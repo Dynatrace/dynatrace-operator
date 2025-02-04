@@ -1,0 +1,125 @@
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: dynatrace-webhook
+  labels:
+  {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1beta1-dynakube
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1beta1
+        resources:
+          - dynakubes
+    name: v1beta1.dynakube.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1beta2-dynakube
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1beta2
+        resources:
+          - dynakubes
+    name: v1beta2.dynakube.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1beta3-dynakube
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1beta3
+        resources:
+          - dynakubes
+    name: v1beta3.dynakube.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1alpha1-edgeconnect
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1alpha1
+        resources:
+          - edgeconnects
+    name: v1alpha1.edgeconnect.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1alpha2-edgeconnect
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1alpha2
+        resources:
+          - edgeconnects
+    name: v1alpha2.edgeconnect.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact

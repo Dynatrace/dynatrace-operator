@@ -1,0 +1,34 @@
+feature request:
+  comment: >
+    Thank you for opening a Dynatrace Operator Issue. We've identified and tagged the issue as a "**Feature request**".
+
+
+    Dynatrace reviews feature requests in the [Dynatrace community](https://community.dynatrace.com/) rather than Github. This helps our team consolidate, rank, and prioritize important input like yours.
+
+
+    Please search for similar requests, collaborate, and ask questions using the link above. Remember to add the labels "kubernetes" and "dynatrace-operator" to help get the attention you deserve.
+
+
+    Thanks for your help!
+  close: true
+
+-feature request:
+  comment: >
+    It isn't a "Feature request".
+  reopen: true
+
+support request:
+  comment: >
+    Thank you for opening a Dynatrace Operator Issue. We've identified and tagged the issue as a "**Support request**".
+
+
+    Dynatrace responds to requests like these via [Dynatrace ONE support](https://support.dynatrace.com/) rather than Github. This helps our team respond as quickly as possible using the support team's tools and procedures.
+
+
+    Thanks for your help!
+  close: true
+
+-support request:
+  comment: >
+    It isn't a "Support request".
+  reopen: true

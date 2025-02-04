@@ -1,0 +1,174 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+  ],
+  labels: [
+    "dependencies",
+  ],
+  digest: {
+    enabled: false,
+  },
+  baseBranches: [
+    "$default",
+    "release-1.2",
+    "release-1.3",
+    "release-1.4",
+  ],
+  enabledManagers: [
+    "regex",
+    "dockerfile",
+    "gomod",
+    "github-actions",
+    "pip_requirements",
+  ],
+  postUpdateOptions: [
+    "gomodTidy",
+    "gomodTidy1.17",
+  ],
+  automergeType: "pr",
+  automerge: true,
+  regexManagers: [
+    {
+      fileMatch: [
+        "(^|/|\\.)prerequisites.mk$",
+        "(^|/|\\.)third-party-licenses.sh$",
+      ],
+      matchStrings: [
+        "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s",
+      ],
+      datasourceTemplate: "go",
+    },
+    {
+      fileMatch: [
+        "(^|/|\\.)ci.yaml$",
+      ],
+      matchStrings: [
+        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
+      ],
+      datasourceTemplate: "go",
+    },
+    {
+      fileMatch: [
+        "(^|/|\\.)action.yaml$",
+      ],
+      matchStrings: [
+        "depName=(?<depName>.*?)\\s.*?PREFLIGHT_VERSION\\:\\s(?<currentValue>.*)\\s",
+      ],
+      datasourceTemplate: "github-releases",
+    },
+  ],
+  packageRules: [
+    {
+      matchBaseBranches: [
+        "$default",
+        "release-1.2",
+        "release-1.3",
+        "release-1.4",
+      ],
+      matchUpdateTypes: [
+        "major",
+        "minor",
+      ],
+      enabled: false,
+      automerge: true,
+    },
+    {
+      matchManagers: [
+        "dockerfile",
+      ],
+      matchBaseBranches: [
+        "$default",
+      ],
+      commitMessagePrefix: "Docker:",
+      enabled: true,
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+      automerge: true,
+    },
+    {
+      matchManagers: [
+        "gomod",
+      ],
+      matchBaseBranches: [
+        "$default",
+      ],
+      commitMessagePrefix: "Go:",
+      enabled: true,
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+      automerge: true,
+    },
+    {
+      matchManagers: [
+        "gomod",
+      ],
+      matchDepTypes: [
+        "indirect",
+      ],
+      enabled: false,
+      automerge: true,
+    },
+    {
+      matchManagers: [
+        "github-actions",
+      ],
+      matchBaseBranches: [
+        "$default",
+      ],
+      commitMessagePrefix: "Actions:",
+      enabled: true,
+      automerge: true,
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+    },
+    {
+      matchManagers: [
+        "regex",
+      ],
+      matchBaseBranches: [
+        "$default",
+      ],
+      commitMessagePrefix: "Dev:",
+      enabled: true,
+      automerge: true,
+    },
+    {
+      matchPackageNames: [
+        "k8s.io/client-go",
+      ],
+      matchBaseBranches: [
+        "$default",
+      ],
+      automerge: true,
+    },
+    {
+      matchPackageNames: [
+        "markdownlint-cli",
+      ],
+      pinVersions: true,
+      enabled: true,
+      automerge: true,
+    },
+    {
+      packageNames: [
+        "helm-unittest",
+      ],
+      enabled: true,
+      pinVersions: true,
+      automerge: true,
+    },
+    {
+      packageNames: [
+        "gomarkdoc",
+      ],
+      enabled: true,
+      pinVersions: true,
+      automerge: true,
+    },
+    {
+      matchPackageNames: [
+        "sigs.k8s.io/e2e-framework",
+      ],
+      enabled: false,
+    },
+  ],
+  platformAutomerge: true,
+}

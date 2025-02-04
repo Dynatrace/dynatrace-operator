@@ -1,0 +1,98 @@
+{{- if eq (include "dynatrace-operator.platform" .) "google-marketplace" }}
+# Copyright 2020 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#     http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+  annotations:
+    kubernetes-engine.cloud.google.com/icon: data:image/png;base64,{{ .Files.Get "logo.png" | b64enc }}
+    marketplace.cloud.google.com/deploy-info: '{"partner_id": "dynatrace-marketplace-prod", "product_id": "dynatrace-operator", "partner_name": "Dynatrace LLC"}'
+spec:
+  descriptor:
+    type: "Dynatrace Operator"
+    version: {{ .Chart.AppVersion }}
+    maintainers:
+      - name: Dynatrace LLC
+        url: https://www.dynatrace.com/
+    keywords:
+      - "dynatrace"
+      - "operator"
+      - "activegate"
+      - "k8s"
+      - "monitoring"
+      - "apm"
+    description: |
+      # Dynatrace Operator
+
+      The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
+
+      * OneAgent
+      * `classicFullStack` rolls out a OneAgent pod per node to monitor pods on it and the node itself
+      * `applicationMonitoring` is a webhook based injection mechanism for automatic app-only injection
+      * CSI Driver can be enabled to cache OneAgent downloads per node
+      * `hostMonitoring` is only monitoring the hosts (i.e. nodes) in the cluster without app-only injection
+      * `cloudNativeFullStack` is a combination of `applicationMonitoring` with CSI driver and `hostMonitoring`
+      * ActiveGate
+      * `routing` routes OneAgent traffic through the ActiveGate
+      * `kubernetes-monitoring` allows monitoring of the Kubernetes API
+      * `metrics-ingest` routes enriched metrics through ActiveGate
+
+      For more information please have a look at [our DynaKube Custom Resource examples](config/samples) and
+      our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/).
+    links:
+      - description: Dynatrace Website
+        url: https://www.dynatrace.com/
+      - description: Operator Deploy Guide
+        url: ToDo
+      - description: Kubernetes Monitoring Info
+        url: https://www.dynatrace.com/technologies/kubernetes-monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dynatrace-operator
+  componentKinds:
+    - group: apps/v1
+      kind: DaemonSet
+    - group: v1
+      kind: Pod
+    - group: v1
+      kind: ConfigMap
+    - group: apps/v1
+      kind: Deployment
+    - group: v1
+      kind: Secret
+    - group: batch/v1
+      kind: Job
+    - group: v1
+      kind: Service
+    - group: v1
+      kind: ServiceAccount
+    - group: admissionregistration.k8s.io/v1
+      kind: ValidatingWebhookConfiguration
+    - group: admissionregistration.k8s.io/v1
+      kind: MutatingWebhookConfiguration
+    - group: apps/v1
+      kind: StatefulSet
+    - group: storage.k8s.io/v1
+      kind: CSIDriver
+    - group: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+    - group: rbac.authorization.k8s.io/v1
+      kind: Role
+    - group: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+{{ end }}

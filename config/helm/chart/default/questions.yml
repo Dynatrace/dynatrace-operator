@@ -1,0 +1,236 @@
+categories:
+  - APM
+  - Monitoring
+questions:
+
+  #################### Global Configuration ####################
+  - variable: installCRD
+    label: "Install Custom Resource Definitions"
+    description: "Installs the Custom Resource Definitions for the Dynakube. This is recommended if you haven't installed it manually yet. Default: true"
+    default: true
+    type: boolean
+    group: "Global Configuration"
+
+  - variable: image
+    label: "Set a custom image for operator components"
+    description: "Set a custom image for operator. Defaults to public.ecr.aws/dynatrace/dynatrace-operator"
+    default: ""
+    type: string
+    group: "Global Configuration"
+
+  - variable: customPullSecret
+    label: "Set a custom pull secret for operator image"
+    description: "Set a custom pull secret for the operator image"
+    default: ""
+    type: string
+    group: "Global Configuration"
+
+  #################### Operator Deployment Configuration ####################
+  - variable: operator.nodeSelector
+    label: "Assign the Dynatrace Operator's pod to certain nodes"
+    description: "Defines a NodeSelector to customize to which nodes the Dynatrace Operator can be deployed on - Please edit as Yaml for the best experience - see https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector"
+    default: ""
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.tolerations
+    label: "Custom tolerations for the Dynatrace Operator's pod"
+    description: "Defines custom tolerations to the Dynatrace Operator - Please edit as Yaml for the best experience - see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/"
+    default: ""
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.apparmor
+    label: "Enable AppArmor for the Dynatrace Operator's pod"
+    description: "Adds AppArmor security annotations to the Dynatrace Operator's pod. Default: false"
+    default: false
+    type: boolean
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.requests.cpu
+    label: "CPU resource requests settings for Dynatrace Operator's pods"
+    description: "The minimum amount of CPU resources that the Dynatrace Operator's pods should request. Affects scheduling. Default: 50m"
+    default: "50m"
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.requests.memory
+    label: "Memory resource requests settings for Dynatrace Operator's pods"
+    description: "The minimum amount of memory that the Dynatrace Operator's pods should request. Affects scheduling. Default: 64Mi"
+    default: "64Mi"
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.limits.cpu
+    label: "CPU resource limits settings for Dynatrace Operator's pods"
+    description: "The maximum amount of CPU resources that the Dynatrace Operator's pods can use. Default: 100m"
+    default: "100m"
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.limits.memory
+    label: "Memory resource limits settings for Dynatrace Operator's pods"
+    description: "The maximum amount of memory that the Dynatrace Operator's pods can use. Pod restarted if exceeded. Default: 128Mi"
+    default: "128Mi"
+    type: string
+    group: "Operator Deployment Configuration"
+
+
+  #################### Webhook Deployment Configuration ####################
+
+  - variable: webhook.apparmor
+    label: "Enable AppArmor for the Dynatrace Webhook's pod"
+    description: "Adds AppArmor security annotations to the Dynatrace Webhook's pod. Default: false"
+    default: false
+    type: boolean
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.highAvailability
+    label: "Enable high availability for the Dynatrace Webhook's pod"
+    description: "Adds topologySpreadConstraints and increases the replicas to 2 for the Dynatrace Webhook's pod. Default: false"
+    default: false
+    type: boolean
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.hostNetwork
+    label: "Enable hostNetwork for the Dynatrace Webhook's pod"
+    description: "Enables hostNetwork for the Dynatrace Webhook's pod. Default: false"
+    default: false
+    type: boolean
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.requests.cpu
+    label: "CPU resource requests settings for Dynatrace Webhook's pods"
+    description: "The minimum amount of CPU resources that the Dynatrace Webhook's pods should request. Affects scheduling. Default: 300m"
+    default: "300m"
+    type: string
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.requests.memory
+    label: "Memory resource requests settings for Dynatrace Webhook's pods"
+    description: "The minimum amount of memory that the Dynatrace Webhook's pods should request. Affects scheduling. Default: 128Mi"
+    default: "128Mi"
+    type: string
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.limits.cpu
+    label: "CPU resource limits settings for Dynatrace Webhook's pods"
+    description: "The maximum amount of CPU resources that the Dynatrace Webhook's pods can use. Default: 300m"
+    default: "300m"
+    type: string
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.limits.memory
+    label: "Memory resource limits settings for Dynatrace Webhook's pods"
+    description: "The maximum amount of memory that the Dynatrace Webhook's pods can use. Pod restarted if exceeded. Default: 128Mi"
+    default: "128Mi"
+    type: string
+    group: "Webhook Deployment Configuration"
+
+
+  #################### CSI Driver Deployment Configuration ####################
+
+  - variable: csidriver.enabled
+    label: "Deploy the Dynatrace CSI Driver"
+    description: "Deploys the Dynatrace CSI Driver via a DaemonSet to enable Cloud Native FullStack. Default: false"
+    default: false
+    type: boolean
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.server.requests.cpu
+    label: "CPU resource requests settings for Dynatrace CSI Driver's server container"
+    description: "The minimum amount of CPU resources that the Dynatrace CSI Driver's server container should request. Affects scheduling. Default: 50m"
+    default: "50m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.server.requests.memory
+    label: "Memory resource requests settings for Dynatrace CSI Driver's server container"
+    description: "The minimum amount of memory that the Dynatrace CSI Driver's server container should request. Affects scheduling. Default: 100Mi"
+    default: "100Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.server.limits.cpu
+    label: "CPU resource limits settings for Dynatrace CSI Driver's server container"
+    description: "The maximum amount of CPU resources that the Dynatrace CSI Driver's server container can use. Default: 50m"
+    default: "50m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.server.limits.memory
+    label: "Memory resource limits settings for Dynatrace CSI Driver's server container"
+    description: "The maximum amount of memory that the Dynatrace CSI Driver's server container can use. Pod restarted if exceeded. Default: 100Mi"
+    default: "100Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.provisioner.requests.cpu
+    label: "CPU resource requests settings for Dynatrace CSI Driver's provisioner container"
+    description: "The minimum amount of CPU resources that the Dynatrace CSI Driver's provisioner container should request. Affects scheduling. Default: 300m"
+    default: "300m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.provisioner.requests.memory
+    label: "Memory resource requests settings for Dynatrace CSI Driver's provisioner container"
+    description: "The minimum amount of memory that the Dynatrace CSI Driver's provisioner container should request. Affects scheduling. Default: 100Mi"
+    default: "100Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.registrar.requests.cpu
+    label: "CPU resource requests settings for Dynatrace CSI Driver's registrar container"
+    description: "The minimum amount of CPU resources that the Dynatrace CSI Driver's registrar container should request. Affects scheduling. Default: 20m"
+    default: "20m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.registrar.requests.memory
+    label: "Memory resource requests settings for Dynatrace CSI Driver's registrar container"
+    description: "The minimum amount of memory that the Dynatrace CSI Driver's registrar container should request. Affects scheduling. Default: 30Mi"
+    default: "30Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.registrar.limits.cpu
+    label: "CPU resource limits settings for Dynatrace CSI Driver's registrar container"
+    description: "The maximum amount of CPU resources that the Dynatrace CSI Driver's registrar container can use. Default: 20m"
+    default: "20m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.registrar.limits.memory
+    label: "Memory resource limits settings for Dynatrace CSI Driver's registrar container"
+    description: "The maximum amount of memory that the Dynatrace CSI Driver's registrar container can use. Pod restarted if exceeded. Default: 30Mi"
+    default: "30Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.livenessprobe.requests.cpu
+    label: "CPU resource requests settings for Dynatrace CSI Driver's livenessprobe container"
+    description: "The minimum amount of CPU resources that the Dynatrace CSI Driver's livenessprobe container should request. Affects scheduling. Default: 20m"
+    default: "20m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.livenessprobe.requests.memory
+    label: "Memory resource requests settings for Dynatrace CSI Driver's livenessprobe container"
+    description: "The minimum amount of memory that the Dynatrace CSI Driver's livenessprobe container should request. Affects scheduling. Default: 30Mi"
+    default: "30Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.livenessprobe.limits.cpu
+    label: "CPU resource limits settings for Dynatrace CSI Driver's livenessprobe container"
+    description: "The maximum amount of CPU resources that the Dynatrace CSI Driver's livenessprobe container can use. Default: 20m"
+    default: "20m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.livenessprobe.limits.memory
+    label: "Memory resource limits settings for Dynatrace CSI Driver's livenessprobe container"
+    description: "The maximum amount of memory that the Dynatrace CSI Driver's livenessprobe container can use. Pod restarted if exceeded. Default: 30Mi"
+    default: "30Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"

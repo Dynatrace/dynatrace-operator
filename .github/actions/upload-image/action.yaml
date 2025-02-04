@@ -1,0 +1,42 @@
+name: Upload Docker Image
+description: Uploads the operator docker image to a registry
+inputs:
+  platform:
+    description: The platform of the uploaded image
+    required: true
+  labels:
+    description: The labels for the uploaded image
+    required: true
+  version:
+    description: The version the image is for
+    required: true
+  registry:
+    description: The registry where the image is uploaded
+    required: true
+  repository:
+    description: The repository in the registry where the image is uploaded
+    required: true
+  skip-platform-suffix:
+    description: Set if platform suffix should be skipped for image
+    required: false
+    default: ""
+outputs:
+  digest:
+    description: The digest of the pushed image
+    value: ${{ steps.push-image.outputs.digest }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+      with:
+        name: operator-${{ inputs.platform }}
+        path: /tmp
+    - name: Upload image to Registry
+      id: push-image
+      shell: bash
+      env:
+        IMAGE: "${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}"
+      run: |
+        hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${{ env.IMAGE }}" "${{ inputs.skip-platform-suffix }}"

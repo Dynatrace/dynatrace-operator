@@ -1,0 +1,94 @@
+name: Run e2e tests
+description: Runs the e2e test in the specified environment
+inputs:
+  flc-namespace:
+    description: The namespace FLC uses
+    required: true
+  flc-environment:
+    description: The environment FLC uses
+    required: true
+  target-branch:
+    description: Target branch to run E2E tests over
+    required: true
+    default: main
+  tenant1-name:
+    description: The name of Tenant 1
+    required: true
+  tenant1-apitoken:
+    description: The API token of Tenant 1
+    required: true
+  tenant1-oauth-client-id:
+    description: The OAuth client ID of Tenant 1
+    required: true
+  tenant1-oauth-secret:
+    description: The OAuth secret of Tenant 1
+    required: true
+  tenant1-oauth-urn:
+    description: The OAuth urn of Tenant 1
+    required: true
+  tenant2-name:
+    description: The name of Tenant 2
+    required: true
+  tenant2-apitoken:
+    description: The API token of Tenant 2
+    required: true
+  github-token:
+    description: The GitHub token
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Checkout workflow scripts from ref branch
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        path: ref
+    - name: Checkout target branch
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        ref: ${{ inputs.target-branch || 'main' }}
+        path: target
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
+    - name: Set up go
+      uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+      with:
+        go-version-file: "${{ github.workspace }}/target/go.mod"
+    - name: Set up helm
+      uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4.2.0
+      with:
+        token: ${{ inputs.github-token }}
+    - name: Install gotestsum
+      shell: bash
+      run: go install gotest.tools/gotestsum@latest
+    - name: Create cluster
+      shell: bash
+      run: ref/.github/scripts/create-cluster.sh
+      env:
+        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
+    - name: Run tests
+      shell: bash
+      run: ref/.github/scripts/run-e2e-tests.sh
+      env:
+        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
+        TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
+        TENANT1_NAME: ${{ inputs.tenant1-name }}
+        TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
+        TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
+        TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
+        TENANT1_OAUTH_URN: ${{ inputs.tenant1-oauth-urn }}
+        TENANT2_NAME: ${{ inputs.tenant2-name }}
+        TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
+    - name: Destroy cluster
+      shell: bash
+      run: ref/.github/scripts/destroy-cluster.sh
+      env:
+        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
+      if: always()
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: target/results/*.xml
+      if: always()

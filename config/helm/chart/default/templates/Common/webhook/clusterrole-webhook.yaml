@@ -1,0 +1,102 @@
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynatrace-webhook
+  labels:
+    {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    resourceNames:
+      - dynatrace-dynakube-config
+      - dynatrace-metadata-enrichment-endpoint
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  # metadata-enrichment workload owner lookup
+  - apiGroups:
+      - ""
+    resources:
+      - replicationcontrollers
+    verbs:
+      - get
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
+      - statefulsets
+      - daemonsets
+      - deployments
+    verbs:
+      - get
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+      - cronjobs
+    verbs:
+      - get
+  - apiGroups:
+      - apps.openshift.io
+    resources:
+      - deploymentconfigs
+    verbs:
+      - get
+  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+      - nonroot-v2
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+  {{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-webhook
+  labels:
+    {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-webhook
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: dynatrace-webhook
+  apiGroup: rbac.authorization.k8s.io

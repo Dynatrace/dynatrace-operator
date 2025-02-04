@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: proxy
+  annotations:
+    dynatrace.com/inject: "false"
+  labels:
+    app: squid
+    pod-security.kubernetes.io/privileged: warn
+    pod-security.kubernetes.io/baseline: warn
+    pod-security.kubernetes.io/restricted: warn
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: proxy
+  namespace: proxy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configfile
+  namespace: proxy
+data:
+  squid.conf: |
+    acl localnet src 0.0.0.1-0.255.255.255	# RFC 1122 "this" network (LAN)
+    acl localnet src 10.0.0.0/8		# RFC 1918 local private network (LAN)
+    acl localnet src 100.64.0.0/10		# RFC 6598 shared address space (CGN)
+    acl localnet src 169.254.0.0/16 	# RFC 3927 link-local (directly plugged) machines
+    acl localnet src 172.16.0.0/12		# RFC 1918 local private network (LAN)
+    acl localnet src 192.168.0.0/16		# RFC 1918 local private network (LAN)
+    acl localnet src fc00::/7       	# RFC 4193 local private network range
+    acl localnet src fe80::/10      	# RFC 4291 link-local (directly plugged) machines
+    acl SSL_ports port 443
+    acl Safe_ports port 80		# http
+    acl Safe_ports port 21		# ftp
+    acl Safe_ports port 443		# https
+    acl Safe_ports port 70		# gopher
+    acl Safe_ports port 210		# wais
+    acl Safe_ports port 1025-65535	# unregistered ports
+    acl Safe_ports port 280		# http-mgmt
+    acl Safe_ports port 488		# gss-http
+    acl Safe_ports port 591		# filemaker
+    acl Safe_ports port 777		# multiling http
+    acl CONNECT method CONNECT
+    http_access deny !Safe_ports
+    http_access deny CONNECT !SSL_ports
+    http_access allow localhost manager
+    http_access deny manager
+    http_access allow localhost
+    http_access allow localnet
+    http_access deny all
+    http_port 3128
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: squid
+  name: squid
+  namespace: proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: squid
+  template:
+    metadata:
+      annotations:
+        dynatrace.com/inject: "false"
+      labels:
+        app: squid
+    spec:
+      serviceAccountName: proxy
+      containers:
+      - image: ubuntu/squid
+        name: squid
+        volumeMounts:
+          - mountPath: /etc/squid/
+            name: config-volume
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+             - NET_RAW
+        readinessProbe:
+          tcpSocket:
+            port: 3128
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 3128
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+        - name: config-volume
+          configMap:
+            name: configfile
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: squid
+  namespace: proxy
+spec:
+  selector:
+    app: squid
+  ports:
+  - port: 3128
+    targetPort: 3128
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: squid
+  namespace: dynatrace
+spec:
+  hosts:
+  - squid.proxy.svc.cluster.local
+  ports:
+    - number: 3128
+      name: tcp
+      protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL

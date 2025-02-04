@@ -1,0 +1,223 @@
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# special handling for "openshift" and "gke-autopilot" (deprecated)
+platform: ""
+
+#image qualifier; OBSOLETE -> use imageref instead!
+# supply either image or imageref; if both supplied, imageref will be disregarded
+image: ""
+#image description using tags
+#resulting image will be named <repository>:v<tag>
+imageRef:
+  repository: "" #path to repo
+  tag: "" #defaults to chart version
+
+customPullSecret: ""
+installCRD: true
+
+operator:
+  nodeSelector: {}
+  tolerations: []
+  labels: {}
+  annotations: {}
+  apparmor: false
+  securityContext:
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+webhook:
+  hostNetwork: false
+  ports:
+    server: 8443
+    metrics: 8383
+    healthProbe: 10080
+  nodeSelector: {}
+  tolerations: []
+  labels: {}
+  annotations: {}
+  apparmor: false
+  securityContext:
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  requests:
+    cpu: 300m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 128Mi
+  highAvailability: true
+  validatingWebhook:
+    timeoutSeconds: 10
+  mutatingWebhook:
+    failurePolicy: Ignore
+    timeoutSeconds: 10
+
+csidriver:
+  enabled: true
+  nodeSelector: {}
+  kubeletPath: "/var/lib/kubelet"
+  existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one
+  priorityClassValue: "1000000"
+  cleanupPeriod: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  labels: {}
+  annotations: {}
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  csiInit:
+    securityContext:
+      runAsUser: 0
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seLinuxOptions:
+        level: s0
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 50m
+        memory: 100Mi
+  server:
+    securityContext:
+      runAsUser: 0
+      privileged: true # Needed for mountPropagation
+      allowPrivilegeEscalation: true # Needed for privileged
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seLinuxOptions:
+        level: s0
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 50m
+        memory: 100Mi
+  provisioner:
+    securityContext:
+      runAsUser: 0
+      privileged: true # Needed for mountPropagation
+      allowPrivilegeEscalation: true # Needed for privileged
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seLinuxOptions:
+        level: s0
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 300m
+        memory: 100Mi
+  registrar:
+    securityContext:
+      runAsUser: 0
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 20m
+        memory: 30Mi
+      limits:
+        cpu: 20m
+        memory: 30Mi
+  livenessprobe:
+    securityContext:
+      runAsUser: 0
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 20m
+        memory: 30Mi
+      limits:
+        cpu: 20m
+        memory: 30Mi
+
+rbac:
+  activeGate:
+    create: true
+    annotations: {}
+  edgeConnect:
+    create: true
+    annotations: {}
+  extensions:
+    create: true
+    annotations: {}
+  telemetryService:
+    create: true
+    annotations: {}
+  logMonitoring:
+    create: true
+    annotations: {}
+  oneAgent:
+    create: true
+    annotations: {}
+  kspm:
+    create: true
+    annotations: {}
+  supportability: true

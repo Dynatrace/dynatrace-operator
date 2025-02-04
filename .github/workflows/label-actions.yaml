@@ -1,0 +1,18 @@
+name: 'Label Actions'
+
+on:
+  issues:
+    types: [labeled, unlabeled]
+
+permissions:
+  issues: write
+
+jobs:
+  job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: toshimaru/label-actions@4d6a6241cd5177abbd996aa5b9fdf02d47c78bb9 # v2.0.0
+        with:
+          github-token: ${{ github.token }}
+          config-path: '.github/label-actions.yaml'
+          process-only: 'issues'

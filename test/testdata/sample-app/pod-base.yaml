@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: php-sample
+  name: php-sample
+spec:
+  containers:
+    - image: docker.io/php:fpm-stretch
+      imagePullPolicy: Always
+      livenessProbe:
+        failureThreshold: 3
+        tcpSocket:
+          port: 9000
+        initialDelaySeconds: 600
+        periodSeconds: 30
+        successThreshold: 1
+        timeoutSeconds: 2
+      name: app
+      env:
+        - name: DT_DEBUGFLAGS
+          value: debugBootstrapNative=true
+      ports:
+        - containerPort: 9000
+          protocol: TCP
+      readinessProbe:
+        failureThreshold: 3
+        tcpSocket:
+          port: 9000
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+      resources:
+        requests:
+          memory: 64Mi
+          ephemeral-storage: 2Gi
+        limits:
+          memory: 128Mi
+          ephemeral-storage: 2Gi
+  restartPolicy: Always
+  tolerations:
+    - key: kubernetes.io/arch
+      value: arm64
+      effect: NoSchedule
+    - key: kubernetes.io/arch
+      value: amd64
+      effect: NoSchedule
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+  terminationGracePeriodSeconds: 30

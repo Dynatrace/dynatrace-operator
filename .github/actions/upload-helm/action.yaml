@@ -1,0 +1,48 @@
+name: Upload helm package
+description: Upload the helm package
+inputs:
+  registry-url:
+    description: URL for the OCI registry
+    required: true
+    default: registry.hub.docker.com
+  registry-namespace:
+    description: Repository in the OCI registry
+    required: true
+    default: dynatrace
+  image-base-url:
+    description: Base URL for the image
+    required: true
+    default: docker.io
+  helm-repository-name:
+    description: Repository used in the OCI registry, be aware that helm upload does infer this from the helm package name itself
+    required: true
+    default: dynatrace-operator
+  version:
+    description: The version of the helm package to upload
+    required: true
+  version-without-prefix:
+    description: The version of the helm package to upload without the leading 'v' character
+    required: true
+  cosign-private-key:
+    description: Private key used to sign the helm package
+    required: true
+  cosign-password:
+    description: Password used to encrypt the private key
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+  - name: Upload helm package to OCI registry
+    id: push-helm-to-OCI
+    shell: bash
+    run: |
+        hack/build/ci/push-helm-chart.sh \
+        "./helm-pkg/dynatrace-operator-${{ inputs.version-without-prefix }}.tgz" \
+        "oci://${{ inputs.registry-url }}/${{ inputs.registry-namespace }}"
+  - name: Sign OCI package with cosign
+    uses: ./.github/actions/sign-image
+    with:
+      image: "${{ inputs.image-base-url }}/${{ inputs.registry-namespace }}/${{ inputs.helm-repository-name }}:${{ inputs.version }}@${{ steps.push-helm-to-OCI.outputs.digest }}"
+      signing-key: ${{ inputs.cosign-private-key }}
+      signing-password: ${{ inputs.cosign-password }}

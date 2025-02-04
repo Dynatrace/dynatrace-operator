@@ -1,0 +1,10 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: deny-all
+  namespace: dynatrace
+spec:
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+
+

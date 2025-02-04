@@ -1,0 +1,68 @@
+suite: test labels
+chart:
+  version: 1.0.0
+  appVersion: 1.0.1
+templates:
+  - Common/operator/deployment-operator.yaml
+tests:
+  - it: default install-source
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: helm
+  - it: install-source for kubernetes platform
+    set:
+      platform: kubernetes
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: helm
+  - it: install-source for openshift platform
+    set:
+      platform: openshift
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: helm
+  - it: install-source for any platform
+    set:
+      platform: anymarketplace
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: anymarketplace
+
+  - it: install-source for kubernetes manifests
+    set:
+      platform: kubernetes
+      manifests: true
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: manifest
+  - it: install-source for openshift manifests
+    set:
+      platform: openshift
+      manifests: true
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: manifest
+
+  - it: install-source for olm
+    set:
+      olm: true
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: operatorhub
+
+  - it: install-source for olm unaffected by other parameters
+    set:
+      olm: true
+      manifests: true
+      platform: any
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: operatorhub

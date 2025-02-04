@@ -1,0 +1,13 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: deny-csi
+  namespace: dynatrace
+spec:
+  workloadSelector:
+    labels:
+      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/component: csi-driver
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+

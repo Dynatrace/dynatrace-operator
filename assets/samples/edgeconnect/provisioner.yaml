@@ -1,0 +1,24 @@
+apiVersion: dynatrace.com/v1alpha2
+kind: EdgeConnect
+metadata:
+  name: edge-connect-sample
+  namespace: dynatrace
+spec:
+  # Documentation:
+  # https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/edgeconnect/edge-connect-provision
+
+  apiServer: "https://example.dev.apps.dynatracelabs.com"
+  replicas: 1
+
+  oauth:
+    # OAuth client has to be created in Dynatrace account management
+    # https://docs.dynatrace.com/docs/shortlink/account-api-authentication#create-an-oauth2-client
+    #
+    # Please consult https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/edgeconnect/edge-connect-provision
+    # for the scopes required specific to EdgeConnect with Kubernetes Automation enabled
+    clientSecret: provisioner-oauth-client-secret
+    endpoint: https://sso-dev.dynatracelabs.com/sso/oauth2/token
+    resource: urn:dtaccount:cd99bbd6-3b73-467e-b1fb-c09b9db9e7cc
+
+    # Enable EdgeConnect provisioning
+    provisioner: true

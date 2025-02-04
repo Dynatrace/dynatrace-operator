@@ -1,0 +1,4 @@
+resources:
+- dynatrace.com_dynakubes.yaml
+- dynatrace.com_edgeconnects.yaml
+

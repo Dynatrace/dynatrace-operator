@@ -1,0 +1,28 @@
+apiVersion: dynatrace.com/v1beta3
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+
+  # The `logMonitoring` section is used to configure log collection via the OneAgent Log module.
+  # it can be used with any other DynaKube mode, e.g. applicationMonitoring.
+  # Available with Dynatrace version 1.306+ and OneAgent 1.305+
+
+  logMonitoring: {}
+
+  activeGate:
+    capabilities:
+      - kubernetes-monitoring
+
+  templates: {}
+    # Required in combination with logMonitoring enabled.
+    # As there is no image available in public registry yet, this field is required if you want to run logMonitoring.
+    #
+    # logMonitoring:
+    #   imageRef:
+    #     repository: <image-repo>
+    #     tag: <image-tag>

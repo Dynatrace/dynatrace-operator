@@ -1,0 +1,29 @@
+name: Create Manifests
+description: Creates the manifests for the images
+inputs:
+  version:
+    description: The version the manifests are for
+    required: true
+  registry:
+    description: The registry where the manifests are pushed
+    required: true
+  repository:
+    description: The repository in the registry where the manifests are pushed
+    required: true
+  combined:
+    description: Should it create a combined manifests for amd64, arm64 and ppc64le builds
+    required: true
+outputs:
+  digest:
+    description: The digest of the created manifest
+    value: ${{ steps.create-manifest.outputs.digest }}
+runs:
+  using: "composite"
+  steps:
+    - name: Create manifest
+      id: create-manifest
+      env:
+        IMAGE: ${{ inputs.registry }}/${{ inputs.repository }}
+      shell: bash
+      run: |
+        hack/build/ci/create-manifest.sh "${IMAGE}" "${{ inputs.version }}" ${{ inputs.combined }}

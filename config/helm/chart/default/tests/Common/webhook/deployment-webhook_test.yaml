@@ -1,0 +1,668 @@
+suite: test deployment of webhook
+chart:
+  version: 1.0.0
+  appVersion: 1.0.1
+templates:
+  - Common/webhook/deployment-webhook.yaml
+tests:
+  - it: should exist with highavailability mode
+    set:
+      platform: kubernetes
+      image: image-name
+      webhook.highAvailability: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: dynatrace-operator
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: webhook
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: dynatrace-operator-1.0.0
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 1.0.1
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+      - isNotEmpty:
+          path: spec.selector.matchLabels
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
+            kubectl.kubernetes.io/default-container: webhook
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+      - equal:
+          path: spec.template.spec
+          value:
+            topologySpreadConstraints:
+              - maxSkew: 1
+                topologyKey: "topology.kubernetes.io/zone"
+                whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    internal.dynatrace.com/app: webhook
+                    internal.dynatrace.com/component: webhook
+              - maxSkew: 1
+                topologyKey: "kubernetes.io/hostname"
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    internal.dynatrace.com/app: webhook
+                    internal.dynatrace.com/component: webhook
+            volumes:
+              - emptyDir: {}
+                name: certs-dir
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                            - ppc64le
+                            - s390x
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
+            containers:
+              - name: webhook
+                args:
+                  - webhook-server
+                  - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
+                image: image-name
+                imagePullPolicy: Always
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: WEBHOOK_PORT
+                    value: "8443"
+                  - name: HEALTH_PROBE_BIND_ADDRESS
+                    value: :10080
+                  - name: METRICS_BIND_ADDRESS
+                    value: :8383
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
+                livenessProbe:
+                  httpGet:
+                    path: /livez
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                ports:
+                  - containerPort: 8443
+                    name: server-port
+                  - containerPort: 10080
+                    name: livez
+                  - containerPort: 8383
+                    name: metrics
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                resources:
+                  requests:
+                    cpu: 300m
+                    memory: 128Mi
+                  limits:
+                    cpu: 300m
+                    memory: 128Mi
+                volumeMounts:
+                  - name: certs-dir
+                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
+            serviceAccountName: dynatrace-webhook
+
+  - it: should have tolerations if set
+    set:
+      platform: kubernetes
+      webhook.tolerations:
+        - effect: NoSchedule
+          key: a-special-taint
+          value: a-special-value
+    asserts:
+      - equal:
+          path: spec.template.spec.tolerations
+          value:
+            - effect: NoSchedule
+              key: a-special-taint
+              value: a-special-value
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: arm64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: amd64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: ppc64le
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: s390x
+
+  - it: should have nodeSelectors if set
+    set:
+      platform: kubernetes
+      webhook.nodeSelector:
+        test-key: test-value
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            test-key: test-value
+
+  - it: should exist (without highavailabilty mode)
+    set:
+      platform: kubernetes
+      image: image-name
+      webhook.highAvailability: false
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: dynatrace-operator
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: webhook
+      - isNotEmpty:
+          path: metadata.labels["helm.sh/chart"]
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+      - isNotEmpty:
+          path: spec.selector.matchLabels
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
+            kubectl.kubernetes.io/default-container: webhook
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+      - equal:
+          path: spec.template.spec
+          value:
+            volumes:
+              - emptyDir: {}
+                name: certs-dir
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                            - ppc64le
+                            - s390x
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
+            containers:
+              - name: webhook
+                args:
+                  - webhook-server
+                  - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
+                image: image-name
+                imagePullPolicy: Always
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: WEBHOOK_PORT
+                    value: "8443"
+                  - name: HEALTH_PROBE_BIND_ADDRESS
+                    value: :10080
+                  - name: METRICS_BIND_ADDRESS
+                    value: :8383
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
+                livenessProbe:
+                  httpGet:
+                    path: /livez
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                ports:
+                  - containerPort: 8443
+                    name: server-port
+                  - containerPort: 10080
+                    name: livez
+                  - containerPort: 8383
+                    name: metrics
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                resources:
+                  requests:
+                    cpu: 300m
+                    memory: 128Mi
+                  limits:
+                    cpu: 300m
+                    memory: 128Mi
+                volumeMounts:
+                  - name: certs-dir
+                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
+            serviceAccountName: dynatrace-webhook
+
+  - it: should not have imagePullSecrets defined in spec (without highavailabilty mode)
+    set:
+      platform: kubernetes
+    asserts:
+      - isNull:
+          path: spec.template.spec.imagePullSecrets
+
+  - it: should exist on olm (but different and without highavailabilty mode)
+    set:
+      olm: true
+      image: image-name
+      webhook.highAvailability: false
+      platform: kubernetes
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+      - isNotEmpty:
+          path: spec.selector.matchLabels
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
+            kubectl.kubernetes.io/default-container: webhook
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+      - equal:
+          path: spec.template.spec
+          value:
+            volumes:
+              - emptyDir: {}
+                name: certs-dir
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                            - ppc64le
+                            - s390x
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
+
+            containers:
+              - name: webhook
+                args:
+                  - webhook-server
+                  - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
+                image: image-name
+                imagePullPolicy: Always
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: WEBHOOK_PORT
+                    value: "8443"
+                  - name: HEALTH_PROBE_BIND_ADDRESS
+                    value: :10080
+                  - name: METRICS_BIND_ADDRESS
+                    value: :8383
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
+                livenessProbe:
+                  httpGet:
+                    path: /livez
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                ports:
+                  - containerPort: 8443
+                    name: server-port
+                  - containerPort: 10080
+                    name: livez
+                  - containerPort: 8383
+                    name: metrics
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                resources:
+                  requests:
+                    cpu: 300m
+                    memory: 128Mi
+                  limits:
+                    cpu: 300m
+                    memory: 128Mi
+                volumeMounts:
+                  - name: certs-dir
+                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
+            serviceAccountName: dynatrace-webhook
+
+  - it: should have imagePullSecrets defined in spec
+    set:
+      customPullSecret: pull-secret
+      platform: kubernetes
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: pull-secret
+
+  - it: should take custom labels
+    set:
+      platform: kubernetes
+      webhook.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: metadata.labels.testKey
+      - equal:
+          path: metadata.labels.testKey
+          value: testValue
+
+  - it: should take custom annotations
+    set:
+      platform: kubernetes
+      webhook.annotations:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            testKey: testValue
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
+            kubectl.kubernetes.io/default-container: webhook
+            testKey: testValue
+
+  - it: should take custom labels in spec.template.metadata.labels path
+    set:
+      platform: kubernetes
+      webhook.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: metadata.labels.testKey
+      - equal:
+          path: metadata.labels.testKey
+          value: testValue
+      - isNotEmpty:
+          path: spec.template.metadata.labels.testKey
+      - equal:
+          path: spec.template.metadata.labels.testKey
+          value: testValue
+
+  - it: should set ephemeral-storage request/limits
+    set:
+      platform: kubernetes
+      webhook.requests:
+        ephemeral-storage: 320
+      webhook.limits:
+        ephemeral-storage: 420
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.ephemeral-storage
+          value: 420
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.ephemeral-storage
+          value: 320
+
+  ####################### imageref tests #######################
+  - it: should run the same if image is set
+    set:
+      platform: kubernetes
+      image: image-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
+  - it: it uses imageref if set
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+        tag: tag-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo:tag-name"
+
+  - it: image field has precedence over imageref section
+    set:
+      platform: kubernetes
+      image: image-name
+      imageRef:
+        repository: not-the-repo-you-are-looking-for
+        tag: tag-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
+  - it: tag in imageref defaults to chart.version
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo:v1.0.1"
+
+  - it: debug flag disables high availability and security context
+    set:
+      platform: kubernetes
+      image: image-name
+      debug: true
+      webhook.highAvailability: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value: null
+      - equal:
+          path: spec.replicas
+          value: 1

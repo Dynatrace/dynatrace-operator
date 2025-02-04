@@ -1,0 +1,23 @@
+changelog:
+  exclude:
+    labels:
+      - cherrypick
+  categories:
+    - title: Bugfixes 🪲
+      labels:
+        - bug
+    - title: Core changes 🎉
+      labels:
+        - core
+        - ci
+        - security
+    - title: Helm changes ⛑️
+      labels:
+        - helm
+    - title: Component changes 🛠️
+      labels:
+        - oneagent
+        - activegate
+    - title: Documentation changes 📚
+      labels:
+        - documentation

@@ -1,0 +1,544 @@
+suite: test deployment for dynatrace operator
+chart:
+  version: 1.0.0
+  appVersion: 1.0.1
+templates:
+  - Common/operator/deployment-operator.yaml
+tests:
+  - it: should exist if platform is set to kubernetes
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist if platform is set to openshift
+    set:
+      platform: openshift
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist if platform is set to google-marketplace
+    set:
+      platform: google-marketplace
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist on kubernetes
+    set:
+      platform: kubernetes
+      image: image-name
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dynatrace-operator
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: dynatrace-operator
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: operator
+      - equal:
+          path: metadata.labels["helm.sh/chart"]
+          value: dynatrace-operator-1.0.0
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 1.0.1
+      - equal:
+          path: spec.replicas
+          value: 1
+      - isNotEmpty:
+          path: spec.selector
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 1
+      - equal:
+          path: spec.template.spec
+          value:
+            containers:
+              - name: operator
+                args:
+                  - operator
+                # Replace this with the built image name
+                image: image-name
+                imagePullPolicy: Always
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
+                ports:
+                  - containerPort: 10080
+                    name: livez
+                  - containerPort: 8080
+                    name: metrics
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                volumeMounts:
+                  - name: tmp-cert-dir
+                    mountPath: /tmp/dynatrace-operator
+                livenessProbe:
+                  httpGet:
+                    path: /livez
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                            - ppc64le
+                            - s390x
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+            volumes:
+              - emptyDir: { }
+                name: tmp-cert-dir
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
+            serviceAccountName: dynatrace-operator
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
+      - isNull:
+          path: spec.template.spec.nodeSelector
+
+
+  - it: should have tolerations if set in kubernetes
+    set:
+      platform: kubernetes
+      operator.tolerations:
+        - effect: NoSchedule
+          key: a-special-taint
+          value: a-special-value
+    asserts:
+      - equal:
+          path: spec.template.spec.tolerations
+          value:
+            - effect: NoSchedule
+              key: a-special-taint
+              value: a-special-value
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: arm64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: amd64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: ppc64le
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: s390x
+
+  - it: should have nodeSelectors if set in kubernetes
+    set:
+      platform: kubernetes
+      operator.nodeSelector:
+        test-key: test-value
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            test-key: test-value
+
+  - it: should not have imagePullSecrets defined in spec
+    set:
+      platform: kubernetes
+    asserts:
+      - isNull:
+          path: spec.template.spec.imagePullSecrets
+
+  - it: should exist on openshift
+    set:
+      platform: openshift
+      image: image-name
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dynatrace-operator
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: spec.replicas
+          value: 1
+      - isNotEmpty:
+          path: spec.selector
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 1
+      - equal:
+          path: spec.template.spec
+          value:
+            containers:
+              - name: operator
+                args:
+                  - operator
+                # Replace this with the built image name
+                image: image-name
+                imagePullPolicy: Always
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
+                ports:
+                  - containerPort: 10080
+                    name: livez
+                  - containerPort: 8080
+                    name: metrics
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                volumeMounts:
+                  - name: tmp-cert-dir
+                    mountPath: /tmp/dynatrace-operator
+                livenessProbe:
+                  httpGet:
+                    path: /livez
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                            - ppc64le
+                            - s390x
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+            volumes:
+              - emptyDir: { }
+                name: tmp-cert-dir
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
+            serviceAccountName: dynatrace-operator
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
+      - isNull:
+          path: spec.template.spec.nodeSelector
+
+  - it: should have tolerations if set in openshift
+    set:
+      platform: openshift
+      operator.tolerations:
+        - effect: NoSchedule
+          key: a-special-taint
+          value: a-special-value
+    asserts:
+      - equal:
+          path: spec.template.spec.tolerations
+          value:
+            - effect: NoSchedule
+              key: a-special-taint
+              value: a-special-value
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: arm64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: amd64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: ppc64le
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: s390x
+
+  - it: should have nodeSelectors if set in openshift
+    set:
+      platform: openshift
+      operator.nodeSelector:
+        test-key: test-value
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            test-key: test-value
+
+  - it: should have imagePullSecrets defined in spec
+    set:
+      platform: openshift
+      customPullSecret: pull-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: pull-secret
+
+  - it: should not have imagePullSecrets defined in spec
+    set:
+      platform: openshift
+    asserts:
+      - isNull:
+          path: spec.template.spec.imagePullSecrets
+
+  - it: should take custom labels
+    set:
+      platform: kubernetes
+      operator.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: metadata.labels.testKey
+      - equal:
+          path: metadata.labels.testKey
+          value: testValue
+      - isNotEmpty:
+          path: spec.template.metadata.labels.testKey
+      - equal:
+          path: spec.template.metadata.labels.testKey
+          value: testValue
+
+  - it: should take custom annotations
+    set:
+      platform: kubernetes
+      operator.annotations:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            testKey: testValue
+
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
+            testKey: testValue
+
+  - it: should take custom labels in spec.template.metadata.labels path
+    set:
+      platform: kubernetes
+      operator.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: spec.template.metadata.labels.testKey
+      - equal:
+          path: spec.template.metadata.labels.testKey
+          value: testValue
+
+  - it: should set ephemeral-storage request/limits
+    set:
+      platform: kubernetes
+      operator.requests:
+        ephemeral-storage: 320
+      operator.limits:
+        ephemeral-storage: 420
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.ephemeral-storage
+          value: 420
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.ephemeral-storage
+          value: 320
+
+####################### imageref tests #######################
+  - it: should run the same if image is set
+    set:
+      platform: kubernetes
+      image: image-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
+  - it: it uses imageref if set
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+        tag: tag-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo:tag-name"
+
+  - it: image field has precedence over imageref section
+    set:
+      platform: kubernetes
+      image: image-name
+      imageRef:
+        repository: not-the-repo-you-are-looking-for
+        tag: tag-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
+  - it: tag in imageref defaults to chart.version
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo:v1.0.1"
+
+  - it: not setting image or imageref but platform to kubernetes defaults to correct repo and version
+    set:
+      platform: kubernetes
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "public.ecr.aws/dynatrace/dynatrace-operator:v1.0.1"
+
+  - it: not setting image or imageref but platform to google-marketplace defaults to correct repo and version
+    set:
+      platform: google-marketplace
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "gcr.io/dynatrace-marketplace-prod/dynatrace-operator:1.0.1"

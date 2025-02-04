@@ -1,0 +1,169 @@
+suite: test role for oneagent on kubernetes
+templates:
+  - Common/operator/role-operator.yaml
+tests:
+  - it: Role should exist
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: metadata.name
+          value: dynatrace-operator
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - dynatrace.com
+              resources:
+                - dynakubes
+                - edgeconnects
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+            - apiGroups:
+                - dynatrace.com
+              resources:
+                - dynakubes/finalizers
+                - edgeconnects/finalizers
+                - dynakubes/status
+                - edgeconnects/status
+              verbs:
+                - update
+            - apiGroups:
+                - apps
+              resources:
+                - statefulsets
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - apps
+              resources:
+                - daemonsets
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+                - deployments
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - apps
+              resources:
+                - deployments/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - configmaps
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - get
+                - list
+            - apiGroups:
+                - ""
+              resources:
+                - services
+              verbs:
+                - create
+                - update
+                - delete
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - networking.istio.io
+              resources:
+                - serviceentries
+                - virtualservices
+              verbs:
+                - get
+                - list
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - get
+                - update
+                - create
+  - it: RoleBinding should exist
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-operator
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-operator
+      - equal:
+          path: roleRef
+          value:
+            kind: Role
+            name: dynatrace-operator
+            apiGroup: rbac.authorization.k8s.io

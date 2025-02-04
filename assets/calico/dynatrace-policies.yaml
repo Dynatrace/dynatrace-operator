@@ -1,0 +1,82 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dynatrace-pods
+  namespace: dynatrace
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/managed-by: dynatrace-operator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+  - from:
+    # from any ip
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    # default HTTP/HTTPS
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+    # from webhook ports
+    - protocol: TCP
+      port: 8383
+    - protocol: TCP
+      port: 8384
+    - protocol: TCP
+      port: 8443
+    # from operator ports
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 10080
+    # csi driver provisioner port
+    - protocol: TCP
+      port: 10090
+  egress:
+  - to:
+    # to any ip
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    # default HTTP/HTTPS
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+    # to webhook ports
+    - protocol: TCP
+      port: 8383
+    - protocol: TCP
+      port: 8384
+    - protocol: TCP
+      port: 8443
+    # to operator ports
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 10080
+  # Allow DNS lookup
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow external traffic for e.g. Cluster API requests
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        # blocks private ips, i.e. blocks Pod to Pod communication
+        - 10.0.0.0/8
+        - 192.168.0.0/16
+        - 172.16.0.0/12
+    ports: []

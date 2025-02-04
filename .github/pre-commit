@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Check linting and unit tests before commiting
+# if linting fails the commit will be aborted and the linting will start auto fixing
+# if unit tests fail the commit will be aborted
+
+# Linting
+
+echo Shell: "${SHELL}"
+
+echo Linting markdown files...
+make markdown/lint
+
+## this will retrieve all of the .go files that have been
+## changed since the last commit
+STAGED_GO_FILES=$(git diff --cached --name-only -- '*.go')
+
+## we can check to see if this is empty
+if [[ ${STAGED_GO_FILES} == "" ]]; then
+    echo "No Go Files to Update"
+    exit 0
+## otherwise we can do stuff with these changed go files
+else
+    for file in ${STAGED_GO_FILES}; do
+        make LINT_TARGET="${file}" go/format
+        ## add any potential changes from our formatting to the
+        ## commit
+        git add "${file}"
+    done
+fi
+
+
+make go/golangci
+res=${?}
+if [[ ${res} -ne 0 ]]; then
+    echo "Linting failed"
+    exit 2
+fi
+
+echo "Run unit tests..."
+make go/test
+res=${?}
+if [[ ${res} -ne 0 ]]; then
+    echo "Unit test failed"
+    exit 2
+fi
+echo

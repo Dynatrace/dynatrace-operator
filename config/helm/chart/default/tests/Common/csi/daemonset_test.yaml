@@ -1,0 +1,724 @@
+suite: test deployment for csi DaemonSet
+chart:
+  version: 1.0.0
+  appVersion: 1.0.1
+templates:
+  - Common/csi/daemonset.yaml
+tests:
+  - it: should exist 1 by default
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should have tolerations by default
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+    asserts:
+    - equal:
+        path: spec.template.spec.tolerations
+        value:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+            operator: Exists
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: arm64
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: amd64
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: ppc64le
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: s390x
+          - effect: NoSchedule
+            key: ToBeDeletedByClusterAutoscaler
+            operator: Exists
+
+  - it: should set the env cleanupPeriod
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.cleanupPeriod: "5m"
+    asserts:
+    - equal:
+        path: spec.template.spec.containers[1].env[1] #provisioner
+        value:
+          name: CLEANUP_PERIOD
+          value: "5m"
+
+  - it: should have nodeSelectors if set
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.nodeSelector:
+        test-key: test-value
+    asserts:
+    - equal:
+        path: spec.template.spec.nodeSelector
+        value:
+          test-key: test-value
+
+  - it: should exist in case of CSI enabled
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+    asserts:
+      - isKind:
+          of: DaemonSet
+      - equal:
+          path: metadata.name
+          value: dynatrace-oneagent-csi-driver
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+
+  - it: should create correct spec for template of daemonset spec
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+    asserts:
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+      - equal:
+          path: spec.template.spec
+          value:
+            initContainers:
+            - name: csi-init
+              image: image-name
+              imagePullPolicy: Always
+              args:
+              - csi-init
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 100Mi
+                limits:
+                  cpu: 50m
+                  memory: 100Mi
+              securityContext:
+                runAsUser: 0
+                privileged: false
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: false
+                seccompProfile:
+                  type: RuntimeDefault
+                seLinuxOptions:
+                  level: s0
+              volumeMounts:
+              - mountPath: /data
+                name: data-dir
+            priorityClassName: dynatrace-high-priority
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                            - ppc64le
+                            - s390x
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+            tolerations:
+                - effect: NoSchedule
+                  key: node-role.kubernetes.io/master
+                  operator: Exists
+                - effect: NoSchedule
+                  key: node-role.kubernetes.io/control-plane
+                  operator: Exists
+                - effect: NoSchedule
+                  key: kubernetes.io/arch
+                  value: arm64
+                - effect: NoSchedule
+                  key: kubernetes.io/arch
+                  value: amd64
+                - effect: NoSchedule
+                  key: kubernetes.io/arch
+                  value: ppc64le
+                - effect: NoSchedule
+                  key: kubernetes.io/arch
+                  value: s390x
+                - effect: NoSchedule
+                  key: ToBeDeletedByClusterAutoscaler
+                  operator: Exists
+            containers:
+              - args:
+                  - csi-server
+                  - "--endpoint=unix:/csi/csi.sock"
+                  - "--node-id=$(KUBE_NODE_NAME)"
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                  - name: KUBE_NODE_NAME
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: spec.nodeName
+                image: image-name
+                imagePullPolicy: Always
+                livenessProbe:
+                  failureThreshold: 5
+                  httpGet:
+                    path: "/healthz"
+                    port: healthz
+                    scheme: HTTP
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  successThreshold: 1
+                  timeoutSeconds: 4
+                name: server
+                ports:
+                  - containerPort: 9808
+                    name: healthz
+                  - containerPort: 8080
+                    name: metrics
+                resources:
+                  limits:
+                    cpu: 50m
+                    memory: 100Mi
+                  requests:
+                    cpu: 50m
+                    memory: 100Mi
+                securityContext:
+                  allowPrivilegeEscalation: true
+                  privileged: true
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: false
+                  runAsUser: 0
+                  seLinuxOptions:
+                    level: s0
+                  seccompProfile:
+                    type: RuntimeDefault
+                terminationMessagePath: "/dev/termination-log"
+                terminationMessagePolicy: File
+                volumeMounts:
+                  - mountPath: "/csi"
+                    name: plugin-dir
+                  - mountPath: "/var/lib/kubelet/pods/"
+                    mountPropagation: Bidirectional
+                    name: mountpoint-dir
+                  - mountPath: "/data"
+                    mountPropagation: Bidirectional
+                    name: data-dir
+                  - mountPath: "/tmp"
+                    name: tmp-dir
+              - args:
+                  - csi-provisioner
+                  - "--health-probe-bind-address=:10090"
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kspm": true
+                      }
+                image: image-name
+                imagePullPolicy: Always
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
+                livenessProbe:
+                  failureThreshold: 3
+                  httpGet:
+                    path: "/livez"
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  successThreshold: 1
+                  timeoutSeconds: 1
+                name: provisioner
+                ports:
+                  - containerPort: 10090
+                    name: livez
+                  - containerPort: 8090
+                    name: metrics
+                resources:
+                  requests:
+                    cpu: 300m
+                    memory: 100Mi
+                securityContext:
+                  allowPrivilegeEscalation: true
+                  privileged: true
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: false
+                  runAsUser: 0
+                  seLinuxOptions:
+                    level: s0
+                  seccompProfile:
+                    type: RuntimeDefault
+                terminationMessagePath: "/dev/termination-log"
+                terminationMessagePolicy: File
+                volumeMounts:
+                  - mountPath: "/data"
+                    mountPropagation: Bidirectional
+                    name: data-dir
+                  - mountPath: "/tmp"
+                    name: tmp-dir
+                  - mountPath: "/var/lib/kubelet/pods/"
+                    name: mountpoint-dir
+                    readOnly: true
+              - args:
+                  - "--csi-address=/csi/csi.sock"
+                  - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+                command:
+                  - csi-node-driver-registrar
+                env:
+                  - name: DRIVER_REG_SOCK_PATH
+                    value: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
+                image: image-name
+                imagePullPolicy: Always
+                name: registrar
+                resources:
+                  limits:
+                    cpu: 20m
+                    memory: 30Mi
+                  requests:
+                    cpu: 20m
+                    memory: 30Mi
+                securityContext:
+                  privileged: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: false
+                  runAsUser: 0
+                  seccompProfile:
+                    type: RuntimeDefault
+                terminationMessagePath: "/dev/termination-log"
+                terminationMessagePolicy: File
+                volumeMounts:
+                  - mountPath: "/csi"
+                    name: plugin-dir
+                  - mountPath: "/registration"
+                    name: registration-dir
+                  - mountPath: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/"
+                    name: lockfile-dir
+              - args:
+                  - "--csi-address=/csi/csi.sock"
+                  - "--health-port=9808"
+                  - "--probe-timeout=4s"
+                command:
+                  - livenessprobe
+                image: image-name
+                imagePullPolicy: Always
+                name: liveness-probe
+                resources:
+                  limits:
+                    cpu: 20m
+                    memory: 30Mi
+                  requests:
+                    cpu: 20m
+                    memory: 30Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  privileged: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: false
+                  runAsUser: 0
+                  seccompProfile:
+                    type: RuntimeDefault
+                terminationMessagePath: "/dev/termination-log"
+                terminationMessagePolicy: File
+                volumeMounts:
+                  - mountPath: "/csi"
+                    name: plugin-dir
+            dnsPolicy: ClusterFirst
+            restartPolicy: Always
+            schedulerName: default-scheduler
+            securityContext: { }
+            serviceAccountName: dynatrace-oneagent-csi-driver
+            terminationGracePeriodSeconds: 30
+            volumes:
+              - hostPath:
+                  path: /var/lib/kubelet/plugins_registry/
+                  type: Directory
+                name: registration-dir
+              - hostPath:
+                  path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/
+                  type: DirectoryOrCreate
+                name: plugin-dir
+              - hostPath:
+                  path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
+                  type: DirectoryOrCreate
+                name: data-dir
+              - hostPath:
+                  path: /var/lib/kubelet/pods/
+                  type: DirectoryOrCreate
+                name: mountpoint-dir
+              - emptyDir: { }
+                name: lockfile-dir
+              - emptyDir: { }
+                name: tmp-dir
+
+  - it: should have default updateStrategy
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+    asserts:
+      - isNotEmpty:
+          path: spec.updateStrategy
+      - equal:
+          path: spec.updateStrategy
+          value:
+            rollingUpdate:
+              maxSurge: 0
+              maxUnavailable: 1
+            type: RollingUpdate
+
+  - it: updateStrategy should be configurable
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.updateStrategy.rollingUpdate.maxUnavailable: 3
+    asserts:
+      - isNotEmpty:
+          path: spec.updateStrategy
+      - equal:
+          path: spec.updateStrategy
+          value:
+            rollingUpdate:
+              maxSurge: 0
+              maxUnavailable: 3
+            type: RollingUpdate
+
+  - it: updateStrategy can be null
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.updateStrategy: null
+    asserts:
+      - isEmpty:
+          path: spec.updateStrategy
+
+  - it: should have imagePullSecrets defined in spec
+    set:
+      platform: kubernetes
+      customPullSecret: pull-secret
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: pull-secret
+
+  - it: should take custom labels
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: metadata.labels.testKey
+      - equal:
+          path: metadata.labels.testKey
+          value: testValue
+
+  - it: should take custom annotations
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.annotations:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            testKey: testValue
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
+            cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
+            kubectl.kubernetes.io/default-container: provisioner
+            testKey: testValue
+
+  - it: should take custom labels in spec.template.metadata.labels path
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: metadata.labels.testKey
+      - equal:
+          path: metadata.labels.testKey
+          value: testValue
+      - isNotEmpty:
+          path: spec.template.metadata.labels.testKey
+      - equal:
+          path: spec.template.metadata.labels.testKey
+          value: testValue
+
+  - it: should take resource limits from values file for init container
+    set:
+      csidriver.enabled: true
+      csidriver.csiInit.resources.requests.cpu: 123m
+      csidriver.csiInit.resources.requests.memory: 456Mi
+      csidriver.csiInit.resources.limits.cpu: 789m
+      csidriver.csiInit.resources.limits.memory: 122Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: csi-init
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.requests.cpu
+          value: 123m
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.requests.memory
+          value: 456Mi
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.limits.cpu
+          value: 789m
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.limits.memory
+          value: 122Mi
+  - it: should take resource limits from values file for provisioner
+    set:
+      csidriver.enabled: true
+      csidriver.provisioner.resources.requests.cpu: 600m
+      csidriver.provisioner.resources.requests.memory: 200Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: provisioner
+      - equal:
+          path: spec.template.spec.containers[1].resources.requests.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[1].resources.requests.memory
+          value: 200Mi
+  - it: should take resource limits from values file for server
+    set:
+      csidriver.enabled: true
+      csidriver.server.resources.requests.cpu: 600m
+      csidriver.server.resources.requests.memory: 200Mi
+      csidriver.server.resources.limits.cpu: 900m
+      csidriver.server.resources.limits.memory: 300Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: server
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 900m
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 300Mi
+  - it: should take resource limits from values file for registrar
+    set:
+      csidriver.enabled: true
+      csidriver.registrar.resources.requests.cpu: 600m
+      csidriver.registrar.resources.requests.memory: 200Mi
+      csidriver.registrar.resources.limits.cpu: 900m
+      csidriver.registrar.resources.limits.memory: 300Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: registrar
+      - equal:
+          path: spec.template.spec.containers[2].resources.requests.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[2].resources.requests.memory
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[2].resources.limits.cpu
+          value: 900m
+      - equal:
+          path: spec.template.spec.containers[2].resources.limits.memory
+          value: 300Mi
+  - it: should take resource limits from values file for livenessprobe
+    set:
+      csidriver.enabled: true
+      csidriver.livenessprobe.resources.requests.cpu: 600m
+      csidriver.livenessprobe.resources.requests.memory: 200Mi
+      csidriver.livenessprobe.resources.limits.cpu: 900m
+      csidriver.livenessprobe.resources.limits.memory: 300Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[3].name
+          value: liveness-probe
+      - equal:
+          path: spec.template.spec.containers[3].resources.requests.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[3].resources.requests.memory
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[3].resources.limits.cpu
+          value: 900m
+      - equal:
+          path: spec.template.spec.containers[3].resources.limits.memory
+          value: 300Mi
+  - it: should take kubelet path from values file
+    set:
+      csidriver.enabled: true
+      csidriver.kubeletPath: "my/kubelet/"
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].hostPath.path
+          value: "my/kubelet/plugins_registry/"
+      - equal:
+          path: spec.template.spec.volumes[1].hostPath.path
+          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/"
+      - equal:
+          path: spec.template.spec.volumes[2].hostPath.path
+          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/data"
+      - equal:
+          path: spec.template.spec.volumes[3].hostPath.path
+          value: "my/kubelet/pods/"
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[1].mountPath
+          value: "my/kubelet/pods/"
+      - equal:
+          path: spec.template.spec.containers[2].env[0].value
+          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
+      - equal:
+          path: spec.template.spec.containers[2].volumeMounts[2].mountPath
+          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/"
+  - it: should use existing priority class if given
+    set:
+      platform: kubernetes
+      csidriver.existingPriorityClassName: "my-custom-priority-class"
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: "my-custom-priority-class"
+
+  ####################### imageref tests #######################
+  - it: should run the same if image is set
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
+  - it: it uses imageref if set
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+        tag: tag-name
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo:tag-name"
+
+  - it: image field has precedence over imageref section
+    set:
+      csidriver.enabled: true
+      platform: kubernetes
+      image: image-name
+      imageRef:
+        repository: not-the-repo-you-are-looking-for
+        tag: tag-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
+  - it: tag in imageref defaults to chart.version
+    set:
+      csidriver.enabled: true
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo:v1.0.1"
+
+  - it: debug flag deletes resources and adds debug command
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      debug: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /usr/local/bin/dlv
+            - --listen=:40000
+            - --headless=true
+            - --api-version=2
+            - --log
+            - exec
+            - --continue
+            - --accept-multiclient
+            - --
+            - /usr/local/bin/dynatrace-operator
+      - equal:
+          path: spec.template.spec.containers[1].command
+          value:
+              - /usr/local/bin/dlv
+              - --listen=:40001
+              - --headless=true
+              - --api-version=2
+              - --log
+              - exec
+              - --continue
+              - --accept-multiclient
+              - --
+              - /usr/local/bin/dynatrace-operator
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value: null
+      - equal:
+          path: spec.template.spec.containers[1].resources
+          value: null

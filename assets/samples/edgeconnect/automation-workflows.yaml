@@ -1,0 +1,93 @@
+apiVersion: dynatrace.com/v1alpha2
+kind: EdgeConnect
+metadata:
+  name: edge-connect-sample
+  namespace: dynatrace
+spec:
+  # Documentation:
+  # https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/edgeconnect/kubernetes-automation/edge-connect-kubernetes-automation-operator-supported-setup
+
+  apiServer: "https://example.dev.apps.dynatracelabs.com"
+  replicas: 1
+
+  # The service account has to have the proper permissions that match the purpose of the
+  # workflow steps this EdgeConnect is used for.
+  serviceAccountName: edgeconnect-automation
+
+  # Enable K8S Automation for workflows
+  kubernetesAutomation:
+    enabled: true
+
+  oauth:
+    # OAuth client has to be created in Dynatrace account management
+    # https://docs.dynatrace.com/docs/shortlink/account-api-authentication#create-an-oauth2-client
+    #
+    # Please consult https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/edgeconnect/kubernetes-automation/edge-connect-kubernetes-automation-operator-supported-setup
+    # for the scopes required specific to EdgeConnect with Kubernetes Automation enabled
+    clientSecret: provisioner-automation-oauth-client-secret
+    endpoint: https://sso-dev.dynatracelabs.com/sso/oauth2/token
+    resource: urn:dtaccount:cd99bbd6-3b73-467e-b1fb-c09b9db9e7cc
+
+    # Mandatory to be true for K8S automation
+    provisioner: true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+  name: edgeconnect-automation
+  namespace: dynatrace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: edgeconnect-automation
+rules:
+  # The required permissions depend on the requirements of the workflow steps that use this edgeconnect.
+  # This is just an example.
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+      - services
+    verbs:
+      - list
+      - get
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+    verbs:
+      - list
+      - get
+  - apiGroups:
+      - dynatrace.com
+    resources:
+      - dynakubes
+    verbs:
+      - list
+      - get
+  - nonResourceURLs:
+      - /metrics
+      - /version
+      - /readyz
+      - /livez
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: edgeconnect-automation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edgeconnect-automation
+subjects:
+  - kind: ServiceAccount
+    name: edgeconnect-automation
+    namespace: dynatrace

@@ -1,0 +1,31 @@
+name: Upload SBOM
+description: uploads a sbom for a given image to a registry
+inputs:
+  image:
+    description: full image to generate and attach sbom
+    required: true
+  sbom:
+    description: sbom of type cyclonedx to attach to image
+    required: true
+  signing-key:
+    description: private signing key
+    required: true
+  signing-password:
+    description: password for private signing key
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
+    - name: Attach sbom attestation to image
+      shell: bash
+      run: |
+        cosign attest -y --key env://COSIGN_PRIVATE_KEY  --type cyclonedx --predicate ${{ inputs.sbom }} ${{ inputs.image }}
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.signing-key }}
+        COSIGN_PASSWORD: ${{ inputs.signing-password }}
+    - name: Attach sbom attestation to image and sign keyless
+      shell: bash
+      run: |
+        cosign attest -y  --type cyclonedx --predicate ${{ inputs.sbom }} ${{ inputs.image }}

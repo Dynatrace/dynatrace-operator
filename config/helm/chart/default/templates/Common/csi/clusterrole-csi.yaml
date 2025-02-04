@@ -1,0 +1,47 @@
+{{ if eq (include "dynatrace-operator.needCSI" .) "true" }}
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-oneagent-csi-driver
+  labels:
+    {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
+rules:
+  {{- if (eq (include "dynatrace-operator.platform" .) "openshift") }}
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+  {{ end }}
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-oneagent-csi-driver
+  labels:
+    {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-oneagent-csi-driver
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: dynatrace-oneagent-csi-driver
+  apiGroup: rbac.authorization.k8s.io
+{{- end -}}
