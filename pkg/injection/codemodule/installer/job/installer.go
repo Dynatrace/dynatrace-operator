@@ -13,9 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -75,29 +73,25 @@ func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool
 }
 
 func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (bool, error) {
+	if inst.isAlreadyPresent(targetDir) {
+		log.Info("agent already installed", "image", inst.props.ImageUri, "target dir", targetDir)
+
+		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace())
+	}
+
 	job, err := inst.query().Get(ctx, types.NamespacedName{Name: jobName, Namespace: inst.props.Owner.GetNamespace()})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to determine the status of the download job", "err", err)
 
 		return false, err
-	}
+	} else if err == nil {
+		log.Info("job is not finished", "job", jobName)
 
-	if k8serrors.IsNotFound(err) && inst.isAlreadyPresent(targetDir) {
-		log.Info("agent already installed", "image", inst.props.ImageUri, "target dir", targetDir)
-
-		return true, nil
-	}
-
-	if !k8serrors.IsNotFound(err) {
-		if job.Status.Succeeded > 0 {
-			log.Info("job succeeded, removing it", "job", job.Name)
-
-			return true, inst.query().Delete(ctx, job, &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
-		} else {
-			log.Info("job still running", "job", job.Name)
-
-			return false, nil
+		if job.Status.Failed > 0 {
+			return false, errors.Errorf("the job is failing; job: %s", jobName)
 		}
+
+		return false, nil
 	}
 
 	log.Info("creating new download job", "job", jobName)

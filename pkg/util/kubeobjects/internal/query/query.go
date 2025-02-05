@@ -218,13 +218,13 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 	return goerrors.Join(errs...)
 }
 
-func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string) error {
+func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string, options ...client.DeleteOption) error {
 	c.Log.Info("deleting object from namespace", "name", objectName, "namespace", namespace)
 
 	c.Target.SetName(objectName)
 	c.Target.SetNamespace(namespace)
 
-	return c.Delete(ctx, c.Target)
+	return c.Delete(ctx, c.Target, options...)
 }
 
 func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {
