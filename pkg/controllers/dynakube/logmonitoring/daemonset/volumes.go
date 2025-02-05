@@ -22,12 +22,15 @@ const (
 	dtLogVolumeMountPath = "/var/log/dynatrace"
 
 	// for the logs that the logmonitoring will ingest
-	podLogsVolumeName       = "var-log-pods"
-	podLogsVolumePath       = "/var/log/pods"
-	dockerLogsVolumeName    = "docker-container-logs"
-	dockerLogsVolumePath    = "/var/lib/docker/containers"
-	containerLogsVolumeName = "container-logs"
-	containerLogsVolumePath = "/var/log/containers"
+	podLogsVolumeName         = "var-log-pods"
+	podLogsVolumePath         = "/var/log/pods"
+	dockerLogsVolumeName      = "docker-container-logs"
+	dockerLogsVolumePath      = "/var/lib/docker/containers"
+	containerLogsVolumeName   = "container-logs"
+	containerLogsVolumePath   = "/var/log/containers"
+	journalLogsVolumeName     = "var-log-journal"
+	journalLogsVolumePath     = "/var/log/journal"
+	journalLogsVolumeHostPath = "/var/log"
 )
 
 // getConfigVolumeMount provides the VolumeMount for the deployment.conf
@@ -74,7 +77,7 @@ func getDTVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: dtLibVolumePath,
-					Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
@@ -114,6 +117,7 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: dockerLogsVolumePath,
+					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
@@ -122,6 +126,7 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: podLogsVolumePath,
+					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
@@ -130,6 +135,33 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: containerLogsVolumePath,
+					Type: ptr.To(corev1.HostPathDirectory),
+				},
+			},
+		},
+	}
+}
+
+// getIngestVolumeMounts provides the VolumeMounts for the log folders that will be ingested by the logmonitoring
+func getJournalLogsVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      journalLogsVolumeName,
+			MountPath: journalLogsVolumePath,
+			ReadOnly:  true,
+		},
+	}
+}
+
+// getIngestVolumeMounts provides the VolumeMounts for the log folders that will be ingested by the logmonitoring
+func getJournalLogsVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: journalLogsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: journalLogsVolumeHostPath,
+					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
@@ -141,6 +173,7 @@ func getVolumeMounts(tenantUUID string) []corev1.VolumeMount {
 	mounts = append(mounts, getConfigVolumeMount())
 	mounts = append(mounts, getDTVolumeMounts(tenantUUID)...)
 	mounts = append(mounts, getIngestVolumeMounts()...)
+	mounts = append(mounts, getJournalLogsVolumeMounts()...)
 
 	return mounts
 }
@@ -150,6 +183,7 @@ func getVolumes(dkName string) []corev1.Volume {
 	volumes = append(volumes, getConfigVolume(dkName))
 	volumes = append(volumes, getDTVolumes()...)
 	volumes = append(volumes, getIngestVolumes()...)
+	volumes = append(volumes, getJournalLogsVolumes()...)
 
 	return volumes
 }
