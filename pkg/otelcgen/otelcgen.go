@@ -119,6 +119,14 @@ func (c *Config) buildTLSSetting() *TLSSetting {
 	return tls
 }
 
+func (c *Config) buildEndpoint(port uint) string {
+	return fmt.Sprintf("%s:%d", c.podIP, port)
+}
+
+func (c *Config) buildEndpointWithoutPort() string {
+	return c.podIP
+}
+
 // func
 // receivers
 func (c *Config) buildReceiverComponent(componentID component.ID) component.Config {
