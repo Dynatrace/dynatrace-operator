@@ -333,7 +333,7 @@ tests:
               - args:
                   - "--csi-address=/csi/csi.sock"
                   - "--health-port=9808"
-                  - "--probe-timeout=4s"
+                  - "--probe-timeout=10s"
                 command:
                   - livenessprobe
                 image: image-name
