@@ -71,6 +71,12 @@ func SetAutomountServiceAccountToken(isEnabled bool) builder.Option[*batchv1.Job
 	}
 }
 
+func SetPodAnnotations(annotations map[string]string) builder.Option[*batchv1.Job] {
+	return func(s *batchv1.Job) {
+		s.Spec.Template.ObjectMeta.Annotations = annotations
+	}
+}
+
 func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
 		s.ObjectMeta.Labels = labels

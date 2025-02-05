@@ -5,6 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -69,7 +70,12 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 
 	container.Args = inst.buildArgs(name, targetDir)
 
+	annotations := map[string]string{
+		webhook.AnnotationDynatraceInject: "false",
+	}
+
 	return jobutil.Build(inst.props.Owner, name, container,
+		jobutil.SetPodAnnotations(annotations),
 		jobutil.SetNodeName(inst.nodeName),
 		jobutil.SetPullSecret(inst.props.PullSecrets...),
 		jobutil.SetTolerations(tolerations),
