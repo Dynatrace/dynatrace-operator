@@ -19,6 +19,7 @@ var (
 		activegate.RoutingCapability.DisplayName:       routingBase,
 		activegate.MetricsIngestCapability.DisplayName: metricsIngestBase,
 		activegate.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
+		activegate.DebuggingCapability.DisplayName:     debuggingBase,
 	}
 )
 
@@ -148,6 +149,16 @@ func dynatraceApiBase() *capabilityBase {
 		shortName:   activegate.DynatraceApiCapability.ShortName,
 		argName:     activegate.DynatraceApiCapability.ArgumentName,
 		displayName: string(activegate.DynatraceApiCapability.DisplayName),
+	}
+
+	return &c
+}
+
+func debuggingBase() *capabilityBase {
+	c := capabilityBase{
+		shortName:   activegate.DebuggingCapability.ShortName,
+		argName:     activegate.DebuggingCapability.ArgumentName,
+		displayName: string(activegate.DebuggingCapability.DisplayName),
 	}
 
 	return &c
