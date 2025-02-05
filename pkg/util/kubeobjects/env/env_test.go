@@ -1,9 +1,11 @@
 package env
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -80,5 +82,46 @@ func TestDefaultNamespace(t *testing.T) {
 	t.Run("Get dynatrace", func(t *testing.T) {
 		got := DefaultNamespace()
 		assert.Equal(t, "dynatrace", got)
+	})
+}
+
+func TestGetToleration(t *testing.T) {
+	t.Run("Get tolerations from env var", func(t *testing.T) {
+		expected := []corev1.Toleration{
+			{
+				Key:      "key1",
+				Operator: corev1.TolerationOpEqual,
+				Value:    "value1",
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+			{
+				Key:      "key2",
+				Operator: corev1.TolerationOpEqual,
+				Value:    "value1",
+				Effect:   corev1.TaintEffectNoSchedule,
+			},
+		}
+
+		raw, err := json.Marshal(expected)
+		require.NoError(t, err)
+
+		t.Setenv(Tolerations, string(raw))
+
+		actual, err := GetTolerations()
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("Error incase of malformed", func(t *testing.T) {
+		t.Setenv(Tolerations, "{!@@@#}")
+
+		_, err := GetTolerations()
+		require.Error(t, err)
+	})
+
+	t.Run("no error incase of empty", func(t *testing.T) {
+		t.Setenv(Tolerations, "")
+
+		_, err := GetTolerations()
+		require.NoError(t, err)
 	})
 }
