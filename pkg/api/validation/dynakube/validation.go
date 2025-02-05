@@ -62,6 +62,7 @@ var (
 		duplicatedTelemetryServiceProtocols,
 		invalidTelemetryServiceName,
 		extensionsWithoutK8SMonitoring,
+		publicImageSetWithoutReadOnlyMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
