@@ -128,6 +128,11 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return err
 	}
 
+	r.dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.ConnectionInfo.TenantToken)
+	if err != nil {
+		return err
+	}
+
 	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
 
 	return nil

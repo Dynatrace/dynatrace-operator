@@ -147,8 +147,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("generate daemonset", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -164,6 +163,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
 		require.Len(t, daemonset.Annotations, 1)
 		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
+		require.Len(t, daemonset.Spec.Template.Annotations, 1)
+		assert.Contains(t, daemonset.Spec.Template.Annotations, annotationTenantTokenHash)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)
 		assert.Empty(t, daemonset.Spec.Template.Spec.DNSPolicy)
 		assert.Empty(t, daemonset.Spec.Template.Spec.PriorityClassName)
@@ -183,8 +184,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			Labels: customLabels,
 		}
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -192,23 +192,25 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Subset(t, daemonset.Spec.Template.Labels, customLabels)
 	})
 
-	t.Run("respect custom annotations", func(t *testing.T) {
+	t.Run("respect annotations", func(t *testing.T) {
 		customAnnotations := map[string]string{
 			"custom": "annotation",
 		}
+		testTokenHash := "testTokenHash"
 
 		dk := createDynakube(true)
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Annotations: customAnnotations,
 		}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
 		assert.Subset(t, daemonset.Spec.Template.Annotations, customAnnotations)
+		assert.Equal(t, testTokenHash, daemonset.Spec.Template.Annotations[annotationTenantTokenHash])
 	})
 
 	t.Run("respect dns policy", func(t *testing.T) {
@@ -219,8 +221,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			DNSPolicy: customPolicy,
 		}
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -236,8 +237,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			PriorityClassName: customClass,
 		}
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -251,8 +251,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.CustomPullSecret = customPullSecret
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
@@ -273,8 +272,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Tolerations: customTolerations,
 		}
-		reconciler := NewReconciler(nil,
-			nil, dk)
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)

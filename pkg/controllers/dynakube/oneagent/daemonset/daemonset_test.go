@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	testImageTag = "1.203.0.0-0"
+	testImageTag  = "1.203.0.0-0"
+	testTokenHash = "test-token-hash"
 )
 
 func TestUseImmutableImage(t *testing.T) {
@@ -768,9 +769,11 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
 		builder := NewCloudNativeFullStack(&dk, testClusterID)
@@ -788,9 +791,11 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
 		builder := NewHostMonitoring(&dk, testClusterID)
@@ -808,9 +813,11 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
 		builder := NewClassicFullStack(&dk, testClusterID)
@@ -834,10 +841,12 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
 		builder := NewCloudNativeFullStack(&dk, testClusterID)
@@ -859,10 +868,12 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
 		builder := NewHostMonitoring(&dk, testClusterID)
@@ -884,10 +895,12 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 		expectedAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
+			annotationTenantTokenHash:         testTokenHash,
 		}
 
 		builder := NewClassicFullStack(&dk, testClusterID)

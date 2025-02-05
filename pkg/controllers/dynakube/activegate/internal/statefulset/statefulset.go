@@ -92,6 +92,7 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					consts.AnnotationActiveGateConfigurationHash: statefulSetBuilder.configHash,
+					consts.AnnotationActiveGateTokenHash:         statefulSetBuilder.dynakube.Status.ActiveGate.ConnectionInfo.TenantTokenHash,
 				},
 			},
 		},

@@ -14,4 +14,7 @@ type ConnectionInfo struct {
 
 	// Available connection endpoints
 	Endpoints string `json:"endpoints,omitempty"`
+
+	// Hash of the tenant token
+	TenantTokenHash string `json:"tenantTokenHash,omitempty"`
 }
