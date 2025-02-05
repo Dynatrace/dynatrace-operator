@@ -115,9 +115,9 @@ spec:
             port: healthz
             scheme: HTTP
           initialDelaySeconds: 5
-          periodSeconds: 5
+          periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 4
+          timeoutSeconds: 9
         {{- end }}
         ports:
         - containerPort: 9808
@@ -240,7 +240,7 @@ spec:
         args:
         - --csi-address=/csi/csi.sock
         - --health-port=9808
-        - --probe-timeout=4s
+        - --probe-timeout=10s
         command:
         - livenessprobe
         resources:
