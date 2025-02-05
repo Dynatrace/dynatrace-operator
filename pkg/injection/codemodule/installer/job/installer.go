@@ -13,7 +13,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -76,7 +78,7 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 	if inst.isAlreadyPresent(targetDir) {
 		log.Info("agent already installed", "image", inst.props.ImageUri, "target dir", targetDir)
 
-		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace())
+		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
 	}
 
 	job, err := inst.query().Get(ctx, types.NamespacedName{Name: jobName, Namespace: inst.props.Owner.GetNamespace()})
