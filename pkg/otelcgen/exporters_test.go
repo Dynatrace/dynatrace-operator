@@ -11,6 +11,7 @@ import (
 
 func TestNewConfigWithExporters(t *testing.T) {
 	cfg, err := NewConfig(
+		WithPodIP("test"),
 		WithExporters(),
 	)
 	require.NoError(t, err)

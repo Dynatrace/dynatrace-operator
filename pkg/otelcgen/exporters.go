@@ -11,7 +11,7 @@ var (
 func (c *Config) buildExporters() map[component.ID]component.Config {
 	return map[component.ID]component.Config{
 		otlphttp: &ServerConfig{
-			Endpoint: "test",
+			Endpoint: c.buildEndpointWithoutPort(),
 			// if in-cluster AG
 			TLSSetting: &TLSSetting{
 				CAFile: "/run/opensignals/cacerts/certs",
