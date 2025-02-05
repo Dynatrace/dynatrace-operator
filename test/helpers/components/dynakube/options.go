@@ -65,6 +65,7 @@ func WithActiveGate() Option {
 				activegate.DynatraceApiCapability.DisplayName,
 				activegate.RoutingCapability.DisplayName,
 				activegate.MetricsIngestCapability.DisplayName,
+				activegate.DebuggingCapability.DisplayName,
 			},
 		}
 	}

@@ -192,6 +192,7 @@ func assertExpectedModulesAreActive(t *testing.T, log string) {
 		"kubernetes_monitoring",
 		"odin_collector",
 		"metrics_ingest",
+		"debugging",
 	}
 
 	head := strings.SplitAfter(log, "[<collector.modules>, ModulesManager] Modules:")

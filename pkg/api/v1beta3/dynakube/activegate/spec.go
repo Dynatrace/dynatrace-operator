@@ -43,6 +43,11 @@ var (
 		ShortName:    "dynatrace-api",
 		ArgumentName: "restInterface",
 	}
+	DebuggingCapability = Capability{
+		DisplayName:  "debugging",
+		ShortName:    "debugging",
+		ArgumentName: "debugging",
+	}
 )
 
 var CapabilityDisplayNames = map[CapabilityDisplayName]struct{}{
@@ -50,6 +55,7 @@ var CapabilityDisplayNames = map[CapabilityDisplayName]struct{}{
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
 	DynatraceApiCapability.DisplayName:  {},
+	DebuggingCapability.DisplayName:     {},
 }
 
 type ActiveGate struct {
