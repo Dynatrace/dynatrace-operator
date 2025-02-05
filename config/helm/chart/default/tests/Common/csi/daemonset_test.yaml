@@ -190,7 +190,7 @@ tests:
                   initialDelaySeconds: 5
                   periodSeconds: 10
                   successThreshold: 1
-                  timeoutSeconds: 10
+                  timeoutSeconds: 9
                 name: server
                 ports:
                   - containerPort: 9808
