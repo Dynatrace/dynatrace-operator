@@ -4,7 +4,7 @@ extensions: {}
 processors: {}
 receivers:
     statsd:
-        endpoint: test
+        endpoint: test:8125
         timer_histogram_mapping:
             - histogram:
                 max_size: 10

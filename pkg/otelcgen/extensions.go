@@ -9,7 +9,7 @@ var (
 func (c *Config) buildExtensions() map[component.ID]component.Config {
 	return map[component.ID]component.Config{
 		healthCheck: &ServerConfig{
-			Endpoint: "test",
+			Endpoint: c.buildEndpoint(ExtensionsHealthCheckPort),
 		},
 	}
 }

@@ -2,7 +2,7 @@ connectors: {}
 exporters: {}
 extensions:
   health_check:
-    endpoint: test
+    endpoint: test:13133
 processors: {}
 receivers: {}
 service:

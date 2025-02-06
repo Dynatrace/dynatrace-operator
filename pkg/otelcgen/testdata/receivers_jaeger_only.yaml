@@ -6,7 +6,7 @@ receivers:
     jaeger:
         protocols:
             grpc:
-                endpoint: test
+                endpoint: test:14250
                 tls:
                     cert_file: /run/opensignals/tls/tls.crt
                     key_file: /run/opensignals/tls/tls.key
