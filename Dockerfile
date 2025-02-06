@@ -57,6 +57,8 @@ COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.15.0@sha256:2c5f9dc4ea5
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
 
+COPY ./dynatrace-operator-bin-sbom.cdx.json ./dynatrace-operator-bin-sbom.cdx.json
+
 # custom scripts
 COPY hack/build/bin /usr/local/bin
 

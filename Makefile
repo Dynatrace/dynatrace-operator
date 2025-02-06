@@ -52,6 +52,7 @@ SHELL ?= bash
 -include hack/make/helm/*.mk
 -include hack/make/manifests/*.mk
 -include hack/make/tests/*.mk
+-include hack/make/release/*.mk
 
 ## Builds the operator image and pushes it to quay with a snapshot tag
 build: images/build/push

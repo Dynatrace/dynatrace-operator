@@ -30,6 +30,10 @@ runs:
       shell: bash
       run: |
         hack/build/ci/third-party-licenses.sh
+    - name: Create empty SBOM file
+      shell: bash
+      run: |
+        touch dynatrace-operator-bin-sbom.cdx.json
     - name: Build target
       uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991 # v6.13.0
       with:
