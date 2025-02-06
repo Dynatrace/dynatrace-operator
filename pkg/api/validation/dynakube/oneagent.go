@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -30,6 +31,12 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	versionRegex = `^\d+.\d+.\d+.\d{8}-\d{6}$`
 
 	versionInvalidMessage = "The OneAgent's version is only valid in the format 'major.minor.patch.timestamp', e.g. 1.0.0.20240101-000000"
+
+	errorDuplicateOneAgentArgument = "%s has been provided multiple times. Only --set-host-property and --set-host-tag arguments may be provided multiple times."
+
+	errorHostIdSourceArgumentInCloudNative = "Setting --set-host-id-source in CloudNativFullstack mode is not allowed."
+
+	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -192,4 +199,54 @@ func isOneAgentVersionValid(_ context.Context, _ *Validator, dk *dynakube.DynaKu
 	}
 
 	return ""
+}
+
+func duplicateOneAgentArguments(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	args := dk.OneAgent().GetArgumentsMap()
+	if args == nil {
+		return ""
+	}
+
+	for key, values := range args {
+		if key != "--set-host-property" && key != "--set-host-tag" && len(values) > 1 {
+			return fmt.Sprintf(errorDuplicateOneAgentArgument, key)
+		} else if key == "--set-host-tag" {
+			if duplicatedTags := findDuplicates(values); len(duplicatedTags) > 0 {
+				return fmt.Sprintf(errorSameHostTagMultipleTimes, duplicatedTags)
+			}
+		}
+	}
+
+	return ""
+}
+
+func forbiddenHostIdSourceArgument(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	args := dk.OneAgent().GetArgumentsMap()
+	if args == nil {
+		return ""
+	}
+
+	for key := range args {
+		if dk.OneAgent().IsCloudNativeFullstackMode() && key == "--set-host-id-source" {
+			return errorHostIdSourceArgumentInCloudNative
+		}
+	}
+
+	return ""
+}
+
+func findDuplicates[S ~[]E, E comparable](s S) []E {
+	seen := make(map[E]bool)
+
+	duplicates := make([]E, 0)
+
+	for _, val := range s {
+		if _, ok := seen[val]; !ok {
+			seen[val] = true
+		} else if !slices.Contains(duplicates, val) {
+			duplicates = append(duplicates, val)
+		}
+	}
+
+	return duplicates
 }
