@@ -32,6 +32,7 @@ const (
 	SharedAgentBinDir    = "codemodules"
 	SharedJobWorkDir     = "work"
 	SharedAppMountsDir   = "appmounts"
+	SharedDynaKubesDir   = "dyna.kubes"
 	SharedAgentConfigDir = "config"
 
 	DaemonSetName = "dynatrace-oneagent-csi-driver"

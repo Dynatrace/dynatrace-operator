@@ -32,13 +32,18 @@ func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 	relevantHostDirs := c.collectRelevantHostDirs(dks)
 
 	for _, hostDk := range fsState.hostDks {
-		hostDir := c.path.OsAgentDir(hostDk)
+		possibleHostDirs := []string{
+			c.path.OsAgentDir(hostDk),
+			c.path.OldOsAgentDir(hostDk),
+		}
 
-		isMountPoint, err := c.isMountPoint(hostDir)
-		if err == nil && !isMountPoint && !relevantHostDirs[hostDir] {
-			err := c.fs.RemoveAll(hostDir)
-			if err == nil {
-				log.Info("removed old host mount directory", "path", hostDir)
+		for _, hostDir := range possibleHostDirs {
+			isMountPoint, err := c.isMountPoint(hostDir)
+			if err == nil && !isMountPoint && !relevantHostDirs[hostDir] {
+				err := c.fs.RemoveAll(hostDir)
+				if err == nil {
+					log.Info("removed old host mount directory", "path", hostDir)
+				}
 			}
 		}
 	}
@@ -65,7 +70,7 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 			continue
 		}
 
-		deprecatedHostDirLink := c.path.OsAgentDir(tenantUUID)
+		deprecatedHostDirLink := c.path.OldOsAgentDir(tenantUUID)
 		c.safeAddRelevantPath(deprecatedHostDirLink, hostDirs)
 	}
 

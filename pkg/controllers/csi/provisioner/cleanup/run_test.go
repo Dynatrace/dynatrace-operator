@@ -24,8 +24,8 @@ func TestGetFilesystemState(t *testing.T) {
 	t.Run("remove unknown dirs", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		cleaner.fs.Mkdir(cleaner.path.DynaKubeDir("test1"), os.ModePerm)
-		cleaner.fs.Mkdir(cleaner.path.DynaKubeDir("test2"), os.ModePerm)
+		cleaner.fs.Mkdir(cleaner.path.Base("test1"), os.ModePerm)
+		cleaner.fs.Mkdir(cleaner.path.Base("test2"), os.ModePerm)
 
 		files, err := cleaner.fs.ReadDir(cleaner.path.RootDir)
 		require.NoError(t, err)
@@ -43,8 +43,8 @@ func TestGetFilesystemState(t *testing.T) {
 	t.Run("don't touch unknown files, to keep the db intact, just in case", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		cleaner.fs.Create(cleaner.path.DynaKubeDir("test1"))
-		cleaner.fs.Create(cleaner.path.DynaKubeDir("test2"))
+		cleaner.fs.Create(cleaner.path.Base("test1"))
+		cleaner.fs.Create(cleaner.path.Base("test2"))
 
 		files, err := cleaner.fs.ReadDir(cleaner.path.RootDir)
 		require.NoError(t, err)
@@ -165,6 +165,14 @@ func (c *Cleaner) createHostDirs(t *testing.T, name string) {
 	t.Helper()
 
 	hostDir := c.path.OsAgentDir(name)
+	err := c.fs.MkdirAll(hostDir, os.ModePerm)
+	require.NoError(t, err)
+}
+
+func (c *Cleaner) createDeprecatedHostDirs(t *testing.T, tenantUUID string) {
+	t.Helper()
+
+	hostDir := c.path.OldOsAgentDir(tenantUUID)
 	err := c.fs.MkdirAll(hostDir, os.ModePerm)
 	require.NoError(t, err)
 }

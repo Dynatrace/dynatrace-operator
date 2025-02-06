@@ -86,10 +86,18 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 
 	var unknownDirs []string
 
+	defer func() {
+		for _, unknown := range unknownDirs {
+			log.Info("removing unknown path", "path", unknown)
+			_ = c.fs.RemoveAll(unknown)
+		}
+	}()
+
 	for _, fileInfo := range rootSubDirs {
 		if !fileInfo.IsDir() ||
 			fileInfo.Name() == dtcsi.SharedAppMountsDir ||
 			fileInfo.Name() == dtcsi.SharedJobWorkDir ||
+			fileInfo.Name() == dtcsi.SharedDynaKubesDir ||
 			fileInfo.Name() == dtcsi.SharedAgentBinDir {
 			continue
 		}
@@ -97,6 +105,30 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 		deprecatedExists, _ := c.fs.Exists(c.path.AgentRunDir(fileInfo.Name()))
 		if deprecatedExists {
 			fsState.deprecatedDks = append(fsState.deprecatedDks, fileInfo.Name())
+		}
+
+		hostExists, _ := c.fs.Exists(c.path.OldOsAgentDir(fileInfo.Name()))
+		if hostExists {
+			fsState.hostDks = append(fsState.hostDks, fileInfo.Name())
+		}
+
+		if !deprecatedExists && !hostExists {
+			unknownDirs = append(unknownDirs, c.path.Base(fileInfo.Name()))
+		}
+	}
+
+	dkDirs, err := c.fs.ReadDir(c.path.DynaKubesBaseDir())
+	if os.IsNotExist(err) {
+		return fsState, nil
+	} else if err != nil {
+		log.Info("failed to list the contents of the root directory of the csi-provisioner", "rootDir", c.path.RootDir)
+
+		return fsState, err
+	}
+
+	for _, fileInfo := range dkDirs {
+		if !fileInfo.IsDir() {
+			continue
 		}
 
 		binExists, _ := c.fs.Exists(c.path.LatestAgentBinaryForDynaKube(fileInfo.Name()))
@@ -109,14 +141,9 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 			fsState.hostDks = append(fsState.hostDks, fileInfo.Name())
 		}
 
-		if !deprecatedExists && !binExists && !hostExists {
-			unknownDirs = append(unknownDirs, c.path.DynaKubeDir(fileInfo.Name()))
+		if !binExists && !hostExists {
+			unknownDirs = append(unknownDirs, c.path.Base(fileInfo.Name()))
 		}
-	}
-
-	for _, unknown := range unknownDirs {
-		log.Info("removing unknown path", "path", unknown)
-		_ = c.fs.RemoveAll(unknown)
 	}
 
 	return fsState, nil
