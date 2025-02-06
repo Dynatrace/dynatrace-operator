@@ -29,6 +29,13 @@ func getContainer(dk *dynakube.DynaKube) corev1.Container {
 		imageTag = defaultImageTag
 	}
 
+	var arg string
+	if dk.IsExtensionsEnabled() {
+		arg = fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.ExtensionsServiceNameFQDN(), consts.OtelCollectorComPort, otelcSecretTokenFilePath)
+	} else {
+		arg = "--config=file:///osconfig/config.yaml"
+	}
+
 	return corev1.Container{
 		Name:            containerName,
 		Image:           imageRepo + ":" + imageTag,
@@ -36,7 +43,7 @@ func getContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             getEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            []string{fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.ExtensionsServiceNameFQDN(), consts.OtelCollectorComPort, otelcSecretTokenFilePath)},
+		Args:            []string{arg},
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
 }

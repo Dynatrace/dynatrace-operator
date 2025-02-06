@@ -1,10 +1,14 @@
 package statefulset
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -21,7 +25,6 @@ const (
 	envPodName            = "POD_NAME"
 	envOTLPgrpcPort       = "OTLP_GRPC_PORT"
 	envOTLPhttpPort       = "OTLP_HTTP_PORT"
-	envOTLPtoken          = "OTLP_TOKEN"
 	envEECDStoken         = "EEC_DS_TOKEN"
 	envTrustedCAs         = "TRUSTED_CAS"
 	envK8sClusterName     = "K8S_CLUSTER_NAME"
@@ -33,6 +36,9 @@ const (
 	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
 	envCertDir          = "SSL_CERT_DIR"
 	envEECcontrollerTLS = "EXTENSIONS_CONTROLLER_TLS"
+	envDTEndpoint       = "DT_ENDPOINT"
+	envDTApiToken       = "DT_API_TOKEN"
+	envMyPodIP          = "MY_POD_IP"
 
 	// Volume names and paths
 	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
@@ -59,21 +65,6 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort},
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
-		{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
-				Key:                  consts.OtelcTokenSecretKey,
-			},
-		},
-		},
-		{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
-				Key:                  consts.OtelcTokenSecretKey,
-			},
-		},
-		},
-		{Name: envCertDir, Value: customEecTLSCertificatePath},
 		{Name: envK8sClusterName, Value: dk.Name},
 		{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID},
 		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
@@ -82,7 +73,66 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
 	}
 
-	envs = append(envs, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath})
+	if dk.IsExtensionsEnabled() {
+		envs = append(envs,
+			corev1.EnvVar{
+				Name:  envCertDir,
+				Value: customEecTLSCertificatePath,
+			},
+			corev1.EnvVar{
+				Name: envEECDStoken,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
+						Key:                  consts.OtelcTokenSecretKey,
+					},
+				},
+			},
+			corev1.EnvVar{
+				Name:  envEECcontrollerTLS,
+				Value: customEecTLSCertificateFullPath,
+			})
+	}
+
+	if !dk.IsExtensionsEnabled() {
+		envs = append(envs,
+			corev1.EnvVar{
+				Name:  envDTEndpoint,
+				Value: buildDTEndpoint(dk),
+			})
+
+		envs = append(envs,
+			corev1.EnvVar{
+				Name: envDTApiToken,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
+						Key:                  dynatrace.ApiToken,
+					},
+				},
+			})
+
+		envs = append(envs,
+			corev1.EnvVar{
+				Name: envMyPodIP,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						APIVersion: "",
+						FieldPath:  "status.podIP",
+					},
+				},
+			})
+	}
 
 	return envs
+}
+
+func buildDTEndpoint(dk *dynakube.DynaKube) string {
+	if dk.ActiveGate().IsEnabled() {
+		serviceName := capability.BuildServiceName(dk.Name, agconsts.MultiActiveGateName)
+
+		return fmt.Sprintf("https://%s.%s/api", serviceName, dk.Namespace)
+	}
+
+	return dk.Spec.APIURL
 }
