@@ -14,7 +14,7 @@ tests:
           of: ClusterRole
       - equal:
           path: metadata.name
-          value: dynatrace-telemetry-endpoints
+          value: dynatrace-telemetry-service
       - isNotEmpty:
           path: metadata.labels
       - isNotEmpty:
@@ -52,7 +52,7 @@ tests:
           of: ClusterRole
       - equal:
           path: metadata.name
-          value: dynatrace-telemetry-endpoints
+          value: dynatrace-telemetry-service
       - isNotEmpty:
           path: metadata.labels
       - contains:
@@ -73,7 +73,7 @@ tests:
           of: ClusterRoleBinding
       - equal:
           path: metadata.name
-          value: dynatrace-telemetry-endpoints
+          value: dynatrace-telemetry-service
       - isNotEmpty:
           path: metadata.labels
 
