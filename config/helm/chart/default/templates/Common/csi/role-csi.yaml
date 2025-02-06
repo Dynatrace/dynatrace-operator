@@ -38,7 +38,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - ""
+      - batch
     resources:
       - jobs
     verbs:
