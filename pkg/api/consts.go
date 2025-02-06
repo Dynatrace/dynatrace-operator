@@ -4,6 +4,6 @@ const (
 	LatestTag                            = "latest"
 	RawTag                               = "raw"
 	InternalFlagPrefix                   = "internal.operator.dynatrace.com/"
-	AnnotationSecretHash                 = InternalFlagPrefix + "secret-hash"
-	AnnotationTelemetryServiceSecretHash = InternalFlagPrefix + "ts-secret-hash"
+	AnnotationExtensionsSecretHash       = InternalFlagPrefix + "extensions-secret-hash"
+	AnnotationTelemetryServiceSecretHash = InternalFlagPrefix + "telemetry-service-secret-hash"
 )

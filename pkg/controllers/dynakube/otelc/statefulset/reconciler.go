@@ -132,7 +132,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		return nil, err
 	}
 
-	templateAnnotations[api.AnnotationSecretHash] = tlsSecretHash
+	templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
 
 	if r.dk.TelemetryService().IsEnabled() && r.dk.TelemetryService().Spec.TlsRefName != "" {
 		tlsSecretHash, err = r.calculateSecretHash(ctx, r.dk.TelemetryService().Spec.TlsRefName)
