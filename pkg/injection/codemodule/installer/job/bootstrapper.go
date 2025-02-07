@@ -14,9 +14,7 @@ import (
 const (
 	namePrefix = "codemodule-download-"
 
-	volumeName = "dynatrace-codemodules"
-
-	bootstrapCommand = "/opt/dynatrace/bin/bootstrap"
+	volumeName       = "dynatrace-codemodules"
 	codeModuleSource = "/opt/dynatrace/oneagent"
 )
 
@@ -40,7 +38,6 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		Name:            "codemodule-download",
 		Image:           inst.props.ImageUri,
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{bootstrapCommand},
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      volumeName,
