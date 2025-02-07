@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	serviceAccountName = "dynatrace-opentelemetry-collector"
+	serviceAccountName                   = "dynatrace-opentelemetry-collector"
+	annotationTelemetryServiceSecretHash = api.InternalFlagPrefix + "telemetry-service-secret-hash"
 )
 
 type Reconciler struct {
@@ -140,7 +141,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 			return nil, err
 		}
 
-		templateAnnotations[api.AnnotationTelemetryServiceSecretHash] = tlsSecretHash
+		templateAnnotations[annotationTelemetryServiceSecretHash] = tlsSecretHash
 	}
 
 	return templateAnnotations, nil
