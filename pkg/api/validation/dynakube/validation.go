@@ -57,7 +57,6 @@ var (
 		missingLogMonitoringImage,
 		logMonitoringWithoutK8SMonitoring,
 		extensionsWithoutK8SMonitoring,
-		publicImageSetWithoutReadOnlyMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -66,6 +65,7 @@ var (
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingApiUrlForExtensions,
+		publicImageSetWithoutReadOnlyMode,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedApiUrl,
