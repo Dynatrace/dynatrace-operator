@@ -62,7 +62,6 @@ var (
 		duplicatedTelemetryServiceProtocols,
 		invalidTelemetryServiceName,
 		extensionsWithoutK8SMonitoring,
-		publicImageSetWithoutReadOnlyMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -71,6 +70,7 @@ var (
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingApiUrlForExtensions,
+		publicImageSetWithoutReadOnlyMode,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedApiUrl,
