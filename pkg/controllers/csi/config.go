@@ -30,6 +30,7 @@ const (
 	OverlayVarDirPath    = "var"
 	OverlayWorkDirPath   = "work"
 	SharedAgentBinDir    = "codemodules"
+	SharedJobWorkDir     = "work"
 	SharedAppMountsDir   = "appmounts"
 	SharedAgentConfigDir = "config"
 

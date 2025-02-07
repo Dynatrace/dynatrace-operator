@@ -23,6 +23,14 @@ func (pr PathResolver) AgentSharedBinaryDirBase() string {
 	return filepath.Join(pr.RootDir, dtcsi.SharedAgentBinDir)
 }
 
+func (pr PathResolver) AgentJobWorkDirBase() string {
+	return filepath.Join(pr.RootDir, dtcsi.SharedJobWorkDir)
+}
+
+func (pr PathResolver) AgentJobWorkDirForJob(jobName string) string {
+	return filepath.Join(pr.AgentJobWorkDirBase(), jobName)
+}
+
 func (pr PathResolver) AgentSharedBinaryDirForAgent(versionOrDigest string) string {
 	return filepath.Join(pr.AgentSharedBinaryDirBase(), versionOrDigest)
 }
