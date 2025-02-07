@@ -53,7 +53,7 @@ tests:
                 - list
                 - watch
             - apiGroups:
-                - ""
+                - "batch"
               resources:
                 - jobs
               verbs:

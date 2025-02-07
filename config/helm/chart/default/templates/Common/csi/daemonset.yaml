@@ -114,10 +114,10 @@ spec:
             path: /healthz
             port: healthz
             scheme: HTTP
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          initialDelaySeconds: 15
+          periodSeconds: 15
           successThreshold: 1
-          timeoutSeconds: 4
+          timeoutSeconds: 10
         {{- end }}
         ports:
         - containerPort: 9808
@@ -166,6 +166,15 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
+          - name: KUBE_NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          - name: TOLERATIONS
+            value: '{{ .Values.csidriver.tolerations | toJson }}'
+          - name: CSI_DATA_DIR
+            value: {{ include "dynatrace-operator.CSIDataDir" . }}
           {{- if .Values.csidriver.cleanupPeriod }}
           - name: CLEANUP_PERIOD
             value: "{{ .Values.csidriver.cleanupPeriod}}"
@@ -243,7 +252,7 @@ spec:
         args:
         - --csi-address=/csi/csi.sock
         - --health-port=9808
-        - --probe-timeout=4s
+        - --probe-timeout=9s
         command:
         - livenessprobe
         resources:
