@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	serviceAccountName = "dynatrace-opentelemetry-collector"
+	serviceAccountName                   = "dynatrace-opentelemetry-collector"
+	annotationTelemetryServiceSecretHash = api.InternalFlagPrefix + "telemetry-service-secret-hash"
 )
 
 type Reconciler struct {
@@ -127,24 +128,42 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations = r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
 	}
 
+	tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.ExtensionsTLSSecretName())
+	if err != nil {
+		return nil, err
+	}
+
+	templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
+
+	if r.dk.TelemetryService().IsEnabled() && r.dk.TelemetryService().Spec.TlsRefName != "" {
+		tlsSecretHash, err = r.calculateSecretHash(ctx, r.dk.TelemetryService().Spec.TlsRefName)
+		if err != nil {
+			return nil, err
+		}
+
+		templateAnnotations[annotationTelemetryServiceSecretHash] = tlsSecretHash
+	}
+
+	return templateAnnotations, nil
+}
+
+func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string) (string, error) {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	tlsSecret, err := query.Get(ctx, types.NamespacedName{
-		Name:      r.dk.ExtensionsTLSSecretName(),
+		Name:      secretName,
 		Namespace: r.dk.Namespace,
 	})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	templateAnnotations[api.AnnotationSecretHash] = tlsSecretHash
-
-	return templateAnnotations, nil
+	return tlsSecretHash, nil
 }
 
 func getReplicas(dk *dynakube.DynaKube) int32 {
