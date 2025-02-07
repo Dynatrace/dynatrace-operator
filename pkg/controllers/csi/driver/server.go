@@ -22,6 +22,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync/atomic"
@@ -223,6 +224,18 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		}
 
 		for _, path := range needsCleanUp {
+			podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
+			if podInfoSymlinkPath != "" {
+				_ = srv.fs.Remove(podInfoSymlinkPath)
+
+				podInfoSymlinkDir := filepath.Dir(podInfoSymlinkPath)
+
+				isEmpty, _ := srv.fs.IsEmpty(podInfoSymlinkDir)
+				if isEmpty {
+					_ = srv.fs.Remove(podInfoSymlinkDir)
+				}
+			}
+
 			err := srv.fs.RemoveAll(path) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
 			if err != nil {
 				log.Error(err, "failed to clean up unmounted volume dir", "path", path)
@@ -230,11 +243,6 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		}
 
 		_ = srv.fs.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
-	}
-
-	podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
-	if podInfoSymlinkPath != "" {
-		_ = srv.fs.Remove(podInfoSymlinkPath)
 	}
 }
 
