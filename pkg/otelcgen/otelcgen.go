@@ -83,8 +83,7 @@ func NewConfig(options ...Option) (*Config, error) {
 	}
 
 	for _, opt := range options {
-		err := opt(&c)
-		if err != nil {
+		if err := opt(&c); err != nil {
 			return nil, err
 		}
 	}
