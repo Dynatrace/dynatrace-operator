@@ -230,8 +230,7 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 
 				podInfoSymlinkDir := filepath.Dir(podInfoSymlinkPath)
 
-				isEmpty, _ := srv.fs.IsEmpty(podInfoSymlinkDir)
-				if isEmpty {
+				if isEmpty, _ := srv.fs.IsEmpty(podInfoSymlinkDir); isEmpty {
 					_ = srv.fs.Remove(podInfoSymlinkDir)
 				}
 			}
