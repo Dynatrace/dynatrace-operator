@@ -96,9 +96,8 @@ func NewConfig(podIP string, options ...Option) (*Config, error) {
 
 func (c *Config) Marshal() ([]byte, error) {
 	conf := confmap.New()
-	err := conf.Marshal(c.cfg)
 
-	if err != nil {
+	if err := conf.Marshal(c.cfg); err != nil {
 		return nil, err
 	}
 
