@@ -50,65 +50,63 @@ var (
 )
 
 func (c *Config) buildProcessors() map[component.ID]component.Config {
-	{
-		return map[component.ID]component.Config{
-			k8sattributes: map[string]any{
-				"extract": map[string]any{
-					"metadata": defaultK8Sattributes,
-					"annotations": []map[string]any{
-						{
-							"from":      "pod",
-							"key_regex": "metadata.dynatrace.com/(.*)",
-							"tag_name":  "$$1",
-						},
-					},
-				},
-				"pod_association": []map[string]any{
+	return map[component.ID]component.Config{
+		k8sattributes: map[string]any{
+			"extract": map[string]any{
+				"metadata": defaultK8Sattributes,
+				"annotations": []map[string]any{
 					{
-						"sources": []map[string]any{
-							{"from": "resource_attribute", "name": "k8s.pod.name"},
-							{"from": "resource_attribute", "name": "k8s.namespace.name"},
-						},
-					},
-					{
-						"sources": []map[string]any{
-							{"from": "resource_attribute", "name": "k8s.pod.ip"},
-						},
-					},
-					{
-						"sources": []map[string]any{
-							{"from": "resource_attribute", "name": "k8s.pod.uid"},
-						},
-					},
-					{
-						"sources": []map[string]any{
-							{"from": "connection"},
-						},
+						"from":      "pod",
+						"key_regex": "metadata.dynatrace.com/(.*)",
+						"tag_name":  "$$1",
 					},
 				},
 			},
-			transform: c.buildTransform(),
-			batchTraces: &BatchConfig{
-				SendBatchSize:    5000,
-				SendBatchMaxSize: 5000,
-				Timeout:          "60s",
+			"pod_association": []map[string]any{
+				{
+					"sources": []map[string]any{
+						{"from": "resource_attribute", "name": "k8s.pod.name"},
+						{"from": "resource_attribute", "name": "k8s.namespace.name"},
+					},
+				},
+				{
+					"sources": []map[string]any{
+						{"from": "resource_attribute", "name": "k8s.pod.ip"},
+					},
+				},
+				{
+					"sources": []map[string]any{
+						{"from": "resource_attribute", "name": "k8s.pod.uid"},
+					},
+				},
+				{
+					"sources": []map[string]any{
+						{"from": "connection"},
+					},
+				},
 			},
-			batchMetrics: &BatchConfig{
-				SendBatchSize:    3000,
-				SendBatchMaxSize: 3000,
-				Timeout:          "60s",
-			},
-			batchLogs: &BatchConfig{
-				SendBatchSize:    1800,
-				SendBatchMaxSize: 2000,
-				Timeout:          "60s",
-			},
-			memoryLimiter: &MemoryLimiter{
-				CheckInterval:         "1s",
-				MemoryLimitPercentage: 70,
-				MemorySpikePercentage: 30,
-			},
-		}
+		},
+		transform: c.buildTransform(),
+		batchTraces: &BatchConfig{
+			SendBatchSize:    5000,
+			SendBatchMaxSize: 5000,
+			Timeout:          "60s",
+		},
+		batchMetrics: &BatchConfig{
+			SendBatchSize:    3000,
+			SendBatchMaxSize: 3000,
+			Timeout:          "60s",
+		},
+		batchLogs: &BatchConfig{
+			SendBatchSize:    1800,
+			SendBatchMaxSize: 2000,
+			Timeout:          "60s",
+		},
+		memoryLimiter: &MemoryLimiter{
+			CheckInterval:         "1s",
+			MemoryLimitPercentage: 70,
+			MemorySpikePercentage: 30,
+		},
 	}
 }
 
