@@ -18,6 +18,7 @@ const (
 	testApiUrl                                 = "https://demo.dev.dynatracelabs.com/api"
 	expectedShortName                          = "activegate"
 	expectedArgName                            = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface"
+	expectedArgNameWithDebugging               = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,debugging"
 	expectedArgNameWithExtensions              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller"
 	expectedArgNameWithExtensionsOnly          = "extension_controller"
 	expectedArgNameWithOTLPingest              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
@@ -178,6 +179,17 @@ func TestNewMultiCapabilityWithOTLPingestAndTelemetryService(t *testing.T) {
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgNameWithOTLPingestOnly, mc.ArgName())
+	})
+}
+
+func TestNewMultiCapabilityWithDebugging(t *testing.T) {
+	t.Run(`creates new multicapability with debugging capability enabled`, func(t *testing.T) {
+		dk := buildDynakube(append(capabilities, activegate.DebuggingCapability.DisplayName), false, false, false)
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.True(t, mc.Enabled())
+		assert.Equal(t, expectedShortName, mc.ShortName())
+		assert.Equal(t, expectedArgNameWithDebugging, mc.ArgName())
 	})
 }
 

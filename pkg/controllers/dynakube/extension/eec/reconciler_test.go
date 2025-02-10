@@ -180,7 +180,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
 	})
 	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -188,7 +188,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
 	})
 	t.Run("annotation is updated when TLS Secret gets updated", func(t *testing.T) {
 		statefulSet := &appsv1.StatefulSet{}
@@ -205,7 +205,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
-		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash]
+		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
 
 		// then update the TLS Secret and call reconcile again
 		updatedTLSSecret := getTLSSecret(dk.ExtensionsTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
@@ -217,7 +217,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
-		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationSecretHash]
+		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
 
 		// original hash and resulting hash should be different, value got updated on reconcile
 		assert.NotEqual(t, originalSecretHash, resultingSecretHash)
@@ -548,7 +548,7 @@ func TestAnnotations(t *testing.T) {
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 2)
 		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationExtensionsSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
@@ -564,7 +564,7 @@ func TestAnnotations(t *testing.T) {
 		assert.Empty(t, statefulSet.ObjectMeta.Annotations["a"])
 		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 2)
 		assert.Equal(t, "b", statefulSet.Spec.Template.ObjectMeta.Annotations["a"])
-		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationSecretHash])
+		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationExtensionsSecretHash])
 	})
 }
 

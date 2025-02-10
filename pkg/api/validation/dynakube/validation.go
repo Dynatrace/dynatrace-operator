@@ -70,6 +70,7 @@ var (
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingApiUrlForExtensions,
+		publicImageSetWithoutReadOnlyMode,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedApiUrl,

@@ -64,7 +64,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 	if installer.isAlreadyPresent(targetDir) {
 		log.Info("agent already installed", "image", installer.props.ImageUri, "target dir", targetDir)
 
-		return false, nil
+		return true, nil
 	}
 
 	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)

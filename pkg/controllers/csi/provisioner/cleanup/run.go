@@ -89,6 +89,7 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 	for _, fileInfo := range rootSubDirs {
 		if !fileInfo.IsDir() ||
 			fileInfo.Name() == dtcsi.SharedAppMountsDir ||
+			fileInfo.Name() == dtcsi.SharedJobWorkDir ||
 			fileInfo.Name() == dtcsi.SharedAgentBinDir {
 			continue
 		}

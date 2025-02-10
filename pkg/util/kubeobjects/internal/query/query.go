@@ -77,10 +77,10 @@ func (c Generic[T, L]) Update(ctx context.Context, object T) error {
 	return errors.WithStack(c.KubeClient.Update(ctx, object))
 }
 
-func (c Generic[T, L]) Delete(ctx context.Context, object T) error {
+func (c Generic[T, L]) Delete(ctx context.Context, object T, options ...client.DeleteOption) error {
 	c.log(object).Info("deleting")
 
-	err := c.KubeClient.Delete(ctx, object)
+	err := c.KubeClient.Delete(ctx, object, options...)
 
 	return errors.WithStack(client.IgnoreNotFound(err))
 }
@@ -218,13 +218,13 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 	return goerrors.Join(errs...)
 }
 
-func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string) error {
+func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string, options ...client.DeleteOption) error {
 	c.Log.Info("deleting object from namespace", "name", objectName, "namespace", namespace)
 
 	c.Target.SetName(objectName)
 	c.Target.SetNamespace(namespace)
 
-	return c.Delete(ctx, c.Target)
+	return c.Delete(ctx, c.Target, options...)
 }
 
 func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {

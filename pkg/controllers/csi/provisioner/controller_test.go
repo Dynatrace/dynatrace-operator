@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -117,6 +118,53 @@ func TestReconcile(t *testing.T) {
 		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
+	t.Run("dynakube with job => job installer used, dtclient not created, no error", func(t *testing.T) {
+		dk := createDynaKubeWithJobFF(t)
+		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		installer := createSuccessfulInstaller(t)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
+		createPMCSourceFile(t, prov, dk)
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
+	})
+
+	t.Run("dynakube with job => job installer used, back-off when not ready, no error", func(t *testing.T) {
+		dk := createDynaKubeWithJobFF(t)
+		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		installer := createNotReadyInstaller(t)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
+		createPMCSourceFile(t, prov, dk)
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, notReadyRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
+	})
+
+	t.Run("dynakube with job => job installer used, with error", func(t *testing.T) {
+		dk := createDynaKubeWithJobFF(t)
+		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		installer := createFailingInstaller(t)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
+		createPMCSourceFile(t, prov, dk)
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.Error(t, err)
+		require.NotNil(t, result)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
+	})
+
 	t.Run("installer fails => error", func(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 		prov := createProvisioner(t, dk)
@@ -194,6 +242,24 @@ func createDynaKubeWithImage(t *testing.T) *dynakube.DynaKube {
 	return dk
 }
 
+func createDynaKubeWithJobFF(t *testing.T) *dynakube.DynaKube {
+	t.Helper()
+
+	dk := createDynaKubeBase(t)
+	imageId := "test-image"
+	dk.Spec.OneAgent = oneagent.Spec{
+		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+			AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: imageId},
+		},
+	}
+	dk.Status.CodeModules.ImageID = imageId
+	dk.Annotations = map[string]string{
+		dynakube.AnnotationFeatureDownloadViaJob: "true",
+	}
+
+	return dk
+}
+
 func createNotReadyDynaKube(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
@@ -236,6 +302,15 @@ func createSuccessfulInstaller(t *testing.T) *installermock.Installer {
 	return m
 }
 
+func createNotReadyInstaller(t *testing.T) *installermock.Installer {
+	t.Helper()
+
+	m := installermock.NewInstaller(t)
+	m.On("InstallAgent", mock.Anything, mock.Anything).Return(false, nil)
+
+	return m
+}
+
 func createFailingInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
@@ -258,6 +333,14 @@ func mockImageInstallerBuilder(t *testing.T, mockedInstaller *installermock.Inst
 
 	return func(_ context.Context, _ afero.Fs, _ *image.Properties) (installer.Installer, error) {
 		return mockedInstaller, nil
+	}
+}
+
+func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) jobInstallerBuilder {
+	t.Helper()
+
+	return func(_ context.Context, _ afero.Fs, _ *job.Properties) installer.Installer {
+		return mockedInstaller
 	}
 }
 

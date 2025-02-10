@@ -54,10 +54,10 @@ const (
     AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
 
     // CSI.
-    AnnotationFeatureMaxFailedCsiMountAttempts      = AnnotationFeaturePrefix + "max-csi-mount-attempts"
-    AnnotationFeatureMaxCsiMountTimeout             = AnnotationFeaturePrefix + "max-csi-mount-timeout"
-    AnnotationFeatureReadOnlyCsiVolume              = AnnotationFeaturePrefix + "injection-readonly-volume"
-    AnnotationFeatureCodeModulesRemoteImageDownload = AnnotationFeatureCodeModulesPrefix + "remoteImageDownload"
+    AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
+    AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
+    AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
+    AnnotationFeatureDownloadViaJob            = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
 )
 ```
 
