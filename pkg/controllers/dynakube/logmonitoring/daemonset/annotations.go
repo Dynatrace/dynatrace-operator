@@ -2,14 +2,20 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 )
 
 const annotationTenantTokenHash = api.InternalFlagPrefix + "tenant-token-hash"
 
-func (r *Reconciler) buildAnnotations(dk *dynakube.DynaKube) map[string]string {
+func (r *Reconciler) getAnnotations() map[string]string {
+	return maputils.MergeMap(
+		r.dk.LogMonitoring().Template().Annotations,
+		r.buildTenantTokenHashAnnotation())
+}
+
+func (r *Reconciler) buildTenantTokenHashAnnotation() map[string]string {
 	annotations := map[string]string{
-		annotationTenantTokenHash: dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo.TenantTokenHash,
+		annotationTenantTokenHash: r.dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo.TenantTokenHash,
 	}
 
 	return annotations

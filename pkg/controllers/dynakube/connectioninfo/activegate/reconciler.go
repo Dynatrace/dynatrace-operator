@@ -113,7 +113,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 	r.dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.ConnectionInfo.TenantToken)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate TenantTokenHash")
 	}
 
 	log.Info("activegate connection info updated")

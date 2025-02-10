@@ -132,8 +132,9 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		tenantTokenHash, _ := hasher.GenerateHash(testTenantToken)
+		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
 
+		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 		assert.Equal(t, getTestCommunicationHosts(), dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)

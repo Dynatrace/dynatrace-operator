@@ -109,8 +109,9 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 
-		tenantTokenHash, _ := hasher.GenerateHash(testTenantToken)
+		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
 
+		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 		assert.Equal(t, tenantTokenHash, dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash)

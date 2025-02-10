@@ -87,7 +87,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		sts, _ := builder.CreateStatefulSet(nil)
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
-			consts.AnnotationActiveGateTokenHash:         testTokenHash,
+			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
@@ -152,8 +152,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		sts, _ := builder.CreateStatefulSet(nil)
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
-			consts.AnnotationActiveGateTokenHash:         testTokenHash,
-			"test":                                       "test",
+			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
+			"test": "test",
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
@@ -174,7 +174,7 @@ func TestGetBaseSpec(t *testing.T) {
 		assert.Equal(t, &testReplicas, stsSpec.Replicas)
 		require.NotNil(t, stsSpec.Template.Annotations)
 		assert.Equal(t, testConfigHash, stsSpec.Template.Annotations[consts.AnnotationActiveGateConfigurationHash])
-		assert.Equal(t, testTokenHash, stsSpec.Template.Annotations[consts.AnnotationActiveGateTokenHash])
+		assert.Equal(t, testTokenHash, stsSpec.Template.Annotations[consts.AnnotationActiveGateTenantTokenHash])
 	})
 }
 
