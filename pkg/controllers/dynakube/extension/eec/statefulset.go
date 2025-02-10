@@ -152,7 +152,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		return nil, err
 	}
 
-	templateAnnotations[api.AnnotationSecretHash] = tlsSecretHash
+	templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
 
 	return templateAnnotations, nil
 }

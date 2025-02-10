@@ -15,6 +15,7 @@ const (
 	AppVersionLabel   = "app.kubernetes.io/version"
 
 	OneAgentComponentLabel      = "oneagent"
+	CodeModuleComponentLabel    = "codemodule"
 	LogMonitoringComponentLabel = "logmonitoring"
 	KSPMComponentLabel          = "kspm"
 	ActiveGateComponentLabel    = "activegate"

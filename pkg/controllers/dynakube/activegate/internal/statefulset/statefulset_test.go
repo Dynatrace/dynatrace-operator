@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
@@ -29,6 +30,7 @@ import (
 const (
 	testKubeUID       = "test-uid"
 	testConfigHash    = "test-hash"
+	testTokenHash     = "test-hash-token"
 	testDynakubeName  = "test-dynakube"
 	testNamespaceName = "test-namespace"
 )
@@ -57,6 +59,9 @@ func getTestDynakube() dynakube.DynaKube {
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
 				VersionStatus: status.VersionStatus{},
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantTokenHash: testTokenHash,
+				},
 			},
 		},
 	}
@@ -82,6 +87,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		sts, _ := builder.CreateStatefulSet(nil)
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
+			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
@@ -146,6 +152,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		sts, _ := builder.CreateStatefulSet(nil)
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
+			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
 			"test": "test",
 		}
 
@@ -167,6 +174,7 @@ func TestGetBaseSpec(t *testing.T) {
 		assert.Equal(t, &testReplicas, stsSpec.Replicas)
 		require.NotNil(t, stsSpec.Template.Annotations)
 		assert.Equal(t, testConfigHash, stsSpec.Template.Annotations[consts.AnnotationActiveGateConfigurationHash])
+		assert.Equal(t, testTokenHash, stsSpec.Template.Annotations[consts.AnnotationActiveGateTenantTokenHash])
 	})
 }
 
