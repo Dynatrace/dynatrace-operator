@@ -9,16 +9,21 @@ var (
 )
 
 func (c *Config) buildExporters() map[component.ID]component.Config {
+	serverConfig := &ServerConfig{
+		Endpoint:   c.buildEndpointWithoutPort(),
+		TLSSetting: &TLSSetting{},
+	}
+
+	if c.caFile != "" {
+		serverConfig.TLSSetting.CAFile = c.caFile
+	}
+
+	if c.apiToken != "" {
+		serverConfig.Headers = make(map[string]string)
+		serverConfig.Headers["Authorization"] = "Api-Token " + c.apiToken
+	}
+
 	return map[component.ID]component.Config{
-		otlphttp: &ServerConfig{
-			Endpoint: c.buildEndpointWithoutPort(),
-			// if in-cluster AG
-			TLSSetting: &TLSSetting{
-				CAFile: "/run/opensignals/cacerts/certs",
-			},
-			Headers: map[string]string{
-				"Authorization": "Api-Token ${env:DT_API_TOKEN}",
-			},
-		},
+		otlphttp: serverConfig,
 	}
 }

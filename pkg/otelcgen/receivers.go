@@ -28,9 +28,17 @@ func (c *Config) buildReceiverComponent(componentID component.ID) component.Conf
 	case StatsdID:
 		return map[string]any{
 			"endpoint": c.buildEndpoint(StatsdPort),
-			"timer_histogram_mapping": []TimerHistogramMapping{{
-				StatsDType: "histogram", ObserverType: "histogram", Histogram: HistogramConfig{MaxSize: 10},
-			}},
+			"timer_histogram_mapping": []TimerHistogramMapping{
+				{
+					StatsDType: "histogram", ObserverType: "histogram", Histogram: HistogramConfig{MaxSize: 10},
+				},
+				{
+					StatsDType: "timing", ObserverType: "histogram", Histogram: HistogramConfig{MaxSize: 100},
+				},
+				{
+					StatsDType: "distribution", ObserverType: "histogram", Histogram: HistogramConfig{MaxSize: 100},
+				},
+			},
 		}
 	}
 

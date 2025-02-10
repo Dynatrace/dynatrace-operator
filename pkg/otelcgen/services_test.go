@@ -11,6 +11,7 @@ import (
 
 func TestNewConfigWithServices(t *testing.T) {
 	cfg, err := NewConfig(
+		"",
 		WithServices(),
 	)
 	require.NoError(t, err)

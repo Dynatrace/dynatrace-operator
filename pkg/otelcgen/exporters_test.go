@@ -11,7 +11,9 @@ import (
 
 func TestNewConfigWithExporters(t *testing.T) {
 	cfg, err := NewConfig(
-		WithPodIP("test"),
+		"test",
+		WithCA("/run/opensignals/cacerts/certs"),
+		WithApiToken("test-token"),
 		WithExporters(),
 	)
 	require.NoError(t, err)

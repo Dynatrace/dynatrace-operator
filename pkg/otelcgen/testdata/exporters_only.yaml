@@ -5,7 +5,7 @@ exporters:
     tls:
       ca_file: "/run/opensignals/cacerts/certs"
     headers:
-      Authorization: "Api-Token ${env:DT_API_TOKEN}"
+      Authorization: "Api-Token test-token"
 extensions: {}
 processors: {}
 receivers: {}

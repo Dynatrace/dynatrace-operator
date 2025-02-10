@@ -11,7 +11,10 @@ import (
 
 func TestNewConfigFull(t *testing.T) {
 	cfg, err := NewConfig(
-		WithPodIP("test"),
+		"test",
+		WithCA("/run/opensignals/cacerts/certs"),
+		WithApiToken("test-token"),
+		WithTLS("/run/opensignals/tls/tls.crt", "/run/opensignals/tls/tls.key"),
 		WithProtocols("otlp", "jaeger", "zipkin", "statsd"),
 		WithExtensions(),
 		WithExporters(),

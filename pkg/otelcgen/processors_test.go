@@ -11,6 +11,7 @@ import (
 
 func TestNewConfigWithProcessors(t *testing.T) {
 	cfg, err := NewConfig(
+		"",
 		WithProcessors(),
 	)
 	require.NoError(t, err)

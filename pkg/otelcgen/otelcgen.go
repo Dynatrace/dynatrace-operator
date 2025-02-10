@@ -69,17 +69,20 @@ var (
 )
 
 type Config struct {
-	cfg     *otelcol.Config
-	tlsKey  string
-	tlsCert string
-	podIP   string
+	cfg      *otelcol.Config
+	tlsKey   string
+	tlsCert  string
+	caFile   string
+	podIP    string
+	apiToken string
 }
 
 type Option func(c *Config) error
 
-func NewConfig(options ...Option) (*Config, error) {
+func NewConfig(podIP string, options ...Option) (*Config, error) {
 	c := Config{
-		cfg: &otelcol.Config{},
+		cfg:   &otelcol.Config{},
+		podIP: podIP,
 	}
 
 	for _, opt := range options {
@@ -176,25 +179,26 @@ func WithServices() Option {
 	}
 }
 
-func WithTLSKey(tlsKey string) Option {
+func WithTLS(tlsCert, tlsKey string) Option {
 	return func(c *Config) error {
+		c.tlsCert = tlsCert
 		c.tlsKey = tlsKey
 
 		return nil
 	}
 }
 
-func WithTLSCert(tlsCert string) Option {
+func WithCA(caFile string) Option {
 	return func(c *Config) error {
-		c.tlsCert = tlsCert
+		c.caFile = caFile
 
 		return nil
 	}
 }
 
-func WithPodIP(podIP string) Option {
+func WithApiToken(apiToken string) Option {
 	return func(c *Config) error {
-		c.podIP = podIP
+		c.apiToken = apiToken
 
 		return nil
 	}

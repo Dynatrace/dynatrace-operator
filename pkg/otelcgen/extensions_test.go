@@ -11,7 +11,7 @@ import (
 
 func TestNewConfigWithExtensions(t *testing.T) {
 	cfg, err := NewConfig(
-		WithPodIP("test"),
+		"test",
 		WithExtensions(),
 	)
 	require.NoError(t, err)

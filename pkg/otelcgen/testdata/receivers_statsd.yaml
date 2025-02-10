@@ -6,10 +6,18 @@ receivers:
     statsd:
         endpoint: test:8125
         timer_histogram_mapping:
-            - histogram:
-                max_size: 10
-              observer_type: histogram
-              statsd_type: histogram
+          - histogram:
+              max_size: 10
+            observer_type: histogram
+            statsd_type: histogram
+          - histogram:
+              max_size: 100
+            observer_type: histogram
+            statsd_type: timing
+          - histogram:
+              max_size: 100
+            observer_type: histogram
+            statsd_type: distribution
 service:
     extensions: []
     pipelines: {}
