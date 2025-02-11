@@ -142,7 +142,7 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 		}
 
 		if !binExists && !hostExists {
-			unknownDirs = append(unknownDirs, c.path.Base(fileInfo.Name()))
+			unknownDirs = append(unknownDirs, c.path.DynaKubeDir(fileInfo.Name()))
 		}
 	}
 
