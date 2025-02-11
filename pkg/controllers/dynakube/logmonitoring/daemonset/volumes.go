@@ -94,7 +94,6 @@ func getIngestVolumeMounts() []corev1.VolumeMount {
 		{
 			Name:      varLogsVolumeName,
 			MountPath: varLogsVolumePath,
-			ReadOnly:  true,
 		},
 	}
 }
