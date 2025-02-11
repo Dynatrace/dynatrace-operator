@@ -1,0 +1,191 @@
+### receiveres ###
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${env:MY_POD_IP}:4317
+        tls: # if .spec.openSignals.tlsRef
+          cert_file: /run/opensignals/tls/tls.crt
+          key_file: /run/opensignals/tls/tls.key
+      http:
+        endpoint: ${env:MY_POD_IP}:4318
+        tls: # if .spec.openSignals.tlsRef
+          cert_file: /run/opensignals/tls/tls.crt
+          key_file: /run/opensignals/tls/tls.key
+  jaeger:
+    protocols:
+      grpc:
+        endpoint: ${env:MY_POD_IP}:14250
+        tls: # if .spec.openSignals.tlsRef
+          cert_file: /run/opensignals/tls/tls.crt
+          key_file: /run/opensignals/tls/tls.key
+      thrift_binary:
+        endpoint: ${env:MY_POD_IP}:6832
+      thrift_compact:
+        endpoint: ${env:MY_POD_IP}:6831
+      thrift_http:
+        endpoint: ${env:MY_POD_IP}:14268
+        tls: # if .spec.openSignals.tlsRef
+          cert_file: /run/opensignals/tls/tls.crt
+          key_file: /run/opensignals/tls/tls.key
+  zipkin:
+    endpoint: ${env:MY_POD_IP}:9411
+    tls: # if .spec.openSignals.tlsRef
+      cert_file: /run/opensignals/tls/tls.crt
+      key_file: /run/opensignals/tls/tls.key
+  statsd:
+    endpoint: ${env:MY_POD_IP}:8125
+    timer_histogram_mapping:
+      - statsd_type: "histogram"
+        observer_type: "histogram"
+        histogram:
+          max_size: 100
+      - statsd_type: "timing"
+        observer_type: "histogram"
+        histogram:
+          max_size: 100
+      - statsd_type: "distribution"
+        observer_type: "histogram"
+        histogram:
+          max_size: 100
+
+### processors ###
+processors:
+  cumulativetodelta:
+  k8sattributes:
+    extract:
+      metadata:
+        - k8s.cluster.uid
+        - k8s.node.name
+        - k8s.namespace.name
+        - k8s.pod.name
+        - k8s.pod.uid
+        - k8s.pod.ip
+        - k8s.deployment.name
+        - k8s.replicaset.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - k8s.job.name
+      annotations:
+        - from: pod
+          key_regex: metadata.dynatrace.com/(.*)
+          tag_name: $$1
+    pod_association:
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.name
+          - from: resource_attribute
+            name: k8s.namespace.name
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+      - sources:
+          - from: connection
+  transform:
+    error_mode: ignore
+    trace_statements: &dynatrace_transformations
+      - context: resource
+        statements:
+          - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"])
+          - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])
+          - set(attributes["k8s.workload.kind"], "cronjob") where IsString(attributes["k8s.cronjob.name"])
+          - set(attributes["k8s.workload.name"], attributes["k8s.cronjob.name"]) where IsString(attributes["k8s.cronjob.name"])
+          - set(attributes["k8s.workload.kind"], "daemonset") where IsString(attributes["k8s.daemonset.name"])
+          - set(attributes["k8s.workload.name"], attributes["k8s.daemonset.name"]) where IsString(attributes["k8s.daemonset.name"])
+          - set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"])
+          - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
+          - set(attributes["k8s.workload.kind"], "replicaset") where IsString(attributes["k8s.replicaset.name"])
+          - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
+          - set(attributes["k8s.workload.kind"], "deployment") where IsString(attributes["k8s.deployment.name"])
+          - set(attributes["k8s.workload.name"], attributes["k8s.deployment.name"]) where IsString(attributes["k8s.deployment.name"])
+          - set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}")
+          - set(attributes["k8s.cluster.uid"], "${env:K8S_CLUSTER_UID}") where attributes["k8s.cluster.uid"] == nil
+          - set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")
+          - delete_key(attributes, "k8s.deployment.name")
+          - delete_key(attributes, "k8s.replicaset.name")
+          - delete_key(attributes, "k8s.statefulset.name")
+          - delete_key(attributes, "k8s.daemonset.name")
+          - delete_key(attributes, "k8s.cronjob.name")
+          - delete_key(attributes, "k8s.job.name")
+          - set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])
+          - set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])
+    metric_statements: *dynatrace_transformations
+    log_statements: *dynatrace_transformations
+  batch/traces:
+    send_batch_size: 5000
+    send_batch_max_size: 5000
+    timeout: 60s
+  batch/metrics:
+    send_batch_size: 3000
+    send_batch_max_size: 3000
+    timeout: 60s
+  batch/logs:
+    send_batch_size: 1800
+    send_batch_max_size: 2000
+    timeout: 60s
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 70
+    spike_limit_percentage: 30
+
+### exporters ###
+exporters:
+  debug:
+  otlphttp:
+    endpoint: "${env:DT_ENDPOINT}"
+    tls: # if in-cluster AG
+      ca_file: /run/opensignals/cacerts/certs
+    headers:
+      Authorization: "Api-Token ${env:DT_API_TOKEN}"
+
+### extensions ###
+extensions:
+  health_check:
+    endpoint: ${env:MY_POD_IP}:13133
+
+### service ###
+service:
+  extensions:
+    - health_check
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+        - jaeger
+        - zipkin
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - batch/traces
+      exporters:
+        - otlphttp
+        - debug
+    metrics:
+      receivers:
+        - otlp
+        - statsd
+      processors:
+        - memory_limiter
+        - cumulativetodelta
+        - k8sattributes
+        - transform
+        - batch/metrics
+      exporters:
+        - otlphttp
+        - debug
+    logs:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - batch/logs
+      exporters:
+        - otlphttp
+        - debug
