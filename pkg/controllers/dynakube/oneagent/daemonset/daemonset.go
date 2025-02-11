@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
@@ -21,6 +22,7 @@ import (
 const (
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
+	annotationTenantTokenHash   = api.InternalFlagPrefix + "tenant-token-hash"
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 
@@ -148,6 +150,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	annotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
 		webhook.AnnotationDynatraceInject: "false",
+		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash,
 	}
 
 	annotations = maputils.MergeMap(annotations, b.hostInjectSpec.Annotations)

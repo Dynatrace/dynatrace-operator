@@ -96,7 +96,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
 		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
-		daemonset.SetAllAnnotations(nil, r.dk.LogMonitoring().Template().Annotations),
+		daemonset.SetAllAnnotations(nil, r.getAnnotations()),
 		daemonset.SetServiceAccount(serviceAccountName),
 		daemonset.SetDNSPolicy(r.dk.LogMonitoring().Template().DNSPolicy),
 		daemonset.SetAffinity(node.Affinity()),

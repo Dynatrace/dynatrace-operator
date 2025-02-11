@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	expectedMountLen     = 6
+	expectedMountLen     = 7
 	expectedInitMountLen = 2
 )
 
