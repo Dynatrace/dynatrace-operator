@@ -1,0 +1,31 @@
+connectors: {}
+exporters: {}
+extensions:
+  health_check:
+    endpoint: test:13133
+processors: {}
+receivers: {}
+service:
+  extensions: []
+  pipelines: {}
+  telemetry:
+    logs:
+      development: false
+      disable_caller: false
+      disable_stacktrace: false
+      encoding: ""
+      error_output_paths: []
+      initial_fields: {}
+      level: info
+      output_paths: []
+      processors: []
+      sampling: null
+    metrics:
+      address: ""
+      level: Basic
+      readers: []
+    resource: {}
+    traces:
+      level: Basic
+      processors: []
+      propagators: []

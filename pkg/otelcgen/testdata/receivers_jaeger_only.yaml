@@ -1,0 +1,45 @@
+connectors: {}
+exporters: {}
+extensions: {}
+processors: {}
+receivers:
+    jaeger:
+        protocols:
+            grpc:
+                endpoint: test:14250
+                tls:
+                    cert_file: /run/opensignals/tls/tls.crt
+                    key_file: /run/opensignals/tls/tls.key
+            thrift_binary:
+                endpoint: test:6832
+            thrift_compact:
+                endpoint: test:6831
+            thrift_http:
+                endpoint: test:14268
+                tls:
+                    cert_file: /run/opensignals/tls/tls.crt
+                    key_file: /run/opensignals/tls/tls.key
+service:
+    extensions: []
+    pipelines: {}
+    telemetry:
+        logs:
+            development: false
+            disable_caller: false
+            disable_stacktrace: false
+            encoding: ""
+            error_output_paths: []
+            initial_fields: {}
+            level: info
+            output_paths: []
+            processors: []
+            sampling: null
+        metrics:
+            address: ""
+            level: Basic
+            readers: []
+        resource: {}
+        traces:
+            level: Basic
+            processors: []
+            propagators: []

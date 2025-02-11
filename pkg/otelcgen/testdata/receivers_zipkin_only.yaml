@@ -1,0 +1,34 @@
+connectors: {}
+exporters: {}
+extensions: {}
+processors: {}
+receivers:
+    zipkin:
+        endpoint: test:9411
+        tls:
+            cert_file: /run/opensignals/tls/tls.crt
+            key_file: /run/opensignals/tls/tls.key
+service:
+    extensions: []
+    pipelines: {}
+    telemetry:
+        logs:
+            development: false
+            disable_caller: false
+            disable_stacktrace: false
+            encoding: ""
+            error_output_paths: []
+            initial_fields: {}
+            level: info
+            output_paths: []
+            processors: []
+            sampling: null
+        metrics:
+            address: ""
+            level: Basic
+            readers: []
+        resource: {}
+        traces:
+            level: Basic
+            processors: []
+            propagators: []
