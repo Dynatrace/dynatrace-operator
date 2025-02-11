@@ -14,14 +14,21 @@ const (
 
 	trustedCAsFile = "rootca.pem"
 
+	extensionsControllerTLSVolumeName = "extensions-controller-tls"
+
 	customTlsCertVolumeName = "telemetry-custom-tls"
 	customTlsCertMountPath  = "/tls/custom/telemetry"
+
+	openSignalConfigVolumeName = "open-signal-config"
+	openSignalConfigPath       = "/osconfig"
 )
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Volumes = []corev1.Volume{
-			{
+		o.Spec.Template.Spec.Volumes = []corev1.Volume{}
+
+		if dk.IsExtensionsEnabled() {
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
@@ -35,8 +42,9 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						DefaultMode: ptr.To(int32(420)),
 					},
 				},
-			},
+			})
 		}
+
 		if dk.Spec.TrustedCAs != "" {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: caCertsVolumeName,
@@ -56,20 +64,22 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			})
 		}
 
-		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: dk.ExtensionsTLSSecretName(),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.ExtensionsTLSSecretName(),
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
+		if dk.IsExtensionsEnabled() {
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: extensionsControllerTLSVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.ExtensionsTLSSecretName(),
+						Items: []corev1.KeyToPath{
+							{
+								Key:  consts.TLSCrtDataName,
+								Path: consts.TLSCrtDataName,
+							},
 						},
 					},
 				},
-			},
-		})
+			})
+		}
 
 		if dk.TelemetryService().IsEnabled() && dk.TelemetryService().Spec.TlsRefName != "" {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
@@ -91,12 +101,35 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			})
 		}
+
+		if !dk.IsExtensionsEnabled() {
+			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: openSignalConfigVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: "os",
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "config.yaml",
+								Path: "config.yaml",
+							},
+						},
+					},
+				},
+			})
+		}
 	}
 }
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
-	vm := []corev1.VolumeMount{
-		{Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath},
+	var vm []corev1.VolumeMount
+
+	if dk.IsExtensionsEnabled() {
+		vm = append(vm, corev1.VolumeMount{
+			Name:      consts.ExtensionsTokensVolumeName,
+			ReadOnly:  true,
+			MountPath: secretsTokensPath,
+		})
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -107,16 +140,26 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		})
 	}
 
-	vm = append(vm, corev1.VolumeMount{
-		Name:      dk.ExtensionsTLSSecretName(),
-		MountPath: customEecTLSCertificatePath,
-		ReadOnly:  true,
-	})
+	if dk.IsExtensionsEnabled() {
+		vm = append(vm, corev1.VolumeMount{
+			Name:      extensionsControllerTLSVolumeName,
+			MountPath: customEecTLSCertificatePath,
+			ReadOnly:  true,
+		})
+	}
 
 	if dk.TelemetryService().IsEnabled() && dk.TelemetryService().Spec.TlsRefName != "" {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      customTlsCertVolumeName,
 			MountPath: customTlsCertMountPath,
+			ReadOnly:  true,
+		})
+	}
+
+	if !dk.IsExtensionsEnabled() {
+		vm = append(vm, corev1.VolumeMount{
+			Name:      openSignalConfigVolumeName,
+			MountPath: openSignalConfigPath,
 			ReadOnly:  true,
 		})
 	}
