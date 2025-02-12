@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v0.119.0
-	go.opentelemetry.io/collector/confmap v1.24.0
+	go.opentelemetry.io/collector/confmap v1.25.0
 	go.opentelemetry.io/collector/otelcol v0.118.0
 	go.opentelemetry.io/collector/pipeline v0.118.0
 	go.opentelemetry.io/collector/service v0.118.0
