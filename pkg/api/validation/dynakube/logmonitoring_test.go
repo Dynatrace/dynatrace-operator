@@ -38,7 +38,7 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 				LogMonitoring: &logmonitoring.Spec{},
 			},
 		}
-		assertDenied(t, []string{errorLogMonitoringWithoutK8SMonitoring}, dk)
+		assertAllowedWithWarnings(t, 1, dk)
 	})
 	t.Run("error if logMonitoring is enabled with activegate with k8s-monitoring but automatic-kubernetes-monitoring disables", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -65,10 +65,10 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 				},
 			},
 		}
-		assertDenied(t, []string{errorLogMonitoringWithoutK8SMonitoring}, dk)
+		assertAllowedWithWarnings(t, 2, dk)
 	})
 	t.Run("error if logMonitoring is enabled without activegate with k8s-monitoring and automatic-kubernetes-monitoring disabled", func(t *testing.T) {
-		assertDenied(t, []string{errorLogMonitoringWithoutK8SMonitoring}, &dynakube.DynaKube{
+		assertAllowedWithWarnings(t, 1, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "false",
