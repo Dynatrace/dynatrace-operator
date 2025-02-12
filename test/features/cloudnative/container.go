@@ -25,11 +25,11 @@ const (
 	activeGateRootCAPath       = "/var/lib/dynatrace/secrets/rootca/rootca.pem"
 )
 
-func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrt []byte, trustedCAs []byte) {
+func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrt func() []byte, trustedCAs []byte) {
 	builder.Assess("certificates are propagated to sample apps containers", checkSampleContainer(sampleApp, agCrt, trustedCAs))
 }
 
-func checkSampleContainer(sampleApp *sample.App, agCrt []byte, trustedCAs []byte) features.Func {
+func checkSampleContainer(sampleApp *sample.App, agCrt func() []byte, trustedCAs []byte) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
@@ -45,9 +45,9 @@ func checkSampleContainer(sampleApp *sample.App, agCrt []byte, trustedCAs []byte
 			require.NotNil(t, podItem.Spec)
 			require.NotEmpty(t, podItem.Spec.Containers)
 
-			certs := string(agCrt) + "\n" + string(trustedCAs)
+			certs := string(agCrt()) + "\n" + string(trustedCAs)
 
-			if string(agCrt) == "" && string(trustedCAs) == "" {
+			if string(agCrt()) == "" && string(trustedCAs) == "" {
 				checkFileNotFound(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomPemPath)
 			} else {
 				checkFileContents(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomPemPath, certs)
@@ -63,11 +63,11 @@ func checkSampleContainer(sampleApp *sample.App, agCrt []byte, trustedCAs []byte
 	}
 }
 
-func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrt []byte, trustedCAs []byte) {
+func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrt func() []byte, trustedCAs []byte) {
 	builder.Assess("certificates are propagated to OneAgent containers", checkOneAgentContainer(agCrt, trustedCAs))
 }
 
-func checkOneAgentContainer(agCrt []byte, trustedCAs []byte) features.Func {
+func checkOneAgentContainer(agCrt func() []byte, trustedCAs []byte) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		// TODO: when OneAgent ticket is done, probably the same pem files as in case of sample container
 

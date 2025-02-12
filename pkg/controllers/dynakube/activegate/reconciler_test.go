@@ -163,7 +163,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ capability.Capability) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
+			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
 			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *value.Source) controllers.Reconciler {
@@ -184,7 +184,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ capability.Capability) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
+			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
 			newCustomPropertiesReconcilerFunc: func(_ string, customPropertiesSource *value.Source) controllers.Reconciler {
@@ -545,7 +545,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			newStatefulsetReconcilerFunc: func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ capability.Capability) controllers.Reconciler {
 				return fakeReconciler
 			},
-			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
+			newCapabilityReconcilerFunc: func(_ client.Client, _ capability.Capability, _ *dynakube.DynaKube, _ controllers.Reconciler, _ controllers.Reconciler, _ controllers.Reconciler) controllers.Reconciler {
 				return fakeReconciler
 			},
 			newCustomPropertiesReconcilerFunc: func(_ string, _ *value.Source) controllers.Reconciler {

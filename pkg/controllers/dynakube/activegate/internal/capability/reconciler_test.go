@@ -93,8 +93,9 @@ func TestReconcile(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithService)
 		mockStatefulSetReconciler := getMockReconciler(t, nil)
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
+		mockTlsSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
@@ -107,8 +108,9 @@ func TestReconcile(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t, errors.New(""))
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
+		mockTlsSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
@@ -121,8 +123,9 @@ func TestReconcile(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t)
 		mockCustompropertiesReconciler := getMockReconciler(t, errors.New(""))
+		mockTlsSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
@@ -134,8 +137,9 @@ func TestReconcile(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t, errors.New(""))
 		mockCustompropertiesReconciler := getMockReconciler(t, errors.New(""))
+		mockTlsSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
@@ -145,8 +149,9 @@ func TestReconcile(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithService)
 		mockStatefulSetReconciler := getMockReconciler(t, nil)
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
+		mockTlsSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
@@ -166,8 +171,9 @@ func TestReconcile(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t, nil)
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
+		mockTlsSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
@@ -191,9 +197,10 @@ func TestCreateOrUpdateService(t *testing.T) {
 	dk := buildDynakube(capabilitiesWithService)
 	mockStatefulSetReconciler := getMockReconciler(t, nil)
 	mockCustompropertiesReconciler := getMockReconciler(t, nil)
+	mockTlsSecretReconciler := getMockReconciler(t, nil)
 
 	t.Run(`create service works`, func(t *testing.T) {
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		service := &corev1.Service{}
@@ -210,7 +217,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		assert.NotNil(t, service)
 	})
 	t.Run(`ports get updated`, func(t *testing.T) {
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		err := r.createOrUpdateService(context.Background())
@@ -238,7 +245,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		require.NotEqual(t, actualService.Spec.Ports, service.Spec.Ports)
 	})
 	t.Run(`labels get updated`, func(t *testing.T) {
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
 		err := r.createOrUpdateService(context.Background())
@@ -270,8 +277,9 @@ func TestPortsAreOutdated(t *testing.T) {
 	dk := buildDynakube(capabilitiesWithService)
 	mockStatefulSetReconciler := getMockReconciler(t, nil)
 	mockCustompropertiesReconciler := getMockReconciler(t, nil)
+	mockTlsSecretReconciler := getMockReconciler(t, nil)
 
-	r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+	r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 	verifyReconciler(t, r)
 
 	desiredService := CreateService(r.dk, r.capability.ShortName())
@@ -298,7 +306,9 @@ func TestLabelsAreOutdated(t *testing.T) {
 	dk := buildDynakube(capabilitiesWithService)
 	mockStatefulSetReconciler := getMockReconciler(t, nil)
 	mockCustompropertiesReconciler := getMockReconciler(t, nil)
-	r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler).(*Reconciler)
+	mockTlsSecretReconciler := getMockReconciler(t, nil)
+
+	r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 	verifyReconciler(t, r)
 
 	desiredService := CreateService(r.dk, r.capability.ShortName())

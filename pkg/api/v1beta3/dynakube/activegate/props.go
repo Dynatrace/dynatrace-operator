@@ -10,6 +10,7 @@ import (
 
 const (
 	TenantSecretSuffix            = "-activegate-tenant-secret"
+	TlsSecretSuffix               = "-activegate-tls-secret"
 	ConnectionInfoConfigMapSuffix = "-activegate-connection-info"
 	AuthTokenSecretSuffix         = "-activegate-authtoken-secret"
 	DefaultImageRegistrySubPath   = "/linux/activegate"
@@ -21,6 +22,10 @@ func (ag *Spec) SetApiUrl(apiUrl string) {
 
 func (ag *Spec) SetName(name string) {
 	ag.name = name
+}
+
+func (ag *Spec) SetTrustedCAs(name string) {
+	ag.trustedCAs = name
 }
 
 func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
@@ -93,7 +98,7 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 }
 
 func (ag *Spec) HasCaCert() bool {
-	return ag.IsEnabled() && ag.TlsSecretName != ""
+	return ag.IsEnabled() && (ag.TlsSecretName != "" || ag.TlsSecretName == "" && ag.trustedCAs != "")
 }
 
 // ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
@@ -104,6 +109,14 @@ func (ag *Spec) GetTenantSecretName() string {
 // ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
 func (ag *Spec) GetAuthTokenSecretName() string {
 	return ag.name + AuthTokenSecretSuffix
+}
+
+func (ag *Spec) GetTlsSecretName() string {
+	if ag.TlsSecretName != "" {
+		return ag.TlsSecretName
+	}
+
+	return ag.name + TlsSecretSuffix
 }
 
 func (ag *Spec) GetConnectionInfoConfigMapName() string {
