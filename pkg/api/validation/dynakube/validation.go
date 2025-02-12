@@ -52,11 +52,8 @@ var (
 		extensionControllerImage,
 		extensionControllerPVCStorageDevice,
 		tooManyAGReplicas,
-		missingKSPMDependency,
 		missingKSPMImage,
 		missingLogMonitoringImage,
-		logMonitoringWithoutK8SMonitoring,
-		extensionsWithoutK8SMonitoring,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -66,6 +63,9 @@ var (
 		ignoredLogMonitoringTemplate,
 		conflictingApiUrlForExtensions,
 		publicImageSetWithoutReadOnlyMode,
+		logMonitoringWithoutK8SMonitoring,
+		kspmWithoutK8SMonitoring,
+		extensionsWithoutK8SMonitoring,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedApiUrl,

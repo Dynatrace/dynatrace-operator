@@ -509,7 +509,7 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 	})
 	t.Run("allow dk with hostMon without csi and no custom image", func(t *testing.T) {
 		setupDisabledCSIEnv(t)
-		assertAllowed(t,
+		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
@@ -521,12 +521,39 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 			})
 	})
 	t.Run("allow dk with hostMon with csi and custom image", func(t *testing.T) {
-		assertAllowed(t, &dynakube.DynaKube{
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
 				OneAgent: dynakube.OneAgentSpec{
 					HostMonitoring: &dynakube.HostInjectSpec{
+						Image: "test/image/test-image:some-tag",
+					},
+				},
+			},
+		})
+	})
+	t.Run("allow dk with classicFullStack without csi and custom image", func(t *testing.T) {
+		setupDisabledCSIEnv(t)
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
+						Image: "test/image/test-image:some-tag",
+					},
+				},
+			},
+		})
+	})
+	t.Run("allow dk with classicFullStack with csi and custom image", func(t *testing.T) {
+		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynakube.OneAgentSpec{
+					ClassicFullStack: &dynakube.HostInjectSpec{
 						Image: "test/image/test-image:some-tag",
 					},
 				},
