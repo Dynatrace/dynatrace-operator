@@ -114,7 +114,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			continue
 		}
 
-		oldPath := checker.path.OsAgentDir(tenantUUID)
+		oldPath := checker.path.OldOsAgentDir(tenantUUID)
 
 		oldExists, err := checker.fs.DirExists(oldPath)
 		if err != nil {
