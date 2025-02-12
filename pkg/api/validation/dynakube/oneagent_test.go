@@ -478,14 +478,14 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 	}
 
 	for _, validVersion := range validVersions {
-		dk.Spec.OneAgent.ClassicFullStack.Version = validVersion
+		dk.OneAgent().ClassicFullStack.Version = validVersion
 		t.Run(fmt.Sprintf("OneAgent custom version %s is allowed", validVersion), func(t *testing.T) {
 			assertAllowed(t, &dk)
 		})
 	}
 
 	for _, invalidVersion := range invalidVersions {
-		dk.Spec.OneAgent.ClassicFullStack.Version = invalidVersion
+		dk.OneAgent().ClassicFullStack.Version = invalidVersion
 		t.Run(fmt.Sprintf("OneAgent custom version %s is not allowed", invalidVersion), func(t *testing.T) {
 			assertDenied(t, []string{versionInvalidMessage}, &dk)
 		})
@@ -540,8 +540,8 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{
 						Image: "test/image/test-image:some-tag",
 					},
 				},
@@ -553,8 +553,8 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynakube.OneAgentSpec{
-					ClassicFullStack: &dynakube.HostInjectSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{
 						Image: "test/image/test-image:some-tag",
 					},
 				},
