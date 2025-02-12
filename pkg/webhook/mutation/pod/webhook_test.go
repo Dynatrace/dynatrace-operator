@@ -3,7 +3,6 @@ package pod
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -17,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -413,7 +413,7 @@ func createFailPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
 	mutator := webhookmock.NewPodMutator(t)
 	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
-	mutator.On("Mutate", mock.Anything, mock.Anything).Return(fmt.Errorf("BOOM")).Maybe()
+	mutator.On("Mutate", mock.Anything, mock.Anything).Return(errors.New("BOOM")).Maybe()
 	mutator.On("Reinvoke", mock.Anything).Return(false).Maybe()
 
 	return mutator

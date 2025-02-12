@@ -1,8 +1,7 @@
 package otelcgen
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/collector/component"
 )
 
@@ -64,7 +63,7 @@ func (c *Config) buildReceivers(protocols []string) (map[component.ID]component.
 		case OtlpProtocol:
 			receivers[OtlpID] = c.buildReceiverComponent(OtlpID)
 		default:
-			return nil, fmt.Errorf("unknown protocol: %s", p)
+			return nil, errors.Errorf("unknown protocol: %s", p)
 		}
 	}
 
