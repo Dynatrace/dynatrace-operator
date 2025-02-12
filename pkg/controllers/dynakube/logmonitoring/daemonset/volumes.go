@@ -114,6 +114,7 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: dockerLogsVolumePath,
+					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
@@ -122,6 +123,7 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: podLogsVolumePath,
+					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
@@ -130,6 +132,7 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: containerLogsVolumePath,
+					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
