@@ -14,8 +14,8 @@ entries:
       name: 0sewa0
     - email: christoph.muellner@dynatrace.com
       name: chrismuellner
-    - email: lukas.hinterreiter@dynatrace.com
-      name: luhi-DT
+    - email: stefan.hauth@dynatrace.com
+      name: StefanHauth
     name: dynatrace-operator
     sources:
     - https://github.com/Dynatrace/dynatrace-operator
