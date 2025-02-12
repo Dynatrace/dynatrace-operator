@@ -3,7 +3,6 @@ package image
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"path"
 	"path/filepath"
 
@@ -118,7 +117,7 @@ func (installer *Installer) unpackOciImage(layers []containerv1.Layer, imageCach
 		case types.OCILayerZStd:
 			return errors.New("OCILayerZStd is not implemented")
 		default:
-			return fmt.Errorf("media type %s is not implemented", mediaType)
+			return errors.Errorf("media type %s is not implemented", mediaType)
 		}
 	}
 

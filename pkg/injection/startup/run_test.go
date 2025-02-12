@@ -3,6 +3,7 @@ package startup
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -157,7 +158,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.installer.(*installermock.Installer).
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
-			Return(false, fmt.Errorf("BOOM"))
+			Return(false, errors.New("BOOM"))
 
 		err := runner.installOneAgent(ctx)
 
@@ -180,7 +181,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*dtclientmock.Client).
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
-			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
+			Return(&dtclient.ProcessModuleConfig{}, errors.New("BOOM"))
 		runner.installer.(*installermock.Installer).
 			On("InstallAgent", mock.AnythingOfType("context.backgroundCtx"), consts.AgentBinDirMount).
 			Return(true, nil)
@@ -296,7 +297,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*dtclientmock.Client).
 			On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), uint(0)).
-			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
+			Return(&dtclient.ProcessModuleConfig{}, errors.New("BOOM"))
 
 		config, err := runner.getProcessModuleConfig(ctx)
 		require.Error(t, err)

@@ -1,7 +1,6 @@
 package zip
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -70,7 +69,7 @@ func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) erro
 
 		// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
 		if !strings.HasPrefix(path, filepath.Clean(targetDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("illegal file path: %s", path)
+			return errors.Errorf("illegal file path: %s", path)
 		}
 
 		mode := file.Mode()

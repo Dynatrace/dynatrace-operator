@@ -3,7 +3,6 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -163,7 +162,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(ctx context.Context, prevRevi
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error while requesting process module config: %w", err)
+		return nil, errors.WithMessage(err, "error while requesting process module config")
 	}
 
 	defer utils.CloseBodyAfterRequest(resp)
@@ -179,7 +178,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(ctx context.Context, prevRevi
 func (dtc *dynatraceClient) createProcessModuleConfigRequest(ctx context.Context, prevRevision uint) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %w", err)
+		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 
 	query := req.URL.Query()

@@ -3,7 +3,6 @@ package troubleshoot
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -17,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -366,7 +366,7 @@ func TestImagePullablePullSecret(t *testing.T) {
 func getPullSecretToken(pullSecret *corev1.Secret) (string, error) {
 	secretBytes, hasPullSecret := pullSecret.Data[dtpullsecret.DockerConfigJson]
 	if !hasPullSecret {
-		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", pullSecret.Name)
+		return "", errors.Errorf("token .dockerconfigjson does not exist in secret '%s'", pullSecret.Name)
 	}
 
 	secretStr := string(secretBytes)

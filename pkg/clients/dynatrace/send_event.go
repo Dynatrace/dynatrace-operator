@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
@@ -45,7 +44,7 @@ func (dtc *dynatraceClient) SendEvent(ctx context.Context, eventData *EventData)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
-		return fmt.Errorf("error initializing http request: %w", err)
+		return errors.WithMessage(err, "error initializing http request")
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -53,7 +52,7 @@ func (dtc *dynatraceClient) SendEvent(ctx context.Context, eventData *EventData)
 
 	response, err := dtc.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
 	defer utils.CloseBodyAfterRequest(response)

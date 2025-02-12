@@ -2,7 +2,6 @@ package apimonitoring
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -73,11 +72,11 @@ func createReadOnlyReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEnti
 		mock.AnythingOfType("string")).
 		Return(getSettingsResponse, nil)
 	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, "KUBERNETES_CLUSTER-119C75CCDA94799F").
-		Return("", fmt.Errorf("BOOM, readonly only client is used"))
+		Return("", errors.New("BOOM, readonly only client is used"))
 	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, "test-MEID").
-		Return("", fmt.Errorf("BOOM, readonly only client is used"))
+		Return("", errors.New("BOOM, readonly only client is used"))
 	mockClient.On("CreateOrUpdateKubernetesAppSetting", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
-		Return("", fmt.Errorf("BOOM, readonly only client is used"))
+		Return("", errors.New("BOOM, readonly only client is used"))
 
 	for _, call := range mockClient.ExpectedCalls {
 		call.Maybe()
