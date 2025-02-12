@@ -86,8 +86,9 @@ type Spec struct {
 	// +kubebuilder:validation:Optional
 	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 
-	name   string
-	apiUrl string
+	name       string
+	apiUrl     string
+	trustedCAs string
 
 	// The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
 	// server.p12: certificate+key pair in pkcs12 format

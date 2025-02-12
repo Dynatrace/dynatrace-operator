@@ -21,20 +21,22 @@ type Reconciler struct {
 	capability                 capability.Capability
 	statefulsetReconciler      controllers.Reconciler
 	customPropertiesReconciler controllers.Reconciler
+	tlsSecretReconciler        controllers.Reconciler
 	dk                         *dynakube.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler {
+func NewReconciler(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler, tlsSecretReconciler controllers.Reconciler) controllers.Reconciler { //nolint:revive
 	return &Reconciler{
 		statefulsetReconciler:      statefulsetReconciler,
 		customPropertiesReconciler: customPropertiesReconciler,
+		tlsSecretReconciler:        tlsSecretReconciler,
 		capability:                 capability,
 		dk:                         dk,
 		client:                     clt,
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dk *dynakube.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler, tlsSecretReconciler controllers.Reconciler) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.customPropertiesReconciler.Reconcile(ctx)
@@ -48,6 +50,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	err = r.setAGServiceIPs(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = r.tlsSecretReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}

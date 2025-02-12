@@ -7,6 +7,7 @@ import (
 func (dk *DynaKube) ActiveGate() *activegate.ActiveGate {
 	dk.Spec.ActiveGate.SetApiUrl(dk.ApiUrl())
 	dk.Spec.ActiveGate.SetName(dk.Name)
+	dk.Spec.ActiveGate.SetTrustedCAs(dk.Spec.TrustedCAs)
 	dk.Spec.ActiveGate.SetExtensionsDependency(dk.IsExtensionsEnabled())
 	dk.Spec.ActiveGate.SetOTLPingestDependency(dk.IsOTLPingestEnabled())
 
