@@ -10,6 +10,7 @@ import (
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
@@ -180,8 +181,9 @@ func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 func (r *Reconciler) createCapability(ctx context.Context, agCapability capability.Capability) error {
 	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dk.ActiveGate().GetServiceAccountOwner(), agCapability.Properties().CustomProperties) //nolint:typeCheck
 	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.dk, agCapability)                                                        //nolint:typeCheck
+	tlsSecretReconciler := tls.NewReconciler(r.client, r.apiReader, r.dk)
 
-	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dk, statefulsetReconciler, customPropertiesReconciler)
+	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dk, statefulsetReconciler, customPropertiesReconciler, tlsSecretReconciler)
 
 	return capabilityReconciler.Reconcile(ctx)
 }

@@ -22,11 +22,11 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		volumeMounts = append(volumeMounts, getRootMount())
 	}
 
-	if dk != nil && dk.Spec.TrustedCAs != "" {
+	if dk != nil && dk.Spec.TrustedCAs != "" && !dk.FeatureOneAgentIgnoreTrustedCAs() {
 		volumeMounts = append(volumeMounts, getClusterCaCertVolumeMount())
 	}
 
-	if dk != nil && dk.ActiveGate().HasCaCert() {
+	if dk != nil && dk.ActiveGate().HasCaCert() && !dk.FeatureOneAgentIgnoreActiveGateTlsCertificate() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 
@@ -98,11 +98,11 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		volumes = append(volumes, getCSIStorageVolume(dk))
 	}
 
-	if dk.Spec.TrustedCAs != "" {
+	if dk.Spec.TrustedCAs != "" && !dk.FeatureOneAgentIgnoreTrustedCAs() {
 		volumes = append(volumes, getCertificateVolume(dk))
 	}
 
-	if dk.ActiveGate().HasCaCert() {
+	if dk.ActiveGate().HasCaCert() && !dk.FeatureOneAgentIgnoreActiveGateTlsCertificate() {
 		volumes = append(volumes, getActiveGateCaCertVolume(dk))
 	}
 
@@ -152,7 +152,7 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 		Name: activeGateCaCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: dk.Spec.ActiveGate.TlsSecretName,
+				SecretName: dk.Spec.ActiveGate.GetTlsSecretName(),
 				Items: []corev1.KeyToPath{
 					{
 						Key:  "server.crt",
