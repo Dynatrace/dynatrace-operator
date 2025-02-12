@@ -22,15 +22,12 @@ const (
 	dtLogVolumeMountPath = "/var/log/dynatrace"
 
 	// for the logs that the logmonitoring will ingest
-	podLogsVolumeName         = "var-log-pods"
-	podLogsVolumePath         = "/var/log/pods"
-	dockerLogsVolumeName      = "docker-container-logs"
-	dockerLogsVolumePath      = "/var/lib/docker/containers"
-	containerLogsVolumeName   = "container-logs"
-	containerLogsVolumePath   = "/var/log/containers"
-	journalLogsVolumeName     = "var-log-journal"
-	journalLogsVolumePath     = "/var/log/journal"
-	journalLogsVolumeHostPath = "/var/log"
+	podLogsVolumeName       = "var-log-pods"
+	podLogsVolumePath       = "/var/log/pods"
+	dockerLogsVolumeName    = "docker-container-logs"
+	dockerLogsVolumePath    = "/var/lib/docker/containers"
+	containerLogsVolumeName = "container-logs"
+	containerLogsVolumePath = "/var/log/containers"
 )
 
 // getConfigVolumeMount provides the VolumeMount for the deployment.conf
@@ -106,11 +103,6 @@ func getIngestVolumeMounts() []corev1.VolumeMount {
 			MountPath: containerLogsVolumePath,
 			ReadOnly:  true,
 		},
-		{
-			Name:      journalLogsVolumeName,
-			MountPath: journalLogsVolumePath,
-			ReadOnly:  true,
-		},
 	}
 }
 
@@ -122,7 +114,6 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: dockerLogsVolumePath,
-					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
@@ -131,7 +122,6 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: podLogsVolumePath,
-					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
@@ -140,16 +130,6 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: containerLogsVolumePath,
-					Type: ptr.To(corev1.HostPathDirectory),
-				},
-			},
-		},
-		{
-			Name: journalLogsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: journalLogsVolumeHostPath,
-					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
 		},
