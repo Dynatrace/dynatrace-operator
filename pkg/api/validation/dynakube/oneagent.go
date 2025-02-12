@@ -130,9 +130,11 @@ func publicImageSetWithoutReadOnlyMode(_ context.Context, v *Validator, dk *dyna
 		if dk.UseReadOnlyOneAgents() {
 			return ""
 		}
+
 		if dk.ClassicFullStackMode() {
 			return ""
 		}
+
 		return warningPublicImageWithWrongConfig
 	}
 
