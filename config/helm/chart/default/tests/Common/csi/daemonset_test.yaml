@@ -185,7 +185,7 @@ tests:
                   failureThreshold: 5
                   httpGet:
                     path: "/healthz"
-                    port: healthz
+                    port: 9808
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 15
@@ -193,8 +193,6 @@ tests:
                   timeoutSeconds: 10
                 name: server
                 ports:
-                  - containerPort: 9808
-                    name: healthz
                   - containerPort: 8080
                     name: metrics
                 resources:
