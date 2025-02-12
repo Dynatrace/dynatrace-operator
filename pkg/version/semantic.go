@@ -47,7 +47,7 @@ func ExtractSemanticVersion(versionString string) (SemanticVersion, error) {
 	version := versionRegex.FindStringSubmatch(versionString)
 
 	if len(version) < maxStringSubMatch {
-		return SemanticVersion{}, fmt.Errorf("version malformed: %s", versionString)
+		return SemanticVersion{}, errors.Errorf("version malformed: %s", versionString)
 	}
 
 	major, err := strconv.Atoi(version[1])

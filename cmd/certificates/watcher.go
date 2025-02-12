@@ -3,7 +3,6 @@ package certificates
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -77,7 +76,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 	if _, err = watcher.fs.Stat(watcher.certificateDirectory); os.IsNotExist(err) {
 		err = watcher.fs.MkdirAll(watcher.certificateDirectory, permDirUser)
 		if err != nil {
-			return false, fmt.Errorf("could not create cert directory: %w", err)
+			return false, errors.WithMessage(err, "could not create cert directory")
 		}
 	}
 

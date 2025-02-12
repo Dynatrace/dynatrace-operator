@@ -34,6 +34,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -78,14 +79,14 @@ func (srv *Server) Start(ctx context.Context) error {
 	endpoint, err := url.Parse(srv.opts.Endpoint)
 
 	if err != nil {
-		return fmt.Errorf("failed to parse endpoint '%s': %w", srv.opts.Endpoint, err)
+		return errors.WithMessage(err, fmt.Sprintf("failed to parse endpoint '%s'", srv.opts.Endpoint))
 	}
 
 	addr := endpoint.Host + endpoint.Path
 
 	if endpoint.Scheme == "unix" {
 		if err := srv.fs.Remove(addr); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to remove old endpoint on '%s': %w", addr, err)
+			return errors.WithMessage(err, fmt.Sprintf("failed to remove old endpoint on '%s'", addr))
 		}
 	}
 
@@ -98,7 +99,7 @@ func (srv *Server) Start(ctx context.Context) error {
 
 	listener, err := net.Listen(endpoint.Scheme, addr)
 	if err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
+		return errors.WithMessage(err, "failed to start server")
 	}
 
 	maxGrpcRequests, err := strconv.Atoi(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"))

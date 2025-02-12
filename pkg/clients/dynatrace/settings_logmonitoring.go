@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
+	"github.com/pkg/errors"
 )
 
 type IngestRuleMatchers struct {
@@ -57,12 +57,12 @@ func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body
 	defer utils.CloseBodyAfterRequest(res)
 
 	if err != nil {
-		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return "", errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
 	resData, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "", fmt.Errorf("error reading response: %w", err)
+		return "", errors.WithMessage(err, "error reading response")
 	}
 
 	if res.StatusCode != http.StatusOK &&
@@ -78,7 +78,7 @@ func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body
 	}
 
 	if len(resDataJson) != 1 {
-		return "", fmt.Errorf("response is not containing exactly one entry %s", resData)
+		return "", errors.Errorf("response is not containing exactly one entry %s", resData)
 	}
 
 	return resDataJson[0].ObjectId, nil

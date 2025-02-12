@@ -3,7 +3,6 @@ package edgeconnect
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
@@ -40,7 +39,7 @@ func (c *client) GetConnectionSettings() ([]EnvironmentSetting, error) {
 
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %w", err)
+		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 
 	q := req.URL.Query()
@@ -53,19 +52,19 @@ func (c *client) GetConnectionSettings() ([]EnvironmentSetting, error) {
 	defer utils.CloseBodyAfterRequest(response)
 
 	if err != nil {
-		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return nil, errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
 	responseData, err := c.getSettingsApiResponseData(response)
 	if err != nil {
-		return nil, fmt.Errorf("error getting server response data: %w", err)
+		return nil, errors.WithMessage(err, "error getting server response data")
 	}
 
 	var resDataJson EnvironmentSettingsResponse
 
 	err = json.Unmarshal(responseData, &resDataJson)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response body: %w", err)
+		return nil, errors.WithMessage(err, "error parsing response body")
 	}
 
 	return resDataJson.Items, nil
@@ -79,7 +78,7 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodPost, c.getSettingsObjectsUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
-		return fmt.Errorf("error initializing http request: %w", err)
+		return errors.WithMessage(err, "error initializing http request")
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -89,13 +88,13 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 	defer utils.CloseBodyAfterRequest(response)
 
 	if err != nil {
-		return fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
 	_, err = c.getSettingsApiResponseData(response)
 
 	if err != nil {
-		return fmt.Errorf("error reading response data: %w", err)
+		return errors.WithMessage(err, "error reading response data")
 	}
 
 	return nil
@@ -109,14 +108,14 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodPut, c.getSettingsObjectsIdUrl(*es.ObjectId), bytes.NewBuffer(jsonStr))
 	if err != nil {
-		return fmt.Errorf("error initializing http request: %w", err)
+		return errors.WithMessage(err, "error initializing http request")
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
 	defer utils.CloseBodyAfterRequest(response)
@@ -124,7 +123,7 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 	_, err = c.getSettingsApiResponseData(response)
 
 	if err != nil {
-		return fmt.Errorf("error reading response data: %w", err)
+		return errors.WithMessage(err, "error reading response data")
 	}
 
 	return nil
@@ -133,7 +132,7 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 func (c *client) DeleteConnectionSetting(objectId string) error {
 	req, err := http.NewRequestWithContext(c.ctx, http.MethodDelete, c.getSettingsObjectsIdUrl(objectId), nil)
 	if err != nil {
-		return fmt.Errorf("error initializing http request: %w", err)
+		return errors.WithMessage(err, "error initializing http request")
 	}
 
 	response, err := c.httpClient.Do(req)
@@ -141,13 +140,13 @@ func (c *client) DeleteConnectionSetting(objectId string) error {
 	defer utils.CloseBodyAfterRequest(response)
 
 	if err != nil {
-		return fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
 	_, err = c.getSettingsApiResponseData(response)
 
 	if err != nil {
-		return fmt.Errorf("error reading response data: %w", err)
+		return errors.WithMessage(err, "error reading response data")
 	}
 
 	return nil
