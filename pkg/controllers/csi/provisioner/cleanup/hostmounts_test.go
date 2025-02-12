@@ -2,6 +2,7 @@ package cleanup
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -47,27 +48,30 @@ func TestRemoveHostMounts(t *testing.T) {
 			createHostMonDk(t, "hostmon", apiUrl1),
 			createCloudNativeDk(t, "cloudnative", apiUrl2),
 		}
-		hostFolders := []string{tenantUUID1, dks[0].Name, dks[1].Name, "random-name1", "random-name2"}
+		folders := []string{
+			cleaner.path.OldOsAgentDir(tenantUUID1),
+			cleaner.path.OsAgentDir(dks[0].Name),
+			cleaner.path.OsAgentDir(dks[1].Name),
+			cleaner.path.OldOsAgentDir("random-name1"),
+			cleaner.path.OsAgentDir("random-name2"),
+		}
 
-		for _, folder := range hostFolders {
-			cleaner.createHostDirs(t, folder)
-
-			expectedDir := cleaner.path.OsAgentDir(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+		for _, folder := range folders {
+			err := cleaner.fs.MkdirAll(folder, os.ModePerm)
+			require.NoError(t, err)
 		}
 
 		cleaner.removeHostMounts(dks, fsState{
-			hostDks: hostFolders,
+			hostDks: []string{dks[0].Name, dks[1].Name, tenantUUID1, "random-name1", "random-name2"},
 		})
 
-		for _, folder := range hostFolders[:3] {
-			exists, _ := cleaner.fs.Exists(cleaner.path.OsAgentDir(folder))
+		for _, folder := range folders[:3] {
+			exists, _ := cleaner.fs.Exists(folder)
 			require.True(t, exists)
 		}
 
-		for _, folder := range hostFolders[3:] {
-			exists, _ := cleaner.fs.Exists(cleaner.path.OsAgentDir(folder))
+		for _, folder := range folders[3:] {
+			exists, _ := cleaner.fs.Exists(folder)
 			require.False(t, exists)
 		}
 	})
@@ -155,7 +159,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 			createAppMonDk(t, "appmon", apiUrl1),
 		}
 
-		cleaner.createHostDirs(t, tenantUUID1)
+		cleaner.createDeprecatedHostDirs(t, tenantUUID1)
 		cleaner.createHostDirs(t, dks[0].Name)
 
 		relevantDirs := cleaner.collectRelevantHostDirs(dks)
@@ -165,7 +169,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 		assert.Contains(t, relevantDirs, cleaner.path.OsAgentDir(dks[0].Name))
 		assert.Contains(t, relevantDirs, cleaner.path.OsAgentDir(dks[1].Name))
 		assert.NotContains(t, relevantDirs, cleaner.path.OsAgentDir(dks[2].Name))
-		assert.Contains(t, relevantDirs, cleaner.path.OsAgentDir(tenantUUID1))
+		assert.Contains(t, relevantDirs, cleaner.path.OldOsAgentDir(tenantUUID1))
 		assert.NotContains(t, relevantDirs, cleaner.path.OsAgentDir(tenantUUID2))
 	})
 }

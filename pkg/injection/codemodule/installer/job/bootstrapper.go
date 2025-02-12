@@ -16,6 +16,9 @@ const (
 
 	volumeName       = "dynatrace-codemodules"
 	codeModuleSource = "/opt/dynatrace/oneagent"
+
+	activeDeadlineSeconds   int64 = 600 // 10 min, after which the Job will be put into a Failed state
+	ttlSecondsAfterFinished int32 = 10  // 10 sec after the Job is put into a Succeeded or Failed state the Job and related Pods will be terminated
 )
 
 func (inst *Installer) buildJobName() string {
@@ -80,6 +83,8 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		jobutil.SetVolumes([]corev1.Volume{hostVolume}),
 		jobutil.SetOnFailureRestartPolicy(),
 		jobutil.SetAutomountServiceAccountToken(false),
+		jobutil.SetActiveDeadlineSeconds(activeDeadlineSeconds),
+		jobutil.SetTTLSecondsAfterFinished(ttlSecondsAfterFinished),
 	)
 }
 

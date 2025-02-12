@@ -11,8 +11,16 @@ type PathResolver struct {
 	RootDir string
 }
 
+func (pr PathResolver) Base(name string) string {
+	return filepath.Join(pr.RootDir, name)
+}
+
+func (pr PathResolver) DynaKubesBaseDir() string {
+	return pr.Base(dtcsi.SharedDynaKubesDir)
+}
+
 func (pr PathResolver) DynaKubeDir(dynakubeName string) string {
-	return filepath.Join(pr.RootDir, dynakubeName)
+	return filepath.Join(pr.DynaKubesBaseDir(), dynakubeName)
 }
 
 func (pr PathResolver) OsAgentDir(dynakubeName string) string {
@@ -20,7 +28,7 @@ func (pr PathResolver) OsAgentDir(dynakubeName string) string {
 }
 
 func (pr PathResolver) AgentSharedBinaryDirBase() string {
-	return filepath.Join(pr.RootDir, dtcsi.SharedAgentBinDir)
+	return pr.Base(dtcsi.SharedAgentBinDir)
 }
 
 func (pr PathResolver) AgentJobWorkDirBase() string {
@@ -40,7 +48,7 @@ func (pr PathResolver) LatestAgentBinaryForDynaKube(dynakubeName string) string 
 }
 
 func (pr PathResolver) AgentTempUnzipRootDir() string {
-	return filepath.Join(pr.RootDir, "tmp_zip")
+	return pr.Base("tmp_zip")
 }
 
 func (pr PathResolver) AgentTempUnzipDir() string {
@@ -65,7 +73,7 @@ func (pr PathResolver) OverlayVarPodInfo(volumeID string) string {
 
 // AppMountsBaseDir replaces the AgentRunDir, the base directory where all the volumes for the app-mounts are stored
 func (pr PathResolver) AppMountsBaseDir() string {
-	return filepath.Join(pr.RootDir, dtcsi.SharedAppMountsDir)
+	return pr.Base(dtcsi.SharedAppMountsDir)
 }
 
 // AppMountForID replaces AgentRunDirForVolume, the directory where a given app-mount volume is stored
@@ -75,7 +83,7 @@ func (pr PathResolver) AppMountForID(volumeID string) string {
 
 // AppMountForDK is a directory where a given app-mount volume is stored under a certain dynakube
 func (pr PathResolver) AppMountForDK(dkName string) string {
-	return filepath.Join(pr.RootDir, dkName, dtcsi.SharedAppMountsDir)
+	return filepath.Join(pr.DynaKubeDir(dkName), dtcsi.SharedAppMountsDir)
 }
 
 // AppMountMappedDir replaces OverlayMappedDir, the directory where the overlay layers combine into
@@ -98,8 +106,13 @@ func (pr PathResolver) AppMountPodInfoDir(dkName, podNamespace, podName string) 
 }
 
 // Deprecated kept for future migration/cleanup
+func (pr PathResolver) TenantDir(tenantUUID string) string {
+	return pr.Base(tenantUUID)
+}
+
+// Deprecated kept for future migration/cleanup
 func (pr PathResolver) AgentRunDir(dynakubeName string) string {
-	return filepath.Join(pr.DynaKubeDir(dynakubeName), dtcsi.AgentRunDir)
+	return filepath.Join(pr.TenantDir(dynakubeName), dtcsi.AgentRunDir)
 }
 
 // Deprecated kept for future migration/cleanup
@@ -123,8 +136,13 @@ func (pr PathResolver) OverlayWorkDir(dynakubeName string, volumeId string) stri
 }
 
 // Deprecated kept for future migration/cleanup
+func (pr PathResolver) OldOsAgentDir(tenantUUID string) string {
+	return filepath.Join(pr.TenantDir(tenantUUID), "osagent")
+}
+
+// Deprecated kept for future migration/cleanup
 func (pr PathResolver) OldAgentConfigDir(tenantUUID string, dynakubeName string) string {
-	return filepath.Join(pr.DynaKubeDir(tenantUUID), dynakubeName, dtcsi.SharedAgentConfigDir)
+	return filepath.Join(pr.TenantDir(tenantUUID), dynakubeName, dtcsi.SharedAgentConfigDir)
 }
 
 // Deprecated kept for future migration/cleanup
