@@ -22,14 +22,15 @@ const (
 	dtLogVolumeMountPath = "/var/log/dynatrace"
 
 	// for the logs that the logmonitoring will ingest
-	podLogsVolumeName       = "var-log-pods"
-	podLogsVolumePath       = "/var/log/pods"
-	dockerLogsVolumeName    = "docker-container-logs"
-	dockerLogsVolumePath    = "/var/lib/docker/containers"
-	containerLogsVolumeName = "container-logs"
-	containerLogsVolumePath = "/var/log/containers"
-	journalLogsVolumeName   = "var-log"
-	journalLogsVolumePath   = "/var/log"
+	podLogsVolumeName         = "var-log-pods"
+	podLogsVolumePath         = "/var/log/pods"
+	dockerLogsVolumeName      = "docker-container-logs"
+	dockerLogsVolumePath      = "/var/lib/docker/containers"
+	containerLogsVolumeName   = "container-logs"
+	containerLogsVolumePath   = "/var/log/containers"
+	journalLogsVolumeName     = "var-log-journal"
+	journalLogsVolumePath     = "/var/log/journal"
+	journalLogsVolumeHostPath = "/var/log"
 )
 
 // getConfigVolumeMount provides the VolumeMount for the deployment.conf
@@ -147,7 +148,7 @@ func getIngestVolumes() []corev1.Volume {
 			Name: journalLogsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: journalLogsVolumePath,
+					Path: journalLogsVolumeHostPath,
 					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
