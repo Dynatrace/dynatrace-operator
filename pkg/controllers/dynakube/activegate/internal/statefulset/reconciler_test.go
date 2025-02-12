@@ -2,6 +2,7 @@ package statefulset
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -141,7 +142,7 @@ func TestReconcile(t *testing.T) {
 		r := createDefaultReconciler(t)
 		fakeClient := dynafake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				return fmt.Errorf("BOOM")
+				return errors.New("BOOM")
 			},
 		})
 		r.apiReader = fakeClient

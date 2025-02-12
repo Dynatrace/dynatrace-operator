@@ -2,13 +2,12 @@ package dynatrace
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -72,7 +71,7 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 			return GetRulesSettingsResponse{}, nil
 		}
 
-		return GetRulesSettingsResponse{}, errors.New(fmt.Errorf("error parsing response body: %w", err).Error())
+		return GetRulesSettingsResponse{}, errors.WithMessage(err, "error parsing response body")
 	}
 
 	return resDataJson, nil

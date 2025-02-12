@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
@@ -39,7 +38,7 @@ func (dtc *dynatraceClient) GetTokenScopes(ctx context.Context, token string) (T
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %w", err)
+		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -47,7 +46,7 @@ func (dtc *dynatraceClient) GetTokenScopes(ctx context.Context, token string) (T
 
 	resp, err := dtc.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return nil, errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
 	defer utils.CloseBodyAfterRequest(resp)
