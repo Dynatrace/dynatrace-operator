@@ -21,6 +21,7 @@ out_image="${image}:${tag}"
 
 # directory required by docker copy command
 mkdir -p third_party_licenses
+touch dynatrace-operator-bin-sbom.cdx.json
 
 if ! command -v docker 2>/dev/null; then
   CONTAINER_CMD=podman
@@ -41,3 +42,4 @@ ${CONTAINER_CMD} build "${OPERATOR_BUILD_PLATFORM}" . -f ./Dockerfile -t "${out_
   --label "quay.expires-after=14d"
 
 rm -rf third_party_licenses
+rm dynatrace-operator-bin-sbom.cdx.json

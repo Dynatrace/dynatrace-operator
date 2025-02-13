@@ -106,3 +106,4 @@ test/testdata/secrets/*
 local/
 
 permissions.md
+dynatrace-operator-bin-sbom.cdx.json
