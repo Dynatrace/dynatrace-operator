@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	errorTooManyAGReplicas  = `The Dynakube's specification specifies KSPM, but has more than one ActiveGate replica. Only one ActiveGate replica is allowed in combination with KSPM.`
-	errorKSPMMissingKubemon = `The Dynakube's specification specifies KSPM, but "kubernetes-monitoring" is not enabled on the Activegate.`
-	errorKSPMMissingImage   = `The Dynakube's specification specifies KSPM, but no image repository/tag is configured.`
+	errorTooManyAGReplicas    = `The Dynakube's specification specifies KSPM, but has more than one ActiveGate replica. Only one ActiveGate replica is allowed in combination with KSPM.`
+	warningKSPMMissingKubemon = "The Dynakube is configured with KSPM without an ActiveGate with `kubernetes-monitoring` enabled or the `automatic-kubernetes-monitoring` feature flag. You need to ensure that Kubernetes monitoring is setup for this cluster."
+	errorKSPMMissingImage     = `The Dynakube's specification specifies KSPM, but no image repository/tag is configured.`
 )
 
 func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -20,9 +20,9 @@ func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) s
 	return ""
 }
 
-func missingKSPMDependency(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func kspmWithoutK8SMonitoring(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.KSPM().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FeatureAutomaticKubernetesApiMonitoring()) {
-		return errorKSPMMissingKubemon
+		return warningKSPMMissingKubemon
 	}
 
 	return ""

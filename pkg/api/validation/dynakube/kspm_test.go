@@ -91,21 +91,27 @@ func TestMissingKSPMDependency(t *testing.T) {
 	})
 
 	t.Run("missing kubemon but kspm enabled", func(t *testing.T) {
-		assertDenied(t,
-			[]string{errorKSPMMissingKubemon},
+		assertAllowedWithWarnings(t, 1,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testApiUrl,
 					Kspm:       &kspm.Spec{},
 					ActiveGate: activegate.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
 				},
 			})
 	})
 
 	t.Run("both kspm and kubemon enabled, automatic k8s monitoring disabled", func(t *testing.T) {
-		assertDenied(t,
-			[]string{errorKSPMMissingKubemon},
+		assertAllowedWithWarnings(t, 2,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -135,8 +141,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 	})
 
 	t.Run("missing kubemon, automatic k8s monitoring disabled, but kspm enabled", func(t *testing.T) {
-		assertDenied(t,
-			[]string{errorKSPMMissingKubemon},
+		assertAllowedWithWarnings(t, 1,
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -149,6 +154,14 @@ func TestMissingKSPMDependency(t *testing.T) {
 					APIURL:     testApiUrl,
 					Kspm:       &kspm.Spec{},
 					ActiveGate: activegate.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
 				},
 			})
 	})

@@ -24,7 +24,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube specification specifies a read-only host file system while OneAgent has volume storage enabled.`
 
-	warningPublicImageWithWrongConfig = `Custom OneAgent image is only supported when CSI Driver is used.`
+	warningPublicImageWithWrongConfig = `You are using a custom OneAgent image without CSI driver. Only images from the tenant registry are supported."`
 
 	warningOneAgentInstallerEnvVars = `The environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please ensure you are using a supported image.`
 
@@ -128,7 +128,15 @@ func mapKeysToString(m map[string]bool, sep string) string {
 }
 
 func publicImageSetWithoutReadOnlyMode(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if !dk.OneAgent().IsReadOnlyOneAgentsMode() && dk.OneAgent().GetCustomImage() != "" {
+	if dk.OneAgent().GetCustomImage() != "" {
+		if dk.OneAgent().IsReadOnlyOneAgentsMode() {
+			return ""
+		}
+
+		if dk.OneAgent().IsClassicFullStackMode() {
+			return ""
+		}
+
 		return warningPublicImageWithWrongConfig
 	}
 
