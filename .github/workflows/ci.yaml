@@ -89,7 +89,7 @@ jobs:
         uses: golangci/golangci-lint-action@e0ebdd245eea59746bb0b28ea6a9871d3e35fbc9 # v6.3.3
         with:
           # renovate depName=github.com/golangci/golangci-lint
-          version: v1.64.4
+          version: v1.64.5
           args: --build-tags e2e --timeout 300s --out-${NO_FUTURE}format colored-line-number
       - name: Run deadcode
         id: deadcode
