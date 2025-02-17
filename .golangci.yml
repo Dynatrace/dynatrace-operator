@@ -298,10 +298,6 @@ linters:
 # - tagliatelle    # Checks the struct tags.
 # - testpackage    # Linter that makes you use a separate _test package.
 
-
-service:
-  golangci-lint-version: 1.55.x # use the fixed version to not introduce new linters unexpectedly
-
 issues:
   exclude-dirs:
     - pkg/api/v1alpha1/dynakube # legacy version, should not be changed
