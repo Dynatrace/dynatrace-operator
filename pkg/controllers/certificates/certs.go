@@ -7,11 +7,11 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
+	"github.com/pkg/errors"
 )
 
 const intSerialNumberLimit = 128
@@ -136,7 +136,7 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 	// Generate CA root certificate
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return fmt.Errorf("failed to generate serial number for root certificate: %w", err)
+		return errors.WithMessage(err, "failed to generate serial number for root certificate")
 	}
 
 	cs.rootPublicCert = &x509.Certificate{
@@ -166,7 +166,7 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 		cs.rootPrivateKey.Public(),
 		cs.rootPrivateKey)
 	if err != nil {
-		return fmt.Errorf("failed to generate root certificate: %w", err)
+		return errors.WithMessage(err, "failed to generate root certificate")
 	}
 
 	cs.Data[RootCertOld] = cs.Data[RootCert]
@@ -189,7 +189,7 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	// Generate server certificate
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return fmt.Errorf("failed to generate serial number for server certificate: %w", err)
+		return errors.WithMessage(err, "failed to generate serial number for server certificate")
 	}
 
 	tpl := &x509.Certificate{
@@ -215,7 +215,7 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 
 	serverPublicCertDER, err := x509.CreateCertificate(rand.Reader, tpl, cs.rootPublicCert, privateKey.Public(), cs.rootPrivateKey)
 	if err != nil {
-		return fmt.Errorf("failed to generate server certificate: %w", err)
+		return errors.WithMessage(err, "failed to generate server certificate")
 	}
 
 	cs.Data[ServerCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverPublicCertDER})
@@ -228,7 +228,7 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 func (cs *Certs) generatePrivateKey(dataKey string) (*ecdsa.PrivateKey, error) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate server private key: %w", err)
+		return nil, errors.WithMessage(err, "failed to generate server private key")
 	}
 
 	x509Encoded, err := x509.MarshalECPrivateKey(privateKey)

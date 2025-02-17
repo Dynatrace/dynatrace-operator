@@ -12,6 +12,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -131,9 +132,13 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
+		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
+
+		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 		assert.Equal(t, getTestCommunicationHosts(), dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
+		assert.Equal(t, tenantTokenHash, dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)

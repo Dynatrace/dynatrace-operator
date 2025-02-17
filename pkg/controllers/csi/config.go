@@ -16,10 +16,6 @@ limitations under the License.
 
 package dtcsi
 
-import (
-	"path/filepath"
-)
-
 const (
 	DataPath       = "/data"
 	DriverName     = "csi.oneagent.dynatrace.com"
@@ -32,14 +28,13 @@ const (
 	SharedAgentBinDir    = "codemodules"
 	SharedJobWorkDir     = "work"
 	SharedAppMountsDir   = "appmounts"
+	SharedDynaKubesDir   = "_dynakubes"
 	SharedAgentConfigDir = "config"
 
 	DaemonSetName = "dynatrace-oneagent-csi-driver"
 
 	UnixUmask = 0000
 )
-
-var MetadataAccessPath = filepath.Join(DataPath, "csi.db?_journal=WAL")
 
 type CSIOptions struct {
 	NodeId   string

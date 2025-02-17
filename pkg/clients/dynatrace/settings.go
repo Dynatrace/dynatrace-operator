@@ -83,7 +83,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Co
 
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response body: %w", err)
+		return nil, errors.WithMessage(err, "error parsing response body")
 	}
 
 	return resDataJson.Entities, nil
@@ -117,7 +117,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, m
 
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
-		return GetSettingsResponse{}, fmt.Errorf("error parsing response body: %w", err)
+		return GetSettingsResponse{}, errors.WithMessage(err, "error parsing response body")
 	}
 
 	return resDataJson, nil
@@ -151,7 +151,7 @@ func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitor
 
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
-		return GetLogMonSettingsResponse{}, fmt.Errorf("error parsing response body: %w", err)
+		return GetLogMonSettingsResponse{}, errors.WithMessage(err, "error parsing response body")
 	}
 
 	return resDataJson, nil
@@ -160,12 +160,12 @@ func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitor
 func (dtc *dynatraceClient) unmarshalToJson(res *http.Response, resDataJson any) error {
 	resData, err := dtc.getServerResponseData(res)
 	if err != nil {
-		return fmt.Errorf("error reading response body: %w", err)
+		return errors.WithMessage(err, "error reading response body")
 	}
 
 	err = json.Unmarshal(resData, resDataJson)
 	if err != nil {
-		return fmt.Errorf("error parsing response body: %w", err)
+		return errors.WithMessage(err, "error parsing response body")
 	}
 
 	return nil
@@ -175,14 +175,14 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 	if statusCode == http.StatusForbidden || statusCode == http.StatusUnauthorized {
 		var se serverErrorResponse
 		if err := json.Unmarshal(response, &se); err != nil {
-			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
+			return errors.Errorf("response error: %d, can't unmarshal json response", statusCode)
 		}
 
-		return fmt.Errorf("response error: %d, %s", statusCode, se.ErrorMessage.Message)
+		return errors.Errorf("response error: %d, %s", statusCode, se.ErrorMessage.Message)
 	} else {
 		var se []serverErrorResponse
 		if err := json.Unmarshal(response, &se); err != nil {
-			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
+			return errors.Errorf("response error: %d, can't unmarshal json response", statusCode)
 		}
 
 		var sb strings.Builder

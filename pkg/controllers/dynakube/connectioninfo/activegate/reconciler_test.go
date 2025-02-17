@@ -2,7 +2,6 @@ package activegate
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -13,7 +12,9 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -108,8 +109,12 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 
+		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
+
+		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dk.Status.ActiveGate.ConnectionInfo.Endpoints)
+		assert.Equal(t, tenantTokenHash, dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: testNamespace}, &actualSecret)
@@ -149,7 +154,7 @@ func TestReconcile(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				return fmt.Errorf("BOOM")
+				return errors.New("BOOM")
 			},
 		})
 

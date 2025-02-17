@@ -43,7 +43,7 @@ func (c *Cleaner) removeDeprecatedMounts(fsState fsState) {
 			continue
 		}
 
-		tenantDir := c.path.DynaKubeDir(depDir)
+		tenantDir := c.path.TenantDir(depDir)
 
 		err = c.fs.RemoveAll(c.path.DynaKubeDir(tenantDir))
 		if err == nil {

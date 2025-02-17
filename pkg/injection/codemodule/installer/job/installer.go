@@ -78,6 +78,8 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 	if inst.isAlreadyPresent(targetDir) {
 		log.Info("agent already installed", "image", inst.props.ImageUri, "target dir", targetDir)
 
+		_ = inst.fs.RemoveAll(inst.props.PathResolver.AgentJobWorkDirForJob(jobName))
+
 		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
 	}
 

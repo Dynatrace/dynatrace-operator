@@ -2,7 +2,6 @@ package zip
 
 import (
 	"archive/tar"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -56,7 +55,7 @@ func extractFilesFromGzip(fs afero.Fs, targetDir string, reader *tar.Reader) err
 
 		// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
 		if !strings.HasPrefix(target, targetDir) {
-			return fmt.Errorf("illegal file path: %s", target)
+			return errors.Errorf("illegal file path: %s", target)
 		}
 
 		err = extract(fs, targetDir, reader, header, target)

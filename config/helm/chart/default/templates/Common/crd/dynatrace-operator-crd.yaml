@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.17.2
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -2302,6 +2302,9 @@ spec:
                         description: Time of the last connection request
                         format: date-time
                         type: string
+                      tenantTokenHash:
+                        description: Hash of the tenant token
+                        type: string
                       tenantUUID:
                         description: UUID of the tenant, received from the tenant
                         type: string
@@ -2456,6 +2459,9 @@ spec:
                       lastRequest:
                         description: Time of the last connection request
                         format: date-time
+                        type: string
+                      tenantTokenHash:
+                        description: Hash of the tenant token
                         type: string
                       tenantUUID:
                         description: UUID of the tenant, received from the tenant
@@ -4181,6 +4187,9 @@ spec:
                         description: Time of the last connection request
                         format: date-time
                         type: string
+                      tenantTokenHash:
+                        description: Hash of the tenant token
+                        type: string
                       tenantUUID:
                         description: UUID of the tenant, received from the tenant
                         type: string
@@ -4356,6 +4365,9 @@ spec:
                       lastRequest:
                         description: Time of the last connection request
                         format: date-time
+                        type: string
+                      tenantTokenHash:
+                        description: Hash of the tenant token
                         type: string
                       tenantUUID:
                         description: UUID of the tenant, received from the tenant
@@ -7572,6 +7584,9 @@ spec:
                         description: Time of the last connection request
                         format: date-time
                         type: string
+                      tenantTokenHash:
+                        description: Hash of the tenant token
+                        type: string
                       tenantUUID:
                         description: UUID of the tenant, received from the tenant
                         type: string
@@ -7757,6 +7772,9 @@ spec:
                         description: Time of the last connection request
                         format: date-time
                         type: string
+                      tenantTokenHash:
+                        description: Hash of the tenant token
+                        type: string
                       tenantUUID:
                         description: UUID of the tenant, received from the tenant
                         type: string
@@ -7820,7 +7838,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.17.2
   name: edgeconnects.dynatrace.com
 spec:
   conversion:

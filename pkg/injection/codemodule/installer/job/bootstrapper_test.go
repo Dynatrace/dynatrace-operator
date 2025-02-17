@@ -124,7 +124,7 @@ func TestBuildJob(t *testing.T) {
 		container := job.Spec.Template.Spec.Containers[0]
 
 		assert.Equal(t, imageURI, container.Image)
-		assert.Contains(t, container.Command, bootstrapCommand)
+		assert.Empty(t, container.Command)
 		assert.NotEmpty(t, container.Args)
 		assert.NotEmpty(t, container.SecurityContext)
 

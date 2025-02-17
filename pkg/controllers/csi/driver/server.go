@@ -22,6 +22,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync/atomic"
@@ -34,6 +35,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -78,14 +80,14 @@ func (srv *Server) Start(ctx context.Context) error {
 	endpoint, err := url.Parse(srv.opts.Endpoint)
 
 	if err != nil {
-		return fmt.Errorf("failed to parse endpoint '%s': %w", srv.opts.Endpoint, err)
+		return errors.WithMessage(err, fmt.Sprintf("failed to parse endpoint '%s'", srv.opts.Endpoint))
 	}
 
 	addr := endpoint.Host + endpoint.Path
 
 	if endpoint.Scheme == "unix" {
 		if err := srv.fs.Remove(addr); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to remove old endpoint on '%s': %w", addr, err)
+			return errors.WithMessage(err, fmt.Sprintf("failed to remove old endpoint on '%s'", addr))
 		}
 	}
 
@@ -98,7 +100,7 @@ func (srv *Server) Start(ctx context.Context) error {
 
 	listener, err := net.Listen(endpoint.Scheme, addr)
 	if err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
+		return errors.WithMessage(err, "failed to start server")
 	}
 
 	maxGrpcRequests, err := strconv.Atoi(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"))
@@ -223,6 +225,17 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		}
 
 		for _, path := range needsCleanUp {
+			podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
+			if podInfoSymlinkPath != "" {
+				_ = srv.fs.Remove(podInfoSymlinkPath)
+
+				podInfoSymlinkDir := filepath.Dir(podInfoSymlinkPath)
+
+				if isEmpty, _ := srv.fs.IsEmpty(podInfoSymlinkDir); isEmpty {
+					_ = srv.fs.Remove(podInfoSymlinkDir)
+				}
+			}
+
 			err := srv.fs.RemoveAll(path) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
 			if err != nil {
 				log.Error(err, "failed to clean up unmounted volume dir", "path", path)
@@ -230,11 +243,6 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		}
 
 		_ = srv.fs.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
-	}
-
-	podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
-	if podInfoSymlinkPath != "" {
-		_ = srv.fs.Remove(podInfoSymlinkPath)
 	}
 }
 
