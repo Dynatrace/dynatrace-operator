@@ -1,6 +1,6 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$BUILDPLATFORM golang:1.23.6@sha256:958bd2e45b2d6d166aa0e33ee737093fe0c773c89c3fc142f26ac65ec37507cd AS operator-build
+FROM --platform=$BUILDPLATFORM golang:1.24.0@sha256:4546829ecda4404596cf5c9d8936488283910a3564ffc8fe4f32b33ddaeff239 AS operator-build
 
 WORKDIR /app
 
@@ -27,8 +27,8 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.5-1739146154@sha256:4a2052ef4db4fd1a53b45263b5067eb01d5745fdd300b27986952af27887bc27 AS base
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.5-1738814488@sha256:be214e191bbe3f4d0f16a5a4f5642e1f32fccd6fae7d2b6c6acb066ba51fb507 AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.5-1739467664@sha256:e01d3109d55b6cc4e5a58911e979f91ae29f30e50124563d277a6f29be08397f AS base
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.5-1739751568@sha256:d342aa80781bf41c4c73485c41d8f1e2dbc40ee491633d9cafe787c361dd44ff AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
@@ -56,6 +56,8 @@ COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.15.0@sha256:2c5f9dc4ea5
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
+
+COPY ./dynatrace-operator-bin-sbom.cdx.json ./dynatrace-operator-bin-sbom.cdx.json
 
 # custom scripts
 COPY hack/build/bin /usr/local/bin

@@ -3,7 +3,7 @@ kustomize_version=v5.6.0
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.17.2
 # renovate depName=github.com/golangci/golangci-lint
-golang_ci_cmd_version=v1.64.2
+golang_ci_cmd_version=v1.64.5
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.13.5
 # renovate depName=golang.org/x/tools
@@ -16,6 +16,8 @@ markdownlint_cli_version=v0.44.0
 helmunittest_version=v0.7.2
 # renovate depName=github.com/princjef/gomarkdoc
 gomarkdoc_version=v1.1.0
+# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
+cyclonedx_gomod_version=v1.9.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -81,3 +83,7 @@ prerequisites/gomarkdoc:
 ## Install python dependencies
 prerequisites/python:
 	python3 -m venv local/.venv && source local/.venv/bin/activate && pip3 install -r hack/requirements.txt
+
+## Install 'cyclonedx-gomod' if it is missing
+prerequisites/cyclonedx-gomod:
+	go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@$(cyclonedx_gomod_version)
