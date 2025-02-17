@@ -44,6 +44,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Prepare SBOM
+        id: sbom
+        run: |
+          make release/gen-sbom
       - name: Build image
         uses: ./.github/actions/build-image
         with:
@@ -238,6 +242,7 @@ jobs:
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
+          skip-files: '/usr/local/bin/dynatrace-operator'
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
