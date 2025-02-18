@@ -22,8 +22,8 @@ rules:
   - apiGroups:
       - dynatrace.com
     resources:
-      - dynakubes
-      - edgeconnects
+      - dynakubes # Required for reconciliation
+      - edgeconnects # Required for reconciliation
     verbs:
       - get
       - list
@@ -32,39 +32,19 @@ rules:
   - apiGroups:
       - dynatrace.com
     resources:
-      - dynakubes/finalizers
-      - edgeconnects/finalizers
-      - dynakubes/status
-      - edgeconnects/status
+      - dynakubes/finalizers # Required for EdgeConnect
+      - edgeconnects/finalizers # Required for EdgeConnect
+      - dynakubes/status # Required for reconciliation
+      - edgeconnects/status # Required for reconciliation
     verbs:
       - update
   - apiGroups:
       - apps
     resources:
-      - statefulsets
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - delete
-  - apiGroups:
-      - apps
-    resources:
-      - daemonsets
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - delete
-  - apiGroups:
-      - apps
-    resources:
-      - replicasets
-      - deployments
+      - statefulsets # Required by Extensions, OtelCollector, ActiveGate
+      - daemonsets # Required by KSPM, LogMonitoring, All Monitoring modes that require host agents
+      - replicasets # Required by the nodes controller to check the owner
+      - deployments # Required by our unit & E2E tests
     verbs:
       - get
       - list
@@ -81,7 +61,9 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - configmaps
+      - configmaps # Required to access trustedCAs, edgeConnect CA certs, ActiveGate/OneAgent Connection Info, Extension Custom Configuration, NodesController cache
+      - secrets # Required for webhook certificates, OneAgent/ActiveGate AuthToken, ProcessModuleConfig; To access ActiveGate TLS, CustomPullSecret;
+      - services # Required for ActiveGate, OTEL Collector Operator TelemetryService, Extensions
     verbs:
       - get
       - list
@@ -92,7 +74,7 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - pods
+      - pods # Required for operator pod to check if deployed via olm
     verbs:
       - get
       - list
@@ -100,38 +82,16 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - events
+      - events # Required by operator SDK
     verbs:
       - create
       - get
       - list
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    verbs:
-      - create
-      - update
-      - delete
-      - get
-      - list
-      - watch
   - apiGroups:
       - networking.istio.io
     resources:
-      - serviceentries
-      - virtualservices
+      - serviceentries # Required by Istio Reconciler
+      - virtualservices # Required by Istio Reconciler
     verbs:
       - get
       - list
@@ -141,7 +101,7 @@ rules:
   - apiGroups:
       - coordination.k8s.io
     resources:
-      - leases
+      - leases # Required by Operator to guarantee, that only one is running at the same time
     verbs:
       - get
       - update

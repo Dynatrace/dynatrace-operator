@@ -21,7 +21,7 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - nodes
+      - nodes # Required by nodes controller for node cache and mark for termination handling
     verbs:
       - get
       - list
@@ -29,7 +29,7 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - namespaces
+      - namespaces # Required by troubleshoot and setting the injection labels; Required as soon as a DynaKube is reconciled.; Required by EdgeConnect and DynaKube for requesting the kubeSystem UID
     verbs:
       - get
       - list
@@ -44,7 +44,7 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - secrets
+      - secrets # Required by troubleshoot; Required to create init secret in every namespace for CNFS and application monitoring / metadata enrichment
     resourceNames:
       - dynatrace-dynakube-config
       - dynatrace-metadata-enrichment-endpoint
@@ -56,7 +56,7 @@ rules:
   - apiGroups:
       - admissionregistration.k8s.io
     resources:
-      - mutatingwebhookconfigurations
+      - mutatingwebhookconfigurations # Required for setting the CABundles aka. public cert created by our webhook cert controller. These certs are used by the API-Server to create a secure connection to the webhook.
     resourceNames:
       - dynatrace-webhook
     verbs:
@@ -65,7 +65,7 @@ rules:
   - apiGroups:
       - admissionregistration.k8s.io
     resources:
-      - validatingwebhookconfigurations
+      - validatingwebhookconfigurations # Required for setting the CABundles aka. public cert created by our webhook cert controller. These certs are used by the API-Server to create a secure connection to the webhook.
     resourceNames:
       - dynatrace-webhook
     verbs:
@@ -74,7 +74,7 @@ rules:
   - apiGroups:
       - apiextensions.k8s.io
     resources:
-      - customresourcedefinitions
+      - customresourcedefinitions # Required for webhook cert controller.
     resourceNames:
       - dynakubes.dynatrace.com
       - edgeconnects.dynatrace.com
@@ -88,7 +88,7 @@ rules:
       - privileged
       - nonroot-v2
     resources:
-      - securitycontextconstraints
+      - securitycontextconstraints # Required for openshift monitoring
     verbs:
       - use
   {{ end }}
