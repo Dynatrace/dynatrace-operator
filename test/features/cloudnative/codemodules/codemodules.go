@@ -40,6 +40,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -174,8 +175,8 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
 
-	cloudnative.AssessSampleContainer(builder, sampleApp, nil, nil)
-	cloudnative.AssessOneAgentContainer(builder, nil, nil)
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return nil }, nil)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return nil }, nil)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -234,8 +235,16 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature {
 
 	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
 
-	cloudnative.AssessSampleContainer(builder, sampleApp, nil, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, nil, trustedCa)
+	agTlsSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cloudNativeDynakube.ActiveGate().GetTlsSecretName(),
+			Namespace: cloudNativeDynakube.Namespace,
+		},
+	}
+	builder.Assess("read AG TLS secret", getAgTlsSecret(&agTlsSecret))
+
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -246,6 +255,18 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature {
 	builder.WithTeardown("deleted trusted CAs config map", configmap.Delete(caConfigMap))
 
 	return builder.Feature()
+}
+
+func getAgTlsSecret(secret *corev1.Secret) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := envConfig.Client().Resources().Get(ctx, secret.Name, secret.Namespace, secret)
+		require.NoError(t, err)
+
+		_, ok := secret.Data[dynakube.TLSCertKey]
+		require.True(t, ok)
+
+		return ctx
+	}
 }
 
 func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
@@ -300,8 +321,8 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 
 	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
 
-	cloudnative.AssessSampleContainer(builder, sampleApp, agCrt, nil)
-	cloudnative.AssessOneAgentContainer(builder, agCrt, nil)
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, nil)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, nil)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -372,8 +393,8 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 
 	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
 
-	cloudnative.AssessSampleContainer(builder, sampleApp, agCrt, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, agCrt, trustedCa)
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall

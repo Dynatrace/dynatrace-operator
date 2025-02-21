@@ -47,11 +47,16 @@ const (
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
 
+	AnnotationFeatureActiveGateAutomaticTLSCertificate = AnnotationFeaturePrefix + "automatic=tls-certificate"
+
 	// dtClient.
 
 	AnnotationFeatureNoProxy = AnnotationFeaturePrefix + "no-proxy"
 
 	// oneAgent.
+
+	AnnotationFeatureOneAgnetIgnoreAgTlsCertificate = AnnotationFeaturePrefix + "oneagent-ignore-ag-tls-certificate"
+	AnnotationFeatureOneAgnetIgnoreTrustedCAs       = AnnotationFeaturePrefix + "oneagent-ignore-trusted-cas"
 
 	// Deprecated: AnnotationFeatureOneAgentIgnoreProxy use AnnotationFeatureNoProxy instead.
 	AnnotationFeatureOneAgentIgnoreProxy = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
@@ -127,6 +132,11 @@ func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
 // FeatureNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
 func (dk *DynaKube) FeatureNoProxy() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
+}
+
+// FeatureActiveGateAutomaticTLSCertificate is a feature flag to enable automatic creation of AG TLS certificate if TrustedCAs are used.
+func (dk *DynaKube) FeatureActiveGateAutomaticTLSCertificate() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAutomaticTLSCertificate) == truePhrase
 }
 
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
@@ -294,4 +304,14 @@ func (dk *DynaKube) FeatureInitContainerSeccomp() bool {
 // sets the tenantUUID to the container.conf file (always vs if oneAgent is present).
 func (dk *DynaKube) FeatureEnforcementMode() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureEnforcementMode) != falsePhrase
+}
+
+// FeatureOneAgentIgnoreActiveGateTlsCertificate is a feature flag to skip mounting AG TLS certificate to OneAgent POD.
+func (dk *DynaKube) FeatureOneAgentIgnoreActiveGateTlsCertificate() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgnetIgnoreAgTlsCertificate) == truePhrase
+}
+
+// FeatureOneAgentIgnoreTrustedCAs is a feature flag to skip mounting TrustedCAs certificates to OneAgent POD.
+func (dk *DynaKube) FeatureOneAgentIgnoreTrustedCAs() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgnetIgnoreTrustedCAs) == truePhrase
 }
