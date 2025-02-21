@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# For more information why the individual permissions are required see
+# https://github.com/Dynatrace/dynatrace-operator/blob/main/doc/roles/operator-roles.md
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -21,7 +24,7 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - nodes # Required by nodes controller for node cache and mark for termination handling
+      - nodes
     verbs:
       - get
       - list
@@ -29,7 +32,7 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - namespaces # Required by troubleshoot and setting the injection labels; Required as soon as a DynaKube is reconciled.; Required by EdgeConnect and DynaKube for requesting the kubeSystem UID
+      - namespaces
     verbs:
       - get
       - list
@@ -44,7 +47,7 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - secrets # Required by troubleshoot; Required to create init secret in every namespace for CNFS and application monitoring / metadata enrichment
+      - secrets
     resourceNames:
       - dynatrace-dynakube-config
       - dynatrace-metadata-enrichment-endpoint
@@ -56,7 +59,7 @@ rules:
   - apiGroups:
       - admissionregistration.k8s.io
     resources:
-      - mutatingwebhookconfigurations # Required for setting the CABundles aka. public cert created by our webhook cert controller. These certs are used by the API-Server to create a secure connection to the webhook.
+      - mutatingwebhookconfigurations
     resourceNames:
       - dynatrace-webhook
     verbs:
@@ -65,7 +68,7 @@ rules:
   - apiGroups:
       - admissionregistration.k8s.io
     resources:
-      - validatingwebhookconfigurations # Required for setting the CABundles aka. public cert created by our webhook cert controller. These certs are used by the API-Server to create a secure connection to the webhook.
+      - validatingwebhookconfigurations
     resourceNames:
       - dynatrace-webhook
     verbs:
@@ -74,7 +77,7 @@ rules:
   - apiGroups:
       - apiextensions.k8s.io
     resources:
-      - customresourcedefinitions # Required for webhook cert controller.
+      - customresourcedefinitions
     resourceNames:
       - dynakubes.dynatrace.com
       - edgeconnects.dynatrace.com
@@ -88,7 +91,7 @@ rules:
       - privileged
       - nonroot-v2
     resources:
-      - securitycontextconstraints # Required for openshift monitoring
+      - securitycontextconstraints
     verbs:
       - use
   {{ end }}
