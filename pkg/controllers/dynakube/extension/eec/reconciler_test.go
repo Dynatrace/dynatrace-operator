@@ -971,7 +971,7 @@ func TestActiveGateVolumes(t *testing.T) {
 		},
 	}
 
-	t.Run("ActiveGate tls certificate is mounted to EEC", func(t *testing.T) {
+	t.Run("volumes with custom ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.TlsSecretName = tlsSecretName
 		statefulSet := getStatefulset(t, dk)
@@ -983,7 +983,8 @@ func TestActiveGateVolumes(t *testing.T) {
 		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
-	t.Run("ActiveGate tls certificate is not mounted to EEC", func(t *testing.T) {
+
+	t.Run("volumes without custom ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 
@@ -993,5 +994,49 @@ func TestActiveGateVolumes(t *testing.T) {
 		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
 		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 		require.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+
+	t.Run("volumes with TrustedCAs certificates", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.TrustedCAs = "custom-tls"
+		statefulSet := getStatefulset(t, dk)
+
+		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
+		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Volumes)
+
+		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
+		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		require.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+	})
+
+	t.Run("volumes with automatically created ActiveGate tls certificate", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations[dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate] = "true"
+		dk.Spec.TrustedCAs = "custom-tls"
+
+		expectedVolume := corev1.Volume{
+			Name: activeGateTrustedCertVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &defaultMode,
+					SecretName:  dk.ActiveGate().GetTlsSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  activeGateTrustedCertSecretKeyPath,
+							Path: activeGateTrustedCertSecretKeyPath,
+						},
+					},
+				},
+			},
+		}
+
+		statefulSet := getStatefulset(t, dk)
+
+		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
+		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Volumes)
+
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
 }
