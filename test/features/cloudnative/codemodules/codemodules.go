@@ -202,6 +202,9 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithIstioIntegration(),
 		dynakubeComponents.WithProxy(proxySpec),
+		dynakubeComponents.WithAnnotations(map[string]string{
+			dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
+		}),
 	)
 
 	sampleNamespace := *namespace.New("codemodules-sample-with-proxy-custom-ca", namespace.WithIstio())

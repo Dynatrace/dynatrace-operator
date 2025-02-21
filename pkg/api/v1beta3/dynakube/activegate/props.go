@@ -28,6 +28,10 @@ func (ag *Spec) SetTrustedCAs(name string) {
 	ag.trustedCAs = name
 }
 
+func (ag *Spec) SetAutomaticTLSCertificate(enabled bool) {
+	ag.automaticTLSCertificateEnabled = enabled
+}
+
 func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
 }
@@ -97,26 +101,35 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 	return ag.IsMode(MetricsIngestCapability.DisplayName)
 }
 
-func (ag *Spec) HasCaCert() bool {
-	return ag.IsEnabled() && (ag.TlsSecretName != "" || ag.TlsSecretName == "" && ag.trustedCAs != "")
+func (ag *Spec) IsAutomaticTlsSecretEnabled() bool {
+	return ag.TlsSecretName == "" && ag.trustedCAs != "" && ag.automaticTLSCertificateEnabled
 }
 
-// ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
+func (ag *Spec) HasCaCert() bool {
+	return ag.IsEnabled() && (ag.TlsSecretName != "" || ag.IsAutomaticTlsSecretEnabled())
+}
+
+// GetTenantSecretName returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
 func (ag *Spec) GetTenantSecretName() string {
 	return ag.name + TenantSecretSuffix
 }
 
-// ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
+// GetAuthTokenSecretName returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
 func (ag *Spec) GetAuthTokenSecretName() string {
 	return ag.name + AuthTokenSecretSuffix
 }
 
+// GetTlsSecretName returns the name of the AG TLS secret.
 func (ag *Spec) GetTlsSecretName() string {
 	if ag.TlsSecretName != "" {
 		return ag.TlsSecretName
 	}
 
-	return ag.name + TlsSecretSuffix
+	if ag.IsAutomaticTlsSecretEnabled() {
+		return ag.name + TlsSecretSuffix
+	}
+
+	return ""
 }
 
 func (ag *Spec) GetConnectionInfoConfigMapName() string {
