@@ -246,6 +246,132 @@ func TestOneAgentHostGroup(t *testing.T) {
 	})
 }
 
+func TestOneAgentArgumentsMap(t *testing.T) {
+	t.Run("straight forward argument list", func(t *testing.T) {
+		dk := OneAgent{Spec: &Spec{
+			CloudNativeFullStack: &CloudNativeFullStackSpec{
+				HostInjectSpec: HostInjectSpec{
+					Args: []string{
+						"--set-host-id-source=k8s-node-name",
+						"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+						"--set-host-property=dt.security_context=kubernetes_clusters",
+						"--set-host-property=dynakube-name=$(CUSTOM_CRD_NAME)",
+						"--set-no-proxy=",
+						"--set-proxy=",
+						"--set-tenant=$(DT_TENANT)",
+						"--set-server=dynatrace.com",
+						"--set-host-property=prop1=val1",
+						"--set-host-property=prop2=val2",
+						"--set-host-property=prop3=val3",
+						"--set-host-tag=tag1",
+						"--set-host-tag=tag2",
+						"--set-host-tag=tag3",
+					},
+				},
+			},
+			HostGroup: "field",
+		},
+		}
+		argMap := dk.GetArgumentsMap()
+		require.Len(t, argMap, 7)
+
+		require.Len(t, argMap["--set-host-id-source"], 1)
+		assert.Equal(t, "k8s-node-name", argMap["--set-host-id-source"][0])
+
+		require.Len(t, argMap["--set-host-property"], 6)
+		assert.Equal(t, "OperatorVersion=$(DT_OPERATOR_VERSION)", argMap["--set-host-property"][0])
+		assert.Equal(t, "dt.security_context=kubernetes_clusters", argMap["--set-host-property"][1])
+		assert.Equal(t, "dynakube-name=$(CUSTOM_CRD_NAME)", argMap["--set-host-property"][2])
+		assert.Equal(t, "prop1=val1", argMap["--set-host-property"][3])
+		assert.Equal(t, "prop2=val2", argMap["--set-host-property"][4])
+		assert.Equal(t, "prop3=val3", argMap["--set-host-property"][5])
+
+		require.Len(t, argMap["--set-no-proxy"], 1)
+		assert.Equal(t, "", argMap["--set-no-proxy"][0])
+
+		require.Len(t, argMap["--set-proxy"], 1)
+		assert.Equal(t, "", argMap["--set-proxy"][0])
+
+		require.Len(t, argMap["--set-tenant"], 1)
+		assert.Equal(t, "$(DT_TENANT)", argMap["--set-tenant"][0])
+
+		require.Len(t, argMap["--set-server"], 1)
+		assert.Equal(t, "dynatrace.com", argMap["--set-server"][0])
+	})
+
+	t.Run("multiple --set-host-property arguments", func(t *testing.T) {
+		dk := OneAgent{Spec: &Spec{
+			CloudNativeFullStack: &CloudNativeFullStackSpec{
+				HostInjectSpec: HostInjectSpec{
+					Args: []string{
+						"--set-host-property=prop1=val1",
+						"--set-host-property=prop2=val2",
+						"--set-host-property=prop3=val3",
+						"--set-host-property=prop3=val3",
+					},
+				},
+			},
+			HostGroup: "field",
+		},
+		}
+		argMap := dk.GetArgumentsMap()
+		require.Len(t, argMap, 1)
+		require.Len(t, argMap["--set-host-property"], 4)
+
+		assert.Equal(t, "prop1=val1", argMap["--set-host-property"][0])
+		assert.Equal(t, "prop2=val2", argMap["--set-host-property"][1])
+		assert.Equal(t, "prop3=val3", argMap["--set-host-property"][2])
+	})
+
+	t.Run("multiple --set-host-tag arguments", func(t *testing.T) {
+		dk := OneAgent{Spec: &Spec{
+			CloudNativeFullStack: &CloudNativeFullStackSpec{
+				HostInjectSpec: HostInjectSpec{
+					Args: []string{
+						"--set-host-tag=tag1=1",
+						"--set-host-tag=tag1=2",
+						"--set-host-tag=tag1=3",
+						"--set-host-tag=tag2",
+						"--set-host-tag=tag3",
+					},
+				},
+			},
+			HostGroup: "field",
+		},
+		}
+		argMap := dk.GetArgumentsMap()
+		require.Len(t, argMap, 1)
+		require.Len(t, argMap["--set-host-tag"], 5)
+
+		assert.Equal(t, "tag1=1", argMap["--set-host-tag"][0])
+		assert.Equal(t, "tag1=2", argMap["--set-host-tag"][1])
+		assert.Equal(t, "tag1=3", argMap["--set-host-tag"][2])
+		assert.Equal(t, "tag2", argMap["--set-host-tag"][3])
+		assert.Equal(t, "tag3", argMap["--set-host-tag"][4])
+	})
+
+	t.Run("arguments without value", func(t *testing.T) {
+		dk := OneAgent{Spec: &Spec{
+			CloudNativeFullStack: &CloudNativeFullStackSpec{
+				HostInjectSpec: HostInjectSpec{
+					Args: []string{
+						"--enable-feature-a",
+						"--enable-feature-b",
+						"--enable-feature-c",
+					},
+				},
+			},
+			HostGroup: "field",
+		},
+		}
+		argMap := dk.GetArgumentsMap()
+		require.Len(t, argMap, 3)
+		require.Len(t, argMap["--enable-feature-a"], 1)
+		require.Len(t, argMap["--enable-feature-b"], 1)
+		require.Len(t, argMap["--enable-feature-c"], 1)
+	})
+}
+
 func setupDisabledCSIEnv(t *testing.T) {
 	t.Helper()
 	installconfig.SetModulesOverride(t, installconfig.Modules{
