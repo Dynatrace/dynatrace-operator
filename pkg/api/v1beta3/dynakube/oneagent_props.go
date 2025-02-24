@@ -291,19 +291,13 @@ func (dk *DynaKube) HostGroupAsParam() string {
 	return hostGroup
 }
 
-func splitArg(arg string) (key, value string) {
-	split := strings.Split(arg, "=")
-
-	const expectedLen = 2
-
-	if len(split) != expectedLen {
-		return
+func splitArg(arg string) (string, string) {
+	key, value, found := strings.Cut(arg, "=")
+	if !found {
+		return arg, ""
 	}
 
-	key = split[0]
-	value = split[1]
-
-	return
+	return key, value
 }
 
 func (dk *DynaKube) IsOneAgentCommunicationRouteClear() bool {
