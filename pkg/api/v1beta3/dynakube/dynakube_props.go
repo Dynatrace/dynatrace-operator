@@ -70,7 +70,7 @@ func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
 	return imagePullSecrets
 }
 
-// Tokens returns the name of the Secret to be used for tokens.
+// Tokens return the name of the Secret to be used for tokens.
 func (dk *DynaKube) Tokens() string {
 	if tkns := dk.Spec.Tokens; tkns != "" {
 		return tkns
