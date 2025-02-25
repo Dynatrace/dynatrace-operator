@@ -254,7 +254,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
 	}
 
-	if dk.Spec.ActiveGate.TlsSecretName != "" {
+	if dk.ActiveGate().HasCaCert() {
 		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert})
 	}
 
@@ -312,7 +312,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		})
 	}
 
-	if dk.Spec.ActiveGate.TlsSecretName != "" {
+	if dk.ActiveGate().HasCaCert() {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      activeGateTrustedCertVolumeName,
 			MountPath: activeGateTrustedCertMountPath,
@@ -388,14 +388,14 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			})
 		}
 
-		if dk.Spec.ActiveGate.TlsSecretName != "" {
+		if dk.ActiveGate().HasCaCert() {
 			defaultMode := int32(420)
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: activeGateTrustedCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						DefaultMode: &defaultMode,
-						SecretName:  dk.Spec.ActiveGate.TlsSecretName,
+						SecretName:  dk.ActiveGate().GetTlsSecretName(),
 						Items: []corev1.KeyToPath{
 							{
 								Key:  activeGateTrustedCertSecretKeyPath,
