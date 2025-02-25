@@ -104,7 +104,7 @@ func (installer *Installer) unpackOciImage(layers []containerv1.Layer, imageCach
 	for _, layer := range layers {
 		mediaType, _ := layer.MediaType()
 		switch mediaType {
-		case types.DockerLayer:
+		case types.DockerLayer, types.OCILayer:
 			digest, _ := layer.Digest()
 			sourcePath := filepath.Join(imageCacheDir, "blobs", digest.Algorithm, digest.Hex)
 			log.Info("unpackOciImage", "sourcePath", sourcePath)
@@ -112,8 +112,6 @@ func (installer *Installer) unpackOciImage(layers []containerv1.Layer, imageCach
 			if err := installer.extractor.ExtractGzip(sourcePath, targetDir); err != nil {
 				return err
 			}
-		case types.OCILayer:
-			return errors.New("OCILayer is not implemented")
 		case types.OCILayerZStd:
 			return errors.New("OCILayerZStd is not implemented")
 		default:
