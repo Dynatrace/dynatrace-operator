@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
@@ -206,7 +207,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
-		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-extensions-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
+		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-opentelemetry-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
@@ -219,23 +220,71 @@ func TestEnvironmentVariables(t *testing.T) {
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envOTLPtoken, ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
-				Key:                  consts.OtelcTokenSecretKey,
-			},
-		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
 				Key:                  consts.OtelcTokenSecretKey,
 			},
-		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
-		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 	})
+
+	t.Run("environment variables for open signal configuration", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        testDynakubeName,
+				Namespace:   testNamespaceName,
+				Annotations: map[string]string{},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				TelemetryService: &telemetryservice.Spec{},
+			},
+		}
+
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
+		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-opentelemetry-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
+		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
+			},
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
+		assert.Equal(t, corev1.EnvVar{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
+			},
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
+		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
+		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		// envCertDir, envEECDStoken, envEECcontrollerTLS not needed in OpenSignal mode
+		assert.Equal(t, corev1.EnvVar{Name: envDTEndpoint, Value: buildDTEndpoint(dk)}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envDTApiToken, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
+				Key:                  dynatrace.ApiToken,
+			},
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{
+			Name: envMyPodIP,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "",
+					FieldPath:  "status.podIP",
+				},
+			},
+		}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
+
+		assert.Len(t, statefulSet.Spec.Template.Spec.Containers[0].Env, 12)
+	})
+
 	t.Run("environment variables with trustedCA", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.TrustedCAs = "test-trusted-ca"
@@ -439,12 +488,12 @@ func TestVolumes(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMount := corev1.VolumeMount{
-			Name:      dk.ExtensionsTLSSecretName(),
+			Name:      extensionsControllerTLSVolumeName,
 			MountPath: customEecTLSCertificatePath,
 			ReadOnly:  true,
 		}
 
-		expectedVolume := corev1.Volume{Name: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
+		expectedVolume := corev1.Volume{Name: extensionsControllerTLSVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
