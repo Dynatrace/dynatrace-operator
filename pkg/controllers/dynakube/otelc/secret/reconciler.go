@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -19,8 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const telemetryApiCredentialsSecretName = "dynatrace-telemetry-api-credentials"
 
 type Reconciler struct {
 	client    client.Client
@@ -48,12 +47,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 func (r *Reconciler) ensureOpenSignalAPISecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.apiReader, log)
-	_, err := query.Get(ctx, types.NamespacedName{Name: telemetryApiCredentialsSecretName, Namespace: r.dk.Namespace})
+	_, err := query.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiCredentialsSecretName, Namespace: r.dk.Namespace})
 
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new secret for telemetry api credentials")
 
-		secretConfig, err := r.generateTelemetryApiCredentialsSecret(ctx, telemetryApiCredentialsSecretName)
+		secretConfig, err := r.generateTelemetryApiCredentialsSecret(ctx, consts.TelemetryApiCredentialsSecretName)
 
 		if err != nil {
 			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, err)
@@ -76,7 +75,7 @@ func (r *Reconciler) ensureOpenSignalAPISecret(ctx context.Context) error {
 			return err
 		}
 
-		conditions.SetSecretCreated(r.dk.Conditions(), secretConditionType, telemetryApiCredentialsSecretName)
+		conditions.SetSecretCreated(r.dk.Conditions(), secretConditionType, consts.TelemetryApiCredentialsSecretName)
 	}
 
 	return nil
@@ -147,10 +146,10 @@ func (r *Reconciler) removeOpenSignalAPISecret(ctx context.Context) error {
 	}
 
 	query := k8ssecret.Query(r.client, r.apiReader, log)
-	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: telemetryApiCredentialsSecretName, Namespace: r.dk.Namespace}})
+	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.TelemetryApiCredentialsSecretName, Namespace: r.dk.Namespace}})
 
 	if err != nil {
-		log.Info("could not delete apiCredential secret", "name", telemetryApiCredentialsSecretName)
+		log.Info("could not delete apiCredential secret", "name", consts.TelemetryApiCredentialsSecretName)
 
 		return err
 	}

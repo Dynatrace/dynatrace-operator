@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/stretchr/testify/assert"
@@ -48,7 +49,7 @@ func TestSecretCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var apiCredsSecret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: telemetryApiCredentialsSecretName, Namespace: dk.Namespace}, &apiCredsSecret)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiCredentialsSecretName, Namespace: dk.Namespace}, &apiCredsSecret)
 		require.NoError(t, err)
 		assert.NotEmpty(t, apiCredsSecret)
 		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), secretConditionType))
@@ -57,12 +58,12 @@ func TestSecretCreation(t *testing.T) {
 
 	t.Run("removes secret if exists but we don't need it", func(t *testing.T) {
 		dk := createDynaKube(false)
-		conditions.SetSecretCreated(dk.Conditions(), secretConditionType, telemetryApiCredentialsSecretName)
+		conditions.SetSecretCreated(dk.Conditions(), secretConditionType, consts.TelemetryApiCredentialsSecretName)
 
 		objs := []client.Object{
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      telemetryApiCredentialsSecretName,
+					Name:      consts.TelemetryApiCredentialsSecretName,
 					Namespace: dk.Namespace,
 				},
 			},
@@ -75,7 +76,7 @@ func TestSecretCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var apiTokenSecret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: telemetryApiCredentialsSecretName, Namespace: dk.Namespace}, &apiTokenSecret)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiCredentialsSecretName, Namespace: dk.Namespace}, &apiTokenSecret)
 
 		require.Error(t, err)
 		assert.Empty(t, apiTokenSecret)

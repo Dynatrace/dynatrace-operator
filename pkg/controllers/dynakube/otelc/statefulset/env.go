@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -26,6 +27,7 @@ const (
 	envK8sClusterName     = "K8S_CLUSTER_NAME"
 	envK8sClusterUid      = "K8S_CLUSTER_UID"
 	envDTentityK8sCluster = "DT_ENTITY_KUBERNETES_CLUSTER"
+	envDTendpoint         = "DT_ENDPOINT"
 	// certDirEnv is the environment variable that identifies which directory
 	// to check for SSL certificate files. If set, this overrides the system default.
 	// It is a colon separated list of directories.
@@ -69,6 +71,12 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envK8sClusterName, Value: dk.Name},
 		{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID},
 		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
+		{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiCredentialsSecretName},
+				Key:                  envDTendpoint,
+			},
+		}},
 	}
 	if dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
