@@ -66,8 +66,10 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
 
-	if err := mut.ensureInitSecret(request); err != nil {
-		return err
+	if !request.DynaKube.FeatureDownloadViaJob() || request.DynaKube.OneAgent().IsCSIAvailable() {
+		if err := mut.ensureInitSecret(request); err != nil {
+			return err
+		}
 	}
 
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
@@ -136,6 +138,17 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 		log.Info("information about the codemodules (version or image) is not available, OneAgent cannot be injected", "pod", request.PodName())
 
 		reasons = append(reasons, UnknownCodeModuleReason)
+	}
+
+	if dk.FeatureDownloadViaJob() && !dk.OneAgent().IsCSIAvailable() {
+		var initSecret corev1.Secret
+
+		secretObjectKey := client.ObjectKey{Name: consts.BootsTrapperInitSecretName, Namespace: request.Namespace.Name}
+		if err := mut.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
+			log.Info("dynatrace-bootstrapper-config is not available, OneAgent cannot be injected", "pod", request.PodName())
+
+			reasons = append(reasons, NoBootstrapperConfigReason)
+		}
 	}
 
 	if len(reasons) > 0 {

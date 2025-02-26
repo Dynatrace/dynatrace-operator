@@ -18,9 +18,10 @@ const (
 	releaseStageEnv        = "DT_RELEASE_STAGE"
 	releaseBuildVersionEnv = "DT_RELEASE_BUILD_VERSION"
 
-	EmptyConnectionInfoReason = "EmptyConnectionInfo"
-	UnknownCodeModuleReason   = "UnknownCodeModule"
-	EmptyTenantUUIDReason     = "EmptyTenantUUID"
+	EmptyConnectionInfoReason  = "EmptyConnectionInfo"
+	UnknownCodeModuleReason    = "UnknownCodeModule"
+	NoBootstrapperConfigReason = "NoBootstrapperConfig"
+	EmptyTenantUUIDReason      = "EmptyTenantUUID"
 
 	OneAgentBinVolumeName     = "oneagent-bin"
 	oneAgentShareVolumeName   = "oneagent-share"
