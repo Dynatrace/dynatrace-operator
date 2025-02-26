@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	extensionsSelfSignedTLSCommonNameSuffix = "-extensions-controller.dynatrace"
+	extensionsSelfSignedTLSCommonNameSuffix = "extensions-controller"
 )
 
 type reconciler struct {
@@ -94,10 +94,10 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 		return err
 	}
 
-	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
+	cert.Cert.DNSNames = certificates.AltNames(r.dk.Name, r.dk.Namespace, extensionsSelfSignedTLSCommonNameSuffix)
 	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
 	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
-	cert.Cert.Subject.CommonName = r.dk.Name + extensionsSelfSignedTLSCommonNameSuffix
+	cert.Cert.Subject.CommonName = certificates.CommonName(r.dk.Name, r.dk.Namespace, extensionsSelfSignedTLSCommonNameSuffix)
 
 	err = cert.SelfSign()
 	if err != nil {
@@ -137,12 +137,4 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 	conditions.SetSecretCreated(r.dk.Conditions(), conditionType, secret.Name)
 
 	return nil
-}
-
-func getCertificateAltNames(dkName string) []string {
-	return []string{
-		dkName + "-extensions-controller.dynatrace",
-		dkName + "-extensions-controller.dynatrace.svc",
-		dkName + "-extensions-controller.dynatrace.svc.cluster.local",
-	}
 }

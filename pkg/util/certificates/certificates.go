@@ -116,3 +116,15 @@ func ValidateCertificateExpiration(certData []byte, renewalThreshold time.Durati
 
 	return true, nil
 }
+
+func CommonName(dkName string, dkNamespace string, componentName string) string {
+	return dkName + "-" + componentName + "." + dkNamespace
+}
+
+func AltNames(dkName string, dkNamespace string, componentName string) []string {
+	return []string{
+		dkName + "-" + componentName + "." + dkNamespace,
+		dkName + "-" + componentName + "." + dkNamespace + ".svc",
+		dkName + "-" + componentName + "." + dkNamespace + ".svc.cluster.local",
+	}
+}

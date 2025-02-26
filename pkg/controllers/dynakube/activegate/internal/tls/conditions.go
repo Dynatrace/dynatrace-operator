@@ -1,5 +1,5 @@
 package tls
 
 const (
-	conditionType = "TlsSecret"
+	conditionType = "TLSSecret"
 )

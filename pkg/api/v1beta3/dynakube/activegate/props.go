@@ -119,8 +119,8 @@ func (ag *Spec) GetAuthTokenSecretName() string {
 	return ag.name + AuthTokenSecretSuffix
 }
 
-// GetTlsSecretName returns the name of the AG TLS secret.
-func (ag *Spec) GetTlsSecretName() string {
+// GetTLSSecretName returns the name of the AG TLS secret.
+func (ag *Spec) GetTLSSecretName() string {
 	if ag.TlsSecretName != "" {
 		return ag.TlsSecretName
 	}

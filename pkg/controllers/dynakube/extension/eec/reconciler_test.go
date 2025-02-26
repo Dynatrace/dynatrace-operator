@@ -1019,7 +1019,7 @@ func TestActiveGateVolumes(t *testing.T) {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					DefaultMode: &defaultMode,
-					SecretName:  dk.ActiveGate().GetTlsSecretName(),
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  activeGateTrustedCertSecretKeyPath,

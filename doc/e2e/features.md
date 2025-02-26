@@ -128,8 +128,8 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 ## Index
 
 - [func AssessActiveGateContainer(builder *features.FeatureBuilder, dk *dynakube.DynaKube, trustedCAs []byte)](<#AssessActiveGateContainer>)
-- [func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrt func() []byte, trustedCAs []byte)](<#AssessOneAgentContainer>)
-- [func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrt func() []byte, trustedCAs []byte)](<#AssessSampleContainer>)
+- [func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrtFunc func() []byte, trustedCAs []byte)](<#AssessOneAgentContainer>)
+- [func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrtFunc func() []byte, trustedCAs []byte)](<#AssessSampleContainer>)
 - [func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sample.App)](<#AssessSampleInitContainers>)
 - [func DefaultCloudNativeSpec() *oneagent.CloudNativeFullStackSpec](<#DefaultCloudNativeSpec>)
 
@@ -146,7 +146,7 @@ func AssessActiveGateContainer(builder *features.FeatureBuilder, dk *dynakube.Dy
 ## func [AssessOneAgentContainer](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/container.go#L66>)
 
 ```go
-func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrt func() []byte, trustedCAs []byte)
+func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrtFunc func() []byte, trustedCAs []byte)
 ```
 
 <a name="AssessSampleContainer"></a>
@@ -154,7 +154,7 @@ func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrt func() []by
 ## func [AssessSampleContainer](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/container.go#L28>)
 
 ```go
-func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrt func() []byte, trustedCAs []byte)
+func AssessSampleContainer(builder *features.FeatureBuilder, sampleApp *sample.App, agCrtFunc func() []byte, trustedCAs []byte)
 ```
 
 <a name="AssessSampleInitContainers"></a>

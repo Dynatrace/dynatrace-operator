@@ -48,7 +48,7 @@ func (mod CertificatesModifier) getVolumes() []corev1.Volume {
 			Name: jettyCerts,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dk.ActiveGate().GetTlsSecretName(),
+					SecretName: mod.dk.ActiveGate().GetTLSSecretName(),
 				},
 			},
 		},

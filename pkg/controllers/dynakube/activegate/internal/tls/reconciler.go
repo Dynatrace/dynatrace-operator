@@ -7,12 +7,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -22,13 +22,9 @@ import (
 )
 
 const (
-	activeGateSelfSignedTLSCommonNameSuffix = "-activegate.dynatrace"
+	activeGateSelfSignedTLSCommonNameSuffix = "activegate"
 
 	tlsCrtDataName = "server.crt"
-)
-
-var (
-	log = logd.Get().WithName("dynakube-activegate-tls-secret")
 )
 
 type Reconciler struct {
@@ -66,7 +62,7 @@ func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	_, err := query.Get(ctx, types.NamespacedName{
-		Name:      r.dk.ActiveGate().GetTlsSecretName(),
+		Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		Namespace: r.dk.Namespace,
 	})
 
@@ -88,7 +84,7 @@ func (r *Reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 
 	return query.Delete(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.ActiveGate().GetTlsSecretName(),
+			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 			Namespace: r.dk.Namespace,
 		},
 	})
@@ -102,11 +98,19 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 		return err
 	}
 
-	cert.Cert.DNSNames = getCertificateAltNames(r.dk.Name)
+	cert.Cert.DNSNames = certificates.AltNames(r.dk.Name, r.dk.Namespace, activeGateSelfSignedTLSCommonNameSuffix)
 	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
 	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
-	cert.Cert.Subject.CommonName = r.dk.Name + activeGateSelfSignedTLSCommonNameSuffix
-	cert.Cert.IPAddresses = getCertificateAltIPs(r.dk.Status.ActiveGate.ServiceIPs)
+	cert.Cert.Subject.CommonName = certificates.CommonName(r.dk.Name, r.dk.Namespace, activeGateSelfSignedTLSCommonNameSuffix)
+
+	ipAddresses, err := getCertificateAltIPs(r.dk.Status.ActiveGate.ServiceIPs)
+	if err != nil {
+		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
+
+		return err
+	}
+
+	cert.Cert.IPAddresses = ipAddresses
 
 	err = cert.SelfSign()
 	if err != nil {
@@ -129,7 +133,7 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 		tlsCrtDataName:        pemCert,
 	}
 
-	secret, err := k8ssecret.Build(r.dk, r.dk.ActiveGate().GetTlsSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(r.dk, r.dk.ActiveGate().GetTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
 
@@ -152,20 +156,17 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 	return nil
 }
 
-func getCertificateAltNames(dkName string) []string {
-	return []string{
-		dkName + activeGateSelfSignedTLSCommonNameSuffix,
-		dkName + activeGateSelfSignedTLSCommonNameSuffix + ".svc",
-		dkName + activeGateSelfSignedTLSCommonNameSuffix + ".svc.cluster.local",
-	}
-}
-
-func getCertificateAltIPs(ips []string) []net.IP {
+func getCertificateAltIPs(ips []string) ([]net.IP, error) {
 	altIPs := []net.IP{}
 
 	for _, ip := range ips {
-		altIPs = append(altIPs, net.ParseIP(ip))
+		netIP := net.ParseIP(ip)
+		if netIP == nil {
+			return nil, errors.Errorf("failed to parse '%s' IP address", ip)
+		}
+
+		altIPs = append(altIPs, netIP)
 	}
 
-	return altIPs
+	return altIPs, nil
 }

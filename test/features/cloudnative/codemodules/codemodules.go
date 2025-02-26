@@ -240,7 +240,7 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature {
 
 	agTlsSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cloudNativeDynakube.ActiveGate().GetTlsSecretName(),
+			Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
 			Namespace: cloudNativeDynakube.Namespace,
 		},
 	}
