@@ -22,11 +22,11 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		volumeMounts = append(volumeMounts, getRootMount())
 	}
 
-	if dk != nil && dk.Spec.TrustedCAs != "" && !dk.FeatureOneAgentIgnoreTrustedCAs() {
+	if dk != nil && dk.Spec.TrustedCAs != "" {
 		volumeMounts = append(volumeMounts, getClusterCaCertVolumeMount())
 	}
 
-	if dk != nil && dk.ActiveGate().HasCaCert() && !dk.FeatureOneAgentIgnoreActiveGateTlsCertificate() {
+	if dk != nil && dk.ActiveGate().HasCaCert() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 
@@ -98,11 +98,11 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		volumes = append(volumes, getCSIStorageVolume(dk))
 	}
 
-	if dk.Spec.TrustedCAs != "" && !dk.FeatureOneAgentIgnoreTrustedCAs() {
+	if dk.Spec.TrustedCAs != "" {
 		volumes = append(volumes, getCertificateVolume(dk))
 	}
 
-	if dk.ActiveGate().HasCaCert() && !dk.FeatureOneAgentIgnoreActiveGateTlsCertificate() {
+	if dk.ActiveGate().HasCaCert() {
 		volumes = append(volumes, getActiveGateCaCertVolume(dk))
 	}
 

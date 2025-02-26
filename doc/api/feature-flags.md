@@ -39,9 +39,6 @@ const (
 
     AnnotationFeatureNoProxy = AnnotationFeaturePrefix + "no-proxy"
 
-    AnnotationFeatureOneAgnetIgnoreAgTlsCertificate = AnnotationFeaturePrefix + "oneagent-ignore-ag-tls-certificate"
-    AnnotationFeatureOneAgnetIgnoreTrustedCAs       = AnnotationFeaturePrefix + "oneagent-ignore-trusted-cas"
-
     // Deprecated: AnnotationFeatureOneAgentIgnoreProxy use AnnotationFeatureNoProxy instead.
     AnnotationFeatureOneAgentIgnoreProxy = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 
@@ -79,7 +76,7 @@ const (
 
 <a name="MountAttemptsToTimeout"></a>
 
-## func [MountAttemptsToTimeout](<https://github.com/Dynatrace/dynatrace-operator/blob/main/pkg/api/v1beta3/dynakube/tmp/feature_flags.go#L271>)
+## func [MountAttemptsToTimeout](<https://github.com/Dynatrace/dynatrace-operator/blob/main/pkg/api/v1beta3/dynakube/tmp/feature_flags.go#L268>)
 
 ```go
 func MountAttemptsToTimeout(maxAttempts int) string

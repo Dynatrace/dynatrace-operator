@@ -55,9 +55,6 @@ const (
 
 	// oneAgent.
 
-	AnnotationFeatureOneAgnetIgnoreAgTlsCertificate = AnnotationFeaturePrefix + "oneagent-ignore-ag-tls-certificate"
-	AnnotationFeatureOneAgnetIgnoreTrustedCAs       = AnnotationFeaturePrefix + "oneagent-ignore-trusted-cas"
-
 	// Deprecated: AnnotationFeatureOneAgentIgnoreProxy use AnnotationFeatureNoProxy instead.
 	AnnotationFeatureOneAgentIgnoreProxy = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 
@@ -304,14 +301,4 @@ func (dk *DynaKube) FeatureInitContainerSeccomp() bool {
 // sets the tenantUUID to the container.conf file (always vs if oneAgent is present).
 func (dk *DynaKube) FeatureEnforcementMode() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureEnforcementMode) != falsePhrase
-}
-
-// FeatureOneAgentIgnoreActiveGateTlsCertificate is a feature flag to skip mounting AG TLS certificate to OneAgent POD.
-func (dk *DynaKube) FeatureOneAgentIgnoreActiveGateTlsCertificate() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgnetIgnoreAgTlsCertificate) == truePhrase
-}
-
-// FeatureOneAgentIgnoreTrustedCAs is a feature flag to skip mounting TrustedCAs certificates to OneAgent POD.
-func (dk *DynaKube) FeatureOneAgentIgnoreTrustedCAs() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgnetIgnoreTrustedCAs) == truePhrase
 }
