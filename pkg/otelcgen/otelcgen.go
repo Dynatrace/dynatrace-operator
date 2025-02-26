@@ -125,7 +125,7 @@ func (c *Config) buildEndpointWithoutPort() string {
 	return c.podIP
 }
 
-func WithProtocols(protocols ...string) Option {
+func WithProtocols(protocols ...Protocol) Option {
 	return func(c *Config) error {
 		receivers, err := c.buildReceivers(protocols)
 		if err != nil {
@@ -168,9 +168,9 @@ func WithExtensions() Option {
 	}
 }
 
-func WithServices() Option {
+func WithServices(protocols ...Protocol) Option {
 	return func(c *Config) error {
-		services := c.buildServices()
+		services := c.buildServices(protocols)
 
 		c.cfg.Service = services
 

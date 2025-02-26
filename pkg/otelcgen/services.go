@@ -16,7 +16,7 @@ var (
 	debug   = component.MustNewID("debug")
 )
 
-func (c *Config) buildServices() service.Config {
+func (c *Config) buildServices(protocols []Protocol) service.Config {
 	return service.Config{
 		Telemetry: telemetry.Config{
 			Logs:     telemetry.LogsConfig{},
@@ -27,17 +27,17 @@ func (c *Config) buildServices() service.Config {
 		Extensions: extensions.Config{healthCheck},
 		Pipelines: pipelines.Config{
 			traces: &pipelines.PipelineConfig{
-				Receivers:  buildReceivers(),
+				Receivers:  buildReceivers(protocols),
 				Processors: append(buildProcessors(), batchTraces),
 				Exporters:  buildExporters(),
 			},
 			metrics: &pipelines.PipelineConfig{
-				Receivers:  buildReceivers(),
+				Receivers:  buildReceivers(protocols),
 				Processors: append(buildProcessors(), batchMetrics),
 				Exporters:  buildExporters(),
 			},
 			logs: &pipelines.PipelineConfig{
-				Receivers:  buildReceivers(),
+				Receivers:  buildReceivers(protocols),
 				Processors: append(buildProcessors(), batchLogs),
 				Exporters:  buildExporters(),
 			},
@@ -45,10 +45,23 @@ func (c *Config) buildServices() service.Config {
 	}
 }
 
-func buildReceivers() []component.ID {
-	return []component.ID{
-		OtlpID, JaegerID, ZipkinID,
+func buildReceivers(protocols []Protocol) []component.ID {
+	components := []component.ID{}
+
+	for _, protocol := range protocols {
+		switch protocol {
+		case JaegerProtocol:
+			components = append(components, JaegerID)
+		case ZipkinProtocol:
+			components = append(components, ZipkinID)
+		case OtlpProtocol:
+			components = append(components, OtlpID)
+		case StatsdProtocol:
+			components = append(components, StatsdID)
+		}
 	}
+
+	return components
 }
 
 func buildExporters() []component.ID {

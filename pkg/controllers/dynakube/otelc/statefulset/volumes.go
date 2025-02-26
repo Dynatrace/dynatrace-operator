@@ -4,6 +4,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -15,11 +16,13 @@ const (
 
 	trustedCAsFile = "rootca.pem"
 
-	customTlsCertVolumeName           = "telemetry-custom-tls"
-	customTlsCertMountPath            = "/tls/custom/telemetry"
-	extensionsControllerTLSVolumeName = "extensions-controller-tls"
-	dataIngestTokenVolumeName         = "api-token"
-	dataIngestTokenMountPath          = "/secrets/" + dataIngestTokenVolumeName
+	customTlsCertVolumeName            = "telemetry-custom-tls"
+	customTlsCertMountPath             = "/tls/custom/telemetry"
+	extensionsControllerTLSVolumeName  = "extensions-controller-tls"
+	dataIngestTokenVolumeName          = "api-token"
+	dataIngestTokenMountPath           = "/secrets/" + dataIngestTokenVolumeName
+	telemetryCollectorConfigVolumeName = "telemetry-collector-config"
+	telemetryCollectorConfigPath       = "/config"
 )
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
@@ -99,6 +102,19 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					},
 				},
 			})
+
+			if dk.TelemetryService().IsEnabled() {
+				volumes = append(volumes, corev1.Volume{
+					Name: telemetryCollectorConfigVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: configuration.GetConfigMapName(dk.Name),
+							},
+						},
+					},
+				})
+			}
 		}
 
 		volumes = append(volumes, corev1.Volume{
@@ -159,6 +175,12 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      dataIngestTokenVolumeName,
 			MountPath: dataIngestTokenMountPath,
+			ReadOnly:  true,
+		})
+
+		vm = append(vm, corev1.VolumeMount{
+			Name:      telemetryCollectorConfigVolumeName,
+			MountPath: telemetryCollectorConfigPath,
 			ReadOnly:  true,
 		})
 	}
