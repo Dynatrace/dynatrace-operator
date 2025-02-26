@@ -1,16 +1,16 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
-// +versionName=v1beta3
+// +versionName=v1beta4
 package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryservice"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -93,9 +93,9 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	Extensions *ExtensionsSpec `json:"extensions,omitempty"`
 
-	// When a TelemetryIngestSpec is provided, the OTEL collector is deployed by the operator.
+	// When a TelemetryServiceSpec is provided, the OTEL collector is deployed by the operator.
 	// +kubebuilder:validation:Optional
-	TelemetryIngest *telemetryingest.Spec `json:"telemetryIngest,omitempty"`
+	TelemetryService *telemetryservice.Spec `json:"telemetryService,omitempty"`
 
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
@@ -151,6 +151,8 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableIstio bool `json:"enableIstio,omitempty"`
+
+	EnableOTLPingest bool `json:"enableOTLPIngest,omitempty"`
 }
 
 type TemplatesSpec struct {
@@ -176,5 +178,5 @@ type DynaKubeList struct { //nolint:revive
 }
 
 func init() {
-	v1beta3.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
+	v1beta4.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }

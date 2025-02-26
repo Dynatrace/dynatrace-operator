@@ -27,9 +27,12 @@ func (ag *Spec) SetName(name string) {
 func (ag *Spec) SetAutomaticTLSCertificate(enabled bool) {
 	ag.automaticTLSCertificateEnabled = enabled
 }
-
 func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
+}
+
+func (ag *Spec) SetOTLPingestDependency(isEnabled bool) {
+	ag.enabledDependencies.otlpIngest = isEnabled
 }
 
 func (ag *Spec) apiUrlHost() string {
@@ -96,7 +99,6 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 func (ag *Spec) IsAutomaticTlsSecretEnabled() bool {
 	return ag.automaticTLSCertificateEnabled
 }
-
 func (ag *Spec) HasCaCert() bool {
 	return ag.IsEnabled() && (ag.TlsSecretName != "" || ag.IsAutomaticTlsSecretEnabled())
 }
