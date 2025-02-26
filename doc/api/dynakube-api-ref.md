@@ -8,6 +8,7 @@
 |`customPullSecret`|Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.<br/>To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret<br/>(<https://www.dynatrace.|-|string|
 |`dynatraceApiRequestThreshold`|Configuration for thresholding Dynatrace API requests.|-|integer|
 |`enableIstio`|When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding<br/>VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.<br/>Disabled by default.|-|boolean|
+|`enableOTLPIngest`||-|boolean|
 |`extensions`|When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)<br/>are deployed by the operator.|-|object|
 |`kspm`|General configuration about the KSPM feature.|-|object|
 |`networkZone`|Sets a network zone for the OneAgent and ActiveGate pods.|-|string|
