@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/service"
@@ -115,7 +115,7 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 	)
 }
 
-func buildServicePortList(protocols []telemetryservice.Protocol) []corev1.ServicePort {
+func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 	if len(protocols) == 0 {
 		return nil
 	}
@@ -124,14 +124,14 @@ func buildServicePortList(protocols []telemetryservice.Protocol) []corev1.Servic
 
 	for _, protocol := range protocols {
 		switch protocol {
-		case telemetryservice.ZipkinProtocol:
+		case otelcgen.ZipkinProtocol:
 			svcPorts = append(svcPorts, corev1.ServicePort{
 				Name:       portNameZipkin,
 				Port:       9411,
 				Protocol:   corev1.ProtocolTCP,
 				TargetPort: intstr.FromInt32(9411),
 			})
-		case telemetryservice.OtlpProtocol:
+		case otelcgen.OtlpProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:       portNameOtlpGrpc,
@@ -145,7 +145,7 @@ func buildServicePortList(protocols []telemetryservice.Protocol) []corev1.Servic
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt32(4318),
 				})
-		case telemetryservice.JaegerProtocol:
+		case otelcgen.JaegerProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:       portNameJaegerGrpc,
@@ -171,7 +171,7 @@ func buildServicePortList(protocols []telemetryservice.Protocol) []corev1.Servic
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt32(14268),
 				})
-		case telemetryservice.StatsdProtocol:
+		case otelcgen.StatsdProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:       portNameStatsd,

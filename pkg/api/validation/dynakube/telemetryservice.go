@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -61,7 +62,7 @@ func duplicatedTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dy
 		return ""
 	}
 
-	protocolsOccurrences := map[telemetryservice.Protocol]int{}
+	protocolsOccurrences := map[otelcgen.Protocol]int{}
 
 	for _, protocol := range dk.TelemetryService().GetProtocols() {
 		if _, ok := protocolsOccurrences[protocol]; !ok {

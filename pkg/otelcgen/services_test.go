@@ -12,7 +12,7 @@ import (
 func TestNewConfigWithServices(t *testing.T) {
 	cfg, err := NewConfig(
 		"",
-		WithServices(),
+		WithServices(OtlpProtocol, JaegerProtocol, ZipkinProtocol),
 	)
 	require.NoError(t, err)
 	c, err := cfg.Marshal()

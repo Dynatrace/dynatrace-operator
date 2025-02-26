@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -92,8 +93,8 @@ func TestService(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryservice.Spec{
 			Protocols: []string{
-				string(telemetryservice.ZipkinProtocol),
-				string(telemetryservice.StatsdProtocol),
+				string(otelcgen.ZipkinProtocol),
+				string(otelcgen.StatsdProtocol),
 			},
 		})
 		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
