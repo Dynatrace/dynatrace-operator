@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube" //nolint:staticcheck
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -62,8 +62,8 @@ func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Leve
 }
 
 func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, prevDk prevDynakube.DynaKube) {
-	if prevDk.NeedsOneAgent() {
-		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(prevDk.OneAgentDaemonsetName(), prevDk.Namespace))
+	if prevDk.OneAgent().IsDaemonsetRequired() {
+		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(prevDk.OneAgent().GetDaemonsetName(), prevDk.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", prevDk.Name),
