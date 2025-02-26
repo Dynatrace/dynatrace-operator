@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -197,6 +198,39 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.EnrichmentEndpointSecretName, Namespace: namespace.Name}, &secret)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+	t.Run("Remove "+consts.BootsTrapperInitSecretName, func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dkRemoteImage := createDynakubeWithRemoteImageDownloadAndNoCSI("dk-test", convertToLabelSelector(labels))
+
+		labels := map[string]string{
+			dtwebhook.InjectionInstanceLabel: dkRemoteImage.Name,
+		}
+
+		ns := createNamespace("ns-bootstrapper", labels)
+		ns2 := createNamespace("ns-bootstrapper2", labels)
+
+		clt := fake.NewClient(ns, ns2)
+		ctx := context.Background()
+
+		namespaces, err := GetNamespacesForDynakube(ctx, clt, dkRemoteImage.Name)
+		require.NoError(t, err)
+
+		var tmp corev1.Secret
+
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootsTrapperInitSecretName, Namespace: ns.Name}})
+
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootsTrapperInitSecretName, Namespace: ns.Name}, &tmp)
+		require.NoError(t, err)
+
+		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dkRemoteImage)
+		err = dm.UnmapFromDynaKube(namespaces)
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootsTrapperInitSecretName, Namespace: ns.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -293,6 +294,7 @@ func TestIsInjectionPossible(t *testing.T) {
 	t.Run("not possible without communication route", injectionNotPossibleWithoutCommunicationRoute)
 	t.Run("not possible without code modules version", injectionNotPossibleWithoutCodeModulesVersion)
 	t.Run("not possible with multiple issues", injectionNotPossibleWithMultipleIssues)
+	t.Run("not possible with remote image download enabled and no csi driver", injectionNotPossibleWithRemoteImageDownloadEnabled)
 }
 
 func injectionPossibleWithValidTenantUUID(t *testing.T) {
@@ -370,6 +372,19 @@ func injectionNotPossibleWithMultipleIssues(t *testing.T) {
 	require.Contains(t, reason, UnknownCodeModuleReason)
 }
 
+func injectionNotPossibleWithRemoteImageDownloadEnabled(t *testing.T) {
+	installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+	mutator := createTestPodMutator(nil)
+	dk := getRemoteImageDownloadDynakube()
+	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
+
+	ok, reason := mutator.isInjectionPossible(request)
+
+	require.False(t, ok)
+	require.Contains(t, reason, NoBootstrapperConfigReason)
+}
+
 func createTestPodMutator(objects []client.Object) *Mutator {
 	return &Mutator{
 		client:           fake.NewClient(objects...),
@@ -434,6 +449,22 @@ func getTestCSIDynakube() *dynakube.DynaKube {
 		},
 		Status: getTestDynakubeStatus(),
 	}
+}
+
+func getRemoteImageDownloadDynakube() *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: getTestDynakubeMeta(),
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+			},
+		},
+		Status: getTestDynakubeStatus(),
+	}
+
+	dk.Annotations[dynakube.AnnotationFeatureDownloadViaJob] = "true"
+
+	return dk
 }
 
 func getTestReadOnlyCSIDynakube() *dynakube.DynaKube {
