@@ -102,7 +102,7 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 }
 
 func (ag *Spec) IsAutomaticTlsSecretEnabled() bool {
-	return ag.TlsSecretName == "" && ag.trustedCAs != "" && ag.automaticTLSCertificateEnabled
+	return ag.automaticTLSCertificateEnabled
 }
 
 func (ag *Spec) HasCaCert() bool {
