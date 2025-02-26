@@ -3,7 +3,7 @@ package bootstrapperconfig
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
@@ -51,30 +51,6 @@ func NewBootstrapperInitGenerator(client client.Client, apiReader client.Reader,
 		namespace:  namespace,
 		secretName: consts.BootsTrapperInitSecretName,
 	}
-}
-
-// GenerateForNamespace creates the init secret for namespace while only having the name of the corresponding dynakube
-// Used by the podInjection webhook in case the namespace lacks the init secret.
-func (g *BootstrapperInitGenerator) GenerateForNamespace(ctx context.Context, dk dynakube.DynaKube, targetNs string) error {
-	log.Info("reconciling namespace bootstrapper init secret for", "namespace", targetNs)
-
-	g.canWatchNodes = false
-
-	data, err := g.generate(ctx, &dk)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
-
-	secret, err := k8ssecret.BuildForNamespace(consts.BootsTrapperInitSecretName, targetNs, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
-	if err != nil {
-		return err
-	}
-
-	_, err = k8ssecret.Query(g.client, g.apiReader, log).CreateOrUpdate(ctx, secret)
-
-	return errors.WithStack(err)
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
@@ -148,10 +124,10 @@ func (g *BootstrapperInitGenerator) generate(ctx context.Context, dk *dynakube.D
 	}
 
 	return map[string][]byte{
-		pmc.InputFileName:        []byte(pmcSecret),
+		pmc.InputFileName:        pmcSecret,
 		ca.TrustedCertsInputFile: trustedCAs,
 		ca.AgCertsInputFile:      agCerts,
-		curl.InputFileName:       []byte(fmt.Sprintf("%d", secretConfig.InitialConnectRetry)),
+		curl.InputFileName:       []byte(strconv.Itoa(secretConfig.InitialConnectRetry)),
 		endpoint.InputFileName:   []byte(secretConfig.ApiToken),
 	}, nil
 }
