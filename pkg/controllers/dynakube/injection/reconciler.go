@@ -156,6 +156,22 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return nil
 	}
 
+	err = r.generateCorrectInitSecret(ctx)
+	if err != nil {
+		return err
+	}
+
+	if r.dk.OneAgent().IsApplicationMonitoringMode() {
+		r.dk.Status.SetPhase(status.Running)
+	}
+
+	setCodeModulesInjectionCreatedCondition(r.dk.Conditions())
+
+	return nil
+}
+
+func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
+	var err error
 	if r.dk.FeatureDownloadViaJob() && !r.dk.OneAgent().IsCSIAvailable() {
 		err = bootstrapperconfig.NewBootstrapperInitGenerator(r.client, r.apiReader, r.dynatraceClient, r.dk.Namespace).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
@@ -176,13 +192,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		}
 	}
 
-	if r.dk.OneAgent().IsApplicationMonitoringMode() {
-		r.dk.Status.SetPhase(status.Running)
-	}
-
-	setCodeModulesInjectionCreatedCondition(r.dk.Conditions())
-
-	return nil
+	return err
 }
 
 func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
