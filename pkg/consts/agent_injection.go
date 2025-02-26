@@ -8,6 +8,8 @@ const (
 	AgentInitSecretName                = "dynatrace-dynakube-config"
 	AgentInitSecretConfigField         = "config"
 
+	BootsTrapperInitSecretName = "dynatrace-bootstrapper-config"
+
 	LdPreloadFilename = "ld.so.preload"
 	LibAgentProcPath  = "/agent/lib64/liboneagentproc.so"
 
