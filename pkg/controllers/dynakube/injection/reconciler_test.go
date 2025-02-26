@@ -408,7 +408,6 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace)
 		assertSecretFound(t, clt, consts.BootsTrapperInitSecretName, testNamespace)
 	})
-
 }
 
 func TestSetupEnrichmentInjection(t *testing.T) {
