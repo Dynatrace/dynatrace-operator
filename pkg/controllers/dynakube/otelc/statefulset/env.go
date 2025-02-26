@@ -63,6 +63,12 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envK8sClusterName, Value: dk.Name},
 		{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID},
 		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
+		{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiCredentialsSecretName},
+				Key:                  envDTendpoint,
+			},
+		}},
 	}
 
 	if dk.IsExtensionsEnabled() {
