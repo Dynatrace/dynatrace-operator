@@ -1,12 +1,12 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
 )
 
-func (dk *DynaKube) TelemetryService() *telemetryservice.TelemetryService {
-	ts := &telemetryservice.TelemetryService{
-		Spec: dk.Spec.TelemetryService,
+func (dk *DynaKube) TelemetryIngest() *telemetryingest.TelemetryIngest {
+	ts := &telemetryingest.TelemetryIngest{
+		Spec: dk.Spec.TelemetryIngest,
 	}
 	ts.SetName(dk.Name)
 
