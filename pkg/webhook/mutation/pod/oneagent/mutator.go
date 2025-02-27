@@ -66,10 +66,8 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
 
-	if !request.DynaKube.FeatureDownloadViaJob() || request.DynaKube.OneAgent().IsCSIAvailable() {
-		if err := mut.ensureInitSecret(request); err != nil {
-			return err
-		}
+	if err := mut.ensureInitSecret(request); err != nil {
+		return err
 	}
 
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)

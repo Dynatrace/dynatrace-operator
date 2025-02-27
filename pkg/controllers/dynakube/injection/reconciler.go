@@ -173,7 +173,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 	var err error
 	if r.dk.FeatureBootstrapperInjection() {
-		err = bootstrapperconfig.NewSecretGenerator(ctx, r.client, r.apiReader, r.dynatraceClient, r.dk.Namespace).GenerateForDynakube(r.dk)
+		err = bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
 			if conditions.IsKubeApiError(err) {
 				conditions.SetKubeApiError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
@@ -207,7 +207,7 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 		}
 
 		if r.dk.FeatureBootstrapperInjection() {
-			err = bootstrapperconfig.NewSecretGenerator(ctx, r.client, r.apiReader, r.dynatraceClient, r.dk.Namespace).Cleanup(namespaces)
+			err = bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces)
 			if err != nil {
 				log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
 			}
