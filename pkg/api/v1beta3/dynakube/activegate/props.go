@@ -24,10 +24,6 @@ func (ag *Spec) SetName(name string) {
 	ag.name = name
 }
 
-func (ag *Spec) SetTrustedCAs(name string) {
-	ag.trustedCAs = name
-}
-
 func (ag *Spec) SetAutomaticTLSCertificate(enabled bool) {
 	ag.automaticTLSCertificateEnabled = enabled
 }
