@@ -185,7 +185,7 @@ func getInjectedPod() *corev1.Pod {
 			},
 		},
 	}
-	installContainer := createInstallInitContainerBase("test", "test", pod, *getTestDynakube())
+	installContainer := createDefaultInitContainerBase("test", "test", pod, *getTestDynakube())
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
 
 	return pod

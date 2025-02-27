@@ -51,7 +51,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 
 func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dynakube.DynaKube) (installer.Installer, error) {
 	switch {
-	case dk.FeatureDownloadViaJob():
+	case dk.FeatureRemoteDownload():
 		return provisioner.getJobInstaller(ctx, dk), nil
 	case dk.OneAgent().GetCustomCodeModulesImage() != "":
 		props := &image.Properties{

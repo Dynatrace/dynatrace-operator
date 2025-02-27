@@ -11,6 +11,7 @@ import (
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/bootstrapper"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -47,9 +48,10 @@ type webhook struct {
 	webhookNamespace string
 	clusterID        string
 
-	mutators       []dtwebhook.PodMutator
-	apmExists      bool
-	deployedViaOLM bool
+	defaultMutators      []dtwebhook.PodMutator
+	bootstrapperMutators []dtwebhook.PodMutator
+	apmExists            bool
+	deployedViaOLM       bool
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
@@ -113,7 +115,7 @@ func (wh *webhook) setupEventRecorder(mutationRequest *dtwebhook.MutationRequest
 }
 
 func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
-	for _, mutator := range wh.mutators {
+	for _, mutator := range wh.defaultMutators {
 		if mutator.Injected(mutationRequest.BaseRequest) {
 			return true
 		}
@@ -157,22 +159,27 @@ func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 		return nil
 	}
 
-	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
-
-	_ = updateContainerInfo(mutationRequest.BaseRequest, mutationRequest.InstallContainer)
-
 	var isMutated bool
 
-	for _, mutator := range wh.mutators {
-		if !mutator.Enabled(mutationRequest.BaseRequest) {
-			continue
-		}
+	var err error
 
-		if err := mutator.Mutate(ctx, mutationRequest); err != nil {
+	if !mutationRequest.DynaKube.OneAgent().IsCSIAvailable() && mutationRequest.DynaKube.FeatureRemoteDownload() {
+		mutationRequest.InstallContainer, err = createBootstrapperInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
+		if err != nil {
 			return err
 		}
 
-		isMutated = true
+		isMutated, err = bootstrapper.HandleBootstrapperMutation(ctx, mutationRequest, wh.bootstrapperMutators)
+		if err != nil {
+			return err
+		}
+	} else {
+		mutationRequest.InstallContainer = createDefaultInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
+
+		isMutated, err = handleDefaultMutation(ctx, mutationRequest, wh.defaultMutators)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !isMutated {
@@ -189,18 +196,45 @@ func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 }
 
 func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
-	var needsUpdate bool
-
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
+	if mutationRequest.DynaKube.OneAgent().IsInitContainerBootstrapperRequired() {
+		return bootstrapper.HandleBootstrapperReinvocation(reinvocationRequest, wh.bootstrapperMutators)
+	}
 
+	return handleDefaultReinvocation(reinvocationRequest, wh.defaultMutators)
+}
+
+func handleDefaultMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest, mutators []dtwebhook.PodMutator) (bool, error) {
+	_ = updateContainerInfo(mutationRequest.BaseRequest, mutationRequest.InstallContainer)
+
+	var isMutated bool
+
+	for _, mutator := range mutators {
+		if !mutator.Enabled(mutationRequest.BaseRequest) {
+			continue
+		}
+
+		if err := mutator.Mutate(ctx, mutationRequest); err != nil {
+			return false, err
+		}
+
+		isMutated = true
+	}
+
+	return isMutated, nil
+}
+
+func handleDefaultReinvocation(reinvocationRequest *dtwebhook.ReinvocationRequest, mutators []dtwebhook.PodMutator) bool {
 	isMutated := updateContainerInfo(reinvocationRequest.BaseRequest, nil)
+
+	var needsUpdate bool
 
 	if !isMutated { // == no new containers were detected, we only mutate new containers during reinvoke
 		return false
 	}
 
-	for _, mutator := range wh.mutators {
-		if mutator.Enabled(mutationRequest.BaseRequest) {
+	for _, mutator := range mutators {
+		if mutator.Enabled(reinvocationRequest.BaseRequest) {
 			if update := mutator.Reinvoke(reinvocationRequest); update {
 				needsUpdate = true
 			}

@@ -153,7 +153,7 @@ func TestDoubleInjection(t *testing.T) {
 		webhookNamespace: testNamespaceName,
 		clusterID:        testClusterID,
 		apmExists:        false,
-		mutators: []dtwebhook.PodMutator{
+		defaultMutators: []dtwebhook.PodMutator{
 			oamutation.NewMutator(
 				testImage,
 				testClusterID,
@@ -385,7 +385,7 @@ func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object)
 		webhookNamespace: testNamespaceName,
 		clusterID:        testClusterID,
 		apmExists:        false,
-		mutators:         mutators,
+		defaultMutators:  mutators,
 	}
 }
 

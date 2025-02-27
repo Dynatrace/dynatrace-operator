@@ -1,6 +1,7 @@
 package job
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
@@ -14,8 +15,7 @@ import (
 const (
 	namePrefix = "codemodule-download-"
 
-	volumeName       = "dynatrace-codemodules"
-	codeModuleSource = "/opt/dynatrace/oneagent"
+	volumeName = "dynatrace-codemodules"
 
 	activeDeadlineSeconds   int64 = 600 // 10 min, after which the Job will be put into a Failed state
 	ttlSecondsAfterFinished int32 = 10  // 10 sec after the Job is put into a Succeeded or Failed state the Job and related Pods will be terminated
@@ -90,7 +90,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 
 func (inst *Installer) buildArgs(jobName, targetDir string) []string {
 	return []string{
-		"--source=" + codeModuleSource,
+		"--source=" + consts.AgentCodeModuleSource,
 		"--target=" + targetDir,
 		"--work=" + inst.props.PathResolver.AgentJobWorkDirForJob(jobName),
 	}

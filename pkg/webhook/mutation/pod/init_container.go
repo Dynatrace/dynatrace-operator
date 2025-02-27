@@ -14,11 +14,12 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
 
-func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+func createDefaultInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
 	return &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           webhookImage,
@@ -36,6 +37,21 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		SecurityContext: securityContextForInitContainer(pod, dk),
 		Resources:       initContainerResources(dk),
 	}
+}
+
+func createBootstrapperInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) (*corev1.Container, error) {
+	customImage := dk.OneAgent().GetCustomCodeModulesImage()
+	if customImage == "" {
+		return nil, errors.New("custom code modules image not set")
+	}
+
+	return &corev1.Container{
+		Name:            dtwebhook.InstallContainerName,
+		Image:           customImage,
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		SecurityContext: securityContextForInitContainer(pod, dk),
+		Resources:       initContainerResources(dk),
+	}, nil
 }
 
 func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {

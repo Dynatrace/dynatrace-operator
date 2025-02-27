@@ -23,7 +23,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		require.NotNil(t, initContainer)
 		assert.Equal(t, initContainer.Image, webhookImage)
@@ -58,7 +58,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -82,7 +82,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
 
@@ -103,7 +103,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -122,7 +122,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		assert.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -140,7 +140,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		assert.Equal(t, "fail", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
 		assert.NotEqual(t, "silent", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
@@ -152,7 +152,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		assert.NotEqual(t, "fail", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
 		assert.Equal(t, "silent", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
@@ -164,7 +164,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		assert.NotEqual(t, "fail", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
 		assert.Equal(t, "silent", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
@@ -178,7 +178,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		assert.Equal(t, "fail", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
 		assert.NotEqual(t, "silent", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
@@ -192,7 +192,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		assert.NotEqual(t, "fail", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
 		assert.Equal(t, "silent", env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value)
@@ -205,7 +205,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		webhookImage := "test-image"
 		clusterID := "id"
 
-		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dk)
+		initContainer := createDefaultInitContainerBase(webhookImage, clusterID, pod, *dk)
 
 		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, initContainer.SecurityContext.SeccompProfile.Type)
 	})

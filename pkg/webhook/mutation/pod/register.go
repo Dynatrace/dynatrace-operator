@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	oabootstrappermutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/bootstrapper/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/pkg/errors"
@@ -64,7 +65,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
 		clusterID:        clusterID,
 		recorder:         eventRecorder,
-		mutators: []dtwebhook.PodMutator{
+		defaultMutators: []dtwebhook.PodMutator{
 			oamutation.NewMutator(
 				webhookPodImage,
 				clusterID,
@@ -77,6 +78,14 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 				kubeClient,
 				apiReader,
 				metaClient,
+			),
+		},
+		bootstrapperMutators: []dtwebhook.PodMutator{
+			oabootstrappermutation.NewMutator(
+				webhookPodImage,
+				clusterID,
+				kubeClient,
+				apiReader,
 			),
 		},
 		decoder: admission.NewDecoder(mgr.GetScheme()),

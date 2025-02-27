@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
@@ -56,7 +57,7 @@ func TestBuildArgs(t *testing.T) {
 
 		require.Len(t, args, 3)
 		assert.Contains(t, args[0], "--source")
-		assert.Contains(t, args[0], codeModuleSource)
+		assert.Contains(t, args[0], consts.AgentCodeModuleSource)
 
 		assert.Contains(t, args[1], "--target")
 		assert.Contains(t, args[1], targetDir)

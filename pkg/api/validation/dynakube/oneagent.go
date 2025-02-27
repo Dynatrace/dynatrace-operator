@@ -145,7 +145,9 @@ func publicImageSetWithoutReadOnlyMode(_ context.Context, v *Validator, dk *dyna
 
 func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().IsApplicationMonitoringMode() {
-		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver {
+		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 &&
+			!v.modules.CSIDriver &&
+			!dk.FeatureRemoteDownload() {
 			return errorImageFieldSetWithoutCSIFlag
 		}
 	}

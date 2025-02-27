@@ -26,7 +26,7 @@ const (
 	AnnotationFlavor = "oneagent.dynatrace.com/flavor"
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
-	// "all" if not set.
+	// "all" if not set. This setting is ignored for bootstrapper downloads.
 	AnnotationTechnologies = "oneagent.dynatrace.com/technologies"
 
 	// AnnotationInstallPath can be set on a Pod to configure on which directory the OneAgent will be available from,

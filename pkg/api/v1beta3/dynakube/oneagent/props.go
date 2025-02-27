@@ -20,7 +20,7 @@ const (
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
 	name, apiUrlHost string,
-	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe bool) *OneAgent {
+	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureRemoteDownload bool) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
 		Status:            status,
@@ -31,11 +31,16 @@ func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatu
 
 		featureOneAgentPrivileged:        featureOneAgentPrivileged,
 		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
+		featureRemoteDownload:            featureRemoteDownload,
 	}
 }
 
 func (oa *OneAgent) IsCSIAvailable() bool {
 	return installconfig.GetModules().CSIDriver
+}
+
+func (oa *OneAgent) IsInitContainerBootstrapperRequired() bool {
+	return !oa.IsCSIAvailable() && oa.featureRemoteDownload
 }
 
 // IsApplicationMonitoringMode returns true when application only section is used.
@@ -286,7 +291,7 @@ func (oa *OneAgent) GetEndpoints() string {
 func (oa *OneAgent) GetCustomCodeModulesImage() string {
 	if oa.IsCloudNativeFullstackMode() {
 		return oa.CloudNativeFullStack.CodeModulesImage
-	} else if oa.IsApplicationMonitoringMode() && oa.IsCSIAvailable() {
+	} else if oa.IsApplicationMonitoringMode() {
 		return oa.ApplicationMonitoring.CodeModulesImage
 	}
 

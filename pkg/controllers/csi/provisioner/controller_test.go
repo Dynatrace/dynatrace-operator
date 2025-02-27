@@ -254,7 +254,7 @@ func createDynaKubeWithJobFF(t *testing.T) *dynakube.DynaKube {
 	}
 	dk.Status.CodeModules.ImageID = imageId
 	dk.Annotations = map[string]string{
-		dynakube.AnnotationFeatureDownloadViaJob: "true",
+		dynakube.AnnotationFeatureRemoteDownload: "true",
 	}
 
 	return dk

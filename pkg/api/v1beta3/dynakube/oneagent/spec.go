@@ -16,6 +16,7 @@ type OneAgent struct {
 
 	featureOneAgentPrivileged        bool
 	featureOneAgentSkipLivenessProbe bool
+	featureRemoteDownload            bool
 }
 
 type Mode string
