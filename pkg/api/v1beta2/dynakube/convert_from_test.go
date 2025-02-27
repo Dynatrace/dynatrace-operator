@@ -6,9 +6,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
@@ -20,79 +20,86 @@ import (
 )
 
 func TestConvertFrom(t *testing.T) {
-	t.Run("migrate base from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate base from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate host-monitoring from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate host-monitoring from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring)
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate classic-fullstack from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate classic-fullstack from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack)
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate cloud-native from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate cloud-native from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		spec := getNewCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack)
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate application-monitoring from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate application-monitoring from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		appSpec := getNewApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareApplicationMonitoringSpec(t, *to.Spec.OneAgent.ApplicationMonitoring, *from.Spec.OneAgent.ApplicationMonitoring)
 	})
 
-	t.Run("migrate activegate from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate activegate from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		agSpec := getNewActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareActiveGateSpec(t, to.Spec.ActiveGate, from.Spec.ActiveGate)
 	})
 
-	t.Run("migrate status from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate status from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Status = getNewStatus()
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareStatus(t, to.Status, from.Status)
 	})
