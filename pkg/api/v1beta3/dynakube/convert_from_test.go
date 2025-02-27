@@ -6,10 +6,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
+	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	activegatev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
+	oneagentv1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,85 +21,92 @@ import (
 )
 
 func TestConvertFrom(t *testing.T) {
-	t.Run("migrate base from dynakube to v1beta1", func(t *testing.T) {
+	t.Run("migrate base from v1beta4 to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate host-monitoring from dynakube to v1beta1", func(t *testing.T) {
+	t.Run("migrate host-monitoring from v1beta4 to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring)
-		compareMovedFields(t, to, from)
+		compareBase(t, to, from)
 	})
 
-	t.Run("migrate classic-fullstack from dynakube to v1beta1", func(t *testing.T) {
+	t.Run("migrate classic-fullstack from v1beta4 to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack)
-		compareMovedFields(t, to, from)
+		compareBase(t, to, from)
 	})
 
-	t.Run("migrate cloud-native from dynakube to v1beta1", func(t *testing.T) {
+	t.Run("migrate cloud-native from v1beta4 to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		spec := getNewCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack)
-		compareMovedFields(t, to, from)
+		compareBase(t, to, from)
 	})
 
-	t.Run("migrate application-monitoring from dynakube to v1beta1", func(t *testing.T) {
+	t.Run("migrate application-monitoring from v1beta4 to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		appSpec := getNewApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareApplicationMonitoringSpec(t, *to.Spec.OneAgent.ApplicationMonitoring, *from.Spec.OneAgent.ApplicationMonitoring)
 	})
 
-	t.Run("migrate activegate from dynakube to v1beta1", func(t *testing.T) {
+	t.Run("migrate activegate from v1beta4 to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		agSpec := getNewActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareActiveGateSpec(t, to.Spec.ActiveGate, from.Spec.ActiveGate)
 	})
 
-	t.Run("migrate status from dynakube to v1beta1", func(t *testing.T) {
+	t.Run("migrate status from v1beta4 to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Status = getNewStatus()
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareStatus(t, to.Status, from.Status)
 	})
 }
 
-func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
+func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubev1beta4.DynaKube) {
 	require.NotEmpty(t, oldDk)
 	require.NotEmpty(t, newDk)
 
@@ -113,19 +121,20 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	oldDk.Annotations = oldAnnotations
 	newDk.Annotations = newAnnotations
 
-	for _, ff := range getMovedFeatureFlagList() {
-		if _, ok := oldDk.Annotations[ff]; ok {
-			_, ok := newDk.Annotations[ff]
-			assert.False(t, ok, ff+" wasn't moved properly, should have been removed from the annotations.")
-		}
-	}
-
 	assert.Equal(t, oldDk.Spec.APIURL, newDk.Spec.APIURL)
 	assert.Equal(t, oldDk.Spec.Tokens, newDk.Spec.Tokens)
 	assert.Equal(t, oldDk.Spec.CustomPullSecret, newDk.Spec.CustomPullSecret)
 	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
 	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
+	assert.Equal(t, oldDk.Spec.DynatraceApiRequestThreshold, newDk.Spec.DynatraceApiRequestThreshold)
+
+	if newDk.OneAgent().IsAppInjectionNeeded() {
+		assert.Equal(t, oldDk.OneAgent().GetNamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
+	}
+
+	assert.Equal(t, oldDk.MetadataEnrichmentEnabled(), newDk.MetadataEnrichmentEnabled())
+	assert.Equal(t, oldDk.Spec.MetadataEnrichment.NamespaceSelector, newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
 	if oldDk.Spec.Proxy != nil || newDk.Spec.Proxy != nil { // necessary so we don't explode with nil pointer when not set
 		require.NotNil(t, oldDk.Spec.Proxy)
@@ -133,24 +142,13 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 		assert.Equal(t, oldDk.Spec.Proxy.Value, newDk.Spec.Proxy.Value)
 		assert.Equal(t, oldDk.Spec.Proxy.ValueFrom, newDk.Spec.Proxy.ValueFrom)
 	}
-}
-
-func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
-	assert.Equal(t, oldDk.FeatureApiRequestThreshold(), newDk.ApiRequestThreshold())
-	assert.Equal(t, oldDk.FeatureOneAgentSecCompProfile(), newDk.OneAgent().GetSecCompProfile())
-	assert.Equal(t, !oldDk.FeatureDisableMetadataEnrichment(), newDk.MetadataEnrichmentEnabled())
-	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
 	if oldDk.FeatureMaxFailedCsiMountAttempts() != DefaultMaxFailedCsiMountAttempts {
-		assert.Equal(t, dynakube.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
-	}
-
-	if newDk.OneAgent().IsAppInjectionNeeded() {
-		assert.Equal(t, oldDk.NamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
+		assert.Equal(t, dynakubev1beta4.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
 	}
 }
 
-func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec oneagent.HostInjectSpec) {
+func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentv1beta4.HostInjectSpec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
 	assert.Equal(t, *oldSpec.AutoUpdate, *newSpec.AutoUpdate)
@@ -163,25 +161,25 @@ func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec oneagen
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
+	assert.Equal(t, oldSpec.SecCompProfile, newSpec.SecCompProfile)
 }
 
-func compareAppInjectionSpec(t *testing.T, oldSpec AppInjectionSpec, newSpec oneagent.AppInjectionSpec) {
+func compareAppInjectionSpec(t *testing.T, oldSpec oneagent.AppInjectionSpec, newSpec oneagentv1beta4.AppInjectionSpec) {
 	assert.Equal(t, oldSpec.CodeModulesImage, newSpec.CodeModulesImage)
 	assert.Equal(t, oldSpec.InitResources, newSpec.InitResources)
 }
 
-func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newSpec oneagent.CloudNativeFullStackSpec) {
+func compareCloudNativeSpec(t *testing.T, oldSpec oneagent.CloudNativeFullStackSpec, newSpec oneagentv1beta4.CloudNativeFullStackSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 	compareHostInjectSpec(t, oldSpec.HostInjectSpec, newSpec.HostInjectSpec)
 }
 
-func compareApplicationMonitoringSpec(t *testing.T, oldSpec ApplicationMonitoringSpec, newSpec oneagent.ApplicationMonitoringSpec) {
+func compareApplicationMonitoringSpec(t *testing.T, oldSpec oneagent.ApplicationMonitoringSpec, newSpec oneagentv1beta4.ApplicationMonitoringSpec) {
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
-	assert.Equal(t, *oldSpec.UseCSIDriver, installconfig.GetModules().CSIDriver)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
 }
 
-func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activegate.Spec) {
+func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec activegatev1beta4.Spec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
@@ -205,7 +203,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activeg
 	}
 }
 
-func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakube.DynaKubeStatus) {
+func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubev1beta4.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
 	assert.Equal(t, oldStatus.DynatraceApi.LastTokenScopeRequest, newStatus.DynatraceApi.LastTokenScopeRequest)
@@ -218,9 +216,9 @@ func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakube.Dy
 
 	// ActiveGate
 	assert.Equal(t, oldStatus.ActiveGate.VersionStatus, newStatus.ActiveGate.VersionStatus)
-	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.Endpoints, newStatus.ActiveGate.ConnectionInfo.Endpoints)
-	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.LastRequest, newStatus.ActiveGate.ConnectionInfo.LastRequest)
-	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfoStatus.TenantUUID, newStatus.ActiveGate.ConnectionInfo.TenantUUID)
+	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfo.Endpoints, newStatus.ActiveGate.ConnectionInfo.Endpoints)
+	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfo.LastRequest, newStatus.ActiveGate.ConnectionInfo.LastRequest)
+	assert.Equal(t, oldStatus.ActiveGate.ConnectionInfo.TenantUUID, newStatus.ActiveGate.ConnectionInfo.TenantUUID)
 
 	// OneAgent
 	assert.Equal(t, oldStatus.OneAgent.VersionStatus, newStatus.OneAgent.VersionStatus)
@@ -247,20 +245,20 @@ func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakube.Dy
 	}
 }
 
-func getNewDynakubeBase() dynakube.DynaKube {
-	return dynakube.DynaKube{
+func getNewDynakubeBase() dynakubev1beta4.DynaKube {
+	return dynakubev1beta4.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				AnnotationFeatureActiveGateIgnoreProxy:     "true",
-				AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				dynakubev1beta4.AnnotationFeatureActiveGateIgnoreProxy:     "true", //nolint:staticcheck
+				dynakubev1beta4.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
 			},
 		},
-		Spec: dynakube.DynaKubeSpec{
+		Spec: dynakubev1beta4.DynaKubeSpec{
 			APIURL:           "api-url",
 			Tokens:           "token",
 			CustomPullSecret: "pull-secret",
@@ -273,7 +271,7 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			DynatraceApiRequestThreshold: ptr.To(uint16(42)),
-			MetadataEnrichment: dynakube.MetadataEnrichment{
+			MetadataEnrichment: dynakubev1beta4.MetadataEnrichment{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
 			},
@@ -281,8 +279,8 @@ func getNewDynakubeBase() dynakube.DynaKube {
 	}
 }
 
-func getNewHostInjectSpec() oneagent.HostInjectSpec {
-	return oneagent.HostInjectSpec{
+func getNewHostInjectSpec() oneagentv1beta4.HostInjectSpec {
+	return oneagentv1beta4.HostInjectSpec{
 		Version: "host-inject-version",
 		Image:   "host-inject-image",
 		Tolerations: []corev1.Toleration{
@@ -324,8 +322,8 @@ func getNewHostInjectSpec() oneagent.HostInjectSpec {
 	}
 }
 
-func getNewAppInjectionSpec() oneagent.AppInjectionSpec {
-	return oneagent.AppInjectionSpec{
+func getNewAppInjectionSpec() oneagentv1beta4.AppInjectionSpec {
+	return oneagentv1beta4.AppInjectionSpec{
 		InitResources: &corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1)},
@@ -335,34 +333,34 @@ func getNewAppInjectionSpec() oneagent.AppInjectionSpec {
 	}
 }
 
-func getNewCloudNativeSpec() oneagent.CloudNativeFullStackSpec {
-	return oneagent.CloudNativeFullStackSpec{
+func getNewCloudNativeSpec() oneagentv1beta4.CloudNativeFullStackSpec {
+	return oneagentv1beta4.CloudNativeFullStackSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
 		HostInjectSpec:   getNewHostInjectSpec(),
 	}
 }
 
-func getNewApplicationMonitoringSpec() oneagent.ApplicationMonitoringSpec {
-	return oneagent.ApplicationMonitoringSpec{
+func getNewApplicationMonitoringSpec() oneagentv1beta4.ApplicationMonitoringSpec {
+	return oneagentv1beta4.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
 		Version:          "app-monitoring-version",
 	}
 }
 
-func getNewActiveGateSpec() activegate.Spec {
-	return activegate.Spec{
+func getNewActiveGateSpec() activegatev1beta4.Spec {
+	return activegatev1beta4.Spec{
 		DNSPolicy: corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
 		TlsSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
-		Capabilities: []activegate.CapabilityDisplayName{
-			activegate.DynatraceApiCapability.DisplayName,
-			activegate.KubeMonCapability.DisplayName,
-			activegate.MetricsIngestCapability.DisplayName,
+		Capabilities: []activegatev1beta4.CapabilityDisplayName{
+			activegatev1beta4.DynatraceApiCapability.DisplayName,
+			activegatev1beta4.KubeMonCapability.DisplayName,
+			activegatev1beta4.MetricsIngestCapability.DisplayName,
 		},
-		CapabilityProperties: activegate.CapabilityProperties{
+		CapabilityProperties: activegatev1beta4.CapabilityProperties{
 			Labels: map[string]string{
 				"activegate-label-key": "activegate-label-value",
 			},
@@ -402,9 +400,9 @@ func getNewActiveGateSpec() activegate.Spec {
 	}
 }
 
-func getNewStatus() dynakube.DynaKubeStatus {
-	return dynakube.DynaKubeStatus{
-		OneAgent: oneagent.Status{
+func getNewStatus() dynakubev1beta4.DynaKubeStatus {
+	return dynakubev1beta4.DynaKubeStatus{
+		OneAgent: oneagentv1beta4.Status{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "oa-image-id",
 				Version:            "oa-version",
@@ -412,7 +410,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				Source:             status.CustomImageVersionSource,
 				LastProbeTimestamp: &testTime,
 			},
-			Instances: map[string]oneagent.Instance{
+			Instances: map[string]oneagentv1beta4.Instance{
 				"oa-instance-key-1": {
 					PodName:   "oa-instance-pod-1",
 					IPAddress: "oa-instance-ip-1",
@@ -426,13 +424,13 @@ func getNewStatus() dynakube.DynaKubeStatus {
 			Healthcheck: &registryv1.HealthConfig{
 				Test: []string{"oa-health-check-test"},
 			},
-			ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+			ConnectionInfoStatus: oneagentv1beta4.ConnectionInfoStatus{
 				ConnectionInfo: communication.ConnectionInfo{
 					LastRequest: testTime,
 					TenantUUID:  "oa-tenant-uuid",
 					Endpoints:   "oa-endpoints",
 				},
-				CommunicationHosts: []oneagent.CommunicationHostStatus{
+				CommunicationHosts: []oneagentv1beta4.CommunicationHostStatus{
 					{
 						Protocol: "oa-protocol-1",
 						Host:     "oa-host-1",
@@ -446,7 +444,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				},
 			},
 		},
-		ActiveGate: activegate.Status{
+		ActiveGate: activegatev1beta4.Status{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "ag-image-id",
 				Version:            "ag-version",
@@ -455,7 +453,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		CodeModules: oneagent.CodeModulesStatus{
+		CodeModules: oneagentv1beta4.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "cm-image-id",
 				Version:            "cm-version",
@@ -464,7 +462,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		DynatraceApi: dynakube.DynatraceApiStatus{
+		DynatraceApi: dynakubev1beta4.DynatraceApiStatus{
 			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{

@@ -3,10 +3,15 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
+	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,82 +21,89 @@ import (
 var testTime = metav1.Now()
 
 func TestConvertTo(t *testing.T) {
-	t.Run("migrate from v1beta1 to v1beta2", func(t *testing.T) {
-		to := dynakube.DynaKube{}
+	t.Run("migrate from v1beta3 to v1beta4", func(t *testing.T) {
+		to := dynakubev1beta4.DynaKube{}
 		from := getOldDynakubeBase()
 
-		from.ConvertTo(&to)
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
 
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate host-monitoring from v1beta1 to v1beta2", func(t *testing.T) {
+	t.Run("migrate host-monitoring from v1beta3 to v1beta4", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
-		to := dynakube.DynaKube{}
+		to := dynakubev1beta4.DynaKube{}
 
-		from.ConvertTo(&to)
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring)
-		compareMovedFields(t, from, to)
+		compareBase(t, from, to)
 		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
-	t.Run("migrate classic-fullstack from v1beta1 to v1beta2", func(t *testing.T) {
+	t.Run("migrate classic-fullstack from v1beta3 to v1beta4", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
-		to := dynakube.DynaKube{}
+		to := dynakubev1beta4.DynaKube{}
 
-		from.ConvertTo(&to)
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack)
-		compareMovedFields(t, from, to)
+		compareBase(t, from, to)
 		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
-	t.Run("migrate cloud-native from v1beta1 to v1beta2", func(t *testing.T) {
+	t.Run("migrate cloud-native from v1beta3 to v1beta4", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		spec := getOldCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
-		to := dynakube.DynaKube{}
+		to := dynakubev1beta4.DynaKube{}
 
-		from.ConvertTo(&to)
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
 
 		compareCloudNativeSpec(t, *from.Spec.OneAgent.CloudNativeFullStack, *to.Spec.OneAgent.CloudNativeFullStack)
-		compareMovedFields(t, from, to)
+		compareBase(t, from, to)
 	})
 
-	t.Run("migrate application-monitoring from v1beta1 to v1beta2", func(t *testing.T) {
+	t.Run("migrate application-monitoring from v1beta3 to v1beta4", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		appSpec := getOldApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
-		to := dynakube.DynaKube{}
+		to := dynakubev1beta4.DynaKube{}
 
-		from.ConvertTo(&to)
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
 
 		compareApplicationMonitoringSpec(t, *from.Spec.OneAgent.ApplicationMonitoring, *to.Spec.OneAgent.ApplicationMonitoring)
 	})
 
-	t.Run("migrate activegate from v1beta2 to v1beta1", func(t *testing.T) {
+	t.Run("migrate activegate from v1beta3 to v1beta4", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		agSpec := getOldActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
-		to := dynakube.DynaKube{}
+		to := dynakubev1beta4.DynaKube{}
 
-		from.ConvertTo(&to)
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
 
 		compareActiveGateSpec(t, from.Spec.ActiveGate, to.Spec.ActiveGate)
 		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
-	t.Run("migrate status from v1beta2 to v1beta1", func(t *testing.T) {
+	t.Run("migrate status from v1beta3 to v1beta4", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
-		to := dynakube.DynaKube{}
+		to := dynakubev1beta4.DynaKube{}
 
-		from.ConvertTo(&to)
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
 
 		compareStatus(t, from.Status, to.Status)
 	})
@@ -99,20 +111,13 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate hostGroup", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
-		to := dynakube.DynaKube{}
+		to := dynakubev1beta4.DynaKube{}
 
-		from.ConvertTo(&to)
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
 
 		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 	})
-}
-
-func getMovedFeatureFlagList() []string {
-	return []string{
-		AnnotationFeatureApiRequestThreshold,
-		AnnotationFeatureOneAgentSecCompProfile,
-		AnnotationFeatureMetadataEnrichment,
-	}
 }
 
 func getTestNamespaceSelector() metav1.LabelSelector {
@@ -136,37 +141,36 @@ func getOldDynakubeBase() DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				AnnotationFeatureApiRequestThreshold:       "42",
-				AnnotationFeatureOneAgentSecCompProfile:    "seccomp",
-				AnnotationFeatureMetadataEnrichment:        "false",
-				AnnotationFeatureActiveGateIgnoreProxy:     "true",
-				AnnotationFeatureAutomaticK8sApiMonitoring: "true",
-				AnnotationFeatureMaxFailedCsiMountAttempts: "9",
+				dynakubev1beta4.AnnotationFeatureActiveGateIgnoreProxy:     "true", //nolint:staticcheck
+				dynakubev1beta4.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
 			},
 		},
 		Spec: DynaKubeSpec{
-			OneAgent:         OneAgentSpec{HostGroup: "hostgroup-value"},
+			OneAgent:         oneagent.Spec{HostGroup: "hostgroup-value"},
 			APIURL:           "api-url",
 			Tokens:           "token",
 			CustomPullSecret: "pull-secret",
 			EnableIstio:      true,
 			SkipCertCheck:    true,
-			Proxy: &DynaKubeProxy{
+			Proxy: &value.Source{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
 			},
-			TrustedCAs:        "trusted-ca",
-			NetworkZone:       "network-zone",
-			NamespaceSelector: getTestNamespaceSelector(),
+			TrustedCAs:                   "trusted-ca",
+			NetworkZone:                  "network-zone",
+			DynatraceApiRequestThreshold: ptr.To(uint16(42)),
+			MetadataEnrichment: MetadataEnrichment{
+				Enabled: ptr.To(false),
+			},
 		},
 	}
 }
 
-func getOldHostInjectSpec() HostInjectSpec {
-	return HostInjectSpec{
+func getOldHostInjectSpec() oneagent.HostInjectSpec {
+	return oneagent.HostInjectSpec{
 		Version: "host-inject-version",
 		Image:   "host-inject-image",
 		Tolerations: []corev1.Toleration{
@@ -204,48 +208,49 @@ func getOldHostInjectSpec() HostInjectSpec {
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(1, 1)},
 		},
+		SecCompProfile: "seccomp",
 	}
 }
 
-func getOldAppInjectionSpec() AppInjectionSpec {
-	return AppInjectionSpec{
+func getOldAppInjectionSpec() oneagent.AppInjectionSpec {
+	return oneagent.AppInjectionSpec{
 		InitResources: &corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1)},
 		},
-		CodeModulesImage: "app-injection-image",
+		CodeModulesImage:  "app-injection-image",
+		NamespaceSelector: getTestNamespaceSelector(),
 	}
 }
 
-func getOldCloudNativeSpec() CloudNativeFullStackSpec {
-	return CloudNativeFullStackSpec{
+func getOldCloudNativeSpec() oneagent.CloudNativeFullStackSpec {
+	return oneagent.CloudNativeFullStackSpec{
 		AppInjectionSpec: getOldAppInjectionSpec(),
 		HostInjectSpec:   getOldHostInjectSpec(),
 	}
 }
 
-func getOldApplicationMonitoringSpec() ApplicationMonitoringSpec {
-	return ApplicationMonitoringSpec{
+func getOldApplicationMonitoringSpec() oneagent.ApplicationMonitoringSpec {
+	return oneagent.ApplicationMonitoringSpec{
 		AppInjectionSpec: getOldAppInjectionSpec(),
-		UseCSIDriver:     ptr.To(true),
 		Version:          "app-monitoring-version",
 	}
 }
 
-func getOldActiveGateSpec() ActiveGateSpec {
-	return ActiveGateSpec{
+func getOldActiveGateSpec() activegate.Spec {
+	return activegate.Spec{
 		DNSPolicy: corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
 		TlsSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
-		Capabilities: []CapabilityDisplayName{
-			DynatraceApiCapability.DisplayName,
-			KubeMonCapability.DisplayName,
-			MetricsIngestCapability.DisplayName,
+		Capabilities: []activegate.CapabilityDisplayName{
+			activegate.DynatraceApiCapability.DisplayName,
+			activegate.KubeMonCapability.DisplayName,
+			activegate.MetricsIngestCapability.DisplayName,
 		},
-		CapabilityProperties: CapabilityProperties{
+		CapabilityProperties: activegate.CapabilityProperties{
 			Labels: map[string]string{
 				"activegate-label-key": "activegate-label-value",
 			},
@@ -267,7 +272,7 @@ func getOldActiveGateSpec() ActiveGateSpec {
 			Image:    "activegate-image",
 			Replicas: ptr.To(int32(42)),
 			Group:    "activegate-group",
-			CustomProperties: &DynaKubeValueSource{
+			CustomProperties: &value.Source{
 				Value:     "activegate-cp-value",
 				ValueFrom: "activegate-cp-value-from",
 			},
@@ -287,7 +292,7 @@ func getOldActiveGateSpec() ActiveGateSpec {
 
 func getOldStatus() DynaKubeStatus {
 	return DynaKubeStatus{
-		OneAgent: OneAgentStatus{
+		OneAgent: oneagent.Status{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "oa-image-id",
 				Version:            "oa-version",
@@ -295,7 +300,7 @@ func getOldStatus() DynaKubeStatus {
 				Source:             status.CustomImageVersionSource,
 				LastProbeTimestamp: &testTime,
 			},
-			Instances: map[string]OneAgentInstance{
+			Instances: map[string]oneagent.Instance{
 				"oa-instance-key-1": {
 					PodName:   "oa-instance-pod-1",
 					IPAddress: "oa-instance-ip-1",
@@ -309,13 +314,13 @@ func getOldStatus() DynaKubeStatus {
 			Healthcheck: &registryv1.HealthConfig{
 				Test: []string{"oa-health-check-test"},
 			},
-			ConnectionInfoStatus: OneAgentConnectionInfoStatus{
-				ConnectionInfoStatus: ConnectionInfoStatus{
+			ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+				ConnectionInfo: communication.ConnectionInfo{
 					LastRequest: testTime,
 					TenantUUID:  "oa-tenant-uuid",
 					Endpoints:   "oa-endpoints",
 				},
-				CommunicationHosts: []CommunicationHostStatus{
+				CommunicationHosts: []oneagent.CommunicationHostStatus{
 					{
 						Protocol: "oa-protocol-1",
 						Host:     "oa-host-1",
@@ -329,7 +334,7 @@ func getOldStatus() DynaKubeStatus {
 				},
 			},
 		},
-		ActiveGate: ActiveGateStatus{
+		ActiveGate: activegate.Status{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "ag-image-id",
 				Version:            "ag-version",
@@ -338,7 +343,7 @@ func getOldStatus() DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		CodeModules: CodeModulesStatus{
+		CodeModules: oneagent.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "cm-image-id",
 				Version:            "cm-version",
@@ -364,9 +369,8 @@ func getOldStatus() DynaKubeStatus {
 				LastTransitionTime: testTime,
 			},
 		},
-		KubeSystemUUID:          "kube-system-uuid",
-		Phase:                   status.Deploying,
-		LastTokenProbeTimestamp: &testTime,
-		UpdatedTimestamp:        testTime,
+		KubeSystemUUID:   "kube-system-uuid",
+		Phase:            status.Deploying,
+		UpdatedTimestamp: testTime,
 	}
 }
