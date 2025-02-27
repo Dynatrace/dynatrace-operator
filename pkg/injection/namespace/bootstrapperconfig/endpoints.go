@@ -1,0 +1,66 @@
+package bootstrapperconfig
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	fields, err := s.prepareFieldsForEndpoints(ctx, dk)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	endpointPropertiesBuilder := strings.Builder{}
+
+	if dk.MetadataEnrichmentEnabled() {
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsUrlSecretField, fields[dtingestendpoint.MetricsUrlSecretField])); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsTokenSecretField, fields[dtingestendpoint.MetricsTokenSecretField])); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	data := map[string][]byte{
+		endpoint.InputFileName: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
+	}
+
+	return data, nil
+}
+
+func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
+	fields := make(map[string]string)
+
+	tokens, err := k8ssecret.Query(s.client, s.apiReader, log).Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to query tokens")
+	}
+
+	if dk.MetadataEnrichmentEnabled() {
+		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
+			fields[dtingestendpoint.MetricsTokenSecretField] = string(token)
+		} else {
+			log.Info("data ingest token not found in secret", "dk", dk.Name)
+		}
+
+		if ingestUrl, err := dtingestendpoint.IngestUrlFor(dk); err != nil {
+			return nil, err
+		} else {
+			fields[dtingestendpoint.MetricsUrlSecretField] = ingestUrl
+		}
+	}
+
+	return fields, nil
+}
