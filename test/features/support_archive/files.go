@@ -71,6 +71,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, r.getRequiredWebhookConfigurationFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredCRDFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredConfigMapFiles()...)
+	requiredFiles = append(requiredFiles, r.getRequiredEventFiles()...)
 
 	return requiredFiles
 }
@@ -344,6 +345,19 @@ func (r requiredFiles) getRequiredConfigMapFiles() []string {
 			"configmap",
 			r.dk.Name,
 			"activegate-connection-info",
+			support_archive.ManifestsFileExtension))
+
+	return requiredFiles
+}
+
+func (r requiredFiles) getRequiredEventFiles() []string {
+	requiredFiles := make([]string, 0)
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.dk.Namespace,
+			"event",
 			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
