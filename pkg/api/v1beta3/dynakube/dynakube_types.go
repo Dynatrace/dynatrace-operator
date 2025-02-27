@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -92,10 +91,6 @@ type DynaKubeSpec struct { //nolint:revive
 	// are deployed by the operator.
 	// +kubebuilder:validation:Optional
 	Extensions *ExtensionsSpec `json:"extensions,omitempty"`
-
-	// When a TelemetryIngestSpec is provided, the OTEL collector is deployed by the operator.
-	// +kubebuilder:validation:Optional
-	TelemetryIngest *telemetryingest.Spec `json:"telemetryIngest,omitempty"`
 
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
