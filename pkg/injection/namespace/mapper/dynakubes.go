@@ -61,8 +61,8 @@ func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error 
 		}
 
 		var err error
-		if dm.dk.FeatureDownloadViaJob() && !dm.dk.OneAgent().IsCSIAvailable() {
-			err = k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespace(dm.ctx, consts.BootsTrapperInitSecretName, ns.Name)
+		if dm.dk.FeatureBootstrapperInjection() {
+			err = k8ssecret.Query(dm.client, dm.apiReader, log).DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, ns.Name)
 			if err != nil {
 				return err
 			}

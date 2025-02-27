@@ -78,7 +78,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	// because the 2 injection type we have share the label that the webhook is listening to, we can only clean that label up if both are disabled
 	// but we should only clean-up the labels after everything else is cleaned up because the clean-up for the secrets depend on the label still being there
 	// but we have to do the mapping before everything when its necessary
-	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichmentEnabled() && (!r.dk.FeatureDownloadViaJob() || r.dk.OneAgent().IsCSIAvailable()) {
+	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichmentEnabled() {
 		defer r.unmapDynakube(ctx)
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx)
@@ -135,7 +135,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return err
 	}
 
-	if !r.dk.FeatureDownloadViaJob() || r.dk.OneAgent().IsCSIAvailable() {
+	if !r.dk.FeatureBootstrapperInjection() {
 		err = r.pmcSecretreconciler.Reconcile(ctx)
 		if err != nil {
 			return err
@@ -172,8 +172,8 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 
 func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 	var err error
-	if r.dk.FeatureDownloadViaJob() && !r.dk.OneAgent().IsCSIAvailable() {
-		err = bootstrapperconfig.NewBootstrapperInitGenerator(r.client, r.apiReader, r.dynatraceClient, r.dk.Namespace).GenerateForDynakube(ctx, r.dk)
+	if r.dk.FeatureBootstrapperInjection() {
+		err = bootstrapperconfig.NewBootstrapperInitGenerator(ctx, r.client, r.apiReader, r.dynatraceClient, r.dk.Namespace).GenerateForDynakube(r.dk)
 		if err != nil {
 			if conditions.IsKubeApiError(err) {
 				conditions.SetKubeApiError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
@@ -206,8 +206,8 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 			return
 		}
 
-		if r.dk.FeatureDownloadViaJob() && !r.dk.OneAgent().IsCSIAvailable() {
-			err = bootstrapperconfig.NewBootstrapperInitGenerator(r.client, r.apiReader, r.dynatraceClient, r.dk.Namespace).Cleanup(ctx, namespaces)
+		if r.dk.FeatureBootstrapperInjection() {
+			err = bootstrapperconfig.NewBootstrapperInitGenerator(ctx, r.client, r.apiReader, r.dynatraceClient, r.dk.Namespace).Cleanup(namespaces)
 			if err != nil {
 				log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
 			}

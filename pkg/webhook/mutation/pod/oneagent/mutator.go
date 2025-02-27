@@ -140,10 +140,10 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 		reasons = append(reasons, UnknownCodeModuleReason)
 	}
 
-	if dk.FeatureDownloadViaJob() && !dk.OneAgent().IsCSIAvailable() {
+	if dk.FeatureBootstrapperInjection() {
 		var initSecret corev1.Secret
 
-		secretObjectKey := client.ObjectKey{Name: consts.BootsTrapperInitSecretName, Namespace: request.Namespace.Name}
+		secretObjectKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}
 		if err := mut.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
 			log.Info("dynatrace-bootstrapper-config is not available, OneAgent cannot be injected", "pod", request.PodName())
 
