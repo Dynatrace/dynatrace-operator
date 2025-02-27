@@ -1,9 +1,10 @@
 package bootstrapperconfig
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"strconv"
+	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
@@ -16,68 +17,59 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
+	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// BootstrapperInitGenerator manages the bootstrapper init secret generation for the user namespaces.
-type BootstrapperInitGenerator struct {
-	client        client.Client
-	dtClient      dtclient.Client
-	apiReader     client.Reader
-	namespace     string
-	secretName    string
-	canWatchNodes bool
+// SecretGenerator manages the bootstrapper init secret generation for the user namespaces.
+type SecretGenerator struct {
+	ctx       context.Context
+	client    client.Client
+	dtClient  dtclient.Client
+	apiReader client.Reader
+	namespace string
 }
 
-type nodeInfo struct {
-	imNodes map[string]string
-	nodes   []corev1.Node
-}
-
-func NewBootstrapperInitGenerator(client client.Client, apiReader client.Reader, dtClient dtclient.Client, namespace string) *BootstrapperInitGenerator {
-	return &BootstrapperInitGenerator{
-		client:     client,
-		dtClient:   dtClient,
-		apiReader:  apiReader,
-		namespace:  namespace,
-		secretName: consts.BootsTrapperInitSecretName,
+func NewBootstrapperInitGenerator(ctx context.Context, client client.Client, apiReader client.Reader, dtClient dtclient.Client, namespace string) *SecretGenerator {
+	return &SecretGenerator{
+		ctx:       ctx,
+		client:    client,
+		dtClient:  dtClient,
+		apiReader: apiReader,
+		namespace: namespace,
 	}
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *BootstrapperInitGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
+func (s *SecretGenerator) GenerateForDynakube(dk *dynakube.DynaKube) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
-	g.canWatchNodes = true
-
-	data, err := g.generate(ctx, dk)
+	data, err := s.generate(s.ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
+	nsList, err := mapper.GetNamespacesForDynakube(s.ctx, s.apiReader, dk.Name)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
 
-	secret, err := k8ssecret.BuildForNamespace(consts.BootsTrapperInitSecretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.BuildForNamespace(consts.BootstrapperInitSecretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		return err
 	}
 
-	err = k8ssecret.Query(g.client, g.apiReader, log).CreateOrUpdateForNamespaces(ctx, secret, nsList)
+	err = k8ssecret.Query(s.client, s.apiReader, log).CreateOrUpdateForNamespaces(s.ctx, secret, nsList)
 	if err != nil {
 		return err
 	}
@@ -87,38 +79,34 @@ func (g *BootstrapperInitGenerator) GenerateForDynakube(ctx context.Context, dk 
 	return nil
 }
 
-func (g *BootstrapperInitGenerator) Cleanup(ctx context.Context, namespaces []corev1.Namespace) error {
+func (s *SecretGenerator) Cleanup(namespaces []corev1.Namespace) error {
 	nsList := make([]string, 0, len(namespaces))
 	for _, ns := range namespaces {
 		nsList = append(nsList, ns.Name)
 	}
 
-	return k8ssecret.Query(g.client, g.apiReader, log).DeleteForNamespaces(ctx, consts.BootsTrapperInitSecretName, nsList)
+	return k8ssecret.Query(s.client, s.apiReader, log).DeleteForNamespaces(s.ctx, consts.BootstrapperInitSecretName, nsList)
 }
 
 // generate gets the necessary info the create the init secret data
-func (g *BootstrapperInitGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
-	hostMonitoringNodes, err := g.getHostMonitoringNodes(dk)
-	if err != nil {
-		return nil, err
-	}
+func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 
-	secretConfig, err := g.createSecretConfigForDynaKube(ctx, dk, hostMonitoringNodes)
-	if err != nil {
-		return nil, err
-	}
-
-	agCerts, err := dk.ActiveGateTLSCert(ctx, g.apiReader)
+	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	trustedCAs, err := dk.TrustedCAs(ctx, g.apiReader)
+	trustedCAs, err := dk.TrustedCAs(ctx, s.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	pmcSecret, err := g.preparePMCSecretForBootstrapper(ctx, *dk)
+	pmcSecret, err := s.preparePMC(ctx, *dk)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	endpointProperties, err := s.prepareEndpoints(ctx, dk)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -127,25 +115,75 @@ func (g *BootstrapperInitGenerator) generate(ctx context.Context, dk *dynakube.D
 		pmc.InputFileName:        pmcSecret,
 		ca.TrustedCertsInputFile: trustedCAs,
 		ca.AgCertsInputFile:      agCerts,
-		curl.InputFileName:       []byte(strconv.Itoa(secretConfig.InitialConnectRetry)),
-		endpoint.InputFileName:   []byte(secretConfig.ApiToken),
+		curl.InputFileName:       []byte{byte(dk.FeatureAgentInitialConnectRetry())},
+		endpoint.InputFileName:   endpointProperties[endpoint.InputFileName],
 	}, nil
 }
 
-func (g *BootstrapperInitGenerator) preparePMCSecretForBootstrapper(ctx context.Context, dk dynakube.DynaKube) ([]byte, error) {
-	pmc, err := g.dtClient.GetProcessModuleConfig(ctx, 0)
+func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	fields, err := s.prepareFieldsForEndpoints(ctx, dk)
 	if err != nil {
-		conditions.SetDynatraceApiError(dk.Conditions(), processmoduleconfigsecret.PmcConditionType, err)
+		return nil, errors.WithStack(err)
+	}
+
+	endpointPropertiesBuilder := strings.Builder{}
+
+	if dk.MetadataEnrichmentEnabled() {
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsUrlSecretField, fields[dtingestendpoint.MetricsUrlSecretField])); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsTokenSecretField, fields[dtingestendpoint.MetricsTokenSecretField])); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	data := map[string][]byte{
+		endpoint.InputFileName: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
+	}
+
+	return data, nil
+}
+
+func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
+	fields := make(map[string]string)
+
+	tokens, err := k8ssecret.Query(s.client, s.apiReader, log).Get(s.ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: s.namespace})
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to query tokens")
+	}
+
+	if dk.MetadataEnrichmentEnabled() {
+		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
+			fields[dtingestendpoint.MetricsTokenSecretField] = string(token)
+		} else {
+			log.Info("data ingest token not found in secret", "dk", dk.Name)
+		}
+
+		if ingestUrl, err := dtingestendpoint.IngestUrlFor(dk); err != nil {
+			return nil, err
+		} else {
+			fields[dtingestendpoint.MetricsUrlSecretField] = ingestUrl
+		}
+	}
+
+	return fields, nil
+}
+
+func (s *SecretGenerator) preparePMC(ctx context.Context, dk dynakube.DynaKube) ([]byte, error) {
+	pmc, err := s.dtClient.GetProcessModuleConfig(ctx, 0)
+	if err != nil {
+		conditions.SetDynatraceApiError(dk.Conditions(), processmoduleconfigsecret.PMCConditionType, err)
 
 		return nil, err
 	}
 
-	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, g.apiReader, types.NamespacedName{
+	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, s.apiReader, types.NamespacedName{
 		Name:      dk.OneAgent().GetTenantSecret(),
 		Namespace: dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), processmoduleconfigsecret.PmcConditionType, err)
+		conditions.SetKubeApiError(dk.Conditions(), processmoduleconfigsecret.PMCConditionType, err)
 
 		return nil, err
 	}
@@ -157,9 +195,9 @@ func (g *BootstrapperInitGenerator) preparePMCSecretForBootstrapper(ctx context.
 		AddProxy("")
 
 	if dk.NeedsOneAgentProxy() {
-		proxy, err := dk.Proxy(ctx, g.apiReader)
+		proxy, err := dk.Proxy(ctx, s.apiReader)
 		if err != nil {
-			conditions.SetKubeApiError(dk.Conditions(), processmoduleconfigsecret.PmcConditionType, err)
+			conditions.SetKubeApiError(dk.Conditions(), processmoduleconfigsecret.PMCConditionType, err)
 
 			return nil, err
 		}
@@ -184,142 +222,4 @@ func (g *BootstrapperInitGenerator) preparePMCSecretForBootstrapper(ctx context.
 	}
 
 	return marshaled, err
-}
-
-func (g *BootstrapperInitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *dynakube.DynaKube, hostMonitoringNodes map[string]string) (*startup.SecretConfig, error) {
-	var tokens corev1.Secret
-	if err := g.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
-		return nil, errors.WithMessage(err, "failed to query tokens")
-	}
-
-	var proxy string
-
-	var err error
-	if dk.NeedsOneAgentProxy() {
-		proxy, err = dk.Proxy(ctx, g.apiReader)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-
-	oneAgentNoProxyValues := []string{}
-
-	if dk.NeedsCustomNoProxy() {
-		oneAgentNoProxyValues = append(oneAgentNoProxyValues, dk.FeatureNoProxy())
-	}
-
-	if dk.ActiveGate().IsRoutingEnabled() {
-		multiCap := capability.NewMultiCapability(dk)
-		oneAgentDNSEntry := capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap)
-		oneAgentNoProxyValues = append(oneAgentNoProxyValues, oneAgentDNSEntry)
-	}
-
-	return &startup.SecretConfig{
-		ApiUrl:              dk.Spec.APIURL,
-		ApiToken:            getAPIToken(tokens),
-		PaasToken:           getPaasToken(tokens),
-		TenantUUID:          dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID,
-		Proxy:               proxy,
-		NoProxy:             dk.FeatureNoProxy(),
-		OneAgentNoProxy:     strings.Join(oneAgentNoProxyValues, ","),
-		NetworkZone:         dk.Spec.NetworkZone,
-		SkipCertCheck:       dk.Spec.SkipCertCheck,
-		HasHost:             dk.OneAgent().IsCloudNativeFullstackMode(),
-		MonitoringNodes:     hostMonitoringNodes,
-		HostGroup:           dk.OneAgent().GetHostGroup(),
-		InitialConnectRetry: dk.FeatureAgentInitialConnectRetry(),
-		EnforcementMode:     dk.FeatureEnforcementMode(),
-		ReadOnlyCSIDriver:   dk.FeatureReadOnlyCsiVolume(),
-		CSIMode:             dk.OneAgent().IsCSIAvailable(),
-	}, nil
-}
-
-func getPaasToken(tokens corev1.Secret) string {
-	if len(tokens.Data[dtclient.PaasToken]) != 0 {
-		return string(tokens.Data[dtclient.PaasToken])
-	}
-
-	return string(tokens.Data[dtclient.ApiToken])
-}
-
-func getAPIToken(tokens corev1.Secret) string {
-	return string(tokens.Data[dtclient.ApiToken])
-}
-
-// getHostMonitoringNodes creates a mapping between all the nodes and the tenantUID for the host-monitoring dynakube on that node.
-// Possible mappings:
-// - mapped: there is a host-monitoring agent on the node, and the dynakube has the tenantUID set => user processes will be grouped to the hosts  (["node.Name"] = "dynakube.tenantUID")
-// - not-mapped: there is NO host-monitoring agent on the node => user processes will show up as individual 'fake' hosts (["node.Name"] = "-")
-// - unknown: there SHOULD be a host-monitoring agent on the node, but dynakube has NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
-//
-// Checks all the dynakubes with host-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
-func (g *BootstrapperInitGenerator) getHostMonitoringNodes(dk *dynakube.DynaKube) (map[string]string, error) {
-	tenantUUID := dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
-
-	imNodes := map[string]string{}
-	if !dk.OneAgent().IsCloudNativeFullstackMode() {
-		return imNodes, nil
-	}
-
-	if g.canWatchNodes {
-		var err error
-
-		imNodes, err = g.calculateImNodes(dk, tenantUUID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		updateImNodes(dk, tenantUUID, imNodes)
-	}
-
-	return imNodes, nil
-}
-
-func (g *BootstrapperInitGenerator) calculateImNodes(dk *dynakube.DynaKube, tenantUUID string) (map[string]string, error) {
-	nodeInf, err := g.initIMNodes()
-	if err != nil {
-		return nil, err
-	}
-
-	nodeSelector := labels.SelectorFromSet(dk.OneAgent().GetNodeSelector(nil))
-	updateNodeInfImNodes(dk, nodeInf, nodeSelector, tenantUUID)
-
-	return nodeInf.imNodes, nil
-}
-
-func updateImNodes(dk *dynakube.DynaKube, tenantUUID string, imNodes map[string]string) {
-	for nodeName := range dk.Status.OneAgent.Instances {
-		if tenantUUID != "" {
-			imNodes[nodeName] = tenantUUID
-		} else if !dk.FeatureIgnoreUnknownState() {
-			delete(imNodes, nodeName)
-		}
-	}
-}
-
-func updateNodeInfImNodes(dk *dynakube.DynaKube, nodeInf nodeInfo, nodeSelector labels.Selector, tenantUUID string) {
-	for _, node := range nodeInf.nodes {
-		nodeLabels := labels.Set(node.Labels)
-		if nodeSelector.Matches(nodeLabels) {
-			if tenantUUID != "" {
-				nodeInf.imNodes[node.Name] = tenantUUID
-			} else if !dk.FeatureIgnoreUnknownState() {
-				delete(nodeInf.imNodes, node.Name)
-			}
-		}
-	}
-}
-
-func (g *BootstrapperInitGenerator) initIMNodes() (nodeInfo, error) {
-	var nodeList corev1.NodeList
-	if err := g.client.List(context.TODO(), &nodeList); err != nil {
-		return nodeInfo{}, err
-	}
-
-	imNodes := map[string]string{}
-	for _, node := range nodeList.Items {
-		imNodes[node.Name] = consts.AgentNoHostTenant
-	}
-
-	return nodeInfo{nodes: nodeList.Items, imNodes: imNodes}, nil
 }

@@ -163,7 +163,7 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynakube.DynaKu
 			log.Info("data ingest token not found in secret", "dk", dk.Name)
 		}
 
-		if ingestUrl, err := ingestUrlFor(dk); err != nil {
+		if ingestUrl, err := IngestUrlFor(dk); err != nil {
 			return nil, err
 		} else {
 			fields[MetricsUrlSecretField] = ingestUrl
@@ -173,22 +173,22 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynakube.DynaKu
 	return fields, nil
 }
 
-func ingestUrlFor(dk *dynakube.DynaKube) (string, error) {
+func IngestUrlFor(dk *dynakube.DynaKube) (string, error) {
 	switch {
 	case dk.ActiveGate().IsMetricsIngestEnabled():
-		return metricsIngestUrlForClusterActiveGate(dk)
+		return MetricsIngestUrlForClusterActiveGate(dk)
 	case len(dk.Spec.APIURL) > 0:
-		return metricsIngestUrlForDynatraceActiveGate(dk)
+		return MetricsIngestUrlForDynatraceActiveGate(dk)
 	default:
 		return "", errors.New("failed to create metadata-enrichment endpoint, DynaKube.spec.apiUrl is empty")
 	}
 }
 
-func metricsIngestUrlForDynatraceActiveGate(dk *dynakube.DynaKube) (string, error) {
+func MetricsIngestUrlForDynatraceActiveGate(dk *dynakube.DynaKube) (string, error) {
 	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
 }
 
-func metricsIngestUrlForClusterActiveGate(dk *dynakube.DynaKube) (string, error) {
+func MetricsIngestUrlForClusterActiveGate(dk *dynakube.DynaKube) (string, error) {
 	tenant, err := dk.TenantUUID()
 	if err != nil {
 		return "", err
