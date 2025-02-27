@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -12,6 +13,7 @@ import (
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -41,7 +43,9 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.IsExtensionsEnabled() {
+	if r.dk.IsExtensionsEnabled() || r.dk.TelemetryService().IsEnabled() {
+		return r.createOrUpdateStatefulset(ctx)
+	} else { // do cleanup or
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil
 		}
@@ -64,11 +68,20 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 		return nil
 	}
-
-	return r.createOrUpdateStatefulset(ctx)
 }
 
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
+	if r.dk.TelemetryService().IsEnabled() {
+		if !r.checkDataIngestTokenExists(ctx) {
+			msg := "data ingest token is missing, but it's required for otel controller"
+			conditions.SetDataIngestTokenMissing(r.dk.Conditions(), dynakube.TokenConditionType, msg)
+
+			log.Error(errors.New(msg), "could not create or update statefulset: "+msg)
+
+			return nil
+		}
+	}
+
 	appLabels := buildAppLabels(r.dk.Name)
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
@@ -164,6 +177,17 @@ func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string)
 	}
 
 	return tlsSecretHash, nil
+}
+
+func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context) bool {
+	tokenReader := token.NewReader(r.apiReader, r.dk)
+
+	tokens, err := tokenReader.ReadTokens(ctx)
+	if err != nil {
+		return false
+	}
+
+	return token.CheckForDataIngestToken(tokens)
 }
 
 func getReplicas(dk *dynakube.DynaKube) int32 {

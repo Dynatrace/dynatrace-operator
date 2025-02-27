@@ -2,6 +2,7 @@ package statefulset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,8 +15,10 @@ const (
 
 	trustedCAsFile = "rootca.pem"
 
-	customTlsCertVolumeName = "telemetry-custom-tls"
-	customTlsCertMountPath  = "/tls/custom/telemetry"
+	customTlsCertVolumeName   = "telemetry-custom-tls"
+	customTlsCertMountPath    = "/tls/custom/telemetry"
+	dataIngestTokenVolumeName = "api-token"
+	dataIngestTokenMountPath  = "/secrets/" + dataIngestTokenVolumeName
 )
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
@@ -71,20 +74,37 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			},
 		})
 
-		if dk.TelemetryService().IsEnabled() && dk.TelemetryService().Spec.TlsRefName != "" {
+		if dk.TelemetryService().IsEnabled() {
+			if dk.TelemetryService().Spec.TlsRefName != "" {
+				o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+					Name: customTlsCertVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: dk.TelemetryService().Spec.TlsRefName,
+							Items: []corev1.KeyToPath{
+								{
+									Key:  consts.TLSCrtDataName,
+									Path: consts.TLSCrtDataName,
+								},
+								{
+									Key:  consts.TLSKeyDataName,
+									Path: consts.TLSKeyDataName,
+								},
+							},
+						},
+					},
+				})
+			}
+
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: customTlsCertVolumeName,
+				Name: dataIngestTokenVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.TelemetryService().Spec.TlsRefName,
+						SecretName: dk.Name,
 						Items: []corev1.KeyToPath{
 							{
-								Key:  consts.TLSCrtDataName,
-								Path: consts.TLSCrtDataName,
-							},
-							{
-								Key:  consts.TLSKeyDataName,
-								Path: consts.TLSKeyDataName,
+								Key:  dynatrace.DataIngestToken,
+								Path: dynatrace.DataIngestToken,
 							},
 						},
 					},
@@ -113,10 +133,18 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		ReadOnly:  true,
 	})
 
-	if dk.TelemetryService().IsEnabled() && dk.TelemetryService().Spec.TlsRefName != "" {
+	if dk.TelemetryService().IsEnabled() {
+		if dk.TelemetryService().Spec.TlsRefName != "" {
+			vm = append(vm, corev1.VolumeMount{
+				Name:      customTlsCertVolumeName,
+				MountPath: customTlsCertMountPath,
+				ReadOnly:  true,
+			})
+		}
+
 		vm = append(vm, corev1.VolumeMount{
-			Name:      customTlsCertVolumeName,
-			MountPath: customTlsCertMountPath,
+			Name:      dataIngestTokenVolumeName,
+			MountPath: dataIngestTokenMountPath,
 			ReadOnly:  true,
 		})
 	}

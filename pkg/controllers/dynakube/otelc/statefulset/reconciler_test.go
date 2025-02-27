@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
@@ -507,7 +508,9 @@ func TestVolumes(t *testing.T) {
 		}
 
 		tlsSecret := getTLSSecret(dk.TelemetryService().Spec.TlsRefName, dk.Namespace, "crt", "key")
-		statefulSet := getStatefulset(t, dk, &tlsSecret)
+		dataIngestToken := getTokens(dk.Name, dk.Namespace)
+
+		statefulSet := getStatefulset(t, dk, &tlsSecret, &dataIngestToken)
 
 		expectedVolume := corev1.Volume{
 			Name: customTlsCertVolumeName,
@@ -580,6 +583,19 @@ func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) cl
 	require.NoError(t, err)
 
 	return client
+}
+
+func getTokens(name string, namespace string) corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			dtclient.ApiToken:        []byte("test"),
+			dtclient.DataIngestToken: []byte("test"),
+		},
+	}
 }
 
 func getTLSSecret(name string, namespace string, crt string, key string) corev1.Secret {
