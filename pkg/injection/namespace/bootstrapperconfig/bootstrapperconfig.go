@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
@@ -37,7 +38,7 @@ type SecretGenerator struct {
 	namespace string
 }
 
-func NewBootstrapperInitGenerator(ctx context.Context, client client.Client, apiReader client.Reader, dtClient dtclient.Client, namespace string) *SecretGenerator {
+func NewSecretGenerator(ctx context.Context, client client.Client, apiReader client.Reader, dtClient dtclient.Client, namespace string) *SecretGenerator {
 	return &SecretGenerator{
 		ctx:       ctx,
 		client:    client,
@@ -90,7 +91,6 @@ func (s *SecretGenerator) Cleanup(namespaces []corev1.Namespace) error {
 
 // generate gets the necessary info the create the init secret data
 func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
-
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -111,11 +111,13 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		return nil, errors.WithStack(err)
 	}
 
+	initialConnectRetryMs := strconv.Itoa(dk.FeatureAgentInitialConnectRetry())
+
 	return map[string][]byte{
 		pmc.InputFileName:        pmcSecret,
 		ca.TrustedCertsInputFile: trustedCAs,
 		ca.AgCertsInputFile:      agCerts,
-		curl.InputFileName:       []byte{byte(dk.FeatureAgentInitialConnectRetry())},
+		curl.InputFileName:       []byte(initialConnectRetryMs),
 		endpoint.InputFileName:   endpointProperties[endpoint.InputFileName],
 	}, nil
 }
@@ -148,7 +150,7 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
-	tokens, err := k8ssecret.Query(s.client, s.apiReader, log).Get(s.ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: s.namespace})
+	tokens, err := k8ssecret.Query(s.client, s.apiReader, log).Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: s.namespace})
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
