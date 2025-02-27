@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	expectedMountLen     = 7
-	expectedInitMountLen = 2
+	expectedMountLen     = 5
+	expectedInitMountLen = 1
 )
 
 func TestGetVolumeMounts(t *testing.T) {
