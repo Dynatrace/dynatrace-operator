@@ -1,5 +1,5 @@
 package processmoduleconfigsecret
 
 const (
-	PmcConditionType = "ProcessModuleConfig"
+	PMCConditionType = "ProcessModuleConfig"
 )

@@ -200,7 +200,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.EnrichmentEndpointSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
-	t.Run("Remove "+consts.BootsTrapperInitSecretName, func(t *testing.T) {
+	t.Run("Remove "+consts.BootstrapperInitSecretName, func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		dkRemoteImage := createDynakubeWithRemoteImageDownloadAndNoCSI("dk-test", convertToLabelSelector(labels))
@@ -220,9 +220,9 @@ func TestUnmapFromDynaKube(t *testing.T) {
 
 		var tmp corev1.Secret
 
-		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootsTrapperInitSecretName, Namespace: ns.Name}})
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}})
 
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootsTrapperInitSecretName, Namespace: ns.Name}, &tmp)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &tmp)
 		require.NoError(t, err)
 
 		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dkRemoteImage)
@@ -230,7 +230,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootsTrapperInitSecretName, Namespace: ns.Name}, &secret)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }

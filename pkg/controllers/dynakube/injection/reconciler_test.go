@@ -406,7 +406,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		require.NoError(t, err)
 
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace)
-		assertSecretFound(t, clt, consts.BootsTrapperInitSecretName, testNamespace)
+		assertSecretFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
 	})
 }
 

@@ -50,11 +50,11 @@ func NewReconciler(clt client.Client,
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !(r.dk.OneAgent().IsCloudNativeFullstackMode() || r.dk.OneAgent().IsApplicationMonitoringMode()) {
-		if meta.FindStatusCondition(*r.dk.Conditions(), PmcConditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), PMCConditionType) == nil {
 			return nil
 		}
 
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), PmcConditionType)
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), PMCConditionType)
 
 		err := r.deleteSecret(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -79,12 +79,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileSecret(ctx context.Context) error {
-	if !conditions.IsOutdated(r.timeProvider, r.dk, PmcConditionType) {
+	if !conditions.IsOutdated(r.timeProvider, r.dk, PMCConditionType) {
 		return nil
 	}
 
 	log.Info("processModuleConfig is outdated, updating")
-	conditions.SetSecretOutdated(r.dk.Conditions(), PmcConditionType, "secret is outdated, update in progress")
+	conditions.SetSecretOutdated(r.dk.Conditions(), PMCConditionType, "secret is outdated, update in progress")
 
 	secret, err := r.prepareSecret(ctx)
 	if err != nil {
@@ -97,19 +97,19 @@ func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 func (r *Reconciler) createOrUpdateSecret(ctx context.Context, secret *corev1.Secret) error {
 	_, err := k8ssecret.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), PmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), PMCConditionType, err)
 
 		return errors.Errorf("failed to create or update secret '%s': %v", secret.Name, err)
 	}
 
-	conditions.SetSecretCreatedOrUpdated(r.dk.Conditions(), PmcConditionType, secret.Name)
+	conditions.SetSecretCreatedOrUpdated(r.dk.Conditions(), PMCConditionType, secret.Name)
 
 	return nil
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
 	if err := k8ssecret.Query(r.client, r.apiReader, log).Delete(ctx, secret); err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), PmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), PMCConditionType, err)
 
 		return err
 	}
@@ -120,7 +120,7 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) er
 func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {
 	pmc, err := r.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
-		conditions.SetDynatraceApiError(r.dk.Conditions(), PmcConditionType, err)
+		conditions.SetDynatraceApiError(r.dk.Conditions(), PMCConditionType, err)
 
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), PmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), PMCConditionType, err)
 
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	if r.dk.NeedsOneAgentProxy() {
 		proxy, err := r.dk.Proxy(ctx, r.apiReader)
 		if err != nil {
-			conditions.SetKubeApiError(r.dk.Conditions(), PmcConditionType, err)
+			conditions.SetKubeApiError(r.dk.Conditions(), PMCConditionType, err)
 
 			return nil, err
 		}
@@ -175,7 +175,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	k8ssecret.SetType(corev1.SecretTypeOpaque)
 
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), PmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), PMCConditionType, err)
 
 		return nil, err
 	}
