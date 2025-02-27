@@ -9,13 +9,6 @@ var (
 )
 
 const (
-	preloadEnv = "LD_PRELOAD"
-
-	releaseVersionEnv      = "DT_RELEASE_VERSION"
-	releaseProductEnv      = "DT_RELEASE_PRODUCT"
-	releaseStageEnv        = "DT_RELEASE_STAGE"
-	releaseBuildVersionEnv = "DT_RELEASE_BUILD_VERSION"
-
 	emptyConnectionInfoReason = "EmptyConnectionInfo"
 	emptyTenantUUIDReason     = "EmptyTenantUUID"
 

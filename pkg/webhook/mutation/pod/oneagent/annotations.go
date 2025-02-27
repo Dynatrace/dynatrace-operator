@@ -17,23 +17,6 @@ type installerInfo struct {
 	version      string
 }
 
-func setInjectedAnnotation(pod *corev1.Pod) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[dtwebhook.AnnotationOneAgentInjected] = "true"
-}
-
-func setNotInjectedAnnotations(pod *corev1.Pod, reason string) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[dtwebhook.AnnotationOneAgentInjected] = "false"
-	pod.Annotations[dtwebhook.AnnotationOneAgentReason] = reason
-}
-
 func getInstallerInfo(pod *corev1.Pod, dk dynakube.DynaKube) installerInfo {
 	return installerInfo{
 		flavor:       maputils.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, ""),

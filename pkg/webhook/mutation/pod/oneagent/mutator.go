@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/sharedoneagent"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,7 +60,7 @@ func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
 	if ok, reason := mut.isInjectionPossible(request); !ok {
-		setNotInjectedAnnotations(request.Pod, reason)
+		sharedoneagent.SetNotInjectedAnnotations(request.Pod, reason)
 
 		return nil
 	}
@@ -75,7 +76,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	mut.configureInitContainer(request, installerInfo)
 	mut.mutateUserContainers(request)
 	addInjectionConfigVolumeMount(request.InstallContainer)
-	setInjectedAnnotation(request.Pod)
+	sharedoneagent.SetInjectedAnnotation(request.Pod)
 
 	return nil
 }
@@ -147,7 +148,7 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 
 func ContainerIsInjected(container corev1.Container) bool {
 	return env.IsIn(container.Env, dynatraceMetadataEnv) &&
-		env.IsIn(container.Env, preloadEnv) &&
+		env.IsIn(container.Env, sharedoneagent.PreloadEnv) &&
 		volumes.IsIn(container.VolumeMounts, OneAgentBinVolumeName) &&
 		volumes.IsIn(container.VolumeMounts, oneAgentShareVolumeName)
 }
