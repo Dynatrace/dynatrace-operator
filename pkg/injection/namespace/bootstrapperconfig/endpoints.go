@@ -1,12 +1,10 @@
 package bootstrapperconfig
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
@@ -15,29 +13,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
 	fields, err := s.prepareFieldsForEndpoints(ctx, dk)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	endpointPropertiesBuilder := strings.Builder{}
 
 	if dk.MetadataEnrichmentEnabled() {
 		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsUrlSecretField, fields[dtingestendpoint.MetricsUrlSecretField])); err != nil {
-			return nil, errors.WithStack(err)
+			return "", errors.WithStack(err)
 		}
 
 		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsTokenSecretField, fields[dtingestendpoint.MetricsTokenSecretField])); err != nil {
-			return nil, errors.WithStack(err)
+			return "", errors.WithStack(err)
 		}
 	}
 
-	data := map[string][]byte{
-		endpoint.InputFileName: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
-	}
-
-	return data, nil
+	return endpointPropertiesBuilder.String(), nil
 }
 
 func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {

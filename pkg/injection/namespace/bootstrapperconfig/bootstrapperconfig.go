@@ -2,7 +2,6 @@ package bootstrapperconfig
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
@@ -98,11 +97,6 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		return nil, errors.WithStack(err)
 	}
 
-	endpointJson, err := json.Marshal(endpointProperties)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	initialConnectRetryMs := strconv.Itoa(dk.FeatureAgentInitialConnectRetry())
 
 	return map[string][]byte{
@@ -110,6 +104,6 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		ca.TrustedCertsInputFile: trustedCAs,
 		ca.AgCertsInputFile:      agCerts,
 		curl.InputFileName:       []byte(initialConnectRetryMs),
-		endpoint.InputFileName:   endpointJson,
+		endpoint.InputFileName:   []byte(endpointProperties),
 	}, nil
 }

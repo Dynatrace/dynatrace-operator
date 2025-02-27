@@ -218,19 +218,42 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		namespaces, err := GetNamespacesForDynakube(ctx, clt, dkRemoteImage.Name)
 		require.NoError(t, err)
 
-		var tmp corev1.Secret
+		var secretNS1 corev1.Secret
 
 		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}})
 
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &tmp)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &secretNS1)
 		require.NoError(t, err)
+
+		require.NotEmpty(t, secretNS1)
+		assert.Equal(t, consts.BootstrapperInitSecretName, secretNS1.Name)
+
+		var secretNS2 corev1.Secret
+
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: ns2.Name}})
+
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns2.Name}, &secretNS2)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, secretNS2)
+		assert.Equal(t, consts.BootstrapperInitSecretName, secretNS2.Name)
 
 		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dkRemoteImage)
 		err = dm.UnmapFromDynaKube(namespaces)
 		require.NoError(t, err)
 
-		var secret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &secret)
+		var deletedSecretNS1 corev1.Secret
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &deletedSecretNS1)
+
+		require.Empty(t, deletedSecretNS1)
+		assert.NotEqual(t, consts.BootstrapperInitSecretName, deletedSecretNS1.Name)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		var deletedSecretNS2 corev1.Secret
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns2.Name}, &deletedSecretNS2)
+
+		require.Empty(t, deletedSecretNS2)
+		assert.NotEqual(t, consts.BootstrapperInitSecretName, deletedSecretNS2.Name)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }
