@@ -36,7 +36,21 @@ func getContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Env:             getEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            []string{fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.ExtensionsServiceNameFQDN(), consts.OtelCollectorComPort, otelcSecretTokenFilePath)},
+		Args:            buildArgs(dk),
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 	}
+}
+
+func buildArgs(dk *dynakube.DynaKube) []string {
+	args := []string{}
+
+	if dk.IsExtensionsEnabled() {
+		args = append(args, fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.ExtensionsServiceNameFQDN(), consts.OtelCollectorComPort, otelcSecretTokenFilePath))
+	}
+
+	if dk.TelemetryService().IsEnabled() {
+		args = append(args, "--config=file:///osconfig/config.yaml")
+	}
+
+	return args
 }

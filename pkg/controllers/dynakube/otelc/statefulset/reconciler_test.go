@@ -2,7 +2,6 @@ package statefulset
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -39,7 +38,7 @@ func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 
 		mockK8sClient := fake.NewClient()
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
@@ -68,7 +67,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotEmpty(t, sts)
 	})
 	t.Run("Only runs when required, and cleans up condition + statefulset", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.Extensions = nil
 
 		previousSts := appsv1.StatefulSet{}
@@ -96,7 +95,7 @@ func TestReconcile(t *testing.T) {
 
 func TestSecretHashAnnotation(t *testing.T) {
 	t.Run("annotation is set with self-signed tls secret", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
 		statefulSet := getStatefulset(t, dk)
 
@@ -104,7 +103,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
 	})
 	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-secret"
 		statefulSet := getStatefulset(t, dk)
 
@@ -113,7 +112,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 	})
 	t.Run("annotation is updated when TLS Secret gets updated", func(t *testing.T) {
 		statefulSet := &appsv1.StatefulSet{}
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 
 		// first reconcile a basic setup - TLS Secret gets created
 		mockK8sClient := fake.NewClient(dk)
@@ -147,13 +146,13 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 func TestStatefulsetBase(t *testing.T) {
 	t.Run("replicas", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
 		assert.Equal(t, int32(1), *statefulSet.Spec.Replicas)
 	})
 
 	t.Run("pod management policy", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
 		assert.Equal(t, appsv1.ParallelPodManagement, statefulSet.Spec.PodManagementPolicy)
 	})
@@ -161,7 +160,7 @@ func TestStatefulsetBase(t *testing.T) {
 
 func TestServiceAccountName(t *testing.T) {
 	t.Run("serviceAccountName is set", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
 		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.ServiceAccountName)
 		assert.Equal(t, serviceAccountName, statefulSet.Spec.Template.Spec.DeprecatedServiceAccount)
@@ -170,14 +169,14 @@ func TestServiceAccountName(t *testing.T) {
 
 func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		statefulSet := getStatefulset(t, dk)
 		appLabels := buildAppLabels(dk.Name)
 		assert.Equal(t, topology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 
 		customTopologySpreadConstraints := []corev1.TopologySpreadConstraint{
 			{
@@ -200,59 +199,9 @@ func TestTopologySpreadConstraints(t *testing.T) {
 	})
 }
 
-func TestEnvironmentVariables(t *testing.T) {
-	t.Run("environment variables", func(t *testing.T) {
-		dk := getTestDynakube()
-
-		statefulSet := getStatefulset(t, dk)
-
-		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
-		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-extensions-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
-		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
-			},
-		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
-		assert.Equal(t, corev1.EnvVar{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
-			},
-		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
-		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
-		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
-				Key:                  consts.OtelcTokenSecretKey,
-			},
-		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
-	})
-	t.Run("environment variables with trustedCA", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.TrustedCAs = "test-trusted-ca"
-
-		statefulSet := getStatefulset(t, dk)
-
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
-	})
-
-	t.Run("environment variables with custom EEC TLS certificate", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "test-tls-ca"
-
-		statefulSet := getStatefulset(t, dk)
-
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath})
-	})
-}
-
 func TestAffinity(t *testing.T) {
 	t.Run("affinity", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		statefulSet := getStatefulset(t, dk)
 
 		expectedAffinity := node.Affinity()
@@ -263,13 +212,13 @@ func TestAffinity(t *testing.T) {
 
 func TestImagePullSecrets(t *testing.T) {
 	t.Run("the default image pull secret only", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
 		assert.Len(t, statefulSet.Spec.Template.Spec.ImagePullSecrets, 1)
 	})
 
 	t.Run("custom pull secret", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.CustomPullSecret = testOtelPullSecret
 
 		statefulSet := getStatefulset(t, dk)
@@ -282,14 +231,14 @@ func TestImagePullSecrets(t *testing.T) {
 
 func TestResources(t *testing.T) {
 	t.Run("no resources", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Empty(t, statefulSet.Spec.Template.Spec.Containers[0].Resources)
 	})
 
 	t.Run("custom resources", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.Templates.ExtensionExecutionController.Resources = corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("1Gi"),
@@ -304,7 +253,7 @@ func TestResources(t *testing.T) {
 
 func TestLabels(t *testing.T) {
 	t.Run("the default labels", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -316,7 +265,7 @@ func TestLabels(t *testing.T) {
 	})
 
 	t.Run("custom labels", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		customLabels := map[string]string{
 			"a": "b",
 		}
@@ -335,7 +284,7 @@ func TestLabels(t *testing.T) {
 
 func TestAnnotations(t *testing.T) {
 	t.Run("the default annotations", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
 		assert.Len(t, statefulSet.ObjectMeta.Annotations, 1)
 		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
@@ -343,7 +292,7 @@ func TestAnnotations(t *testing.T) {
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		customAnnotations := map[string]string{
 			"a": "b",
 		}
@@ -361,13 +310,13 @@ func TestAnnotations(t *testing.T) {
 
 func TestTolerations(t *testing.T) {
 	t.Run("the default tolerations", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
 		assert.Empty(t, statefulSet.Spec.Template.Spec.Tolerations)
 	})
 
 	t.Run("custom tolerations", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 
 		customTolerations := []corev1.Toleration{
 			{
@@ -387,7 +336,7 @@ func TestTolerations(t *testing.T) {
 
 func TestSecurityContext(t *testing.T) {
 	t.Run("the default securityContext is set", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
 		assert.NotNil(t, statefulSet.Spec.Template.Spec.SecurityContext)
 		assert.NotNil(t, statefulSet.Spec.Template.Spec.Containers[0].SecurityContext)
@@ -396,7 +345,7 @@ func TestSecurityContext(t *testing.T) {
 
 func TestUpdateStrategy(t *testing.T) {
 	t.Run("the default update strategy is set", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
 		assert.NotNil(t, statefulSet.Spec.UpdateStrategy.RollingUpdate.Partition)
 		assert.NotEmpty(t, statefulSet.Spec.UpdateStrategy.Type)
@@ -405,7 +354,7 @@ func TestUpdateStrategy(t *testing.T) {
 
 func TestVolumes(t *testing.T) {
 	t.Run("volume mounts with trusted CAs", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		statefulSet := getStatefulset(t, dk)
 
@@ -417,7 +366,7 @@ func TestVolumes(t *testing.T) {
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
 	t.Run("volume mounts without trusted CAs", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMount := corev1.VolumeMount{
@@ -429,7 +378,7 @@ func TestVolumes(t *testing.T) {
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
 	t.Run("volumes and volume mounts with custom EEC TLS certificate", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "test-tls-name"
 		statefulSet := getStatefulset(t, dk)
 
@@ -456,7 +405,7 @@ func TestVolumes(t *testing.T) {
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
 	t.Run("volumes with trusted CAs", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		statefulSet := getStatefulset(t, dk)
 
@@ -479,7 +428,7 @@ func TestVolumes(t *testing.T) {
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
 	t.Run("volumes with otelc token", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolume := corev1.Volume{
@@ -502,7 +451,7 @@ func TestVolumes(t *testing.T) {
 	})
 
 	t.Run("volumes and volume mounts with telemetry service custom TLS certificate", func(t *testing.T) {
-		dk := getTestDynakube()
+		dk := getTestDynakubeWithExtensions()
 		dk.Spec.TelemetryService = &telemetryservice.Spec{
 			TlsRefName: testTelemetryServiceSecret,
 		}
@@ -543,7 +492,7 @@ func TestVolumes(t *testing.T) {
 	})
 }
 
-func getTestDynakube() *dynakube.DynaKube {
+func getTestDynakubeWithExtensions() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        testDynakubeName,
@@ -555,6 +504,19 @@ func getTestDynakube() *dynakube.DynaKube {
 			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
 	}
+}
+
+func getTestDynakube() *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        testDynakubeName,
+			Namespace:   testNamespaceName,
+			Annotations: map[string]string{},
+		},
+		Spec: dynakube.DynaKubeSpec{},
+	}
+
+	return dk
 }
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) *appsv1.StatefulSet {

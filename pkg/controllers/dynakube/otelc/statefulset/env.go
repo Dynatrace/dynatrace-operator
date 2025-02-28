@@ -60,29 +60,39 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort},
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
-		{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
-				Key:                  consts.OtelcTokenSecretKey,
-			},
-		},
-		},
-		{Name: envCertDir, Value: customEecTLSCertificatePath},
 		{Name: envK8sClusterName, Value: dk.Name},
 		{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID},
-		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
-		{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiCredentialsSecretName},
-				Key:                  envDTendpoint,
-			},
-		}},
 	}
+
+	if dk.IsExtensionsEnabled() {
+		envs = append(
+			envs,
+			corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: dk.ExtensionsTokenSecretName()},
+					Key:                  consts.OtelcTokenSecretKey,
+				}},
+			},
+			corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath},
+			corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath},
+		)
+	}
+
+	if dk.TelemetryService().IsEnabled() {
+		envs = append(envs,
+			corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
+			corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiCredentialsSecretName},
+					Key:                  envDTendpoint,
+				},
+			}},
+		)
+	}
+
 	if dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
 	}
-
-	envs = append(envs, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEecTLSCertificateFullPath})
 
 	return envs
 }
