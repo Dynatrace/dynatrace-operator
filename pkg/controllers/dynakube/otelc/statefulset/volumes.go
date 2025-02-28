@@ -15,10 +15,11 @@ const (
 
 	trustedCAsFile = "rootca.pem"
 
-	customTlsCertVolumeName   = "telemetry-custom-tls"
-	customTlsCertMountPath    = "/tls/custom/telemetry"
-	dataIngestTokenVolumeName = "api-token"
-	dataIngestTokenMountPath  = "/secrets/" + dataIngestTokenVolumeName
+	customTlsCertVolumeName           = "telemetry-custom-tls"
+	customTlsCertMountPath            = "/tls/custom/telemetry"
+	extensionsControllerTLSVolumeName = "extensions-controller-tls"
+	dataIngestTokenVolumeName         = "api-token"
+	dataIngestTokenMountPath          = "/secrets/" + dataIngestTokenVolumeName
 )
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
@@ -43,7 +44,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			},
 			corev1.Volume{
-				Name: dk.ExtensionsTLSSecretName(),
+				Name: extensionsControllerTLSVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: dk.ExtensionsTLSSecretName(),
@@ -135,7 +136,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	vm = append(vm, corev1.VolumeMount{
-		Name:      dk.ExtensionsTLSSecretName(),
+		Name:      extensionsControllerTLSVolumeName,
 		MountPath: customEecTLSCertificatePath,
 		ReadOnly:  true,
 	})

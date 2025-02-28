@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -23,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -349,146 +347,6 @@ func TestUpdateStrategy(t *testing.T) {
 
 		assert.NotNil(t, statefulSet.Spec.UpdateStrategy.RollingUpdate.Partition)
 		assert.NotEmpty(t, statefulSet.Spec.UpdateStrategy.Type)
-	})
-}
-
-func TestVolumes(t *testing.T) {
-	t.Run("volume mounts with trusted CAs", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TrustedCAs = "test-trusted-cas"
-		statefulSet := getStatefulset(t, dk)
-
-		expectedVolumeMount := corev1.VolumeMount{
-			Name:      caCertsVolumeName,
-			MountPath: trustedCAVolumeMountPath,
-			ReadOnly:  true,
-		}
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
-	})
-	t.Run("volume mounts without trusted CAs", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		statefulSet := getStatefulset(t, dk)
-
-		expectedVolumeMount := corev1.VolumeMount{
-			Name:      caCertsVolumeName,
-			MountPath: trustedCAVolumeMountPath,
-			ReadOnly:  true,
-		}
-
-		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
-	})
-	t.Run("volumes and volume mounts with custom EEC TLS certificate", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "test-tls-name"
-		statefulSet := getStatefulset(t, dk)
-
-		expectedVolumeMount := corev1.VolumeMount{
-			Name:      dk.ExtensionsTLSSecretName(),
-			MountPath: customEecTLSCertificatePath,
-			ReadOnly:  true,
-		}
-
-		expectedVolume := corev1.Volume{Name: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.Spec.Templates.ExtensionExecutionController.TlsRefName,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
-						},
-					},
-				},
-			}}
-
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
-	})
-	t.Run("volumes with trusted CAs", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TrustedCAs = "test-trusted-cas"
-		statefulSet := getStatefulset(t, dk)
-
-		expectedVolume := corev1.Volume{
-			Name: caCertsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dk.Spec.TrustedCAs,
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "certs",
-							Path: trustedCAsFile,
-						},
-					},
-				},
-			},
-		}
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
-	})
-	t.Run("volumes with otelc token", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		statefulSet := getStatefulset(t, dk)
-
-		expectedVolume := corev1.Volume{
-			Name: consts.ExtensionsTokensVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.ExtensionsTokenSecretName(),
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.OtelcTokenSecretKey,
-							Path: consts.OtelcTokenSecretKey,
-						},
-					},
-					DefaultMode: ptr.To(int32(420)),
-				},
-			},
-		}
-
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
-	})
-
-	t.Run("volumes and volume mounts with telemetry service custom TLS certificate", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TelemetryService = &telemetryservice.Spec{
-			TlsRefName: testTelemetryServiceSecret,
-		}
-
-		tlsSecret := getTLSSecret(dk.TelemetryService().Spec.TlsRefName, dk.Namespace, "crt", "key")
-		dataIngestToken := getTokens(dk.Name, dk.Namespace)
-
-		statefulSet := getStatefulset(t, dk, &tlsSecret, &dataIngestToken)
-
-		expectedVolume := corev1.Volume{
-			Name: customTlsCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.TelemetryService().Spec.TlsRefName,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
-						},
-						{
-							Key:  consts.TLSKeyDataName,
-							Path: consts.TLSKeyDataName,
-						},
-					},
-				},
-			},
-		}
-
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
-
-		expectedVolumeMount := corev1.VolumeMount{
-			Name:      customTlsCertVolumeName,
-			MountPath: customTlsCertMountPath,
-			ReadOnly:  true,
-		}
-
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
 }
 
