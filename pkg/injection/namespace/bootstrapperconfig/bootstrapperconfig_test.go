@@ -186,8 +186,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:     testApiUrl,
-				TrustedCAs: "test-trusted-ca",
+				APIURL: testApiUrl,
 				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: ptr.To(true),
 				},
@@ -195,7 +194,6 @@ func TestGenerateForDynakube(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
-					TlsSecretName: "test-tls-secret-name",
 				},
 			},
 		}
@@ -218,15 +216,6 @@ func TestGenerateForDynakube(t *testing.T) {
 				ca.TrustedCertsInputFile: []byte(oldTrustedCa),
 				ca.AgCertsInputFile:      []byte(oldCertValue),
 			}),
-			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-trusted-ca",
-					Namespace: testNamespaceDynatrace,
-				},
-				Data: map[string]string{
-					dynakube.TrustedCAKey: "test-trusted-ca-value",
-				},
-			},
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -250,16 +239,18 @@ func TestGenerateForDynakube(t *testing.T) {
 		val, ok := secret.Data[ca.TrustedCertsInputFile]
 		require.True(t, ok)
 		assert.NotEqual(t, oldTrustedCa, val)
+		require.Empty(t, val)
 
 		_, ok = secret.Data[ca.AgCertsInputFile]
 		require.True(t, ok)
 		assert.NotEqual(t, oldCertValue, val)
+		require.Empty(t, val)
 
 		_, ok = secret.Data[curl.InputFileName]
 		require.True(t, ok)
 
 		_, ok = secret.Data[endpoint.InputFileName]
-		assert.True(t, ok)
+		require.True(t, ok)
 	})
 	t.Run("fail while generating secret for dynakube", func(t *testing.T) {
 		dynakube := &dynakube.DynaKube{
