@@ -4,9 +4,12 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -259,6 +262,120 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 	})
 }
 
+func TestLogAgentPhaseChanges(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			LogMonitoring: &logmonitoring.Spec{},
+			Templates: dynakube.TemplatesSpec{
+				LogMonitoring: &logmonitoring.TemplateSpec{
+					ImageRef: image.Ref{
+						Repository: "test",
+						Tag:        "test-tag",
+					},
+				},
+			},
+		},
+	}
+
+	t.Run("no LogAgent pods in cluster -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineDynaKubePhase(dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
+	t.Run("Error accessing k8s api", func(t *testing.T) {
+		fakeClient := errorClient{}
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineDynaKubePhase(dk)
+		assert.Equal(t, status.Error, phase)
+	})
+	t.Run("LogAgent daemonsets in cluster not all ready -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient(createDaemonSet(testNamespace, dk.LogMonitoring().GetDaemonSetName(), 3, 2))
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineDynaKubePhase(dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
+	t.Run("LogAgent daemonsets in cluster all ready -> running", func(t *testing.T) {
+		fakeClient := fake.NewClient(createDaemonSet(testNamespace, dk.LogMonitoring().GetDaemonSetName(), 3, 3))
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineDynaKubePhase(dk)
+		assert.Equal(t, status.Running, phase)
+	})
+}
+
+func TestKSPMPhaseChanges(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			Kspm: &kspm.Spec{},
+			Templates: dynakube.TemplatesSpec{
+				KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+					ImageRef: image.Ref{
+						Repository: "test",
+						Tag:        "test-tag",
+					},
+				},
+			},
+		},
+	}
+
+	t.Run("no KSPM pods in cluster -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineDynaKubePhase(dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
+	t.Run("Error accessing k8s api", func(t *testing.T) {
+		fakeClient := errorClient{}
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineDynaKubePhase(dk)
+		assert.Equal(t, status.Error, phase)
+	})
+	t.Run("KSPM daemonsets in cluster not all ready -> deploying", func(t *testing.T) {
+		fakeClient := fake.NewClient(createDaemonSet(testNamespace, dk.KSPM().GetDaemonSetName(), 3, 2))
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineDynaKubePhase(dk)
+		assert.Equal(t, status.Deploying, phase)
+	})
+	t.Run("KSPM daemonsets in cluster all ready -> running", func(t *testing.T) {
+		fakeClient := fake.NewClient(createDaemonSet(testNamespace, dk.KSPM().GetDaemonSetName(), 3, 3))
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		phase := controller.determineDynaKubePhase(dk)
+		assert.Equal(t, status.Running, phase)
+	})
+}
+
 func TestDynakubePhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -269,6 +386,10 @@ func TestDynakubePhaseChanges(t *testing.T) {
 			OneAgent: oneagent.Spec{
 				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
+
+			LogMonitoring: &logmonitoring.Spec{},
+
+			Kspm: &kspm.Spec{},
 
 			Extensions: &dynakube.ExtensionsSpec{},
 		},
@@ -282,6 +403,10 @@ func TestDynakubePhaseChanges(t *testing.T) {
 	otelcNotReady := createStatefulset(testNamespace, dk.ExtensionsCollectorStatefulsetName(), 2, 1)
 	oaReady := createDaemonSet(testNamespace, "test-name-oneagent", 3, 3)
 	oaNotReady := createDaemonSet(testNamespace, "test-name-oneagent", 3, 2)
+	logAgentReady := createDaemonSet(testNamespace, dk.LogMonitoring().GetDaemonSetName(), 3, 3)
+	logAgentNotReady := createDaemonSet(testNamespace, dk.LogMonitoring().GetDaemonSetName(), 3, 2)
+	kspmReady := createDaemonSet(testNamespace, dk.KSPM().GetDaemonSetName(), 3, 3)
+	kspmNotReady := createDaemonSet(testNamespace, dk.KSPM().GetDaemonSetName(), 3, 2)
 
 	tests := []struct {
 		clt   client.Client
@@ -348,8 +473,16 @@ func TestDynakubePhaseChanges(t *testing.T) {
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaReady, eecReady, otelcReady),
+			clt:   fake.NewClient(agReady, oaReady, eecReady, otelcReady, logAgentReady, kspmReady),
 			phase: status.Running,
+		},
+		{
+			clt:   fake.NewClient(agReady, oaNotReady, eecReady, otelcReady, logAgentNotReady, kspmReady),
+			phase: status.Deploying,
+		},
+		{
+			clt:   fake.NewClient(agReady, oaReady, eecReady, otelcReady, logAgentReady, kspmNotReady),
+			phase: status.Deploying,
 		},
 	}
 

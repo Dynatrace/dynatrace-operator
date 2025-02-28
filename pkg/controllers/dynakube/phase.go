@@ -17,6 +17,8 @@ func (controller *Controller) determineDynaKubePhase(dk *dynakube.DynaKube) stat
 		controller.determineExtensionsExecutionControllerPhase,
 		controller.determineExtensionsCollectorPhase,
 		controller.determineOneAgentPhase,
+		controller.determineLogAgentPhase,
+		controller.determineKSPMPhase,
 	}
 	for _, component := range components {
 		if phase := component(dk); phase != status.Running {
@@ -94,7 +96,7 @@ func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.D
 
 func (controller *Controller) determineOneAgentPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
 	if dk.OneAgent().IsCloudNativeFullstackMode() || dk.OneAgent().IsClassicFullStackMode() || dk.OneAgent().IsHostMonitoringMode() {
-		oneAgentPods, err := controller.numberOfMissingOneagentPods(dk)
+		oneAgentPods, err := controller.numberOfMissingDaemonSetPods(dk, dk.OneAgent().GetDaemonsetName())
 		if k8serrors.IsNotFound(err) {
 			log.Info("oneagent daemonset not yet available", "dynakube", dk.Name)
 
@@ -117,16 +119,66 @@ func (controller *Controller) determineOneAgentPhase(dk *dynakube.DynaKube) stat
 	return status.Running
 }
 
-func (controller *Controller) numberOfMissingOneagentPods(dk *dynakube.DynaKube) (int32, error) {
-	oneAgentDaemonSet := &appsv1.DaemonSet{}
-	instanceName := dk.OneAgent().GetDaemonsetName()
+func (controller *Controller) determineLogAgentPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+	if dk.LogMonitoring().IsStandalone() {
+		logAgentPods, err := controller.numberOfMissingDaemonSetPods(dk, dk.LogMonitoring().GetDaemonSetName())
+		if k8serrors.IsNotFound(err) {
+			log.Info("logagent daemonset not yet available", "dynakube", dk.Name)
 
-	err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, oneAgentDaemonSet)
+			return status.Deploying
+		}
+
+		if err != nil {
+			log.Error(err, "logagent daemonset could not be accessed", "dynakube", dk.Name)
+
+			return status.Error
+		}
+
+		if logAgentPods > 0 {
+			log.Info("logagent daemonset is still deploying", "dynakube", dk.Name)
+
+			return status.Deploying
+		}
+	}
+
+	return status.Running
+}
+
+func (controller *Controller) determineKSPMPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+	if dk.KSPM().IsEnabled() {
+		kspmPods, err := controller.numberOfMissingDaemonSetPods(dk, dk.KSPM().GetDaemonSetName())
+		if k8serrors.IsNotFound(err) {
+			log.Info("kspm daemonset not yet available", "dynakube", dk.Name)
+
+			return status.Deploying
+		}
+
+		if err != nil {
+			log.Error(err, "kspm daemonset could not be accessed", "dynakube", dk.Name)
+
+			return status.Error
+		}
+
+		if kspmPods > 0 {
+			log.Info("kspm daemonset is still deploying", "dynakube", dk.Name)
+
+			return status.Deploying
+		}
+	}
+
+	return status.Running
+}
+
+func (controller *Controller) numberOfMissingDaemonSetPods(dk *dynakube.DynaKube, dsName string) (int32, error) {
+	daemonSet := &appsv1.DaemonSet{}
+	instanceName := dsName
+
+	err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, daemonSet)
 	if err != nil {
 		return 0, err
 	}
 
-	return oneAgentDaemonSet.Status.CurrentNumberScheduled - oneAgentDaemonSet.Status.NumberReady, nil
+	return daemonSet.Status.CurrentNumberScheduled - daemonSet.Status.NumberReady, nil
 }
 
 func (controller *Controller) numberOfMissingActiveGatePods(dk *dynakube.DynaKube) (int32, error) {
