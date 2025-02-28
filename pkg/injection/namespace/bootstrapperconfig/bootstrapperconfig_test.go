@@ -4,8 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/curl"
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -15,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,6 +42,9 @@ const (
 	testNamespaceDynatrace = "dynatrace"
 
 	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
+
+	oldCertValue = "old-cert-value"
+	oldTrustedCa = "old-trusted-ca"
 )
 
 func TestNewSecretGenerator(t *testing.T) {
@@ -72,7 +81,6 @@ func TestGenerateForDynakube(t *testing.T) {
 			clientSecret(dynakube.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
 			}),
-			clientSecret(consts.BootstrapperInitSecretName, testNamespace, nil),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -82,6 +90,176 @@ func TestGenerateForDynakube(t *testing.T) {
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(context.Background(), dynakube)
 		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, secret)
+		assert.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
+	})
+	t.Run("succcessfully generate secret with fields for dynakube", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+				Annotations: map[string]string{
+					dynakube.AnnotationFeatureOneAgentInitialConnectRetry: "6500",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:     testApiUrl,
+				TrustedCAs: "test-trusted-ca",
+				MetadataEnrichment: dynakube.MetadataEnrichment{
+					Enabled: ptr.To(true),
+				},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					TlsSecretName: "test-tls-secret-name",
+				},
+			},
+		}
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			clientInjectedNamespace(testNamespace, testDynakube),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				dtclient.ApiToken:  []byte(testAPIToken),
+				dtclient.PaasToken: []byte(testPaasToken),
+			}),
+			clientSecret(dk.ActiveGate().TlsSecretName, testNamespaceDynatrace, map[string][]byte{
+				dynakube.TLSCertKey: []byte("test-cert-value"),
+			}),
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+				"tenant-token": []byte(testTenantToken),
+			}),
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-trusted-ca",
+					Namespace: testNamespaceDynatrace,
+				},
+				Data: map[string]string{
+					dynakube.TrustedCAKey: "test-trusted-ca-value",
+				},
+			},
+		)
+
+		mockDTClient := dtclientmock.NewClient(t)
+
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, secret)
+
+		assert.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
+		_, ok := secret.Data[pmc.InputFileName]
+		require.True(t, ok)
+
+		_, ok = secret.Data[ca.TrustedCertsInputFile]
+		require.True(t, ok)
+
+		_, ok = secret.Data[ca.AgCertsInputFile]
+		require.True(t, ok)
+
+		_, ok = secret.Data[curl.InputFileName]
+		require.True(t, ok)
+
+		_, ok = secret.Data[endpoint.InputFileName]
+		require.True(t, ok)
+	})
+	t.Run("update secret with preexisting secret + fields", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+				Annotations: map[string]string{
+					dynakube.AnnotationFeatureOneAgentInitialConnectRetry: "6500",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:     testApiUrl,
+				TrustedCAs: "test-trusted-ca",
+				MetadataEnrichment: dynakube.MetadataEnrichment{
+					Enabled: ptr.To(true),
+				},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					TlsSecretName: "test-tls-secret-name",
+				},
+			},
+		}
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			clientInjectedNamespace(testNamespace, testDynakube),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				dtclient.ApiToken:  []byte(testAPIToken),
+				dtclient.PaasToken: []byte(testPaasToken),
+			}),
+			clientSecret(dk.ActiveGate().TlsSecretName, testNamespaceDynatrace, map[string][]byte{
+				dynakube.TLSCertKey: []byte("test-cert-value"),
+			}),
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+				"tenant-token": []byte(testTenantToken),
+			}),
+			clientSecret(consts.BootstrapperInitSecretName, testNamespace, map[string][]byte{
+				pmc.InputFileName:        nil,
+				ca.TrustedCertsInputFile: []byte(oldTrustedCa),
+				ca.AgCertsInputFile:      []byte(oldCertValue),
+			}),
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-trusted-ca",
+					Namespace: testNamespaceDynatrace,
+				},
+				Data: map[string]string{
+					dynakube.TrustedCAKey: "test-trusted-ca-value",
+				},
+			},
+		)
+
+		mockDTClient := dtclientmock.NewClient(t)
+
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, secret)
+
+		assert.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
+		_, ok := secret.Data[pmc.InputFileName]
+		require.True(t, ok)
+
+		val, ok := secret.Data[ca.TrustedCertsInputFile]
+		require.True(t, ok)
+		assert.NotEqual(t, oldTrustedCa, val)
+
+		_, ok = secret.Data[ca.AgCertsInputFile]
+		require.True(t, ok)
+		assert.NotEqual(t, oldCertValue, val)
+
+		_, ok = secret.Data[curl.InputFileName]
+		require.True(t, ok)
+
+		_, ok = secret.Data[endpoint.InputFileName]
+		assert.True(t, ok)
 	})
 	t.Run("fail while generating secret for dynakube", func(t *testing.T) {
 		dynakube := &dynakube.DynaKube{
