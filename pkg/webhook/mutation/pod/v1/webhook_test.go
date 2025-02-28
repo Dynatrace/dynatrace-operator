@@ -13,8 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
-	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
+	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -145,14 +145,15 @@ func TestMutator(t *testing.T) {
 func TestDoubleInjection(t *testing.T) {
 	noCommunicationHostDK := getTestDynakube()
 	fakeClient := fake.NewClient(noCommunicationHostDK, getTestNamespace())
-	podWebhook := &webhook{
-		apiReader:        fakeClient,
+	podWebhook := &Webhook{
+		ApiReader:        fakeClient,
 		decoder:          admission.NewDecoder(scheme.Scheme),
-		recorder:         eventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: noCommunicationHostDK},
-		webhookImage:     testImage,
-		webhookNamespace: testNamespaceName,
-		clusterID:        testClusterID,
-		mutators: []dtwebhook.PodMutator{
+		Recorder:         EventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: noCommunicationHostDK},
+		WebhookImage:     testImage,
+		WebhookNamespace: testNamespaceName,
+		ClusterID:        testClusterID,
+		apmExists:        false,
+		Mutators: []dtwebhook.PodMutator{
 			oamutation.NewMutator(
 				testImage,
 				testClusterID,
@@ -204,7 +205,7 @@ func TestDoubleInjection(t *testing.T) {
 	communicationHostDK := getTestDynakube()
 	communicationHostDK.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{{Host: "test"}}
 	fakeClient = fake.NewClient(communicationHostDK, getTestNamespace())
-	podWebhook.apiReader = fakeClient
+	podWebhook.ApiReader = fakeClient
 
 	// simulate a Reinvocation
 	request = createTestAdmissionRequest(pod)
@@ -373,17 +374,18 @@ func getTestPodWithOcDebugPodAnnotations() *corev1.Pod {
 	return pod
 }
 
-func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *webhook {
+func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *Webhook {
 	decoder := admission.NewDecoder(scheme.Scheme)
 
-	return &webhook{
-		apiReader:        fake.NewClient(objects...),
+	return &Webhook{
+		ApiReader:        fake.NewClient(objects...),
 		decoder:          decoder,
-		recorder:         eventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: getTestDynakube()},
-		webhookImage:     testImage,
-		webhookNamespace: testNamespaceName,
-		clusterID:        testClusterID,
-		mutators:         mutators,
+		Recorder:         EventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: getTestDynakube()},
+		WebhookImage:     testImage,
+		WebhookNamespace: testNamespaceName,
+		ClusterID:        testClusterID,
+		apmExists:        false,
+		Mutators:         mutators,
 	}
 }
 
