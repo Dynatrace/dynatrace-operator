@@ -12,7 +12,7 @@ func TestContainer(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.TelemetryService = &telemetryservice.Spec{}
 
-		assert.Equal(t, []string{"--config=file:///osconfig/config.yaml"}, buildArgs(dk))
+		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs(dk))
 	})
 
 	t.Run("only EEC enabled", func(t *testing.T) {
@@ -32,7 +32,7 @@ func TestContainer(t *testing.T) {
 			t,
 			[]string{
 				"--config=eec://dynakube-extensions-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/otelc.token",
-				"--config=file:///osconfig/config.yaml",
+				"--config=file:///config/telemetry.yaml",
 			},
 			buildArgs(dk),
 		)

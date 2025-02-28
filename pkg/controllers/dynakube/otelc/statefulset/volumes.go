@@ -105,7 +105,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			Name: dataIngestTokenVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.Name,
+					SecretName: dk.Tokens(),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  dynatrace.DataIngestToken,

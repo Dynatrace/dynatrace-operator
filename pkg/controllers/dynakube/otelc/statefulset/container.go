@@ -49,7 +49,7 @@ func buildArgs(dk *dynakube.DynaKube) []string {
 	}
 
 	if dk.TelemetryService().IsEnabled() {
-		args = append(args, "--config=file:///osconfig/config.yaml")
+		args = append(args, "--config=file:///config/telemetry.yaml")
 	}
 
 	return args

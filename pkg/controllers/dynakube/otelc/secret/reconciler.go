@@ -5,14 +5,11 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -52,7 +49,7 @@ func (r *Reconciler) ensureOpenSignalAPISecret(ctx context.Context) error {
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new secret for telemetry api credentials")
 
-		secretConfig, err := r.generateTelemetryApiCredentialsSecret(ctx, consts.TelemetryApiCredentialsSecretName)
+		secretConfig, err := r.generateTelemetryApiCredentialsSecret(consts.TelemetryApiCredentialsSecretName)
 
 		if err != nil {
 			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, err)
@@ -81,22 +78,6 @@ func (r *Reconciler) ensureOpenSignalAPISecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) getApiToken(ctx context.Context) ([]byte, error) {
-	tokenReader := token.NewReader(r.apiReader, r.dk)
-
-	tokens, err := tokenReader.ReadTokens(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "'%s:%s' secret is missing or invalid", r.dk.Namespace, r.dk.Tokens())
-	}
-
-	apiToken, hasApiToken := tokens[dtclient.ApiToken]
-	if !hasApiToken {
-		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", dtclient.ApiToken, r.dk.Namespace, r.dk.Tokens()))
-	}
-
-	return []byte(apiToken.Value), nil
-}
-
 func (r *Reconciler) getDtEndpoint() ([]byte, error) {
 	tenantUUID, err := r.dk.TenantUUID()
 	if err != nil {
@@ -110,15 +91,8 @@ func (r *Reconciler) getDtEndpoint() ([]byte, error) {
 	return []byte(fmt.Sprintf("https://%s.dev.dynatracelabs.com/api/v2/otlp", tenantUUID)), nil
 }
 
-func (r *Reconciler) generateTelemetryApiCredentialsSecret(ctx context.Context, name string) (secret *corev1.Secret, err error) {
+func (r *Reconciler) generateTelemetryApiCredentialsSecret(name string) (secret *corev1.Secret, err error) {
 	secretData := make(map[string][]byte)
-
-	apiToken, err := r.getApiToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	secretData["DT_API_TOKEN"] = apiToken
 
 	dtEndpoint, err := r.getDtEndpoint()
 	if err != nil {

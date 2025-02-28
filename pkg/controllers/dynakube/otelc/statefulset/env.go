@@ -62,6 +62,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
 		{Name: envK8sClusterName, Value: dk.Name},
 		{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID},
+		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
 	}
 
 	if dk.IsExtensionsEnabled() {
@@ -80,7 +81,6 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 
 	if dk.TelemetryService().IsEnabled() {
 		envs = append(envs,
-			corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
 			corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiCredentialsSecretName},
