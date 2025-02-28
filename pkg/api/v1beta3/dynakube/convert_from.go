@@ -25,6 +25,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.fromExtensionsSpec(src)
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
+	dst.fromTemplatesSpec(src)
 
 	return nil
 }
@@ -88,6 +89,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubev1beta4.DynaKube) { //nolint:
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
 	}
+
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 }
 
@@ -170,7 +172,7 @@ func fromExtensionControllerTemplate(src dynakubev1beta4.ExtensionExecutionContr
 	return dst
 }
 
-func (dst *DynaKube) fromActiveGateSpec(src *dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromActiveGateSpec(src *dynakubev1beta4.DynaKube) { //nolint:dupl
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
 	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
@@ -223,23 +225,22 @@ func (dst *DynaKube) fromStatus(src *dynakubev1beta4.DynaKube) {
 	dst.Status.Conditions = src.Status.Conditions
 }
 
-func (dst *DynaKube) fromOneAgentStatus(src dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromOneAgentStatus(src dynakubev1beta4.DynaKube) { //nolint:dupl
 	dst.Status.OneAgent.VersionStatus = src.Status.OneAgent.VersionStatus
 
 	dst.Status.OneAgent.Instances = map[string]oneagent.Instance{}
 	for key, instance := range src.Status.OneAgent.Instances {
-		tmp := oneagent.Instance{
+		dst.Status.OneAgent.Instances[key] = oneagent.Instance{
 			PodName:   instance.PodName,
 			IPAddress: instance.IPAddress,
 		}
-		dst.Status.OneAgent.Instances[key] = tmp
 	}
 
 	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
-
 	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo
 	dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = make([]oneagent.CommunicationHostStatus, 0)
+
 	for _, host := range src.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
 		dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts =
 			append(dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts, oneagent.CommunicationHostStatus{
