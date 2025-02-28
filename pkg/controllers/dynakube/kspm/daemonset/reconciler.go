@@ -91,6 +91,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		daemonset.SetServiceAccount(serviceAccountName),
 		daemonset.SetAffinity(node.AMDOnlyAffinity()),
 		daemonset.SetPriorityClass(r.dk.KSPM().PriorityClassName),
+		daemonset.SetNodeSelector(r.dk.KSPM().NodeSelector),
 		daemonset.SetTolerations(r.dk.KSPM().Tolerations),
 		daemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
 		daemonset.SetUpdateStrategy(r.getUpdateStrategy()),

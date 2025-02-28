@@ -10,6 +10,7 @@ import (
 
 const (
 	TenantSecretSuffix            = "-activegate-tenant-secret"
+	TlsSecretSuffix               = "-activegate-tls-secret"
 	ConnectionInfoConfigMapSuffix = "-activegate-connection-info"
 	AuthTokenSecretSuffix         = "-activegate-authtoken-secret"
 	DefaultImageRegistrySubPath   = "/linux/activegate"
@@ -21,6 +22,10 @@ func (ag *Spec) SetApiUrl(apiUrl string) {
 
 func (ag *Spec) SetName(name string) {
 	ag.name = name
+}
+
+func (ag *Spec) SetAutomaticTLSCertificate(enabled bool) {
+	ag.automaticTLSCertificateEnabled = enabled
 }
 
 func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
@@ -92,18 +97,35 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 	return ag.IsMode(MetricsIngestCapability.DisplayName)
 }
 
-func (ag *Spec) HasCaCert() bool {
-	return ag.IsEnabled() && ag.TlsSecretName != ""
+func (ag *Spec) IsAutomaticTlsSecretEnabled() bool {
+	return ag.automaticTLSCertificateEnabled
 }
 
-// ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
+func (ag *Spec) HasCaCert() bool {
+	return ag.IsEnabled() && (ag.TlsSecretName != "" || ag.IsAutomaticTlsSecretEnabled())
+}
+
+// GetTenantSecretName returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
 func (ag *Spec) GetTenantSecretName() string {
 	return ag.name + TenantSecretSuffix
 }
 
-// ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
+// GetAuthTokenSecretName returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs.
 func (ag *Spec) GetAuthTokenSecretName() string {
 	return ag.name + AuthTokenSecretSuffix
+}
+
+// GetTLSSecretName returns the name of the AG TLS secret.
+func (ag *Spec) GetTLSSecretName() string {
+	if ag.TlsSecretName != "" {
+		return ag.TlsSecretName
+	}
+
+	if ag.IsAutomaticTlsSecretEnabled() {
+		return ag.name + TlsSecretSuffix
+	}
+
+	return ""
 }
 
 func (ag *Spec) GetConnectionInfoConfigMapName() string {
