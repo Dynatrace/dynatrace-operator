@@ -17,20 +17,14 @@ const (
 	dtLibVolumeName      = "dynatrace-lib"
 	dtLibVolumeMountPath = "/var/lib/dynatrace"
 	dtSubPathTemplate    = "logmonitoring-%s"
-	dtLibVolumePath      = "/tmp/dynatrace"
+	dtLogVolumePath      = "/tmp/dynatrace"
 	dtLogVolumeName      = "dynatrace-logs"
-	dtLogVolumeMountPath = "/var/log/dynatrace"
 
 	// for the logs that the logmonitoring will ingest
-	podLogsVolumeName         = "var-log-pods"
-	podLogsVolumePath         = "/var/log/pods"
-	dockerLogsVolumeName      = "docker-container-logs"
-	dockerLogsVolumePath      = "/var/lib/docker/containers"
-	containerLogsVolumeName   = "container-logs"
-	containerLogsVolumePath   = "/var/log/containers"
-	journalLogsVolumeName     = "var-log-journal"
-	journalLogsVolumePath     = "/var/log/journal"
-	journalLogsVolumeHostPath = "/var/log"
+	dockerLogsVolumeName = "docker-container-logs"
+	dockerLogsVolumePath = "/var/lib/docker/containers"
+	logsVolumeHostPath   = "/var/log"
+	logsVolumeName       = "var-log"
 )
 
 // getConfigVolumeMount provides the VolumeMount for the deployment.conf
@@ -55,17 +49,22 @@ func getConfigVolume(dkName string) corev1.Volume {
 }
 
 // getDTVolumeMounts provides the VolumeMounts for the dynatrace specific folders
-func getDTVolumeMounts(tenantUUID string) []corev1.VolumeMount {
-	return []corev1.VolumeMount{
-		{
-			Name:      dtLibVolumeName,
-			SubPath:   fmt.Sprintf(dtSubPathTemplate, tenantUUID),
-			MountPath: dtLibVolumeMountPath,
-		},
-		{
-			Name:      dtLogVolumeName,
-			MountPath: dtLogVolumeMountPath,
-		},
+func getDTVolumeMounts(tenantUUID string) corev1.VolumeMount {
+	return corev1.VolumeMount{
+
+		Name:      dtLibVolumeName,
+		SubPath:   fmt.Sprintf(dtSubPathTemplate, tenantUUID),
+		MountPath: dtLibVolumeMountPath,
+	}
+}
+
+// getDTVolumeMounts provides the VolumeMounts for the dynatrace specific folders
+func getDTLogVolumeMounts(tenantUUID string) corev1.VolumeMount {
+	return corev1.VolumeMount{
+
+		Name:      dtLogVolumeName,
+		SubPath:   fmt.Sprintf(dtSubPathTemplate, tenantUUID),
+		MountPath: dtLogVolumePath,
 	}
 }
 
@@ -76,7 +75,7 @@ func getDTVolumes() []corev1.Volume {
 			Name: dtLibVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: dtLibVolumePath,
+					Path: dtLogVolumePath,
 					Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 				},
 			},
@@ -97,18 +96,8 @@ func getIngestVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      podLogsVolumeName,
-			MountPath: podLogsVolumePath,
-			ReadOnly:  true,
-		},
-		{
-			Name:      containerLogsVolumeName,
-			MountPath: containerLogsVolumePath,
-			ReadOnly:  true,
-		},
-		{
-			Name:      journalLogsVolumeName,
-			MountPath: journalLogsVolumePath,
+			Name:      logsVolumeName,
+			MountPath: logsVolumeHostPath,
 			ReadOnly:  true,
 		},
 	}
@@ -122,33 +111,15 @@ func getIngestVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: dockerLogsVolumePath,
-					Type: ptr.To(corev1.HostPathDirectory),
+					Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 				},
 			},
 		},
 		{
-			Name: podLogsVolumeName,
+			Name: logsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: podLogsVolumePath,
-					Type: ptr.To(corev1.HostPathDirectory),
-				},
-			},
-		},
-		{
-			Name: containerLogsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: containerLogsVolumePath,
-					Type: ptr.To(corev1.HostPathDirectory),
-				},
-			},
-		},
-		{
-			Name: journalLogsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: journalLogsVolumeHostPath,
+					Path: logsVolumeHostPath,
 					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
@@ -159,7 +130,8 @@ func getIngestVolumes() []corev1.Volume {
 func getVolumeMounts(tenantUUID string) []corev1.VolumeMount {
 	var mounts []corev1.VolumeMount
 	mounts = append(mounts, getConfigVolumeMount())
-	mounts = append(mounts, getDTVolumeMounts(tenantUUID)...)
+	mounts = append(mounts, getDTVolumeMounts(tenantUUID))
+	mounts = append(mounts, getDTLogVolumeMounts(tenantUUID))
 	mounts = append(mounts, getIngestVolumeMounts()...)
 
 	return mounts
