@@ -123,9 +123,7 @@ func (r *Reconciler) removeOpenSignalAPISecret(ctx context.Context) error {
 	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.TelemetryApiCredentialsSecretName, Namespace: r.dk.Namespace}})
 
 	if err != nil {
-		log.Info("could not delete apiCredential secret", "name", consts.TelemetryApiCredentialsSecretName)
-
-		return err
+		log.Error(err, "could not delete apiCredential secret", "name", consts.TelemetryApiCredentialsSecretName)
 	}
 
 	meta.RemoveStatusCondition(r.dk.Conditions(), secretConditionType)
