@@ -18,7 +18,7 @@ func TestNewConfigFull(t *testing.T) {
 		WithProtocols("otlp", "jaeger", "zipkin", "statsd"),
 		WithExtensions(),
 		WithExporters(),
-		WithServices(),
+		WithServices("otlp", "jaeger", "zipkin"),
 		WithProcessors(),
 	)
 	require.NoError(t, err)
