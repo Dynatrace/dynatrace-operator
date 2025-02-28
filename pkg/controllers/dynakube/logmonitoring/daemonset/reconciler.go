@@ -101,6 +101,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		daemonset.SetDNSPolicy(r.dk.LogMonitoring().Template().DNSPolicy),
 		daemonset.SetAffinity(node.Affinity()),
 		daemonset.SetPriorityClass(r.dk.LogMonitoring().Template().PriorityClassName),
+		daemonset.SetNodeSelector(r.dk.LogMonitoring().Template().NodeSelector),
 		daemonset.SetTolerations(r.dk.LogMonitoring().Template().Tolerations),
 		daemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
 		daemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{

@@ -46,6 +46,12 @@ func SetTolerations(tolerations []corev1.Toleration) builder.Option[*appsv1.Daem
 	}
 }
 
+func SetNodeSelector(nodeSelector map[string]string) builder.Option[*appsv1.DaemonSet] {
+	return func(s *appsv1.DaemonSet) {
+		s.Spec.Template.Spec.NodeSelector = nodeSelector
+	}
+}
+
 func SetDNSPolicy(policy corev1.DNSPolicy) builder.Option[*appsv1.DaemonSet] {
 	return func(s *appsv1.DaemonSet) {
 		s.Spec.Template.Spec.DNSPolicy = policy
