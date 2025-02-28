@@ -1,22 +1,30 @@
 package dynakube
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	activegatev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
+	kspmv1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
+	logmonitoringv1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
 	oneagentv1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -28,6 +36,17 @@ func TestConvertFrom(t *testing.T) {
 		err := to.ConvertFrom(&from)
 		require.NoError(t, err)
 
+		compareBase(t, to, from)
+	})
+
+	t.Run("migrate metadata-enrichment from v1beta4 to v1beta3", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.True(t, to.MetadataEnrichmentEnabled())
 		compareBase(t, to, from)
 	})
 
@@ -53,6 +72,10 @@ func TestConvertFrom(t *testing.T) {
 		err := to.ConvertFrom(&from)
 		require.NoError(t, err)
 
+		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
+		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
+
 		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack)
 		compareBase(t, to, from)
 	})
@@ -65,6 +88,10 @@ func TestConvertFrom(t *testing.T) {
 
 		err := to.ConvertFrom(&from)
 		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
+		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
 
 		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack)
 		compareBase(t, to, from)
@@ -79,7 +106,12 @@ func TestConvertFrom(t *testing.T) {
 		err := to.ConvertFrom(&from)
 		require.NoError(t, err)
 
+		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
+		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
+
 		compareApplicationMonitoringSpec(t, *to.Spec.OneAgent.ApplicationMonitoring, *from.Spec.OneAgent.ApplicationMonitoring)
+		compareBase(t, to, from)
 	})
 
 	t.Run("migrate activegate from v1beta4 to v1beta3", func(t *testing.T) {
@@ -92,6 +124,85 @@ func TestConvertFrom(t *testing.T) {
 		require.NoError(t, err)
 
 		compareActiveGateSpec(t, to.Spec.ActiveGate, from.Spec.ActiveGate)
+		compareBase(t, to, from)
+	})
+
+	t.Run("migrate extensions from v1beta4 to v1beta3", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.Extensions = &dynakubev1beta4.ExtensionsSpec{}
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.NotNil(t, to.Spec.Extensions)
+		compareBase(t, to, from)
+	})
+
+	t.Run("migrate log-monitoring from v1beta4 to v1beta3", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.LogMonitoring = getNewLogMonitoringSpec()
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		compareLogMonitoringSpec(t, to.Spec.LogMonitoring, from.Spec.LogMonitoring)
+		compareBase(t, to, from)
+	})
+
+	t.Run("migrate kspm from v1beta4 to v1beta3", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.Kspm = &kspmv1beta4.Spec{}
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.NotNil(t, to.Spec.Kspm)
+		compareBase(t, to, from)
+	})
+
+	t.Run("migrate extensions templates from v1beta4 to v1beta3", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
+		from.Spec.Templates.ExtensionExecutionController = getNewExtensionExecutionControllerSpec()
+
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		compareOpenTelemetryTemplateSpec(t, to.Spec.Templates.OpenTelemetryCollector, from.Spec.Templates.OpenTelemetryCollector)
+		compareExtensionsExecutionControllerTemplateSpec(t, to.Spec.Templates.ExtensionExecutionController, from.Spec.Templates.ExtensionExecutionController)
+
+		compareBase(t, to, from)
+	})
+
+	t.Run("migrate log-monitoring templates from v1beta4 to v1beta3", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.Templates.LogMonitoring = getNewLogMonitoringTemplateSpec()
+
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		compareLogMonitoringTemplateSpec(t, to.Spec.Templates.LogMonitoring, from.Spec.Templates.LogMonitoring)
+		compareBase(t, to, from)
+	})
+
+	t.Run("migrate kspm templates from v1beta4 to v1beta3", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.Templates.KspmNodeConfigurationCollector = getNewNodeConfigurationCollectorTemplateSpec()
+
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		compareNodeConfigurationCollectorTemplateSpec(t, to.Spec.Templates.KspmNodeConfigurationCollector, from.Spec.Templates.KspmNodeConfigurationCollector)
+		compareBase(t, to, from)
 	})
 
 	t.Run("migrate status from v1beta4 to v1beta3", func(t *testing.T) {
@@ -103,6 +214,16 @@ func TestConvertFrom(t *testing.T) {
 		require.NoError(t, err)
 
 		compareStatus(t, to.Status, from.Status)
+	})
+	t.Run("migrate hostGroup", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Status = getNewStatus()
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Equal(t, to.Spec.OneAgent.HostGroup, from.Spec.OneAgent.HostGroup)
 	})
 }
 
@@ -121,13 +242,21 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubev1beta4.DynaKube) {
 	oldDk.Annotations = oldAnnotations
 	newDk.Annotations = newAnnotations
 
+	if oldDk.Spec.Proxy != nil || newDk.Spec.Proxy != nil { // necessary so we don't explode with nil pointer when not set
+		require.NotNil(t, oldDk.Spec.Proxy)
+		require.NotNil(t, newDk.Spec.Proxy)
+		assert.Equal(t, oldDk.Spec.Proxy.Value, newDk.Spec.Proxy.Value)
+		assert.Equal(t, oldDk.Spec.Proxy.ValueFrom, newDk.Spec.Proxy.ValueFrom)
+	}
+
+	assert.Equal(t, oldDk.Spec.DynatraceApiRequestThreshold, newDk.Spec.DynatraceApiRequestThreshold)
 	assert.Equal(t, oldDk.Spec.APIURL, newDk.Spec.APIURL)
 	assert.Equal(t, oldDk.Spec.Tokens, newDk.Spec.Tokens)
-	assert.Equal(t, oldDk.Spec.CustomPullSecret, newDk.Spec.CustomPullSecret)
-	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
-	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
-	assert.Equal(t, oldDk.Spec.DynatraceApiRequestThreshold, newDk.Spec.DynatraceApiRequestThreshold)
+	assert.Equal(t, oldDk.Spec.NetworkZone, newDk.Spec.NetworkZone)
+	assert.Equal(t, oldDk.Spec.CustomPullSecret, newDk.Spec.CustomPullSecret)
+	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
+	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
 
 	if newDk.OneAgent().IsAppInjectionNeeded() {
 		assert.Equal(t, oldDk.OneAgent().GetNamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
@@ -135,13 +264,6 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubev1beta4.DynaKube) {
 
 	assert.Equal(t, oldDk.MetadataEnrichmentEnabled(), newDk.MetadataEnrichmentEnabled())
 	assert.Equal(t, oldDk.Spec.MetadataEnrichment.NamespaceSelector, newDk.Spec.MetadataEnrichment.NamespaceSelector)
-
-	if oldDk.Spec.Proxy != nil || newDk.Spec.Proxy != nil { // necessary so we don't explode with nil pointer when not set
-		require.NotNil(t, oldDk.Spec.Proxy)
-		require.NotNil(t, newDk.Spec.Proxy)
-		assert.Equal(t, oldDk.Spec.Proxy.Value, newDk.Spec.Proxy.Value)
-		assert.Equal(t, oldDk.Spec.Proxy.ValueFrom, newDk.Spec.Proxy.ValueFrom)
-	}
 
 	if oldDk.FeatureMaxFailedCsiMountAttempts() != DefaultMaxFailedCsiMountAttempts {
 		assert.Equal(t, dynakubev1beta4.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
@@ -165,41 +287,48 @@ func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpe
 }
 
 func compareAppInjectionSpec(t *testing.T, oldSpec oneagent.AppInjectionSpec, newSpec oneagentv1beta4.AppInjectionSpec) {
-	assert.Equal(t, oldSpec.CodeModulesImage, newSpec.CodeModulesImage)
 	assert.Equal(t, oldSpec.InitResources, newSpec.InitResources)
+	assert.Equal(t, oldSpec.CodeModulesImage, newSpec.CodeModulesImage)
+	assert.Equal(t, oldSpec.NamespaceSelector, newSpec.NamespaceSelector)
 }
 
 func compareCloudNativeSpec(t *testing.T, oldSpec oneagent.CloudNativeFullStackSpec, newSpec oneagentv1beta4.CloudNativeFullStackSpec) {
-	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 	compareHostInjectSpec(t, oldSpec.HostInjectSpec, newSpec.HostInjectSpec)
+	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 }
 
 func compareApplicationMonitoringSpec(t *testing.T, oldSpec oneagent.ApplicationMonitoringSpec, newSpec oneagentv1beta4.ApplicationMonitoringSpec) {
-	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
+	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 }
 
 func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec activegatev1beta4.Spec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
-	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
-	assert.Equal(t, oldSpec.Env, newSpec.Env)
-	assert.Equal(t, oldSpec.Image, newSpec.Image)
-	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
-	assert.Equal(t, oldSpec.NodeSelector, newSpec.NodeSelector)
-	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
-	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
-	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
-	assert.Equal(t, len(oldSpec.Capabilities), len(newSpec.Capabilities))
 	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TlsSecretName)
-	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
-	assert.Equal(t, oldSpec.Group, newSpec.Group)
-	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
+	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
+	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 
-	if oldSpec.CustomProperties != nil || newSpec.CustomProperties != nil { // necessary so we don't explode with nil pointer when not set
-		require.NotNil(t, oldSpec.CustomProperties)
-		require.NotNil(t, newSpec.CustomProperties)
-		assert.Equal(t, oldSpec.CustomProperties.Value, newSpec.CustomProperties.Value)
-		assert.Equal(t, oldSpec.CustomProperties.ValueFrom, newSpec.CustomProperties.ValueFrom)
+	if oldSpec.CapabilityProperties.CustomProperties != nil || newSpec.CapabilityProperties.CustomProperties != nil { // necessary so we don't explode with nil pointer when not set
+		require.NotNil(t, oldSpec.CapabilityProperties.CustomProperties)
+		require.NotNil(t, newSpec.CapabilityProperties.CustomProperties)
+		assert.Equal(t, oldSpec.CapabilityProperties.CustomProperties.Value, newSpec.CapabilityProperties.CustomProperties.Value)
+		assert.Equal(t, oldSpec.CapabilityProperties.CustomProperties.ValueFrom, newSpec.CapabilityProperties.CustomProperties.ValueFrom)
+	}
+
+	assert.Equal(t, oldSpec.CapabilityProperties.NodeSelector, newSpec.CapabilityProperties.NodeSelector)
+	assert.Equal(t, oldSpec.CapabilityProperties.Labels, newSpec.CapabilityProperties.Labels)
+	assert.Equal(t, *oldSpec.CapabilityProperties.Replicas, *newSpec.CapabilityProperties.Replicas)
+	assert.Equal(t, oldSpec.CapabilityProperties.Image, newSpec.CapabilityProperties.Image)
+	assert.Equal(t, oldSpec.CapabilityProperties.Group, newSpec.CapabilityProperties.Group)
+	assert.Equal(t, oldSpec.CapabilityProperties.Resources, newSpec.CapabilityProperties.Resources)
+	assert.Equal(t, oldSpec.CapabilityProperties.Tolerations, newSpec.CapabilityProperties.Tolerations)
+	assert.Equal(t, oldSpec.CapabilityProperties.Env, newSpec.CapabilityProperties.Env)
+	assert.Equal(t, oldSpec.CapabilityProperties.TopologySpreadConstraints, newSpec.CapabilityProperties.TopologySpreadConstraints)
+
+	assert.Len(t, newSpec.Capabilities, len(oldSpec.Capabilities))
+
+	for _, oldCapability := range oldSpec.Capabilities {
+		assert.Contains(t, newSpec.Capabilities, activegatev1beta4.CapabilityDisplayName(oldCapability))
 	}
 }
 
@@ -245,11 +374,91 @@ func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubev1b
 	}
 }
 
+func compareLogMonitoringSpec(t *testing.T, oldSpec *logmonitoring.Spec, newSpec *logmonitoringv1beta4.Spec) {
+	if oldSpec == nil {
+		assert.Nil(t, newSpec)
+
+		return
+	} else {
+		require.NotNil(t, newSpec)
+	}
+
+	assert.Len(t, newSpec.IngestRuleMatchers, len(oldSpec.IngestRuleMatchers))
+
+	for _, oldMatchers := range oldSpec.IngestRuleMatchers {
+		assert.True(t, slices.ContainsFunc(newSpec.IngestRuleMatchers, func(newMatchers logmonitoringv1beta4.IngestRuleMatchers) bool {
+			return slices.Equal(newMatchers.Values, oldMatchers.Values) && newMatchers.Attribute == oldMatchers.Attribute
+		}))
+	}
+}
+
+func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollectorSpec, newSpec dynakubev1beta4.OpenTelemetryCollectorSpec) {
+	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
+	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
+	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
+	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
+	assert.Equal(t, oldSpec.TlsRefName, newSpec.TlsRefName)
+	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
+	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
+	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
+}
+
+func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec ExtensionExecutionControllerSpec, newSpec dynakubev1beta4.ExtensionExecutionControllerSpec) {
+	assert.Equal(t, *oldSpec.PersistentVolumeClaim, *newSpec.PersistentVolumeClaim)
+	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
+	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
+	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
+	assert.Equal(t, oldSpec.TlsRefName, newSpec.TlsRefName)
+	assert.Equal(t, oldSpec.CustomConfig, newSpec.CustomConfig)
+	assert.Equal(t, oldSpec.CustomExtensionCertificates, newSpec.CustomExtensionCertificates)
+	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
+	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
+	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
+	assert.Equal(t, oldSpec.UseEphemeralVolume, newSpec.UseEphemeralVolume)
+}
+
+func compareLogMonitoringTemplateSpec(t *testing.T, oldSpec *logmonitoring.TemplateSpec, newSpec *logmonitoringv1beta4.TemplateSpec) {
+	if oldSpec == nil {
+		assert.Nil(t, newSpec)
+
+		return
+	} else {
+		require.NotNil(t, newSpec)
+	}
+
+	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
+	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
+	assert.Equal(t, oldSpec.NodeSelector, newSpec.NodeSelector)
+	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
+	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
+	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
+	assert.Equal(t, oldSpec.SecCompProfile, newSpec.SecCompProfile)
+	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
+	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
+	assert.Equal(t, oldSpec.Args, newSpec.Args)
+}
+
+func compareNodeConfigurationCollectorTemplateSpec(t *testing.T, oldSpec kspm.NodeConfigurationCollectorSpec, newSpec kspmv1beta4.NodeConfigurationCollectorSpec) {
+	assert.Equal(t, oldSpec.UpdateStrategy, newSpec.UpdateStrategy)
+	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
+	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
+	assert.Equal(t, oldSpec.NodeSelector, newSpec.NodeSelector)
+	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
+	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
+	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
+	assert.Equal(t, oldSpec.NodeAffinity, newSpec.NodeAffinity)
+	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
+	assert.Equal(t, oldSpec.Args, newSpec.Args)
+	assert.Equal(t, oldSpec.Env, newSpec.Env)
+}
+
 func getNewDynakubeBase() dynakubev1beta4.DynaKube {
 	return dynakubev1beta4.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "name",
-			Namespace: "namespace",
+			Name:         "name",
+			GenerateName: "generateName",
+			Namespace:    "namespace",
+			Generation:   0xDEADBEEF,
 			Annotations: map[string]string{
 				dynakubev1beta4.AnnotationFeatureActiveGateIgnoreProxy:     "true", //nolint:staticcheck
 				dynakubev1beta4.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
@@ -257,20 +466,21 @@ func getNewDynakubeBase() dynakubev1beta4.DynaKube {
 			Labels: map[string]string{
 				"label": "label-value",
 			},
+			Finalizers: []string{"finalizer1", "finalizer2"},
 		},
 		Spec: dynakubev1beta4.DynaKubeSpec{
-			APIURL:           "api-url",
-			Tokens:           "token",
-			CustomPullSecret: "pull-secret",
-			EnableIstio:      true,
-			SkipCertCheck:    true,
 			Proxy: &value.Source{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
 			},
+			DynatraceApiRequestThreshold: ptr.To(uint16(42)),
+			APIURL:                       "api-url",
+			Tokens:                       "token",
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceApiRequestThreshold: ptr.To(uint16(42)),
+			CustomPullSecret:             "pull-secret",
+			SkipCertCheck:                true,
+			EnableIstio:                  true,
 			MetadataEnrichment: dynakubev1beta4.MetadataEnrichment{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
@@ -389,12 +599,276 @@ func getNewActiveGateSpec() activegatev1beta4.Spec {
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1)},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+				},
+				Claims: []corev1.ResourceClaim{{
+					Name:    "claim-name",
+					Request: "claim-request",
+				}},
 			},
 			Tolerations: []corev1.Toleration{
 				{Key: "activegate-toleration-key", Operator: "In", Value: "activegate-toleration-value"},
 			},
 			TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
 				{MaxSkew: 1},
+			},
+		},
+	}
+}
+
+func getNewLogMonitoringSpec() *logmonitoringv1beta4.Spec {
+	newSpec := logmonitoringv1beta4.Spec{
+		IngestRuleMatchers: make([]logmonitoringv1beta4.IngestRuleMatchers, 0),
+	}
+
+	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringv1beta4.IngestRuleMatchers{
+		Attribute: "attribute1",
+		Values:    []string{"matcher1", "matcher2", "matcher3"},
+	})
+
+	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringv1beta4.IngestRuleMatchers{
+		Attribute: "attribute2",
+		Values:    []string{"matcher1", "matcher2", "matcher3"},
+	})
+
+	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringv1beta4.IngestRuleMatchers{
+		Attribute: "attribute3",
+		Values:    []string{"matcher1", "matcher2", "matcher3"},
+	})
+
+	return &newSpec
+}
+
+func getNewOpenTelemetryTemplateSpec() dynakubev1beta4.OpenTelemetryCollectorSpec {
+	return dynakubev1beta4.OpenTelemetryCollectorSpec{
+		Labels: map[string]string{
+			"otelc-label-key1": "otelc-label-value1",
+			"otelc-label-key2": "otelc-label-value2",
+		},
+		Annotations: map[string]string{
+			"otelc-annotation-key1": "otelc-annotation-value1",
+			"otelc-annotation-key2": "otelc-annotation-value2",
+		},
+		Replicas: ptr.To(int32(42)),
+		ImageRef: image.Ref{
+			Repository: "image-repo.repohost.test/repo",
+			Tag:        "image-tag",
+		},
+		TlsRefName: "tls-ref-name",
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			},
+			Claims: []corev1.ResourceClaim{{
+				Name:    "claim-name",
+				Request: "claim-request",
+			}},
+		},
+		Tolerations: []corev1.Toleration{
+			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
+		},
+		TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+			{MaxSkew: 1},
+		},
+	}
+}
+
+func getNewExtensionExecutionControllerSpec() dynakubev1beta4.ExtensionExecutionControllerSpec {
+	return dynakubev1beta4.ExtensionExecutionControllerSpec{
+		PersistentVolumeClaim: getPersistentVolumeClaimSpec(),
+		Labels: map[string]string{
+			"eec-label-key1": "eec-label-value1",
+			"eec-label-key2": "eec-label-value2",
+		},
+		Annotations: map[string]string{
+			"eec-annotation-key1": "eec-annotation-value1",
+			"eec-annotation-key2": "eec-annotation-value2",
+		},
+		ImageRef: image.Ref{
+			Repository: "image-repo.repohost.test/repo",
+			Tag:        "image-tag",
+		},
+		TlsRefName: "tls-ref-name",
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			},
+			Claims: []corev1.ResourceClaim{{
+				Name:    "claim-name",
+				Request: "claim-request",
+			}},
+		},
+		Tolerations: []corev1.Toleration{
+			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
+		},
+		TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+			{MaxSkew: 1},
+		},
+		CustomConfig:                "custom-eec-config",
+		CustomExtensionCertificates: "custom-eec-certificates",
+		UseEphemeralVolume:          true,
+	}
+}
+
+func getPersistentVolumeClaimSpec() *corev1.PersistentVolumeClaimSpec {
+	return &corev1.PersistentVolumeClaimSpec{
+		AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+		Selector: &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"pvc-label-key1": "pvc-label-value1",
+				"pvc-label-key2": "pvc-label-value2",
+			},
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      "label-selector-key",
+					Operator: "label-selector-value",
+					Values:   []string{"pvc-value-1", "pvc-value-key2"},
+				},
+			},
+		},
+		Resources: corev1.VolumeResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceStorage: *resource.NewScaledQuantity(3, 1),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceStorage: *resource.NewScaledQuantity(3, 1),
+			},
+		},
+		VolumeName:                "volume-name",
+		StorageClassName:          ptr.To("localstorage"),
+		VolumeMode:                ptr.To(corev1.PersistentVolumeFilesystem),
+		VolumeAttributesClassName: ptr.To("volume-attributes-class-name"),
+	}
+}
+
+func getNewLogMonitoringTemplateSpec() *logmonitoringv1beta4.TemplateSpec {
+	return &logmonitoringv1beta4.TemplateSpec{
+		Labels: map[string]string{
+			"logagent-label-key1": "logagent-label-value1",
+			"logagent-label-key2": "logagent-label-value2",
+		},
+		Annotations: map[string]string{
+			"logagent-annotation-key1": "logagent-annotation-value1",
+			"logagent-annotation-key2": "logagent-annotation-value2",
+		},
+		NodeSelector: map[string]string{
+			"selector1": "node1",
+			"selector2": "node2",
+		},
+		ImageRef: image.Ref{
+			Repository: "image-repo.repohost.test/repo",
+			Tag:        "image-tag",
+		},
+		DNSPolicy:         "dns-policy",
+		PriorityClassName: "priority-class-name",
+		SecCompProfile:    "sec-comp-profile",
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			},
+			Claims: []corev1.ResourceClaim{{
+				Name:    "claim-name",
+				Request: "claim-request",
+			}},
+		},
+		Tolerations: []corev1.Toleration{
+			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
+		},
+		Args: []string{"--log-level", "debug", "--log-format", "json"},
+	}
+}
+
+func getNewNodeConfigurationCollectorTemplateSpec() kspmv1beta4.NodeConfigurationCollectorSpec {
+	return kspmv1beta4.NodeConfigurationCollectorSpec{
+		UpdateStrategy: &v1.DaemonSetUpdateStrategy{
+			Type: "daemonset-update-strategy-type",
+			RollingUpdate: &v1.RollingUpdateDaemonSet{
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   0,
+					IntVal: 42,
+				},
+				MaxSurge: &intstr.IntOrString{
+					Type:   1,
+					StrVal: "42",
+				},
+			},
+		},
+		Labels: map[string]string{
+			"ncc-label-key1": "ncc-label-value1",
+			"ncc-label-key2": "ncc-label-value2",
+		},
+		Annotations: map[string]string{
+			"ncc-annotation-key1": "ncc-annotation-value1",
+			"ncc-annotation-key2": "ncc-annotation-value2",
+		},
+		NodeSelector: map[string]string{
+			"selector1": "node1",
+			"selector2": "node2",
+		},
+		ImageRef: image.Ref{
+			Repository: "image-repo.repohost.test/repo",
+			Tag:        "image-tag",
+		},
+		PriorityClassName: "priority-class-name",
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			},
+			Claims: []corev1.ResourceClaim{{
+				Name:    "claim-name",
+				Request: "claim-request",
+			}},
+		},
+		NodeAffinity: corev1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "node-selector-match-key",
+							Operator: "node-selector-match-operator",
+							Values:   []string{"node-match-value-1", "node-match-value2"},
+						},
+					},
+					MatchFields: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "node-selector-field-key",
+							Operator: "node-selector-field-operator",
+							Values:   []string{"node-field-value-1", "node-field-value2"},
+						},
+					},
+				}},
+			},
+			PreferredDuringSchedulingIgnoredDuringExecution: nil,
+		},
+		Tolerations: []corev1.Toleration{
+			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
+		},
+		Args: []string{"--log-level", "debug", "--log-format", "json"},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "ENV1",
+				Value: "VAL1",
+			},
+			{
+				Name:  "ENV2",
+				Value: "VAL2",
+			},
+			{
+				Name:  "ENV2",
+				Value: "VAL2",
 			},
 		},
 	}
