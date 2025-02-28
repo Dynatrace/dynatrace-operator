@@ -137,19 +137,21 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
 	templateAnnotations := map[string]string{}
 
-	if r.dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
-		templateAnnotations = r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
-	}
+	if r.dk.IsExtensionsEnabled() {
+		if r.dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
+			templateAnnotations = r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
+		}
 
-	tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.ExtensionsTLSSecretName())
-	if err != nil {
-		return nil, err
-	}
+		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.ExtensionsTLSSecretName())
+		if err != nil {
+			return nil, err
+		}
 
-	templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
+		templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
+	}
 
 	if r.dk.TelemetryService().IsEnabled() && r.dk.TelemetryService().Spec.TlsRefName != "" {
-		tlsSecretHash, err = r.calculateSecretHash(ctx, r.dk.TelemetryService().Spec.TlsRefName)
+		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.TelemetryService().Spec.TlsRefName)
 		if err != nil {
 			return nil, err
 		}
