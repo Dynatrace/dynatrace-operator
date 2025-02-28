@@ -123,8 +123,20 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 }
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
-	vm := []corev1.VolumeMount{
-		{Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath},
+	var vm []corev1.VolumeMount
+
+	if dk.IsExtensionsEnabled() {
+		vm = append(
+			vm,
+			corev1.VolumeMount{
+				Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath,
+			},
+			corev1.VolumeMount{
+				Name:      extensionsControllerTLSVolumeName,
+				MountPath: customEecTLSCertificatePath,
+				ReadOnly:  true,
+			},
+		)
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -134,12 +146,6 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			ReadOnly:  true,
 		})
 	}
-
-	vm = append(vm, corev1.VolumeMount{
-		Name:      extensionsControllerTLSVolumeName,
-		MountPath: customEecTLSCertificatePath,
-		ReadOnly:  true,
-	})
 
 	if dk.TelemetryService().IsEnabled() {
 		if dk.TelemetryService().Spec.TlsRefName != "" {
