@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	expectedBaseInitArgsLen = 11
+	expectedBaseInitArgsLen = 12
 )
 
 func TestGetInitArgs(t *testing.T) {

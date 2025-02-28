@@ -51,7 +51,7 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container 
 		Name:            initContainerName,
 		Image:           dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
 		ImagePullPolicy: corev1.PullAlways,
-		VolumeMounts:    getDTVolumeMounts(tenantUUID),
+		VolumeMounts:    []corev1.VolumeMount{getDTVolumeMounts(tenantUUID)},
 		Command:         []string{bootstrapCommand},
 		Env:             getInitEnvs(dk),
 		Args:            getInitArgs(dk),
