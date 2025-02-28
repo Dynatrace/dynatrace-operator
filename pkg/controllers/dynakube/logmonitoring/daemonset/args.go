@@ -14,11 +14,11 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv),
 		fmt.Sprintf("-c k8s_fullpodname $(%s)", podNameEnv),
 		fmt.Sprintf("-c k8s_poduid $(%s)", podUIDEnv),
-		fmt.Sprintf("-c k8s_containername %s", containerName), //nolint:perfsprint
 		fmt.Sprintf("-c k8s_basepodname $(%s)", basePodNameEnv),
 		fmt.Sprintf("-c k8s_namespace $(%s)", namespaceNameEnv),
 		fmt.Sprintf("-c k8s_node_name $(%s)", nodeNameEnv),
 		fmt.Sprintf("-c k8s_cluster_id $(%s)", clusterUIDEnv),
+		"-c k8s_containername " + containerName,
 		"-l " + dtLogVolumePath,
 	}
 
