@@ -152,7 +152,7 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 		Name: activeGateCaCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: dk.Spec.ActiveGate.TlsSecretName,
+				SecretName: dk.Spec.ActiveGate.GetTLSSecretName(),
 				Items: []corev1.KeyToPath{
 					{
 						Key:  "server.crt",
