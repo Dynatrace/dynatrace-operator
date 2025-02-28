@@ -102,20 +102,18 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					},
 				},
 			})
-
-			if dk.TelemetryService().IsEnabled() {
-				volumes = append(volumes, corev1.Volume{
-					Name: telemetryCollectorConfigVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: configuration.GetConfigMapName(dk.Name),
-							},
-						},
-					},
-				})
-			}
 		}
+
+		volumes = append(volumes, corev1.Volume{
+			Name: telemetryCollectorConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: configuration.GetConfigMapName(dk.Name),
+					},
+				},
+			},
+		})
 
 		volumes = append(volumes, corev1.Volume{
 			Name: dataIngestTokenVolumeName,

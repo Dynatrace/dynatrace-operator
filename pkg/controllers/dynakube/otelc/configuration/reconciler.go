@@ -16,7 +16,7 @@ import (
 const (
 	telemetryCollectorConfigmapSuffix = "-telemetry-collector-config"
 	myPodIpEnvVarName                 = "MY_POD_IP"
-	configFieldName                   = "telemetry.yaml"
+	ConfigFieldName                   = "telemetry.yaml"
 )
 
 type Reconciler struct {
@@ -121,7 +121,7 @@ func (r *Reconciler) getData() (map[string]string, error) {
 	}
 
 	configMap := map[string]string{
-		configFieldName: string(configBytes),
+		ConfigFieldName: string(configBytes),
 	}
 
 	return configMap, nil

@@ -44,7 +44,7 @@ func TestConfigurationConfigMap(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, configMap)
 		require.NoError(t, err)
 
-		_, ok := configMap.Data[configFieldName]
+		_, ok := configMap.Data[ConfigFieldName]
 		assert.True(t, ok)
 
 		require.Len(t, dk.Status.Conditions, 1)
