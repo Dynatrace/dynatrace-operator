@@ -10,6 +10,7 @@ extensions:
   health_check:
     endpoint: test:13133
 processors:
+  cumulativetodelta: {}
   k8sattributes:
     extract:
       annotations:

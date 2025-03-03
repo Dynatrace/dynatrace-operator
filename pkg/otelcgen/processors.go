@@ -52,6 +52,7 @@ var (
 
 func (c *Config) buildProcessors() map[component.ID]component.Config {
 	return map[component.ID]component.Config{
+		cumulativeToDelta: map[string]any{},
 		k8sattributes: map[string]any{
 			"extract": map[string]any{
 				"metadata": defaultK8Sattributes,

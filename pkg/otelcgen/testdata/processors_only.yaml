@@ -2,6 +2,7 @@ connectors: {}
 exporters: {}
 extensions: {}
 processors:
+  cumulativetodelta: {}
   k8sattributes:
     extract:
       annotations:
