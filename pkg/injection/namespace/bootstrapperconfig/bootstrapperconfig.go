@@ -97,7 +97,10 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		return nil, errors.WithStack(err)
 	}
 
-	initialConnectRetryMs := strconv.Itoa(dk.FeatureAgentInitialConnectRetry())
+	initialConnectRetryMs := ""
+	if dk.FeatureAgentInitialConnectRetry() > -1 {
+		initialConnectRetryMs = strconv.Itoa(dk.FeatureAgentInitialConnectRetry())
+	}
 
 	return map[string][]byte{
 		pmc.InputFileName:        pmcSecret,
