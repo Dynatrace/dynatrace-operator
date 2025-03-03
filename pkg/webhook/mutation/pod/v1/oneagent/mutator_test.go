@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +35,7 @@ const (
 func TestEnabled(t *testing.T) {
 	t.Run("turned off", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationOneAgentInject: "false"}, getTestNamespace(nil))
+		request := createTestMutationRequest(nil, map[string]string{oacommon.AnnotationInject: "false"}, getTestNamespace(nil))
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -93,7 +94,7 @@ func TestEnabled(t *testing.T) {
 func TestInjected(t *testing.T) {
 	t.Run("already marked", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"}, getTestNamespace(nil))
+		request := createTestMutationRequest(nil, map[string]string{oacommon.AnnotationInjected: "true"}, getTestNamespace(nil))
 
 		enabled := mutator.Injected(request.BaseRequest)
 
@@ -207,13 +208,13 @@ func TestNoInjectionMutate(t *testing.T) {
 	assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
 
 	assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+2) // +2 == injected-annotation, reason-annotation
-	require.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected)
-	require.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationOneAgentReason)
+	require.Contains(t, request.Pod.Annotations, oacommon.AnnotationInjected)
+	require.Contains(t, request.Pod.Annotations, oacommon.AnnotationReason)
 
-	assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationOneAgentInjected])
-	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyConnectionInfoReason)
-	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], EmptyTenantUUIDReason)
-	assert.Contains(t, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason], UnknownCodeModuleReason)
+	assert.Equal(t, "false", request.Pod.Annotations[oacommon.AnnotationInjected])
+	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], EmptyConnectionInfoReason)
+	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], EmptyTenantUUIDReason)
+	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], UnknownCodeModuleReason)
 
 	assert.Empty(t, request.InstallContainer.Env)
 	assert.Empty(t, request.InstallContainer.VolumeMounts)
@@ -251,7 +252,7 @@ func TestReinvoke(t *testing.T) {
 	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestReinvocationRequest(&testCases[index].dk, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
+			request := createTestReinvocationRequest(&testCases[index].dk, map[string]string{oacommon.AnnotationInjected: "true"})
 
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
@@ -276,7 +277,7 @@ func TestReinvoke(t *testing.T) {
 				DynaKube: *getTestDynakube(),
 				Pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Annotations: map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"},
+						Annotations: map[string]string{oacommon.AnnotationInjected: "true"},
 					},
 				},
 			},

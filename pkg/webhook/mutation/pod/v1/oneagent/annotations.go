@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -22,7 +22,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	pod.Annotations[dtwebhook.AnnotationOneAgentInjected] = "true"
+	pod.Annotations[oacommon.AnnotationInjected] = "true"
 }
 
 func setNotInjectedAnnotations(pod *corev1.Pod, reason string) {
@@ -30,16 +30,16 @@ func setNotInjectedAnnotations(pod *corev1.Pod, reason string) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	pod.Annotations[dtwebhook.AnnotationOneAgentInjected] = "false"
-	pod.Annotations[dtwebhook.AnnotationOneAgentReason] = reason
+	pod.Annotations[oacommon.AnnotationInjected] = "false"
+	pod.Annotations[oacommon.AnnotationReason] = reason
 }
 
 func getInstallerInfo(pod *corev1.Pod, dk dynakube.DynaKube) installerInfo {
 	return installerInfo{
-		flavor:       maputils.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, ""),
-		technologies: url.QueryEscape(maputils.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all")),
-		installPath:  maputils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath),
-		installerURL: maputils.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, ""),
+		flavor:       maputils.GetField(pod.Annotations, AnnotationFlavor, ""),
+		technologies: url.QueryEscape(maputils.GetField(pod.Annotations, AnnotationTechnologies, "all")),
+		installPath:  maputils.GetField(pod.Annotations, AnnotationInstallPath, DefaultInstallPath),
+		installerURL: maputils.GetField(pod.Annotations, AnnotationInstallerUrl, ""),
 		version:      dk.OneAgent().GetCodeModulesVersion(),
 	}
 }

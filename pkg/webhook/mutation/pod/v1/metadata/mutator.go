@@ -7,6 +7,7 @@ import (
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +32,7 @@ func NewMutator(webhookNamespace string, client client.Client, apiReader client.
 }
 
 func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationMetadataEnrichmentInject,
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, metacommon.AnnotationInject,
 		request.DynaKube.FeatureAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.MetadataEnrichmentEnabled()
 
@@ -47,7 +48,7 @@ func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
 }
 
 func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
-	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationMetadataEnrichmentInjected, false)
+	return maputils.GetFieldBool(request.Pod.Annotations, metacommon.AnnotationInjected, false)
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
@@ -118,7 +119,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	pod.Annotations[dtwebhook.AnnotationMetadataEnrichmentInjected] = "true"
+	pod.Annotations[metacommon.AnnotationInjected] = "true"
 }
 
 func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {

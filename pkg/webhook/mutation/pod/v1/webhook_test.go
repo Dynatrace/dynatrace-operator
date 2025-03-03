@@ -1,4 +1,4 @@
-package pod
+package v1
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
@@ -147,7 +147,7 @@ func TestMutator(t *testing.T) {
 func TestDoubleInjection(t *testing.T) {
 	noCommunicationHostDK := getTestDynakube()
 	fakeClient := fake.NewClient(noCommunicationHostDK, getTestNamespace())
-	podWebhook := &Webhook{
+	podWebhook := &Injector{
 		recorder:     events.NewRecorder(record.NewFakeRecorder(10)),
 		webhookImage: testImage,
 		clusterID:    testClusterID,
@@ -352,10 +352,10 @@ func assertPodMutatorCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedC
 	mock.AssertNumberOfCalls(t, "Mutate", expectedCalls)
 }
 
-func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *Webhook {
+func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *Injector {
 	decoder := admission.NewDecoder(scheme.Scheme)
 
-	return &Webhook{
+	return &Injector{
 		apiReader:        fake.NewClient(objects...),
 		decoder:          decoder,
 		recorder:         EventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: getTestDynakube()},

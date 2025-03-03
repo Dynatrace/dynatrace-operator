@@ -1,4 +1,4 @@
-package pod
+package v1
 
 import (
 	"testing"
@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -174,7 +173,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "silent"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
-		pod.Annotations[dtwebhook.AnnotationFailurePolicy] = "fail"
+		pod.Annotations[AnnotationFailurePolicy] = "fail"
 		webhookImage := "test-image"
 		clusterID := "id"
 
@@ -188,7 +187,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "fail"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
-		pod.Annotations[dtwebhook.AnnotationFailurePolicy] = "silent"
+		pod.Annotations[AnnotationFailurePolicy] = "silent"
 		webhookImage := "test-image"
 		clusterID := "id"
 

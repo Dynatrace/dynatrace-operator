@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +37,7 @@ const (
 func TestEnabled(t *testing.T) {
 	t.Run("turned off", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationMetadataEnrichmentInject: "false"}, false)
+		request := createTestMutationRequest(nil, map[string]string{metacommon.AnnotationInject: "false"}, false)
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -113,7 +114,7 @@ func TestEnabled(t *testing.T) {
 func TestInjected(t *testing.T) {
 	t.Run("already marked", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationMetadataEnrichmentInjected: "true"}, false)
+		request := createTestMutationRequest(nil, map[string]string{metacommon.AnnotationInjected: "true"}, false)
 
 		enabled := mutator.Injected(request.BaseRequest)
 
@@ -152,7 +153,7 @@ func TestMutate(t *testing.T) {
 func TestReinvoke(t *testing.T) {
 	t.Run("should only mutate the containers in the pod", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-		request := createTestReinvocationRequest(getTestDynakube(), map[string]string{dtwebhook.AnnotationMetadataEnrichmentInjected: "true"})
+		request := createTestReinvocationRequest(getTestDynakube(), map[string]string{metacommon.AnnotationInjected: "true"})
 
 		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 
@@ -168,7 +169,7 @@ func TestReinvoke(t *testing.T) {
 				DynaKube: *getTestDynakube(),
 				Pod: &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Annotations: map[string]string{dtwebhook.AnnotationMetadataEnrichmentInjected: "true"},
+						Annotations: map[string]string{metacommon.AnnotationInjected: "true"},
 					},
 				},
 			},

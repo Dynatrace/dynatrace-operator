@@ -10,9 +10,9 @@ import (
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
-	v1pod "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
-	v2pod "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
+	v1 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
+	v2 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -40,8 +40,8 @@ func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string) er
 }
 
 type webhook struct {
-	v1 v1pod.Webhook
-	v2 v2pod.Webhook
+	v1 v1.Injector
+	v2 v2.Injector
 
 	recorder events.EventRecorder
 	decoder  admission.Decoder
@@ -49,7 +49,7 @@ type webhook struct {
 	apiReader client.Reader
 
 	webhookNamespace string
-	deployedViaOLM bool
+	deployedViaOLM   bool
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
