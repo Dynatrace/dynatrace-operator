@@ -266,6 +266,36 @@ func TestArguments(t *testing.T) {
 
 		assert.Contains(t, arguments, "--set-no-proxy=*.dev.dynatracelabs.com,dynakube-activegate.dynatrace")
 	})
+	t.Run("allow arguments without value, but deduplicate", func(t *testing.T) {
+		custArgs := []string{
+			"--enable-feature-a",
+			"--enable-feature-b",
+			"--enable-feature-c",
+			"--enable-feature-c",
+			"--enable-feature-a",
+			"--enable-feature-b",
+		}
+		builder := builder{
+			dk:             &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}}}},
+			hostInjectSpec: &oneagent.HostInjectSpec{Args: custArgs},
+			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
+		}
+
+		arguments, _ := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--enable-feature-a",
+			"--enable-feature-b",
+			"--enable-feature-c",
+			"--set-host-id-source=auto",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-no-proxy=",
+			"--set-proxy=",
+			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
 }
 
 func TestPodSpec_Arguments(t *testing.T) {

@@ -42,19 +42,19 @@ Check if default image or imageref is used
 {{- end -}}
 
 {{- define "webhook.securityContext" -}}
-    {{- if ne .Values.debug true -}}
+    {{- if not .Values.debug -}}
         {{- toYaml .Values.webhook.securityContext -}}
     {{- end -}}
 {{- end -}}
 
 {{- define "csidriver.provisioner.resources" -}}
-    {{- if ne .Values.debug true -}}
+    {{- if not .Values.debug -}}
         {{- toYaml .Values.csidriver.provisioner.resources -}}
     {{- end -}}
 {{- end -}}
 
 {{- define "csidriver.server.resources" -}}
-    {{- if ne .Values.debug true -}}
+    {{- if not .Values.debug -}}
         {{- toYaml .Values.csidriver.server.resources -}}
     {{- end -}}
 {{- end -}}

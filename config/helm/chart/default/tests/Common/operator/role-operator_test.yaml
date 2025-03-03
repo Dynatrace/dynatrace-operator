@@ -39,27 +39,7 @@ tests:
                 - apps
               resources:
                 - statefulsets
-              verbs:
-                - get
-                - list
-                - watch
-                - create
-                - update
-                - delete
-            - apiGroups:
-                - apps
-              resources:
                 - daemonsets
-              verbs:
-                - get
-                - list
-                - watch
-                - create
-                - update
-                - delete
-            - apiGroups:
-                - apps
-              resources:
                 - replicasets
                 - deployments
               verbs:
@@ -79,6 +59,8 @@ tests:
                 - ""
               resources:
                 - configmaps
+                - secrets
+                - services
               verbs:
                 - get
                 - list
@@ -97,33 +79,11 @@ tests:
             - apiGroups:
                 - ""
               resources:
-                - secrets
-              verbs:
-                - get
-                - list
-                - watch
-                - create
-                - update
-                - delete
-            - apiGroups:
-                - ""
-              resources:
                 - events
               verbs:
                 - create
                 - get
                 - list
-            - apiGroups:
-                - ""
-              resources:
-                - services
-              verbs:
-                - create
-                - update
-                - delete
-                - get
-                - list
-                - watch
             - apiGroups:
                 - networking.istio.io
               resources:

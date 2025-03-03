@@ -279,6 +279,22 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		assert.Equal(t, daemonset.Spec.Template.Spec.Tolerations, customTolerations)
 	})
+	t.Run("respect custom nodeselector", func(t *testing.T) {
+		customNodeSelector := map[string]string{
+			"some.nodeSelector.key": "true",
+		}
+
+		dk := createDynakube(true)
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			NodeSelector: customNodeSelector,
+		}
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		assert.Equal(t, daemonset.Spec.Template.Spec.NodeSelector, customNodeSelector)
+	})
 }
 
 func createDynakube(isEnabled bool) *dynakube.DynaKube {
