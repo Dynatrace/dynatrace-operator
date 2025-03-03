@@ -45,7 +45,7 @@ func TestSecretCreation(t *testing.T) {
 
 		r := NewReconciler(clt, clt, &dk)
 
-		err = r.ensureOpenSignalAPISecret(ctx)
+		err = r.ensureTelemetryServiceApiCredentialsSecret(ctx)
 		require.NoError(t, err)
 
 		var apiCredsSecret corev1.Secret

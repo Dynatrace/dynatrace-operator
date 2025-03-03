@@ -15,7 +15,7 @@ const (
 
 	trustedCAsFile = "rootca.pem"
 
-	customTlsCertVolumeName           = "telemetry-custom-tls"
+	customTlsCertVolumeName           = "telemetry-service-custom-tls"
 	customTlsCertMountPath            = "/tls/custom/telemetry"
 	extensionsControllerTLSVolumeName = "extensions-controller-tls"
 	dataIngestTokenVolumeName         = "api-token"

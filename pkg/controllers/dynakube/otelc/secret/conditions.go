@@ -1,5 +1,5 @@
 package secret
 
 const (
-	secretConditionType = "TelemetryApiCredentialsSecretCondition"
+	secretConditionType = "TelemetryServiceApiCredentialsSecretCondition"
 )
