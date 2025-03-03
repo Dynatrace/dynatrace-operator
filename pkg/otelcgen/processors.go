@@ -25,13 +25,14 @@ type MemoryLimiter struct {
 // More details, about how to configure `processors,` can be found
 // https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md
 var (
-	k8sattributes = component.MustNewID("k8sattributes")
-	transform     = component.MustNewID("transform")
-	batch         = component.MustNewType("batch")
-	batchTraces   = component.NewIDWithName(batch, "traces")
-	batchMetrics  = component.NewIDWithName(batch, "metrics")
-	batchLogs     = component.NewIDWithName(batch, "logs")
-	memoryLimiter = component.MustNewID("memory_limiter")
+	k8sattributes     = component.MustNewID("k8sattributes")
+	transform         = component.MustNewID("transform")
+	batch             = component.MustNewType("batch")
+	batchTraces       = component.NewIDWithName(batch, "traces")
+	batchMetrics      = component.NewIDWithName(batch, "metrics")
+	batchLogs         = component.NewIDWithName(batch, "logs")
+	memoryLimiter     = component.MustNewID("memory_limiter")
+	cumulativeToDelta = component.MustNewID("cumulativetodelta")
 
 	defaultK8Sattributes = []string{
 		"k8s.cluster.uid",

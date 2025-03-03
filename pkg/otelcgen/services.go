@@ -33,17 +33,17 @@ func (c *Config) buildServices() ServiceConfig {
 		Extensions: extensions.Config{healthCheck},
 		Pipelines: pipelines.Config{
 			traces: &pipelines.PipelineConfig{
-				Receivers:  buildReceivers(),
+				Receivers:  buildTracesReceivers(),
 				Processors: append(buildProcessors(), batchTraces),
 				Exporters:  buildExporters(),
 			},
 			metrics: &pipelines.PipelineConfig{
-				Receivers:  buildReceivers(),
-				Processors: append(buildProcessors(), batchMetrics),
+				Receivers:  buildMetricsReceivers(),
+				Processors: append(buildProcessors(), cumulativeToDelta, batchMetrics),
 				Exporters:  buildExporters(),
 			},
 			logs: &pipelines.PipelineConfig{
-				Receivers:  buildReceivers(),
+				Receivers:  buildLogsReceivers(),
 				Processors: append(buildProcessors(), batchLogs),
 				Exporters:  buildExporters(),
 			},
@@ -51,9 +51,21 @@ func (c *Config) buildServices() ServiceConfig {
 	}
 }
 
-func buildReceivers() []component.ID {
+func buildTracesReceivers() []component.ID {
 	return []component.ID{
 		OtlpID, JaegerID, ZipkinID,
+	}
+}
+
+func buildMetricsReceivers() []component.ID {
+	return []component.ID{
+		OtlpID, StatsdID,
+	}
+}
+
+func buildLogsReceivers() []component.ID {
+	return []component.ID{
+		OtlpID,
 	}
 }
 
