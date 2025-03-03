@@ -64,6 +64,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
 		statefulSet := getStatefulset(t, dk, &dataIngestToken)
+		assert.Len(t, statefulSet.Spec.Template.Spec.Containers[0].Env, 11)
 
 		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-extensions-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
@@ -89,6 +90,10 @@ func TestEnvironmentVariables(t *testing.T) {
 				Key:                  envDTendpoint,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Len(t, statefulSet.Spec.Template.Spec.Containers[0].Env, 10)
+		assert.Equal(t, corev1.EnvVar{Name: envMyPodIP, ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "status.podIP",
+			},
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 	})
 }

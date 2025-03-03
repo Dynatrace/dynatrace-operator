@@ -20,6 +20,7 @@ const (
 	envShardId            = "SHARD_ID"
 	envPodNamePrefix      = "POD_NAME_PREFIX"
 	envPodName            = "POD_NAME"
+	envMyPodIP            = "MY_POD_IP"
 	envOTLPgrpcPort       = "OTLP_GRPC_PORT"
 	envOTLPhttpPort       = "OTLP_HTTP_PORT"
 	envEECDStoken         = "EEC_DS_TOKEN"
@@ -85,6 +86,11 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiCredentialsSecretName},
 					Key:                  envDTendpoint,
+				},
+			}},
+			corev1.EnvVar{Name: envMyPodIP, ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.podIP",
 				},
 			}},
 		)
