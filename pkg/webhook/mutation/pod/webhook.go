@@ -12,6 +12,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	v1pod "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
+	v2pod "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -40,17 +41,14 @@ func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string) er
 
 type webhook struct {
 	v1 v1pod.Webhook
+	v2 v2pod.Webhook
 
 	recorder events.EventRecorder
 	decoder  admission.Decoder
 
 	apiReader client.Reader
 
-	webhookImage     string
 	webhookNamespace string
-	clusterID        string
-
-	mutators       []dtwebhook.PodMutator
 	deployedViaOLM bool
 }
 
@@ -79,7 +77,17 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	wh.recorder.Setup(mutationRequest)
 
-	// TODO
+	if true { // TODO
+		err := wh.v1.Handle(ctx, mutationRequest)
+		if err != nil {
+			return silentErrorResponse(mutationRequest.Pod, err)
+		}
+	} else {
+		err := wh.v2.Handle(ctx, mutationRequest)
+		if err != nil {
+			return silentErrorResponse(mutationRequest.Pod, err)
+		}
+	}
 
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 

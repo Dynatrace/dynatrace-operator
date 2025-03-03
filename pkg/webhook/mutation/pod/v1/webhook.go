@@ -10,30 +10,50 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
+	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type Webhook struct {
-	Recorder events.EventRecorder
+	recorder events.EventRecorder
+	webhookImage string
+	clusterID    string
 
-	ApiReader client.Reader
+	mutators []dtwebhook.PodMutator
+}
 
-	WebhookImage     string
-	WebhookNamespace string
-	ClusterID        string
-
-	Mutators []dtwebhook.PodMutator
+func New(apiReader client.Reader, kubeClient, metaClient client.Client, recorder events.EventRecorder, clusterID, webhookPodImage, webhookNamespace string) Webhook {
+	return Webhook{
+		webhookImage: webhookPodImage,
+		recorder:     recorder,
+		clusterID:    clusterID,
+		mutators: []dtwebhook.PodMutator{
+			oamutation.NewMutator(
+				clusterID,
+				webhookNamespace,
+				kubeClient,
+				apiReader,
+			),
+			metadata.NewMutator(
+				webhookNamespace,
+				kubeClient,
+				apiReader,
+				metaClient,
+			),
+		},
+	}
 }
 
 func (wh *Webhook) Handle(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
-	wh.Recorder.Setup(mutationRequest)
+	wh.recorder.Setup(mutationRequest)
 
 	if wh.isInjected(mutationRequest) {
 		if wh.handlePodReinvocation(mutationRequest) {
 			log.Info("reinvocation policy applied", "podName", mutationRequest.PodName)
-			wh.Recorder.SendPodUpdateEvent()
+			wh.recorder.SendPodUpdateEvent()
 		}
 
 		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName)
@@ -57,7 +77,7 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 }
 
 func (wh *Webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
-	for _, mutator := range wh.Mutators {
+	for _, mutator := range wh.mutators {
 		if mutator.Injected(mutationRequest.BaseRequest) {
 			return true
 		}
@@ -89,13 +109,13 @@ func (wh *Webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 		return nil
 	}
 
-	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.WebhookImage, wh.ClusterID, mutationRequest.Pod, mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
 
 	_ = updateContainerInfo(mutationRequest.BaseRequest, mutationRequest.InstallContainer)
 
 	var isMutated bool
 
-	for _, mutator := range wh.Mutators {
+	for _, mutator := range wh.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
 		}
@@ -114,7 +134,7 @@ func (wh *Webhook) handlePodMutation(ctx context.Context, mutationRequest *dtweb
 	}
 
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
-	wh.Recorder.SendPodInjectEvent()
+	wh.recorder.SendPodInjectEvent()
 	setDynatraceInjectedAnnotation(mutationRequest)
 
 	return nil
@@ -131,7 +151,7 @@ func (wh *Webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequ
 		return false
 	}
 
-	for _, mutator := range wh.Mutators {
+	for _, mutator := range wh.mutators {
 		if mutator.Enabled(mutationRequest.BaseRequest) {
 			if update := mutator.Reinvoke(reinvocationRequest); update {
 				needsUpdate = true

@@ -374,7 +374,6 @@ func createTestPodMutator(objects []client.Object) *Mutator {
 	return &Mutator{
 		client:           fake.NewClient(objects...),
 		apiReader:        fake.NewClient(objects...),
-		image:            testImage,
 		clusterID:        testClusterID,
 		webhookNamespace: testNamespaceName,
 	}

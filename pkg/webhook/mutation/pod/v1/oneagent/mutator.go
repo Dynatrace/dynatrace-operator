@@ -21,16 +21,14 @@ import (
 type Mutator struct {
 	client           client.Client
 	apiReader        client.Reader
-	image            string
 	clusterID        string
 	webhookNamespace string
 }
 
 var _ dtwebhook.PodMutator = &Mutator{}
 
-func NewMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *Mutator {
+func NewMutator(clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *Mutator {
 	return &Mutator{
-		image:            image,
 		clusterID:        clusterID,
 		webhookNamespace: webhookNamespace,
 		client:           client,

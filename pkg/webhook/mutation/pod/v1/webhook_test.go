@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
@@ -24,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -146,16 +148,11 @@ func TestDoubleInjection(t *testing.T) {
 	noCommunicationHostDK := getTestDynakube()
 	fakeClient := fake.NewClient(noCommunicationHostDK, getTestNamespace())
 	podWebhook := &Webhook{
-		ApiReader:        fakeClient,
-		decoder:          admission.NewDecoder(scheme.Scheme),
-		Recorder:         EventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: noCommunicationHostDK},
-		WebhookImage:     testImage,
-		WebhookNamespace: testNamespaceName,
-		ClusterID:        testClusterID,
-		apmExists:        false,
-		Mutators: []dtwebhook.PodMutator{
+		recorder:     events.NewRecorder(record.NewFakeRecorder(10)),
+		webhookImage: testImage,
+		clusterID:    testClusterID,
+		mutators: []dtwebhook.PodMutator{
 			oamutation.NewMutator(
-				testImage,
 				testClusterID,
 				testNamespaceName,
 				fakeClient,
@@ -205,7 +202,7 @@ func TestDoubleInjection(t *testing.T) {
 	communicationHostDK := getTestDynakube()
 	communicationHostDK.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{{Host: "test"}}
 	fakeClient = fake.NewClient(communicationHostDK, getTestNamespace())
-	podWebhook.ApiReader = fakeClient
+	podWebhook.apiReader = fakeClient
 
 	// simulate a Reinvocation
 	request = createTestAdmissionRequest(pod)
@@ -355,37 +352,18 @@ func assertPodMutatorCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedC
 	mock.AssertNumberOfCalls(t, "Mutate", expectedCalls)
 }
 
-func getTestPodWithInjectionDisabled() *corev1.Pod {
-	pod := getTestPod()
-	pod.Annotations = map[string]string{
-		dtwebhook.AnnotationDynatraceInject: "false",
-	}
-
-	return pod
-}
-
-func getTestPodWithOcDebugPodAnnotations() *corev1.Pod {
-	pod := getTestPod()
-	pod.Annotations = map[string]string{
-		ocDebugAnnotationsContainer: "true",
-		ocDebugAnnotationsResource:  "true",
-	}
-
-	return pod
-}
-
 func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *Webhook {
 	decoder := admission.NewDecoder(scheme.Scheme)
 
 	return &Webhook{
-		ApiReader:        fake.NewClient(objects...),
+		apiReader:        fake.NewClient(objects...),
 		decoder:          decoder,
-		Recorder:         EventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: getTestDynakube()},
-		WebhookImage:     testImage,
+		recorder:         EventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: getTestDynakube()},
+		webhookImage:     testImage,
 		WebhookNamespace: testNamespaceName,
-		ClusterID:        testClusterID,
+		clusterID:        testClusterID,
 		apmExists:        false,
-		Mutators:         mutators,
+		mutators:         mutators,
 	}
 }
 
@@ -462,5 +440,46 @@ func getCloudNativeSpec(initResources *corev1.ResourceRequirements) oneagent.Spe
 				InitResources: initResources,
 			},
 		},
+	}
+}
+
+func getTestPod() *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testPodName,
+			Namespace: testNamespaceName,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:            "container",
+					Image:           "alpine",
+					SecurityContext: getTestSecurityContext(),
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:  "init-container",
+					Image: "alpine",
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
+}
+
+const testUser int64 = 420
+
+func getTestSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		RunAsUser:  ptr.To(testUser),
+		RunAsGroup: ptr.To(testUser),
 	}
 }

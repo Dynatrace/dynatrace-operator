@@ -11,8 +11,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	v1pod "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
-	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
+	v2pod "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,33 +59,11 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
-		v1: v1pod.Webhook{
-			ApiReader:        apiReader,
-			WebhookNamespace: webhookNamespace,
-			WebhookImage:     webhookPodImage,
-			ClusterID:        clusterID,
-			Recorder:         eventRecorder,
-			Mutators: []dtwebhook.PodMutator{
-				oamutation.NewMutator(
-					webhookPodImage,
-					clusterID,
-					webhookNamespace,
-					kubeClient,
-					apiReader,
-				),
-				metadata.NewMutator(
-					webhookNamespace,
-					kubeClient,
-					apiReader,
-					metaClient,
-				),
-			},
-		},
+		v1:               v1pod.New(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
+		v2:               v2pod.New(apiReader, metaClient, eventRecorder),
 		apiReader:        apiReader,
 		webhookNamespace: webhookNamespace,
-		webhookImage:     webhookPodImage,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
-		clusterID:        clusterID,
 		decoder:          admission.NewDecoder(mgr.GetScheme()),
 	}})
 	log.Info("registered /inject endpoint")
