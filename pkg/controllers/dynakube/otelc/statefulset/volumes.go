@@ -2,7 +2,6 @@ package statefulset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,8 +17,6 @@ const (
 	customTlsCertVolumeName           = "telemetry-service-custom-tls"
 	customTlsCertMountPath            = "/tls/custom/telemetry"
 	extensionsControllerTLSVolumeName = "extensions-controller-tls"
-	dataIngestTokenVolumeName         = "api-token"
-	dataIngestTokenMountPath          = "/secrets/" + dataIngestTokenVolumeName
 )
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
@@ -100,21 +97,6 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			})
 		}
-
-		volumes = append(volumes, corev1.Volume{
-			Name: dataIngestTokenVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.Tokens(),
-					Items: []corev1.KeyToPath{
-						{
-							Key:  dynatrace.DataIngestToken,
-							Path: dynatrace.DataIngestToken,
-						},
-					},
-				},
-			},
-		})
 	}
 
 	return func(o *appsv1.StatefulSet) {
@@ -155,12 +137,6 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 				ReadOnly:  true,
 			})
 		}
-
-		vm = append(vm, corev1.VolumeMount{
-			Name:      dataIngestTokenVolumeName,
-			MountPath: dataIngestTokenMountPath,
-			ReadOnly:  true,
-		})
 	}
 
 	return vm

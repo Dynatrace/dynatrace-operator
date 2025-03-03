@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
 		statefulSet := getStatefulset(t, dk, &dataIngestToken)
-		assert.Len(t, statefulSet.Spec.Template.Spec.Containers[0].Env, 11)
+		assert.Len(t, statefulSet.Spec.Template.Spec.Containers[0].Env, 12)
 
 		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-extensions-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
@@ -95,5 +96,12 @@ func TestEnvironmentVariables(t *testing.T) {
 				FieldPath: "status.podIP",
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+
+		assert.Equal(t, corev1.EnvVar{Name: envDataIngestToken, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
+				Key:                  dynatrace.DataIngestToken,
+			},
+		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 	})
 }
