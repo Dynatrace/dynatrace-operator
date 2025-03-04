@@ -263,9 +263,6 @@ func (collector k8sResourceCollector) createFileName(kind string, resourceMeta u
 	case resourceMeta.GetKind() == CRDKindName:
 		return fmt.Sprintf("%s/%s/%s-%s%s", ManifestsDirectoryName, CRDDirectoryName, strings.ToLower(resourceMeta.GetKind()), collector.getCRDName(resourceMeta), ManifestsFileExtension)
 
-	case resourceMeta.GetKind() == EventKindName:
-		return fmt.Sprintf("%s/%s/%s%s", ManifestsDirectoryName, collector.namespace, strings.ToLower(resourceMeta.GetKind()), ManifestsFileExtension)
-
 	default:
 		return fmt.Sprintf("%s/%s/%s-%s%s", ManifestsDirectoryName, InjectedNamespacesManifestsDirectoryName, kind, resourceMeta.GetName(), ManifestsFileExtension)
 	}
