@@ -34,7 +34,6 @@ func getQueries(namespace string, appName string) []resourceQuery {
 	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppManagedByLabel).getQueries()...)
 	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
 	allQueries = append(allQueries, getConfigMapQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getEventsQueryGroup(namespace).getQueries()...)
 
 	return allQueries
 }
@@ -74,6 +73,7 @@ func getComponentsQueryGroup(namespace string, appName string, labelKey string) 
 			toGroupVersionKind(appsv1.SchemeGroupVersion, appsv1.ReplicaSet{}),
 			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Service{}),
 			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Pod{}),
+			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Event{}),
 		},
 		filters: []client.ListOption{
 			client.MatchingLabels{
@@ -100,17 +100,6 @@ func getConfigMapQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.ConfigMap{}),
-		},
-		filters: []client.ListOption{
-			client.InNamespace(namespace),
-		},
-	}
-}
-
-func getEventsQueryGroup(namespace string) resourceQueryGroup {
-	return resourceQueryGroup{
-		resources: []schema.GroupVersionKind{
-			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Event{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
