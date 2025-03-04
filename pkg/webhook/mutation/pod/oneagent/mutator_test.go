@@ -462,7 +462,7 @@ func getRemoteImageDownloadDynakube() *dynakube.DynaKube {
 		Status: getTestDynakubeStatus(),
 	}
 
-	dk.Annotations[dynakube.AnnotationFeatureDownloadViaJob] = "true"
+	dk.Annotations[dynakube.AnnotationFeatureRemoteImageDownload] = "true"
 
 	return dk
 }

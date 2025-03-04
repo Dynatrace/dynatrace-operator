@@ -58,7 +58,7 @@ func createDynakubeWithRemoteImageDownloadAndNoCSI(name string, selector metav1.
 
 	dk.Annotations = make(map[string]string)
 
-	dk.Annotations[dynakube.AnnotationFeatureDownloadViaJob] = "true"
+	dk.Annotations[dynakube.AnnotationFeatureRemoteImageDownload] = "true"
 
 	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
 

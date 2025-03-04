@@ -316,7 +316,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureDownloadViaJob: "true",
+					dynakube.AnnotationFeatureRemoteImageDownload: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -341,7 +341,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureDownloadViaJob: "false",
+					dynakube.AnnotationFeatureRemoteImageDownload: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
