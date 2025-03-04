@@ -59,7 +59,7 @@ const (
     AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
     AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
     AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
-    AnnotationFeatureDownloadViaJob            = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
+    AnnotationFeatureRemoteImageDownload       = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
 )
 ```
 

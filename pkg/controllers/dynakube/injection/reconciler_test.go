@@ -16,6 +16,7 @@ import (
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -380,6 +381,33 @@ func TestSetupOneAgentInjection(t *testing.T) {
 
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
 	})
+
+	t.Run(`no injection - ClassicFullStack`, func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		clt := clientBootstrapperConfigInjection()
+		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
+			ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+		})
+
+		dtClient := dtclientmock.NewClient(t)
+		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+
+		rec.dynatraceClient = dtClient
+
+		rec.dk.Annotations = make(map[string]string)
+		rec.dk.Annotations[dynakube.AnnotationFeatureRemoteImageDownload] = "true"
+		rec.versionReconciler = createVersionReconcilerMock(t)
+		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
+		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
+		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
+
+		err := rec.setupOneAgentInjection(context.Background())
+		require.NoError(t, err)
+
+		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace)
+		assertSecretFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
+	})
 }
 
 func TestSetupEnrichmentInjection(t *testing.T) {
@@ -464,6 +492,19 @@ func clientOneAgentInjection() client.Client {
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 			dtclient.ApiToken:  []byte(testAPIToken),
 			dtclient.PaasToken: []byte(testPaasToken),
+		}),
+	)
+}
+
+func clientBootstrapperConfigInjection() client.Client {
+	return fake.NewClientWithIndex(
+		clientInjectedNamespace(testNamespace, testDynakube),
+		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+			dtclient.ApiToken:  []byte(testAPIToken),
+			dtclient.PaasToken: []byte(testPaasToken),
+		}),
+		clientSecret("test-dynakube-oneagent-tenant-secret", testNamespaceDynatrace, map[string][]byte{
+			"tenant-token": []byte(testTenantToken),
 		}),
 	)
 }
