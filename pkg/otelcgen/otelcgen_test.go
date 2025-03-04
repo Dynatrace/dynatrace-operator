@@ -16,6 +16,7 @@ func TestNewConfigFull(t *testing.T) {
 		WithApiToken("test-token"),
 		WithTLS("/run/opensignals/tls/tls.crt", "/run/opensignals/tls/tls.key"),
 		WithProtocols("otlp", "jaeger", "zipkin", "statsd"),
+		WithExportersEndpoint("exporters-test-endpoint"),
 		WithExtensions(),
 		WithExporters(),
 		WithServices(),

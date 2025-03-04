@@ -87,6 +87,7 @@ type Config struct {
 	tlsCert  string
 	caFile   string
 	podIP    string
+	endpoint string
 	apiToken string
 
 	Service ServiceConfig `mapstructure:"service"`
@@ -135,8 +136,8 @@ func (c *Config) buildEndpoint(port uint) string {
 	return fmt.Sprintf("%s:%d", c.podIP, port)
 }
 
-func (c *Config) buildEndpointWithoutPort() string {
-	return c.podIP
+func (c *Config) buildExportersEndpoint() string {
+	return c.endpoint
 }
 
 func WithProtocols(protocols ...string) Option {
@@ -212,6 +213,14 @@ func WithCA(caFile string) Option {
 func WithApiToken(apiToken string) Option {
 	return func(c *Config) error {
 		c.apiToken = apiToken
+
+		return nil
+	}
+}
+
+func WithExportersEndpoint(endpoint string) Option {
+	return func(c *Config) error {
+		c.endpoint = endpoint
 
 		return nil
 	}

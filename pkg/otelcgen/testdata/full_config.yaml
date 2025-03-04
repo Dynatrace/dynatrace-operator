@@ -1,7 +1,7 @@
 connectors: {}
 exporters:
   otlphttp:
-    endpoint: "test"
+    endpoint: "exporters-test-endpoint"
     tls:
       ca_file: "/run/opensignals/cacerts/certs"
     headers:
