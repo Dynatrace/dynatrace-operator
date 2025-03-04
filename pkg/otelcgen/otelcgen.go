@@ -140,7 +140,7 @@ func (c *Config) buildExportersEndpoint() string {
 	return c.endpoint
 }
 
-func WithProtocols(protocols ...string) Option {
+func WithProtocols(protocols ...Protocol) Option {
 	return func(c *Config) error {
 		receivers, err := c.buildReceivers(protocols)
 		if err != nil {
