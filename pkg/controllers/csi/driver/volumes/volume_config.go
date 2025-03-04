@@ -1,6 +1,7 @@
 package csivolumes
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -97,6 +98,14 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 		DynakubeName: dynakubeName,
 		RetryTimeout: retryTimeout,
 	}, nil
+}
+
+func (cfg VolumeConfig) GetErrorPrefix() string {
+	return fmt.Sprintf("(%s) %s/%s:%s", cfg.DynakubeName, cfg.PodNamespace, cfg.PodName, cfg.VolumeID)
+}
+
+func (cfg VolumeConfig) GetErrorMessage(msg string) string {
+	return cfg.GetErrorPrefix() + " " + msg
 }
 
 // Transforms the NodeUnpublishVolumeRequest into a VolumeInfo

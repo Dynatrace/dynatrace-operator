@@ -60,14 +60,18 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 	}
 
 	if !pub.isCodeModuleAvailable(volumeCfg) {
+		msg := "version or digest is not yet set, csi-provisioner hasn't finished setup injection is delayed"
+
 		return nil, status.Error(
 			codes.Unavailable,
-			"version or digest is not yet set, csi-provisioner hasn't finished setup yet for DynaKube: "+volumeCfg.DynakubeName,
+			volumeCfg.GetErrorMessage(msg),
 		)
 	}
 
 	if err := pub.mountCodeModule(volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
+		msg := fmt.Sprintf("failed to mount oneagent volume: %s", err)
+
+		return nil, status.Error(codes.Internal, volumeCfg.GetErrorMessage(msg))
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
