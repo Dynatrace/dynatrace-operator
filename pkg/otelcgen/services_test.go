@@ -12,6 +12,7 @@ import (
 func TestNewConfigWithServices(t *testing.T) {
 	cfg, err := NewConfig(
 		"",
+		RegisteredProtocols,
 		WithServices(),
 	)
 	require.NoError(t, err)
