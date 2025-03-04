@@ -1,6 +1,7 @@
 package csivolumes
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -169,5 +170,31 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, testNs, volumeCfg.PodNamespace)
 		assert.Equal(t, "test", volumeCfg.Mode)
 		assert.Equal(t, testDynakubeName, volumeCfg.DynakubeName)
+	})
+}
+
+func TestGetErrorMessage(t *testing.T) {
+	t.Run("add prefix", func(t *testing.T) {
+		dkName := "myDk"
+		podName := "my-app-123"
+		nsName := "ns-dev"
+		volumeID := "csi-1235wsfds1agsdf3445"
+		msg := "failed to mount"
+
+		cfg := VolumeConfig{
+			VolumeInfo: VolumeInfo{
+				VolumeID: volumeID,
+			},
+			PodName:      podName,
+			PodNamespace: nsName,
+			DynakubeName: dkName,
+		}
+
+		// (myDk) ns-dev/my-app-123:csi-1235wsfds1agsdf3445 failed to mount"
+		expectedMsg := fmt.Sprintf("(%s) %s/%s:%s %s", cfg.DynakubeName, cfg.PodNamespace, cfg.PodName, cfg.VolumeID, msg)
+
+		actualMsg := cfg.GetErrorMessage(msg)
+
+		require.Equal(t, expectedMsg, actualMsg)
 	})
 }
