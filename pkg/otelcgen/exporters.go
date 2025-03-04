@@ -24,6 +24,7 @@ func (c *Config) buildExporters() map[component.ID]component.Config {
 	}
 
 	return map[component.ID]component.Config{
+		debug:    nil,
 		otlphttp: serverConfig,
 	}
 }

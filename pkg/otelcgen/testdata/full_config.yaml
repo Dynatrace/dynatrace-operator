@@ -1,5 +1,6 @@
 connectors: {}
 exporters:
+  debug:
   otlphttp:
     endpoint: "exporters-test-endpoint"
     tls:
