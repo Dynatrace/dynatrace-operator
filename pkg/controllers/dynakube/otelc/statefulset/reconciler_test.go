@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
@@ -427,6 +428,18 @@ func getTLSSecret(name string, namespace string, crt string, key string) corev1.
 		Data: map[string][]byte{
 			consts.TLSCrtDataName: []byte(crt),
 			consts.TLSKeyDataName: []byte(key),
+		},
+	}
+}
+
+func getConfigConfigMap(name string, namespace string) corev1.ConfigMap {
+	return corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name + otelcconsts.TelemetryCollectorConfigmapSuffix,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			otelcconsts.ConfigFieldName: "test",
 		},
 	}
 }
