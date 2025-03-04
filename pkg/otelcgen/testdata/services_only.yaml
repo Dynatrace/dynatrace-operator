@@ -14,6 +14,7 @@ service:
       receivers:
         - otlp
         - jaeger
+        - statsd
         - zipkin
       processors:
         - memory_limiter
@@ -27,11 +28,13 @@ service:
       receivers:
         - otlp
         - jaeger
+        - statsd
         - zipkin
       processors:
         - memory_limiter
         - k8sattributes
         - transform
+        - cumulativetodelta
         - batch/metrics
     traces:
       exporters:
@@ -40,6 +43,7 @@ service:
       receivers:
         - otlp
         - jaeger
+        - statsd
         - zipkin
       processors:
         - memory_limiter

@@ -12,6 +12,7 @@ import (
 func TestNewConfigWithExtensions(t *testing.T) {
 	cfg, err := NewConfig(
 		"test",
+		RegisteredProtocols,
 		WithExtensions(),
 	)
 	require.NoError(t, err)

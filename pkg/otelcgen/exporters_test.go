@@ -11,7 +11,9 @@ import (
 
 func TestNewConfigWithExporters(t *testing.T) {
 	cfg, err := NewConfig(
-		"test",
+		"",
+		RegisteredProtocols,
+		WithExportersEndpoint("test"),
 		WithCA("/run/opensignals/cacerts/certs"),
 		WithApiToken("test-token"),
 		WithExporters(),

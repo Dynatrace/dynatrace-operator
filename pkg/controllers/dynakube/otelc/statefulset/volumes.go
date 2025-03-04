@@ -14,14 +14,18 @@ const (
 
 	trustedCAsFile = "rootca.pem"
 
-	customTlsCertVolumeName = "telemetry-custom-tls"
-	customTlsCertMountPath  = "/tls/custom/telemetry"
+	customTlsCertVolumeName           = "telemetry-service-custom-tls"
+	customTlsCertMountPath            = "/tls/custom/telemetry"
+	extensionsControllerTLSVolumeName = "extensions-controller-tls"
 )
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.Volumes = []corev1.Volume{
-			{
+	var volumes []corev1.Volume
+
+	if dk.IsExtensionsEnabled() {
+		volumes = append(
+			volumes,
+			corev1.Volume{
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
@@ -36,43 +40,45 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					},
 				},
 			},
-		}
-		if dk.Spec.TrustedCAs != "" {
-			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: caCertsVolumeName,
+			corev1.Volume{
+				Name: extensionsControllerTLSVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: dk.Spec.TrustedCAs,
-						},
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.ExtensionsTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  "certs",
-								Path: trustedCAsFile,
+								Key:  consts.TLSCrtDataName,
+								Path: consts.TLSCrtDataName,
 							},
 						},
 					},
 				},
-			})
-		}
+			},
+		)
+	}
 
-		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: dk.ExtensionsTLSSecretName(),
+	if dk.Spec.TrustedCAs != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: caCertsVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.ExtensionsTLSSecretName(),
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dk.Spec.TrustedCAs,
+					},
 					Items: []corev1.KeyToPath{
 						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
+							Key:  "certs",
+							Path: trustedCAsFile,
 						},
 					},
 				},
 			},
 		})
+	}
 
-		if dk.TelemetryService().IsEnabled() && dk.TelemetryService().Spec.TlsRefName != "" {
-			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
+	if dk.TelemetryService().IsEnabled() {
+		if dk.TelemetryService().Spec.TlsRefName != "" {
+			volumes = append(volumes, corev1.Volume{
 				Name: customTlsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
@@ -92,11 +98,27 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			})
 		}
 	}
+
+	return func(o *appsv1.StatefulSet) {
+		o.Spec.Template.Spec.Volumes = volumes
+	}
 }
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
-	vm := []corev1.VolumeMount{
-		{Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath},
+	var vm []corev1.VolumeMount
+
+	if dk.IsExtensionsEnabled() {
+		vm = append(
+			vm,
+			corev1.VolumeMount{
+				Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath,
+			},
+			corev1.VolumeMount{
+				Name:      extensionsControllerTLSVolumeName,
+				MountPath: customEecTLSCertificatePath,
+				ReadOnly:  true,
+			},
+		)
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -107,18 +129,14 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		})
 	}
 
-	vm = append(vm, corev1.VolumeMount{
-		Name:      dk.ExtensionsTLSSecretName(),
-		MountPath: customEecTLSCertificatePath,
-		ReadOnly:  true,
-	})
-
-	if dk.TelemetryService().IsEnabled() && dk.TelemetryService().Spec.TlsRefName != "" {
-		vm = append(vm, corev1.VolumeMount{
-			Name:      customTlsCertVolumeName,
-			MountPath: customTlsCertMountPath,
-			ReadOnly:  true,
-		})
+	if dk.TelemetryService().IsEnabled() {
+		if dk.TelemetryService().Spec.TlsRefName != "" {
+			vm = append(vm, corev1.VolumeMount{
+				Name:      customTlsCertVolumeName,
+				MountPath: customTlsCertMountPath,
+				ReadOnly:  true,
+			})
+		}
 	}
 
 	return vm
