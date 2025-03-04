@@ -127,8 +127,8 @@ func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	pod.Annotations[dtwebhook.AnnotationWorkloadKind] = workload.kind
-	pod.Annotations[dtwebhook.AnnotationWorkloadName] = workload.name
+	pod.Annotations[metacommon.AnnotationWorkloadKind] = workload.kind
+	pod.Annotations[metacommon.AnnotationWorkloadName] = workload.name
 }
 
 func ContainerIsInjected(container corev1.Container) bool {

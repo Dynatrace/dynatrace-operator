@@ -217,11 +217,11 @@ func TestWorkloadAnnotations(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
 		request := createTestMutationRequest(nil, nil, false)
 
-		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadName, "not-found"))
+		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, metacommon.AnnotationWorkloadName, "not-found"))
 		setWorkloadAnnotations(request.Pod, &workloadInfo{name: testWorkloadInfoName, kind: testWorkloadInfoKind})
 		require.Len(t, request.Pod.Annotations, 2)
-		assert.Equal(t, testWorkloadInfoName, maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadName, "not-found"))
-		assert.Equal(t, testWorkloadInfoKind, maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationWorkloadKind, "not-found"))
+		assert.Equal(t, testWorkloadInfoName, maputils.GetField(request.Pod.Annotations, metacommon.AnnotationWorkloadName, "not-found"))
+		assert.Equal(t, testWorkloadInfoKind, maputils.GetField(request.Pod.Annotations, metacommon.AnnotationWorkloadKind, "not-found"))
 	})
 	t.Run("should lower case kind annotation", func(t *testing.T) {
 		request := createTestMutationRequest(nil, nil, false)
@@ -231,8 +231,8 @@ func TestWorkloadAnnotations(t *testing.T) {
 		}
 
 		setWorkloadAnnotations(request.Pod, newWorkloadInfo(objectMeta))
-		assert.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationWorkloadKind)
-		assert.Equal(t, "superworkload", request.Pod.Annotations[dtwebhook.AnnotationWorkloadKind])
+		assert.Contains(t, request.Pod.Annotations, metacommon.AnnotationWorkloadKind)
+		assert.Equal(t, "superworkload", request.Pod.Annotations[metacommon.AnnotationWorkloadKind])
 	})
 }
 

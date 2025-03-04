@@ -22,9 +22,4 @@ const (
 
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "dynatrace-operator"
-
-	// AnnotationWorkloadKind is added to any injected pods when the metadata-enrichment feature is enabled
-	AnnotationWorkloadKind = "metadata.dynatrace.com/k8s.workload.kind"
-	// AnnotationWorkloadName is added to any injected pods when the metadata-enrichment feature is enabled
-	AnnotationWorkloadName = "metadata.dynatrace.com/k8s.workload.name"
 )
