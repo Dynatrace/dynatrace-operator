@@ -5,7 +5,6 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
-	"go.opentelemetry.io/collector/otelcol"
 	"gopkg.in/yaml.v3"
 )
 
@@ -69,19 +68,34 @@ var (
 )
 
 type Config struct {
-	cfg      *otelcol.Config
+	// Receivers is a map of ComponentID to Receivers.
+	Receivers map[component.ID]component.Config `mapstructure:"receivers"`
+
+	// Exporters is a map of ComponentID to Exporters.
+	Exporters map[component.ID]component.Config `mapstructure:"exporters"`
+
+	// Processors is a map of ComponentID to Processors.
+	Processors map[component.ID]component.Config `mapstructure:"processors"`
+
+	// Connectors is a map of ComponentID to connectors.
+	Connectors map[component.ID]component.Config `mapstructure:"connectors"`
+
+	// Extensions is a map of ComponentID to extensions.
+	Extensions map[component.ID]component.Config `mapstructure:"extensions"`
+
 	tlsKey   string
 	tlsCert  string
 	caFile   string
 	podIP    string
 	apiToken string
+
+	Service ServiceConfig `mapstructure:"service"`
 }
 
 type Option func(c *Config) error
 
 func NewConfig(podIP string, options ...Option) (*Config, error) {
 	c := Config{
-		cfg:   &otelcol.Config{},
 		podIP: podIP,
 	}
 
@@ -97,7 +111,7 @@ func NewConfig(podIP string, options ...Option) (*Config, error) {
 func (c *Config) Marshal() ([]byte, error) {
 	conf := confmap.New()
 
-	if err := conf.Marshal(c.cfg); err != nil {
+	if err := conf.Marshal(c); err != nil {
 		return nil, err
 	}
 
@@ -132,7 +146,7 @@ func WithProtocols(protocols ...string) Option {
 			return err
 		}
 
-		c.cfg.Receivers = receivers
+		c.Receivers = receivers
 
 		return nil
 	}
@@ -142,7 +156,7 @@ func WithProcessors() Option {
 	return func(c *Config) error {
 		processors := c.buildProcessors()
 
-		c.cfg.Processors = processors
+		c.Processors = processors
 
 		return nil
 	}
@@ -152,7 +166,7 @@ func WithExporters() Option {
 	return func(c *Config) error {
 		exporters := c.buildExporters()
 
-		c.cfg.Exporters = exporters
+		c.Exporters = exporters
 
 		return nil
 	}
@@ -162,7 +176,7 @@ func WithExtensions() Option {
 	return func(c *Config) error {
 		extensions := c.buildExtensions()
 
-		c.cfg.Extensions = extensions
+		c.Extensions = extensions
 
 		return nil
 	}
@@ -172,7 +186,7 @@ func WithServices() Option {
 	return func(c *Config) error {
 		services := c.buildServices()
 
-		c.cfg.Service = services
+		c.Service = services
 
 		return nil
 	}

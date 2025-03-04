@@ -15,7 +15,7 @@ createDockerImageTag() {
 }
 
 createDockerImageLabels() {
-  if [[ "${GITHUB_REF_TYPE}" != "tag" ]] && [[ ! "${GITHUB_REF_NAME}" =~ ^release-* ]]; then
+  if [[ "${GITHUB_REF_TYPE}" != "tag" ]] && [[ ! "${GITHUB_REF_NAME}" =~ ^release-* ]] && [[ "${GITHUB_REF_NAME}" != "main" ]]; then
     echo "quay.expires-after=10d"
   fi
 
