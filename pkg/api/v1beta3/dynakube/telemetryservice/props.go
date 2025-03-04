@@ -1,37 +1,23 @@
 package telemetryservice
 
-type Protocol string
+import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 
 const (
 	nameSuffix = "-telemetry"
-
-	OtlpProtocol   Protocol = "otlp"
-	ZipkinProtocol Protocol = "zipkin"
-	JaegerProtocol Protocol = "jaeger"
-	StatsdProtocol Protocol = "statsd"
 )
 
-func KnownProtocols() []Protocol {
-	return []Protocol{
-		OtlpProtocol,
-		ZipkinProtocol,
-		JaegerProtocol,
-		StatsdProtocol,
-	}
-}
-
-func (spec *Spec) GetProtocols() []Protocol {
+func (spec *Spec) GetProtocols() otelcgen.Protocols {
 	if spec == nil {
-		return []Protocol{}
+		return otelcgen.Protocols{}
 	}
 
 	if len(spec.Protocols) == 0 {
-		return KnownProtocols()
+		return otelcgen.RegisteredProtocols
 	}
 
-	protocols := make([]Protocol, len(spec.Protocols))
+	protocols := make(otelcgen.Protocols, len(spec.Protocols))
 	for i, proto := range spec.Protocols {
-		protocols[i] = Protocol(proto)
+		protocols[i] = otelcgen.Protocol(proto)
 	}
 
 	return protocols

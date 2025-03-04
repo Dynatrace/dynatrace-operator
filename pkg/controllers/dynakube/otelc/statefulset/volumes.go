@@ -3,6 +3,8 @@ package statefulset
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
+	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -14,9 +16,10 @@ const (
 
 	trustedCAsFile = "rootca.pem"
 
-	customTlsCertVolumeName           = "telemetry-service-custom-tls"
-	customTlsCertMountPath            = "/tls/custom/telemetry"
-	extensionsControllerTLSVolumeName = "extensions-controller-tls"
+	customTlsCertVolumeName            = "telemetry-service-custom-tls"
+	extensionsControllerTLSVolumeName  = "extensions-controller-tls"
+	telemetryCollectorConfigVolumeName = "telemetry-collector-config"
+	telemetryCollectorConfigPath       = "/config"
 )
 
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
@@ -97,6 +100,17 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			})
 		}
+
+		volumes = append(volumes, corev1.Volume{
+			Name: telemetryCollectorConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: configuration.GetConfigMapName(dk.Name),
+					},
+				},
+			},
+		})
 	}
 
 	return func(o *appsv1.StatefulSet) {
@@ -124,7 +138,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	if dk.Spec.TrustedCAs != "" {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      caCertsVolumeName,
-			MountPath: trustedCAVolumeMountPath,
+			MountPath: otelcconsts.TrustedCAVolumeMountPath,
 			ReadOnly:  true,
 		})
 	}
@@ -133,10 +147,16 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		if dk.TelemetryService().Spec.TlsRefName != "" {
 			vm = append(vm, corev1.VolumeMount{
 				Name:      customTlsCertVolumeName,
-				MountPath: customTlsCertMountPath,
+				MountPath: otelcconsts.CustomTlsCertMountPath,
 				ReadOnly:  true,
 			})
 		}
+
+		vm = append(vm, corev1.VolumeMount{
+			Name:      telemetryCollectorConfigVolumeName,
+			MountPath: telemetryCollectorConfigPath,
+			ReadOnly:  true,
+		})
 	}
 
 	return vm

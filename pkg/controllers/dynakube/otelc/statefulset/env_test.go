@@ -49,7 +49,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envTrustedCAs, Value: otelcConsts.TrustedCAVolumePath})
 	})
 	t.Run("environment variables with custom EEC TLS certificate", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
@@ -64,7 +64,8 @@ func TestEnvironmentVariables(t *testing.T) {
 		dk.Spec.TelemetryService = &telemetryservice.Spec{}
 
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &dataIngestToken)
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		statefulSet := getStatefulset(t, dk, &dataIngestToken, &configMap)
 		assert.Len(t, statefulSet.Spec.Template.Spec.Containers[0].Env, 12)
 
 		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
@@ -97,7 +98,7 @@ func TestEnvironmentVariables(t *testing.T) {
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 
-		assert.Equal(t, corev1.EnvVar{Name: envDataIngestToken, ValueFrom: &corev1.EnvVarSource{
+		assert.Equal(t, corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
 				Key:                  dynatrace.DataIngestToken,

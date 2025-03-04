@@ -30,7 +30,6 @@ const (
 	envK8sClusterUid      = "K8S_CLUSTER_UID"
 	envDTentityK8sCluster = "DT_ENTITY_KUBERNETES_CLUSTER"
 	envDTendpoint         = "DT_ENDPOINT"
-	envDataIngestToken    = "DT_DATA_INGEST_TOKEN"
 	// certDirEnv is the environment variable that identifies which directory
 	// to check for SSL certificate files. If set, this overrides the system default.
 	// It is a colon separated list of directories.
@@ -39,8 +38,6 @@ const (
 	envEECcontrollerTLS = "EXTENSIONS_CONTROLLER_TLS"
 
 	// Volume names and paths
-	trustedCAVolumeMountPath        = "/tls/custom/cacerts"
-	trustedCAVolumePath             = trustedCAVolumeMountPath + "/certs"
 	customEecTLSCertificatePath     = "/tls/custom/eec"
 	customEecTLSCertificateFullPath = customEecTLSCertificatePath + "/" + consts.TLSCrtDataName
 )
@@ -95,7 +92,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 					FieldPath: "status.podIP",
 				},
 			}},
-			corev1.EnvVar{Name: envDataIngestToken, ValueFrom: &corev1.EnvVarSource{
+			corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
 					Key:                  dynatrace.DataIngestToken,
@@ -105,7 +102,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	}
 
 	if dk.Spec.TrustedCAs != "" {
-		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: trustedCAVolumePath})
+		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: otelcConsts.TrustedCAVolumePath})
 	}
 
 	return envs

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,13 +50,12 @@ func TestService(t *testing.T) {
 		require.Len(t, service.Spec.Ports, 8)
 		assert.Equal(t, portNameOtlpGrpc, service.Spec.Ports[0].Name)
 		assert.Equal(t, portNameOtlpHttp, service.Spec.Ports[1].Name)
-		assert.Equal(t, portNameZipkin, service.Spec.Ports[2].Name)
-		assert.Equal(t, portNameJaegerGrpc, service.Spec.Ports[3].Name)
-		assert.Equal(t, portNameJaegerThriftBinary, service.Spec.Ports[4].Name)
-		assert.Equal(t, portNameJaegerThriftCompact, service.Spec.Ports[5].Name)
-		assert.Equal(t, portNameJaegerThriftHttp, service.Spec.Ports[6].Name)
-		assert.Equal(t, portNameStatsd, service.Spec.Ports[7].Name)
-
+		assert.Equal(t, portNameJaegerGrpc, service.Spec.Ports[2].Name)
+		assert.Equal(t, portNameJaegerThriftBinary, service.Spec.Ports[3].Name)
+		assert.Equal(t, portNameJaegerThriftCompact, service.Spec.Ports[4].Name)
+		assert.Equal(t, portNameJaegerThriftHttp, service.Spec.Ports[5].Name)
+		assert.Equal(t, portNameStatsd, service.Spec.Ports[6].Name)
+		assert.Equal(t, portNameZipkin, service.Spec.Ports[7].Name)
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, serviceConditionType, dk.Status.Conditions[0].Type)
 		assert.Equal(t, conditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
@@ -92,8 +92,8 @@ func TestService(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryservice.Spec{
 			Protocols: []string{
-				string(telemetryservice.ZipkinProtocol),
-				string(telemetryservice.StatsdProtocol),
+				string(otelcgen.ZipkinProtocol),
+				string(otelcgen.StatsdProtocol),
 			},
 		})
 		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
