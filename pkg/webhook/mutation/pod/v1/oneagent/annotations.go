@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -15,23 +14,6 @@ type installerInfo struct {
 	installPath  string
 	installerURL string
 	version      string
-}
-
-func setInjectedAnnotation(pod *corev1.Pod) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[oacommon.AnnotationInjected] = "true"
-}
-
-func setNotInjectedAnnotations(pod *corev1.Pod, reason string) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[oacommon.AnnotationInjected] = "false"
-	pod.Annotations[oacommon.AnnotationReason] = reason
 }
 
 func getInstallerInfo(pod *corev1.Pod, dk dynakube.DynaKube) installerInfo {

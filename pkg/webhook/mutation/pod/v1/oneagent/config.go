@@ -9,15 +9,6 @@ var (
 )
 
 const (
-	preloadEnv           = "LD_PRELOAD"
-	networkZoneEnv       = "DT_NETWORK_ZONE"
-	dynatraceMetadataEnv = "DT_DEPLOYMENT_METADATA"
-
-	releaseVersionEnv      = "DT_RELEASE_VERSION"
-	releaseProductEnv      = "DT_RELEASE_PRODUCT"
-	releaseStageEnv        = "DT_RELEASE_STAGE"
-	releaseBuildVersionEnv = "DT_RELEASE_BUILD_VERSION"
-
 	EmptyConnectionInfoReason = "EmptyConnectionInfo"
 	UnknownCodeModuleReason   = "UnknownCodeModule"
 	EmptyTenantUUIDReason     = "EmptyTenantUUID"

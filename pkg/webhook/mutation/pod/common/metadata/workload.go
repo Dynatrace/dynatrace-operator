@@ -13,17 +13,17 @@ import (
 )
 
 type WorkloadInfo struct {
-	name string
-	kind string
+	Name string
+	Kind string
 }
 
 func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *WorkloadInfo {
 	return &WorkloadInfo{
-		name: partialObjectMetadata.ObjectMeta.Name,
+		Name: partialObjectMetadata.ObjectMeta.Name,
 
 		// workload kind in lower case according to dt semantic-dictionary
 		// https://docs.dynatrace.com/docs/discover-dynatrace/references/semantic-dictionary/fields#kubernetes
-		kind: strings.ToLower(partialObjectMetadata.Kind),
+		Kind: strings.ToLower(partialObjectMetadata.Kind),
 	}
 }
 

@@ -41,6 +41,6 @@ func SetWorkloadAnnotations(pod *corev1.Pod, workload *WorkloadInfo) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	pod.Annotations[AnnotationWorkloadKind] = workload.kind
-	pod.Annotations[AnnotationWorkloadName] = workload.name
+	pod.Annotations[AnnotationWorkloadKind] = workload.Kind
+	pod.Annotations[AnnotationWorkloadName] = workload.Name
 }
