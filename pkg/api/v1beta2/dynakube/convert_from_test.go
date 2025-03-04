@@ -6,9 +6,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
@@ -20,79 +20,106 @@ import (
 )
 
 func TestConvertFrom(t *testing.T) {
-	t.Run("migrate base from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate base from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate host-monitoring from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate host-monitoring from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
+		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
+		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring)
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate classic-fullstack from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate classic-fullstack from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
+		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack)
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate cloud-native from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate cloud-native from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		spec := getNewCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
+		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 
 		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack)
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate application-monitoring from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate application-monitoring from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		appSpec := getNewApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
+		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 
 		compareApplicationMonitoringSpec(t, *to.Spec.OneAgent.ApplicationMonitoring, *from.Spec.OneAgent.ApplicationMonitoring)
 	})
 
-	t.Run("migrate activegate from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate activegate from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		agSpec := getNewActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareActiveGateSpec(t, to.Spec.ActiveGate, from.Spec.ActiveGate)
 	})
 
-	t.Run("migrate status from v1beta3 to v1beta2", func(t *testing.T) {
+	t.Run("migrate status from v1beta4 to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Status = getNewStatus()
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareStatus(t, to.Status, from.Status)
 	})
@@ -120,6 +147,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
 	assert.Equal(t, uint16(oldDk.Spec.DynatraceApiRequestThreshold), *newDk.Spec.DynatraceApiRequestThreshold) //nolint:gosec
+	assert.Equal(t, oldDk.Spec.NetworkZone, newDk.Spec.NetworkZone)
 
 	if newDk.OneAgent().IsAppInjectionNeeded() {
 		assert.Equal(t, oldDk.OneAgentNamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
@@ -142,23 +170,24 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 
 func compareHostInjectSpec(t *testing.T, oldSpec HostInjectSpec, newSpec oneagent.HostInjectSpec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
-	assert.Equal(t, oldSpec.Args, newSpec.Args)
-	assert.Equal(t, oldSpec.AutoUpdate, *newSpec.AutoUpdate)
-	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
-	assert.Equal(t, oldSpec.Env, newSpec.Env)
-	assert.Equal(t, oldSpec.Image, newSpec.Image)
 	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
 	assert.Equal(t, oldSpec.NodeSelector, newSpec.NodeSelector)
-	assert.Equal(t, oldSpec.OneAgentResources, newSpec.OneAgentResources)
-	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
-	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
+	assert.Equal(t, oldSpec.AutoUpdate, *newSpec.AutoUpdate)
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
+	assert.Equal(t, oldSpec.Image, newSpec.Image)
+	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
+	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.SecCompProfile, newSpec.SecCompProfile)
+	assert.Equal(t, oldSpec.OneAgentResources, newSpec.OneAgentResources)
+	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
+	assert.Equal(t, oldSpec.Env, newSpec.Env)
+	assert.Equal(t, oldSpec.Args, newSpec.Args)
 }
 
 func compareAppInjectionSpec(t *testing.T, oldSpec AppInjectionSpec, newSpec oneagent.AppInjectionSpec) {
 	assert.Equal(t, oldSpec.CodeModulesImage, newSpec.CodeModulesImage)
 	assert.Equal(t, oldSpec.InitResources, newSpec.InitResources)
+	assert.Equal(t, oldSpec.NamespaceSelector, newSpec.NamespaceSelector)
 }
 
 func compareCloudNativeSpec(t *testing.T, oldSpec CloudNativeFullStackSpec, newSpec oneagent.CloudNativeFullStackSpec) {
@@ -267,6 +296,9 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
+			},
+			OneAgent: oneagent.Spec{
+				HostGroup: "host-group",
 			},
 		},
 	}
