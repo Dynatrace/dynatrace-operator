@@ -200,6 +200,9 @@ service:
         - debug
       receivers:
         - otlp
+        - jaeger
+        - statsd
+        - zipkin
       processors:
         - memory_limiter
         - k8sattributes
@@ -211,7 +214,9 @@ service:
         - debug
       receivers:
         - otlp
+        - jaeger
         - statsd
+        - zipkin
       processors:
         - memory_limiter
         - k8sattributes
@@ -225,6 +230,7 @@ service:
       receivers:
         - otlp
         - jaeger
+        - statsd
         - zipkin
       processors:
         - memory_limiter
