@@ -230,15 +230,6 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 }
 
-func createTestWorkloadInfo(t *testing.T) *WorkloadInfo {
-	t.Helper()
-
-	return &WorkloadInfo{
-		Kind: "test",
-		Name: "test",
-	}
-}
-
 func createFailK8sClient(t *testing.T) client.Client {
 	t.Helper()
 

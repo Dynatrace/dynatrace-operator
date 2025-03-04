@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	"github.com/stretchr/testify/assert"
@@ -198,41 +197,6 @@ func TestIngestEndpointSecret(t *testing.T) {
 		var secret corev1.Secret
 		err = mutator.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.EnrichmentEndpointSecretName, Namespace: testNamespaceName}, &secret)
 		require.NoError(t, err)
-	})
-}
-
-func TestSetInjectedAnnotation(t *testing.T) {
-	t.Run("should add annotation to nil map", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil, false)
-		mutator := createTestPodMutator(nil)
-
-		require.False(t, mutator.Injected(request.BaseRequest))
-		setInjectedAnnotation(request.Pod)
-		require.Len(t, request.Pod.Annotations, 1)
-		require.True(t, mutator.Injected(request.BaseRequest))
-	})
-}
-
-func TestWorkloadAnnotations(t *testing.T) {
-	t.Run("should add annotation to nil map", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil, false)
-
-		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, metacommon.AnnotationWorkloadName, "not-found"))
-		setWorkloadAnnotations(request.Pod, &workloadInfo{name: testWorkloadInfoName, kind: testWorkloadInfoKind})
-		require.Len(t, request.Pod.Annotations, 2)
-		assert.Equal(t, testWorkloadInfoName, maputils.GetField(request.Pod.Annotations, metacommon.AnnotationWorkloadName, "not-found"))
-		assert.Equal(t, testWorkloadInfoKind, maputils.GetField(request.Pod.Annotations, metacommon.AnnotationWorkloadKind, "not-found"))
-	})
-	t.Run("should lower case kind annotation", func(t *testing.T) {
-		request := createTestMutationRequest(nil, nil, false)
-		objectMeta := &metav1.PartialObjectMetadata{
-			ObjectMeta: metav1.ObjectMeta{Name: testWorkloadInfoName},
-			TypeMeta:   metav1.TypeMeta{Kind: "SuperWorkload"},
-		}
-
-		setWorkloadAnnotations(request.Pod, newWorkloadInfo(objectMeta))
-		assert.Contains(t, request.Pod.Annotations, metacommon.AnnotationWorkloadKind)
-		assert.Equal(t, "superworkload", request.Pod.Annotations[metacommon.AnnotationWorkloadKind])
 	})
 }
 
