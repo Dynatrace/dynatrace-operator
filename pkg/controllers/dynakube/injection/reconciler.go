@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -33,6 +34,7 @@ type reconciler struct {
 	connectionInfoReconciler    controllers.Reconciler
 	monitoredEntitiesReconciler controllers.Reconciler
 	enrichmentRulesReconciler   controllers.Reconciler
+	dynatraceClient             dynatrace.Client
 }
 
 type ReconcilerBuilder func(
@@ -61,6 +63,7 @@ func NewReconciler(
 		client:            client,
 		apiReader:         apiReader,
 		dk:                dk,
+		dynatraceClient:   dynatraceClient,
 		istioReconciler:   istioReconciler,
 		versionReconciler: version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		pmcSecretreconciler: processmoduleconfigsecret.NewReconciler(
@@ -132,9 +135,11 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return err
 	}
 
-	err = r.pmcSecretreconciler.Reconcile(ctx)
-	if err != nil {
-		return err
+	if !r.dk.FeatureBootstrapperInjection() {
+		err = r.pmcSecretreconciler.Reconcile(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	if r.istioReconciler != nil {
@@ -151,12 +156,8 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return nil
 	}
 
-	err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).GenerateForDynakube(ctx, r.dk)
+	err = r.generateCorrectInitSecret(ctx)
 	if err != nil {
-		if conditions.IsKubeApiError(err) {
-			conditions.SetKubeApiError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
-		}
-
 		return err
 	}
 
@@ -167,6 +168,31 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 	setCodeModulesInjectionCreatedCondition(r.dk.Conditions())
 
 	return nil
+}
+
+func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
+	var err error
+	if r.dk.FeatureBootstrapperInjection() {
+		err = bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk)
+		if err != nil {
+			if conditions.IsKubeApiError(err) {
+				conditions.SetKubeApiError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
+			}
+
+			return err
+		}
+	} else {
+		err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).GenerateForDynakube(ctx, r.dk)
+		if err != nil {
+			if conditions.IsKubeApiError(err) {
+				conditions.SetKubeApiError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
+			}
+
+			return err
+		}
+	}
+
+	return err
 }
 
 func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
@@ -180,9 +206,16 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 			return
 		}
 
-		err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).Cleanup(ctx, namespaces)
-		if err != nil {
-			log.Error(err, "failed to clean-up code module injection init-secrets")
+		if r.dk.FeatureBootstrapperInjection() {
+			err = bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces)
+			if err != nil {
+				log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
+			}
+		} else {
+			err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).Cleanup(ctx, namespaces)
+			if err != nil {
+				log.Error(err, "failed to clean-up code module injection init-secrets")
+			}
 		}
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -197,6 +198,62 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.EnrichmentEndpointSecretName, Namespace: namespace.Name}, &secret)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+	t.Run("Remove "+consts.BootstrapperInitSecretName, func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dkRemoteImage := createDynakubeWithRemoteImageDownloadAndNoCSI("dk-test", convertToLabelSelector(labels))
+
+		labels := map[string]string{
+			dtwebhook.InjectionInstanceLabel: dkRemoteImage.Name,
+		}
+
+		ns := createNamespace("ns-bootstrapper", labels)
+		ns2 := createNamespace("ns-bootstrapper2", labels)
+
+		clt := fake.NewClient(ns, ns2)
+		ctx := context.Background()
+
+		namespaces, err := GetNamespacesForDynakube(ctx, clt, dkRemoteImage.Name)
+		require.NoError(t, err)
+
+		var secretNS1 corev1.Secret
+
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}})
+
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &secretNS1)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, secretNS1)
+		assert.Equal(t, consts.BootstrapperInitSecretName, secretNS1.Name)
+
+		var secretNS2 corev1.Secret
+
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: ns2.Name}})
+
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns2.Name}, &secretNS2)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, secretNS2)
+		assert.Equal(t, consts.BootstrapperInitSecretName, secretNS2.Name)
+
+		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dkRemoteImage)
+		err = dm.UnmapFromDynaKube(namespaces)
+		require.NoError(t, err)
+
+		var deletedSecretNS1 corev1.Secret
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &deletedSecretNS1)
+
+		require.Empty(t, deletedSecretNS1)
+		assert.NotEqual(t, consts.BootstrapperInitSecretName, deletedSecretNS1.Name)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		var deletedSecretNS2 corev1.Secret
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns2.Name}, &deletedSecretNS2)
+
+		require.Empty(t, deletedSecretNS2)
+		assert.NotEqual(t, consts.BootstrapperInitSecretName, deletedSecretNS2.Name)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }
