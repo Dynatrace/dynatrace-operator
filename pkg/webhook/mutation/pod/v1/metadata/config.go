@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logd.Get().WithName("metadata-enrichment-pod-mutation")
+	log = logd.Get().WithName("metadata-enrichment-pod-v1-mutation")
 )

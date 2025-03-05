@@ -5,14 +5,10 @@ import (
 )
 
 var (
-	log = logd.Get().WithName("oneagent-pod-mutation")
+	log = logd.Get().WithName("oneagent-pod-v1-mutation")
 )
 
 const (
-	EmptyConnectionInfoReason  = "EmptyConnectionInfo"
-	UnknownCodeModuleReason    = "UnknownCodeModule"
-	EmptyTenantUUIDReason      = "EmptyTenantUUID"
-
 	OneAgentBinVolumeName     = "oneagent-bin"
 	oneAgentShareVolumeName   = "oneagent-share"
 	injectionConfigVolumeName = "injection-config"

@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/stretchr/testify/assert"
@@ -213,9 +212,9 @@ func TestNoInjectionMutate(t *testing.T) {
 	require.Contains(t, request.Pod.Annotations, oacommon.AnnotationReason)
 
 	assert.Equal(t, "false", request.Pod.Annotations[oacommon.AnnotationInjected])
-	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], EmptyConnectionInfoReason)
-	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], EmptyTenantUUIDReason)
-	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], UnknownCodeModuleReason)
+	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], oacommon.EmptyConnectionInfoReason)
+	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], oacommon.EmptyTenantUUIDReason)
+	assert.Contains(t, request.Pod.Annotations[oacommon.AnnotationReason], oacommon.UnknownCodeModuleReason)
 
 	assert.Empty(t, request.InstallContainer.Env)
 	assert.Empty(t, request.InstallContainer.VolumeMounts)
@@ -295,7 +294,6 @@ func TestIsInjectionPossible(t *testing.T) {
 	t.Run("not possible without communication route", injectionNotPossibleWithoutCommunicationRoute)
 	t.Run("not possible without code modules version", injectionNotPossibleWithoutCodeModulesVersion)
 	t.Run("not possible with multiple issues", injectionNotPossibleWithMultipleIssues)
-	t.Run("not possible with remote image download enabled and no csi driver", injectionNotPossibleWithRemoteImageDownloadEnabled)
 }
 
 func injectionPossibleWithValidTenantUUID(t *testing.T) {
@@ -330,7 +328,7 @@ func injectionNotPossibleWithoutTenantUUID(t *testing.T) {
 	ok, reason := mutator.isInjectionPossible(request)
 
 	require.False(t, ok)
-	require.Contains(t, reason, EmptyTenantUUIDReason)
+	require.Contains(t, reason, oacommon.EmptyTenantUUIDReason)
 }
 
 func injectionNotPossibleWithoutCommunicationRoute(t *testing.T) {
@@ -342,7 +340,7 @@ func injectionNotPossibleWithoutCommunicationRoute(t *testing.T) {
 	ok, reason := mutator.isInjectionPossible(request)
 
 	require.False(t, ok)
-	require.Contains(t, reason, EmptyConnectionInfoReason)
+	require.Contains(t, reason, oacommon.EmptyConnectionInfoReason)
 }
 
 func injectionNotPossibleWithoutCodeModulesVersion(t *testing.T) {
@@ -354,7 +352,7 @@ func injectionNotPossibleWithoutCodeModulesVersion(t *testing.T) {
 	ok, reason := mutator.isInjectionPossible(request)
 
 	require.False(t, ok)
-	require.Contains(t, reason, UnknownCodeModuleReason)
+	require.Contains(t, reason, oacommon.UnknownCodeModuleReason)
 }
 
 func injectionNotPossibleWithMultipleIssues(t *testing.T) {
@@ -368,22 +366,9 @@ func injectionNotPossibleWithMultipleIssues(t *testing.T) {
 	ok, reason := mutator.isInjectionPossible(request)
 
 	require.False(t, ok)
-	require.Contains(t, reason, EmptyTenantUUIDReason)
-	require.Contains(t, reason, EmptyConnectionInfoReason)
-	require.Contains(t, reason, UnknownCodeModuleReason)
-}
-
-func injectionNotPossibleWithRemoteImageDownloadEnabled(t *testing.T) {
-	installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
-
-	mutator := createTestPodMutator(nil)
-	dk := getRemoteImageDownloadDynakube()
-	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
-
-	ok, reason := mutator.isInjectionPossible(request)
-
-	require.False(t, ok)
-	require.Contains(t, reason, NoBootstrapperConfigReason)
+	require.Contains(t, reason, oacommon.EmptyTenantUUIDReason)
+	require.Contains(t, reason, oacommon.EmptyConnectionInfoReason)
+	require.Contains(t, reason, oacommon.UnknownCodeModuleReason)
 }
 
 func createTestPodMutator(objects []client.Object) *Mutator {
