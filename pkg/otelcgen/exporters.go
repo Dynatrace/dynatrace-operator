@@ -10,12 +10,13 @@ var (
 
 func (c *Config) buildExporters() map[component.ID]component.Config {
 	serverConfig := &ServerConfig{
-		Endpoint:   c.buildExportersEndpoint(),
-		TLSSetting: &TLSSetting{},
+		Endpoint: c.buildExportersEndpoint(),
 	}
 
 	if c.caFile != "" {
-		serverConfig.TLSSetting.CAFile = c.caFile
+		serverConfig.TLSSetting = &TLSSetting{
+			CAFile: c.caFile,
+		}
 	}
 
 	if c.apiToken != "" {

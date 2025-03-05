@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/certificates"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -104,6 +105,12 @@ func (r *Reconciler) getData() (map[string]string, error) {
 	options := []otelcgen.Option{
 		otelcgen.WithApiToken("${env:" + otelcconsts.EnvDataIngestToken + "}"),
 		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
+	}
+
+	if certificates.IsAGCertificateNeeded(r.dk) {
+		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
+	} else if certificates.IsCACertificateNeeded(r.dk) {
+		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))
 	}
 
 	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TlsRefName != "" {
