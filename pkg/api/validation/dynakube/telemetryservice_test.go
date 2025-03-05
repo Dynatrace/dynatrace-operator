@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 )
 
 func TestTelemetryServiceProtocols(t *testing.T) {
@@ -43,8 +44,8 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 					APIURL: testApiUrl,
 					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.OtlpProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.OtlpProtocol),
 							"unknown",
 						},
 					},
@@ -61,8 +62,8 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 					APIURL: testApiUrl,
 					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.OtlpProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.OtlpProtocol),
 							"unknown1",
 							"unknown2",
 						},
@@ -80,9 +81,9 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 					APIURL: testApiUrl,
 					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.OtlpProtocol),
-							string(telemetryservice.OtlpProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.OtlpProtocol),
+							string(otelcgen.OtlpProtocol),
 						},
 					},
 				},
@@ -98,11 +99,11 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 					APIURL: testApiUrl,
 					TelemetryService: &telemetryservice.Spec{
 						Protocols: []string{
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.OtlpProtocol),
-							string(telemetryservice.OtlpProtocol),
-							string(telemetryservice.JaegerProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.OtlpProtocol),
+							string(otelcgen.OtlpProtocol),
+							string(otelcgen.JaegerProtocol),
 						},
 					},
 				},

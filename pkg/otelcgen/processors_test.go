@@ -12,6 +12,7 @@ import (
 func TestNewConfigWithProcessors(t *testing.T) {
 	cfg, err := NewConfig(
 		"",
+		RegisteredProtocols,
 		WithProcessors(),
 	)
 	require.NoError(t, err)
