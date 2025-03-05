@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -18,7 +19,7 @@ func TestVolumes(t *testing.T) {
 
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      caCertsVolumeName,
-			MountPath: trustedCAVolumeMountPath,
+			MountPath: otelcconsts.TrustedCAVolumeMountPath,
 			ReadOnly:  true,
 		}
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
@@ -29,7 +30,7 @@ func TestVolumes(t *testing.T) {
 
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      caCertsVolumeName,
-			MountPath: trustedCAVolumeMountPath,
+			MountPath: otelcconsts.TrustedCAVolumeMountPath,
 			ReadOnly:  true,
 		}
 
@@ -77,6 +78,7 @@ func TestVolumes(t *testing.T) {
 				},
 			},
 		}
+
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
 	})
@@ -134,8 +136,9 @@ func TestVolumes(t *testing.T) {
 
 		tlsSecret := getTLSSecret(dk.TelemetryService().Spec.TlsRefName, dk.Namespace, "crt", "key")
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 
-		statefulSet := getStatefulset(t, dk, &tlsSecret, &dataIngestToken)
+		statefulSet := getStatefulset(t, dk, &tlsSecret, &dataIngestToken, &configMap)
 
 		expectedVolume := corev1.Volume{
 			Name: customTlsCertVolumeName,
@@ -160,7 +163,7 @@ func TestVolumes(t *testing.T) {
 
 		expectedVolumeMount := corev1.VolumeMount{
 			Name:      customTlsCertVolumeName,
-			MountPath: customTlsCertMountPath,
+			MountPath: otelcconsts.CustomTlsCertMountPath,
 			ReadOnly:  true,
 		}
 

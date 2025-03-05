@@ -5,9 +5,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -22,8 +24,9 @@ import (
 )
 
 const (
-	serviceAccountName                   = "dynatrace-opentelemetry-collector"
-	annotationTelemetryServiceSecretHash = api.InternalFlagPrefix + "telemetry-service-secret-hash"
+	serviceAccountName                                   = "dynatrace-opentelemetry-collector"
+	annotationTelemetryServiceSecretHash                 = api.InternalFlagPrefix + "telemetry-service-secret-hash"
+	annotationTelemetryServiceConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-service-config-hash"
 )
 
 type Reconciler struct {
@@ -159,6 +162,15 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations[annotationTelemetryServiceSecretHash] = tlsSecretHash
 	}
 
+	if r.dk.TelemetryService().IsEnabled() {
+		configConfigMapHash, err := r.calculateConfigMapHash(ctx, configuration.GetConfigMapName(r.dk.Name))
+		if err != nil {
+			return nil, err
+		}
+
+		templateAnnotations[annotationTelemetryServiceConfigurationConfigMapHash] = configConfigMapHash
+	}
+
 	return templateAnnotations, nil
 }
 
@@ -179,6 +191,25 @@ func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string)
 	}
 
 	return tlsSecretHash, nil
+}
+
+func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName string) (string, error) {
+	query := configmap.Query(r.client, r.client, log)
+
+	configConfigMap, err := query.Get(ctx, types.NamespacedName{
+		Name:      configMapName,
+		Namespace: r.dk.Namespace,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	configConfigMaptHash, err := hasher.GenerateHash(configConfigMap.Data)
+	if err != nil {
+		return "", err
+	}
+
+	return configConfigMaptHash, nil
 }
 
 func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context) bool {
