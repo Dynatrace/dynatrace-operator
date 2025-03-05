@@ -1,0 +1,39 @@
+connectors: {}
+exporters: {}
+extensions: {}
+processors: {}
+receivers: {}
+service:
+  extensions:
+    - health_check
+  pipelines:
+    logs:
+      exporters:
+        - otlphttp
+        - debug
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - batch/logs
+    metrics:
+      exporters:
+        - otlphttp
+        - debug
+      receivers:
+        - statsd
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - cumulativetodelta
+        - batch/metrics
+    traces:
+      exporters:
+        - otlphttp
+        - debug
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - batch/traces
