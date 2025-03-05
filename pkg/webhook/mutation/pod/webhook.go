@@ -77,7 +77,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	wh.recorder.Setup(mutationRequest)
 
-	if true { // TODO
+	if !mutationRequest.DynaKube.FeatureBootstrapperInjection() {
 		err := wh.v1.Handle(ctx, mutationRequest)
 		if err != nil {
 			return silentErrorResponse(mutationRequest.Pod, err)
