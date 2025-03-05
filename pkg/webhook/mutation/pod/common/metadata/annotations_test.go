@@ -1,20 +1,19 @@
 package metadata
 
 import (
-	"encoding/json"
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/stretchr/testify/assert"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCopyMetadataFromNamespace(t *testing.T) {
 	t.Run("should copy annotations not labels with prefix from namespace to pod", func(t *testing.T) {
-		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, nil, false)
+		request := createTestMutationRequest(nil, nil)
 		request.Namespace.Labels = map[string]string{
 			dynakube.MetadataPrefix + "nocopyoflabels": "nocopyoflabels",
 			"test-label": "test-value",
@@ -24,16 +23,14 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test-annotation": "test-value",
 		}
 
-		require.False(t, mutator.Injected(request.BaseRequest))
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 1)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "copyofannotations", request.Pod.Annotations[dynakube.MetadataPrefix+"copyofannotations"])
 	})
 
 	t.Run("should copy all labels and annotations defined without override", func(t *testing.T) {
-		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, nil, false)
+		request := createTestMutationRequest(nil, nil)
 		request.Namespace.Labels = map[string]string{
 			dynakube.MetadataPrefix + "nocopyoflabels":   "nocopyoflabels",
 			dynakube.MetadataPrefix + "copyifruleexists": "copyifruleexists",
@@ -70,8 +67,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			dynakube.MetadataPrefix + "copyofannotations": "do-not-overwrite",
 		}
 
-		require.False(t, mutator.Injected(request.BaseRequest))
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 4)
 		require.Empty(t, request.Pod.Labels)
 
@@ -83,8 +79,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 	})
 
 	t.Run("are custom rule types handled correctly", func(t *testing.T) {
-		mutator := createTestPodMutator(nil)
-		request := createTestMutationRequest(nil, nil, false)
+		request := createTestMutationRequest(nil, nil)
 		request.Namespace.Labels = map[string]string{
 			"test":  "test-label-value",
 			"test2": "test-label-value2",
@@ -114,8 +109,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 
-		require.False(t, mutator.Injected(request.BaseRequest))
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "test-label-value", request.Pod.Annotations[dynakube.MetadataPrefix+"dt.test-label"])
@@ -123,40 +117,77 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 	})
 }
 
-func TestAddMetadataToInitEnv(t *testing.T) {
-	t.Run("should copy annotations not labels with prefix from pod to env", func(t *testing.T) {
-		expectedKeys := []string{
-			"beep",
-			"boop",
-			"hello",
-		}
-		notExpectedKey := "no-prop"
-		request := createTestMutationRequest(nil, nil, false)
-		request.Pod.Labels = map[string]string{
-			dynakube.MetadataPrefix + notExpectedKey: "beep-boop",
-			"test-label":                             "boom",
-		}
-		request.Pod.Annotations = map[string]string{
-			"test-annotation": "boom",
-		}
+func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+	if dk == nil {
+		dk = &dynakube.DynaKube{}
+	}
 
-		for _, key := range expectedKeys {
-			request.Pod.Annotations[dynakube.MetadataPrefix+key] = key + "-value"
-		}
+	return dtwebhook.NewMutationRequest(
+		context.Background(),
+		*getTestNamespace(dk),
+		&corev1.Container{
+			Name: dtwebhook.InstallContainerName,
+		},
+		getTestPod(annotations),
+		*dk,
+	)
+}
 
-		addMetadataToInitEnv(request.Pod, request.InstallContainer)
+func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ns",
+			Labels: map[string]string{
+				dtwebhook.InjectionInstanceLabel: dk.Name,
+			},
+		},
+	}
+}
 
-		annotationsEnv := env.FindEnvVar(request.InstallContainer.Env, consts.EnrichmentWorkloadAnnotationsEnv)
-		require.NotNil(t, annotationsEnv)
-
-		propagatedAnnotations := map[string]string{}
-		err := json.Unmarshal([]byte(annotationsEnv.Value), &propagatedAnnotations)
-		require.NoError(t, err)
-
-		for _, key := range expectedKeys {
-			require.Contains(t, propagatedAnnotations, key)
-			assert.Equal(t, key+"-value", propagatedAnnotations[key])
-			assert.NotContains(t, propagatedAnnotations, notExpectedKey)
-		}
-	})
+func getTestPod(annotations map[string]string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "test-pod",
+			Namespace:   "test-ns",
+			Annotations: annotations,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "container-1",
+					Image: "alpine-1",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "volume",
+							MountPath: "/volume",
+						},
+					},
+				},
+				{
+					Name:  "container-2",
+					Image: "alpine-2",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "volume",
+							MountPath: "/volume",
+						},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:  "init-container",
+					Image: "alpine",
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
 }

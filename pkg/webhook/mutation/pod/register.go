@@ -9,8 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
-	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
+	v1 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
+	v2 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,7 +21,7 @@ import (
 )
 
 func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
-	eventRecorder := newPodMutatorEventRecorder(mgr.GetEventRecorderFor("dynatrace-webhook"))
+	eventRecorder := events.NewRecorder(mgr.GetEventRecorderFor("dynatrace-webhook"))
 	kubeConfig := mgr.GetConfig()
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
@@ -36,7 +37,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 	}
 
 	if apmExists {
-		eventRecorder.sendOneAgentAPMWarningEvent(webhookPod)
+		eventRecorder.SendOneAgentAPMWarningEvent(webhookPod)
 
 		return errors.New("OneAgentAPM object detected - the Dynatrace webhook will not inject until the deprecated OneAgent Operator has been fully uninstalled")
 	}
@@ -58,28 +59,12 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
+		v1:               v1.NewInjector(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
+		v2:               v2.NewInjector(apiReader, metaClient, eventRecorder),
 		apiReader:        apiReader,
 		webhookNamespace: webhookNamespace,
-		webhookImage:     webhookPodImage,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
-		clusterID:        clusterID,
-		recorder:         eventRecorder,
-		mutators: []dtwebhook.PodMutator{
-			oamutation.NewMutator(
-				webhookPodImage,
-				clusterID,
-				webhookNamespace,
-				kubeClient,
-				apiReader,
-			),
-			metadata.NewMutator(
-				webhookNamespace,
-				kubeClient,
-				apiReader,
-				metaClient,
-			),
-		},
-		decoder: admission.NewDecoder(mgr.GetScheme()),
+		decoder:          admission.NewDecoder(mgr.GetScheme()),
 	}})
 	log.Info("registered /inject endpoint")
 

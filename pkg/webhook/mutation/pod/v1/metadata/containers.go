@@ -2,6 +2,7 @@ package metadata
 
 import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -32,7 +33,7 @@ func reinvokeUserContainers(request *dtwebhook.BaseRequest) bool {
 	return updated
 }
 
-func updateInstallContainer(installContainer *corev1.Container, workload *workloadInfo, entityID, clusterName string) {
+func updateInstallContainer(installContainer *corev1.Container, workload *metacommon.WorkloadInfo, entityID, clusterName string) {
 	addInjectedEnv(installContainer)
 	addDTClusterEnvs(installContainer, entityID, clusterName)
 	addWorkloadInfoEnvs(installContainer, workload)

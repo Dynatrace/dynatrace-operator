@@ -14,23 +14,23 @@ const (
 
 var (
 	defaultVersionLabelMapping = VersionLabelMapping{
-		releaseVersionEnv: "metadata.labels['app.kubernetes.io/version']",
-		releaseProductEnv: "metadata.labels['app.kubernetes.io/part-of']",
+		ReleaseVersionEnv: "metadata.labels['app.kubernetes.io/version']",
+		ReleaseProductEnv: "metadata.labels['app.kubernetes.io/part-of']",
 	}
 )
 
 type VersionLabelMapping map[string]string
 
-func newVersionLabelMapping(namespace corev1.Namespace) VersionLabelMapping {
+func NewVersionLabelMapping(namespace corev1.Namespace) VersionLabelMapping {
 	return mergeMappingWithDefault(getMappingFromNamespace(namespace))
 }
 
 func getMappingFromNamespace(namespace corev1.Namespace) VersionLabelMapping {
 	annotationLabelMap := map[string]string{
-		versionMappingAnnotationName: releaseVersionEnv,
-		productMappingAnnotationName: releaseProductEnv,
-		stageMappingAnnotationName:   releaseStageEnv,
-		buildVersionAnnotationName:   releaseBuildVersionEnv,
+		versionMappingAnnotationName: ReleaseVersionEnv,
+		productMappingAnnotationName: ReleaseProductEnv,
+		stageMappingAnnotationName:   ReleaseStageEnv,
+		buildVersionAnnotationName:   ReleaseBuildVersionEnv,
 	}
 
 	versionLabelMapping := VersionLabelMapping{}

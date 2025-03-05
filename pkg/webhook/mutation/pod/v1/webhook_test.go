@@ -1,20 +1,17 @@
-package pod
+package v1
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
-	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -24,8 +21,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
@@ -46,78 +43,41 @@ var testResourceRequirements = corev1.ResourceRequirements{
 type mutatorTest struct {
 	name           string
 	mutators       []dtwebhook.PodMutator
-	testPod        *corev1.Pod
-	objects        []client.Object
-	expectedResult func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator)
+	expectedResult func(t *testing.T, err error, mutators []dtwebhook.PodMutator)
 }
 
 func TestMutator(t *testing.T) {
 	tests := []mutatorTest{
 		{
-			name:     "happy path",
+			name:     "not yet injected => mutate",
 			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(t), createSimplePodMutatorMock(t)},
-			testPod:  getTestPod(),
-			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
-			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
-				require.NotNil(t, response)
-				assert.True(t, response.Allowed)
-				assert.Nil(t, response.Result)
-				assert.NotNil(t, response.Patches)
+			expectedResult: func(t *testing.T, err error, mutators []dtwebhook.PodMutator) {
+				require.NoError(t, err)
 
 				for _, mutator := range mutators {
-					assertPodMutatorCalls(t, mutator, 1)
+					assertMutateCalls(t, mutator, 1)
 				}
 			},
 		},
 		{
-			name:     "disable all mutators with dynatrace.com/inject",
-			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(t), createSimplePodMutatorMock(t)},
-			testPod:  getTestPodWithInjectionDisabled(),
-			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
-			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
-				require.NotNil(t, response)
-				assert.True(t, response.Allowed)
-				assert.NotNil(t, response.Result)
-				assert.Nil(t, response.Patches)
+			name:     "already injected => reinvoke",
+			mutators: []dtwebhook.PodMutator{createAlreadyInjectedPodMutatorMock(t), createAlreadyInjectedPodMutatorMock(t)},
+			expectedResult: func(t *testing.T, err error, mutators []dtwebhook.PodMutator) {
+				require.NoError(t, err)
 
 				for _, mutator := range mutators {
-					assertPodMutatorCalls(t, mutator, 0)
+					assertReinvokeCalls(t, mutator, 1)
 				}
 			},
 		},
 		{
-			name:     "sad path",
+			name:     "fail => error",
 			mutators: []dtwebhook.PodMutator{createFailPodMutatorMock(t)},
-			testPod:  getTestPod(),
-			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
-			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
-				require.NotNil(t, response)
-				assert.True(t, response.Allowed)
-				assert.Contains(t, response.Result.Message, "Failed")
-				assert.Nil(t, response.Patches)
+			expectedResult: func(t *testing.T, err error, mutators []dtwebhook.PodMutator) {
+				require.Error(t, err)
 
 				for _, mutator := range mutators {
-					assertPodMutatorCalls(t, mutator, 1)
-				}
-
-				// Logging newline so go test can parse the output correctly
-				log.Info("")
-			},
-		},
-		{
-			name:     "oc debug pod",
-			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(t)},
-			testPod:  getTestPodWithOcDebugPodAnnotations(),
-			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
-			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
-				require.NotNil(t, response)
-				assert.True(t, response.Allowed)
-				assert.NotNil(t, response.Result)
-				assert.Nil(t, response.Patches)
-				assert.Nil(t, response.Patch)
-
-				for _, mutator := range mutators {
-					assertPodMutatorCalls(t, mutator, 0)
+					assertMutateCalls(t, mutator, 1)
 				}
 			},
 		},
@@ -126,92 +86,13 @@ func TestMutator(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			request := createTestAdmissionRequest(test.testPod)
 			// merge test objects with the test pod
-			objects := test.objects
-			objects = append(objects, test.testPod)
-			podWebhook := createTestWebhook(test.mutators, objects)
+			podWebhook := createTestWebhook(test.mutators, nil)
 
-			response := podWebhook.Handle(ctx, *request)
-			test.expectedResult(t, &response, test.mutators)
+			err := podWebhook.Handle(ctx, createTestMutationRequest(getTestDynakube()))
+			test.expectedResult(t, err, test.mutators)
 		})
 	}
-}
-
-// TestDoubleInjection is special test case for making sure that we do not inject the init-container 2 times incase 1 of the mutators are skipped.
-// The mutators are intentionally NOT mocked, as to mock them properly for this scenario you would need to basically reimplement them in the mock.
-// This test is necessary as the current interface is not ready to handle the scenario properly.
-// Scenario: OneAgent mutation is Enabled however needs to be skipped due to not meeting the requirements, so it needs to annotate but not fully inject
-func TestDoubleInjection(t *testing.T) {
-	noCommunicationHostDK := getTestDynakube()
-	fakeClient := fake.NewClient(noCommunicationHostDK, getTestNamespace())
-	podWebhook := &webhook{
-		apiReader:        fakeClient,
-		decoder:          admission.NewDecoder(scheme.Scheme),
-		recorder:         eventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: noCommunicationHostDK},
-		webhookImage:     testImage,
-		webhookNamespace: testNamespaceName,
-		clusterID:        testClusterID,
-		mutators: []dtwebhook.PodMutator{
-			oamutation.NewMutator(
-				testImage,
-				testClusterID,
-				testNamespaceName,
-				fakeClient,
-				fakeClient,
-			),
-			metadata.NewMutator(
-				testNamespaceName,
-				fakeClient,
-				fakeClient,
-				fakeClient,
-			),
-		},
-	}
-
-	pod := getTestPod()
-
-	request := createTestAdmissionRequest(pod)
-
-	response := podWebhook.Handle(context.Background(), *request)
-	require.NotNil(t, response)
-	assert.True(t, response.Allowed)
-	assert.Nil(t, response.Result)
-	require.Len(t, response.Patches, 2)
-
-	allowedPatchPaths := []string{
-		"/spec/initContainers/1",
-		"/metadata/annotations",
-	}
-	alreadySeenPaths := []string{}
-
-	for _, patch := range response.Patches {
-		path := patch.Path
-		assert.NotContains(t, alreadySeenPaths, path)
-		assert.Contains(t, allowedPatchPaths, path)
-		alreadySeenPaths = append(alreadySeenPaths, path)
-	}
-
-	// simulate initial mutation, annotations + init-container <== skip in case on communication hosts
-	pod.Annotations = map[string]string{
-		dtwebhook.AnnotationOneAgentInjected: "false",
-		dtwebhook.AnnotationOneAgentReason:   oamutation.EmptyConnectionInfoReason,
-	}
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
-
-	// adding communicationHost to the dynakube to make the scenario more complicated
-	// it shouldn't try to mutate the pod because now it could be enabled, that is just asking for trouble.
-	communicationHostDK := getTestDynakube()
-	communicationHostDK.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{{Host: "test"}}
-	fakeClient = fake.NewClient(communicationHostDK, getTestNamespace())
-	podWebhook.apiReader = fakeClient
-
-	// simulate a Reinvocation
-	request = createTestAdmissionRequest(pod)
-	response = podWebhook.Handle(context.Background(), *request)
-
-	require.NotNil(t, response)
-	assert.Equal(t, admission.Patched(""), response)
 }
 
 func TestHandlePodMutation(t *testing.T) {
@@ -344,46 +225,30 @@ func assertContainersInfo(t *testing.T, request *dtwebhook.ReinvocationRequest, 
 	}
 }
 
-func assertPodMutatorCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {
+func assertMutateCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {
 	mock, ok := mutator.(*webhookmock.PodMutator)
 	if !ok {
 		t.Fatalf("assertPodMutatorCalls: webhook is not a mock")
 	}
 
-	mock.AssertNumberOfCalls(t, "Enabled", expectedCalls)
 	mock.AssertNumberOfCalls(t, "Mutate", expectedCalls)
 }
 
-func getTestPodWithInjectionDisabled() *corev1.Pod {
-	pod := getTestPod()
-	pod.Annotations = map[string]string{
-		dtwebhook.AnnotationDynatraceInject: "false",
+func assertReinvokeCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {
+	mock, ok := mutator.(*webhookmock.PodMutator)
+	if !ok {
+		t.Fatalf("assertPodMutatorCalls: webhook is not a mock")
 	}
 
-	return pod
+	mock.AssertNumberOfCalls(t, "Reinvoke", expectedCalls)
 }
 
-func getTestPodWithOcDebugPodAnnotations() *corev1.Pod {
-	pod := getTestPod()
-	pod.Annotations = map[string]string{
-		ocDebugAnnotationsContainer: "true",
-		ocDebugAnnotationsResource:  "true",
-	}
-
-	return pod
-}
-
-func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *webhook {
-	decoder := admission.NewDecoder(scheme.Scheme)
-
-	return &webhook{
-		apiReader:        fake.NewClient(objects...),
-		decoder:          decoder,
-		recorder:         eventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dk: getTestDynakube()},
-		webhookImage:     testImage,
-		webhookNamespace: testNamespaceName,
-		clusterID:        testClusterID,
-		mutators:         mutators,
+func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *Injector {
+	return &Injector{
+		recorder:     events.NewRecorder(record.NewFakeRecorder(10)),
+		webhookImage: testImage,
+		clusterID:    testClusterID,
+		mutators:     mutators,
 	}
 }
 
@@ -458,6 +323,102 @@ func getCloudNativeSpec(initResources *corev1.ResourceRequirements) oneagent.Spe
 		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 			AppInjectionSpec: oneagent.AppInjectionSpec{
 				InitResources: initResources,
+			},
+		},
+	}
+}
+
+func getTestPod() *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testPodName,
+			Namespace: testNamespaceName,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:            "container",
+					Image:           "alpine",
+					SecurityContext: getTestSecurityContext(),
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:  "init-container",
+					Image: "alpine",
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
+}
+
+const testUser int64 = 420
+
+func getTestSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		RunAsUser:  ptr.To(testUser),
+		RunAsGroup: ptr.To(testUser),
+	}
+}
+
+func createTestMutationRequest(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dk)
+}
+
+func createTestMutationRequestWithInjectedPod(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getInjectedPod(), *dk)
+}
+
+func getInjectedPod() *corev1.Pod {
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testPodName,
+			Namespace: testNamespaceName,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:            "container",
+					Image:           "alpine",
+					SecurityContext: getTestSecurityContext(),
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:  "init-container",
+					Image: "alpine",
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
+	installContainer := createInstallInitContainerBase("test", "test", pod, *getTestDynakube())
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
+
+	return pod
+}
+
+func getTestNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNamespaceName,
+			Labels: map[string]string{
+				dtwebhook.InjectionInstanceLabel: testDynakubeName,
 			},
 		},
 	}

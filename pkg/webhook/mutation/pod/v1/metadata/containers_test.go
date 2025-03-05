@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 )
 
 func TestMutateUserContainers(t *testing.T) {
@@ -92,4 +93,13 @@ func TestUpdateInstallContainer(t *testing.T) {
 		require.Len(t, container.VolumeMounts, 1)
 		require.Len(t, container.Env, 5)
 	})
+}
+
+func createTestWorkloadInfo(t *testing.T) *metacommon.WorkloadInfo {
+	t.Helper()
+
+	return &metacommon.WorkloadInfo{
+		Kind: "test",
+		Name: "test",
+	}
 }

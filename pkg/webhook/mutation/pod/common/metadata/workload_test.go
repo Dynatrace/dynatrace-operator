@@ -73,8 +73,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
-		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "daemonset", workloadInfo.kind)
+		assert.Equal(t, resourceName, workloadInfo.Name)
+		assert.Equal(t, "daemonset", workloadInfo.Kind)
 	})
 
 	t.Run("should return Pod if owner references are empty", func(t *testing.T) {
@@ -90,8 +90,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		client := fake.NewClient(&pod)
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
-		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "pod", workloadInfo.kind)
+		assert.Equal(t, resourceName, workloadInfo.Name)
+		assert.Equal(t, "pod", workloadInfo.Kind)
 	})
 
 	t.Run("should be pod if owner is not well known", func(t *testing.T) {
@@ -120,8 +120,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		client := fake.NewClient(&pod, &secret)
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
-		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "pod", workloadInfo.kind)
+		assert.Equal(t, resourceName, workloadInfo.Name)
+		assert.Equal(t, "pod", workloadInfo.Kind)
 	})
 
 	t.Run("should be pod if no controller is the owner", func(t *testing.T) {
@@ -145,8 +145,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		client := fake.NewClient(&pod)
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
-		assert.Equal(t, namespaceName, workloadInfo.name)
-		assert.Equal(t, "pod", workloadInfo.kind)
+		assert.Equal(t, namespaceName, workloadInfo.Name)
+		assert.Equal(t, "pod", workloadInfo.Kind)
 	})
 	t.Run("should find the root owner of the pod if the root owner is unknown", func(t *testing.T) {
 		pod := corev1.Pod{
@@ -203,8 +203,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
-		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "deployment", workloadInfo.kind)
+		assert.Equal(t, resourceName, workloadInfo.Name)
+		assert.Equal(t, "deployment", workloadInfo.Kind)
 	})
 	t.Run("should not make an api-call if workload is not well known", func(t *testing.T) {
 		pod := corev1.Pod{
@@ -226,17 +226,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
-		assert.Equal(t, resourceName, workloadInfo.name)
+		assert.Equal(t, resourceName, workloadInfo.Name)
 	})
-}
-
-func createTestWorkloadInfo(t *testing.T) *workloadInfo {
-	t.Helper()
-
-	return &workloadInfo{
-		kind: "test",
-		name: "test",
-	}
 }
 
 func createFailK8sClient(t *testing.T) client.Client {

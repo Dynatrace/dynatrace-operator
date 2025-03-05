@@ -3,6 +3,8 @@ package oneagent
 import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -38,13 +40,13 @@ func (mut *Mutator) reinvokeUserContainers(request *dtwebhook.ReinvocationReques
 func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 
-	installPath := maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
+	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
 	dk := request.DynaKube
 
 	addOneAgentVolumeMounts(container, installPath)
-	addDeploymentMetadataEnv(container, dk, mut.clusterID)
-	addPreloadEnv(container, installPath)
+	oacommon.AddDeploymentMetadataEnv(container, dk)
+	oacommon.AddPreloadEnv(container, installPath)
 
 	addCertVolumeMounts(container, dk)
 
@@ -53,11 +55,11 @@ func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationReques
 	}
 
 	if dk.Spec.NetworkZone != "" {
-		addNetworkZoneEnv(container, dk.Spec.NetworkZone)
+		oacommon.AddNetworkZoneEnv(container, dk.Spec.NetworkZone)
 	}
 
 	if dk.FeatureLabelVersionDetection() {
-		addVersionDetectionEnvs(container, newVersionLabelMapping(request.Namespace))
+		oacommon.AddVersionDetectionEnvs(container, request.Namespace)
 	}
 
 	if dk.FeatureReadOnlyCsiVolume() {

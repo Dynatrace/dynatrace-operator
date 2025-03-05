@@ -5,12 +5,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
-	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -31,29 +29,17 @@ func NewMutator(webhookNamespace string, client client.Client, apiReader client.
 }
 
 func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationMetadataEnrichmentInject,
-		request.DynaKube.FeatureAutomaticInjection())
-	enabledOnDynakube := request.DynaKube.MetadataEnrichmentEnabled()
-
-	matchesNamespace := true // if no namespace selector is configured, we just pass set this to true
-
-	if request.DynaKube.MetadataEnrichmentNamespaceSelector().Size() > 0 {
-		selector, _ := metav1.LabelSelectorAsSelector(request.DynaKube.MetadataEnrichmentNamespaceSelector())
-
-		matchesNamespace = selector.Matches(labels.Set(request.Namespace.Labels))
-	}
-
-	return matchesNamespace && enabledOnPod && enabledOnDynakube
+	return metacommon.IsEnabled(request)
 }
 
 func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
-	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationMetadataEnrichmentInjected, false)
+	return metacommon.IsInjected(request)
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
 	log.Info("injecting metadata-enrichment into pod", "podName", request.PodName())
 
-	workload, err := mut.retrieveWorkload(request)
+	workload, err := metacommon.RetrieveWorkload(mut.metaClient, request)
 	if err != nil {
 		return err
 	}
@@ -67,8 +53,8 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	mutateUserContainers(request.BaseRequest)
 	updateInstallContainer(request.InstallContainer, workload, request.DynaKube.Status.KubernetesClusterName, request.DynaKube.Status.KubernetesClusterMEID)
 	propagateMetadataAnnotations(request)
-	setInjectedAnnotation(request.Pod)
-	setWorkloadAnnotations(request.Pod, workload)
+	metacommon.SetInjectedAnnotation(request.Pod)
+	metacommon.SetWorkloadAnnotations(request.Pod, workload)
 
 	return nil
 }
@@ -111,23 +97,6 @@ func (mut *Mutator) ensureIngestEndpointSecret(request *dtwebhook.MutationReques
 	}
 
 	return nil
-}
-
-func setInjectedAnnotation(pod *corev1.Pod) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[dtwebhook.AnnotationMetadataEnrichmentInjected] = "true"
-}
-
-func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[dtwebhook.AnnotationWorkloadKind] = workload.kind
-	pod.Annotations[dtwebhook.AnnotationWorkloadName] = workload.name
 }
 
 func ContainerIsInjected(container corev1.Container) bool {

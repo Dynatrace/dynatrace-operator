@@ -83,7 +83,7 @@ func (wh *webhook) getDynakube(ctx context.Context, dynakubeName string) (*dynak
 
 	err := wh.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: wh.webhookNamespace}, &dk)
 	if k8serrors.IsNotFound(err) {
-		wh.recorder.sendMissingDynaKubeEvent(wh.webhookNamespace, dynakubeName)
+		wh.recorder.SendMissingDynaKubeEvent(wh.webhookNamespace, dynakubeName)
 
 		return nil, err
 	} else if err != nil {

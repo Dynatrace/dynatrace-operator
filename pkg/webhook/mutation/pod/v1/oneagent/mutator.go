@@ -8,29 +8,25 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
-	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Mutator struct {
 	client           client.Client
 	apiReader        client.Reader
-	image            string
 	clusterID        string
 	webhookNamespace string
 }
 
 var _ dtwebhook.PodMutator = &Mutator{}
 
-func NewMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *Mutator {
+func NewMutator(clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *Mutator {
 	return &Mutator{
-		image:            image,
 		clusterID:        clusterID,
 		webhookNamespace: webhookNamespace,
 		client:           client,
@@ -39,27 +35,16 @@ func NewMutator(image, clusterID, webhookNamespace string, client client.Client,
 }
 
 func (mut *Mutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
-	enabledOnDynakube := request.DynaKube.OneAgent().GetNamespaceSelector() != nil
-
-	matchesNamespaceSelector := true // if no namespace selector is configured, we just pass set this to true
-
-	if request.DynaKube.OneAgent().GetNamespaceSelector().Size() > 0 {
-		selector, _ := metav1.LabelSelectorAsSelector(request.DynaKube.OneAgent().GetNamespaceSelector())
-
-		matchesNamespaceSelector = selector.Matches(labels.Set(request.Namespace.Labels))
-	}
-
-	return matchesNamespaceSelector && enabledOnPod && enabledOnDynakube
+	return oacommon.IsEnabled(request)
 }
 
 func (mut *Mutator) Injected(request *dtwebhook.BaseRequest) bool {
-	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
+	return oacommon.IsInjected(request)
 }
 
 func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
 	if ok, reason := mut.isInjectionPossible(request); !ok {
-		setNotInjectedAnnotations(request.Pod, reason)
+		oacommon.SetNotInjectedAnnotations(request.Pod, reason)
 
 		return nil
 	}
@@ -75,7 +60,7 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 	mut.configureInitContainer(request, installerInfo)
 	mut.mutateUserContainers(request)
 	addInjectionConfigVolumeMount(request.InstallContainer)
-	setInjectedAnnotation(request.Pod)
+	oacommon.SetInjectedAnnotation(request.Pod)
 
 	return nil
 }
@@ -138,17 +123,6 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 		reasons = append(reasons, UnknownCodeModuleReason)
 	}
 
-	if dk.FeatureBootstrapperInjection() {
-		var initSecret corev1.Secret
-
-		secretObjectKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}
-		if err := mut.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
-			log.Info("dynatrace-bootstrapper-config is not available, OneAgent cannot be injected", "pod", request.PodName())
-
-			reasons = append(reasons, NoBootstrapperConfigReason)
-		}
-	}
-
 	if len(reasons) > 0 {
 		return false, strings.Join(reasons, ", ")
 	}
@@ -157,8 +131,8 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 }
 
 func ContainerIsInjected(container corev1.Container) bool {
-	return env.IsIn(container.Env, dynatraceMetadataEnv) &&
-		env.IsIn(container.Env, preloadEnv) &&
+	return env.IsIn(container.Env, oacommon.DynatraceMetadataEnv) &&
+		env.IsIn(container.Env, oacommon.PreloadEnv) &&
 		volumes.IsIn(container.VolumeMounts, OneAgentBinVolumeName) &&
 		volumes.IsIn(container.VolumeMounts, oneAgentShareVolumeName)
 }

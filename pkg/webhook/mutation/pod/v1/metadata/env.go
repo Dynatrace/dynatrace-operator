@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -11,10 +12,10 @@ func addInjectedEnv(container *corev1.Container) {
 	)
 }
 
-func addWorkloadInfoEnvs(container *corev1.Container, workload *workloadInfo) {
+func addWorkloadInfoEnvs(container *corev1.Container, workload *metacommon.WorkloadInfo) {
 	container.Env = append(container.Env,
-		corev1.EnvVar{Name: consts.EnrichmentWorkloadKindEnv, Value: workload.kind},
-		corev1.EnvVar{Name: consts.EnrichmentWorkloadNameEnv, Value: workload.name},
+		corev1.EnvVar{Name: consts.EnrichmentWorkloadKindEnv, Value: workload.Kind},
+		corev1.EnvVar{Name: consts.EnrichmentWorkloadNameEnv, Value: workload.Name},
 	)
 }
 

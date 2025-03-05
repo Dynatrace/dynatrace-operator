@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
+	v1 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
+	v2 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -38,18 +40,16 @@ func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string) er
 }
 
 type webhook struct {
+	v1 v1.Injector
+	v2 v2.Injector
+
+	recorder events.EventRecorder
 	decoder  admission.Decoder
-	recorder eventRecorder
 
 	apiReader client.Reader
 
-	webhookImage     string
 	webhookNamespace string
-	clusterID        string
-
-	mutators       []dtwebhook.PodMutator
-	apmExists      bool
-	deployedViaOLM bool
+	deployedViaOLM   bool
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
@@ -75,24 +75,21 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 		return emptyPatch
 	}
 
-	wh.setupEventRecorder(mutationRequest)
+	wh.recorder.Setup(mutationRequest)
 
-	if wh.isInjected(mutationRequest) {
-		if wh.handlePodReinvocation(mutationRequest) {
-			log.Info("reinvocation policy applied", "podName", podName)
-			wh.recorder.sendPodUpdateEvent()
-
-			return createResponseForPod(mutationRequest.Pod, request)
+	if true { // TODO
+		err := wh.v1.Handle(ctx, mutationRequest)
+		if err != nil {
+			return silentErrorResponse(mutationRequest.Pod, err)
 		}
-
-		log.Info("no change, all containers already injected", "podName", podName)
-
-		return emptyPatch
+	} else {
+		err := wh.v2.Handle(ctx, mutationRequest)
+		if err != nil {
+			return silentErrorResponse(mutationRequest.Pod, err)
+		}
 	}
 
-	if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
-		return silentErrorResponse(mutationRequest.Pod, err)
-	}
+	setDynatraceInjectedAnnotation(mutationRequest)
 
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
@@ -104,29 +101,14 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 		return false
 	}
 
-	return maputils.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
-}
+	enabledOnPod := maputils.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
 
-func (wh *webhook) setupEventRecorder(mutationRequest *dtwebhook.MutationRequest) {
-	wh.recorder.dk = &mutationRequest.DynaKube
-	wh.recorder.pod = mutationRequest.Pod
-}
-
-func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
-	for _, mutator := range wh.mutators {
-		if mutator.Injected(mutationRequest.BaseRequest) {
-			return true
-		}
+	enabledOnContainers := false
+	for _, container := range mutationRequest.Pod.Spec.Containers {
+		enabledOnContainers = enabledOnContainers || !dtwebhook.IsContainerExcludedFromInjection(mutationRequest.DynaKube.Annotations, mutationRequest.Pod.Annotations, container.Name)
 	}
 
-	installContainer := container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
-	if installContainer != nil {
-		log.Info("Dynatrace init-container already present, skipping mutation, doing reinvocation", "containerName", dtwebhook.InstallContainerName)
-
-		return true
-	}
-
-	return false
+	return enabledOnPod && enabledOnContainers
 }
 
 func (wh *webhook) isOcDebugPod(pod *corev1.Pod) bool {
@@ -139,83 +121,6 @@ func (wh *webhook) isOcDebugPod(pod *corev1.Pod) bool {
 	}
 
 	return true
-}
-
-func podNeedsInjection(mutationRequest *dtwebhook.MutationRequest) bool {
-	needsInjection := false
-	for _, container := range mutationRequest.Pod.Spec.Containers {
-		needsInjection = needsInjection || !dtwebhook.IsContainerExcludedFromInjection(mutationRequest.DynaKube.Annotations, mutationRequest.Pod.Annotations, container.Name)
-	}
-
-	return needsInjection
-}
-
-func (wh *webhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
-	if !podNeedsInjection(mutationRequest) {
-		log.Info("no mutation is needed, all containers are excluded from injection.")
-
-		return nil
-	}
-
-	mutationRequest.InstallContainer = createInstallInitContainerBase(wh.webhookImage, wh.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
-
-	_ = updateContainerInfo(mutationRequest.BaseRequest, mutationRequest.InstallContainer)
-
-	var isMutated bool
-
-	for _, mutator := range wh.mutators {
-		if !mutator.Enabled(mutationRequest.BaseRequest) {
-			continue
-		}
-
-		if err := mutator.Mutate(ctx, mutationRequest); err != nil {
-			return err
-		}
-
-		isMutated = true
-	}
-
-	if !isMutated {
-		log.Info("no mutation is enabled")
-
-		return nil
-	}
-
-	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
-	wh.recorder.sendPodInjectEvent()
-	setDynatraceInjectedAnnotation(mutationRequest)
-
-	return nil
-}
-
-func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
-	var needsUpdate bool
-
-	reinvocationRequest := mutationRequest.ToReinvocationRequest()
-
-	isMutated := updateContainerInfo(reinvocationRequest.BaseRequest, nil)
-
-	if !isMutated { // == no new containers were detected, we only mutate new containers during reinvoke
-		return false
-	}
-
-	for _, mutator := range wh.mutators {
-		if mutator.Enabled(mutationRequest.BaseRequest) {
-			if update := mutator.Reinvoke(reinvocationRequest); update {
-				needsUpdate = true
-			}
-		}
-	}
-
-	return needsUpdate
-}
-
-func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) {
-	if mutationRequest.Pod.Annotations == nil {
-		mutationRequest.Pod.Annotations = make(map[string]string)
-	}
-
-	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
 }
 
 // createResponseForPod tries to format pod as json
@@ -235,4 +140,12 @@ func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 
 	return rsp
+}
+
+func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) {
+	if mutationRequest.Pod.Annotations == nil {
+		mutationRequest.Pod.Annotations = make(map[string]string)
+	}
+
+	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
 }

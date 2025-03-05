@@ -12,23 +12,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type workloadInfo struct {
-	name string
-	kind string
+type WorkloadInfo struct {
+	Name string
+	Kind string
 }
 
-func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *workloadInfo {
-	return &workloadInfo{
-		name: partialObjectMetadata.ObjectMeta.Name,
+func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *WorkloadInfo {
+	return &WorkloadInfo{
+		Name: partialObjectMetadata.ObjectMeta.Name,
 
 		// workload kind in lower case according to dt semantic-dictionary
 		// https://docs.dynatrace.com/docs/discover-dynatrace/references/semantic-dictionary/fields#kubernetes
-		kind: strings.ToLower(partialObjectMetadata.Kind),
+		Kind: strings.ToLower(partialObjectMetadata.Kind),
 	}
 }
 
-func (mut *Mutator) retrieveWorkload(request *dtwebhook.MutationRequest) (*workloadInfo, error) {
-	workload, err := findRootOwnerOfPod(request.Context, mut.metaClient, request.Pod, request.Namespace.Name)
+func RetrieveWorkload(metaClient client.Client, request *dtwebhook.MutationRequest) (*WorkloadInfo, error) {
+	workload, err := findRootOwnerOfPod(request.Context, metaClient, request.Pod, request.Namespace.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (mut *Mutator) retrieveWorkload(request *dtwebhook.MutationRequest) (*workl
 	return workload, nil
 }
 
-func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod, namespace string) (*workloadInfo, error) {
+func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod, namespace string) (*WorkloadInfo, error) {
 	podPartialMetadata := &metav1.PartialObjectMetadata{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: pod.APIVersion,
