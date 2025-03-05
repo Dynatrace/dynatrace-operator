@@ -6,6 +6,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
 	"go.opentelemetry.io/collector/service/extensions"
+	"go.opentelemetry.io/collector/service/pipelines"
 	"go.opentelemetry.io/collector/service/telemetry"
 )
 
@@ -34,61 +35,48 @@ type ServiceConfig struct {
 	Telemetry telemetry.Config `mapstructure:"telemetry,omitempty"`
 
 	// Pipelines are the set of data pipelines configured for the service.
-	Pipelines map[pipeline.ID]*PipelineConfig `mapstructure:"pipelines"`
+	Pipelines pipelines.Config `mapstructure:"pipelines"`
 
 	// Extensions are the ordered list of extensions configured for the service.
 	Extensions extensions.Config `mapstructure:"extensions"`
 }
 
-// PipelineConfig defines the configuration of a Pipeline.
-// based on "go.opentelemetry.io/collector/service/pipelines.PipelineConfig
-type PipelineConfig struct {
-	Receivers  []component.ID `mapstructure:"receivers,omitempty"`
-	Processors []component.ID `mapstructure:"processors"`
-	Exporters  []component.ID `mapstructure:"exporters"`
-}
-
 func (c *Config) buildServices() ServiceConfig {
-	// traces
-	pipelineTracesConfig := &PipelineConfig{
-		Processors: append(buildProcessors(), batchTraces),
-		Exporters:  buildExporters(),
-	}
+	pipelinesCfg := pipelines.Config{}
 
+	// traces
 	tracesReceivers := c.buildPipelinesReceivers(allowedPipelinesTracesReceiversIDs)
 	if len(tracesReceivers) != 0 {
-		pipelineTracesConfig.Receivers = tracesReceivers
+		pipelinesCfg[traces] = &pipelines.PipelineConfig{
+			Receivers:  tracesReceivers,
+			Processors: append(buildProcessors(), batchTraces),
+			Exporters:  buildExporters(),
+		}
 	}
 
 	// metrics
-	pipelineMetricsConfig := &PipelineConfig{
-		Processors: append(buildProcessors(), cumulativeToDelta, batchMetrics),
-		Exporters:  buildExporters(),
-	}
 	metricsReceivers := c.buildPipelinesReceivers(allowedPipelinesMetricsReceiversIDs)
-
 	if len(metricsReceivers) != 0 {
-		pipelineMetricsConfig.Receivers = metricsReceivers
+		pipelinesCfg[metrics] = &pipelines.PipelineConfig{
+			Receivers:  metricsReceivers,
+			Processors: append(buildProcessors(), cumulativeToDelta, batchMetrics),
+			Exporters:  buildExporters(),
+		}
 	}
 
 	// logs
-	pipelineLogsConfig := &PipelineConfig{
-		Processors: append(buildProcessors(), batchLogs),
-		Exporters:  buildExporters(),
-	}
-
 	logsReceivers := c.buildPipelinesReceivers(allowedPipelinesLogsReceiversIDs)
 	if len(logsReceivers) != 0 {
-		pipelineLogsConfig.Receivers = logsReceivers
+		pipelinesCfg[logs] = &pipelines.PipelineConfig{
+			Receivers:  logsReceivers,
+			Processors: append(buildProcessors(), batchLogs),
+			Exporters:  buildExporters(),
+		}
 	}
 
 	return ServiceConfig{
 		Extensions: extensions.Config{healthCheck},
-		Pipelines: map[pipeline.ID]*PipelineConfig{
-			traces:  pipelineTracesConfig,
-			metrics: pipelineMetricsConfig,
-			logs:    pipelineLogsConfig,
-		},
+		Pipelines:  pipelinesCfg,
 	}
 }
 
