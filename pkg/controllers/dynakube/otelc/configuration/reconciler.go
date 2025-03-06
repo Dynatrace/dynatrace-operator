@@ -86,7 +86,7 @@ func (r *Reconciler) prepareConfigMap() (*corev1.ConfigMap, error) {
 		return nil, err
 	}
 
-	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.CollectorComponentLabel).BuildLabels()
+	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.OtelCComponentLabel).BuildLabels()
 
 	newSecret, err := k8sconfigmap.Build(r.dk,
 		GetConfigMapName(r.dk.Name),

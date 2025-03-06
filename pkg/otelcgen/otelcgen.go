@@ -124,6 +124,9 @@ func (c *Config) Marshal() ([]byte, error) {
 }
 
 func (c *Config) buildTLSSetting() *TLSSetting {
+	if c.tlsCert == "" && c.tlsKey == "" {
+		return nil
+	}
 	tls := &TLSSetting{}
 	if c.tlsCert != "" {
 		tls.CertFile = c.tlsCert

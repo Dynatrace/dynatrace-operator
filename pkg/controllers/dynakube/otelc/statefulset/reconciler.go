@@ -251,7 +251,7 @@ func buildAppLabels(dkName string) *labels.AppLabels {
 	// TODO: when version is available
 	version := "0.0.0"
 
-	return labels.NewAppLabels(labels.CollectorComponentLabel, dkName, labels.CollectorComponentLabel, version)
+	return labels.NewAppLabels(labels.OtelCComponentLabel, dkName, labels.OtelCComponentLabel, version)
 }
 
 func buildAffinity() corev1.Affinity {
