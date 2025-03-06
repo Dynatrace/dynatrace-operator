@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type Injector struct {
@@ -17,6 +18,7 @@ type Injector struct {
 	clusterID    string
 
 	mutators []dtwebhook.PodMutator
+	isContainerInjected func(corev1.Container) bool
 }
 
 var _ dtwebhook.PodInjector = &Injector{}
@@ -40,6 +42,7 @@ func NewInjector(apiReader client.Reader, kubeClient, metaClient client.Client, 
 				metaClient,
 			),
 		},
+		isContainerInjected: containerIsInjected,
 	}
 }
 
@@ -53,10 +56,10 @@ func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.Mutat
 		}
 
 		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName)
-	}
-
-	if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
-		return err
+	} else {
+		if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
+			return err
+		}
 	}
 
 	log.Info("injection finished for pod", "podName", mutationRequest.PodName, "namespace", mutationRequest.Namespace)
