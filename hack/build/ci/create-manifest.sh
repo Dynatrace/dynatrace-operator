@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 if [ -z "$2" ]
 then
@@ -27,7 +28,15 @@ else
   echo "Creating manifest for the AMD image "
   docker pull "${image}-amd64"
   docker manifest create "${image}" "${image}-amd64"
+  # docker manifest annotate
 fi
 
 sha256=$(docker manifest push "${image}")
 echo "digest=${sha256}">> $GITHUB_OUTPUT
+
+
+if [ "$image" == gcr.io* ] # # True if $image starts with a "gcr.io" (wildcard matching).
+then
+  go install github.com/google/go-containerregistry/cmd/crane@latest
+  crane mutate "${image}" --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog"
+fi
