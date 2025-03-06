@@ -3,6 +3,7 @@ package statefulset
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	appsv1 "k8s.io/api/apps/v1"
@@ -60,7 +61,22 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		)
 	}
 
-	if dk.Spec.TrustedCAs != "" {
+	if certificates.IsAGCertificateNeeded(dk) {
+		volumes = append(volumes, corev1.Volume{
+			Name: caCertsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  dynakube.TLSCertKey,
+							Path: otelcconsts.TrustedCAFilename,
+						},
+					},
+				},
+			},
+		})
+	} else if certificates.IsCACertificateNeeded(dk) {
 		volumes = append(volumes, corev1.Volume{
 			Name: caCertsVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -71,7 +87,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "certs",
-							Path: trustedCAsFile,
+							Path: otelcconsts.TrustedCAFilename,
 						},
 					},
 				},
@@ -135,7 +151,13 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		)
 	}
 
-	if dk.Spec.TrustedCAs != "" {
+	if certificates.IsAGCertificateNeeded(dk) {
+		vm = append(vm, corev1.VolumeMount{
+			Name:      caCertsVolumeName,
+			MountPath: otelcconsts.ActiveGateTLSCertVolumePath,
+			ReadOnly:  true,
+		})
+	} else if certificates.IsCACertificateNeeded(dk) {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      caCertsVolumeName,
 			MountPath: otelcconsts.TrustedCAVolumeMountPath,

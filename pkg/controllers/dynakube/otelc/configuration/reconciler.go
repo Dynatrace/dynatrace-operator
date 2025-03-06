@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/certificates"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -110,10 +111,11 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
 	}
 
-	// TODO what cert(s) does exporter need (dk.trustedCAs or dk.tlsSecretName)
-	// if r.dk.ActiveGate().IsApiEnabled() {
-	// otelcgen.WithCA(otelcconsts.TrustedCAVolumePath)
-	// }
+	if certificates.IsAGCertificateNeeded(r.dk) {
+		otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath)
+	} else if certificates.IsCACertificateNeeded(r.dk) {
+		otelcgen.WithCA(otelcconsts.TrustedCAVolumePath)
+	}
 
 	if r.dk.TelemetryService().IsEnabled() && r.dk.TelemetryService().Spec.TlsRefName != "" {
 		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSKeyDataName)))
