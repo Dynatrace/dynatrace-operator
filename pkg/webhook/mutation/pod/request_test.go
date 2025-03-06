@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admission/v1"
@@ -31,7 +32,8 @@ func TestCreateMutationRequestBase(t *testing.T) {
 	t.Run("should create a mutation request", func(t *testing.T) {
 		dk := getTestDynakube()
 		podWebhook := createTestWebhook(
-			[]dtwebhook.PodMutator{},
+			webhookmock.NewPodInjector(t),
+			webhookmock.NewPodInjector(t),
 			[]client.Object{
 				getTestNamespace(),
 				getTestPod(),
@@ -53,7 +55,8 @@ func TestCreateMutationRequestBase(t *testing.T) {
 func TestGetPodFromRequest(t *testing.T) {
 	t.Run("should return the pod struct", func(t *testing.T) {
 		podWebhook := createTestWebhook(
-			[]dtwebhook.PodMutator{},
+			webhookmock.NewPodInjector(t),
+			webhookmock.NewPodInjector(t),
 			[]client.Object{},
 		)
 		expected := getTestPod()
@@ -68,7 +71,8 @@ func TestGetNamespaceFromRequest(t *testing.T) {
 	t.Run("should return the namespace struct", func(t *testing.T) {
 		expected := getTestNamespace()
 		podWebhook := createTestWebhook(
-			[]dtwebhook.PodMutator{},
+			webhookmock.NewPodInjector(t),
+			webhookmock.NewPodInjector(t),
 			[]client.Object{expected},
 		)
 
@@ -91,7 +95,8 @@ func TestGetDynakube(t *testing.T) {
 	t.Run("should return the dynakube struct", func(t *testing.T) {
 		expected := getTestDynakube()
 		podWebhook := createTestWebhook(
-			[]dtwebhook.PodMutator{},
+			webhookmock.NewPodInjector(t),
+			webhookmock.NewPodInjector(t),
 			[]client.Object{expected},
 		)
 
@@ -104,10 +109,6 @@ func TestGetDynakube(t *testing.T) {
 
 func createTestMutationRequest(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dk)
-}
-
-func createTestMutationRequestWithInjectedPod(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
-	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getInjectedPod(), *dk)
 }
 
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {
@@ -153,42 +154,6 @@ func getTestPod() *corev1.Pod {
 			},
 		},
 	}
-}
-
-func getInjectedPod() *corev1.Pod {
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testPodName,
-			Namespace: testNamespaceName,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:            "container",
-					Image:           "alpine",
-					SecurityContext: getTestSecurityContext(),
-				},
-			},
-			InitContainers: []corev1.Container{
-				{
-					Name:  "init-container",
-					Image: "alpine",
-				},
-			},
-			Volumes: []corev1.Volume{
-				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-			},
-		},
-	}
-	installContainer := createInstallInitContainerBase("test", "test", pod, *getTestDynakube())
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
-
-	return pod
 }
 
 func getTestNamespace() *corev1.Namespace {

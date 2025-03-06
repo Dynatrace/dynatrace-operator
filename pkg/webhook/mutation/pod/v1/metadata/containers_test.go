@@ -3,9 +3,9 @@ package metadata
 import (
 	"testing"
 
+	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 )
 
 func TestMutateUserContainers(t *testing.T) {

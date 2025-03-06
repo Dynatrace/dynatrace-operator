@@ -58,6 +58,7 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook:
     interfaces:
       PodMutator:
+      PodInjector:
   sigs.k8s.io/controller-runtime/pkg/manager:
     interfaces:
       Manager:

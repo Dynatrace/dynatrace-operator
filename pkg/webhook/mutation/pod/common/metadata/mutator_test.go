@@ -23,6 +23,7 @@ func TestSetInjectedAnnotation(t *testing.T) {
 func TestWorkloadAnnotations(t *testing.T) {
 	workloadInfoName := "workload-name"
 	workloadInfoKind := "workload-kind"
+
 	t.Run("should add annotation to nil map", func(t *testing.T) {
 		request := createTestMutationRequest(nil, nil)
 

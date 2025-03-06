@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -12,6 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
+	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -40,59 +42,48 @@ var testResourceRequirements = corev1.ResourceRequirements{
 	},
 }
 
-type mutatorTest struct {
-	name           string
-	mutators       []dtwebhook.PodMutator
-	expectedResult func(t *testing.T, err error, mutators []dtwebhook.PodMutator)
-}
+func TestInjector(t *testing.T) {
+	t.Run("not yet injected => mutate", func(t *testing.T) {
+		ctx := context.Background()
 
-func TestMutator(t *testing.T) {
-	tests := []mutatorTest{
-		{
-			name:     "not yet injected => mutate",
-			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(t), createSimplePodMutatorMock(t)},
-			expectedResult: func(t *testing.T, err error, mutators []dtwebhook.PodMutator) {
-				require.NoError(t, err)
+		injector := createTestInjector([]dtwebhook.PodMutator{createSimplePodMutatorMock(t), createSimplePodMutatorMock(t)}, false)
+		request := createTestMutationRequest(getTestDynakube())
 
-				for _, mutator := range mutators {
-					assertMutateCalls(t, mutator, 1)
-				}
-			},
-		},
-		{
-			name:     "already injected => reinvoke",
-			mutators: []dtwebhook.PodMutator{createAlreadyInjectedPodMutatorMock(t), createAlreadyInjectedPodMutatorMock(t)},
-			expectedResult: func(t *testing.T, err error, mutators []dtwebhook.PodMutator) {
-				require.NoError(t, err)
+		err := injector.Handle(ctx, request)
+		require.NoError(t, err)
 
-				for _, mutator := range mutators {
-					assertReinvokeCalls(t, mutator, 1)
-				}
-			},
-		},
-		{
-			name:     "fail => error",
-			mutators: []dtwebhook.PodMutator{createFailPodMutatorMock(t)},
-			expectedResult: func(t *testing.T, err error, mutators []dtwebhook.PodMutator) {
-				require.Error(t, err)
+		for _, mutator := range injector.mutators {
+			assertMutateCalls(t, mutator, 1)
+		}
+	})
 
-				for _, mutator := range mutators {
-					assertMutateCalls(t, mutator, 1)
-				}
-			},
-		},
-	}
+	t.Run("fail => error", func(t *testing.T) {
+		ctx := context.Background()
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ctx := context.Background()
-			// merge test objects with the test pod
-			podWebhook := createTestWebhook(test.mutators, nil)
+		injector := createTestInjector([]dtwebhook.PodMutator{createFailPodMutatorMock(t)}, false)
+		request := createTestMutationRequest(getTestDynakube())
 
-			err := podWebhook.Handle(ctx, createTestMutationRequest(getTestDynakube()))
-			test.expectedResult(t, err, test.mutators)
-		})
-	}
+		err := injector.Handle(ctx, request)
+		require.Error(t, err)
+
+		for _, mutator := range injector.mutators {
+			assertMutateCalls(t, mutator, 1)
+		}
+	})
+
+	t.Run("already injected => reinvoke", func(t *testing.T) {
+		ctx := context.Background()
+
+		injector := createTestInjector([]dtwebhook.PodMutator{createAlreadyInjectedPodMutatorMock(t), createAlreadyInjectedPodMutatorMock(t)}, true)
+		request := createTestMutationRequestWithInjectedPod(getTestDynakube())
+
+		err := injector.Handle(ctx, request)
+		require.NoError(t, err)
+
+		for _, mutator := range injector.mutators {
+			assertReinvokeCalls(t, mutator, 1)
+		}
+	})
 }
 
 func TestHandlePodMutation(t *testing.T) {
@@ -100,8 +91,9 @@ func TestHandlePodMutation(t *testing.T) {
 		mutator1 := createSimplePodMutatorMock(t)
 		mutator2 := createSimplePodMutatorMock(t)
 		dk := getTestDynakube()
-		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
+		podWebhook := createTestInjector([]dtwebhook.PodMutator{mutator1, mutator2}, false)
 		mutationRequest := createTestMutationRequest(dk)
+		podWebhook.recorder.Setup(mutationRequest)
 
 		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		require.NoError(t, err)
@@ -127,7 +119,6 @@ func TestHandlePodMutation(t *testing.T) {
 		assert.True(t, *initSecurityContext.RunAsNonRoot)
 
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
-		assert.Equal(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
 		mutator1.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		mutator1.AssertCalled(t, "Mutate", mock.Anything, mutationRequest)
 		mutator2.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
@@ -135,20 +126,18 @@ func TestHandlePodMutation(t *testing.T) {
 	})
 	t.Run("should call 1 webhook, 1 error, no initContainer and annotation", func(t *testing.T) {
 		sadMutator := createFailPodMutatorMock(t)
-		happyMutator := createSimplePodMutatorMock(t)
+		emptyMutator := webhookmock.NewPodMutator(t)
 		dk := getTestDynakube()
-		podWebhook := createTestWebhook([]dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
+		podWebhook := createTestInjector([]dtwebhook.PodMutator{sadMutator, emptyMutator}, false)
 		mutationRequest := createTestMutationRequest(dk)
+		podWebhook.recorder.Setup(mutationRequest)
 
 		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		require.Error(t, err)
 		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 1)
-		assert.NotEqual(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
 		sadMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		sadMutator.AssertCalled(t, "Mutate", mock.Anything, mutationRequest)
-		happyMutator.AssertNotCalled(t, "Enabled", mock.Anything)
-		happyMutator.AssertNotCalled(t, "Mutate", mock.Anything, mock.Anything)
 	})
 }
 
@@ -157,8 +146,9 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator1 := createAlreadyInjectedPodMutatorMock(t)
 		mutator2 := createAlreadyInjectedPodMutatorMock(t)
 		dk := getTestDynakube()
-		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
+		podWebhook := createTestInjector([]dtwebhook.PodMutator{mutator1, mutator2}, true)
 		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
+		podWebhook.recorder.Setup(mutationRequest)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.True(t, updated)
@@ -172,31 +162,31 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator2.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call both webhook, only 1 update, updated == true", func(t *testing.T) {
-		failingMutator := createFailPodMutatorMock(t)
+		noUpdateMutator := createNoUpdatePodMutatorMock(t)
 		workingMutator := createAlreadyInjectedPodMutatorMock(t)
 		dk := getTestDynakube()
-		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
+		podWebhook := createTestInjector([]dtwebhook.PodMutator{noUpdateMutator, workingMutator}, true)
 		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
+		podWebhook.recorder.Setup(mutationRequest)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.True(t, updated)
-		failingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		failingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		noUpdateMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		noUpdateMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 		workingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		workingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call webhook, no update", func(t *testing.T) {
-		failingMutator := createFailPodMutatorMock(t)
+		noUpdateMutator := createNoUpdatePodMutatorMock(t)
 		dk := getTestDynakube()
-		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator}, nil)
+		podWebhook := createTestInjector([]dtwebhook.PodMutator{noUpdateMutator}, true)
 		mutationRequest := createTestMutationRequestWithInjectedPod(dk)
+		podWebhook.recorder.Setup(mutationRequest)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.False(t, updated)
-		failingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		failingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
-		failingMutator.AssertNotCalled(t, "Injected", mock.Anything)
-		failingMutator.AssertNotCalled(t, "Mutated", mock.Anything, mock.Anything)
+		noUpdateMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		noUpdateMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 }
 
@@ -243,41 +233,56 @@ func assertReinvokeCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCal
 	mock.AssertNumberOfCalls(t, "Reinvoke", expectedCalls)
 }
 
-func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *Injector {
+func createTestInjector(mutators []dtwebhook.PodMutator, isContainerInjected bool) *Injector {
 	return &Injector{
-		recorder:     events.NewRecorder(record.NewFakeRecorder(10)),
-		webhookImage: testImage,
-		clusterID:    testClusterID,
-		mutators:     mutators,
+		recorder:            events.NewRecorder(record.NewFakeRecorder(10)),
+		webhookImage:        testImage,
+		clusterID:           testClusterID,
+		mutators:            mutators,
+		isContainerInjected: func(c corev1.Container) bool { return isContainerInjected },
 	}
 }
 
 func createSimplePodMutatorMock(t *testing.T) *webhookmock.PodMutator {
+	t.Helper()
+
 	mutator := webhookmock.NewPodMutator(t)
-	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
-	mutator.On("Injected", mock.Anything).Return(false).Maybe()
-	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil).Maybe()
-	mutator.On("Reinvoke", mock.Anything).Return(true).Maybe()
+	mutator.On("Injected", mock.Anything).Return(false).Maybe() // It is a Maybe, because it is only checked at the very beginning
+	mutator.On("Enabled", mock.Anything).Return(true)
+	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil)
 
 	return mutator
 }
 
 func createAlreadyInjectedPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
+	t.Helper()
+
 	mutator := webhookmock.NewPodMutator(t)
-	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
-	mutator.On("Injected", mock.Anything).Return(true).Maybe()
-	mutator.On("Mutate", mock.Anything, mock.Anything).Return(nil).Maybe()
-	mutator.On("Reinvoke", mock.Anything).Return(true).Maybe()
+	mutator.On("Injected", mock.Anything).Return(true).Maybe() // It is a Maybe, because if there are multiple mutators, the first "Injected" that returns true will break the loop -> Reinvoke
+	mutator.On("Enabled", mock.Anything).Return(true)
+	mutator.On("Reinvoke", mock.Anything).Return(true)
+
+	return mutator
+}
+
+func createNoUpdatePodMutatorMock(t *testing.T) *webhookmock.PodMutator {
+	t.Helper()
+
+	mutator := webhookmock.NewPodMutator(t)
+	mutator.On("Injected", mock.Anything).Return(true).Maybe() // It is a Maybe, because if there are multiple mutators, the first "Injected" that returns true will break the loop -> Reinvoke
+	mutator.On("Enabled", mock.Anything).Return(true)
+	mutator.On("Reinvoke", mock.Anything).Return(false)
 
 	return mutator
 }
 
 func createFailPodMutatorMock(t *testing.T) *webhookmock.PodMutator {
+	t.Helper()
+
 	mutator := webhookmock.NewPodMutator(t)
-	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
-	mutator.On("Injected", mock.Anything).Return(false).Maybe()
-	mutator.On("Mutate", mock.Anything, mock.Anything).Return(errors.New("BOOM")).Maybe()
-	mutator.On("Reinvoke", mock.Anything).Return(false).Maybe()
+	mutator.On("Injected", mock.Anything).Return(false).Maybe() // It is a Maybe, because it is only checked at the very beginning
+	mutator.On("Enabled", mock.Anything).Return(true)
+	mutator.On("Mutate", mock.Anything, mock.Anything).Return(errors.New("BOOM"))
 
 	return mutator
 }
@@ -422,4 +427,68 @@ func getTestNamespace() *corev1.Namespace {
 			},
 		},
 	}
+}
+
+// TestDoubleInjection is special test case for making sure that we do not inject the init-container 2 times incase 1 of the mutators are skipped.
+// The mutators are intentionally NOT mocked, as to mock them properly for this scenario you would need to basically reimplement them in the mock.
+// This test is necessary as the current interface is not ready to handle the scenario properly.
+// Scenario: OneAgent mutation is Enabled however needs to be skipped due to not meeting the requirements, so it needs to annotate but not fully inject
+func TestDoubleInjection(t *testing.T) {
+	noCommunicationHostDK := getTestDynakube()
+	fakeClient := fake.NewClient(noCommunicationHostDK, getTestNamespace())
+	podWebhook := &Injector{
+		recorder:     events.NewRecorder(record.NewFakeRecorder(10)),
+		webhookImage: testImage,
+		clusterID:    testClusterID,
+		mutators: []dtwebhook.PodMutator{
+			oamutation.NewMutator(
+				testImage,
+				testClusterID,
+				fakeClient,
+				fakeClient,
+			),
+			metadata.NewMutator(
+				testNamespaceName,
+				fakeClient,
+				fakeClient,
+				fakeClient,
+			),
+		},
+	}
+
+	pod := getTestPod()
+
+	request := createTestMutationRequest(noCommunicationHostDK)
+	request.Pod = pod
+
+	// simulate initial mutation, annotations + init-container <== skip in case on communication hosts
+	err := podWebhook.Handle(context.Background(), request)
+	require.NoError(t, err)
+	require.NotNil(t, findInstallContainer(pod.Spec.InitContainers))
+
+	// adding communicationHost to the dynakube to make the scenario more complicated
+	// it shouldn't try to mutate the pod because now it could be enabled, that is just asking for trouble.
+	communicationHostDK := getTestDynakube()
+	communicationHostDK.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{{Host: "test"}}
+	fakeClient = fake.NewClient(communicationHostDK, getTestNamespace())
+	podWebhook.mutators = []dtwebhook.PodMutator{
+		oamutation.NewMutator(
+			testImage,
+			testClusterID,
+			fakeClient,
+			fakeClient,
+		),
+		metadata.NewMutator(
+			testNamespaceName,
+			fakeClient,
+			fakeClient,
+			fakeClient,
+		),
+	}
+
+	// simulate a Reinvocation
+	request = createTestMutationRequest(noCommunicationHostDK)
+	request.Pod = pod
+	err = podWebhook.Handle(context.Background(), request)
+	require.NoError(t, err)
 }

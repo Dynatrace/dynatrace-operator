@@ -8,17 +8,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Injector struct {
-	recorder     events.EventRecorder
-	webhookImage string
-	clusterID    string
+	recorder            events.EventRecorder
+	isContainerInjected func(corev1.Container) bool
+	webhookImage        string
+	clusterID           string
 
 	mutators []dtwebhook.PodMutator
-	isContainerInjected func(corev1.Container) bool
 }
 
 var _ dtwebhook.PodInjector = &Injector{}

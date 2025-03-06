@@ -90,6 +90,7 @@ func TestAddNetworkZoneEnv(t *testing.T) {
 
 func TestAddDeploymentMetadataEnv(t *testing.T) {
 	clusterID := "cluster-id"
+
 	t.Run("Add cloudNative deployment metadata env", func(t *testing.T) {
 		container := &corev1.Container{}
 		dk := dynakube.DynaKube{
