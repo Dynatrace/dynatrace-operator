@@ -112,9 +112,10 @@ func (r *Reconciler) getData() (map[string]string, error) {
 	}
 
 	if certificates.IsAGCertificateNeeded(r.dk) {
-		otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath)
+		log.Info("add tls certs to exporter")
+		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
 	} else if certificates.IsCACertificateNeeded(r.dk) {
-		otelcgen.WithCA(otelcconsts.TrustedCAVolumePath)
+		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))
 	}
 
 	if r.dk.TelemetryService().IsEnabled() && r.dk.TelemetryService().Spec.TlsRefName != "" {

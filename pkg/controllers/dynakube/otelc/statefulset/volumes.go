@@ -62,6 +62,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	}
 
 	if certificates.IsAGCertificateNeeded(dk) {
+		log.Info("add TLS certs")
 		volumes = append(volumes, corev1.Volume{
 			Name: caCertsVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -154,7 +155,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	if certificates.IsAGCertificateNeeded(dk) {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      caCertsVolumeName,
-			MountPath: otelcconsts.ActiveGateTLSCertVolumePath,
+			MountPath: otelcconsts.ActiveGateTLSCertCAVolumeMountPath,
 			ReadOnly:  true,
 		})
 	} else if certificates.IsCACertificateNeeded(dk) {

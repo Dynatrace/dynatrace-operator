@@ -10,12 +10,8 @@ var (
 
 func (c *Config) buildExporters() map[component.ID]component.Config {
 	serverConfig := &ServerConfig{
-		Endpoint: c.buildExportersEndpoint(),
-		TLSSetting: TLSSetting{
-			CAFile:   "",
-			KeyFile:  "",
-			CertFile: "",
-		},
+		Endpoint:   c.buildExportersEndpoint(),
+		TLSSetting: &TLSSetting{},
 	}
 
 	if c.caFile != "" {
