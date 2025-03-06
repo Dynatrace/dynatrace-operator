@@ -16,7 +16,7 @@ const (
 	ReleaseStageEnv        = "DT_RELEASE_STAGE"
 	ReleaseBuildVersionEnv = "DT_RELEASE_BUILD_VERSION"
 
-	EmptyConnectionInfoReason  = "EmptyConnectionInfo"
-	UnknownCodeModuleReason    = "UnknownCodeModule"
-	EmptyTenantUUIDReason      = "EmptyTenantUUID"
+	EmptyConnectionInfoReason = "EmptyConnectionInfo"
+	UnknownCodeModuleReason   = "UnknownCodeModule"
+	EmptyTenantUUIDReason     = "EmptyTenantUUID"
 )

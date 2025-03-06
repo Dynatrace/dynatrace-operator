@@ -19,8 +19,10 @@ type Injector struct {
 	mutators []dtwebhook.PodMutator
 }
 
-func NewInjector(apiReader client.Reader, kubeClient, metaClient client.Client, recorder events.EventRecorder, clusterID, webhookPodImage, webhookNamespace string) Injector { //nolint:revive
-	return Injector{
+var _ dtwebhook.PodInjector = &Injector{}
+
+func NewInjector(apiReader client.Reader, kubeClient, metaClient client.Client, recorder events.EventRecorder, clusterID, webhookPodImage, webhookNamespace string) *Injector { //nolint:revive
+	return &Injector{
 		webhookImage: webhookPodImage,
 		recorder:     recorder,
 		clusterID:    clusterID,

@@ -15,8 +15,10 @@ type Injector struct {
 	metaClient client.Client
 }
 
-func NewInjector(apiReader client.Reader, metaClient client.Client, recorder events.EventRecorder) Injector {
-	return Injector{
+var _ dtwebhook.PodInjector = &Injector{}
+
+func NewInjector(apiReader client.Reader, metaClient client.Client, recorder events.EventRecorder) *Injector {
+	return &Injector{
 		apiReader:  apiReader,
 		metaClient: metaClient,
 		recorder:   recorder,
@@ -26,4 +28,3 @@ func NewInjector(apiReader client.Reader, metaClient client.Client, recorder eve
 func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
 	return nil
 }
-

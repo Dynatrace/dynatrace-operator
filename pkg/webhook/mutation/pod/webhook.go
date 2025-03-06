@@ -11,8 +11,6 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
-	v1 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
-	v2 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -40,8 +38,8 @@ func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string) er
 }
 
 type webhook struct {
-	v1 v1.Injector
-	v2 v2.Injector
+	v1 dtwebhook.PodInjector
+	v2 dtwebhook.PodInjector
 
 	recorder events.EventRecorder
 	decoder  admission.Decoder
