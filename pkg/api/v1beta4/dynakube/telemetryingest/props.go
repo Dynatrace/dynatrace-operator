@@ -4,9 +4,7 @@ import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 
 const (
 	nameSuffix = "-telemetry-ingest"
-
 )
-
 
 func (spec *Spec) GetProtocols() otelcgen.Protocols {
 	if spec == nil {
