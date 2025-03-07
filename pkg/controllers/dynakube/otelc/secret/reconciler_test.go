@@ -2,6 +2,7 @@ package secret
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	schemeFake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -80,6 +81,57 @@ func TestSecretCreation(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Empty(t, apiTokenSecret)
+	})
+}
+
+func TestEndpoint(t *testing.T) {
+	t.Run("in-cluster ActiveGate", func(t *testing.T) {
+		dk := createDynaKube(true)
+		apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID)
+		dk.Spec.APIURL = apiUrl
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{"dynatrace-api"},
+		}
+
+		objs := []client.Object{
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      consts.TelemetryApiCredentialsSecretName,
+					Namespace: dk.Namespace,
+				},
+			},
+		}
+
+		clt := schemeFake.NewClient(objs...)
+		r := NewReconciler(clt, clt, &dk)
+
+		endpoint, err := r.getDtEndpoint()
+		require.NoError(t, err)
+
+		expected := fmt.Sprintf("https://%s-activegate.dynatrace.svc/e/%s/api/v2/otlp", dk.Name, testTenantUUID)
+		assert.Equal(t, expected, string(endpoint))
+	})
+
+	t.Run("public ActiveGate", func(t *testing.T) {
+		dk := createDynaKube(true)
+		apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID)
+		dk.Spec.APIURL = apiUrl
+
+		objs := []client.Object{
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      consts.TelemetryApiCredentialsSecretName,
+					Namespace: dk.Namespace,
+				},
+			},
+		}
+
+		clt := schemeFake.NewClient(objs...)
+		r := NewReconciler(clt, clt, &dk)
+
+		endpoint, err := r.getDtEndpoint()
+		require.NoError(t, err)
+		assert.Equal(t, apiUrl+"/v2/otlp", string(endpoint))
 	})
 }
 
