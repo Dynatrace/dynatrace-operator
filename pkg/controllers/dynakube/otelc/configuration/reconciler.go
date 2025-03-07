@@ -106,6 +106,12 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
 	}
 
+	if r.dk.IsAGCertificateNeeded() {
+		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
+	} else if r.dk.IsCACertificateNeeded() {
+		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))
+	}
+
 	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TlsRefName != "" {
 		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSKeyDataName)))
 	}
