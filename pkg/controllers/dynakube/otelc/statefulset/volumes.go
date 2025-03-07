@@ -3,7 +3,6 @@ package statefulset
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	appsv1 "k8s.io/api/apps/v1"
@@ -80,7 +79,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
-		if certificates.IsAGCertificateNeeded(dk) {
+		if dk.IsAGCertificateNeeded() {
 			volumes = append(volumes, corev1.Volume{
 				Name: agCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -161,7 +160,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
-		if certificates.IsAGCertificateNeeded(dk) {
+		if dk.IsAGCertificateNeeded() {
 			vm = append(vm, corev1.VolumeMount{
 				Name:      agCertVolumeName,
 				MountPath: otelcconsts.ActiveGateTLSCertCAVolumeMountPath,
@@ -188,5 +187,5 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 }
 
 func isTrustedCAsVolumeNeeded(dk *dynakube.DynaKube) bool {
-	return dk.IsExtensionsEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && certificates.IsCACertificateNeeded(dk)
+	return dk.IsExtensionsEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
 }

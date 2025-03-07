@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/certificates"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -107,9 +106,9 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
 	}
 
-	if certificates.IsAGCertificateNeeded(r.dk) {
+	if r.dk.IsAGCertificateNeeded() {
 		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
-	} else if certificates.IsCACertificateNeeded(r.dk) {
+	} else if r.dk.IsCACertificateNeeded() {
 		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))
 	}
 
