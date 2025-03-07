@@ -15,7 +15,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: dynatrace-telemetry-service
+  name: dynatrace-telemetry-ingest
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.openTelemetryCollectorLabels" . | nindent 4 }}
@@ -52,14 +52,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: dynatrace-telemetry-service
+  name: dynatrace-telemetry-ingest
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.openTelemetryCollectorLabels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: dynatrace-telemetry-service
+  name: dynatrace-telemetry-ingest
 subjects:
   - kind: ServiceAccount
     name: dynatrace-opentelemetry-collector

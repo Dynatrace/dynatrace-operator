@@ -25,8 +25,8 @@ import (
 
 const (
 	serviceAccountName                                  = "dynatrace-opentelemetry-collector"
-	annotationTelemetryIngestSecretHash                 = api.InternalFlagPrefix + "telemetry-service-secret-hash"
-	annotationTelemetryIngestConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-service-config-hash"
+	annotationTelemetryIngestSecretHash                 = api.InternalFlagPrefix + "telemetry-ingest-secret-hash"
+	annotationTelemetryIngestConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-ingest-config-hash"
 )
 
 type Reconciler struct {
