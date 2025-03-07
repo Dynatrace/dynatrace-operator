@@ -49,7 +49,7 @@
 |:-|:-|:-|:-|
 |`ingestRuleMatchers`||-|array|
 
-### .spec.telemetryService
+### .spec.telemetryIngest
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|

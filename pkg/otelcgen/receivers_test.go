@@ -13,7 +13,8 @@ func TestNewConfig(t *testing.T) {
 	t.Run("with statsd protocol only", func(t *testing.T) {
 		cfg, err := NewConfig(
 			"test",
-			WithProtocols("statsd"),
+			Protocols{StatsdProtocol},
+			WithReceivers(),
 		)
 		require.NoError(t, err)
 		c, err := cfg.Marshal()
@@ -28,8 +29,9 @@ func TestNewConfig(t *testing.T) {
 	t.Run("with zipkin protocol only with tls key and tls cert", func(t *testing.T) {
 		cfg, err := NewConfig(
 			"test",
+			Protocols{ZipkinProtocol},
 			WithTLS("/run/opensignals/tls/tls.crt", "/run/opensignals/tls/tls.key"),
-			WithProtocols("zipkin"),
+			WithReceivers(),
 		)
 		require.NoError(t, err)
 		c, err := cfg.Marshal()
@@ -43,8 +45,9 @@ func TestNewConfig(t *testing.T) {
 	t.Run("with jaeger protocol only with tls key and tls cert", func(t *testing.T) {
 		cfg, err := NewConfig(
 			"test",
+			Protocols{JaegerProtocol},
 			WithTLS("/run/opensignals/tls/tls.crt", "/run/opensignals/tls/tls.key"),
-			WithProtocols("jaeger"),
+			WithReceivers(),
 		)
 		require.NoError(t, err)
 		c, err := cfg.Marshal()
@@ -59,8 +62,9 @@ func TestNewConfig(t *testing.T) {
 	t.Run("with otlp protocol only with tls key and tls cert", func(t *testing.T) {
 		cfg, err := NewConfig(
 			"test",
+			Protocols{OtlpProtocol},
 			WithTLS("/run/opensignals/tls/tls.crt", "/run/opensignals/tls/tls.key"),
-			WithProtocols("otlp"),
+			WithReceivers(),
 		)
 		require.NoError(t, err)
 		c, err := cfg.Marshal()
@@ -75,7 +79,8 @@ func TestNewConfig(t *testing.T) {
 	t.Run("with unknown protocol", func(t *testing.T) {
 		_, err := NewConfig(
 			"",
-			WithProtocols("unknown"),
+			Protocols{"unknown"},
+			WithReceivers(),
 		)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "unknown protocol")

@@ -12,10 +12,12 @@ import (
 func TestNewConfigFull(t *testing.T) {
 	cfg, err := NewConfig(
 		"test",
+		Protocols{OtlpProtocol, JaegerProtocol, StatsdProtocol, ZipkinProtocol},
 		WithCA("/run/opensignals/cacerts/certs"),
 		WithApiToken("test-token"),
 		WithTLS("/run/opensignals/tls/tls.crt", "/run/opensignals/tls/tls.key"),
-		WithProtocols("otlp", "jaeger", "zipkin", "statsd"),
+		WithReceivers(),
+		WithExportersEndpoint("exporters-test-endpoint"),
 		WithExtensions(),
 		WithExporters(),
 		WithServices(),

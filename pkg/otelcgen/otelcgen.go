@@ -65,6 +65,8 @@ var (
 	OtlpID   = component.MustNewID(string(OtlpProtocol))
 	StatsdID = component.MustNewID(string(StatsdProtocol))
 	ZipkinID = component.MustNewID(string(ZipkinProtocol))
+
+	RegisteredProtocols = Protocols{OtlpProtocol, JaegerProtocol, StatsdProtocol, ZipkinProtocol}
 )
 
 type Config struct {
@@ -83,20 +85,23 @@ type Config struct {
 	// Extensions is a map of ComponentID to extensions.
 	Extensions map[component.ID]component.Config `mapstructure:"extensions"`
 
-	tlsKey   string
-	tlsCert  string
-	caFile   string
-	podIP    string
-	apiToken string
+	tlsKey    string
+	tlsCert   string
+	caFile    string
+	podIP     string
+	endpoint  string
+	apiToken  string
+	protocols Protocols
 
 	Service ServiceConfig `mapstructure:"service"`
 }
 
 type Option func(c *Config) error
 
-func NewConfig(podIP string, options ...Option) (*Config, error) {
+func NewConfig(podIP string, protocols Protocols, options ...Option) (*Config, error) {
 	c := Config{
-		podIP: podIP,
+		podIP:     podIP,
+		protocols: protocols,
 	}
 
 	for _, opt := range options {
@@ -119,7 +124,12 @@ func (c *Config) Marshal() ([]byte, error) {
 }
 
 func (c *Config) buildTLSSetting() *TLSSetting {
+	if c.tlsCert == "" && c.tlsKey == "" {
+		return nil
+	}
+
 	tls := &TLSSetting{}
+
 	if c.tlsCert != "" {
 		tls.CertFile = c.tlsCert
 	}
@@ -135,13 +145,32 @@ func (c *Config) buildEndpoint(port uint) string {
 	return fmt.Sprintf("%s:%d", c.podIP, port)
 }
 
-func (c *Config) buildEndpointWithoutPort() string {
-	return c.podIP
+func (c *Config) buildExportersEndpoint() string {
+	return c.endpoint
 }
 
-func WithProtocols(protocols ...string) Option {
+func (c *Config) protocolsToIDs() []component.ID {
+	ids := []component.ID{}
+
+	for _, p := range c.protocols {
+		switch p {
+		case JaegerProtocol:
+			ids = append(ids, JaegerID)
+		case ZipkinProtocol:
+			ids = append(ids, ZipkinID)
+		case StatsdProtocol:
+			ids = append(ids, StatsdID)
+		case OtlpProtocol:
+			ids = append(ids, OtlpID)
+		}
+	}
+
+	return ids
+}
+
+func WithReceivers() Option {
 	return func(c *Config) error {
-		receivers, err := c.buildReceivers(protocols)
+		receivers, err := c.buildReceivers()
 		if err != nil {
 			return err
 		}
@@ -212,6 +241,14 @@ func WithCA(caFile string) Option {
 func WithApiToken(apiToken string) Option {
 	return func(c *Config) error {
 		c.apiToken = apiToken
+
+		return nil
+	}
+}
+
+func WithExportersEndpoint(endpoint string) Option {
+	return func(c *Config) error {
+		c.endpoint = endpoint
 
 		return nil
 	}

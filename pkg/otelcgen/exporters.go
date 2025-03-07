@@ -10,7 +10,7 @@ var (
 
 func (c *Config) buildExporters() map[component.ID]component.Config {
 	serverConfig := &ServerConfig{
-		Endpoint:   c.buildEndpointWithoutPort(),
+		Endpoint:   c.buildExportersEndpoint(),
 		TLSSetting: &TLSSetting{},
 	}
 
@@ -24,6 +24,7 @@ func (c *Config) buildExporters() map[component.ID]component.Config {
 	}
 
 	return map[component.ID]component.Config{
+		debug:    nil,
 		otlphttp: serverConfig,
 	}
 }

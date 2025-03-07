@@ -6214,8 +6214,8 @@ spec:
                   Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
                   Set to true if you want to skip certification validation checks.
                 type: boolean
-              telemetryService:
-                description: When a TelemetryServiceSpec is provided, the OTEL collector
+              telemetryIngest:
+                description: When a TelemetryIngestSpec is provided, the OTEL collector
                   is deployed by the operator.
                 properties:
                   protocols:

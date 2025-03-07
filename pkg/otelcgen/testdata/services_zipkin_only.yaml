@@ -1,0 +1,20 @@
+connectors: {}
+exporters: {}
+extensions: {}
+processors: {}
+receivers: {}
+service:
+  extensions:
+    - health_check
+  pipelines:
+    traces:
+      exporters:
+        - otlphttp
+        - debug
+      receivers:
+        - zipkin
+      processors:
+        - memory_limiter
+        - k8sattributes
+        - transform
+        - batch/traces
