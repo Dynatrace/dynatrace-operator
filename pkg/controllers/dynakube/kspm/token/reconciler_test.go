@@ -47,6 +47,7 @@ func TestTokenCreation(t *testing.T) {
 
 		err := ensureKSPMSecret(ctx, clt, clt, &dk)
 		require.Error(t, err)
+		assert.Equal(t, conditions.KubeApiErrorReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
 	})
 
 	t.Run("removes secret if exists", func(t *testing.T) {
