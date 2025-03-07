@@ -106,11 +106,6 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
 	}
 
-	// TODO what cert(s) does exporter need (dk.trustedCAs or dk.tlsSecretName)
-	// if r.dk.ActiveGate().IsApiEnabled() {
-	// otelcgen.WithCA(otelcconsts.TrustedCAVolumePath)
-	// }
-
 	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TlsRefName != "" {
 		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSKeyDataName)))
 	}
