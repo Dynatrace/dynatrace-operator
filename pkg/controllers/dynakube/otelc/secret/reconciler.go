@@ -83,16 +83,17 @@ func (r *Reconciler) ensureTelemetryIngestApiCredentialsSecret(ctx context.Conte
 }
 
 func (r *Reconciler) getDtEndpoint() ([]byte, error) {
-	tenantUUID, err := r.dk.TenantUUID()
-	if err != nil {
-		return nil, err
-	}
 
 	if r.dk.ActiveGate().IsApiEnabled() {
+		tenantUUID, err := r.dk.TenantUUID()
+		if err != nil {
+			return nil, err
+		}
+
 		return []byte(fmt.Sprintf("https://%s-activegate.dynatrace.svc/e/%s/api/v2/otlp", r.dk.Name, tenantUUID)), nil
 	}
 
-	return []byte(fmt.Sprintf("https://%s.%s/api/v2/otlp", tenantUUID, r.dk.ApiUrlHost())), nil
+	return []byte(fmt.Sprintf("https://%s/api/v2/otlp", r.dk.ApiUrlHost())), nil
 }
 
 func (r *Reconciler) generateTelemetryIngestApiCredentialsSecret(name string) (secret *corev1.Secret, err error) {
