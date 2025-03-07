@@ -107,6 +107,7 @@ func TestEndpoint(t *testing.T) {
 
 		endpoint, err := r.getDtEndpoint()
 		require.NoError(t, err)
+
 		expected := fmt.Sprintf("https://%s-activegate.dynatrace.svc/e/%s/api/v2/otlp", dk.Name, testTenantUUID)
 		assert.Equal(t, expected, string(endpoint))
 	})
