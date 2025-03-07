@@ -27,10 +27,10 @@ import (
 )
 
 const (
-	testDynakubeName           = "dynakube"
-	testNamespaceName          = "dynatrace"
-	testOtelPullSecret         = "otelc-pull-secret"
-	testTelemetryServiceSecret = "test-ts-secret"
+	testDynakubeName          = "dynakube"
+	testNamespaceName         = "dynatrace"
+	testOtelPullSecret        = "otelc-pull-secret"
+	testTelemetryIngestSecret = "test-ts-secret"
 )
 
 func TestReconcile(t *testing.T) {

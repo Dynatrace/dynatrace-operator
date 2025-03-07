@@ -3,14 +3,14 @@ package statefulset
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestContainer(t *testing.T) {
-	t.Run("only TelemetryService enabled", func(t *testing.T) {
+	t.Run("only TelemetryIngest enabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.TelemetryService = &telemetryservice.Spec{}
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
 		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs(dk))
 	})
@@ -24,9 +24,9 @@ func TestContainer(t *testing.T) {
 		)
 	})
 
-	t.Run("TelemetryService and EEC enabled", func(t *testing.T) {
+	t.Run("TelemetryIngest and EEC enabled", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TelemetryService = &telemetryservice.Spec{}
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
 		assert.Equal(
 			t,

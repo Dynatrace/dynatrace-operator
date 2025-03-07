@@ -35,21 +35,21 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.TelemetryService().IsEnabled() {
-		return r.ensureTelemetryServiceApiCredentialsSecret(ctx)
+	if r.dk.TelemetryIngest().IsEnabled() {
+		return r.ensureTelemetryIngestApiCredentialsSecret(ctx)
 	}
 
-	return r.removeTelemetryServiceApiCredentialsSecret(ctx)
+	return r.removeTelemetryIngestApiCredentialsSecret(ctx)
 }
 
-func (r *Reconciler) ensureTelemetryServiceApiCredentialsSecret(ctx context.Context) error {
+func (r *Reconciler) ensureTelemetryIngestApiCredentialsSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.apiReader, log)
 	_, err := query.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiCredentialsSecretName, Namespace: r.dk.Namespace})
 
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new secret for telemetry api credentials")
 
-		secretConfig, err := r.generateTelemetryServiceApiCredentialsSecret(consts.TelemetryApiCredentialsSecretName)
+		secretConfig, err := r.generateTelemetryIngestApiCredentialsSecret(consts.TelemetryApiCredentialsSecretName)
 
 		if err != nil {
 			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, err)
@@ -91,7 +91,7 @@ func (r *Reconciler) getDtEndpoint() ([]byte, error) {
 	return []byte(fmt.Sprintf("https://%s.%s/api/v2/otlp", tenantUUID, r.dk.ApiUrlHost())), nil
 }
 
-func (r *Reconciler) generateTelemetryServiceApiCredentialsSecret(name string) (secret *corev1.Secret, err error) {
+func (r *Reconciler) generateTelemetryIngestApiCredentialsSecret(name string) (secret *corev1.Secret, err error) {
 	secretData := make(map[string][]byte)
 
 	dtEndpoint, err := r.getDtEndpoint()
@@ -114,7 +114,7 @@ func (r *Reconciler) generateTelemetryServiceApiCredentialsSecret(name string) (
 	return secretConfig, nil
 }
 
-func (r *Reconciler) removeTelemetryServiceApiCredentialsSecret(ctx context.Context) error {
+func (r *Reconciler) removeTelemetryIngestApiCredentialsSecret(ctx context.Context) error {
 	if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
 		return nil // no condition == nothing is there to clean up
 	}

@@ -34,7 +34,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.TelemetryService().IsEnabled() {
+	if !r.dk.TelemetryIngest().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
@@ -111,7 +111,7 @@ func (r *Reconciler) getData() (map[string]string, error) {
 	// otelcgen.WithCA(otelcconsts.TrustedCAVolumePath)
 	// }
 
-	if r.dk.TelemetryService().IsEnabled() && r.dk.TelemetryService().Spec.TlsRefName != "" {
+	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TlsRefName != "" {
 		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSKeyDataName)))
 	}
 
@@ -123,7 +123,7 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithServices(),
 	)
 
-	config, err := otelcgen.NewConfig(myPodIp, r.dk.TelemetryService().GetProtocols(), options...)
+	config, err := otelcgen.NewConfig(myPodIp, r.dk.TelemetryIngest().GetProtocols(), options...)
 	if err != nil {
 		return nil, err
 	}

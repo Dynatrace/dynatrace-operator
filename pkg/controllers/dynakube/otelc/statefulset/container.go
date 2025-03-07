@@ -48,7 +48,7 @@ func buildArgs(dk *dynakube.DynaKube) []string {
 		args = append(args, fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", dk.ExtensionsServiceNameFQDN(), consts.OtelCollectorComPort, otelcSecretTokenFilePath))
 	}
 
-	if dk.TelemetryService().IsEnabled() {
+	if dk.TelemetryIngest().IsEnabled() {
 		args = append(args, "--config=file:///config/telemetry.yaml")
 	}
 

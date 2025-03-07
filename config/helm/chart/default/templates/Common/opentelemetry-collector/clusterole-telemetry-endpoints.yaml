@@ -1,4 +1,4 @@
-{{- if .Values.rbac.telemetryService.create }}
+{{- if .Values.rbac.telemetryIngest.create }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");

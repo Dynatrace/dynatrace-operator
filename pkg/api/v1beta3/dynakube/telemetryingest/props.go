@@ -1,4 +1,4 @@
-package telemetryservice
+package telemetryingest
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 
@@ -23,14 +23,14 @@ func (spec *Spec) GetProtocols() otelcgen.Protocols {
 	return protocols
 }
 
-func (ts *TelemetryService) SetName(name string) {
+func (ts *TelemetryIngest) SetName(name string) {
 	ts.name = name
 }
 
-func (ts *TelemetryService) GetName() string {
+func (ts *TelemetryIngest) GetName() string {
 	return ts.name + nameSuffix
 }
 
-func (ts *TelemetryService) IsEnabled() bool {
+func (ts *TelemetryIngest) IsEnabled() bool {
 	return ts.Spec != nil
 }

@@ -12,58 +12,58 @@ import (
 )
 
 const (
-	errorTelemetryServiceNotEnoughProtocols  = `DynaKube's specification enables the TelemetryService feature, at least one Protocol has to be specified.`
-	errorTelemetryServiceUnknownProtocols    = `DynaKube's specification enables the TelemetryService feature, unsupported protocols found on the Protocols list.`
-	errorTelemetryServiceDuplicatedProtocols = `DynaKube's specification enables the TelemetryService feature, duplicated protocols found on the Protocols list.`
-	errorTelemetryServiceNoDNS1053Label      = `DynaKube's specification enables the TelemetryService feature, the telemetry service name violates DNS-1035.
+	errorTelemetryIngestNotEnoughProtocols  = `DynaKube's specification enables the TelemetryIngest feature, at least one Protocol has to be specified.`
+	errorTelemetryIngestUnknownProtocols    = `DynaKube's specification enables the TelemetryIngest feature, unsupported protocols found on the Protocols list.`
+	errorTelemetryIngestDuplicatedProtocols = `DynaKube's specification enables the TelemetryIngest feature, duplicated protocols found on the Protocols list.`
+	errorTelemetryIngestNoDNS1053Label      = `DynaKube's specification enables the TelemetryIngest feature, the telemetry service name violates DNS-1035.
     [The length limit for the name is %d. Additionally a DNS-1035 name must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')]
 	`
 )
 
-func emptyTelemetryServiceProtocolsList(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.TelemetryService().IsEnabled() {
+func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
 
-	if len(dk.TelemetryService().GetProtocols()) == 0 {
+	if len(dk.TelemetryIngest().GetProtocols()) == 0 {
 		log.Info("requested dynakube specify empty list of Protocols")
 
-		return errorTelemetryServiceNotEnoughProtocols
+		return errorTelemetryIngestNotEnoughProtocols
 	}
 
 	return ""
 }
 
-func unknownTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.TelemetryService().IsEnabled() {
+func unknownTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
 
 	var unknownProtocols []string
 
-	for _, protocol := range dk.TelemetryService().GetProtocols() {
+	for _, protocol := range dk.TelemetryIngest().GetProtocols() {
 		if !slices.Contains(otelcgen.RegisteredProtocols, protocol) {
 			unknownProtocols = append(unknownProtocols, string(protocol))
 		}
 	}
 
 	if len(unknownProtocols) > 0 {
-		log.Info("requested dynakube specify unknown TelemetryService protocol(s)", "protocols", strings.Join(unknownProtocols, ","))
+		log.Info("requested dynakube specify unknown TelemetryIngest protocol(s)", "protocols", strings.Join(unknownProtocols, ","))
 
-		return errorTelemetryServiceUnknownProtocols
+		return errorTelemetryIngestUnknownProtocols
 	}
 
 	return ""
 }
 
-func duplicatedTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.TelemetryService().IsEnabled() {
+func duplicatedTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
 
 	protocolsOccurrences := map[otelcgen.Protocol]int{}
 
-	for _, protocol := range dk.TelemetryService().GetProtocols() {
+	for _, protocol := range dk.TelemetryIngest().GetProtocols() {
 		if _, ok := protocolsOccurrences[protocol]; !ok {
 			protocolsOccurrences[protocol] = 1
 		} else {
@@ -80,32 +80,32 @@ func duplicatedTelemetryServiceProtocols(_ context.Context, _ *Validator, dk *dy
 	}
 
 	if len(duplicatedProtocols) > 0 {
-		log.Info("requested dynakube specify duplicated TelemetryService protocol(s)", "protocols", strings.Join(duplicatedProtocols, ","))
+		log.Info("requested dynakube specify duplicated TelemetryIngest protocol(s)", "protocols", strings.Join(duplicatedProtocols, ","))
 
-		return errorTelemetryServiceDuplicatedProtocols
+		return errorTelemetryIngestDuplicatedProtocols
 	}
 
 	return ""
 }
 
-func invalidTelemetryServiceName(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.TelemetryService().IsEnabled() {
+func invalidTelemetryIngestName(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
 
 	var errs []string
 
-	if dk.TelemetryService().ServiceName != "" {
-		errs = validation.IsDNS1035Label(dk.Spec.TelemetryService.ServiceName)
+	if dk.TelemetryIngest().ServiceName != "" {
+		errs = validation.IsDNS1035Label(dk.Spec.TelemetryIngest.ServiceName)
 	}
 
 	if len(errs) == 0 {
 		return ""
 	}
 
-	return invalidTelemetryServiceNameErrorMessage()
+	return invalidTelemetryIngestNameErrorMessage()
 }
 
-func invalidTelemetryServiceNameErrorMessage() string {
-	return fmt.Sprintf(errorTelemetryServiceNoDNS1053Label, validation.DNS1035LabelMaxLength)
+func invalidTelemetryIngestNameErrorMessage() string {
+	return fmt.Sprintf(errorTelemetryIngestNoDNS1053Label, validation.DNS1035LabelMaxLength)
 }

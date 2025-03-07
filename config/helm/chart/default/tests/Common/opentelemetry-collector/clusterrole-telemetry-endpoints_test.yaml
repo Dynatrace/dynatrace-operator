@@ -79,7 +79,7 @@ tests:
 
   - it: shouldn't exist if turned off
     set:
-      rbac.telemetryService.create: false
+      rbac.telemetryIngest.create: false
     asserts:
       - hasDocuments:
         count: 0

@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -45,7 +45,7 @@ func TestSecretCreation(t *testing.T) {
 
 		r := NewReconciler(clt, clt, &dk)
 
-		err = r.ensureTelemetryServiceApiCredentialsSecret(ctx)
+		err = r.ensureTelemetryIngestApiCredentialsSecret(ctx)
 		require.NoError(t, err)
 
 		var apiCredsSecret corev1.Secret
@@ -83,7 +83,7 @@ func TestSecretCreation(t *testing.T) {
 	})
 }
 
-func createDynaKube(telemetryServiceEnabled bool) dynakube.DynaKube {
+func createDynaKube(telemetryIngestEnabled bool) dynakube.DynaKube {
 	dk := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-dk",
@@ -100,10 +100,10 @@ func createDynaKube(telemetryServiceEnabled bool) dynakube.DynaKube {
 		},
 	}
 
-	if telemetryServiceEnabled {
-		dk.TelemetryService().Spec = &telemetryservice.Spec{}
+	if telemetryIngestEnabled {
+		dk.TelemetryIngest().Spec = &telemetryingest.Spec{}
 	} else {
-		dk.TelemetryService().Spec = nil
+		dk.TelemetryIngest().Spec = nil
 	}
 
 	return dk

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/stretchr/testify/assert"
@@ -23,14 +23,14 @@ const (
 	testServiceName   = "test-service-name"
 )
 
-func getTestDynakube(telemetryServiceSpec *telemetryservice.Spec) *dynakube.DynaKube {
+func getTestDynakube(telemetryIngestSpec *telemetryingest.Spec) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeName,
 			Namespace: testNamespaceName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			TelemetryService: telemetryServiceSpec,
+			TelemetryIngest: telemetryIngestSpec,
 		},
 		Status: dynakube.DynaKubeStatus{},
 	}
@@ -39,12 +39,12 @@ func getTestDynakube(telemetryServiceSpec *telemetryservice.Spec) *dynakube.Dyna
 func TestService(t *testing.T) {
 	t.Run("create service if it does not exist", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
-		dk := getTestDynakube(&telemetryservice.Spec{})
+		dk := getTestDynakube(&telemetryingest.Spec{})
 		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 8)
@@ -72,7 +72,7 @@ func TestService(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		err := mockK8sClient.Create(context.Background(), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.TelemetryService().GetName(),
+				Name:      dk.TelemetryIngest().GetName(),
 				Namespace: dk.Namespace,
 			},
 		})
@@ -82,7 +82,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -90,7 +90,7 @@ func TestService(t *testing.T) {
 	})
 	t.Run("create service for specified protocols", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
-		dk := getTestDynakube(&telemetryservice.Spec{
+		dk := getTestDynakube(&telemetryingest.Spec{
 			Protocols: []string{
 				string(otelcgen.ZipkinProtocol),
 				string(otelcgen.StatsdProtocol),
@@ -100,7 +100,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 2)
@@ -114,7 +114,7 @@ func TestService(t *testing.T) {
 	})
 	t.Run("custom service", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
-		dk := getTestDynakube(&telemetryservice.Spec{
+		dk := getTestDynakube(&telemetryingest.Spec{
 			ServiceName: testServiceName,
 		})
 		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
@@ -129,12 +129,12 @@ func TestService(t *testing.T) {
 	})
 	t.Run("update from default service to custom service", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
-		dk := getTestDynakube(&telemetryservice.Spec{})
+		dk := getTestDynakube(&telemetryingest.Spec{})
 		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, dk.Status.Conditions, 1)
@@ -143,14 +143,14 @@ func TestService(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
 
 		// update
-		dk.Spec.TelemetryService = &telemetryservice.Spec{
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{
 			ServiceName: testServiceName,
 		}
 		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryService().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 

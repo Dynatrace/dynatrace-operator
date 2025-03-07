@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/stretchr/testify/assert"
@@ -21,14 +21,14 @@ const (
 	testNamespaceName = "dynatrace"
 )
 
-func getTestDynakube(telemetryServiceSpec *telemetryservice.Spec) *dynakube.DynaKube {
+func getTestDynakube(telemetryIngestSpec *telemetryingest.Spec) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeName,
 			Namespace: testNamespaceName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			TelemetryService: telemetryServiceSpec,
+			TelemetryIngest: telemetryIngestSpec,
 		},
 		Status: dynakube.DynaKubeStatus{},
 	}
@@ -37,7 +37,7 @@ func getTestDynakube(telemetryServiceSpec *telemetryservice.Spec) *dynakube.Dyna
 func TestConfigurationConfigMap(t *testing.T) {
 	t.Run("create configmap if it does not exist", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
-		dk := getTestDynakube(&telemetryservice.Spec{})
+		dk := getTestDynakube(&telemetryingest.Spec{})
 		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
 		require.NoError(t, err)
 

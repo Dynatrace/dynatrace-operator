@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	serviceAccountName                                   = "dynatrace-opentelemetry-collector"
-	annotationTelemetryServiceSecretHash                 = api.InternalFlagPrefix + "telemetry-service-secret-hash"
-	annotationTelemetryServiceConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-service-config-hash"
+	serviceAccountName                                  = "dynatrace-opentelemetry-collector"
+	annotationTelemetryIngestSecretHash                 = api.InternalFlagPrefix + "telemetry-service-secret-hash"
+	annotationTelemetryIngestConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-service-config-hash"
 )
 
 type Reconciler struct {
@@ -46,7 +46,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.IsExtensionsEnabled() || r.dk.TelemetryService().IsEnabled() {
+	if r.dk.IsExtensionsEnabled() || r.dk.TelemetryIngest().IsEnabled() {
 		return r.createOrUpdateStatefulset(ctx)
 	} else { // do cleanup or
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
@@ -74,7 +74,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
-	if r.dk.TelemetryService().IsEnabled() {
+	if r.dk.TelemetryIngest().IsEnabled() {
 		if !r.checkDataIngestTokenExists(ctx) {
 			msg := "data ingest token is missing, but it's required for otel controller"
 			conditions.SetDataIngestTokenMissing(r.dk.Conditions(), dynakube.TokenConditionType, msg)
@@ -153,22 +153,22 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
 	}
 
-	if r.dk.TelemetryService().IsEnabled() && r.dk.TelemetryService().Spec.TlsRefName != "" {
-		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.TelemetryService().Spec.TlsRefName)
+	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TlsRefName != "" {
+		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.TelemetryIngest().Spec.TlsRefName)
 		if err != nil {
 			return nil, err
 		}
 
-		templateAnnotations[annotationTelemetryServiceSecretHash] = tlsSecretHash
+		templateAnnotations[annotationTelemetryIngestSecretHash] = tlsSecretHash
 	}
 
-	if r.dk.TelemetryService().IsEnabled() {
+	if r.dk.TelemetryIngest().IsEnabled() {
 		configConfigMapHash, err := r.calculateConfigMapHash(ctx, configuration.GetConfigMapName(r.dk.Name))
 		if err != nil {
 			return nil, err
 		}
 
-		templateAnnotations[annotationTelemetryServiceConfigurationConfigMapHash] = configConfigMapHash
+		templateAnnotations[annotationTelemetryIngestConfigurationConfigMapHash] = configConfigMapHash
 	}
 
 	return templateAnnotations, nil

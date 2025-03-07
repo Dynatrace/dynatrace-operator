@@ -3,7 +3,7 @@ package statefulset
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
@@ -130,11 +130,11 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("volumes and volume mounts with telemetry service custom TLS certificate", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TelemetryService = &telemetryservice.Spec{
-			TlsRefName: testTelemetryServiceSecret,
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{
+			TlsRefName: testTelemetryIngestSecret,
 		}
 
-		tlsSecret := getTLSSecret(dk.TelemetryService().Spec.TlsRefName, dk.Namespace, "crt", "key")
+		tlsSecret := getTLSSecret(dk.TelemetryIngest().Spec.TlsRefName, dk.Namespace, "crt", "key")
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 
@@ -144,7 +144,7 @@ func TestVolumes(t *testing.T) {
 			Name: customTlsCertVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.TelemetryService().Spec.TlsRefName,
+					SecretName: dk.TelemetryIngest().Spec.TlsRefName,
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.TLSCrtDataName,

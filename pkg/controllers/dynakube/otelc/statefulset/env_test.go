@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
@@ -61,7 +61,7 @@ func TestEnvironmentVariables(t *testing.T) {
 	})
 	t.Run("environment variables for open signal configuration", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.TelemetryService = &telemetryservice.Spec{}
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)

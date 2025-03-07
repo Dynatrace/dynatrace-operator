@@ -79,7 +79,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		)
 	}
 
-	if dk.TelemetryService().IsEnabled() {
+	if dk.TelemetryIngest().IsEnabled() {
 		envs = append(envs,
 			corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
