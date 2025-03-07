@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -204,6 +205,32 @@ func TestHandle(t *testing.T) {
 		assert.NotEqual(t, admission.Patched(""), resp)
 	})
 
+	t.Run("FF metadata-dk WITHOUT CSI ==> v1 injector", func(t *testing.T) {
+		dk := getTestMetadataDynakube()
+		dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureRemoteImageDownload: "true",
+		}
+
+		v1Injector := webhookmock.NewPodInjector(t)
+		v1Injector.On("Handle", mock.Anything, mock.Anything).Return(nil)
+		wh := createTestWebhook(
+			v1Injector,
+			webhookmock.NewPodInjector(t),
+			[]client.Object{
+				getTestNamespace(),
+				dk,
+			},
+		)
+
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		request := createTestAdmissionRequest(getTestPod())
+
+		resp := wh.Handle(ctx, *request)
+		require.NotNil(t, resp)
+		assert.NotEqual(t, admission.Patched(""), resp)
+	})
+
 	t.Run("FF appmon-dk WITH CSI ==> v1 injector", func(t *testing.T) {
 		dk := getTestDynakubeDefaultAppMon()
 		dk.Annotations = map[string]string{
@@ -340,6 +367,17 @@ func getTestDynakubeDefaultAppMon() *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+			},
+		},
+	}
+}
+
+func getTestMetadataDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		ObjectMeta: getTestDynakubeMeta(),
+		Spec: dynakube.DynaKubeSpec{
+			MetadataEnrichment: dynakube.MetadataEnrichment{
+				Enabled: ptr.To(true),
 			},
 		},
 	}
