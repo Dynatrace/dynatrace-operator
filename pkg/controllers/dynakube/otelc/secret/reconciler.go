@@ -73,6 +73,10 @@ func (r *Reconciler) ensureTelemetryIngestApiCredentialsSecret(ctx context.Conte
 		}
 
 		conditions.SetSecretCreated(r.dk.Conditions(), secretConditionType, consts.TelemetryApiCredentialsSecretName)
+	} else if err != nil {
+		conditions.SetKubeApiError(r.dk.Conditions(), secretConditionType, err)
+
+		return err
 	}
 
 	return nil
