@@ -79,7 +79,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 			msg := "data ingest token is missing, but it's required for otel controller"
 			conditions.SetDataIngestTokenMissing(r.dk.Conditions(), dynakube.TokenConditionType, msg)
 
-			log.Error(errors.New(msg), "could not create or update statefulset: "+msg)
+			log.Error(errors.New(msg), "could not create or update statefulset")
 
 			return nil
 		}
