@@ -436,22 +436,6 @@ func getTestCSIDynakube() *dynakube.DynaKube {
 	}
 }
 
-func getRemoteImageDownloadDynakube() *dynakube.DynaKube {
-	dk := &dynakube.DynaKube{
-		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynakube.DynaKubeSpec{
-			OneAgent: oneagent.Spec{
-				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
-			},
-		},
-		Status: getTestDynakubeStatus(),
-	}
-
-	dk.Annotations[dynakube.AnnotationFeatureRemoteImageDownload] = "true"
-
-	return dk
-}
-
 func getTestReadOnlyCSIDynakube() *dynakube.DynaKube {
 	dk := getTestCSIDynakube()
 	dk.Annotations[dynakube.AnnotationFeatureReadOnlyCsiVolume] = "true"
