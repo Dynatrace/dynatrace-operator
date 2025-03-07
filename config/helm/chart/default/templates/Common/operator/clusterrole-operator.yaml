@@ -49,6 +49,7 @@ rules:
     resources:
       - secrets
     resourceNames:
+      - dynatrace-bootstrapper-config
       - dynatrace-dynakube-config
       - dynatrace-metadata-enrichment-endpoint
     verbs:
