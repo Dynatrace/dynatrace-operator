@@ -17,10 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-// myPodIpEnvVarName = "MY_POD_IP"
-)
-
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
