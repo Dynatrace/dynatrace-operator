@@ -1,15 +1,15 @@
 package dynakube
 
 import (
-	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	lts "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 )
 
-type DynaKube = v1beta3.DynaKube
+type DynaKube = lts.DynaKube
 
-type DynaKubeList = v1beta3.DynaKubeList
+type DynaKubeList = lts.DynaKubeList
 
-type DynaKubeSpec = v1beta3.DynaKubeSpec
+type DynaKubeSpec = lts.DynaKubeSpec
 
-type DynaKubeStatus = v1beta3.DynaKubeStatus
+type DynaKubeStatus = lts.DynaKubeStatus
 
-type TemplatesSpec = v1beta3.TemplatesSpec
+type TemplatesSpec = lts.TemplatesSpec
