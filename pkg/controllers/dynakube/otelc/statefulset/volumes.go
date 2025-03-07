@@ -13,8 +13,7 @@ import (
 const (
 	// Volume names and paths
 	caCertsVolumeName = "cacerts"
-
-	trustedCAsFile = "rootca.pem"
+	agCertVolumeName  = "agcert"
 
 	customTlsCertVolumeName            = "telemetry-ingest-custom-tls"
 	extensionsControllerTLSVolumeName  = "extensions-controller-tls"
@@ -60,7 +59,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		)
 	}
 
-	if dk.Spec.TrustedCAs != "" {
+	if isTrustedCAsVolumeNeeded(dk) {
 		volumes = append(volumes, corev1.Volume{
 			Name: caCertsVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -71,7 +70,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "certs",
-							Path: trustedCAsFile,
+							Path: otelcconsts.TrustedCAsFile,
 						},
 					},
 				},
@@ -80,6 +79,23 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
+		if dk.IsAGCertificateNeeded() {
+			volumes = append(volumes, corev1.Volume{
+				Name: agCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.ActiveGate().GetTLSSecretName(),
+						Items: []corev1.KeyToPath{
+							{
+								Key:  dynakube.TLSCertKey,
+								Path: otelcconsts.ActiveGateCertFile,
+							},
+						},
+					},
+				},
+			})
+		}
+
 		if dk.TelemetryIngest().Spec.TlsRefName != "" {
 			volumes = append(volumes, corev1.Volume{
 				Name: customTlsCertVolumeName,
@@ -135,7 +151,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		)
 	}
 
-	if dk.Spec.TrustedCAs != "" {
+	if isTrustedCAsVolumeNeeded(dk) {
 		vm = append(vm, corev1.VolumeMount{
 			Name:      caCertsVolumeName,
 			MountPath: otelcconsts.TrustedCAVolumeMountPath,
@@ -144,6 +160,14 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
+		if dk.IsAGCertificateNeeded() {
+			vm = append(vm, corev1.VolumeMount{
+				Name:      agCertVolumeName,
+				MountPath: otelcconsts.ActiveGateTLSCertCAVolumeMountPath,
+				ReadOnly:  true,
+			})
+		}
+
 		if dk.TelemetryIngest().Spec.TlsRefName != "" {
 			vm = append(vm, corev1.VolumeMount{
 				Name:      customTlsCertVolumeName,
@@ -160,4 +184,8 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	return vm
+}
+
+func isTrustedCAsVolumeNeeded(dk *dynakube.DynaKube) bool {
+	return dk.IsExtensionsEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
 }

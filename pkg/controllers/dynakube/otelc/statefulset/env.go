@@ -101,7 +101,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		)
 	}
 
-	if dk.Spec.TrustedCAs != "" {
+	if dk.IsExtensionsEnabled() && dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: otelcConsts.TrustedCAVolumePath})
 	}
 
