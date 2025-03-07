@@ -45,7 +45,7 @@ const (
 func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
 		{Name: envShards, Value: strconv.Itoa(int(getReplicas(dk)))},
-		{Name: envPodNamePrefix, Value: dk.ExtensionsCollectorStatefulsetName()},
+		{Name: envPodNamePrefix, Value: dk.OtelCollectorStatefulsetName()},
 		{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",

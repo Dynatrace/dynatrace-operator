@@ -54,9 +54,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
-		sts, err := statefulset.Build(r.dk, r.dk.ExtensionsCollectorStatefulsetName(), corev1.Container{})
+		sts, err := statefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), corev1.Container{})
 		if err != nil {
-			log.Error(err, "could not build "+r.dk.ExtensionsCollectorStatefulsetName()+" during cleanup")
+			log.Error(err, "could not build "+r.dk.OtelCollectorStatefulsetName()+" during cleanup")
 
 			return err
 		}
@@ -64,7 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 
 		if err != nil {
-			log.Error(err, "failed to clean up "+r.dk.ExtensionsCollectorStatefulsetName()+" statufulset")
+			log.Error(err, "failed to clean up "+r.dk.OtelCollectorStatefulsetName()+" statufulset")
 
 			return nil
 		}
@@ -97,7 +97,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		topologySpreadConstraints = r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
 	}
 
-	sts, err := statefulset.Build(r.dk, r.dk.ExtensionsCollectorStatefulsetName(), getContainer(r.dk),
+	sts, err := statefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), getContainer(r.dk),
 		statefulset.SetReplicas(getReplicas(r.dk)),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
@@ -126,7 +126,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
-		log.Info("failed to create/update " + r.dk.ExtensionsCollectorStatefulsetName() + " statefulset")
+		log.Info("failed to create/update " + r.dk.OtelCollectorStatefulsetName() + " statefulset")
 		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
 
 		return err

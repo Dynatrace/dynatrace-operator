@@ -32,10 +32,6 @@ func (dk *DynaKube) ExtensionsExecutionControllerStatefulsetName() string {
 	return dk.Name + "-extensions-controller"
 }
 
-func (dk *DynaKube) ExtensionsCollectorStatefulsetName() string {
-	return dk.Name + "-opentelemetry-collector"
-}
-
 func (dk *DynaKube) ExtensionsTokenSecretName() string {
 	return dk.Name + "-extensions-token"
 }

@@ -59,7 +59,7 @@ func TestReconcile(t *testing.T) {
 
 		var sts appsv1.StatefulSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.ExtensionsCollectorStatefulsetName(),
+			Name:      dk.OtelCollectorStatefulsetName(),
 			Namespace: dk.Namespace,
 		}, &sts)
 		require.False(t, k8serrors.IsNotFound(err))
@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) {
 		dk.Spec.Extensions = nil
 
 		previousSts := appsv1.StatefulSet{}
-		previousSts.Name = dk.ExtensionsCollectorStatefulsetName()
+		previousSts.Name = dk.OtelCollectorStatefulsetName()
 		previousSts.Namespace = dk.Namespace
 		mockK8sClient := fake.NewClient(&previousSts)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
@@ -85,7 +85,7 @@ func TestReconcile(t *testing.T) {
 
 		var sts appsv1.StatefulSet
 		err = mockK8sClient.Get(ctx, types.NamespacedName{
-			Name:      dk.ExtensionsCollectorStatefulsetName(),
+			Name:      dk.OtelCollectorStatefulsetName(),
 			Namespace: dk.Namespace,
 		}, &sts)
 		require.True(t, k8serrors.IsNotFound(err))
@@ -121,7 +121,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
@@ -133,7 +133,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
@@ -391,7 +391,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) 
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 	require.NoError(t, err)
 
 	return statefulSet
