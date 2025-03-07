@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -41,10 +42,10 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsUser)
-		assert.Equal(t, defaultUser, *initContainer.SecurityContext.RunAsUser)
+		assert.Equal(t, oacommon.DefaultUser, *initContainer.SecurityContext.RunAsUser)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsGroup)
-		assert.Equal(t, defaultGroup, *initContainer.SecurityContext.RunAsGroup)
+		assert.Equal(t, oacommon.DefaultGroup, *initContainer.SecurityContext.RunAsGroup)
 
 		assert.Nil(t, initContainer.SecurityContext.SeccompProfile)
 	})
@@ -63,7 +64,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsUser)
-		assert.Equal(t, defaultUser, *initContainer.SecurityContext.RunAsUser)
+		assert.Equal(t, oacommon.DefaultUser, *initContainer.SecurityContext.RunAsUser)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, *initContainer.SecurityContext.RunAsGroup, *testUser)
@@ -116,8 +117,8 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 	t.Run("should set RunAsNonRoot if root user is used", func(t *testing.T) {
 		dk := getTestDynakube()
 		pod := getTestPod()
-		pod.Spec.Containers[0].SecurityContext.RunAsUser = ptr.To(rootUserGroup)
-		pod.Spec.Containers[0].SecurityContext.RunAsGroup = ptr.To(rootUserGroup)
+		pod.Spec.Containers[0].SecurityContext.RunAsUser = ptr.To(oacommon.RootUserGroup)
+		pod.Spec.Containers[0].SecurityContext.RunAsGroup = ptr.To(oacommon.RootUserGroup)
 		webhookImage := "test-image"
 		clusterID := "id"
 
@@ -127,10 +128,10 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsUser)
-		assert.Equal(t, rootUserGroup, *initContainer.SecurityContext.RunAsUser)
+		assert.Equal(t, oacommon.RootUserGroup, *initContainer.SecurityContext.RunAsUser)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsGroup)
-		assert.Equal(t, rootUserGroup, *initContainer.SecurityContext.RunAsGroup)
+		assert.Equal(t, oacommon.RootUserGroup, *initContainer.SecurityContext.RunAsGroup)
 	})
 	t.Run("should handle failure policy feature flag correctly", func(t *testing.T) {
 		dk := getTestDynakube()

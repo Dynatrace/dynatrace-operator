@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -20,7 +21,7 @@ func getInstallerInfo(pod *corev1.Pod, dk dynakube.DynaKube) installerInfo {
 	return installerInfo{
 		flavor:       maputils.GetField(pod.Annotations, AnnotationFlavor, ""),
 		technologies: url.QueryEscape(maputils.GetField(pod.Annotations, AnnotationTechnologies, "all")),
-		installPath:  maputils.GetField(pod.Annotations, AnnotationInstallPath, DefaultInstallPath),
+		installPath:  maputils.GetField(pod.Annotations, AnnotationInstallPath, oacommon.DefaultInstallPath),
 		installerURL: maputils.GetField(pod.Annotations, AnnotationInstallerUrl, ""),
 		version:      dk.OneAgent().GetCodeModulesVersion(),
 	}

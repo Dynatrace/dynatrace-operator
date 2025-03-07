@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -520,13 +521,13 @@ func volumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 			assert.True(t, isVolumeAttached(t, volumes, oamutation.OneAgentBinVolumeName))
 			assert.True(t, isVolumeMounted(t, volumeMounts, oamutation.OneAgentBinVolumeName))
 
-			listCommand := shell.ListDirectory(oamutation.DefaultInstallPath)
+			listCommand := shell.ListDirectory(oacommon.DefaultInstallPath)
 			executionResult, err := pod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, sampleApp.ContainerName(), oamutation.DefaultInstallPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, sampleApp.ContainerName(), oacommon.DefaultInstallPath)
 			assert.Positive(t, diskUsage)
 		})
 
@@ -542,7 +543,7 @@ func isVolumeMounted(t *testing.T, volumeMounts []corev1.VolumeMount, volumeMoun
 		if volumeMount.Name == volumeMountName {
 			result = true
 
-			assert.Equal(t, oamutation.DefaultInstallPath, volumeMount.MountPath)
+			assert.Equal(t, oacommon.DefaultInstallPath, volumeMount.MountPath)
 			assert.False(t, volumeMount.ReadOnly)
 		}
 	}

@@ -286,7 +286,7 @@ func (oa *OneAgent) GetEndpoints() string {
 func (oa *OneAgent) GetCustomCodeModulesImage() string {
 	if oa.IsCloudNativeFullstackMode() {
 		return oa.CloudNativeFullStack.CodeModulesImage
-	} else if oa.IsApplicationMonitoringMode() && oa.IsCSIAvailable() {
+	} else if oa.IsApplicationMonitoringMode() {
 		return oa.ApplicationMonitoring.CodeModulesImage
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	corev1 "k8s.io/api/core/v1"
@@ -85,14 +86,14 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 	containerSecurityCtx := pod.Spec.Containers[0].SecurityContext
 	podSecurityCtx := pod.Spec.SecurityContext
 
-	baseSecurityCtx.RunAsUser = ptr.To(defaultUser)
-	baseSecurityCtx.RunAsGroup = ptr.To(defaultGroup)
+	baseSecurityCtx.RunAsUser = ptr.To(oacommon.DefaultUser)
+	baseSecurityCtx.RunAsGroup = ptr.To(oacommon.DefaultGroup)
 
-	if hasPodUserSet(podSecurityCtx) {
+	if oacommon.HasPodUserSet(podSecurityCtx) {
 		baseSecurityCtx.RunAsUser = podSecurityCtx.RunAsUser
 	}
 
-	if hasPodGroupSet(podSecurityCtx) {
+	if oacommon.HasPodGroupSet(podSecurityCtx) {
 		baseSecurityCtx.RunAsGroup = podSecurityCtx.RunAsGroup
 	}
 
@@ -104,17 +105,9 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	baseSecurityCtx.RunAsNonRoot = ptr.To(isNonRoot(&baseSecurityCtx))
+	baseSecurityCtx.RunAsNonRoot = ptr.To(oacommon.IsNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
-}
-
-func hasPodUserSet(ctx *corev1.PodSecurityContext) bool {
-	return ctx != nil && ctx.RunAsUser != nil
-}
-
-func hasPodGroupSet(ctx *corev1.PodSecurityContext) bool {
-	return ctx != nil && ctx.RunAsGroup != nil
 }
 
 func hasContainerUserSet(ctx *corev1.SecurityContext) bool {
@@ -123,12 +116,6 @@ func hasContainerUserSet(ctx *corev1.SecurityContext) bool {
 
 func hasContainerGroupSet(ctx *corev1.SecurityContext) bool {
 	return ctx != nil && ctx.RunAsGroup != nil
-}
-
-func isNonRoot(ctx *corev1.SecurityContext) bool {
-	return ctx != nil &&
-		(ctx.RunAsUser != nil && *ctx.RunAsUser != rootUserGroup) &&
-		(ctx.RunAsGroup != nil && *ctx.RunAsGroup != rootUserGroup)
 }
 
 func getBasePodName(pod *corev1.Pod) string {

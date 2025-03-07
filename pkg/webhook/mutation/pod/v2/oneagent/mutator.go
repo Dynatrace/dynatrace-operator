@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	corev1 "k8s.io/api/core/v1"
@@ -13,20 +15,14 @@ import (
 )
 
 type Mutator struct {
-	client           client.Client
-	apiReader        client.Reader
-	clusterID        string
-	webhookNamespace string
+	apiReader client.Reader
 }
 
 var _ dtwebhook.PodMutator = &Mutator{}
 
-func NewMutator(clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *Mutator {
+func NewMutator(apiReader client.Reader) *Mutator {
 	return &Mutator{
-		clusterID:        clusterID,
-		webhookNamespace: webhookNamespace,
-		client:           client,
-		apiReader:        apiReader,
+		apiReader: apiReader,
 	}
 }
 
@@ -45,7 +41,13 @@ func (mut *Mutator) Mutate(ctx context.Context, request *dtwebhook.MutationReque
 		return nil
 	}
 
-	// TODO
+	log.Info("injecting OneAgent into pod", "podName", request.PodName())
+
+	addInitVolumeMounts(request.InstallContainer)
+	addInitArgs(*request.Pod, request.InstallContainer, request.DynaKube)
+	addVolumes(request.Pod)
+
+	mut.mutateUserContainers(request)
 
 	oacommon.SetInjectedAnnotation(request.Pod)
 
@@ -57,9 +59,9 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 		return false
 	}
 
-	// TODO
+	log.Info("reinvoking", "podName", request.PodName())
 
-	return true
+	return mut.reinvokeUserContainers(request)
 }
 
 func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (bool, string) {
@@ -80,8 +82,8 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 		reasons = append(reasons, oacommon.EmptyConnectionInfoReason)
 	}
 
-	if dk.OneAgent().GetCodeModulesVersion() == "" && dk.OneAgent().GetCodeModulesImage() == "" {
-		log.Info("information about the codemodules (version or image) is not available, OneAgent cannot be injected", "pod", request.PodName())
+	if dk.OneAgent().GetCustomCodeModulesImage() == "" {
+		log.Info("code modules version not set, OneAgent cannot be injected", "pod", request.PodName())
 
 		reasons = append(reasons, oacommon.UnknownCodeModuleReason)
 	}
@@ -105,5 +107,7 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 }
 
 func ContainerIsInjected(container corev1.Container) bool {
-	return true // TODO
+	return env.IsIn(container.Env, oacommon.PreloadEnv) &&
+		volumes.IsIn(container.VolumeMounts, oneAgentCodeModulesVolumeName) &&
+		volumes.IsIn(container.VolumeMounts, oneAgentCodeModulesConfigVolumeName)
 }

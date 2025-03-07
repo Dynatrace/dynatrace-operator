@@ -51,18 +51,18 @@ func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.Mutat
 
 	if wh.isInjected(mutationRequest) {
 		if wh.handlePodReinvocation(mutationRequest) {
-			log.Info("reinvocation policy applied", "podName", mutationRequest.PodName)
+			log.Info("reinvocation policy applied", "podName", mutationRequest.PodName())
 			wh.recorder.SendPodUpdateEvent()
 		}
 
-		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName)
+		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName())
 	} else {
 		if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
 			return err
 		}
 	}
 
-	log.Info("injection finished for pod", "podName", mutationRequest.PodName, "namespace", mutationRequest.Namespace)
+	log.Info("injection finished for pod", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 	return nil
 }

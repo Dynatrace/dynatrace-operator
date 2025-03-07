@@ -72,10 +72,11 @@ const (
 	AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
 
 	// CSI.
-	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
-	AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
-	AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
-	AnnotationFeatureRemoteImageDownload       = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
+	AnnotationFeatureMaxFailedCsiMountAttempts     = AnnotationFeaturePrefix + "max-csi-mount-attempts"
+	AnnotationFeatureMaxCsiMountTimeout            = AnnotationFeaturePrefix + "max-csi-mount-timeout"
+	AnnotationFeatureReadOnlyCsiVolume             = AnnotationFeaturePrefix + "injection-readonly-volume"
+	AnnotationFeatureRemoteImageDownload           = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
+	AnnotationFeatureRemoteImageDownloadTechnology = AnnotationFeatureCodeModulesPrefix + "technology"
 
 	falsePhrase  = "false"
 	truePhrase   = "true"
@@ -279,6 +280,10 @@ func (dk *DynaKube) FeatureReadOnlyCsiVolume() bool {
 
 func (dk *DynaKube) FeatureRemoteImageDownload() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRemoteImageDownload) == truePhrase
+}
+
+func (dk *DynaKube) FeatureRemoteImageDownloadTechnology() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureRemoteImageDownloadTechnology)
 }
 
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {

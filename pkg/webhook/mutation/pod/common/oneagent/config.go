@@ -19,4 +19,11 @@ const (
 	EmptyConnectionInfoReason = "EmptyConnectionInfo"
 	UnknownCodeModuleReason   = "UnknownCodeModule"
 	EmptyTenantUUIDReason     = "EmptyTenantUUID"
+
+	// DefaultInstallPath is the default directory to install the app-only OneAgent package.
+	DefaultInstallPath = "/opt/dynatrace/oneagent-paas"
+
+	DefaultUser   int64 = 1001
+	DefaultGroup  int64 = 1001
+	RootUserGroup int64 = 0
 )

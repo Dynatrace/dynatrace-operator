@@ -60,7 +60,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 
 	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
 		v1:               v1.NewInjector(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
-		v2:               v2.NewInjector(apiReader, metaClient, eventRecorder),
+		v2:               v2.NewInjector(apiReader, eventRecorder),
 		apiReader:        apiReader,
 		webhookNamespace: webhookNamespace,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
