@@ -1,5 +1,5 @@
-github.com/Dynatrace/dynatrace-bootstrapper v0.2.1 h1:RgoDGe4dSaZ0YKVAz4+fo7j0F/v/Y1FKFpgSsrei2FA=
-github.com/Dynatrace/dynatrace-bootstrapper v0.2.1/go.mod h1:Vx5mNVnDs0eVQiDu6j5WYVTgzc0Qo42oGEtOA6NJpS4=
+github.com/Dynatrace/dynatrace-bootstrapper v1.0.1 h1:AokYM0BuvMdn/UBC66d4Ug2TgGbFuPi1pk6idKbngwo=
+github.com/Dynatrace/dynatrace-bootstrapper v1.0.1/go.mod h1:umzzdF2rIRhUBpYHVHLGVjfvMJVa/SK8RXbLvtyA6Ts=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
