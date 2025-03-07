@@ -83,7 +83,6 @@ func (r *Reconciler) ensureTelemetryIngestApiCredentialsSecret(ctx context.Conte
 }
 
 func (r *Reconciler) getDtEndpoint() ([]byte, error) {
-
 	if r.dk.ActiveGate().IsApiEnabled() {
 		tenantUUID, err := r.dk.TenantUUID()
 		if err != nil {
