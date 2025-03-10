@@ -3,7 +3,7 @@ package telemetryingest
 import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 
 const (
-	nameSuffix = "-telemetry-ingest"
+	ServiceNameSuffix = "-telemetry-ingest"
 )
 
 func (spec *Spec) GetProtocols() otelcgen.Protocols {
@@ -28,7 +28,7 @@ func (ts *TelemetryIngest) SetName(name string) {
 }
 
 func (ts *TelemetryIngest) GetName() string {
-	return ts.name + nameSuffix
+	return ts.name + ServiceNameSuffix
 }
 
 func (ts *TelemetryIngest) IsEnabled() bool {

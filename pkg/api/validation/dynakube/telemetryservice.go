@@ -6,9 +6,13 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -18,6 +22,8 @@ const (
 	errorTelemetryIngestNoDNS1053Label      = `DynaKube's specification enables the TelemetryIngest feature, the telemetry service name violates DNS-1035.
     [The length limit for the name is %d. Additionally a DNS-1035 name must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')]
 	`
+	errorTelemetryIngestServiceNameInUse     = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is already used by other Dynakube.`
+	errorTelemetryIngestForbiddenServiceName = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is incorrect because of forbidden suffix.`
 )
 
 func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -108,4 +114,66 @@ func invalidTelemetryIngestName(_ context.Context, _ *Validator, dk *dynakube.Dy
 
 func invalidTelemetryIngestNameErrorMessage() string {
 	return fmt.Sprintf(errorTelemetryIngestNoDNS1053Label, validation.DNS1035LabelMaxLength)
+}
+
+func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() {
+		return ""
+	}
+
+	dkList := &dynakube.DynaKubeList{}
+	if err := dv.apiReader.List(ctx, dkList, &client.ListOptions{Namespace: dk.Namespace}); err != nil {
+		log.Info("error occurred while listing dynakubes", "err", err.Error())
+
+		return ""
+	}
+
+	dkServiceName := dk.TelemetryIngest().ServiceName
+	if dkServiceName == "" {
+		dkServiceName = dk.TelemetryIngest().GetName()
+	}
+
+	for _, otherDk := range dkList.Items {
+		if otherDk.Name == dk.Name {
+			continue
+		}
+
+		if !otherDk.TelemetryIngest().IsEnabled() {
+			continue
+		}
+
+		otherDkServiceName := otherDk.TelemetryIngest().ServiceName
+		if otherDkServiceName == "" {
+			otherDkServiceName = otherDk.TelemetryIngest().GetName()
+		}
+
+		if otherDkServiceName == dkServiceName {
+			log.Info(errorTelemetryIngestServiceNameInUse, "other dynakube name", otherDk.Name, "other telemetry service name", otherDkServiceName, "namespace", otherDk.Namespace)
+
+			return fmt.Sprintf("%s Conflicting Dynakube: %s. Conflicting telemetry service name: %s", errorTelemetryIngestServiceNameInUse, otherDk.Name, otherDkServiceName)
+		}
+	}
+
+	return ""
+}
+
+func forbiddenTelemetryIngestServiceNameSuffix(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() {
+		return ""
+	}
+
+	if dk.TelemetryIngest().ServiceName == "" {
+		return ""
+	}
+
+	if strings.HasSuffix(dk.TelemetryIngest().ServiceName, consts.ExtensionsControllerSuffix) ||
+		strings.HasSuffix(dk.TelemetryIngest().ServiceName, telemetryingest.ServiceNameSuffix) ||
+		strings.HasSuffix(dk.TelemetryIngest().ServiceName, "-"+agconsts.MultiActiveGateName) ||
+		strings.HasSuffix(dk.TelemetryIngest().ServiceName, "-webhook") {
+		log.Info(errorTelemetryIngestForbiddenServiceName, "telemetry service name", dk.TelemetryIngest().ServiceName)
+
+		return fmt.Sprintf("%s Telemetry service name: %s", errorTelemetryIngestForbiddenServiceName, dk.TelemetryIngest().ServiceName)
+	}
+
+	return ""
 }

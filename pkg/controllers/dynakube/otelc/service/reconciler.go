@@ -1,7 +1,8 @@
 package service
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -22,6 +23,8 @@ const (
 	portNameJaegerThriftCompact = "jaeger-thrift-compact"
 	portNameJaegerThriftHttp    = "jaeger-thrift-http"
 	portNameStatsd              = "statsd"
+
+	telemetryIngestServiceLabel = api.InternalFlagPrefix + "telemetry-ingest-service-by"
 )
 
 type Reconciler struct {
@@ -42,37 +45,56 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.TelemetryIngest().IsEnabled() {
-		return r.removeServiceOnce(ctx)
+		r.removeServiceOnce(ctx)
+
+		return nil
 	}
 
-	if r.dk.TelemetryIngest().ServiceName != "" {
-		return r.removeServiceOnce(ctx)
+	serviceName := r.dk.TelemetryIngest().ServiceName
+	if serviceName == "" {
+		serviceName = r.dk.TelemetryIngest().GetName()
 	}
+
+	r.removeServices(ctx, serviceName)
 
 	return r.createOrUpdateService(ctx)
 }
 
-func (r *Reconciler) removeServiceOnce(ctx context.Context) error {
+func (r *Reconciler) removeServiceOnce(ctx context.Context) {
 	if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
-		return nil
+		return
 	}
 	defer meta.RemoveStatusCondition(r.dk.Conditions(), serviceConditionType)
 
-	svc, err := r.buildService()
-	if err != nil {
-		log.Error(err, "could not build service during cleanup")
+	r.removeServices(ctx, "")
+}
 
-		return err
+func (r *Reconciler) removeServices(ctx context.Context, actualServiceName string) {
+	telemetryServiceList := &corev1.ServiceList{}
+
+	listOps := []client.ListOption{
+		client.InNamespace(r.dk.Namespace),
+		client.MatchingLabels{
+			labels.AppCreatedByLabel:    r.dk.Name,
+			telemetryIngestServiceLabel: r.dk.Name,
+		},
 	}
 
-	err = service.Query(r.client, r.apiReader, log).Delete(ctx, svc)
-	if err != nil {
-		log.Error(err, "failed to clean up extension service")
+	if err := r.apiReader.List(ctx, telemetryServiceList, listOps...); err != nil {
+		log.Info("failed to list telemetry services, skipping cleanup", "error", err)
 
-		return nil
+		return
 	}
 
-	return nil
+	for _, service := range telemetryServiceList.Items {
+		if service.Name != actualServiceName {
+			if err := r.client.Delete(ctx, &service); err != nil {
+				log.Info("failed to clean up telemetry service", "service name", service.Name, "namespace", service.Namespace, "error", err)
+			} else {
+				log.Info("removed unused telemetry service", "service name", service.Name, "namespace", service.Namespace)
+			}
+		}
+	}
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
@@ -85,7 +107,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 
 	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
-		log.Info("failed to create/update otelc service")
+		log.Info("failed to create/update telemetry service")
 		conditions.SetKubeApiError(r.dk.Conditions(), serviceConditionType, err)
 
 		return err
@@ -102,15 +124,24 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 	appLabels := labels.NewAppLabels(labels.OtelCComponentLabel, r.dk.Name, labels.OtelCComponentLabel, "")
 
 	var svcPorts []corev1.ServicePort
-	if r.dk.TelemetryIngest().IsEnabled() && r.dk.Spec.TelemetryIngest.ServiceName == "" {
+	if r.dk.TelemetryIngest().IsEnabled() {
 		svcPorts = buildServicePortList(r.dk.TelemetryIngest().GetProtocols())
 	}
 
+	serviceName := r.dk.Spec.TelemetryIngest.ServiceName
+	if serviceName == "" {
+		serviceName = r.dk.TelemetryIngest().GetName()
+	}
+
+	buildLabels := coreLabels.BuildLabels()
+	buildLabels[telemetryIngestServiceLabel] = r.dk.Name
+
 	return service.Build(r.dk,
-		r.dk.TelemetryIngest().GetName(),
+		serviceName,
 		appLabels.BuildMatchLabels(),
 		svcPorts,
 		service.SetLabels(coreLabels.BuildLabels()),
+		service.SetLabels(buildLabels),
 		service.SetType(corev1.ServiceTypeClusterIP),
 	)
 }
