@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	e2ewebhook "github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/service"
@@ -71,6 +72,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, r.getRequiredWebhookConfigurationFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredCRDFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredConfigMapFiles()...)
+	requiredFiles = append(requiredFiles, r.getRequiredEventFiles()...)
 
 	return requiredFiles
 }
@@ -345,6 +347,23 @@ func (r requiredFiles) getRequiredConfigMapFiles() []string {
 			r.dk.Name,
 			"activegate-connection-info",
 			support_archive.ManifestsFileExtension))
+
+	return requiredFiles
+}
+
+func (r requiredFiles) getRequiredEventFiles() []string {
+	events := event.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	requiredFiles := make([]string, 0)
+
+	for _, requiredEvent := range events.Items {
+		requiredFiles = append(requiredFiles,
+			fmt.Sprintf("%s/%s/%s/%s%s",
+				support_archive.ManifestsDirectoryName,
+				requiredEvent.Namespace,
+				"event",
+				requiredEvent.Name,
+				support_archive.ManifestsFileExtension))
+	}
 
 	return requiredFiles
 }
