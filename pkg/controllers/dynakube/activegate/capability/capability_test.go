@@ -21,10 +21,10 @@ const (
 	expectedArgNameWithDebugging               = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,debugging"
 	expectedArgNameWithExtensions              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller"
 	expectedArgNameWithExtensionsOnly          = "extension_controller"
-	expectedArgNameWithOTLPingest              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
-	expectedArgNameWithOTLPingestOnly          = "log_analytics_collector,generic_ingest_enabled,otlp_ingest"
-	expectedArgNameWithExtensionsAndOTLPingest = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
-	expectedArgNameWithTelemetryIngest         = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithOTLPingest              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector_enabled,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithOTLPingestOnly          = "log_analytics_collector_enabled,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithExtensionsAndOTLPingest = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller,log_analytics_collector_enabled,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithTelemetryIngest         = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector_enabled,generic_ingest_enabled,otlp_ingest"
 )
 
 var capabilities = []activegate.CapabilityDisplayName{
