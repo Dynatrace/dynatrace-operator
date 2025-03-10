@@ -8262,8 +8262,6 @@ spec:
                   VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
                   Disabled by default.
                 type: boolean
-              enableOTLPIngest:
-                type: boolean
               extensions:
                 description: |-
                   When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
