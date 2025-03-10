@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
@@ -86,7 +86,7 @@ func getComponentsQueryGroup(namespace string, appName string, labelKey string) 
 func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
-			toGroupVersionKind(v1beta3.GroupVersion, dynakube.DynaKube{}),
+			toGroupVersionKind(v1beta4.GroupVersion, dynakube.DynaKube{}),
 			toGroupVersionKind(v1alpha2.GroupVersion, edgeconnect.EdgeConnect{}),
 		},
 		filters: []client.ListOption{
