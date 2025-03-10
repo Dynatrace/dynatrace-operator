@@ -101,8 +101,16 @@ func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequ
 	var initSecret corev1.Secret
 
 	secretObjectKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: mutationRequest.Namespace.Name}
-	if err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
+	err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
+
+	if k8serrors.IsNotFound(err) {
 		log.Info("dynatrace-bootstrapper-config is not available, injection not possible", "pod", mutationRequest.PodName())
+
+		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
+
+		return false
+	} else if err != nil {
+		log.Error(err, "unable to verify, if dynatrace-bootstrapper-config is available, injection not possible")
 
 		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
 
