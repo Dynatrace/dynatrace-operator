@@ -62,6 +62,8 @@ func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.Mutat
 		}
 	}
 
+	setDynatraceInjectedAnnotation(mutationRequest)
+
 	log.Info("injection finished for pod", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 	return nil
@@ -135,4 +137,12 @@ func (wh *Injector) handlePodReinvocation(mutationRequest *dtwebhook.MutationReq
 	}
 
 	return needsUpdate
+}
+
+func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) {
+	if mutationRequest.Pod.Annotations == nil {
+		mutationRequest.Pod.Annotations = make(map[string]string)
+	}
+
+	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
 }

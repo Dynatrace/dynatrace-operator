@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,7 +39,7 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 		require.Len(t, container.VolumeMounts, 3)
 
 		for expectedVolumeName, expectedMountPath := range expectedMounts {
-			mount, err := volumes.GetVolumeMountByName(container.VolumeMounts, expectedVolumeName)
+			mount, err := mounts.GetByName(container.VolumeMounts, expectedVolumeName)
 			require.NoError(t, err)
 			require.NotNil(t, mount)
 			assert.Equal(t, expectedMountPath, mount.MountPath)
@@ -111,7 +111,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		addInitVolumeMounts(container, *getTestReadOnlyCSIDynakube())
 		require.Len(t, container.VolumeMounts, 3)
 
-		mount, err := volumes.GetVolumeMountByName(container.VolumeMounts, oneagentConfVolumeName)
+		mount, err := mounts.GetByName(container.VolumeMounts, oneagentConfVolumeName)
 		require.NoError(t, err)
 		assert.Equal(t, consts.AgentConfInitDirMount, mount.MountPath)
 	})

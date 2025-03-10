@@ -1,8 +1,10 @@
 package oneagent
 
 import (
+	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -10,13 +12,24 @@ import (
 
 func TestAddVolumeMounts(t *testing.T) {
 	t.Run("should add oneagent volume mounts", func(t *testing.T) {
-		container := &corev1.Container{}
+		container := &corev1.Container{
+			Name: "test-container",
+		}
 		installPath := "test/path"
 
 		addVolumeMounts(container, installPath)
-		require.Len(t, container.VolumeMounts, 2)
-		assert.Equal(t, oneAgentCodeModulesVolumeName, container.VolumeMounts[0].Name)
-		assert.Equal(t, oneAgentCodeModulesConfigVolumeName, container.VolumeMounts[1].Name)
+		require.Len(t, container.VolumeMounts, 3)
+		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, installPath, container.VolumeMounts[0].MountPath)
+		assert.Equal(t, binSubPath, container.VolumeMounts[0].SubPath)
+
+		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[1].Name)
+		assert.Equal(t, ldPreloadPath, container.VolumeMounts[1].MountPath)
+		assert.Equal(t, filepath.Join(common.InitConfigSubPath, ldPreloadSubPath), container.VolumeMounts[1].SubPath)
+
+		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[2].Name)
+		assert.Equal(t, filepath.Join(common.InitConfigSubPath, container.Name), container.VolumeMounts[2].SubPath)
+		assert.Equal(t, common.ConfigMountPath, container.VolumeMounts[2].MountPath)
 	})
 }
 
@@ -25,19 +38,16 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		container := &corev1.Container{}
 
 		addInitVolumeMounts(container)
-		require.Len(t, container.VolumeMounts, 2)
-		assert.Equal(t, oneAgentCodeModulesVolumeName, container.VolumeMounts[0].Name)
-		assert.Equal(t, oneAgentCodeModulesConfigVolumeName, container.VolumeMounts[1].Name)
-	})
-}
+		require.Len(t, container.VolumeMounts, 3)
+		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, binInitMountPath, container.VolumeMounts[0].MountPath)
+		assert.Equal(t, binSubPath, container.VolumeMounts[0].SubPath)
 
-func TestAddOneAgentVolumes(t *testing.T) {
-	t.Run("should add oneagent volumes", func(t *testing.T) {
-		pod := &corev1.Pod{}
+		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[1].Name)
+		assert.Equal(t, common.InitConfigSubPath, container.VolumeMounts[1].SubPath)
+		assert.Equal(t, common.InitConfigMountPath, container.VolumeMounts[1].MountPath)
 
-		addVolumes(pod)
-		require.Len(t, pod.Spec.Volumes, 2)
-		assert.Equal(t, oneAgentCodeModulesVolumeName, pod.Spec.Volumes[0].Name)
-		assert.Equal(t, oneAgentCodeModulesConfigVolumeName, pod.Spec.Volumes[1].Name)
+		assert.Equal(t, common.InputVolumeName, container.VolumeMounts[2].Name)
+		assert.Equal(t, common.InitInputMountPath, container.VolumeMounts[2].MountPath)
 	})
 }

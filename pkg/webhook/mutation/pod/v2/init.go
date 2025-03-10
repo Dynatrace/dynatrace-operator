@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
@@ -16,17 +17,24 @@ func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) (*corev1.Con
 		return nil, errors.New("custom code modules image not set")
 	}
 
-	return &corev1.Container{
+	initContainer := &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           customImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		SecurityContext: securityContextForInitContainer(pod, dk),
 		Resources:       initContainerResources(dk),
-	}, nil
+	}
+
+	return initContainer, nil
 }
 
 func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
+	common.AddInitConfigVolumeMount(initContainer)
+	common.AddInitInputVolumeMount(initContainer)
+	// TODO: Add all `--attribute` args to init-container
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
+	common.AddInputVolume(pod)
+	common.AddConfigVolume(pod)
 }
 
 func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {

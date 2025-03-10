@@ -5,21 +5,21 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func GetVolumeMountByName(mounts []corev1.VolumeMount, volumeName string) (*corev1.VolumeMount, error) {
-	for _, mount := range mounts {
+func GetByName(vol []corev1.Volume, volumeName string) (*corev1.Volume, error) {
+	for _, mount := range vol {
 		if mount.Name == volumeName {
 			return &mount, nil
 		}
 	}
 
-	return nil, errors.Errorf(`Cannot find volume mount "%s" in the provided slice (len %d)`,
-		volumeName, len(mounts),
+	return nil, errors.Errorf(`Cannot find volume "%s" in the provided slice (len %d)`,
+		volumeName, len(vol),
 	)
 }
 
-func IsIn(mounts []corev1.VolumeMount, volumeName string) bool {
-	for _, vm := range mounts {
-		if vm.Name == volumeName {
+func IsIn(vol []corev1.Volume, volumeName string) bool {
+	for _, v := range vol {
+		if v.Name == volumeName {
 			return true
 		}
 	}

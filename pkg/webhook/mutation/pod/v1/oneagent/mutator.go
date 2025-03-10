@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/pkg/errors"
@@ -133,6 +133,6 @@ func (mut *Mutator) isInjectionPossible(request *dtwebhook.MutationRequest) (boo
 func ContainerIsInjected(container corev1.Container) bool {
 	return env.IsIn(container.Env, oacommon.DynatraceMetadataEnv) &&
 		env.IsIn(container.Env, oacommon.PreloadEnv) &&
-		volumes.IsIn(container.VolumeMounts, OneAgentBinVolumeName) &&
-		volumes.IsIn(container.VolumeMounts, oneAgentShareVolumeName)
+		mounts.IsIn(container.VolumeMounts, OneAgentBinVolumeName) &&
+		mounts.IsIn(container.VolumeMounts, oneAgentShareVolumeName)
 }

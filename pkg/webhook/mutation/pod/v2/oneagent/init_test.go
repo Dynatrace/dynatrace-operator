@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +22,7 @@ func TestAddInitArgs(t *testing.T) {
 		initContainer := &corev1.Container{}
 		dk := dynakube.DynaKube{}
 
-		addInitArgs(pod, initContainer, dk)
+		addInitArgs(pod, initContainer, dk, oacommon.DefaultInstallPath)
 
 		require.Contains(t, initContainer.Args, "--technology=java")
 	})
@@ -37,7 +38,7 @@ func TestAddInitArgs(t *testing.T) {
 			},
 		}
 
-		addInitArgs(pod, initContainer, dk)
+		addInitArgs(pod, initContainer, dk, oacommon.DefaultInstallPath)
 
 		require.Contains(t, initContainer.Args, "--technology=nodejs")
 	})
@@ -47,7 +48,7 @@ func TestAddInitArgs(t *testing.T) {
 		initContainer := &corev1.Container{}
 		dk := dynakube.DynaKube{}
 
-		addInitArgs(pod, initContainer, dk)
+		addInitArgs(pod, initContainer, dk, oacommon.DefaultInstallPath)
 
 		require.NotContains(t, initContainer.Args, "--technology=")
 	})
@@ -57,7 +58,7 @@ func TestAddInitArgs(t *testing.T) {
 		initContainer := &corev1.Container{}
 		dk := dynakube.DynaKube{}
 
-		addInitArgs(pod, initContainer, dk)
+		addInitArgs(pod, initContainer, dk, oacommon.DefaultInstallPath)
 
 		require.Contains(t, initContainer.Args, "--source=/opt/dynatrace/oneagent")
 		require.Contains(t, initContainer.Args, "--target=/mnt/bin")

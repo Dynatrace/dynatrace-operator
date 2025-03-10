@@ -11,6 +11,7 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -75,19 +76,17 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	wh.recorder.Setup(mutationRequest)
 
-	if !mutationRequest.DynaKube.FeatureBootstrapperInjection() {
-		err := wh.v1.Handle(ctx, mutationRequest)
-		if err != nil {
-			return silentErrorResponse(mutationRequest.Pod, err)
-		}
-	} else {
+	if mutationRequest.DynaKube.FeatureBootstrapperInjection() && oacommon.IsEnabled(mutationRequest.BaseRequest) {
 		err := wh.v2.Handle(ctx, mutationRequest)
 		if err != nil {
 			return silentErrorResponse(mutationRequest.Pod, err)
 		}
+	} else {
+		err := wh.v1.Handle(ctx, mutationRequest)
+		if err != nil {
+			return silentErrorResponse(mutationRequest.Pod, err)
+		}
 	}
-
-	setDynatraceInjectedAnnotation(mutationRequest)
 
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
@@ -138,12 +137,4 @@ func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 
 	return rsp
-}
-
-func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) {
-	if mutationRequest.Pod.Annotations == nil {
-		mutationRequest.Pod.Annotations = make(map[string]string)
-	}
-
-	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
 }

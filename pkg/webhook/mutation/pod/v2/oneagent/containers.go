@@ -1,42 +1,58 @@
 package oneagent
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (mut *Mutator) mutateUserContainers(request *dtwebhook.MutationRequest) {
-	newContainers := request.NewContainers(ContainerIsInjected)
+const (
+	isInjectedEnv = "DT_CM_INJECTED"
+)
 
-	for i := range newContainers {
-		container := newContainers[i]
-		mut.addOneAgentToContainer(request.ToReinvocationRequest(), container)
-	}
+func Mutate(request *dtwebhook.MutationRequest) bool {
+	installPath := oacommon.DefaultInstallPath // TODO: configure?
+	mutateInitContainer(request, installPath)
+
+	return mutateUserContainers(request.BaseRequest, installPath)
 }
 
-func (mut *Mutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) bool {
-	newContainers := request.NewContainers(ContainerIsInjected)
+func Reinvoke(request *dtwebhook.BaseRequest) bool {
+	installPath := oacommon.DefaultInstallPath // TODO: configure?
 
-	if len(newContainers) == 0 {
-		return false
-	}
-
-	for i := range newContainers {
-		container := newContainers[i]
-		mut.addOneAgentToContainer(request, container)
-	}
-
-	return true
+	return mutateUserContainers(request, installPath)
 }
 
-func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {
+func containerIsInjected(container corev1.Container) bool {
+	return env.IsIn(container.Env, isInjectedEnv)
+}
+
+func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string) bool {
+	newContainers := request.NewContainers(containerIsInjected)
+	for i := range newContainers {
+		container := newContainers[i]
+		addOneAgentToContainer(request.DynaKube, container, installPath)
+		setIsInjectedEnv(container)
+	}
+
+	return len(newContainers) > 0
+}
+
+func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, installPath string) {
 	log.Info("adding OneAgent to container", "name", container.Name)
-
-	installPath := oacommon.DefaultInstallPath
-	dk := request.DynaKube
 
 	addVolumeMounts(container, installPath)
 	oacommon.AddDeploymentMetadataEnv(container, dk)
 	oacommon.AddPreloadEnv(container, installPath)
+}
+
+func setIsInjectedEnv(container *corev1.Container) {
+	container.Env = append(container.Env,
+		corev1.EnvVar{
+			Name:  isInjectedEnv,
+			Value: "true",
+		},
+	)
 }

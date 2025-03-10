@@ -7,6 +7,9 @@ const (
 	// AnnotationDynatraceInjected is set to "true" by the webhook to Pods to indicate that it has been injected.
 	AnnotationDynatraceInjected = "dynakube.dynatrace.com/injected"
 
+	// AnnotationDynatraceReason is add to provide extra info why an injection didn't happen.
+	AnnotationDynatraceReason = "dynakube.dynatrace.com/reason"
+
 	// AnnotationDynatraceInject is set to "false" on the Pod to indicate that does not want any injection.
 	AnnotationDynatraceInject = "dynatrace.com/inject"
 
