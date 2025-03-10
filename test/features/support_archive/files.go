@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	e2ewebhook "github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/service"
@@ -351,14 +352,18 @@ func (r requiredFiles) getRequiredConfigMapFiles() []string {
 }
 
 func (r requiredFiles) getRequiredEventFiles() []string {
+	events := event.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 
-	requiredFiles = append(requiredFiles,
-		fmt.Sprintf("%s/%s/%s%s",
-			support_archive.ManifestsDirectoryName,
-			r.dk.Namespace,
-			"event",
-			support_archive.ManifestsFileExtension))
+	for _, requiredEvent := range events.Items {
+		requiredFiles = append(requiredFiles,
+			fmt.Sprintf("%s/%s/%s/%s%s",
+				support_archive.ManifestsDirectoryName,
+				requiredEvent.Namespace,
+				"event",
+				requiredEvent.Name,
+				support_archive.ManifestsFileExtension))
+	}
 
 	return requiredFiles
 }
