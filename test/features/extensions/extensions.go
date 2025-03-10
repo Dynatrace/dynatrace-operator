@@ -58,7 +58,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.ExtensionsExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.ExtensionsCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 

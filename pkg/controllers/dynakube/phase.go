@@ -59,7 +59,7 @@ func (controller *Controller) determineExtensionsExecutionControllerPhase(dk *dy
 }
 
 func (controller *Controller) determineExtensionsCollectorPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(dk, dk.ExtensionsCollectorStatefulsetName())
+	return controller.determinePrometheusStatefulsetPhase(dk, dk.OtelCollectorStatefulsetName())
 }
 
 func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {

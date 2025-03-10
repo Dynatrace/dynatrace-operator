@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +24,7 @@ const (
 	expectedArgNameWithOTLPingest              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
 	expectedArgNameWithOTLPingestOnly          = "log_analytics_collector,generic_ingest_enabled,otlp_ingest"
 	expectedArgNameWithExtensionsAndOTLPingest = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
-	expectedArgNameWithTelemetryService        = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
+	expectedArgNameWithTelemetryIngest         = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest_enabled,otlp_ingest"
 )
 
 var capabilities = []activegate.CapabilityDisplayName{
@@ -34,15 +34,15 @@ var capabilities = []activegate.CapabilityDisplayName{
 	activegate.DynatraceApiCapability.DisplayName,
 }
 
-func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableOTLPingest bool, enableTelemetryService bool) *dynakube.DynaKube {
+func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableOTLPingest bool, enableTelemetryIngest bool) *dynakube.DynaKube {
 	extensionsSpec := &dynakube.ExtensionsSpec{}
 	if !enableExtensions {
 		extensionsSpec = nil
 	}
 
-	telemetryServiceSpec := &telemetryservice.Spec{}
-	if !enableTelemetryService {
-		telemetryServiceSpec = nil
+	telemetryIngestSpec := &telemetryingest.Spec{}
+	if !enableTelemetryIngest {
+		telemetryIngestSpec = nil
 	}
 
 	return &dynakube.DynaKube{
@@ -56,7 +56,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 			},
 			Extensions:       extensionsSpec,
 			EnableOTLPingest: enableOTLPingest,
-			TelemetryService: telemetryServiceSpec,
+			TelemetryIngest:  telemetryIngestSpec,
 		},
 	}
 }
@@ -150,16 +150,16 @@ func TestNewMultiCapabilityWithExtensionsAndOTLPingest(t *testing.T) {
 	})
 }
 
-func TestNewMultiCapabilityWithTelemetryService(t *testing.T) {
-	t.Run(`creates new multicapability with TelemetryService enabled`, func(t *testing.T) {
+func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
+	t.Run(`creates new multicapability with TelemetryIngest enabled`, func(t *testing.T) {
 		dk := buildDynakube(capabilities, false, false, true)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, expectedArgNameWithTelemetryService, mc.ArgName())
+		assert.Equal(t, expectedArgNameWithTelemetryIngest, mc.ArgName())
 	})
-	t.Run(`creates new multicapability without capabilities set in dynakube and TelemetryService enabled`, func(t *testing.T) {
+	t.Run(`creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, false, false, true)
 		mc := NewMultiCapability(dk)
@@ -170,8 +170,8 @@ func TestNewMultiCapabilityWithTelemetryService(t *testing.T) {
 	})
 }
 
-func TestNewMultiCapabilityWithOTLPingestAndTelemetryService(t *testing.T) {
-	t.Run(`creates new multicapability without capabilities set in dynakube and with OTLPingest and TelemetryService enabled`, func(t *testing.T) {
+func TestNewMultiCapabilityWithOTLPingestAndTelemetryIngest(t *testing.T) {
+	t.Run(`creates new multicapability without capabilities set in dynakube and with OTLPingest and TelemetryIngest enabled`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, false, true, true)
 		mc := NewMultiCapability(dk)

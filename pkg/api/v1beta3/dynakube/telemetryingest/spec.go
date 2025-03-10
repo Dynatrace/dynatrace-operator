@@ -1,6 +1,6 @@
-package telemetryservice
+package telemetryingest
 
-type TelemetryService struct {
+type TelemetryIngest struct {
 	*Spec
 
 	name string
