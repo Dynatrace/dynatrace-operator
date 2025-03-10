@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/service"
@@ -41,11 +41,11 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.TelemetryService().IsEnabled() {
+	if !r.dk.TelemetryIngest().IsEnabled() {
 		return r.removeServiceOnce(ctx)
 	}
 
-	if r.dk.TelemetryService().ServiceName != "" {
+	if r.dk.TelemetryIngest().ServiceName != "" {
 		return r.removeServiceOnce(ctx)
 	}
 
@@ -91,7 +91,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryService().GetName())
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetName())
 
 	return nil
 }
@@ -102,12 +102,12 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 	appLabels := labels.NewAppLabels(labels.OtelCComponentLabel, r.dk.Name, labels.OtelCComponentLabel, "")
 
 	var svcPorts []corev1.ServicePort
-	if r.dk.TelemetryService().IsEnabled() && r.dk.Spec.TelemetryService.ServiceName == "" {
-		svcPorts = buildServicePortList(r.dk.TelemetryService().GetProtocols())
+	if r.dk.TelemetryIngest().IsEnabled() && r.dk.Spec.TelemetryIngest.ServiceName == "" {
+		svcPorts = buildServicePortList(r.dk.TelemetryIngest().GetProtocols())
 	}
 
 	return service.Build(r.dk,
-		r.dk.TelemetryService().GetName(),
+		r.dk.TelemetryIngest().GetName(),
 		appLabels.BuildMatchLabels(),
 		svcPorts,
 		service.SetLabels(coreLabels.BuildLabels()),
@@ -115,7 +115,7 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 	)
 }
 
-func buildServicePortList(protocols []telemetryservice.Protocol) []corev1.ServicePort {
+func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 	if len(protocols) == 0 {
 		return nil
 	}
@@ -124,14 +124,14 @@ func buildServicePortList(protocols []telemetryservice.Protocol) []corev1.Servic
 
 	for _, protocol := range protocols {
 		switch protocol {
-		case telemetryservice.ZipkinProtocol:
+		case otelcgen.ZipkinProtocol:
 			svcPorts = append(svcPorts, corev1.ServicePort{
 				Name:       portNameZipkin,
 				Port:       9411,
 				Protocol:   corev1.ProtocolTCP,
 				TargetPort: intstr.FromInt32(9411),
 			})
-		case telemetryservice.OtlpProtocol:
+		case otelcgen.OtlpProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:       portNameOtlpGrpc,
@@ -145,7 +145,7 @@ func buildServicePortList(protocols []telemetryservice.Protocol) []corev1.Servic
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt32(4318),
 				})
-		case telemetryservice.JaegerProtocol:
+		case otelcgen.JaegerProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:       portNameJaegerGrpc,
@@ -171,7 +171,7 @@ func buildServicePortList(protocols []telemetryservice.Protocol) []corev1.Servic
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt32(14268),
 				})
-		case telemetryservice.StatsdProtocol:
+		case otelcgen.StatsdProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:       portNameStatsd,

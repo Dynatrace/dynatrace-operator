@@ -55,10 +55,10 @@ var (
 		tooManyAGReplicas,
 		missingKSPMImage,
 		missingLogMonitoringImage,
-		emptyTelemetryServiceProtocolsList,
-		unknownTelemetryServiceProtocols,
-		duplicatedTelemetryServiceProtocols,
-		invalidTelemetryServiceName,
+		emptyTelemetryIngestProtocolsList,
+		unknownTelemetryIngestProtocols,
+		duplicatedTelemetryIngestProtocols,
+		invalidTelemetryIngestName,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

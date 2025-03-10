@@ -53,6 +53,18 @@ func createDynakubeWithMetadataAndAppInjection(name string, selector metav1.Labe
 	return dk
 }
 
+func createDynakubeWithRemoteImageDownloadAndNoCSI(name string, selector metav1.LabelSelector) *dynakube.DynaKube {
+	dk := createBaseDynakube(name, true, false)
+
+	dk.Annotations = make(map[string]string)
+
+	dk.Annotations[dynakube.AnnotationFeatureRemoteImageDownload] = "true"
+
+	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
+
+	return dk
+}
+
 func createNamespace(name string, labels map[string]string) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

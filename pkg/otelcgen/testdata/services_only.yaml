@@ -13,8 +13,6 @@ service:
         - debug
       receivers:
         - otlp
-        - jaeger
-        - zipkin
       processors:
         - memory_limiter
         - k8sattributes
@@ -26,12 +24,12 @@ service:
         - debug
       receivers:
         - otlp
-        - jaeger
-        - zipkin
+        - statsd
       processors:
         - memory_limiter
         - k8sattributes
         - transform
+        - cumulativetodelta
         - batch/metrics
     traces:
       exporters:

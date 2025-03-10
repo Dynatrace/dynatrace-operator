@@ -4,17 +4,18 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 )
 
-func TestTelemetryServiceProtocols(t *testing.T) {
+func TestTelemetryIngestProtocols(t *testing.T) {
 	t.Run(`no list of protocols`, func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &telemetryservice.Spec{
+					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: nil,
 					},
 				},
@@ -27,7 +28,7 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &telemetryservice.Spec{
+					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{},
 					},
 				},
@@ -36,15 +37,15 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 
 	t.Run(`unknown protocol`, func(t *testing.T) {
 		assertDenied(t,
-			[]string{errorTelemetryServiceUnknownProtocols},
+			[]string{errorTelemetryIngestUnknownProtocols},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &telemetryservice.Spec{
+					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.OtlpProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.OtlpProtocol),
 							"unknown",
 						},
 					},
@@ -54,15 +55,15 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 
 	t.Run(`unknown protocols`, func(t *testing.T) {
 		assertDenied(t,
-			[]string{errorTelemetryServiceUnknownProtocols},
+			[]string{errorTelemetryIngestUnknownProtocols},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &telemetryservice.Spec{
+					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.OtlpProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.OtlpProtocol),
 							"unknown1",
 							"unknown2",
 						},
@@ -73,16 +74,16 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 
 	t.Run(`duplicated protocol`, func(t *testing.T) {
 		assertDenied(t,
-			[]string{errorTelemetryServiceDuplicatedProtocols},
+			[]string{errorTelemetryIngestDuplicatedProtocols},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &telemetryservice.Spec{
+					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.OtlpProtocol),
-							string(telemetryservice.OtlpProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.OtlpProtocol),
+							string(otelcgen.OtlpProtocol),
 						},
 					},
 				},
@@ -91,18 +92,18 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 
 	t.Run(`duplicated protocols`, func(t *testing.T) {
 		assertDenied(t,
-			[]string{errorTelemetryServiceDuplicatedProtocols},
+			[]string{errorTelemetryIngestDuplicatedProtocols},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &telemetryservice.Spec{
+					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.ZipkinProtocol),
-							string(telemetryservice.OtlpProtocol),
-							string(telemetryservice.OtlpProtocol),
-							string(telemetryservice.JaegerProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.ZipkinProtocol),
+							string(otelcgen.OtlpProtocol),
+							string(otelcgen.OtlpProtocol),
+							string(otelcgen.JaegerProtocol),
 						},
 					},
 				},
@@ -114,8 +115,8 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:           testApiUrl,
-					TelemetryService: &telemetryservice.Spec{},
+					APIURL:          testApiUrl,
+					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			})
 	})
@@ -132,12 +133,12 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 
 	t.Run(`service name too long`, func(t *testing.T) {
 		assertDenied(t,
-			[]string{invalidTelemetryServiceNameErrorMessage()},
+			[]string{invalidTelemetryIngestNameErrorMessage()},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &telemetryservice.Spec{
+					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "a123456789012345678901234567890123456789012345678901234567890123",
 					},
 				},
@@ -146,12 +147,12 @@ func TestTelemetryServiceProtocols(t *testing.T) {
 
 	t.Run(`service name violates DNS-1035`, func(t *testing.T) {
 		assertDenied(t,
-			[]string{invalidTelemetryServiceNameErrorMessage()},
+			[]string{invalidTelemetryIngestNameErrorMessage()},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					TelemetryService: &telemetryservice.Spec{
+					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "0123",
 					},
 				},

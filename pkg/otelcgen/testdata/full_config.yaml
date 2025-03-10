@@ -1,7 +1,8 @@
 connectors: {}
 exporters:
+  debug:
   otlphttp:
-    endpoint: "test"
+    endpoint: "exporters-test-endpoint"
     tls:
       ca_file: "/run/opensignals/cacerts/certs"
     headers:
@@ -10,6 +11,7 @@ extensions:
   health_check:
     endpoint: test:13133
 processors:
+  cumulativetodelta: {}
   k8sattributes:
     extract:
       annotations:
@@ -198,8 +200,6 @@ service:
         - debug
       receivers:
         - otlp
-        - jaeger
-        - zipkin
       processors:
         - memory_limiter
         - k8sattributes
@@ -211,12 +211,12 @@ service:
         - debug
       receivers:
         - otlp
-        - jaeger
-        - zipkin
+        - statsd
       processors:
         - memory_limiter
         - k8sattributes
         - transform
+        - cumulativetodelta
         - batch/metrics
     traces:
       exporters:
