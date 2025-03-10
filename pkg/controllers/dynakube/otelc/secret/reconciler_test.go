@@ -133,6 +133,28 @@ func TestEndpoint(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, apiUrl+"/v2/otlp", string(endpoint))
 	})
+
+	t.Run("managed ActiveGate", func(t *testing.T) {
+		dk := createDynaKube(true)
+		apiUrl := "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api"
+		dk.Spec.APIURL = apiUrl
+
+		objs := []client.Object{
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      consts.TelemetryApiCredentialsSecretName,
+					Namespace: dk.Namespace,
+				},
+			},
+		}
+
+		clt := schemeFake.NewClient(objs...)
+		r := NewReconciler(clt, clt, &dk)
+
+		endpoint, err := r.getDtEndpoint()
+		require.NoError(t, err)
+		assert.Equal(t, apiUrl+"/v2/otlp", string(endpoint))
+	})
 }
 
 func createDynaKube(telemetryIngestEnabled bool) dynakube.DynaKube {
