@@ -104,8 +104,8 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 	}
 
 	if dk.IsOTLPingestEnabled() || dk.TelemetryIngest().IsEnabled() {
-		capabilityNames = append(capabilityNames, "log_analytics_collector", "generic_ingest_enabled", "otlp_ingest")
-		capabilityDisplayNames = append(capabilityDisplayNames, "log_analytics_collector", "generic_ingest_enabled", "otlp_ingest")
+		capabilityNames = append(capabilityNames, "log_analytics_collector_enabled", "generic_ingest_enabled", "otlp_ingest")
+		capabilityDisplayNames = append(capabilityDisplayNames, "log_analytics_collector_enabled", "generic_ingest_enabled", "otlp_ingest")
 	}
 
 	mc.argName = strings.Join(capabilityNames, ",")
