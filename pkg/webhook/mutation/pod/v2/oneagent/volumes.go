@@ -40,7 +40,4 @@ func addInitVolumeMounts(initContainer *corev1.Container) {
 			SubPath:   binSubPath,
 		},
 	)
-
-	common.AddInitConfigVolumeMount(initContainer)
-	common.AddInitInputVolumeMount(initContainer)
 }

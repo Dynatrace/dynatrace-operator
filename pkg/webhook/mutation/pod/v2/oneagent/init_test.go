@@ -15,7 +15,7 @@ func TestAddInitArgs(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureRemoteImageDownloadTechnology: "java",
+					oacommon.AnnotationTechnologies: "java",
 				},
 			},
 		}

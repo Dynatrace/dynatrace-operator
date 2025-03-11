@@ -8,5 +8,6 @@ var (
 
 const (
 	NoBootstrapperConfigReason = "NoBootstrapperConfig"
+	NoCodeModulesImageReason   = "NoCodeModulesImage"
 	NoMutationNeeded           = "NoMutationNeeded"
 )

@@ -2,11 +2,17 @@ package v2
 
 import (
 	"context"
+	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +26,67 @@ const (
 	testDynakubeName  = "test-dynakube"
 	customImage       = "custom-image"
 )
+
+func TestHandle(t *testing.T) {
+	ctx := context.Background()
+
+	initSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.BootstrapperInitSecretName,
+			Namespace: testNamespaceName,
+		},
+	}
+
+	t.Run("no init secret => no injection + only annotation", func(t *testing.T) {
+		injector := createTestInjector()
+		injector.apiReader = fake.NewClient()
+
+		request := createTestMutationRequest(getTestDynakube())
+
+		err := injector.Handle(ctx, request)
+		require.NoError(t, err)
+
+		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		require.True(t, ok)
+		assert.Equal(t, "false", isInjected)
+
+		reason, ok := request.Pod.Annotations[oacommon.AnnotationReason]
+		require.True(t, ok)
+		assert.Equal(t, NoBootstrapperConfigReason, reason)
+	})
+
+	t.Run("no codeModulesImage => no injection + only annotation", func(t *testing.T) {
+		injector := createTestInjector()
+		injector.apiReader = fake.NewClient(&initSecret)
+
+		request := createTestMutationRequest(&dynakube.DynaKube{})
+
+		err := injector.Handle(ctx, request)
+		require.NoError(t, err)
+
+		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		require.True(t, ok)
+		assert.Equal(t, "false", isInjected)
+
+		reason, ok := request.Pod.Annotations[oacommon.AnnotationReason]
+		require.True(t, ok)
+		assert.Equal(t, NoCodeModulesImageReason, reason)
+	})
+}
+
+func TestIsInjected(t *testing.T) {
+	t.Run("init-container present == injected", func(t *testing.T) {
+		injector := createTestInjector()
+
+		assert.True(t, injector.isInjected(createTestMutationRequestWithInjectedPod(getTestDynakube())))
+	})
+
+	t.Run("init-container NOT present != injected", func(t *testing.T) {
+		injector := createTestInjector()
+
+		assert.False(t, injector.isInjected(createTestMutationRequest(getTestDynakube())))
+	})
+}
 
 func createTestInjector() *Injector {
 	return &Injector{
@@ -151,7 +218,7 @@ func getInjectedPod() *corev1.Pod {
 			},
 		},
 	}
-	installContainer, _ := createInitContainerBase(pod, *getTestDynakube())
+	installContainer := createInitContainerBase(pod, *getTestDynakube())
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
 
 	return pod

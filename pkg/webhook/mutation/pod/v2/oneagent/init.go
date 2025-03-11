@@ -7,11 +7,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	bootstrapperSourceArgument = "source" // TODO import consts from bootstrapper as soon as >1.0.1 is released
+	bootstrapperSourceArgument = "source" // TODO import consts from bootstrapper
 	bootstrapperTargetArgument = "target"
 )
 
@@ -22,7 +23,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 
 func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) {
 	args := []arg.Arg{
-		{Name: bootstrapperSourceArgument, Value: consts.AgentCodeModuleSource}, // TODO import consts from bootstrapper as soon as >1.0.1 is released
+		{Name: bootstrapperSourceArgument, Value: consts.AgentCodeModuleSource}, // TODO import consts from bootstrapper
 		{Name: bootstrapperTargetArgument, Value: binInitMountPath},
 		{Name: configure.InstallPathFlag, Value: installPath},
 	}
@@ -31,11 +32,15 @@ func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.Dy
 		args = append(args, arg.Arg{Name: move.TechnologyFlag, Value: technology})
 	}
 
-	initContainer.Args = arg.ConvertArgsToStrings(args)
+	if initContainer.Args == nil {
+		initContainer.Args = []string{}
+	}
+
+	initContainer.Args = append(initContainer.Args, arg.ConvertArgsToStrings(args)...)
 }
 
 func getTechnology(pod corev1.Pod, dk dynakube.DynaKube) string {
-	if technology, ok := pod.Annotations[dynakube.AnnotationFeatureRemoteImageDownloadTechnology]; ok {
+	if technology, ok := pod.Annotations[oacommon.AnnotationTechnologies]; ok {
 		return technology
 	}
 

@@ -4,8 +4,11 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -19,8 +22,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = nil
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = nil
 
-		initContainer, err := createInitContainerBase(pod, *dk)
-		require.NoError(t, err)
+		initContainer := createInitContainerBase(pod, *dk)
 
 		require.NotNil(t, initContainer)
 		assert.Equal(t, dtwebhook.InstallContainerName, initContainer.Name)
@@ -54,9 +56,8 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = testUser
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = testUser
 
-		initContainer, err := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk)
 
-		require.NoError(t, err)
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
 
@@ -75,9 +76,8 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = testUser
 		pod.Spec.SecurityContext.RunAsGroup = testUser
 
-		initContainer, err := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk)
 
-		require.NoError(t, err)
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
 
@@ -94,9 +94,8 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = ptr.To(oacommon.RootUserGroup)
 		pod.Spec.SecurityContext.RunAsGroup = ptr.To(oacommon.RootUserGroup)
 
-		initContainer, err := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk)
 
-		require.NoError(t, err)
 		assert.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
 
@@ -112,10 +111,79 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer, err := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk)
 
-		require.NoError(t, err)
 		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, initContainer.SecurityContext.SeccompProfile.Type)
+	})
+
+	t.Run("should not set suppress-errors arg - according to dk", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "fail"}
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+
+		initContainer := createInitContainerBase(pod, *dk)
+
+		assert.NotContains(t, initContainer.Args, "--suppress-errors")
+	})
+
+	t.Run("should not set suppress-errors arg - according to pod", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "silent"}
+		pod := getTestPod()
+		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"}
+
+		initContainer := createInitContainerBase(pod, *dk)
+
+		assert.NotContains(t, initContainer.Args, "--suppress-errors")
+	})
+
+	t.Run("should set suppress-errors arg - default", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{}
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+
+		initContainer := createInitContainerBase(pod, *dk)
+
+		assert.Contains(t, initContainer.Args, "--suppress-errors")
+	})
+
+	t.Run("should set suppress-errors arg - unknown value", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "asd"}
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+
+		initContainer := createInitContainerBase(pod, *dk)
+
+		assert.Contains(t, initContainer.Args, "--suppress-errors")
+
+		dk = getTestDynakube()
+		dk.Annotations = map[string]string{}
+		pod = getTestPod()
+		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "asd"}
+
+		initContainer = createInitContainerBase(pod, *dk)
+
+		assert.Contains(t, initContainer.Args, "--suppress-errors")
+	})
+}
+
+func TestAddInitContainerToPod(t *testing.T) {
+	t.Run("adds common volumes/mounts", func(t *testing.T) {
+		pod := corev1.Pod{}
+		initContainer := corev1.Container{}
+
+		addInitContainerToPod(&pod, &initContainer)
+
+		assert.Contains(t, pod.Spec.InitContainers, initContainer)
+		require.Len(t, pod.Spec.Volumes, 2)
+		assert.True(t, volumes.IsIn(pod.Spec.Volumes, common.ConfigVolumeName))
+		assert.True(t, volumes.IsIn(pod.Spec.Volumes, common.InputVolumeName))
+		require.Len(t, initContainer.VolumeMounts, 2)
+		assert.True(t, mounts.IsPathIn(initContainer.VolumeMounts, common.InitConfigMountPath))
+		assert.True(t, mounts.IsPathIn(initContainer.VolumeMounts, common.InitInputMountPath))
 	})
 }
 

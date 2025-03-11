@@ -72,6 +72,8 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 
 	log.Info("reinvoking", "podName", request.PodName())
 
+	oacommon.SetInjectedAnnotation(request.Pod)
+
 	return mut.reinvokeUserContainers(request)
 }
 

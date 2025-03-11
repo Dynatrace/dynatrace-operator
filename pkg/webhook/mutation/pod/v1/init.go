@@ -26,7 +26,7 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: consts.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, AnnotationFailurePolicy, dk.FeatureInjectionFailurePolicy())},
+			{Name: consts.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FeatureInjectionFailurePolicy())},
 			{Name: consts.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
 			{Name: consts.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
 			{Name: consts.K8sBasePodNameEnv, Value: getBasePodName(pod)},

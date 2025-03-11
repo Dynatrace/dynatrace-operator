@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
-	v1mutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -52,7 +52,7 @@ func Feature(t *testing.T) features.Feature {
 	sampleAppCloudNative := sample.NewApp(t, &dynakubeCloudNative,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsCloudNativeName),
-		sample.WithAnnotations(map[string]string{v1mutation.AnnotationFailurePolicy: "fail"}),
+		sample.WithAnnotations(map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"}),
 	)
 	builder.Assess("create sample app namespace", sampleAppCloudNative.InstallNamespace())
 

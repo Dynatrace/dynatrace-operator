@@ -1,9 +1,8 @@
 package v2
 
 import (
-	"errors"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common"
@@ -11,30 +10,34 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) (*corev1.Container, error) {
-	customImage := dk.OneAgent().GetCustomCodeModulesImage()
-	if customImage == "" {
-		return nil, errors.New("custom code modules image not set")
-	}
-
+func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
 	initContainer := &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
-		Image:           customImage,
+		Image:           dk.OneAgent().GetCustomCodeModulesImage(),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		SecurityContext: securityContextForInitContainer(pod, dk),
 		Resources:       initContainerResources(dk),
 	}
 
-	return initContainer, nil
+	if areErrorsSuppressed(pod, dk) {
+		initContainer.Args = append(initContainer.Args, "--suppress-errors") // TODO: import arg from bootstrapper package
+	}
+
+	// TODO: Add all `--attribute` args to init-container
+
+	return initContainer
+}
+
+func areErrorsSuppressed(pod *corev1.Pod, dk dynakube.DynaKube) bool {
+	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FeatureInjectionFailurePolicy()) != "fail" // safer than == silent
 }
 
 func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
 	common.AddInitConfigVolumeMount(initContainer)
 	common.AddInitInputVolumeMount(initContainer)
-	// TODO: Add all `--attribute` args to init-container
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 	common.AddInputVolume(pod)
 	common.AddConfigVolume(pod)
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 }
 
 func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {

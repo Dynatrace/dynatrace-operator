@@ -39,7 +39,7 @@ func (mut *Mutator) reinvokeUserContainers(request *dtwebhook.ReinvocationReques
 func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 
-	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, oacommon.DefaultInstallPath)
+	installPath := maputils.GetField(request.Pod.Annotations, oacommon.AnnotationInstallPath, oacommon.DefaultInstallPath)
 
 	dk := request.DynaKube
 

@@ -38,16 +38,9 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		container := &corev1.Container{}
 
 		addInitVolumeMounts(container)
-		require.Len(t, container.VolumeMounts, 3)
+		require.Len(t, container.VolumeMounts, 1)
 		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, binInitMountPath, container.VolumeMounts[0].MountPath)
 		assert.Equal(t, binSubPath, container.VolumeMounts[0].SubPath)
-
-		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[1].Name)
-		assert.Equal(t, common.InitConfigSubPath, container.VolumeMounts[1].SubPath)
-		assert.Equal(t, common.InitConfigMountPath, container.VolumeMounts[1].MountPath)
-
-		assert.Equal(t, common.InputVolumeName, container.VolumeMounts[2].Name)
-		assert.Equal(t, common.InitInputMountPath, container.VolumeMounts[2].MountPath)
 	})
 }

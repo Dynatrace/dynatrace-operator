@@ -8,6 +8,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
+	metamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/oneagent"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,16 +16,18 @@ import (
 )
 
 type Injector struct {
-	recorder  events.EventRecorder
-	apiReader client.Reader
+	recorder   events.EventRecorder
+	apiReader  client.Reader
+	metaClient client.Client
 }
 
 var _ dtwebhook.PodInjector = &Injector{}
 
-func NewInjector(apiReader client.Reader, recorder events.EventRecorder) *Injector {
+func NewInjector(apiReader client.Reader, metaClient client.Client, recorder events.EventRecorder) *Injector {
 	return &Injector{
-		recorder:  recorder,
-		apiReader: apiReader,
+		recorder:   recorder,
+		apiReader:  apiReader,
+		metaClient: metaClient,
 	}
 }
 
@@ -35,10 +38,16 @@ func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.Mutat
 		return nil
 	}
 
+	if !isCustomImageSet(mutationRequest) {
+		return nil
+	}
+
 	if wh.isInjected(mutationRequest) {
 		if wh.handlePodReinvocation(mutationRequest) {
 			log.Info("reinvocation policy applied", "podName", mutationRequest.PodName())
 			wh.recorder.SendPodUpdateEvent()
+
+			return nil
 		}
 
 		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName())
@@ -67,14 +76,7 @@ func (wh *Injector) isInjected(mutationRequest *dtwebhook.MutationRequest) bool 
 }
 
 func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
-	var err error
-
-	mutationRequest.InstallContainer, err = createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
-	if err != nil {
-		log.Error(err, "failed to create init container")
-
-		return err
-	}
+	mutationRequest.InstallContainer = createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
 
 	updated := oamutation.Mutate(mutationRequest)
 	if !updated {
@@ -82,6 +84,10 @@ func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwe
 
 		return nil
 	}
+
+	oacommon.SetInjectedAnnotation(mutationRequest.Pod)
+
+	_ = metamutation.Mutate(ctx, wh.metaClient, mutationRequest) // TODO: finalize
 
 	// TODO: Add `--attribute-container` for new containers to init-container
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
@@ -95,6 +101,17 @@ func (wh *Injector) handlePodReinvocation(mutationRequest *dtwebhook.MutationReq
 	// TODO: Add `--attribute-container` for new containers to init-container
 
 	return updated
+}
+
+func isCustomImageSet(mutationRequest *dtwebhook.MutationRequest) bool {
+	customImage := mutationRequest.DynaKube.OneAgent().GetCustomCodeModulesImage()
+	if customImage == "" {
+		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoCodeModulesImageReason)
+
+		return false
+	}
+
+	return true
 }
 
 func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest) bool {
