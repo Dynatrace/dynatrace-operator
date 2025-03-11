@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -23,8 +22,6 @@ const (
 	portNameJaegerThriftCompact = "jaeger-thrift-compact"
 	portNameJaegerThriftHttp    = "jaeger-thrift-http"
 	portNameStatsd              = "statsd"
-
-	telemetryIngestServiceLabel = api.InternalFlagPrefix + "telemetry-ingest-service-by"
 )
 
 type Reconciler struct {
@@ -52,7 +49,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	serviceName := r.dk.TelemetryIngest().ServiceName
 	if serviceName == "" {
-		serviceName = r.dk.TelemetryIngest().GetName()
+		serviceName = r.dk.TelemetryIngest().GetDefaultServiceName()
 	}
 
 	r.removeServices(ctx, serviceName)
@@ -75,8 +72,8 @@ func (r *Reconciler) removeServices(ctx context.Context, actualServiceName strin
 	listOps := []client.ListOption{
 		client.InNamespace(r.dk.Namespace),
 		client.MatchingLabels{
-			labels.AppCreatedByLabel:    r.dk.Name,
-			telemetryIngestServiceLabel: r.dk.Name,
+			labels.AppComponentLabel: labels.OtelCComponentLabel,
+			labels.AppCreatedByLabel: r.dk.Name,
 		},
 	}
 
@@ -113,7 +110,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetName())
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetDefaultServiceName())
 
 	return nil
 }
@@ -130,18 +127,14 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 
 	serviceName := r.dk.Spec.TelemetryIngest.ServiceName
 	if serviceName == "" {
-		serviceName = r.dk.TelemetryIngest().GetName()
+		serviceName = r.dk.TelemetryIngest().GetDefaultServiceName()
 	}
-
-	buildLabels := coreLabels.BuildLabels()
-	buildLabels[telemetryIngestServiceLabel] = r.dk.Name
 
 	return service.Build(r.dk,
 		serviceName,
 		appLabels.BuildMatchLabels(),
 		svcPorts,
 		service.SetLabels(coreLabels.BuildLabels()),
-		service.SetLabels(buildLabels),
 		service.SetType(corev1.ServiceTypeClusterIP),
 	)
 }

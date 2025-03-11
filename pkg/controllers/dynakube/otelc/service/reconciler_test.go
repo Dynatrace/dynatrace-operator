@@ -45,7 +45,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 8)
@@ -74,7 +74,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 2)
@@ -97,11 +97,11 @@ func TestService(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		err := mockK8sClient.Create(context.Background(), &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.TelemetryIngest().GetName(),
+				Name:      dk.TelemetryIngest().GetDefaultServiceName(),
 				Namespace: dk.Namespace,
 				Labels: map[string]string{
-					labels.AppCreatedByLabel:    dk.Name,
-					telemetryIngestServiceLabel: dk.Name,
+					labels.AppComponentLabel: labels.OtelCComponentLabel,
+					labels.AppCreatedByLabel: dk.Name,
 				},
 			},
 		})
@@ -111,7 +111,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -131,8 +131,8 @@ func TestService(t *testing.T) {
 				Name:      testServiceName,
 				Namespace: dk.Namespace,
 				Labels: map[string]string{
-					labels.AppCreatedByLabel:    dk.Name,
-					telemetryIngestServiceLabel: dk.Name,
+					labels.AppComponentLabel: labels.OtelCComponentLabel,
+					labels.AppCreatedByLabel: dk.Name,
 				},
 			},
 		})
@@ -142,7 +142,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -155,7 +155,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, dk.Status.Conditions, 1)
@@ -171,7 +171,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 

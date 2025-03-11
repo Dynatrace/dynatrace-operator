@@ -130,7 +130,7 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 
 	dkServiceName := dk.TelemetryIngest().ServiceName
 	if dkServiceName == "" {
-		dkServiceName = dk.TelemetryIngest().GetName()
+		dkServiceName = dk.TelemetryIngest().GetDefaultServiceName()
 	}
 
 	for _, otherDk := range dkList.Items {
@@ -144,7 +144,7 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 
 		otherDkServiceName := otherDk.TelemetryIngest().ServiceName
 		if otherDkServiceName == "" {
-			otherDkServiceName = otherDk.TelemetryIngest().GetName()
+			otherDkServiceName = otherDk.TelemetryIngest().GetDefaultServiceName()
 		}
 
 		if otherDkServiceName == dkServiceName {

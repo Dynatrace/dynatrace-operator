@@ -27,7 +27,7 @@ func (ts *TelemetryIngest) SetName(name string) {
 	ts.name = name
 }
 
-func (ts *TelemetryIngest) GetName() string {
+func (ts *TelemetryIngest) GetDefaultServiceName() string {
 	return ts.name + ServiceNameSuffix
 }
 
