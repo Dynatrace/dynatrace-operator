@@ -114,7 +114,7 @@ func getEventsQueryGroup(namespace string) resourceQueryGroup {
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
-			client.Limit(10),
+			client.Limit(NumEvents),
 		},
 	}
 }
