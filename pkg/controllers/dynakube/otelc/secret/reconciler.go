@@ -92,7 +92,7 @@ func (r *Reconciler) getDtEndpoint() ([]byte, error) {
 		return []byte(fmt.Sprintf("https://%s-activegate.dynatrace.svc/e/%s/api/v2/otlp", r.dk.Name, tenantUUID)), nil
 	}
 
-	return []byte(fmt.Sprintf("https://%s/api/v2/otlp", r.dk.ApiUrlHost())), nil
+	return []byte(r.dk.ApiUrl() + "/v2/otlp"), nil
 }
 
 func (r *Reconciler) generateTelemetryIngestApiCredentialsSecret(name string) (secret *corev1.Secret, err error) {
