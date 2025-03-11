@@ -46,18 +46,16 @@ runs:
         image: operator-${{ inputs.platform }}
         labels: ${{ inputs.labels }}
         oci: true
-    - name: Verbose
+    - name: Export image to file
       shell: bash
       run: |
         buildah version
         podman version
         cat /etc/os-release
-
-#        outputs: type=docker,dest=/tmp/operator-${{ inputs.platform }}.tar
-#    - name: Upload artifact
-#      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-#      with:
-#        name: operator-${{ inputs.platform }}
-#        path: /tmp/operator-${{ inputs.platform }}.tar
-#        retention-days: 1
-#
+        podman save /tmp/operator-${{ inputs.platform }}.tar
+    - name: Upload artifact
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      with:
+        name: operator-${{ inputs.platform }}
+        path: /tmp/operator-${{ inputs.platform }}.tar
+        retention-days: 1
