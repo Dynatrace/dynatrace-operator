@@ -31,6 +31,19 @@ func (ts *TelemetryIngest) GetDefaultServiceName() string {
 	return ts.name + ServiceNameSuffix
 }
 
+func (ts *TelemetryIngest) GetServiceName() string {
+	if ts.Spec == nil {
+		return ts.GetDefaultServiceName()
+	}
+
+	serviceName := ts.Spec.ServiceName
+	if serviceName == "" {
+		serviceName = ts.GetDefaultServiceName()
+	}
+
+	return serviceName
+}
+
 func (ts *TelemetryIngest) IsEnabled() bool {
 	return ts.Spec != nil
 }

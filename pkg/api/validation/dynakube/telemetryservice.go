@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
@@ -128,10 +128,7 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 		return ""
 	}
 
-	dkServiceName := dk.TelemetryIngest().ServiceName
-	if dkServiceName == "" {
-		dkServiceName = dk.TelemetryIngest().GetDefaultServiceName()
-	}
+	dkServiceName := dk.TelemetryIngest().GetServiceName()
 
 	for _, otherDk := range dkList.Items {
 		if otherDk.Name == dk.Name {
@@ -142,10 +139,7 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 			continue
 		}
 
-		otherDkServiceName := otherDk.TelemetryIngest().ServiceName
-		if otherDkServiceName == "" {
-			otherDkServiceName = otherDk.TelemetryIngest().GetDefaultServiceName()
-		}
+		otherDkServiceName := otherDk.TelemetryIngest().GetServiceName()
 
 		if otherDkServiceName == dkServiceName {
 			log.Info(errorTelemetryIngestServiceNameInUse, "other dynakube name", otherDk.Name, "other telemetry service name", otherDkServiceName, "namespace", otherDk.Namespace)

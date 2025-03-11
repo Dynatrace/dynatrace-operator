@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -47,12 +47,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	serviceName := r.dk.TelemetryIngest().ServiceName
-	if serviceName == "" {
-		serviceName = r.dk.TelemetryIngest().GetDefaultServiceName()
-	}
-
-	r.removeServices(ctx, serviceName)
+	r.removeServices(ctx, r.dk.TelemetryIngest().GetServiceName())
 
 	return r.createOrUpdateService(ctx)
 }
@@ -110,7 +105,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetDefaultServiceName())
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetServiceName())
 
 	return nil
 }
@@ -120,20 +115,10 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 	// TODO: add proper version later on
 	appLabels := labels.NewAppLabels(labels.OtelCComponentLabel, r.dk.Name, labels.OtelCComponentLabel, "")
 
-	var svcPorts []corev1.ServicePort
-	if r.dk.TelemetryIngest().IsEnabled() {
-		svcPorts = buildServicePortList(r.dk.TelemetryIngest().GetProtocols())
-	}
-
-	serviceName := r.dk.Spec.TelemetryIngest.ServiceName
-	if serviceName == "" {
-		serviceName = r.dk.TelemetryIngest().GetDefaultServiceName()
-	}
-
 	return service.Build(r.dk,
-		serviceName,
+		r.dk.TelemetryIngest().GetServiceName(),
 		appLabels.BuildMatchLabels(),
-		svcPorts,
+		buildServicePortList(r.dk.TelemetryIngest().GetProtocols()),
 		service.SetLabels(coreLabels.BuildLabels()),
 		service.SetType(corev1.ServiceTypeClusterIP),
 	)
