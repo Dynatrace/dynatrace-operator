@@ -47,7 +47,6 @@ runs:
         labels: ${{ inputs.labels }}
         oci: true
     - name: Verbose
-      uses: redhat-actions/buildah-build@v2.13
       shell: bash
       run: |
         buildah version
