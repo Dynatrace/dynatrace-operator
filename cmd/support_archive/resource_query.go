@@ -115,6 +115,9 @@ func getEventsQueryGroup(namespace string) resourceQueryGroup {
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
 			client.Limit(numEventsFlagValue),
+			&client.ListOptions{
+				FieldSelector: fields.OneTermEqualSelector("type", corev1.EventTypeWarning),
+			},
 		},
 	}
 }
