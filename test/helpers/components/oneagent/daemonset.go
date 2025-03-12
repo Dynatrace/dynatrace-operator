@@ -5,7 +5,7 @@ package oneagent
 import (
 	"context"
 
-	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -23,7 +23,7 @@ func WaitForDaemonSetPodsDeletion(dsName, namespace string) features.Func {
 	return pod.WaitForPodsDeletionWithOwner(dsName, namespace)
 }
 
-func Get(ctx context.Context, resource *resources.Resources, dk dynakubev1beta4.DynaKube) (appsv1.DaemonSet, error) {
+func Get(ctx context.Context, resource *resources.Resources, dk dynakube.DynaKube) (appsv1.DaemonSet, error) {
 	return daemonset.NewQuery(ctx, resource, client.ObjectKey{
 		Name:      dk.OneAgent().GetDaemonsetName(),
 		Namespace: dk.Namespace,
