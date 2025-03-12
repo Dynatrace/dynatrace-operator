@@ -5,21 +5,15 @@ func (dk *DynaKube) OtelCollectorStatefulsetName() string {
 }
 
 func (dk *DynaKube) IsAGCertificateNeeded() bool {
-	if dk.isInClusterActiveGate() && dk.ActiveGate().HasCaCert() {
+	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().HasCaCert() {
 		return true
 	}
 
 	return false
 }
+
 func (dk *DynaKube) IsCACertificateNeeded() bool {
-	if !dk.isInClusterActiveGate() && dk.Spec.TrustedCAs != "" {
-		return true
-	}
-
-	return false
-}
-func (dk *DynaKube) isInClusterActiveGate() bool {
-	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().IsApiEnabled() {
+	if !dk.ActiveGate().IsEnabled() && dk.Spec.TrustedCAs != "" {
 		return true
 	}
 
