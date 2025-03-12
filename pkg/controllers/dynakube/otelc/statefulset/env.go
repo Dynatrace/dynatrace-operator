@@ -39,7 +39,8 @@ const (
 	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
 	envCertDir          = "SSL_CERT_DIR"
 	envEECcontrollerTLS = "EXTENSIONS_CONTROLLER_TLS"
-	envProxy            = "HTTPS_PROXY"
+	envHttpProxy        = "HTTP_PROXY"
+	envHttpsProxy       = "HTTPS_PROXY"
 	envNoProxy          = "NO_PROXY"
 
 	// Volume names and paths
@@ -73,7 +74,16 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	if dk.HasProxy() {
 		if dk.Spec.Proxy.ValueFrom != "" {
 			envs = append(envs, corev1.EnvVar{
-				Name: envProxy,
+				Name: envHttpsProxy,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: dk.Spec.Proxy.ValueFrom},
+						Key:                  dynakube.ProxyKey,
+					},
+				},
+			})
+			envs = append(envs, corev1.EnvVar{
+				Name: envHttpProxy,
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{Name: dk.Spec.Proxy.ValueFrom},
@@ -82,7 +92,8 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 				},
 			})
 		} else {
-			envs = append(envs, corev1.EnvVar{Name: envProxy, Value: dk.Spec.Proxy.Value})
+			envs = append(envs, corev1.EnvVar{Name: envHttpsProxy, Value: dk.Spec.Proxy.Value})
+			envs = append(envs, corev1.EnvVar{Name: envHttpProxy, Value: dk.Spec.Proxy.Value})
 		}
 
 		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getNoProxyValue(dk)})

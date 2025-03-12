@@ -113,7 +113,7 @@ func TestEnvironmentVariables(t *testing.T) {
 func TestProxyEnvs(t *testing.T) {
 	const testProxySecretName = "test-proxy-secret"
 
-	const testProxyValue = "test.proxy.com:8888"
+	const testProxyValue = "http://test.proxy.com:8888"
 
 	testActiveGate := activegate.Spec{
 		CapabilityProperties: activegate.CapabilityProperties{},
@@ -259,12 +259,21 @@ func TestProxyEnvs(t *testing.T) {
 			switch {
 			case tt.proxy == nil:
 				{
-					assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envProxy})
+					assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsProxy})
 				}
 			case tt.proxy.ValueFrom != "":
 				{
 					assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-						Name: envProxy,
+						Name: envHttpsProxy,
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: tt.proxy.ValueFrom},
+								Key:                  dynakube.ProxyKey,
+							},
+						},
+					})
+					assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+						Name: envHttpProxy,
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{Name: tt.proxy.ValueFrom},
@@ -276,7 +285,11 @@ func TestProxyEnvs(t *testing.T) {
 			default:
 				{
 					assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-						Name:  envProxy,
+						Name:  envHttpsProxy,
+						Value: tt.proxy.Value,
+					})
+					assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+						Name:  envHttpProxy,
 						Value: tt.proxy.Value,
 					})
 				}
