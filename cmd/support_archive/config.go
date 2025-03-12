@@ -13,5 +13,3 @@ const ManifestsFileExtension = ".yaml"
 const CRDKindName = "CustomResourceDefinition"
 const ValidatingWebhookConfigurationKind = "ValidatingWebhookConfiguration"
 const MutatingWebhookConfigurationKind = "MutatingWebhookConfiguration"
-
-const NumEvents = 300
