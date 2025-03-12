@@ -1,15 +1,15 @@
 package dynakube
 
 import (
-	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	oneagentv1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // ConvertFrom converts from the Hub version (v1beta3) to this version (v1beta3).
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*dynakubev1beta4.DynaKube)
+	src := srcRaw.(*dynakube.DynaKube)
 
 	dst.fromBase(src)
 	dst.fromOneAgentSpec(src)
@@ -20,7 +20,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func (dst *DynaKube) fromBase(src *dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromBase(src *dynakube.DynaKube) {
 	if src.Annotations == nil {
 		src.Annotations = map[string]string{}
 	}
@@ -38,7 +38,7 @@ func (dst *DynaKube) fromBase(src *dynakubev1beta4.DynaKube) {
 	dst.Spec.DynatraceApiRequestThreshold = int(src.GetDynatraceApiRequestThreshold())
 }
 
-func (dst *DynaKube) fromOneAgentSpec(src *dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 
 	switch {
@@ -58,7 +58,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubev1beta4.DynaKube) {
 	}
 }
 
-func (dst *DynaKube) fromActiveGateSpec(src *dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
 	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
@@ -86,7 +86,7 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakubev1beta4.DynaKube) {
 	}
 }
 
-func (dst *DynaKube) fromStatus(src *dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromStatus(src *dynakube.DynaKube) {
 	dst.fromOneAgentStatus(*src)
 	dst.fromActiveGateStatus(*src)
 	dst.Status.CodeModules = CodeModulesStatus{
@@ -105,7 +105,7 @@ func (dst *DynaKube) fromStatus(src *dynakubev1beta4.DynaKube) {
 	dst.Status.KubernetesClusterName = src.Status.KubernetesClusterName
 }
 
-func (dst *DynaKube) fromOneAgentStatus(src dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromOneAgentStatus(src dynakube.DynaKube) {
 	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
 
 	// Instance
@@ -136,13 +136,13 @@ func (dst *DynaKube) fromOneAgentStatus(src dynakubev1beta4.DynaKube) {
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
 }
 
-func (dst *DynaKube) fromActiveGateStatus(src dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromActiveGateStatus(src dynakube.DynaKube) {
 	dst.Status.ActiveGate.ConnectionInfoStatus.ConnectionInfoStatus = (ConnectionInfoStatus)(src.Status.ActiveGate.ConnectionInfo)
 	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 }
 
-func fromHostInjectSpec(src oneagentv1beta4.HostInjectSpec) *HostInjectSpec {
+func fromHostInjectSpec(src oneagent.HostInjectSpec) *HostInjectSpec {
 	dst := &HostInjectSpec{}
 	dst.AutoUpdate = src.AutoUpdate == nil || *src.AutoUpdate
 	dst.OneAgentResources = src.OneAgentResources
@@ -161,7 +161,7 @@ func fromHostInjectSpec(src oneagentv1beta4.HostInjectSpec) *HostInjectSpec {
 	return dst
 }
 
-func fromAppInjectSpec(src oneagentv1beta4.AppInjectionSpec) *AppInjectionSpec {
+func fromAppInjectSpec(src oneagent.AppInjectionSpec) *AppInjectionSpec {
 	dst := &AppInjectionSpec{}
 
 	dst.CodeModulesImage = src.CodeModulesImage
@@ -171,7 +171,7 @@ func fromAppInjectSpec(src oneagentv1beta4.AppInjectionSpec) *AppInjectionSpec {
 	return dst
 }
 
-func (dst *DynaKube) fromMetadataEnrichment(src *dynakubev1beta4.DynaKube) {
+func (dst *DynaKube) fromMetadataEnrichment(src *dynakube.DynaKube) {
 	dst.Spec.MetadataEnrichment.Enabled = src.MetadataEnrichmentEnabled()
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 }
