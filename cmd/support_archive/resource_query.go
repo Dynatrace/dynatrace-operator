@@ -34,6 +34,7 @@ func getQueries(namespace string, appName string) []resourceQuery {
 	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppManagedByLabel).getQueries()...)
 	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
 	allQueries = append(allQueries, getConfigMapQueryGroup(namespace).getQueries()...)
+	allQueries = append(allQueries, getEventsQueryGroup(namespace).getQueries()...)
 
 	return allQueries
 }
@@ -102,6 +103,21 @@ func getConfigMapQueryGroup(namespace string) resourceQueryGroup {
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
+		},
+	}
+}
+
+func getEventsQueryGroup(namespace string) resourceQueryGroup {
+	return resourceQueryGroup{
+		resources: []schema.GroupVersionKind{
+			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Event{}),
+		},
+		filters: []client.ListOption{
+			client.InNamespace(namespace),
+			client.Limit(numEventsFlagValue),
+			&client.ListOptions{
+				FieldSelector: fields.OneTermEqualSelector("type", corev1.EventTypeWarning),
+			},
 		},
 	}
 }
