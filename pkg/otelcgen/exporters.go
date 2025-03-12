@@ -10,12 +10,13 @@ var (
 
 func (c *Config) buildExporters() map[component.ID]component.Config {
 	serverConfig := &ServerConfig{
-		Endpoint:   c.buildEndpointWithoutPort(),
-		TLSSetting: &TLSSetting{},
+		Endpoint: c.buildExportersEndpoint(),
 	}
 
 	if c.caFile != "" {
-		serverConfig.TLSSetting.CAFile = c.caFile
+		serverConfig.TLSSetting = &TLSSetting{
+			CAFile: c.caFile,
+		}
 	}
 
 	if c.apiToken != "" {
@@ -24,6 +25,7 @@ func (c *Config) buildExporters() map[component.ID]component.Config {
 	}
 
 	return map[component.ID]component.Config{
+		debug:    nil,
 		otlphttp: serverConfig,
 	}
 }

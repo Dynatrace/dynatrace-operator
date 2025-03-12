@@ -241,7 +241,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("otelc pods not ready -> deploying", func(t *testing.T) {
-		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.ExtensionsCollectorStatefulsetName(), 2, 1))
+		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 2, 1))
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -251,7 +251,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("otelc deployed -> running", func(t *testing.T) {
-		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.ExtensionsCollectorStatefulsetName(), 2, 2))
+		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 2, 2))
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -399,8 +399,8 @@ func TestDynakubePhaseChanges(t *testing.T) {
 	agNotReady := createStatefulset(testNamespace, "test-name-activegate", 1, 0)
 	eecReady := createStatefulset(testNamespace, dk.ExtensionsExecutionControllerStatefulsetName(), 1, 1)
 	eecNotReady := createStatefulset(testNamespace, dk.ExtensionsExecutionControllerStatefulsetName(), 1, 0)
-	otelcReady := createStatefulset(testNamespace, dk.ExtensionsCollectorStatefulsetName(), 2, 2)
-	otelcNotReady := createStatefulset(testNamespace, dk.ExtensionsCollectorStatefulsetName(), 2, 1)
+	otelcReady := createStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 2, 2)
+	otelcNotReady := createStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 2, 1)
 	oaReady := createDaemonSet(testNamespace, "test-name-oneagent", 3, 3)
 	oaNotReady := createDaemonSet(testNamespace, "test-name-oneagent", 3, 2)
 	logAgentReady := createDaemonSet(testNamespace, dk.LogMonitoring().GetDaemonSetName(), 3, 3)

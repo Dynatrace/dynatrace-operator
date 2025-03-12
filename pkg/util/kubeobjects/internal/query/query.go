@@ -38,7 +38,7 @@ func (c Generic[T, L]) WithOwner(owner client.Object) Generic[T, L] {
 func (c Generic[T, L]) Get(ctx context.Context, objectKey client.ObjectKey) (T, error) {
 	err := c.KubeReader.Get(ctx, objectKey, c.Target)
 
-	return c.Target, err
+	return c.Target, errors.WithStack(err)
 }
 
 func (c Generic[T, L]) Create(ctx context.Context, object T) error {

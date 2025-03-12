@@ -44,16 +44,11 @@ func (c *Config) buildReceiverComponent(componentID component.ID) component.Conf
 	return nil
 }
 
-func (c *Config) buildReceivers(protocols []string) (map[component.ID]component.Config, error) {
-	if len(protocols) == 0 {
-		// means all protocols are enabled
-		protocols = []string{string(StatsdProtocol), string(ZipkinProtocol), string(JaegerProtocol), string(OtlpProtocol)}
-	}
-
+func (c *Config) buildReceivers() (map[component.ID]component.Config, error) {
 	receivers := make(map[component.ID]component.Config)
 
-	for _, p := range protocols {
-		switch Protocol(p) {
+	for _, p := range c.protocols {
+		switch p {
 		case StatsdProtocol:
 			receivers[StatsdID] = c.buildReceiverComponent(StatsdID)
 		case ZipkinProtocol:

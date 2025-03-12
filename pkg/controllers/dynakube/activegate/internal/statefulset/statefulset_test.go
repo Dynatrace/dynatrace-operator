@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryservice"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -584,14 +584,14 @@ func TestPVC(t *testing.T) {
 
 		test(dk, multiCapability, myPVCspec)
 	})
-	t.Run("use custom PVC with TelemetryService", func(t *testing.T) {
+	t.Run("use custom PVC with TelemetryIngest", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
 		myPVCspec := corev1.PersistentVolumeClaimSpec{
 			StorageClassName: ptr.To("test"),
 			VolumeName:       "foo-pv",
 		}
-		dk.Spec.TelemetryService = &telemetryservice.Spec{}
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 		dk.Spec.ActiveGate.PersistentVolumeClaim = &myPVCspec
 
 		test(dk, multiCapability, myPVCspec)
@@ -603,9 +603,9 @@ func TestPVC(t *testing.T) {
 
 		test(dk, multiCapability, defaultPVCSpec())
 	})
-	t.Run("use default PVC with TelemetryService", func(t *testing.T) {
+	t.Run("use default PVC with TelemetryIngest", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.TelemetryService = &telemetryservice.Spec{}
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 		multiCapability := capability.NewMultiCapability(&dk)
 
 		test(dk, multiCapability, defaultPVCSpec())
