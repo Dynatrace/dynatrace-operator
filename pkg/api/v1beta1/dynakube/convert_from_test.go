@@ -6,9 +6,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +24,8 @@ func TestConvertFrom(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareBase(t, to, from)
 	})
@@ -33,9 +34,15 @@ func TestConvertFrom(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
-		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		to := DynaKube{}
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
+		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
+		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring)
 		compareMovedFields(t, to, from)
@@ -47,7 +54,13 @@ func TestConvertFrom(t *testing.T) {
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
+		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 
 		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack)
 		compareMovedFields(t, to, from)
@@ -59,7 +72,13 @@ func TestConvertFrom(t *testing.T) {
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
+		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 
 		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack)
 		compareMovedFields(t, to, from)
@@ -71,7 +90,13 @@ func TestConvertFrom(t *testing.T) {
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
+		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
+		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
+		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 
 		compareApplicationMonitoringSpec(t, *to.Spec.OneAgent.ApplicationMonitoring, *from.Spec.OneAgent.ApplicationMonitoring)
 	})
@@ -82,7 +107,8 @@ func TestConvertFrom(t *testing.T) {
 		from.Spec.ActiveGate = agSpec
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareActiveGateSpec(t, to.Spec.ActiveGate, from.Spec.ActiveGate)
 	})
@@ -92,7 +118,8 @@ func TestConvertFrom(t *testing.T) {
 		from.Status = getNewStatus()
 		to := DynaKube{}
 
-		to.ConvertFrom(&from)
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
 
 		compareStatus(t, to.Status, from.Status)
 	})
@@ -126,6 +153,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
 	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
+	assert.Equal(t, oldDk.Spec.NetworkZone, newDk.Spec.NetworkZone)
 
 	if oldDk.Spec.Proxy != nil || newDk.Spec.Proxy != nil { // necessary so we don't explode with nil pointer when not set
 		require.NotNil(t, oldDk.Spec.Proxy)
@@ -276,6 +304,9 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
+			},
+			OneAgent: oneagent.Spec{
+				HostGroup: "host-group",
 			},
 		},
 	}

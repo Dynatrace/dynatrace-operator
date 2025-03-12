@@ -11,6 +11,7 @@ import (
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -120,6 +121,48 @@ func startCertificateWatcher(webhookManager manager.Manager, namespace string, p
 	return nil
 }
 
+func setupDynakubeValidation(webhookManager manager.Manager) error {
+	dkValidator := dynakubevalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
+
+	err := dynakubev1beta1.SetupWebhookWithManager(webhookManager, dkValidator)
+	if err != nil {
+		return err
+	}
+
+	err = dynakubev1beta2.SetupWebhookWithManager(webhookManager, dkValidator)
+	if err != nil {
+		return err
+	}
+
+	err = dynakubev1beta3.SetupWebhookWithManager(webhookManager, dkValidator)
+	if err != nil {
+		return err
+	}
+
+	err = dynakubev1beta4.SetupWebhookWithManager(webhookManager, dkValidator)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func setupEdgeconnectValidation(webhookManager manager.Manager) error {
+	ecValidator := edgeconnectvalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
+
+	err := edgeconnectv1alpha1.SetupWebhookWithManager(webhookManager, ecValidator)
+	if err != nil {
+		return err
+	}
+
+	err = edgeconnectv1alpha2.SetupWebhookWithManager(webhookManager, ecValidator)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		installconfig.ReadModules()
@@ -153,31 +196,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		dkValidator := dynakubevalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
-
-		err = dynakubev1beta1.SetupWebhookWithManager(webhookManager, dkValidator)
+		err = setupDynakubeValidation(webhookManager)
 		if err != nil {
 			return err
 		}
 
-		err = dynakubev1beta2.SetupWebhookWithManager(webhookManager, dkValidator)
-		if err != nil {
-			return err
-		}
-
-		err = dynakubev1beta3.SetupWebhookWithManager(webhookManager, dkValidator)
-		if err != nil {
-			return err
-		}
-
-		ecValidator := edgeconnectvalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
-
-		err = edgeconnectv1alpha1.SetupWebhookWithManager(webhookManager, ecValidator)
-		if err != nil {
-			return err
-		}
-
-		err = edgeconnectv1alpha2.SetupWebhookWithManager(webhookManager, ecValidator)
+		err = setupEdgeconnectValidation(webhookManager)
 		if err != nil {
 			return err
 		}
