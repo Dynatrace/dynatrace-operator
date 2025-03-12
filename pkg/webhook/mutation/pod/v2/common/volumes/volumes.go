@@ -1,4 +1,4 @@
-package common
+package volumes
 
 import (
 	"path/filepath"

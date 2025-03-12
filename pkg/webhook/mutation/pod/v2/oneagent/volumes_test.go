@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/volumes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -19,17 +19,17 @@ func TestAddVolumeMounts(t *testing.T) {
 
 		addVolumeMounts(container, installPath)
 		require.Len(t, container.VolumeMounts, 3)
-		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, installPath, container.VolumeMounts[0].MountPath)
 		assert.Equal(t, binSubPath, container.VolumeMounts[0].SubPath)
 
-		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[1].Name)
+		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[1].Name)
 		assert.Equal(t, ldPreloadPath, container.VolumeMounts[1].MountPath)
-		assert.Equal(t, filepath.Join(common.InitConfigSubPath, ldPreloadSubPath), container.VolumeMounts[1].SubPath)
+		assert.Equal(t, filepath.Join(volumes.InitConfigSubPath, ldPreloadSubPath), container.VolumeMounts[1].SubPath)
 
-		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[2].Name)
-		assert.Equal(t, filepath.Join(common.InitConfigSubPath, container.Name), container.VolumeMounts[2].SubPath)
-		assert.Equal(t, common.ConfigMountPath, container.VolumeMounts[2].MountPath)
+		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[2].Name)
+		assert.Equal(t, filepath.Join(volumes.InitConfigSubPath, container.Name), container.VolumeMounts[2].SubPath)
+		assert.Equal(t, volumes.ConfigMountPath, container.VolumeMounts[2].MountPath)
 	})
 }
 
@@ -39,7 +39,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 
 		addInitVolumeMounts(container)
 		require.Len(t, container.VolumeMounts, 1)
-		assert.Equal(t, common.ConfigVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, binInitMountPath, container.VolumeMounts[0].MountPath)
 		assert.Equal(t, binSubPath, container.VolumeMounts[0].SubPath)
 	})

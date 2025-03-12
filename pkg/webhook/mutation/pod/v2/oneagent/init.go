@@ -5,9 +5,9 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/move"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/arg"
 	corev1 "k8s.io/api/core/v1"
 )
 
