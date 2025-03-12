@@ -34,12 +34,12 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Recon
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !conditions.IsOutdated(r.timeProvider, r.dk, conditionType) {
+	if !conditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
 		return nil
 	}
 
 	if !r.dk.LogMonitoring().IsEnabled() {
-		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
 
 		return nil
 	} else if r.dk.Status.KubernetesClusterMEID == "" {
@@ -61,7 +61,7 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 
 	logMonitoringSettings, err := r.dtc.GetSettingsForLogModule(ctx, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
-		setLogMonitoringSettingError(r.dk.Conditions(), conditionType, err.Error())
+		setLogMonitoringSettingError(r.dk.Conditions(), ConditionType, err.Error())
 
 		return errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -69,7 +69,7 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	if logMonitoringSettings.TotalCount > 0 {
 		log.Info("there are already settings", "settings", logMonitoringSettings)
 
-		setLogMonitoringSettingExists(r.dk.Conditions(), conditionType)
+		setLogMonitoringSettingExists(r.dk.Conditions(), ConditionType)
 
 		return nil
 	}
@@ -82,7 +82,7 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	objectId, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
 
 	if err != nil {
-		setLogMonitoringSettingError(r.dk.Conditions(), conditionType, err.Error())
+		setLogMonitoringSettingError(r.dk.Conditions(), ConditionType, err.Error())
 
 		return err
 	}

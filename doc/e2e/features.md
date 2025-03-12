@@ -382,6 +382,9 @@ const (
     DevRegistryPullSecretName       = "devregistry"
     EecImageRepo                    = "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-eec"
     EecImageTag                     = "1.303.0.20240930-183404"
+    // LogMonitoringImageRepo          = "repository: public.ecr.aws/dynatrace/dynatrace-logmodule"
+    LogMonitoringImageRepo = "us-central1-docker.pkg.dev/cloud-platform-207208/chmu/logmodule"
+    LogMonitoringImageTag  = "latest"
 )
 ```
 
@@ -434,6 +437,24 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/extensions"
 <a name="Feature"></a>
 
 ## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/extensions/extensions.go#L26>)
+
+```go
+func Feature(t *testing.T) features.Feature
+```
+
+# logmonitoring
+
+```go
+import "github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
+```
+
+## Index
+
+- [func Feature(t *testing.T) features.Feature](<#Feature>)
+
+<a name="Feature"></a>
+
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/logmonitoring/logmonitoring.go#L33>)
 
 ```go
 func Feature(t *testing.T) features.Feature

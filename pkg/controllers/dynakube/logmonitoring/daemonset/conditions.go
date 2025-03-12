@@ -1,5 +1,5 @@
 package daemonset
 
 const (
-	conditionType = "LogMonitoringDaemonSet"
+	ConditionType = "LogMonitoringDaemonSet"
 )
