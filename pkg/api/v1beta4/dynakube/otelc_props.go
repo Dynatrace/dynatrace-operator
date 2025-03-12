@@ -1,7 +1,7 @@
 package dynakube
 
 func (dk *DynaKube) OtelCollectorStatefulsetName() string {
-	return dk.Name + "-extensions-collector"
+	return dk.Name + "-otel-collector"
 }
 
 func (dk *DynaKube) IsAGCertificateNeeded() bool {

@@ -7112,7 +7112,7 @@ spec:
                           type: object
                         type: array
                     type: object
-                  openTelemetryCollector:
+                  otelCollector:
                     properties:
                       annotations:
                         additionalProperties:
@@ -10518,7 +10518,7 @@ spec:
                           type: object
                         type: array
                     type: object
-                  openTelemetryCollector:
+                  otelCollector:
                     properties:
                       annotations:
                         additionalProperties:
