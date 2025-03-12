@@ -9,7 +9,7 @@ const (
 	settingsExistReason = "LogMonSettingsExist"
 	settingsErrorReason = "LogMonSettingsError"
 
-	conditionType = "LogMonitoringSettings"
+	ConditionType = "LogMonitoringSettings"
 )
 
 func setLogMonitoringSettingExists(conditions *[]metav1.Condition, conditionType string) {

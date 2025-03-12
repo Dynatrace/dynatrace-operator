@@ -37,7 +37,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only clean up if not standalone", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		conditions.SetSecretCreated(dk.Conditions(), lmcConditionType, "testing")
+		conditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "testing")
 
 		mockK8sClient := createK8sClientWithConfigSecret()
 
@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: GetSecretName((dk.Name)), Namespace: dk.Namespace}, &secret)
 		require.True(t, k8serrors.IsNotFound(err))
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), lmcConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), LmcConditionType)
 		require.Nil(t, condition)
 	})
 
@@ -66,7 +66,7 @@ func TestReconcile(t *testing.T) {
 
 		checkSecretForValue(t, mockK8sClient, dk)
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), lmcConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), LmcConditionType)
 		require.NotNil(t, condition)
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotEmpty(t, oldTransitionTime)
@@ -82,7 +82,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynakube(false)
 
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(dk, tokenValue)
-		conditions.SetSecretCreated(dk.Conditions(), lmcConditionType, "this is a test")
+		conditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
 		err := reconciler.Reconcile(ctx)
@@ -110,7 +110,7 @@ func TestReconcile(t *testing.T) {
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
-		condition := meta.FindStatusCondition(*dk.Conditions(), lmcConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), LmcConditionType)
 		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
