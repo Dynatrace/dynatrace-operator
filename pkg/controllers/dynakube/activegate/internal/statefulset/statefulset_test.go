@@ -490,51 +490,132 @@ func TestSecurityContexts(t *testing.T) {
 	})
 }
 
-func TestVolumes(t *testing.T) {
-	t.Run("empty dir volume exists when PersistentVolumeClaim = nil and UseEphemeralVolume = true", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.EnableOTLPingest = true
-		dk.Spec.ActiveGate.PersistentVolumeClaim = nil
-		dk.Spec.ActiveGate.UseEphemeralVolume = true
-		multiCapability := capability.NewMultiCapability(&dk)
-		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
-			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
-			modifiers.NewReadOnlyModifier(dk),
+func TestTempVolume(t *testing.T) {
+	myPVCspec := corev1.PersistentVolumeClaimSpec{
+		StorageClassName: ptr.To("test"),
+		VolumeName:       "foo-pv",
+	}
+
+	tests := []struct {
+		name             string
+		telemetryIngest  *telemetryingest.Spec
+		pvc              *corev1.PersistentVolumeClaimSpec
+		useEphemeral     bool
+		emptyDirExpected bool
+		pvcExpected      bool
+		expectedPvcSpec  corev1.PersistentVolumeClaimSpec
+	}{
+		{
+			name:             "EmptyDir and no PVC when PersistentVolumeClaim = nil, TelemetryIngest enabled, UseEphemeralVolume = true",
+			pvc:              nil,
+			telemetryIngest:  &telemetryingest.Spec{},
+			useEphemeral:     true,
+			emptyDirExpected: true,
+			pvcExpected:      false,
+		},
+		{
+			name:             "default PVC and no EmptyDir when PersistentVolumeClaim = nil, TelemetryIngest enabled, UseEphemeralVolume = false",
+			pvc:              nil,
+			telemetryIngest:  &telemetryingest.Spec{},
+			useEphemeral:     false,
+			emptyDirExpected: false,
+			pvcExpected:      true,
+			expectedPvcSpec:  defaultPVCSpec(),
+		},
+		{
+			name:             "EmptyDir and no PVC when PersistentVolumeClaim = nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
+			pvc:              nil,
+			telemetryIngest:  nil,
+			useEphemeral:     true,
+			emptyDirExpected: true,
+			pvcExpected:      false,
+		},
+		{
+			name:             "EmptyDir and no PVC when PersistentVolumeClaim = nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
+			pvc:              nil,
+			telemetryIngest:  nil,
+			useEphemeral:     false,
+			emptyDirExpected: true,
+			pvcExpected:      false,
+		},
+		{
+			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest enabled, UseEphemeralVolume = false",
+			pvc:              &myPVCspec,
+			telemetryIngest:  &telemetryingest.Spec{},
+			useEphemeral:     false,
+			emptyDirExpected: false,
+			pvcExpected:      true,
+			expectedPvcSpec:  myPVCspec,
+		},
+		{
+			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest enabled, UseEphemeralVolume = true",
+			pvc:              &myPVCspec,
+			telemetryIngest:  &telemetryingest.Spec{},
+			useEphemeral:     true,
+			emptyDirExpected: false,
+			pvcExpected:      true,
+			expectedPvcSpec:  myPVCspec,
+		},
+		{
+			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
+			pvc:              &myPVCspec,
+			telemetryIngest:  nil,
+			useEphemeral:     false,
+			emptyDirExpected: false,
+			pvcExpected:      true,
+			expectedPvcSpec:  myPVCspec,
+		},
+		{
+			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
+			pvc:              &myPVCspec,
+			telemetryIngest:  nil,
+			useEphemeral:     true,
+			emptyDirExpected: false,
+			pvcExpected:      true,
+			expectedPvcSpec:  myPVCspec,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dk := getTestDynakube()
+
+			dk.Spec.ActiveGate.PersistentVolumeClaim = test.pvc
+			dk.Spec.TelemetryIngest = test.telemetryIngest
+			dk.Spec.ActiveGate.UseEphemeralVolume = test.useEphemeral
+
+			multiCapability := capability.NewMultiCapability(&dk)
+			statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+			sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+				modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
+				modifiers.NewReadOnlyModifier(dk),
+			})
+
+			require.NotEmpty(t, sts)
+
+			expectedEmptyDirVolume := corev1.Volume{
+				Name: consts.GatewayTmpVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			}
+
+			if test.emptyDirExpected {
+				require.Contains(t, sts.Spec.Template.Spec.Volumes, expectedEmptyDirVolume)
+			} else {
+				require.NotContains(t, sts.Spec.Template.Spec.Volumes, expectedEmptyDirVolume)
+			}
+
+			if test.pvcExpected {
+				require.Len(t, sts.Spec.VolumeClaimTemplates, 1)
+				require.Equal(t, test.expectedPvcSpec, sts.Spec.VolumeClaimTemplates[0].Spec)
+				require.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
+				require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
+			} else {
+				require.Len(t, sts.Spec.VolumeClaimTemplates, 0)
+			}
 		})
-
-		require.NotEmpty(t, sts)
-
-		expectedVolume := corev1.Volume{
-			Name: consts.GatewayTmpVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		}
-		require.Contains(t, sts.Spec.Template.Spec.Volumes, expectedVolume)
-	})
-
-	t.Run("empty dir volume doesn't exists when UseEphemeralVolume = false", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.EnableOTLPingest = true
-		dk.Spec.ActiveGate.UseEphemeralVolume = false
-		multiCapability := capability.NewMultiCapability(&dk)
-		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
-			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
-			modifiers.NewReadOnlyModifier(dk),
-		})
-
-		require.NotEmpty(t, sts)
-
-		expectedVolume := corev1.Volume{
-			Name: consts.GatewayTmpVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		}
-		require.NotContains(t, sts.Spec.Template.Spec.Volumes, expectedVolume)
-	})
+	}
 }
 
 func TestVolumeMounts(t *testing.T) {
@@ -554,60 +635,5 @@ func TestVolumeMounts(t *testing.T) {
 			MountPath: consts.GatewayTmpMountPoint,
 		}
 		require.Contains(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
-	})
-}
-
-func TestPVC(t *testing.T) {
-	test := func(dk dynakube.DynaKube, multiCapability capability.Capability, pvcSpec corev1.PersistentVolumeClaimSpec) {
-		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
-			modifiers.NewKubernetesMonitoringModifier(dk, multiCapability),
-			modifiers.NewReadOnlyModifier(dk),
-		})
-
-		require.NotEmpty(t, sts)
-
-		require.Equal(t, pvcSpec, sts.Spec.VolumeClaimTemplates[0].Spec)
-		require.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
-		require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
-	}
-
-	t.Run("use custom PVC with OTLPingest", func(t *testing.T) {
-		dk := getTestDynakube()
-		multiCapability := capability.NewMultiCapability(&dk)
-		myPVCspec := corev1.PersistentVolumeClaimSpec{
-			StorageClassName: ptr.To("test"),
-			VolumeName:       "foo-pv",
-		}
-		dk.Spec.EnableOTLPingest = true
-		dk.Spec.ActiveGate.PersistentVolumeClaim = &myPVCspec
-
-		test(dk, multiCapability, myPVCspec)
-	})
-	t.Run("use custom PVC with TelemetryIngest", func(t *testing.T) {
-		dk := getTestDynakube()
-		multiCapability := capability.NewMultiCapability(&dk)
-		myPVCspec := corev1.PersistentVolumeClaimSpec{
-			StorageClassName: ptr.To("test"),
-			VolumeName:       "foo-pv",
-		}
-		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-		dk.Spec.ActiveGate.PersistentVolumeClaim = &myPVCspec
-
-		test(dk, multiCapability, myPVCspec)
-	})
-	t.Run("use default PVC with OTLPingest", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.EnableOTLPingest = true
-		multiCapability := capability.NewMultiCapability(&dk)
-
-		test(dk, multiCapability, defaultPVCSpec())
-	})
-	t.Run("use default PVC with TelemetryIngest", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-		multiCapability := capability.NewMultiCapability(&dk)
-
-		test(dk, multiCapability, defaultPVCSpec())
 	})
 }
