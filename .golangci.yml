@@ -121,6 +121,7 @@ linters-settings:
           - "istio.io"
           - "k8s.io"
           - "sigs.k8s.io"
+          - "golang.org"
 
           # Approved packages.
           - "github.com/mattn/go-sqlite3"
