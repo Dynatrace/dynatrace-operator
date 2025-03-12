@@ -1,7 +1,9 @@
 package support_archive
 
 import (
+	"os"
 	"reflect"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
@@ -108,13 +110,18 @@ func getConfigMapQueryGroup(namespace string) resourceQueryGroup {
 }
 
 func getEventsQueryGroup(namespace string) resourceQueryGroup {
+	numEvents, err := strconv.Atoi(os.Getenv("SUPPORT_ARCHIVE_MAX_EVENTS"))
+	if err != nil {
+		numEvents = NumEvents
+	}
+
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Event{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
-			client.Limit(NumEvents),
+			client.Limit(numEvents),
 		},
 	}
 }
