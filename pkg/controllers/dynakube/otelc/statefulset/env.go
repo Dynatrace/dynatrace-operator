@@ -2,10 +2,13 @@ package statefulset
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -36,6 +39,8 @@ const (
 	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
 	envCertDir          = "SSL_CERT_DIR"
 	envEECcontrollerTLS = "EXTENSIONS_CONTROLLER_TLS"
+	envProxy            = "HTTPS_PROXY"
+	envNoProxy          = "NO_PROXY"
 
 	// Volume names and paths
 	customEecTLSCertificatePath     = "/tls/custom/eec"
@@ -63,6 +68,24 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envK8sClusterName, Value: dk.Name},
 		{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID},
 		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
+	}
+
+	if dk.HasProxy() {
+		if dk.Spec.Proxy.ValueFrom != "" {
+			envs = append(envs, corev1.EnvVar{
+				Name: envProxy,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: dk.Spec.Proxy.ValueFrom},
+						Key:                  dynakube.ProxyKey,
+					},
+				},
+			})
+		} else {
+			envs = append(envs, corev1.EnvVar{Name: envProxy, Value: dk.Spec.Proxy.Value})
+		}
+
+		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getNoProxyValue(dk)})
 	}
 
 	if dk.IsExtensionsEnabled() {
@@ -106,4 +129,18 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	}
 
 	return envs
+}
+
+func getNoProxyValue(dk *dynakube.DynaKube) string {
+	noProxyValues := []string{}
+
+	if dk.IsExtensionsEnabled() {
+		noProxyValues = append(noProxyValues, dk.ExtensionsServiceNameFQDN())
+	}
+
+	if dk.ActiveGate().IsEnabled() {
+		noProxyValues = append(noProxyValues, capability.BuildServiceName(dk.Name, agconsts.MultiActiveGateName)+"."+dk.Namespace)
+	}
+
+	return strings.Join(noProxyValues, ",")
 }
