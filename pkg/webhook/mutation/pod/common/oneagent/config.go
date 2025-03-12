@@ -1,5 +1,7 @@
 package oneagent
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+
 const (
 	AnnotationPrefix = "oneagent"
 	// AnnotationOneAgentInject can be set at pod level to enable/disable OneAgent injection.
@@ -9,7 +11,7 @@ const (
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.
-	AnnotationTechnologies = "oneagent.dynatrace.com/technologies"
+	AnnotationTechnologies = dynakube.AnnotationTechnologies
 
 	// AnnotationInstallPath can be set on a Pod to configure on which directory the OneAgent will be available from,
 	// defaults to DefaultInstallPath if not set.

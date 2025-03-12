@@ -1,0 +1,32 @@
+apiVersion: dynatrace.com/v1beta4
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+
+  kspm: {}
+
+  activeGate:
+    tlsSecretName: <ag-tls-name>
+
+    capabilities:
+      - kubernetes-monitoring
+
+    customProperties:
+       value: |
+         [kubernetes_monitoring]
+         kubernetes_configuration_dataset_pipeline_enabled = true
+         kubernetes_configuration_dataset_pipeline_include_node_config = true
+
+  templates: {}
+    # Required in combination with kspm enabled.
+    # As there is no image available in public registry yet, this field is required if you want to run kspm.
+    #
+    # kspmNodeConfigurationCollector:
+    #   imageRef:
+    #     repository: <image-repo>
+    #     tag: <image-tag>

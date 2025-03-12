@@ -82,10 +82,6 @@ type Spec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Annotations",order=27,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Annotations map[string]string `json:"annotations,omitempty"`
 
-	// Defines storage device
-	// +kubebuilder:validation:Optional
-	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
-
 	name   string
 	apiUrl string
 
@@ -115,9 +111,6 @@ type Spec struct {
 	enabledDependencies dependencies
 
 	automaticTLSCertificateEnabled bool
-
-	// UseEphemeralVolume
-	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

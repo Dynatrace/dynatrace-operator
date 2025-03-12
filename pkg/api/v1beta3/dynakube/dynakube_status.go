@@ -2,8 +2,6 @@ package dynakube
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
@@ -62,15 +60,6 @@ type DynaKubeStatus struct { //nolint:revive
 type DynatraceApiStatus struct {
 	// Time of the last token request
 	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
-}
-
-func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
-	remaining := timeout - time.Since(lastRequestTimestamp.Time)
-
-	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago, %d minutes remaining until next request",
-		functionName,
-		int(timeout.Minutes()),
-		int(remaining.Minutes()))
 }
 
 type EnrichmentRuleType string

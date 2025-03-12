@@ -3,7 +3,7 @@ package oneagent
 import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/move"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"

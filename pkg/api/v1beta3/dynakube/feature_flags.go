@@ -278,14 +278,6 @@ func (dk *DynaKube) FeatureReadOnlyCsiVolume() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureReadOnlyCsiVolume) == truePhrase
 }
 
-func (dk *DynaKube) FeatureRemoteImageDownload() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureRemoteImageDownload) == truePhrase
-}
-
-func (dk *DynaKube) FeatureRemoteImageDownloadTechnology() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureRemoteImageDownloadTechnology)
-}
-
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
 		return failPhrase

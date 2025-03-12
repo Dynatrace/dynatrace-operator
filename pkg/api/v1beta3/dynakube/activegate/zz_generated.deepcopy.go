@@ -94,11 +94,6 @@ func (in *Spec) DeepCopyInto(out *Spec) {
 			(*out)[key] = val
 		}
 	}
-	if in.PersistentVolumeClaim != nil {
-		in, out := &in.PersistentVolumeClaim, &out.PersistentVolumeClaim
-		*out = new(v1.PersistentVolumeClaimSpec)
-		(*in).DeepCopyInto(*out)
-	}
 	in.CapabilityProperties.DeepCopyInto(&out.CapabilityProperties)
 	if in.Capabilities != nil {
 		in, out := &in.Capabilities, &out.Capabilities

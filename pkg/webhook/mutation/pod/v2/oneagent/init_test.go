@@ -3,7 +3,7 @@ package oneagent
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +33,7 @@ func TestAddInitArgs(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureRemoteImageDownloadTechnology: "nodejs",
+					dynakube.AnnotationTechnologies: "nodejs",
 				},
 			},
 		}
