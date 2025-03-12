@@ -19,14 +19,3 @@ func Mutate(context context.Context, metaClient client.Client, request *dtwebhoo
 
 	return true
 }
-
-// TODO: probably not needed at all
-// func Reinvoke(request *dtwebhook.BaseRequest) bool {
-// 	if !metacommon.IsEnabled(request) {
-// 		return false
-// 	}
-
-//
-
-// 	return true
-// }
