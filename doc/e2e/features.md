@@ -53,7 +53,7 @@ Verification that build labels are created and set accordingly. The test checks:
 
 <a name="MetadataEnrichment"></a>
 
-## func [MetadataEnrichment](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/metadata_enrichment.go#L44>)
+## func [MetadataEnrichment](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/metadata_enrichment.go#L45>)
 
 ```go
 func MetadataEnrichment(t *testing.T) features.Feature

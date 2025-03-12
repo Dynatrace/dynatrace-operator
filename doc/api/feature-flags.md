@@ -17,8 +17,7 @@ import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/tmp"
 
 ```go
 const (
-    AnnotationFeaturePrefix            = "feature.dynatrace.com/"
-    AnnotationFeatureCodeModulesPrefix = "codemodules.oneagent.dynatrace.com/"
+    AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
     // General.
     AnnotationFeaturePublicRegistry = AnnotationFeaturePrefix + "public-registry"
@@ -59,7 +58,11 @@ const (
     AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
     AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
     AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
-    AnnotationFeatureRemoteImageDownload       = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
+    AnnotationFeatureRemoteImageDownload       = AnnotationFeaturePrefix + "remote-image-download"
+
+    // AnnotationTechnologies can be set on a Pod or DynaKube to configure which code module technologies to download. It's set to
+    // "all" if not set.
+    AnnotationTechnologies = "oneagent.dynatrace.com/technologies"
 )
 ```
 
@@ -76,7 +79,7 @@ const (
 
 <a name="MountAttemptsToTimeout"></a>
 
-## func [MountAttemptsToTimeout](<https://github.com/Dynatrace/dynatrace-operator/blob/main/pkg/api/v1beta4/dynakube/tmp/feature_flags.go#L268>)
+## func [MountAttemptsToTimeout](<https://github.com/Dynatrace/dynatrace-operator/blob/main/pkg/api/v1beta4/dynakube/tmp/feature_flags.go#L271>)
 
 ```go
 func MountAttemptsToTimeout(maxAttempts int) string
