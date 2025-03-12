@@ -11,7 +11,6 @@ func (dk *DynaKube) IsAGCertificateNeeded() bool {
 
 	return false
 }
-
 func (dk *DynaKube) IsCACertificateNeeded() bool {
 	if !dk.isInClusterActiveGate() && dk.Spec.TrustedCAs != "" {
 		return true
@@ -19,7 +18,6 @@ func (dk *DynaKube) IsCACertificateNeeded() bool {
 
 	return false
 }
-
 func (dk *DynaKube) isInClusterActiveGate() bool {
 	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().IsApiEnabled() {
 		return true
