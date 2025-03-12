@@ -12,7 +12,9 @@ func (dk *DynaKube) OneAgent() *oneagent.OneAgent {
 		dk.Name,
 		dk.ApiUrlHost(),
 		dk.FeatureOneAgentPrivileged(),
-		dk.FeatureOneAgentSkipLivenessProbe())
+		dk.FeatureOneAgentSkipLivenessProbe(),
+		dk.FeatureRemoteImageDownload(),
+	)
 
 	return oa
 }
