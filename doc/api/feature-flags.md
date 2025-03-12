@@ -3,7 +3,7 @@
 # dynakube
 
 ```go
-import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/tmp"
+import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/tmp"
 ```
 
 ## Index
@@ -76,7 +76,7 @@ const (
 
 <a name="MountAttemptsToTimeout"></a>
 
-## func [MountAttemptsToTimeout](<https://github.com/Dynatrace/dynatrace-operator/blob/main/pkg/api/v1beta3/dynakube/tmp/feature_flags.go#L268>)
+## func [MountAttemptsToTimeout](<https://github.com/Dynatrace/dynatrace-operator/blob/main/pkg/api/v1beta4/dynakube/tmp/feature_flags.go#L268>)
 
 ```go
 func MountAttemptsToTimeout(maxAttempts int) string

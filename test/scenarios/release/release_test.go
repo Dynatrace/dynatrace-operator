@@ -20,7 +20,7 @@ var (
 	cfg     *envconf.Config
 )
 
-const releaseTag = "1.3.2"
+const releaseTag = "1.4.1"
 
 func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
