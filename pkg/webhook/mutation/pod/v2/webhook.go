@@ -80,7 +80,7 @@ func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwe
 
 	updated := oamutation.Mutate(mutationRequest)
 	if !updated {
-		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoMutationNeeded)
+		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoMutationNeededReason)
 
 		return nil
 	}
