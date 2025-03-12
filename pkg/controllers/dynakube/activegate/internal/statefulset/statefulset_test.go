@@ -612,7 +612,7 @@ func TestTempVolume(t *testing.T) {
 				require.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
 				require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
 			} else {
-				require.Len(t, sts.Spec.VolumeClaimTemplates, 0)
+				require.Empty(t, sts.Spec.VolumeClaimTemplates)
 			}
 		})
 	}
