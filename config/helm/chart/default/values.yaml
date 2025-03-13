@@ -220,4 +220,7 @@ rbac:
   kspm:
     create: true
     annotations: {}
+  kubernetesMonitoringFull:
+    create: true
+    annotations: {}
   supportability: true
