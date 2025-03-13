@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +45,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 8)
@@ -61,33 +62,6 @@ func TestService(t *testing.T) {
 		assert.Equal(t, conditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
 	})
-	t.Run("remove service if it is not needed", func(t *testing.T) {
-		dk := getTestDynakube(nil)
-		dk.Status.Conditions = []metav1.Condition{
-			{
-				Type: serviceConditionType,
-			},
-		}
-
-		mockK8sClient := fake.NewFakeClient()
-		err := mockK8sClient.Create(context.Background(), &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.TelemetryIngest().GetName(),
-				Namespace: dk.Namespace,
-			},
-		})
-		require.NoError(t, err)
-
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
-		require.NoError(t, err)
-
-		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
-		require.Error(t, err)
-		assert.True(t, k8serrors.IsNotFound(err))
-
-		require.Empty(t, dk.Status.Conditions)
-	})
 	t.Run("create service for specified protocols", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{
@@ -100,7 +74,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 2)
@@ -112,20 +86,67 @@ func TestService(t *testing.T) {
 		assert.Equal(t, conditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
 	})
-	t.Run("custom service", func(t *testing.T) {
+	t.Run("default service name, remove service if it is not needed", func(t *testing.T) {
+		dk := getTestDynakube(nil)
+		dk.Status.Conditions = []metav1.Condition{
+			{
+				Type: serviceConditionType,
+			},
+		}
+
 		mockK8sClient := fake.NewFakeClient()
-		dk := getTestDynakube(&telemetryingest.Spec{
-			ServiceName: testServiceName,
+		err := mockK8sClient.Create(context.Background(), &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.TelemetryIngest().GetDefaultServiceName(),
+				Namespace: dk.Namespace,
+				Labels: map[string]string{
+					labels.AppComponentLabel: labels.OtelCComponentLabel,
+					labels.AppCreatedByLabel: dk.Name,
+				},
+			},
 		})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		require.NoError(t, err)
+
+		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: testServiceName, Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
-		assert.Empty(t, dk.Status.Conditions)
+		require.Empty(t, dk.Status.Conditions)
+	})
+	t.Run("custom service name, remove service if it is not needed", func(t *testing.T) {
+		dk := getTestDynakube(nil)
+		dk.Status.Conditions = []metav1.Condition{
+			{
+				Type: serviceConditionType,
+			},
+		}
+
+		mockK8sClient := fake.NewFakeClient()
+		err := mockK8sClient.Create(context.Background(), &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testServiceName,
+				Namespace: dk.Namespace,
+				Labels: map[string]string{
+					labels.AppComponentLabel: labels.OtelCComponentLabel,
+					labels.AppCreatedByLabel: dk.Name,
+				},
+			},
+		})
+		require.NoError(t, err)
+
+		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		require.NoError(t, err)
+
+		service := &corev1.Service{}
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		require.Empty(t, dk.Status.Conditions)
 	})
 	t.Run("update from default service to custom service", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
@@ -134,7 +155,7 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, dk.Status.Conditions, 1)
@@ -150,10 +171,39 @@ func TestService(t *testing.T) {
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
-		assert.Empty(t, dk.Status.Conditions)
+		assert.NotEmpty(t, dk.Status.Conditions)
+	})
+	t.Run("update from custom service to default service", func(t *testing.T) {
+		mockK8sClient := fake.NewFakeClient()
+		dk := getTestDynakube(&telemetryingest.Spec{
+			ServiceName: testServiceName,
+		})
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		require.NoError(t, err)
+
+		service := &corev1.Service{}
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: testServiceName, Namespace: dk.Namespace}, service)
+		require.NoError(t, err)
+
+		require.Len(t, dk.Status.Conditions, 1)
+		assert.Equal(t, serviceConditionType, dk.Status.Conditions[0].Type)
+		assert.Equal(t, conditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
+		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
+
+		// update
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
+		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		require.NoError(t, err)
+
+		service = &corev1.Service{}
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: testServiceName, Namespace: dk.Namespace}, service)
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		assert.NotEmpty(t, dk.Status.Conditions)
 	})
 }

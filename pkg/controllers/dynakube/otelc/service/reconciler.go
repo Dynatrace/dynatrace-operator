@@ -42,37 +42,51 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.TelemetryIngest().IsEnabled() {
-		return r.removeServiceOnce(ctx)
+		r.removeServiceOnce(ctx)
+
+		return nil
 	}
 
-	if r.dk.TelemetryIngest().ServiceName != "" {
-		return r.removeServiceOnce(ctx)
-	}
+	r.removeAllServicesExcept(ctx, r.dk.TelemetryIngest().GetServiceName())
 
 	return r.createOrUpdateService(ctx)
 }
 
-func (r *Reconciler) removeServiceOnce(ctx context.Context) error {
+func (r *Reconciler) removeServiceOnce(ctx context.Context) {
 	if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
-		return nil
+		return
 	}
 	defer meta.RemoveStatusCondition(r.dk.Conditions(), serviceConditionType)
 
-	svc, err := r.buildService()
-	if err != nil {
-		log.Error(err, "could not build service during cleanup")
+	r.removeAllServicesExcept(ctx, "")
+}
 
-		return err
+func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceName string) {
+	telemetryServiceList := &corev1.ServiceList{}
+
+	listOps := []client.ListOption{
+		client.InNamespace(r.dk.Namespace),
+		client.MatchingLabels{
+			labels.AppComponentLabel: labels.OtelCComponentLabel,
+			labels.AppCreatedByLabel: r.dk.Name,
+		},
 	}
 
-	err = service.Query(r.client, r.apiReader, log).Delete(ctx, svc)
-	if err != nil {
-		log.Error(err, "failed to clean up extension service")
+	if err := r.apiReader.List(ctx, telemetryServiceList, listOps...); err != nil {
+		log.Info("failed to list telemetry services, skipping cleanup", "error", err)
 
-		return nil
+		return
 	}
 
-	return nil
+	for _, service := range telemetryServiceList.Items {
+		if service.Name != actualServiceName {
+			if err := r.client.Delete(ctx, &service); err != nil {
+				log.Info("failed to clean up telemetry service", "service name", service.Name, "namespace", service.Namespace, "error", err)
+			} else {
+				log.Info("removed unused telemetry service", "service name", service.Name, "namespace", service.Namespace)
+			}
+		}
+	}
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
@@ -85,13 +99,13 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 
 	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
-		log.Info("failed to create/update otelc service")
+		log.Info("failed to create/update telemetry service")
 		conditions.SetKubeApiError(r.dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetName())
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetServiceName())
 
 	return nil
 }
@@ -101,15 +115,10 @@ func (r *Reconciler) buildService() (*corev1.Service, error) {
 	// TODO: add proper version later on
 	appLabels := labels.NewAppLabels(labels.OtelCComponentLabel, r.dk.Name, labels.OtelCComponentLabel, "")
 
-	var svcPorts []corev1.ServicePort
-	if r.dk.TelemetryIngest().IsEnabled() && r.dk.Spec.TelemetryIngest.ServiceName == "" {
-		svcPorts = buildServicePortList(r.dk.TelemetryIngest().GetProtocols())
-	}
-
 	return service.Build(r.dk,
-		r.dk.TelemetryIngest().GetName(),
+		r.dk.TelemetryIngest().GetServiceName(),
 		appLabels.BuildMatchLabels(),
-		svcPorts,
+		buildServicePortList(r.dk.TelemetryIngest().GetProtocols()),
 		service.SetLabels(coreLabels.BuildLabels()),
 		service.SetType(corev1.ServiceTypeClusterIP),
 	)

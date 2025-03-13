@@ -3,6 +3,7 @@ package support_archive
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -36,7 +37,9 @@ const (
 	loadsimFileSizeFlagName        = "loadsim-file-size"
 	loadsimFilesFlagName           = "loadsim-files"
 	collectManagedLogsFlagName     = "managed-logs"
+	numEventsFlagName              = "num-events"
 	defaultSimFileSize             = 10
+	defaultNumEvents               = 300
 )
 
 const (
@@ -52,6 +55,7 @@ var (
 	loadsimFileSizeFlagValue    int
 	collectManagedLogsFlagValue bool
 	delayFlagValue              int
+	numEventsFlagValue          int
 )
 
 type CommandBuilder struct {
@@ -90,6 +94,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
 	cmd.PersistentFlags().BoolVar(&collectManagedLogsFlagValue, collectManagedLogsFlagName, true, "Add logs from rolled out pods to the support archive.")
 	cmd.PersistentFlags().IntVar(&delayFlagValue, delayFlagName, 0, "Delay start of support-archive collection. Useful for standalone execution with 'kubectl run'")
+	cmd.PersistentFlags().IntVar(&numEventsFlagValue, numEventsFlagName, defaultNumEvents, fmt.Sprintf("Number of events to be fetched (default %d)", defaultNumEvents))
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
