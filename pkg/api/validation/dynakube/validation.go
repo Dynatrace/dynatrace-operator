@@ -60,6 +60,8 @@ var (
 		unknownTelemetryIngestProtocols,
 		duplicatedTelemetryIngestProtocols,
 		invalidTelemetryIngestName,
+		forbiddenTelemetryIngestServiceNameSuffix,
+		conflictingTelemetryIngestServiceNames,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
