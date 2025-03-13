@@ -40,6 +40,7 @@ tests:
               - ""
             resourceNames:
               - dynatrace-dynakube-config
+              - dynatrace-bootstrapper-config
               - dynatrace-metadata-enrichment-endpoint
             resources:
               - secrets

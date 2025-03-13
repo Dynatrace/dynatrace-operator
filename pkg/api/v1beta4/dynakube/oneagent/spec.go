@@ -15,6 +15,7 @@ type OneAgent struct {
 	apiUrlHost string
 
 	featureOneAgentPrivileged        bool
+	featureBootstrapperInjection     bool
 	featureOneAgentSkipLivenessProbe bool
 }
 
