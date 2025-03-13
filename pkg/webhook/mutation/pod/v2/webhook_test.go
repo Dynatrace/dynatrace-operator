@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
@@ -71,6 +72,28 @@ func TestHandle(t *testing.T) {
 		reason, ok := request.Pod.Annotations[oacommon.AnnotationReason]
 		require.True(t, ok)
 		assert.Equal(t, NoCodeModulesImageReason, reason)
+	})
+
+	t.Run("happy path", func(t *testing.T) {
+		injector := createTestInjectorBase()
+		injector.apiReader = fake.NewClient(&initSecret)
+
+		request := createTestMutationRequest(getTestDynakube())
+
+		err := injector.Handle(ctx, request)
+		require.NoError(t, err)
+
+		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		require.True(t, ok)
+		assert.Equal(t, "true", isInjected)
+
+		_, ok = request.Pod.Annotations[oacommon.AnnotationReason]
+		require.False(t, ok)
+
+		installContainer := container.FindInitContainerInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
+		require.NotNil(t, installContainer)
+		assert.Len(t, installContainer.Env, 2)
+		assert.Len(t, installContainer.Args, 10)
 	})
 }
 
@@ -149,7 +172,7 @@ func getTestPod() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:            "container",
-					Image:           "alpine",
+					Image:           "docker.io/php:fpm-stretch",
 					SecurityContext: getTestSecurityContext(),
 				},
 			},
@@ -233,4 +256,64 @@ func getTestNamespace() *corev1.Namespace {
 			},
 		},
 	}
+}
+
+func TestIsCustomImageSet(t *testing.T) {
+	t.Run("true", func(t *testing.T) {
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				DynaKube: *getTestDynakube(),
+			},
+		}
+
+		assert.True(t, isCustomImageSet(&request))
+	})
+	t.Run("false, set annotations", func(t *testing.T) {
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				DynaKube: *getTestDynakube(),
+				Pod:      &corev1.Pod{},
+			},
+		}
+
+		request.DynaKube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = ""
+
+		assert.False(t, isCustomImageSet(&request))
+		assert.Equal(t, NoCodeModulesImageReason, request.Pod.Annotations[oacommon.AnnotationReason])
+		assert.Equal(t, "false", request.Pod.Annotations[oacommon.AnnotationInjected])
+	})
+}
+
+func TestSetDynatraceInjectedAnnotation(t *testing.T) {
+	t.Run("add annotation", func(t *testing.T) {
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &corev1.Pod{},
+			},
+		}
+
+		setDynatraceInjectedAnnotation(&request)
+
+		require.Len(t, request.Pod.Annotations, 1)
+		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+	})
+
+	t.Run("remove reason annotation", func(t *testing.T) {
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							dtwebhook.AnnotationDynatraceReason: "beep",
+						},
+					},
+				},
+			},
+		}
+
+		setDynatraceInjectedAnnotation(&request)
+
+		require.Len(t, request.Pod.Annotations, 1)
+		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+	})
 }
