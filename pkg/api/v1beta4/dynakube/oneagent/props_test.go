@@ -68,13 +68,13 @@ func TestDefaultOneAgentImage(t *testing.T) {
 
 	t.Run("OneAgentImage adds raw postfix", func(t *testing.T) {
 		hostUrl, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false, false)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5"))
 	})
 
 	t.Run("OneAgentImage doesn't add 'raw' postfix if present", func(t *testing.T) {
 		hostUrl, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false, false)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5-raw"))
 	})
 
@@ -82,7 +82,7 @@ func TestDefaultOneAgentImage(t *testing.T) {
 		version := "1.239.14.20220325-164521"
 		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
 		hostUrl, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false, false)
 		assert.Equal(t, expectedImage, oneAgent.GetDefaultImage(version))
 	})
 }
@@ -110,7 +110,7 @@ func TestCodeModulesVersion(t *testing.T) {
 
 	t.Run("use status", func(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: testVersion}}
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false, false)
 		version := oneAgent.GetCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
 	})
@@ -118,7 +118,7 @@ func TestCodeModulesVersion(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: "other"}}
 		oneAgent := NewOneAgent(&Spec{
 			ApplicationMonitoring: &ApplicationMonitoringSpec{Version: testVersion},
-		}, &Status{}, codeModulesStatus, "", "", false, false)
+		}, &Status{}, codeModulesStatus, "", "", false, false, false)
 		version := oneAgent.GetCustomCodeModulesVersion()
 
 		assert.Equal(t, testVersion, version)

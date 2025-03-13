@@ -16,11 +16,12 @@ spec:
     capabilities:
       - kubernetes-monitoring
 
-    customProperties:
-       value: |
-         [kubernetes_monitoring]
-         kubernetes_configuration_dataset_pipeline_enabled = true
-         kubernetes_configuration_dataset_pipeline_include_node_config = true
+    # The KSPM ActiveGate pipeline is enabled by default with ActiveGate >= 1.311. This custom properties are obsolete then.
+    # customProperties:
+    #   value: |
+    #     [kubernetes_monitoring]
+    #     kubernetes_configuration_dataset_pipeline_enabled = true
+    #     kubernetes_configuration_dataset_pipeline_include_node_config = true
 
   templates: {}
     # Required in combination with kspm enabled.

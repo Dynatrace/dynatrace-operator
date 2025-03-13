@@ -12,7 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
@@ -71,8 +72,8 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 				sample.AsDeployment(),
 				sample.WithNamespaceLabels(injectEverythingLabels),
 				sample.WithAnnotations(map[string]string{
-					webhook.AnnotationOneAgentInject:           "false",
-					webhook.AnnotationMetadataEnrichmentInject: "true",
+					oacommon.AnnotationInject:   "false",
+					metacommon.AnnotationInject: "true",
 				})),
 			assess: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
 		},
@@ -82,8 +83,8 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 				sample.WithName("pod-metadata-annotation"),
 				sample.WithNamespaceLabels(injectEverythingLabels),
 				sample.WithAnnotations(map[string]string{
-					webhook.AnnotationOneAgentInject:           "false",
-					webhook.AnnotationMetadataEnrichmentInject: "true",
+					oacommon.AnnotationInject:   "false",
+					metacommon.AnnotationInject: "true",
 				})),
 			assess: podHasOnlyMetadataEnrichmentInitContainer,
 		},
@@ -110,8 +111,8 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 				sample.WithName("pod-oa-annotation"),
 				sample.WithNamespaceLabels(injectEverythingLabels),
 				sample.WithAnnotations(map[string]string{
-					webhook.AnnotationOneAgentInject:           "true",
-					webhook.AnnotationMetadataEnrichmentInject: "false",
+					oacommon.AnnotationInject:   "true",
+					metacommon.AnnotationInject: "false",
 				})),
 			assess: podHasOnlyOneAgentInitContainer,
 		},
@@ -201,8 +202,8 @@ func podHasCompleteInitContainer(samplePod *sample.App) features.Func { //nolint
 
 		assert.True(t, env.IsIn(envVars, consts.AgentInjectedEnv))
 
-		assert.Contains(t, testPod.Annotations, webhook.AnnotationWorkloadKind)
-		assert.Contains(t, testPod.Annotations, webhook.AnnotationWorkloadName)
+		assert.Contains(t, testPod.Annotations, metacommon.AnnotationWorkloadKind)
+		assert.Contains(t, testPod.Annotations, metacommon.AnnotationWorkloadName)
 
 		return ctx
 	}
@@ -224,8 +225,8 @@ func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func { //no
 
 		assert.True(t, env.IsIn(envVars, consts.AgentInjectedEnv))
 
-		assert.NotContains(t, testPod.Annotations, webhook.AnnotationWorkloadKind)
-		assert.NotContains(t, testPod.Annotations, webhook.AnnotationWorkloadName)
+		assert.NotContains(t, testPod.Annotations, metacommon.AnnotationWorkloadKind)
+		assert.NotContains(t, testPod.Annotations, metacommon.AnnotationWorkloadName)
 
 		return ctx
 	}
@@ -274,7 +275,7 @@ func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) deployment.PodConsumer
 
 		assert.False(t, env.IsIn(envVars, consts.AgentInjectedEnv))
 
-		assert.Contains(t, pod.Annotations, webhook.AnnotationWorkloadKind)
-		assert.Contains(t, pod.Annotations, webhook.AnnotationWorkloadName)
+		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadKind)
+		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadName)
 	}
 }
