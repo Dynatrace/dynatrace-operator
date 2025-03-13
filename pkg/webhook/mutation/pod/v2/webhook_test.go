@@ -38,7 +38,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	t.Run("no init secret => no injection + only annotation", func(t *testing.T) {
-		injector := createTestInjector()
+		injector := createTestInjectorBase()
 		injector.apiReader = fake.NewClient()
 
 		request := createTestMutationRequest(getTestDynakube())
@@ -56,7 +56,7 @@ func TestHandle(t *testing.T) {
 	})
 
 	t.Run("no codeModulesImage => no injection + only annotation", func(t *testing.T) {
-		injector := createTestInjector()
+		injector := createTestInjectorBase()
 		injector.apiReader = fake.NewClient(&initSecret)
 
 		request := createTestMutationRequest(&dynakube.DynaKube{})
@@ -76,19 +76,19 @@ func TestHandle(t *testing.T) {
 
 func TestIsInjected(t *testing.T) {
 	t.Run("init-container present == injected", func(t *testing.T) {
-		injector := createTestInjector()
+		injector := createTestInjectorBase()
 
 		assert.True(t, injector.isInjected(createTestMutationRequestWithInjectedPod(getTestDynakube())))
 	})
 
 	t.Run("init-container NOT present != injected", func(t *testing.T) {
-		injector := createTestInjector()
+		injector := createTestInjectorBase()
 
 		assert.False(t, injector.isInjected(createTestMutationRequest(getTestDynakube())))
 	})
 }
 
-func createTestInjector() *Injector {
+func createTestInjectorBase() *Injector {
 	return &Injector{
 		recorder: events.NewRecorder(record.NewFakeRecorder(10)),
 	}
