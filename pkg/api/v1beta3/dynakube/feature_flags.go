@@ -27,8 +27,7 @@ import (
 )
 
 const (
-	AnnotationFeaturePrefix            = "feature.dynatrace.com/"
-	AnnotationFeatureCodeModulesPrefix = "codemodules.oneagent.dynatrace.com/"
+	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// General.
 	AnnotationFeaturePublicRegistry = AnnotationFeaturePrefix + "public-registry"
@@ -72,11 +71,9 @@ const (
 	AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
 
 	// CSI.
-	AnnotationFeatureMaxFailedCsiMountAttempts     = AnnotationFeaturePrefix + "max-csi-mount-attempts"
-	AnnotationFeatureMaxCsiMountTimeout            = AnnotationFeaturePrefix + "max-csi-mount-timeout"
-	AnnotationFeatureReadOnlyCsiVolume             = AnnotationFeaturePrefix + "injection-readonly-volume"
-	AnnotationFeatureRemoteImageDownload           = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
-	AnnotationFeatureRemoteImageDownloadTechnology = AnnotationFeatureCodeModulesPrefix + "technology"
+	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
+	AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
+	AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
 
 	falsePhrase  = "false"
 	truePhrase   = "true"
