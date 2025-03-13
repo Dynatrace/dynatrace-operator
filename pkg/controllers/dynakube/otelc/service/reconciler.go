@@ -47,7 +47,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	r.removeServices(ctx, r.dk.TelemetryIngest().GetServiceName())
+	r.removeAllServicesExcept(ctx, r.dk.TelemetryIngest().GetServiceName())
 
 	return r.createOrUpdateService(ctx)
 }
@@ -58,10 +58,10 @@ func (r *Reconciler) removeServiceOnce(ctx context.Context) {
 	}
 	defer meta.RemoveStatusCondition(r.dk.Conditions(), serviceConditionType)
 
-	r.removeServices(ctx, "")
+	r.removeAllServicesExcept(ctx, "")
 }
 
-func (r *Reconciler) removeServices(ctx context.Context, actualServiceName string) {
+func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceName string) {
 	telemetryServiceList := &corev1.ServiceList{}
 
 	listOps := []client.ListOption{
