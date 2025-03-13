@@ -11,12 +11,18 @@ import (
 )
 
 func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+	args := []string{ // TODO: import arg from bootstrapper package
+		"--config-directory=" + volumes.InitConfigMountPath,
+		"--input-directory=" + volumes.InitInputMountPath,
+	}
+
 	initContainer := &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           dk.OneAgent().GetCustomCodeModulesImage(),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		SecurityContext: securityContextForInitContainer(pod, dk),
 		Resources:       initContainerResources(dk),
+		Args:            args,
 	}
 
 	if areErrorsSuppressed(pod, dk) {

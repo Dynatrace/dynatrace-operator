@@ -13,7 +13,7 @@ const (
 	ConfigVolumeName    = "dynatrace-config"
 	InitConfigMountPath = "/mnt/config"
 	InitConfigSubPath   = "config"
-	ConfigMountPath     = "var/lib/dynatrace"
+	ConfigMountPath     = "/var/lib/dynatrace"
 
 	InputVolumeName    = "dynatrace-input"
 	InitInputMountPath = "/mnt/input"

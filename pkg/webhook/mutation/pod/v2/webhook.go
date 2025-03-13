@@ -8,7 +8,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
-	metamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/oneagent"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +30,7 @@ func NewInjector(apiReader client.Reader, metaClient client.Client, recorder eve
 	}
 }
 
-func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
+func (wh *Injector) Handle(_ context.Context, mutationRequest *dtwebhook.MutationRequest) error {
 	wh.recorder.Setup(mutationRequest)
 
 	if !wh.isInputSecretPresent(mutationRequest) {
@@ -52,7 +51,7 @@ func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.Mutat
 
 		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName())
 	} else {
-		if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
+		if err := wh.handlePodMutation(mutationRequest); err != nil {
 			return err
 		}
 	}
@@ -75,8 +74,11 @@ func (wh *Injector) isInjected(mutationRequest *dtwebhook.MutationRequest) bool 
 	return false
 }
 
-func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
+func (wh *Injector) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
 	mutationRequest.InstallContainer = createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
+
+	addContainerAttributes(mutationRequest)
+	wh.addPodAttributes(mutationRequest)
 
 	updated := oamutation.Mutate(mutationRequest)
 	if !updated {
@@ -87,9 +89,6 @@ func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwe
 
 	oacommon.SetInjectedAnnotation(mutationRequest.Pod)
 
-	_ = metamutation.Mutate(ctx, wh.metaClient, mutationRequest) // TODO: finalize
-
-	// TODO: Add `--attribute-container` for new containers to init-container
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 	wh.recorder.SendPodInjectEvent()
 
@@ -97,8 +96,10 @@ func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwe
 }
 
 func (wh *Injector) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
+	mutationRequest.InstallContainer = container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
+	addContainerAttributes(mutationRequest)
+
 	updated := oamutation.Reinvoke(mutationRequest.BaseRequest)
-	// TODO: Add `--attribute-container` for new containers to init-container
 
 	return updated
 }
