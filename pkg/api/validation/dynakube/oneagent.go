@@ -19,6 +19,8 @@ const (
 
 	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver and/or remote image download is not enabled.`
 
+	errorBootstrapperRemoteImageDownloadRequiresCodeModulesImage = `The DynaKube specification enables remote image download, but the code modules image is not set.`
+
 	errorNodeSelectorConflict = `The Dynakube specification conflicts with another Dynakube's OneAgent or Standalone-LogMonitoring. Only one Agent per node is supported.
 Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
@@ -148,6 +150,14 @@ func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.D
 		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver && !dk.FeatureRemoteImageDownload() {
 			return errorImageFieldSetWithoutCSIFlag
 		}
+	}
+
+	return ""
+}
+
+func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if dk.FeatureBootstrapperInjection() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) == 0 {
+		return errorBootstrapperRemoteImageDownloadRequiresCodeModulesImage
 	}
 
 	return ""
