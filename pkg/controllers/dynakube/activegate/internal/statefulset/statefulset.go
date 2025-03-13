@@ -147,7 +147,7 @@ func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
 	volumes := []corev1.Volume{}
 
 	if statefulSetBuilder.dynakube.Spec.ActiveGate.PersistentVolumeClaim == nil {
-		if !(statefulSetBuilder.dynakube.IsOTLPingestEnabled() || statefulSetBuilder.dynakube.TelemetryIngest().IsEnabled()) || statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
+		if !isDefaultPVCNeeded(statefulSetBuilder.dynakube) {
 			volumes = append(volumes, corev1.Volume{
 				Name: consts.GatewayTmpVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -276,6 +276,10 @@ func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 	return &affinity
 }
 
+func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {
+	return (dk.TelemetryIngest().IsEnabled() || dk.IsOTLPingestEnabled()) && !dk.Spec.ActiveGate.UseEphemeralVolume
+}
+
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {
 	if statefulSetBuilder.dynakube.Spec.ActiveGate.PersistentVolumeClaim != nil {
 		// validation webhook ensures that statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume is false at this point
@@ -288,7 +292,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 			},
 		}
 		sts.Spec.PersistentVolumeClaimRetentionPolicy = defaultPVCRetentionPolicy()
-	} else if (statefulSetBuilder.dynakube.TelemetryIngest().IsEnabled() || statefulSetBuilder.dynakube.IsOTLPingestEnabled()) && !statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume {
+	} else if isDefaultPVCNeeded(statefulSetBuilder.dynakube) {
 		sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
 				ObjectMeta: metav1.ObjectMeta{
