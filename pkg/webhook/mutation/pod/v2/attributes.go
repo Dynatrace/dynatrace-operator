@@ -2,6 +2,7 @@ package v2
 
 import (
 	"fmt"
+	"regexp"
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/pod"
@@ -11,7 +12,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/metadata"
-	"github.com/google/go-containerregistry/pkg/name"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -80,22 +80,22 @@ func isInjected(container corev1.Container) bool {
 }
 
 func createImageInfo(imageURI string) containerattr.ImageInfo { // TODO: move to bootstrapper repo
-	ref, _ := name.ParseReference(imageURI)
+	// Regular expression pattern to capture parts of the URI
+	pattern := `^(?P<registry>[^/]+)/(?P<repository>[^:@]+)(?::(?P<tag>[^@]+))?(?:@(?P<digest>.+))?$`
+	re := regexp.MustCompile(pattern)
+	match := re.FindStringSubmatch(imageURI)
+	result := make(map[string]string)
 
-	tag := ""
-	if taggedRef, ok := ref.(name.Tag); ok {
-		tag = taggedRef.TagStr()
-	}
-
-	digest := ""
-	if diggestRef, ok := ref.(name.Digest); ok {
-		digest = diggestRef.DigestStr()
+	for i, name := range re.SubexpNames() {
+		if i != 0 && name != "" {
+			result[name] = match[i]
+		}
 	}
 
 	return containerattr.ImageInfo{
-		Registry:    ref.Context().RegistryStr(),
-		Repository:  ref.Context().RepositoryStr(),
-		Tag:         tag,
-		ImageDigest: digest,
+		Registry:    result["registry"],
+		Repository:  result["repository"],
+		Tag:         result["tag"],
+		ImageDigest: result["digest"],
 	}
 }
