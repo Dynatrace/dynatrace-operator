@@ -29,8 +29,6 @@ func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Cont
 		initContainer.Args = append(initContainer.Args, "--suppress-errors") // TODO: import arg from bootstrapper package
 	}
 
-	// TODO: Add all `--attribute` args to init-container
-
 	return initContainer
 }
 

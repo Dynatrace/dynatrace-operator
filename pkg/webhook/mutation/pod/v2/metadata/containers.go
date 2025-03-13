@@ -10,16 +10,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attributes *podattr.Attributes) bool {
+func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attributes *podattr.Attributes) error {
 	if !metacommon.IsEnabled(request.BaseRequest) {
-		return false
+		return nil
 	}
 
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
 	worloadInfo, err := metacommon.RetrieveWorkload(metaClient, request)
 	if err != nil {
-		return false // TODO
+		return err
 	}
 
 	attributes.WorkloadInfo = podattr.WorkloadInfo{
@@ -32,7 +32,7 @@ func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attrib
 	metacommon.SetInjectedAnnotation(request.Pod)
 	metacommon.SetWorkloadAnnotations(request.Pod, worloadInfo)
 
-	return true
+	return nil
 }
 
 func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {

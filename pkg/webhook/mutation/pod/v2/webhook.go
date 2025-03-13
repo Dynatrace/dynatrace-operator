@@ -77,14 +77,23 @@ func (wh *Injector) isInjected(mutationRequest *dtwebhook.MutationRequest) bool 
 func (wh *Injector) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
 	mutationRequest.InstallContainer = createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
 
-	addContainerAttributes(mutationRequest)
-	wh.addPodAttributes(mutationRequest)
+	err := addContainerAttributes(mutationRequest)
+	if err != nil {
+		return err
+	}
 
 	updated := oamutation.Mutate(mutationRequest)
 	if !updated {
 		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoMutationNeededReason)
 
 		return nil
+	}
+
+	err = wh.addPodAttributes(mutationRequest)
+	if err != nil {
+		log.Info("failed to add pod attributes to init-container")
+
+		return err
 	}
 
 	oacommon.SetInjectedAnnotation(mutationRequest.Pod)
@@ -97,7 +106,13 @@ func (wh *Injector) handlePodMutation(mutationRequest *dtwebhook.MutationRequest
 
 func (wh *Injector) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
 	mutationRequest.InstallContainer = container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
-	addContainerAttributes(mutationRequest)
+
+	err := addContainerAttributes(mutationRequest)
+	if err != nil {
+		log.Error(err, "error during reinvocation for updating the init-container, failed to update container-attributes on the init container")
+
+		return false
+	}
 
 	updated := oamutation.Reinvoke(mutationRequest.BaseRequest)
 

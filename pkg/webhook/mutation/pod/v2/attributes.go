@@ -15,7 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (wh *Injector) addPodAttributes(request *dtwebhook.MutationRequest) {
+func (wh *Injector) addPodAttributes(request *dtwebhook.MutationRequest) error {
 	attr := podattr.Attributes{
 		PodInfo: podattr.PodInfo{
 			PodName:       createEnvVarRef(consts.K8sPodNameEnv),
@@ -35,21 +35,26 @@ func (wh *Injector) addPodAttributes(request *dtwebhook.MutationRequest) {
 
 	request.InstallContainer.Env = append(request.InstallContainer.Env, envs...)
 
-	metadata.Mutate(wh.metaClient, request, &attr)
+	err := metadata.Mutate(wh.metaClient, request, &attr)
+	if err != nil {
+		return err
+	}
 
 	args, err := podattr.ToArgs(attr)
 	if err != nil {
-		return // TODO
+		return err
 	}
 
 	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
+
+	return nil
 }
 
 func createEnvVarRef(envName string) string {
 	return fmt.Sprintf("$(%s)", envName)
 }
 
-func addContainerAttributes(request *dtwebhook.MutationRequest) {
+func addContainerAttributes(request *dtwebhook.MutationRequest) error {
 	attributes := []containerattr.Attributes{}
 	for _, c := range request.NewContainers(isInjected) {
 		attributes = append(attributes, containerattr.Attributes{
@@ -61,11 +66,13 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) {
 	if len(attributes) > 0 {
 		args, err := containerattr.ToArgs(attributes)
 		if err != nil {
-			return // TODO fix
+			return err
 		}
 
 		request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
 	}
+
+	return nil
 }
 
 func isInjected(container corev1.Container) bool {
