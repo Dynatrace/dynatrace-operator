@@ -12,7 +12,7 @@ const (
 	defaultImageTag  = "latest"
 
 	containerName       = "node-config-collector"
-	runAs         int64 = 0
+	runAs         int64 = 65532
 )
 
 func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
@@ -37,9 +37,9 @@ func getSecurityContext() corev1.SecurityContext {
 		AllowPrivilegeEscalation: ptr.To(false),
 		RunAsUser:                ptr.To(runAs),
 		RunAsGroup:               ptr.To(runAs),
-		RunAsNonRoot:             ptr.To(false),
+		RunAsNonRoot:             ptr.To(true),
 		ReadOnlyRootFilesystem:   ptr.To(true),
-		Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
+		Capabilities:             &corev1.Capabilities{Add: []corev1.Capability{"DAC_OVERRIDE"}, Drop: []corev1.Capability{"ALL"}},
 	}
 
 	return securityContext
