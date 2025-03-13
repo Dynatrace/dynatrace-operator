@@ -28,6 +28,7 @@ const (
 	AgentShareDirMount    = "/mnt/share"
 	AgentConfigDirMount   = "/mnt/config"
 	AgentConfInitDirMount = "/mnt/agent-conf"
+	AgentCodeModuleSource = "/opt/dynatrace/oneagent"
 
 	TrustedCAsInitSecretField    = "trustedcas"
 	ActiveGateCAsInitSecretField = "agcerts"
