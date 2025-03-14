@@ -18,20 +18,20 @@ func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attrib
 
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
-	worloadInfo, err := metacommon.RetrieveWorkload(metaClient, request)
+	workloadInfo, err := metacommon.RetrieveWorkload(metaClient, request)
 	if err != nil {
 		return err
 	}
 
 	attributes.WorkloadInfo = podattr.WorkloadInfo{
-		WorkloadKind: worloadInfo.Kind,
-		WorkloadName: worloadInfo.Name,
+		WorkloadKind: workloadInfo.Kind,
+		WorkloadName: workloadInfo.Name,
 	}
 
 	addMetadataToInitArgs(request, attributes)
 
 	metacommon.SetInjectedAnnotation(request.Pod)
-	metacommon.SetWorkloadAnnotations(request.Pod, worloadInfo)
+	metacommon.SetWorkloadAnnotations(request.Pod, workloadInfo)
 
 	return nil
 }

@@ -116,7 +116,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, initContainer.SecurityContext.SeccompProfile.Type)
 	})
 
-	t.Run("should not set suppress-errors arg - according to dk", func(t *testing.T) {
+	t.Run("should not set suppress-error arg - according to dk", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "fail"}
 		pod := getTestPod()
@@ -124,10 +124,10 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := createInitContainerBase(pod, *dk)
 
-		assert.NotContains(t, initContainer.Args, "--suppress-errors")
+		assert.NotContains(t, initContainer.Args, "--suppress-error")
 	})
 
-	t.Run("should not set suppress-errors arg - according to pod", func(t *testing.T) {
+	t.Run("should not set suppress-error arg - according to pod", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "silent"}
 		pod := getTestPod()
@@ -135,10 +135,10 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := createInitContainerBase(pod, *dk)
 
-		assert.NotContains(t, initContainer.Args, "--suppress-errors")
+		assert.NotContains(t, initContainer.Args, "--suppress-error")
 	})
 
-	t.Run("should set suppress-errors arg - default", func(t *testing.T) {
+	t.Run("should set suppress-error arg - default", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{}
 		pod := getTestPod()
@@ -146,10 +146,10 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--suppress-errors")
+		assert.Contains(t, initContainer.Args, "--suppress-error")
 	})
 
-	t.Run("should set suppress-errors arg - unknown value", func(t *testing.T) {
+	t.Run("should set suppress-error arg - unknown value", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "asd"}
 		pod := getTestPod()
@@ -157,7 +157,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--suppress-errors")
+		assert.Contains(t, initContainer.Args, "--suppress-error")
 
 		dk = getTestDynakube()
 		dk.Annotations = map[string]string{}
@@ -166,7 +166,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer = createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--suppress-errors")
+		assert.Contains(t, initContainer.Args, "--suppress-error")
 	})
 }
 

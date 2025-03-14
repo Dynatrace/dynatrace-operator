@@ -25,7 +25,7 @@ func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Cont
 	}
 
 	if areErrorsSuppressed(pod, dk) {
-		args = append(args, arg.Arg{Name: "suppress-errors"}) // TODO: import arg from bootstrapper package
+		args = append(args, arg.Arg{Name: "suppress-error"}) // TODO: import arg from bootstrapper package
 	}
 
 	initContainer := &corev1.Container{
