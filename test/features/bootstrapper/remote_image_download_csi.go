@@ -5,7 +5,6 @@ package bootstrapper
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
@@ -18,8 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -69,20 +66,11 @@ func jobsAreCompleted(dk dynakube.DynaKube) features.Func {
 		resource := envConfig.Client().Resources()
 
 		jobList := job.GetJobsForOwner(ctx, t, resource, dk.Name, dk.Namespace)
+		require.NotEmpty(t, jobList.Items)
 
 		for _, job := range jobList.Items {
 			t.Logf("waiting for job to be completed: %s", job.Name)
-			pods := pod.GetPodsForOwner(ctx, t, resource, job.Name, job.Namespace)
-			for _, currentPod := range pods.Items {
-				// let's wait not only for the pods to be deleted but rather exactly check if they really reached the state Completed
-				ctx = pod.WaitForCondition(currentPod.Name, currentPod.Namespace, func(object k8s.Object) bool {
-					p, isPod := object.(*corev1.Pod)
-
-					return isPod && len(p.Status.ContainerStatuses) > 0 && p.Status.ContainerStatuses[0].State.Terminated != nil && p.Status.ContainerStatuses[0].State.Terminated.Reason == "Completed"
-				}, time.Minute*5)(ctx, t, envConfig)
-
-				ctx = pod.WaitForPodsDeletionWithOwner(job.Name, job.Namespace)(ctx, t, envConfig)
-			}
+			ctx = pod.WaitForPodsDeletionWithOwner(job.Name, job.Namespace)(ctx, t, envConfig)
 		}
 
 		return ctx
