@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"maps"
 	"strings"
 
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/pod"
@@ -49,5 +50,5 @@ func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podat
 		metadataAnnotations[split[1]] = value
 	}
 
-	attributes.UserDefined = metadataAnnotations
+	maps.Copy(attributes.UserDefined, metadataAnnotations)
 }

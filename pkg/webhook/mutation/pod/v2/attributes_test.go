@@ -44,9 +44,10 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Contains(t, attr.PodUid, consts.K8sPodUIDEnv)
 		assert.Equal(t, request.Pod.Namespace, attr.NamespaceName)
 
-		require.Len(t, request.InstallContainer.Env, 2)
+		require.Len(t, request.InstallContainer.Env, 3)
 		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, consts.K8sPodNameEnv))
 		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, consts.K8sPodUIDEnv))
+		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, consts.K8sNodeNameEnv))
 
 		return attr
 	}
@@ -68,7 +69,7 @@ func TestAddPodAttributes(t *testing.T) {
 			}
 		}
 
-		assert.Len(t, attr.UserDefined, metaAnnotationCount)
+		assert.Len(t, attr.UserDefined, metaAnnotationCount+2) // TODO: this +2 should be removed once k8s.node.name and k8s.cluster.name are part of the actual Attributes
 		require.Len(t, request.Pod.Annotations, 3+metaAnnotationCount)
 		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[metacommon.AnnotationWorkloadKind])
 		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[metacommon.AnnotationWorkloadName])
@@ -96,6 +97,7 @@ func TestAddPodAttributes(t *testing.T) {
 					Status: dynakube.DynaKubeStatus{
 						KubernetesClusterMEID: "meid",
 						KubeSystemUUID:        "systemuuid",
+						KubernetesClusterName: "meidname",
 					},
 				},
 			},
@@ -148,6 +150,11 @@ func TestAddPodAttributes(t *testing.T) {
 						MetadataEnrichment: dynakube.MetadataEnrichment{
 							Enabled: ptr.To(true),
 						},
+					},
+					Status: dynakube.DynaKubeStatus{
+						KubernetesClusterMEID: "meid",
+						KubeSystemUUID:        "systemuuid",
+						KubernetesClusterName: "meidname",
 					},
 				},
 			},
@@ -203,6 +210,7 @@ func TestAddPodAttributes(t *testing.T) {
 					Status: dynakube.DynaKubeStatus{
 						KubernetesClusterMEID: "meid",
 						KubeSystemUUID:        "systemuuid",
+						KubernetesClusterName: "meidname",
 					},
 				},
 			},

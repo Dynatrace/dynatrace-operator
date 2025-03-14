@@ -92,8 +92,8 @@ func TestHandle(t *testing.T) {
 
 		installContainer := container.FindInitContainerInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
 		require.NotNil(t, installContainer)
-		assert.Len(t, installContainer.Env, 2)
-		assert.Len(t, installContainer.Args, 10)
+		assert.Len(t, installContainer.Env, 3)
+		assert.Len(t, installContainer.Args, 14)
 	})
 }
 
@@ -122,6 +122,11 @@ func getTestDynakube() *dynakube.DynaKube {
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: getAppMonSpec(&testResourceRequirements),
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: "meid",
+			KubeSystemUUID:        "systemuuid",
+			KubernetesClusterName: "meidname",
 		},
 	}
 }

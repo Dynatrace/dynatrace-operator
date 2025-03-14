@@ -1,19 +1,31 @@
 package v2
 
 import (
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/arg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/volumes"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
 
 func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
-	args := []string{ // TODO: import arg from bootstrapper package
-		"--config-directory=" + volumes.InitConfigMountPath,
-		"--input-directory=" + volumes.InitInputMountPath,
+	args := []arg.Arg{
+		{
+			Name:  configure.ConfigFolderFlag,
+			Value: volumes.InitConfigMountPath,
+		},
+		{
+			Name:  configure.InputFolderFlag,
+			Value: volumes.InitInputMountPath,
+		},
+	}
+
+	if areErrorsSuppressed(pod, dk) {
+		args = append(args, arg.Arg{Name: "suppress-errors"}) // TODO: import arg from bootstrapper package
 	}
 
 	initContainer := &corev1.Container{
@@ -22,11 +34,7 @@ func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Cont
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		SecurityContext: securityContextForInitContainer(pod, dk),
 		Resources:       initContainerResources(dk),
-		Args:            args,
-	}
-
-	if areErrorsSuppressed(pod, dk) {
-		initContainer.Args = append(initContainer.Args, "--suppress-errors") // TODO: import arg from bootstrapper package
+		Args:            arg.ConvertArgsToStrings(args),
 	}
 
 	return initContainer

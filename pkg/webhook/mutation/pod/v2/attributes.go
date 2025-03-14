@@ -26,11 +26,16 @@ func (wh *Injector) addPodAttributes(request *dtwebhook.MutationRequest) error {
 			ClusterUId:      request.DynaKube.Status.KubeSystemUUID,
 			DTClusterEntity: request.DynaKube.Status.KubernetesClusterMEID,
 		},
+		UserDefined: map[string]string{
+			"k8s.cluster.name": request.DynaKube.Status.KubernetesClusterName, // TODO: make it part of podattr.Attributes
+			"k8s.node.name":    createEnvVarRef(consts.K8sNodeNameEnv),        // TODO: make it part of podattr.Attributes
+		},
 	}
 
 	envs := []corev1.EnvVar{
 		{Name: consts.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
 		{Name: consts.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
+		{Name: consts.K8sNodeNameEnv, ValueFrom: env.NewEnvVarSourceForField("spec.nodeName")},
 	}
 
 	request.InstallContainer.Env = append(request.InstallContainer.Env, envs...)
