@@ -2,7 +2,7 @@ package v2
 
 import (
 	"fmt"
-	"regexp"
+	"strings"
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/pod"
@@ -85,22 +85,34 @@ func isInjected(container corev1.Container) bool {
 }
 
 func createImageInfo(imageURI string) containerattr.ImageInfo { // TODO: move to bootstrapper repo
-	// Regular expression pattern to capture parts of the URI
-	pattern := `^(?P<registry>[^/]+)/(?P<repository>[^:@]+)(?::(?P<tag>[^@]+))?(?:@(?P<digest>.+))?$`
-	re := regexp.MustCompile(pattern)
-	match := re.FindStringSubmatch(imageURI)
-	result := make(map[string]string)
+	// can't use the name.ParseReference() as that will fill in some defaults if certain things are defined, but we want to preserve the original string value, without any modification. Tried it with a regexp, was worse.
+	imageInfo := containerattr.ImageInfo{}
 
-	for i, name := range re.SubexpNames() {
-		if i != 0 && name != "" {
-			result[name] = match[i]
-		}
+	repoPart := ""
+
+	registrySplit := strings.SplitN(imageURI, "/", 2)
+	if len(registrySplit) == 1 {
+		repoPart = registrySplit[0]
+	} else if len(registrySplit) == 2 {
+		imageInfo.Registry = registrySplit[0]
+		repoPart = registrySplit[1]
 	}
 
-	return containerattr.ImageInfo{
-		Registry:    result["registry"],
-		Repository:  result["repository"],
-		Tag:         result["tag"],
-		ImageDigest: result["digest"],
+	digestSplit := strings.SplitN(repoPart, "@", 2)
+	if len(digestSplit) == 1 {
+		repoPart = digestSplit[0]
+	} else if len(digestSplit) == 2 {
+		imageInfo.ImageDigest = digestSplit[1]
+		repoPart = digestSplit[0]
 	}
+
+	tagSplit := strings.SplitN(repoPart, ":", 2)
+	if len(tagSplit) == 1 {
+		imageInfo.Repository = tagSplit[0]
+	} else if len(tagSplit) == 2 {
+		imageInfo.Tag = tagSplit[1]
+		imageInfo.Repository = tagSplit[0]
+	}
+
+	return imageInfo
 }
