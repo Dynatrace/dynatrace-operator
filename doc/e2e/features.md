@@ -357,6 +357,8 @@ Setup: CloudNative deployment with CSI driver
 
 Verification that the CSI driver is able to recover from network issues, when using cloudNative and code modules image.
 
+Connectivity for csi driver pods is restricted to the local k8s cluster (no outside connections allowed) and sample application is installed. The test checks if init container was attached, run successfully and that the sample pods are up and running.
+
 # switch_modes
 
 ```go
