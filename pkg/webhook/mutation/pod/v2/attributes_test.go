@@ -362,88 +362,79 @@ func TestAddContainerAttributes(t *testing.T) {
 }
 
 func TestCreateImageInfo(t *testing.T) {
-	t.Run("empty", func(t *testing.T) {
-		imageURI := ""
+	type testCase struct {
+		title string
+		in    string
+		out   containerattr.ImageInfo
+	}
 
-		imageInfo := createImageInfo(imageURI)
+	testCases := []testCase{
+		{
+			title: "empty URI",
+			in:    "",
+			out:   containerattr.ImageInfo{},
+		},
+		{
+			title: "URI with tag",
+			in:    "registry.example.com/repository/image:tag",
+			out: containerattr.ImageInfo{
+				Registry:    "registry.example.com",
+				Repository:  "repository/image",
+				Tag:         "tag",
+				ImageDigest: "",
+			},
+		},
+		{
+			title: "URI with digest",
+			in:    "registry.example.com/repository/image@sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
+			out: containerattr.ImageInfo{
+				Registry:    "registry.example.com",
+				Repository:  "repository/image",
+				Tag:         "",
+				ImageDigest: "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
+			},
+		},
+		{
+			title: "URI with digest and tag",
+			in:    "registry.example.com/repository/image:tag@sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
+			out: containerattr.ImageInfo{
+				Registry:    "registry.example.com",
+				Repository:  "repository/image",
+				Tag:         "tag",
+				ImageDigest: "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
+			},
+		},
+		{
+			title: "URI with missing tag",
+			in:    "registry.example.com/repository/image",
+			out: containerattr.ImageInfo{
+				Registry:   "registry.example.com",
+				Repository: "repository/image",
+			},
+		},
+		{
+			title: "URI with docker.io (special case in certain libraries)",
+			in:    "docker.io/php:fpm-stretch",
+			out: containerattr.ImageInfo{
+				Registry:   "docker.io",
+				Repository: "php",
+				Tag:        "fpm-stretch",
+			},
+		},
+		{
+			title: "URI with missing registry",
+			in:    "php:fpm-stretch",
+			out: containerattr.ImageInfo{
+				Repository: "php",
+				Tag:        "fpm-stretch",
+			},
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.title, func(t *testing.T) {
+			imageInfo := createImageInfo(test.in)
 
-		require.Equal(t, containerattr.ImageInfo{
-			Registry:    "",
-			Repository:  "",
-			Tag:         "",
-			ImageDigest: "",
-		}, imageInfo)
-	})
-	t.Run("URI with tag", func(t *testing.T) {
-		imageURI := "registry.example.com/repository/image:tag"
-
-		imageInfo := createImageInfo(imageURI)
-
-		require.Equal(t, containerattr.ImageInfo{
-			Registry:    "registry.example.com",
-			Repository:  "repository/image",
-			Tag:         "tag",
-			ImageDigest: "",
-		}, imageInfo)
-	})
-	t.Run("URI with digest", func(t *testing.T) {
-		imageURI := "registry.example.com/repository/image@sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
-
-		imageInfo := createImageInfo(imageURI)
-
-		require.Equal(t, containerattr.ImageInfo{
-			Registry:    "registry.example.com",
-			Repository:  "repository/image",
-			Tag:         "",
-			ImageDigest: "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
-		}, imageInfo)
-	})
-	t.Run("URI with digest and tag", func(t *testing.T) {
-		imageURI := "registry.example.com/repository/image:tag@sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
-
-		imageInfo := createImageInfo(imageURI)
-
-		require.Equal(t, containerattr.ImageInfo{
-			Registry:    "registry.example.com",
-			Repository:  "repository/image",
-			Tag:         "tag",
-			ImageDigest: "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
-		}, imageInfo)
-	})
-	t.Run("URI with missing tag", func(t *testing.T) {
-		imageURI := "registry.example.com/repository/image"
-
-		imageInfo := createImageInfo(imageURI)
-
-		require.Equal(t, containerattr.ImageInfo{
-			Registry:    "registry.example.com",
-			Repository:  "repository/image",
-			Tag:         "",
-			ImageDigest: "",
-		}, imageInfo)
-	})
-	t.Run("URI with docker.io (special case in certain libraries)", func(t *testing.T) {
-		imageURI := "docker.io/php:fpm-stretch"
-
-		imageInfo := createImageInfo(imageURI)
-
-		require.Equal(t, containerattr.ImageInfo{
-			Registry:    "docker.io",
-			Repository:  "php",
-			Tag:         "fpm-stretch",
-			ImageDigest: "",
-		}, imageInfo)
-	})
-	t.Run("URI without registry", func(t *testing.T) {
-		imageURI := "php:fpm-stretch"
-
-		imageInfo := createImageInfo(imageURI)
-
-		require.Equal(t, containerattr.ImageInfo{
-			Registry:    "",
-			Repository:  "php",
-			Tag:         "fpm-stretch",
-			ImageDigest: "",
-		}, imageInfo)
-	})
+			require.Equal(t, test.out, imageInfo)
+		})
+	}
 }

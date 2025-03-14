@@ -16,7 +16,7 @@ import (
 )
 
 func (wh *Injector) addPodAttributes(request *dtwebhook.MutationRequest) error {
-	attr := podattr.Attributes{
+	attrs := podattr.Attributes{
 		PodInfo: podattr.PodInfo{
 			PodName:       createEnvVarRef(consts.K8sPodNameEnv),
 			PodUid:        createEnvVarRef(consts.K8sPodUIDEnv),
@@ -40,12 +40,12 @@ func (wh *Injector) addPodAttributes(request *dtwebhook.MutationRequest) error {
 
 	request.InstallContainer.Env = append(request.InstallContainer.Env, envs...)
 
-	err := metadata.Mutate(wh.metaClient, request, &attr)
+	err := metadata.Mutate(wh.metaClient, request, &attrs)
 	if err != nil {
 		return err
 	}
 
-	args, err := podattr.ToArgs(attr)
+	args, err := podattr.ToArgs(attrs)
 	if err != nil {
 		return err
 	}
