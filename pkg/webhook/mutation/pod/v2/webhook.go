@@ -8,7 +8,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
-	metamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/metadata"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/oneagent"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +30,7 @@ func NewInjector(apiReader client.Reader, metaClient client.Client, recorder eve
 	}
 }
 
-func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
+func (wh *Injector) Handle(_ context.Context, mutationRequest *dtwebhook.MutationRequest) error {
 	wh.recorder.Setup(mutationRequest)
 
 	if !wh.isInputSecretPresent(mutationRequest) {
@@ -52,7 +51,7 @@ func (wh *Injector) Handle(ctx context.Context, mutationRequest *dtwebhook.Mutat
 
 		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName())
 	} else {
-		if err := wh.handlePodMutation(ctx, mutationRequest); err != nil {
+		if err := wh.handlePodMutation(mutationRequest); err != nil {
 			return err
 		}
 	}
@@ -75,8 +74,13 @@ func (wh *Injector) isInjected(mutationRequest *dtwebhook.MutationRequest) bool 
 	return false
 }
 
-func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
+func (wh *Injector) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
 	mutationRequest.InstallContainer = createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
+
+	err := addContainerAttributes(mutationRequest)
+	if err != nil {
+		return err
+	}
 
 	updated := oamutation.Mutate(mutationRequest)
 	if !updated {
@@ -85,11 +89,15 @@ func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwe
 		return nil
 	}
 
+	err = wh.addPodAttributes(mutationRequest)
+	if err != nil {
+		log.Info("failed to add pod attributes to init-container")
+
+		return err
+	}
+
 	oacommon.SetInjectedAnnotation(mutationRequest.Pod)
 
-	_ = metamutation.Mutate(ctx, wh.metaClient, mutationRequest) // TODO: finalize
-
-	// TODO: Add `--attribute-container` for new containers to init-container
 	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 	wh.recorder.SendPodInjectEvent()
 
@@ -97,8 +105,16 @@ func (wh *Injector) handlePodMutation(ctx context.Context, mutationRequest *dtwe
 }
 
 func (wh *Injector) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
+	mutationRequest.InstallContainer = container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
+
+	err := addContainerAttributes(mutationRequest)
+	if err != nil {
+		log.Error(err, "error during reinvocation for updating the init-container, failed to update container-attributes on the init container")
+
+		return false
+	}
+
 	updated := oamutation.Reinvoke(mutationRequest.BaseRequest)
-	// TODO: Add `--attribute-container` for new containers to init-container
 
 	return updated
 }

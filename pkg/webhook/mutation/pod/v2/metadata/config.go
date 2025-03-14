@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logd.Get().WithName("metadata-enrichment-pod-v2-mutation")
+	log = logd.Get().WithName("v2-pod-mutation-metadata-enrichment")
 )

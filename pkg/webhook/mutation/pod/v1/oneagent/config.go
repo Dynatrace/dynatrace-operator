@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	log = logd.Get().WithName("oneagent-pod-v1-mutation")
+	log = logd.Get().WithName("v1-pod-mutation-oneagent")
 )
 
 const (

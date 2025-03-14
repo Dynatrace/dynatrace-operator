@@ -1,21 +1,54 @@
 package metadata
 
 import (
-	"context"
+	"maps"
+	"strings"
 
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Mutate(context context.Context, metaClient client.Client, request *dtwebhook.MutationRequest) bool {
+func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attributes *podattr.Attributes) error {
 	if !metacommon.IsEnabled(request.BaseRequest) {
-		return false
+		return nil
 	}
 
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
-	// TODO: probably will only modify the iniContainer and pod, not the containers
+	workloadInfo, err := metacommon.RetrieveWorkload(metaClient, request)
+	if err != nil {
+		return err
+	}
 
-	return true
+	attributes.WorkloadInfo = podattr.WorkloadInfo{
+		WorkloadKind: workloadInfo.Kind,
+		WorkloadName: workloadInfo.Name,
+	}
+
+	addMetadataToInitArgs(request, attributes)
+
+	metacommon.SetInjectedAnnotation(request.Pod)
+	metacommon.SetWorkloadAnnotations(request.Pod, workloadInfo)
+
+	return nil
+}
+
+func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
+	metacommon.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+
+	metadataAnnotations := map[string]string{}
+
+	for key, value := range request.Pod.Annotations {
+		if !strings.HasPrefix(key, dynakube.MetadataPrefix) {
+			continue
+		}
+
+		split := strings.Split(key, dynakube.MetadataPrefix)
+		metadataAnnotations[split[1]] = value
+	}
+
+	maps.Copy(attributes.UserDefined, metadataAnnotations)
 }
