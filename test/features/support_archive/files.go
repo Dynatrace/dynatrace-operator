@@ -24,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
@@ -352,7 +353,11 @@ func (r requiredFiles) getRequiredConfigMapFiles() []string {
 }
 
 func (r requiredFiles) getRequiredEventFiles() []string {
-	events := event.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	optFunc := func(options *metav1.ListOptions) {
+		options.Limit = int64(support_archive.NumEventsFlagValue)
+		options.FieldSelector = fmt.Sprint(support_archive.DefaultEventFieldSelector)
+	}
+	events := event.List(r.t, r.ctx, r.resources, r.dk.Namespace, optFunc)
 	requiredFiles := make([]string, 0)
 
 	for _, requiredEvent := range events.Items {
