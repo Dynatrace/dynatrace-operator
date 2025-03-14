@@ -6,6 +6,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -13,6 +14,7 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 func WaitFor(name string, namespace string) env.Func {
@@ -32,4 +34,8 @@ func WaitFor(name string, namespace string) env.Func {
 
 		return ctx, err
 	}
+}
+
+func WaitForDaemonset(name string, namespace string) features.Func {
+	return helpers.ToFeatureFunc(WaitFor(name, namespace), true)
 }
