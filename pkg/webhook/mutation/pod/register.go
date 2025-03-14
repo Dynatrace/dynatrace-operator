@@ -10,8 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
-	v1 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
-	v2 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
+	podv1 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
+	podv2 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,8 +59,8 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
-		v1:               v1.NewInjector(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
-		v2:               v2.NewInjector(kubeClient, apiReader, metaClient, eventRecorder),
+		v1:               podv1.NewInjector(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
+		v2:               podv2.NewInjector(kubeClient, apiReader, metaClient, eventRecorder),
 		apiReader:        apiReader,
 		webhookNamespace: webhookNamespace,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
