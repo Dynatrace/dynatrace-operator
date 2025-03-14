@@ -46,6 +46,7 @@ var (
 		conflictingNamespaceSelector,
 		noResourcesAvailable,
 		imageFieldSetWithoutCSIFlag,
+		missingCodeModulesImage,
 		conflictingOneAgentVolumeStorageSettings,
 		nameViolatesDNS1035,
 		nameTooLong,
