@@ -396,7 +396,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.dynatraceClient = dtClient
 
 		rec.dk.Annotations = make(map[string]string)
-		rec.dk.Annotations[dynakube.AnnotationFeatureRemoteImageDownload] = "true"
+		rec.dk.Annotations[dynakube.AnnotationFeatureNodeImagePull] = "true"
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
 		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
