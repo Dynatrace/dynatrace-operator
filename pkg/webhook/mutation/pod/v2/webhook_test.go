@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
@@ -19,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -38,9 +40,10 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	t.Run("no init secret => no injection + only annotation", func(t *testing.T) {
+	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
 		injector := createTestInjectorBase()
-		injector.apiReader = fake.NewClient()
+		clt := fake.NewClient()
+		injector.apiReader = clt
 
 		request := createTestMutationRequest(getTestDynakube())
 
@@ -54,6 +57,37 @@ func TestHandle(t *testing.T) {
 		reason, ok := request.Pod.Annotations[oacommon.AnnotationReason]
 		require.True(t, ok)
 		assert.Equal(t, NoBootstrapperConfigReason, reason)
+	})
+
+	t.Run("no init secret + source => replicate + inject", func(t *testing.T) {
+		injector := createTestInjectorBase()
+		request := createTestMutationRequest(getTestDynakube())
+
+		source := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapperconfig.GetSourceSecretName(request.DynaKube.Name),
+				Namespace: request.DynaKube.Namespace,
+			},
+			Data: map[string][]byte{"data": []byte("beep")},
+		}
+		clt := fake.NewClient(&source)
+		injector.kubeClient = clt
+		injector.apiReader = clt
+
+		err := injector.Handle(ctx, request)
+		require.NoError(t, err)
+
+		var replicated corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
+		require.NoError(t, err)
+		assert.Equal(t, source.Data, replicated.Data)
+
+		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		require.True(t, ok)
+		assert.Equal(t, "true", isInjected)
+
+		_, ok = request.Pod.Annotations[oacommon.AnnotationReason]
+		require.False(t, ok)
 	})
 
 	t.Run("no codeModulesImage => no injection + only annotation", func(t *testing.T) {

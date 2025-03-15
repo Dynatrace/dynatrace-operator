@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
@@ -16,15 +18,17 @@ import (
 
 type Injector struct {
 	recorder   events.EventRecorder
+	kubeClient client.Client
 	apiReader  client.Reader
 	metaClient client.Client
 }
 
 var _ dtwebhook.PodInjector = &Injector{}
 
-func NewInjector(apiReader client.Reader, metaClient client.Client, recorder events.EventRecorder) *Injector {
+func NewInjector(kubeClient client.Client, apiReader client.Reader, metaClient client.Client, recorder events.EventRecorder) *Injector {
 	return &Injector{
 		recorder:   recorder,
+		kubeClient: kubeClient,
 		apiReader:  apiReader,
 		metaClient: metaClient,
 	}
@@ -137,12 +141,19 @@ func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequ
 	err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
 
 	if k8serrors.IsNotFound(err) {
-		log.Info("dynatrace-bootstrapper-config is not available, injection not possible", "pod", mutationRequest.PodName())
+		log.Info("dynatrace-bootstrapper-config is not available, trying to replicate", "pod", mutationRequest.PodName())
 
-		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
+		err = bootstrapperconfig.Replicate(mutationRequest.Context, mutationRequest.DynaKube, secret.Query(wh.kubeClient, wh.apiReader, log), mutationRequest.Namespace.Name)
+		if k8serrors.IsNotFound(err) {
+			log.Info("dynatrace-bootstrapper-config is not available, injection not possible", "pod", mutationRequest.PodName())
 
-		return false
-	} else if err != nil {
+			oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
+
+			return false
+		}
+	}
+
+	if err != nil {
 		log.Error(err, "unable to verify, if dynatrace-bootstrapper-config is available, injection not possible")
 
 		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)

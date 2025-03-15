@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,7 +62,7 @@ func TestNewSecretGenerator(t *testing.T) {
 
 func TestGenerateForDynakube(t *testing.T) {
 	t.Run("succcessfully generate secret for dynakube", func(t *testing.T) {
-		dynakube := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
@@ -72,13 +73,13 @@ func TestGenerateForDynakube(t *testing.T) {
 		}
 
 		clt := fake.NewClientWithIndex(
-			dynakube,
+			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.ApiToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
-			clientSecret(dynakube.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
 			}),
 		)
@@ -88,15 +89,21 @@ func TestGenerateForDynakube(t *testing.T) {
 		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dynakube)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
 		require.NoError(t, err)
+		require.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
+		assert.NotEmpty(t, secret.Data)
 
-		require.NotEmpty(t, secret)
-		assert.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
+		var sourceSecret corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		require.NoError(t, err)
+
+		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
+		assert.Equal(t, secret.Data, sourceSecret.Data)
 	})
 	t.Run("succcessfully generate secret with fields for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -175,6 +182,13 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		_, ok = secret.Data[endpoint.InputFileName]
 		require.True(t, ok)
+
+		var sourceSecret corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		require.NoError(t, err)
+
+		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
+		assert.Equal(t, secret.Data, sourceSecret.Data)
 	})
 	t.Run("update secret with preexisting secret + fields", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -216,6 +230,11 @@ func TestGenerateForDynakube(t *testing.T) {
 				ca.TrustedCertsInputFile: []byte(oldTrustedCa),
 				ca.AgCertsInputFile:      []byte(oldCertValue),
 			}),
+			clientSecret(GetSourceSecretName(dk.Name), dk.Namespace, map[string][]byte{
+				pmc.InputFileName:        nil,
+				ca.TrustedCertsInputFile: []byte(oldTrustedCa),
+				ca.AgCertsInputFile:      []byte(oldCertValue),
+			}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -251,6 +270,13 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		_, ok = secret.Data[endpoint.InputFileName]
 		require.True(t, ok)
+
+		var sourceSecret corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		require.NoError(t, err)
+
+		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
+		assert.Equal(t, secret.Data, sourceSecret.Data)
 	})
 	t.Run("fail while generating secret for dynakube", func(t *testing.T) {
 		dynakube := &dynakube.DynaKube{
@@ -283,7 +309,7 @@ func TestGenerateForDynakube(t *testing.T) {
 }
 
 func TestCleanup(t *testing.T) {
-	dynakube := &dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakube,
 			Namespace: testNamespaceDynatrace,
@@ -294,17 +320,18 @@ func TestCleanup(t *testing.T) {
 	}
 
 	clt := fake.NewClientWithIndex(
-		dynakube,
+		dk,
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 			dtclient.ApiToken:  []byte(testAPIToken),
 			dtclient.PaasToken: []byte(testPaasToken),
 		}),
-		clientSecret(dynakube.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+		clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 			"tenant-token": []byte(testTenantToken),
 		}),
 		clientSecret(consts.BootstrapperInitSecretName, testNamespace, nil),
 		clientSecret(consts.BootstrapperInitSecretName, testNamespace2, nil),
+		clientSecret(GetSourceSecretName(dk.Name), dk.Namespace, nil),
 	)
 	namespaces := []corev1.Namespace{
 		{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}},
@@ -325,22 +352,21 @@ func TestCleanup(t *testing.T) {
 	require.NotEmpty(t, secretNS2)
 	assert.Equal(t, consts.BootstrapperInitSecretName, secretNS2.Name)
 
-	err = Cleanup(context.Background(), clt, clt, namespaces)
+	err = Cleanup(context.Background(), clt, clt, namespaces, *dk)
 	require.NoError(t, err)
 
-	var deletedSecretNS1 corev1.Secret
-	err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &deletedSecretNS1)
+	var deleted corev1.Secret
+	err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &deleted)
 	require.Error(t, err)
+	assert.True(t, errors.IsNotFound(err))
 
-	require.Empty(t, deletedSecretNS1)
-	assert.NotEqual(t, consts.BootstrapperInitSecretName, deletedSecretNS1.Name)
-
-	var deletedSecretNS2 corev1.Secret
-	err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &deletedSecretNS2)
+	err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace2}, &deleted)
 	require.Error(t, err)
+	assert.True(t, errors.IsNotFound(err))
 
-	require.Empty(t, deletedSecretNS2)
-	assert.NotEqual(t, consts.BootstrapperInitSecretName, deletedSecretNS2.Name)
+	err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &deleted)
+	require.Error(t, err)
+	assert.True(t, errors.IsNotFound(err))
 }
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
