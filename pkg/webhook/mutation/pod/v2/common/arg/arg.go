@@ -8,6 +8,10 @@ type Arg struct {
 }
 
 func (a Arg) String() string {
+	if a.Value == "" {
+		return "--" + a.Name
+	}
+
 	return fmt.Sprintf("--%s=%s", a.Name, a.Value)
 }
 

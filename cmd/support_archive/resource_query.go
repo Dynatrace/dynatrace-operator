@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var DefaultEventFieldSelector = fields.OneTermEqualSelector("type", corev1.EventTypeWarning)
+
 type resourceQueryGroup struct {
 	resources []schema.GroupVersionKind
 	filters   []client.ListOption
@@ -114,9 +116,9 @@ func getEventsQueryGroup(namespace string) resourceQueryGroup {
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
-			client.Limit(numEventsFlagValue),
+			client.Limit(NumEventsFlagValue),
 			&client.ListOptions{
-				FieldSelector: fields.OneTermEqualSelector("type", corev1.EventTypeWarning),
+				FieldSelector: DefaultEventFieldSelector,
 			},
 		},
 	}
