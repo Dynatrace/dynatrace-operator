@@ -8,7 +8,7 @@ test/e2e/%/publish:
 test/e2e/%/debug:
 	@make SKIPCLEANUP="--fail-fast" $(@D)
 
-## Run standard, istio and release e2e tests
+## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \
 	make test/e2e/standard  || RC=1; \
@@ -17,7 +17,7 @@ test/e2e:
 	make test/e2e/release || RC=1; \
 	exit $$RC
 
-## Run standard, istio and release e2e tests
+## Run standard, no-csi, istio and release e2e tests with /publish
 test/e2e-publish:
 	RC=0; \
 	make test/e2e/standard/publish || RC=1; \
