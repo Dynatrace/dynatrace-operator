@@ -106,5 +106,5 @@ func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.P
 }
 
 func (dk *DynaKube) FeatureBootstrapperInjection() bool {
-	return dk.OneAgent().IsApplicationMonitoringMode() && dk.FeatureRemoteImageDownload() && !dk.OneAgent().IsCSIAvailable()
+	return dk.OneAgent().IsApplicationMonitoringMode() && dk.FeatureNodeImagePull() && !dk.OneAgent().IsCSIAvailable()
 }
