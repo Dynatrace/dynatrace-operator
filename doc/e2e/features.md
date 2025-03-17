@@ -91,7 +91,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
 
 <a name="InstallWithCSI"></a>
 
-## func [InstallWithCSI](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/bootstrapper/remote_image_download_csi.go#L28>)
+## func [InstallWithCSI](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/bootstrapper/node_image_pull_csi.go#L28>)
 
 ```go
 func InstallWithCSI(t *testing.T) features.Feature

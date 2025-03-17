@@ -17,7 +17,7 @@ import (
 const (
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
 
-	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver and/or remote image download is not enabled.`
+	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver and/or node image pull is not enabled.`
 
 	errorBootstrapperNodeImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but the code modules image is not set.`
 

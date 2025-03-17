@@ -26,17 +26,17 @@ const (
 )
 
 func InstallWithCSI(t *testing.T) features.Feature {
-	builder := features.New("remote-image-download-with-csi")
+	builder := features.New("node-image-pull-with-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	appMonDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: bootstrapperImage}}),
-		dynakubeComponents.WithAnnotations(map[string]string{dynakube.AnnotationFeatureRemoteImageDownload: "true"}),
+		dynakubeComponents.WithAnnotations(map[string]string{dynakube.AnnotationFeatureNodeImagePull: "true"}),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 	)
 
-	sampleNamespace := *namespace.New("codemodules-sample-remote-image-download")
+	sampleNamespace := *namespace.New("codemodules-sample-node-image-pull")
 	sampleApp := sample.NewApp(t, &appMonDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),

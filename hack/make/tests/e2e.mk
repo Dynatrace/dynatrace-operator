@@ -112,9 +112,9 @@ test/e2e/applicationmonitoring/readonlycsivolume: manifests/crd/helm
 test/e2e/applicationmonitoring/withoutcsi: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "app-monitoring-without-csi" $(SKIPCLEANUP)
 
-## Runs Application Monitoring without CSI e2e test only
+## Runs Application Monitoring bootstrapper with CSI e2e test only
 test/e2e/applicationmonitoring/bootstrapper-csi: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "remote-image-download-with-csi" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "node-image-pull-with-csi" $(SKIPCLEANUP)
 
 ## Runs public registry images e2e test only
 test/e2e/publicregistry: manifests/crd/helm
