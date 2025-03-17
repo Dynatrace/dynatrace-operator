@@ -8716,8 +8716,8 @@ spec:
                           order to run in secure computing mode.
                         type: string
                       storageHostPath:
-                        description: Sotrage Host Path is the host filesystem to store
-                          configuration.
+                        description: StorageHostPath is the path on the host filesystem
+                          where OneAgent configurations will be stored.
                         type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
@@ -9111,8 +9111,8 @@ spec:
                           order to run in secure computing mode.
                         type: string
                       storageHostPath:
-                        description: Sotrage Host Path is the host filesystem to store
-                          configuration.
+                        description: StorageHostPath is the path on the host filesystem
+                          where OneAgent configurations will be stored.
                         type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
@@ -9395,8 +9395,8 @@ spec:
                           order to run in secure computing mode.
                         type: string
                       storageHostPath:
-                        description: Sotrage Host Path is the host filesystem to store
-                          configuration.
+                        description: StorageHostPath is the path on the host filesystem
+                          where OneAgent configurations will be stored.
                         type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
