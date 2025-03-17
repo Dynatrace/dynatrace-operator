@@ -8715,6 +8715,8 @@ spec:
                         description: The SecComp Profile that will be configured in
                           order to run in secure computing mode.
                         type: string
+                      storageHostPath:
+                        type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
                           For details, see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
@@ -9106,6 +9108,8 @@ spec:
                         description: The SecComp Profile that will be configured in
                           order to run in secure computing mode.
                         type: string
+                      storageHostPath:
+                        type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
                           For details, see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
@@ -9385,6 +9389,8 @@ spec:
                       secCompProfile:
                         description: The SecComp Profile that will be configured in
                           order to run in secure computing mode.
+                        type: string
+                      storageHostPath:
                         type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
