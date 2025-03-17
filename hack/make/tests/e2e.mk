@@ -12,6 +12,7 @@ test/e2e/%/debug:
 test/e2e:
 	RC=0; \
 	make test/e2e/standard  || RC=1; \
+	make test/e2e/no-csi || RC=1; \
 	make test/e2e/istio  || RC=1; \
 	make test/e2e/release || RC=1; \
 	exit $$RC
@@ -20,6 +21,7 @@ test/e2e:
 test/e2e-publish:
 	RC=0; \
 	make test/e2e/standard/publish || RC=1; \
+	make test/e2e/no-csi/publish || RC=1; \
 	make test/e2e/istio/publish || RC=1; \
 	make test/e2e/release/publish || RC=1; \
 	exit $$RC
@@ -33,12 +35,16 @@ test/e2e/istio: manifests/crd/helm
 	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/istio -args $(SKIPCLEANUP)
 
 ## Run release e2e test only
+test/e2e/no-csi: manifests/crd/helm
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/no_csi -args $(SKIPCLEANUP)
+
+## Run release e2e test only
 test/e2e/release: manifests/crd/helm
 	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/release -args $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "activegate" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "activegate" $(SKIPCLEANUP)
 
 ## Runs ActiveGate proxy e2e test only
 test/e2e/activegate/proxy: manifests/crd/helm
@@ -46,7 +52,7 @@ test/e2e/activegate/proxy: manifests/crd/helm
 
 ## Runs ClassicFullStack e2e test only
 test/e2e/classic: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "classic" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "classic" $(SKIPCLEANUP)
 
 ## Runs ClassicFullStack switch mode e2e test only
 test/e2e/classic/switchmodes: manifests/crd/helm
@@ -98,11 +104,11 @@ test/e2e/cloudnative/upgrade: manifests/crd/helm
 
 ## Runs Application Monitoring metadata-enrichment e2e test only
 test/e2e/applicationmonitoring/metadataenrichment: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "metadata-enrichment"  $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "metadata-enrichment"  $(SKIPCLEANUP)
 
 ## Runs Application Monitoring label versio detection e2e test only
 test/e2e/applicationmonitoring/labelversion: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "label-version"  $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "label-version"  $(SKIPCLEANUP)
 
 ## Runs Application Monitoring readonly csi-volume e2e test only
 test/e2e/applicationmonitoring/readonlycsivolume: manifests/crd/helm
@@ -110,11 +116,15 @@ test/e2e/applicationmonitoring/readonlycsivolume: manifests/crd/helm
 
 ## Runs Application Monitoring without CSI e2e test only
 test/e2e/applicationmonitoring/withoutcsi: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "app-monitoring-without-csi" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "app-monitoring-without-csi" $(SKIPCLEANUP)
 
 ## Runs Application Monitoring bootstrapper with CSI e2e test only
 test/e2e/applicationmonitoring/bootstrapper-csi: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "node-image-pull-with-csi" $(SKIPCLEANUP)
+
+## Runs Application Monitoring bootstrapper with no CSI e2e test only
+test/e2e/applicationmonitoring/bootstrapper-no-csi: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "node-image-pull-with-no-csi" $(SKIPCLEANUP)
 
 ## Runs public registry images e2e test only
 test/e2e/publicregistry: manifests/crd/helm
@@ -126,7 +136,7 @@ test/e2e/supportarchive: manifests/crd/helm
 
 ## Runs Edgeconnect e2e test only
 test/e2e/edgeconnect: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "edgeconnect-.*" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "edgeconnect-.*" $(SKIPCLEANUP)
 
 ## Runs e2e tests on gke-autopilot
 test/e2e/gke-autopilot: manifests/crd/helm
@@ -134,4 +144,4 @@ test/e2e/gke-autopilot: manifests/crd/helm
 
 ## Runs extensions related e2e tests
 test/e2e/extensions: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --feature "extensions-components-rollout" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "extensions-components-rollout" $(SKIPCLEANUP)
