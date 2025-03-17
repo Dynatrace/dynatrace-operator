@@ -307,7 +307,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 		})
 	})
 
-	t.Run("spec with appMon enabled, csi driver not enabled but remote image download enabled and image set", func(t *testing.T) {
+	t.Run("spec with appMon enabled, csi driver not enabled but node image pull enabled and image set", func(t *testing.T) {
 		setupDisabledCSIEnv(t)
 
 		testImage := "testImage"
@@ -332,7 +332,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 		})
 	})
 
-	t.Run("spec with appMon enabled, csi driver and remote image download not enabled and image set", func(t *testing.T) {
+	t.Run("spec with appMon enabled, csi driver and node image pull not enabled and image set", func(t *testing.T) {
 		setupDisabledCSIEnv(t)
 
 		testImage := "testImage"

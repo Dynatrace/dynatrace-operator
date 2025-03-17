@@ -106,11 +106,11 @@ func InstallFromImage(t *testing.T) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[1], appDynakube)
 	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
-	builder.Assess("volumes are mounted correctly", volumesAreMountedCorrectly(*sampleApp))
+	builder.Assess("volumes are mounted correctly", VolumesAreMountedCorrectly(*sampleApp))
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
@@ -170,7 +170,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
@@ -236,7 +236,7 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 
 	agTlsSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -322,7 +322,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, nil)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, nil)
@@ -394,7 +394,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, trustedCa)
@@ -422,7 +422,7 @@ func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
 	}
 }
 
-func imageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
+func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -508,7 +508,7 @@ func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resourc
 	return diskUsage
 }
 
-func volumesAreMountedCorrectly(sampleApp sample.App) features.Func {
+func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		err := deployment.NewQuery(ctx, resource, client.ObjectKey{
