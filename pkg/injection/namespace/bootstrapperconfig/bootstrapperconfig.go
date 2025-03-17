@@ -61,15 +61,25 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		return err
 	}
 
+	err = s.createSourceForWebhook(ctx, dk, data)
+	if err != nil {
+		return err
+	}
+
 	log.Info("done updating init secrets")
 
 	return nil
 }
 
-func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace) error {
+func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk dynakube.DynaKube) error {
 	nsList := make([]string, 0, len(namespaces))
 	for _, ns := range namespaces {
 		nsList = append(nsList, ns.Name)
+	}
+
+	err := k8ssecret.Query(client, apiReader, log).DeleteForNamespace(ctx, GetSourceSecretName(dk.Name), dk.Namespace)
+	if err != nil {
+		log.Error(err, "failed to delete the source bootstrapper-config secret", "name", GetSourceSecretName(dk.Name))
 	}
 
 	return k8ssecret.Query(client, apiReader, log).DeleteForNamespaces(ctx, consts.BootstrapperInitSecretName, nsList)
@@ -97,16 +107,17 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		return nil, errors.WithStack(err)
 	}
 
-	initialConnectRetryMs := ""
-	if dk.FeatureAgentInitialConnectRetry() > -1 {
-		initialConnectRetryMs = strconv.Itoa(dk.FeatureAgentInitialConnectRetry())
-	}
-
-	return map[string][]byte{
+	data := map[string][]byte{
 		pmc.InputFileName:        pmcSecret,
 		ca.TrustedCertsInputFile: trustedCAs,
 		ca.AgCertsInputFile:      agCerts,
-		curl.InputFileName:       []byte(initialConnectRetryMs),
 		endpoint.InputFileName:   []byte(endpointProperties),
-	}, nil
+	}
+
+	if dk.FeatureAgentInitialConnectRetry() > -1 {
+		initialConnectRetryMs := strconv.Itoa(dk.FeatureAgentInitialConnectRetry())
+		data[curl.InputFileName] = []byte(initialConnectRetryMs)
+	}
+
+	return data, err
 }
