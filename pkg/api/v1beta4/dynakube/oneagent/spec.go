@@ -105,6 +105,7 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	SecCompProfile string `json:"secCompProfile,omitempty"`
 
+	// Sotrage Host Path is the host filesystem to store configuration.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="StorageHostPath",order=28,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	StorageHostPath string `json:"storageHostPath,omitempty"`
