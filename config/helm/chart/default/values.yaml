@@ -221,6 +221,6 @@ rbac:
     create: true
     annotations: {}
   kubernetesMonitoringFull:
-    create: true
+    create: false
     annotations: {}
   supportability: true
