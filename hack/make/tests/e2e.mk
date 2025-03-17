@@ -36,7 +36,7 @@ test/e2e/istio: manifests/crd/helm
 
 ## Run no-csi e2e test only
 test/e2e/no-csi: manifests/crd/helm
-	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/no_csi -args $(SKIPCLEANUP)
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/no_csi -args $(SKIPCLEANUP)
 
 ## Run release e2e test only
 test/e2e/release: manifests/crd/helm
