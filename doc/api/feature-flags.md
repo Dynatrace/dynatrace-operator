@@ -58,7 +58,7 @@ const (
     AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
     AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
     AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
-    AnnotationFeatureRemoteImageDownload       = AnnotationFeaturePrefix + "remote-image-download"
+    AnnotationFeatureNodeImagePull             = AnnotationFeaturePrefix + "node-image-pull"
 
     // AnnotationTechnologies can be set on a Pod or DynaKube to configure which code module technologies to download. It's set to
     // "all" if not set.
