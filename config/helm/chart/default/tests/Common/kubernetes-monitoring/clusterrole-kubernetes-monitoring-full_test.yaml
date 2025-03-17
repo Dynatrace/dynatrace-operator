@@ -2,8 +2,12 @@ suite: test clusterrole for kubernetes monitoring full
 templates:
   - Common/kubernetes-monitoring/clusterrole-kubernetes-monitoring-full.yaml
 tests:
-  - it: ClusterRole should exist
+  - it: ClusterRole should exist if enabled
     documentIndex: 0
+    set:
+      rbac.activeGate.create: true
+      rbac.kubernetesMonitoringFull.create.create: true
+
     asserts:
       - isKind:
           of: ClusterRole
@@ -35,10 +39,12 @@ tests:
               - /livez
             verbs:
               - get
-  - it: ClusterRole should exist with extra permissions for openshift
+  - it: ClusterRole should exist if enabled and have extra permissions if on openshift
     documentIndex: 0
     set:
       platform: openshift
+      rbac.activeGate.create: true
+      rbac.kubernetesMonitoringFull.create.create: true
     asserts:
       - isKind:
           of: ClusterRole
@@ -59,46 +65,15 @@ tests:
               - securitycontextconstraints
             verbs:
               - use
-  - it: ClusterRoleBinding should exist
-    documentIndex: 1
-    asserts:
-      - isKind:
-          of: ClusterRoleBinding
-      - equal:
-          path: metadata.name
-          value: dynatrace-kubernetes-monitoring-full
-      - isNotEmpty:
-          path: metadata.labels
-      - equal:
-          path: roleRef
-          value:
-            apiGroup: rbac.authorization.k8s.io
-            kind: ClusterRole
-            name: dynatrace-kubernetes-monitoring-full
-      - contains:
-          path: subjects
-          content:
-            kind: ServiceAccount
-            name: dynatrace-kubernetes-monitoring
-            namespace: NAMESPACE
-  - it: should exist if only activeGate is turned and kspm is turned on
+  - it: shouldn't exist if activeGate is turned off
     set:
-      rbac.activeGate.create: true
-      rbac.kspm.create: true
-    asserts:
-      - hasDocuments:
-          count: 2
-  - it: shouldn't exist if turned off
-    set:
+      rbac.kubernetesMonitoringFull.create: true
       rbac.activeGate.create: false
-      rbac.kspm.create: false
     asserts:
       - hasDocuments:
           count: 0
-  - it: shouldn't exist if turned off
+  - it: shouldn't exist by default
     set:
-      rbac.activeGate.create: true
-      rbac.kspm.create: false
     asserts:
       - hasDocuments:
           count: 0
