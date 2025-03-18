@@ -29,20 +29,20 @@ func InstallViaMake(withCSI bool) env.Func {
 		if err != nil {
 			return ctx, err
 		}
-		ctx, err = VerifyInstall(ctx, envConfig)
+		ctx, err = VerifyInstall(ctx, envConfig, withCSI)
 
 		return ctx, err
 	}
 }
 
-func InstallViaHelm(releaseTag string, withCsi bool, namespace string) env.Func {
+func InstallViaHelm(releaseTag string, withCSI bool, namespace string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		err := installViaHelm(releaseTag, withCsi, namespace)
+		err := installViaHelm(releaseTag, withCSI, namespace)
 		if err != nil {
 			return ctx, err
 		}
 
-		return VerifyInstall(ctx, envConfig)
+		return VerifyInstall(ctx, envConfig, withCSI)
 	}
 }
 
@@ -60,7 +60,7 @@ func UninstallViaMake(withCSI bool) env.Func {
 	}
 }
 
-func VerifyInstall(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+func VerifyInstall(ctx context.Context, envConfig *envconf.Config, withCSI bool) (context.Context, error) {
 	ctx, err := WaitForDeployment(DefaultNamespace)(ctx, envConfig)
 	if err != nil {
 		return ctx, err
@@ -69,9 +69,12 @@ func VerifyInstall(ctx context.Context, envConfig *envconf.Config) (context.Cont
 	if err != nil {
 		return ctx, err
 	}
-	ctx, err = csi.WaitForDaemonset(DefaultNamespace)(ctx, envConfig)
-	if err != nil {
-		return ctx, err
+
+	if withCSI {
+		ctx, err = csi.WaitForDaemonset(DefaultNamespace)(ctx, envConfig)
+		if err != nil {
+			return ctx, err
+		}
 	}
 
 	return ctx, nil

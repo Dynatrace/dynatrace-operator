@@ -5,17 +5,13 @@ package standard
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
-	"github.com/Dynatrace/dynatrace-operator/test/features/classic"
 	classicToCloud "github.com/Dynatrace/dynatrace-operator/test/features/classic/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
 	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
 	disabledAutoInjection "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/disabled_auto_injection"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
-	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -48,21 +44,12 @@ func TestMain(m *testing.M) {
 
 func TestStandard(t *testing.T) {
 	feats := []features.Feature{
-		activegate.Feature(t, nil),
 		cloudnativeDefault.Feature(t, false),
-		applicationmonitoring.MetadataEnrichment(t),
-		applicationmonitoring.LabelVersionDetection(t),
 		applicationmonitoring.ReadOnlyCSIVolume(t),
-		applicationmonitoring.WithoutCSI(t),
 		codemodules.InstallFromImage(t),
 		publicregistry.Feature(t),
-		extensions.Feature(t),
 		disabledAutoInjection.Feature(t),
 		supportArchive.Feature(t),
-		edgeconnect.NormalModeFeature(t),
-		edgeconnect.ProvisionerModeFeature(t),
-		edgeconnect.AutomationModeFeature(t),
-		classic.Feature(t),
 		classicToCloud.Feature(t),
 		cloudToClassic.Feature(t),
 		bootstrapper.InstallWithCSI(t),
