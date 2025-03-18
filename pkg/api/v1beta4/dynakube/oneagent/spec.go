@@ -105,8 +105,7 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	SecCompProfile string `json:"secCompProfile,omitempty"`
 
-	// StorageHostPath is the path on the host filesystem where OneAgent configurations will be stored.
-	// It should be a writable path, for example /var/opt/dynatrace.
+	// StorageHostPath is the writable directory on the host filesystem where OneAgent configurations will be stored.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="StorageHostPath",order=28,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	StorageHostPath string `json:"storageHostPath,omitempty"`

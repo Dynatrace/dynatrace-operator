@@ -79,7 +79,7 @@
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
-|`storageHostPath`|StorageHostPath is the path on the host filesystem where OneAgent configurations will be stored.<br/>It should be a writable path, for example /var/opt/dynatrace.|-|string|
+|`storageHostPath`|StorageHostPath is the writable directory on the host filesystem where OneAgent configurations will be stored.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
@@ -112,7 +112,7 @@
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
-|`storageHostPath`|StorageHostPath is the path on the host filesystem where OneAgent configurations will be stored.<br/>It should be a writable path, for example /var/opt/dynatrace.|-|string|
+|`storageHostPath`|StorageHostPath is the writable directory on the host filesystem where OneAgent configurations will be stored.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
@@ -134,7 +134,7 @@
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
-|`storageHostPath`|StorageHostPath is the path on the host filesystem where OneAgent configurations will be stored.<br/>It should be a writable path, for example /var/opt/dynatrace.|-|string|
+|`storageHostPath`|StorageHostPath is the writable directory on the host filesystem where OneAgent configurations will be stored.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
