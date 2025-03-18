@@ -8704,8 +8704,9 @@ spec:
                           order to run in secure computing mode.
                         type: string
                       storageHostPath:
-                        description: StorageHostPath is the path on the host filesystem
-                          where OneAgent configurations will be stored.
+                        description: |-
+                          StorageHostPath is the path on the host filesystem where OneAgent configurations will be stored.
+                          It should be a writable path, for example /var/opt/dynatrace.
                         type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
@@ -9099,8 +9100,9 @@ spec:
                           order to run in secure computing mode.
                         type: string
                       storageHostPath:
-                        description: StorageHostPath is the path on the host filesystem
-                          where OneAgent configurations will be stored.
+                        description: |-
+                          StorageHostPath is the path on the host filesystem where OneAgent configurations will be stored.
+                          It should be a writable path, for example /var/opt/dynatrace.
                         type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
@@ -9383,8 +9385,9 @@ spec:
                           order to run in secure computing mode.
                         type: string
                       storageHostPath:
-                        description: StorageHostPath is the path on the host filesystem
-                          where OneAgent configurations will be stored.
+                        description: |-
+                          StorageHostPath is the path on the host filesystem where OneAgent configurations will be stored.
+                          It should be a writable path, for example /var/opt/dynatrace.
                         type: string
                       tolerations:
                         description: Tolerations to include with the OneAgent DaemonSet.
