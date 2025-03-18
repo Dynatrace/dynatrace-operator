@@ -193,8 +193,8 @@ go.opentelemetry.io/collector/config/configretry v1.27.0 h1:mM0X/7eiWRVmYTZJ5QTt
 go.opentelemetry.io/collector/config/configretry v1.27.0/go.mod h1:8gzFQ0qzKLYvzP2sNPwsB9gwzKSEls649yANmt/d6yE=
 go.opentelemetry.io/collector/config/configtelemetry v0.121.0 h1:0nEcLHRjr6E9P0LXhy7uluPpOw78YZ4N0t6pZJ5ug0g=
 go.opentelemetry.io/collector/config/configtelemetry v0.121.0/go.mod h1:WXmlNatI0vwjv7whh/qF1Xy+UufCZDk7VLtYqML7QmA=
-go.opentelemetry.io/collector/confmap v1.27.0 h1:OIjPcjij1NxkVQsQVmHro4+t1eYNFiUGib9+J9YBZhM=
-go.opentelemetry.io/collector/confmap v1.27.0/go.mod h1:tmOa6iw3FJsEgfBHKALqvcdfRtf71JZGor0wSM5MoH8=
+go.opentelemetry.io/collector/confmap v1.28.0 h1:pUQh4eOW0YQ1GFWTDP5pw/ZMQuppkz6oSoDDloAH/Sc=
+go.opentelemetry.io/collector/confmap v1.28.0/go.mod h1:k/3fo+2RE6m+OKlJzx78Q8hstABYwYgvXO3u9zyTeHI=
 go.opentelemetry.io/collector/confmap/xconfmap v0.121.0 h1:pZ7SOl/i3kUIPdUwIeHHsYqzOHNLCwiyXZnwQ7rLO3E=
 go.opentelemetry.io/collector/confmap/xconfmap v0.121.0/go.mod h1:YI1Sp8mbYro/H3rqH4csTq68VUuie5WVb7LI1o5+tVc=
 go.opentelemetry.io/collector/connector v0.121.0 h1:Bhre1CU8+nvXhOO74ZjCQth6JIwuRgGmUVFU5I6fDhY=
@@ -225,8 +225,8 @@ go.opentelemetry.io/collector/extension/extensiontest v0.121.0 h1:ce3IEWXBDOOSlj
 go.opentelemetry.io/collector/extension/extensiontest v0.121.0/go.mod h1:yrZhZhf2a3aD0/17drjHnzSTlr0XnNREVrOLYBlcP1o=
 go.opentelemetry.io/collector/extension/xextension v0.121.0 h1:RIhFXwm9+2sc6H2PsM9asGfEBlIDBrK+dyyFMx257bs=
 go.opentelemetry.io/collector/extension/xextension v0.121.0/go.mod h1:EiGx9nRD/7TU4++2/f5+2wdxUnDvjINCpWKLgfF2JRA=
-go.opentelemetry.io/collector/featuregate v1.27.0 h1:4LLrccoMz/gJT5uym8ojBlMzY5tr4RzUUXzwlBuiRz0=
-go.opentelemetry.io/collector/featuregate v1.27.0/go.mod h1:Y/KsHbvREENKvvN9RlpiWk/IGBK+CATBYzIIpU7nccc=
+go.opentelemetry.io/collector/featuregate v1.28.0 h1:nkaMw0HyOSxojLwlezF2O/xJ9T/Jo1a0iEetesT9lr0=
+go.opentelemetry.io/collector/featuregate v1.28.0/go.mod h1:Y/KsHbvREENKvvN9RlpiWk/IGBK+CATBYzIIpU7nccc=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.121.0 h1:gefyTUyn1WHIPvcPUB7LEbPEVj1VB2wqjh2cvxrMzVg=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.121.0/go.mod h1:JM4FHRtacWUGEiZUpR2utoRfvgTdvYk+3OBJjyD9RzQ=
 go.opentelemetry.io/collector/internal/telemetry v0.121.0 h1:vSJg6eS2rpxL8gGFDQEO8OTsIYRO2sDKiyUyEHAFspU=
