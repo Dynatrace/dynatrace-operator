@@ -19,7 +19,7 @@ const (
 
 	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver and/or node image pull is not enabled.`
 
-	errorBootstrapperNodeImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but the code modules image is not set.`
+	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but the code modules image is not set.`
 
 	errorNodeSelectorConflict = `The Dynakube specification conflicts with another Dynakube's OneAgent or Standalone-LogMonitoring. Only one Agent per node is supported.
 Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
@@ -156,8 +156,10 @@ func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.D
 }
 
 func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.FeatureBootstrapperInjection() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) == 0 {
-		return errorBootstrapperNodeImagePullRequiresCodeModulesImage
+	if dk.OneAgent().IsAppInjectionNeeded() &&
+		dk.FeatureNodeImagePull() &&
+		len(dk.OneAgent().GetCustomCodeModulesImage()) == 0 {
+		return errorImagePullRequiresCodeModulesImage
 	}
 
 	return ""
