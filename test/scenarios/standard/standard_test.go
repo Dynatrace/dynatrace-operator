@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/test/features/classic"
 	classicToCloud "github.com/Dynatrace/dynatrace-operator/test/features/classic/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
@@ -64,6 +65,7 @@ func TestStandard(t *testing.T) {
 		classic.Feature(t),
 		classicToCloud.Feature(t),
 		cloudToClassic.Feature(t),
+		bootstrapper.InstallWithCSI(t),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)

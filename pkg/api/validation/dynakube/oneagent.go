@@ -17,9 +17,9 @@ import (
 const (
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
 
-	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver and/or remote image download is not enabled.`
+	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver and/or node image pull is not enabled.`
 
-	errorBootstrapperRemoteImageDownloadRequiresCodeModulesImage = `The DynaKube specification enables remote image download, but the code modules image is not set.`
+	errorBootstrapperNodeImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but the code modules image is not set.`
 
 	errorNodeSelectorConflict = `The Dynakube specification conflicts with another Dynakube's OneAgent or Standalone-LogMonitoring. Only one Agent per node is supported.
 Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
@@ -147,7 +147,7 @@ func publicImageSetWithoutReadOnlyMode(_ context.Context, v *Validator, dk *dyna
 
 func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().IsApplicationMonitoringMode() {
-		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver && !dk.FeatureRemoteImageDownload() {
+		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver && !dk.FeatureNodeImagePull() {
 			return errorImageFieldSetWithoutCSIFlag
 		}
 	}
@@ -157,7 +157,7 @@ func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.D
 
 func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.FeatureBootstrapperInjection() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) == 0 {
-		return errorBootstrapperRemoteImageDownloadRequiresCodeModulesImage
+		return errorBootstrapperNodeImagePullRequiresCodeModulesImage
 	}
 
 	return ""

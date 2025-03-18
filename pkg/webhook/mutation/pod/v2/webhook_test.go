@@ -186,7 +186,7 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 		Name:      testDynakubeName,
 		Namespace: testNamespaceName,
 		Annotations: map[string]string{
-			dynakube.AnnotationFeatureRemoteImageDownload: "true",
+			dynakube.AnnotationFeatureNodeImagePull: "true",
 		},
 	}
 }
