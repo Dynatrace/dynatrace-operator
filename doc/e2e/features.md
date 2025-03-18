@@ -88,6 +88,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
 ## Index
 
 - [func InstallWithCSI(t *testing.T) features.Feature](<#InstallWithCSI>)
+- [func NoCSI(t *testing.T) features.Feature](<#NoCSI>)
 
 <a name="InstallWithCSI"></a>
 
@@ -95,6 +96,14 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
 
 ```go
 func InstallWithCSI(t *testing.T) features.Feature
+```
+
+<a name="NoCSI"></a>
+
+## func [NoCSI](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/bootstrapper/without_csi.go#L25>)
+
+```go
+func NoCSI(t *testing.T) features.Feature
 ```
 
 # classic
