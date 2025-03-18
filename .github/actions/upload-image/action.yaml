@@ -39,4 +39,4 @@ runs:
       env:
         IMAGE: "${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}"
       run: |
-        hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${{ env.IMAGE }}" "${{ inputs.skip-platform-suffix }}"
+        hack/build/ci/upload-podman-image.sh "${{ inputs.platform }}" "${{ env.IMAGE }}" "${{ inputs.skip-platform-suffix }}"
