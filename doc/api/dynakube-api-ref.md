@@ -79,6 +79,7 @@
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
+|`storageHostPath`|StorageHostPath is the writable directory on the host filesystem where OneAgent configurations will be stored.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
@@ -96,6 +97,18 @@
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode for the LogMonitoring pods|-|string|
 |`tolerations`|Set tolerations for the LogMonitoring pods|-|array|
 
+### .spec.templates.otelCollector
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`annotations`|Adds additional annotations to the OtelCollector pods|-|object|
+|`labels`|Adds additional labels for the OtelCollector pods|-|object|
+|`replicas`|Number of replicas for your OtelCollector|-|integer|
+|`resources`|Define resources' requests and limits for single OtelCollector pod|-|object|
+|`tlsRefName`||-|string|
+|`tolerations`|Set tolerations for the OtelCollector pods|-|array|
+|`topologySpreadConstraints`|Adds TopologySpreadConstraints for the OtelCollector pods|-|array|
+
 ### .spec.oneAgent.classicFullStack
 
 |Parameter|Description|Default value|Data type|
@@ -111,6 +124,7 @@
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
+|`storageHostPath`|StorageHostPath is the writable directory on the host filesystem where OneAgent configurations will be stored.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
@@ -132,6 +146,7 @@
 |`oneAgentResources`|Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.<br/>Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.|-|object|
 |`priorityClassName`|Assign a priority class to the OneAgent pods. By default, no class is set.<br/>For details, see Pod Priority and Preemption (<https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/>).|-|string|
 |`secCompProfile`|The SecComp Profile that will be configured in order to run in secure computing mode.|-|string|
+|`storageHostPath`|StorageHostPath is the writable directory on the host filesystem where OneAgent configurations will be stored.|-|string|
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
@@ -164,17 +179,12 @@
 |`repository`|Custom image repository|-|string|
 |`tag`|Indicates a tag of the image to use|-|string|
 
-### .spec.templates.openTelemetryCollector
+### .spec.templates.otelCollector.imageRef
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`annotations`|Adds additional annotations to the OtelCollector pods|-|object|
-|`labels`|Adds additional labels for the OtelCollector pods|-|object|
-|`replicas`|Number of replicas for your OtelCollector|-|integer|
-|`resources`|Define resources' requests and limits for single OtelCollector pod|-|object|
-|`tlsRefName`||-|string|
-|`tolerations`|Set tolerations for the OtelCollector pods|-|array|
-|`topologySpreadConstraints`|Adds TopologySpreadConstraints for the OtelCollector pods|-|array|
+|`repository`|Custom image repository|-|string|
+|`tag`|Indicates a tag of the image to use|-|string|
 
 ### .spec.templates.extensionExecutionController
 
@@ -202,13 +212,6 @@
 |`priorityClassName`|If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that<br/>name. If not specified the setting will be removed from the DaemonSet.|-|string|
 |`resources`|Define resources' requests and limits for single NodeConfigurationCollector pod|-|object|
 |`tolerations`|Set tolerations for the NodeConfigurationCollector pods|-|array|
-
-### .spec.templates.openTelemetryCollector.imageRef
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`repository`|Custom image repository|-|string|
-|`tag`|Indicates a tag of the image to use|-|string|
 
 ### .spec.activeGate.persistentVolumeClaim.dataSourceRef
 
