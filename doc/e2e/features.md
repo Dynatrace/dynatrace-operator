@@ -53,7 +53,7 @@ Verification that build labels are created and set accordingly. The test checks:
 
 <a name="MetadataEnrichment"></a>
 
-## func [MetadataEnrichment](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/metadata_enrichment.go#L44>)
+## func [MetadataEnrichment](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/metadata_enrichment.go#L45>)
 
 ```go
 func MetadataEnrichment(t *testing.T) features.Feature
@@ -78,6 +78,33 @@ func WithoutCSI(t *testing.T) features.Feature
 ```
 
 ApplicationMonitoring deployment without CSI driver
+
+# bootstrapper
+
+```go
+import "github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
+```
+
+## Index
+
+- [func InstallWithCSI(t *testing.T) features.Feature](<#InstallWithCSI>)
+- [func NoCSI(t *testing.T) features.Feature](<#NoCSI>)
+
+<a name="InstallWithCSI"></a>
+
+## func [InstallWithCSI](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/bootstrapper/node_image_pull_csi.go#L28>)
+
+```go
+func InstallWithCSI(t *testing.T) features.Feature
+```
+
+<a name="NoCSI"></a>
+
+## func [NoCSI](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/bootstrapper/without_csi.go#L25>)
+
+```go
+func NoCSI(t *testing.T) features.Feature
+```
 
 # classic
 
@@ -181,11 +208,21 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemo
 
 ## Index
 
+- [func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func](<#ImageHasBeenDownloaded>)
 - [func InstallFromImage(t *testing.T) features.Feature](<#InstallFromImage>)
+- [func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func](<#VolumesAreMountedCorrectly>)
 - [func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxy>)
 - [func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxyAndAGCert>)
 - [func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxyCA>)
 - [func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxyCAAndAGCert>)
+
+<a name="ImageHasBeenDownloaded"></a>
+
+## func [ImageHasBeenDownloaded](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L425>)
+
+```go
+func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func
+```
 
 <a name="InstallFromImage"></a>
 
@@ -196,6 +233,14 @@ func InstallFromImage(t *testing.T) features.Feature
 ```
 
 Verification that the storage in the CSI driver directory does not increase when there are multiple tenants and pods which are monitored.
+
+<a name="VolumesAreMountedCorrectly"></a>
+
+## func [VolumesAreMountedCorrectly](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L511>)
+
+```go
+func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func
+```
 
 <a name="WithProxy"></a>
 

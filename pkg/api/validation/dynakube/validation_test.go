@@ -106,7 +106,6 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 		setupDisabledCSIEnv(t)
 		assertDenied(t,
 			[]string{
-				errorCSIModuleRequired,
 				errorNoApiUrl,
 				errorConflictingNamespaceSelector,
 				fmt.Sprintf(errorDuplicateActiveGateCapability, activegate.KubeMonCapability.DisplayName),

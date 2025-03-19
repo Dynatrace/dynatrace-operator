@@ -24,7 +24,6 @@ type Validator struct {
 
 var (
 	validatorErrorFuncs = []validatorFunc{
-		isCSIModuleDisabled,
 		isActiveGateModuleDisabled,
 		isExtensionsModuleDisabled,
 		isLogMonitoringModuleDisabled,
@@ -46,6 +45,7 @@ var (
 		conflictingNamespaceSelector,
 		noResourcesAvailable,
 		imageFieldSetWithoutCSIFlag,
+		missingCodeModulesImage,
 		conflictingOneAgentVolumeStorageSettings,
 		nameViolatesDNS1035,
 		nameTooLong,
@@ -60,6 +60,8 @@ var (
 		unknownTelemetryIngestProtocols,
 		duplicatedTelemetryIngestProtocols,
 		invalidTelemetryIngestName,
+		forbiddenTelemetryIngestServiceNameSuffix,
+		conflictingTelemetryIngestServiceNames,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

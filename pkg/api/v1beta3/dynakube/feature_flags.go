@@ -27,8 +27,7 @@ import (
 )
 
 const (
-	AnnotationFeaturePrefix            = "feature.dynatrace.com/"
-	AnnotationFeatureCodeModulesPrefix = "codemodules.oneagent.dynatrace.com/"
+	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// General.
 	AnnotationFeaturePublicRegistry = AnnotationFeaturePrefix + "public-registry"
@@ -75,7 +74,6 @@ const (
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 	AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
 	AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
-	AnnotationFeatureRemoteImageDownload       = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
 
 	falsePhrase  = "false"
 	truePhrase   = "true"
@@ -275,10 +273,6 @@ func MountAttemptsToTimeout(maxAttempts int) string {
 
 func (dk *DynaKube) FeatureReadOnlyCsiVolume() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureReadOnlyCsiVolume) == truePhrase
-}
-
-func (dk *DynaKube) FeatureRemoteImageDownload() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureRemoteImageDownload) == truePhrase
 }
 
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {

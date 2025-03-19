@@ -15,6 +15,7 @@ type OneAgent struct {
 	apiUrlHost string
 
 	featureOneAgentPrivileged        bool
+	featureBootstrapperInjection     bool
 	featureOneAgentSkipLivenessProbe bool
 }
 
@@ -103,6 +104,11 @@ type HostInjectSpec struct {
 	// The SecComp Profile that will be configured in order to run in secure computing mode.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent SecComp Profile",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	SecCompProfile string `json:"secCompProfile,omitempty"`
+
+	// StorageHostPath is the writable directory on the host filesystem where OneAgent configurations will be stored.
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="StorageHostPath",order=28,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
+	StorageHostPath string `json:"storageHostPath,omitempty"`
 
 	// Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
 	// Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.

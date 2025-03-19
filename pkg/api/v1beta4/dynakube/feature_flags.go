@@ -27,8 +27,7 @@ import (
 )
 
 const (
-	AnnotationFeaturePrefix            = "feature.dynatrace.com/"
-	AnnotationFeatureCodeModulesPrefix = "codemodules.oneagent.dynatrace.com/"
+	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// General.
 	AnnotationFeaturePublicRegistry = AnnotationFeaturePrefix + "public-registry"
@@ -75,12 +74,16 @@ const (
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 	AnnotationFeatureMaxCsiMountTimeout        = AnnotationFeaturePrefix + "max-csi-mount-timeout"
 	AnnotationFeatureReadOnlyCsiVolume         = AnnotationFeaturePrefix + "injection-readonly-volume"
-	AnnotationFeatureRemoteImageDownload       = AnnotationFeatureCodeModulesPrefix + "remote-image-download"
+	AnnotationFeatureNodeImagePull             = AnnotationFeaturePrefix + "node-image-pull"
 
 	falsePhrase  = "false"
 	truePhrase   = "true"
 	silentPhrase = "silent"
 	failPhrase   = "fail"
+
+	// AnnotationTechnologies can be set on a Pod or DynaKube to configure which code module technologies to download. It's set to
+	// "all" if not set.
+	AnnotationTechnologies = "oneagent.dynatrace.com/technologies"
 )
 
 const (
@@ -277,10 +280,13 @@ func (dk *DynaKube) FeatureReadOnlyCsiVolume() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureReadOnlyCsiVolume) == truePhrase
 }
 
-func (dk *DynaKube) FeatureRemoteImageDownload() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureRemoteImageDownload) == truePhrase
+func (dk *DynaKube) FeatureNodeImagePull() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureNodeImagePull) == truePhrase
 }
 
+func (dk *DynaKube) FeatureNodeImagePullTechnology() string {
+	return dk.getFeatureFlagRaw(AnnotationTechnologies)
+}
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
 		return failPhrase
