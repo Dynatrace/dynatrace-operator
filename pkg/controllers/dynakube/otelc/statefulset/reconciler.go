@@ -76,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	if r.dk.TelemetryIngest().IsEnabled() {
 		if !r.checkDataIngestTokenExists(ctx) {
-			msg := "data ingest token is missing, but it's required for otel controller"
+			msg := "data ingest token is missing, but it's required for telemetery ingest"
 			conditions.SetDataIngestTokenMissing(r.dk.Conditions(), dynakube.TokenConditionType, msg)
 
 			log.Error(errors.New(msg), "could not create or update statefulset")
