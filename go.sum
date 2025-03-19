@@ -185,8 +185,8 @@ go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJyS
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
 go.opentelemetry.io/collector v0.122.0 h1:eir4Fvv2tz5tUvPBTvFk8VmqeihYcTuYD6AXllvxxIg=
 go.opentelemetry.io/collector v0.122.0/go.mod h1:8t7TFg4nQHskvaOZrbfqAprB3r6+SZ2GQ2NYua0HEtg=
-go.opentelemetry.io/collector/component v1.28.0 h1:SQAGxxuyZ+d5tOsuEka8m9oE+wAroaYQpJ8NTIbl6Lk=
-go.opentelemetry.io/collector/component v1.28.0/go.mod h1:te8gbcKU6Mgu7ewo/2VYDSbCkLrhOYYy2llayXCF0bI=
+go.opentelemetry.io/collector/component v1.28.1 h1:JjwfvLR0UdadRDAANAdM4mOSwGmfGO3va2X+fdk4YdA=
+go.opentelemetry.io/collector/component v1.28.1/go.mod h1:jwZRDML3tXo1whueZdRf+y6z3DeEYTLPBmb/O1ujB40=
 go.opentelemetry.io/collector/component/componentstatus v0.122.0 h1:gzqsfL8IN+bwlByl76MNFIDtq0jc9Y671NoZQGAiupg=
 go.opentelemetry.io/collector/component/componentstatus v0.122.0/go.mod h1:d4WiL3UHQFIh7WN4miV5aupTZK3kFRt4xfzhsyTEMN4=
 go.opentelemetry.io/collector/component/componenttest v0.122.0 h1:TxMm4nXB9iByQhDP0QFZwYxG+BFXEB6qUUwVh5YYW7g=
@@ -233,8 +233,8 @@ go.opentelemetry.io/collector/internal/fanoutconsumer v0.122.0 h1:Oup8r2FaIEi7si
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.122.0/go.mod h1:02AWRtzi/v9P2ldMdQq5+OKKoqIVPdqZQ/B3KKNu/So=
 go.opentelemetry.io/collector/internal/telemetry v0.122.0 h1:5RCl/CdT3+VaduRI5IphoH3xS49sHZmEY/y3N3CEZjs=
 go.opentelemetry.io/collector/internal/telemetry v0.122.0/go.mod h1:FrmVXPmQMn3BuGIWg/pOdmHTMvXmlNzcbMusn8SSZn4=
-go.opentelemetry.io/collector/pdata v1.28.0 h1:xSZyvTOOc2Wmz4PoxrVqeQfodLgs9k7gowLAnzZN0eU=
-go.opentelemetry.io/collector/pdata v1.28.0/go.mod h1:asKE8MD/4SOKz1mCrGdAz4VO2U2HUNg8A6094uK7pq0=
+go.opentelemetry.io/collector/pdata v1.28.1 h1:ORl5WLpQJvjzBVpHu12lqKMdcf/qDBwRXMcUubhybiQ=
+go.opentelemetry.io/collector/pdata v1.28.1/go.mod h1:asKE8MD/4SOKz1mCrGdAz4VO2U2HUNg8A6094uK7pq0=
 go.opentelemetry.io/collector/pdata/pprofile v0.122.0 h1:JcmYBmNNOKRO7mIBxJ79YKgrTowILCCcpxKorDBfFOs=
 go.opentelemetry.io/collector/pdata/pprofile v0.122.0/go.mod h1:miIYvmTQov3C2/D7T0nRMndhavG4tPqz3llKMdLjSwg=
 go.opentelemetry.io/collector/pdata/testdata v0.122.0 h1:ANXZ+h9yAy1N37ot407qnMtISjZIgjYk10atzD7wSKI=

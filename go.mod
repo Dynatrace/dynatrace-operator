@@ -17,7 +17,7 @@ require (
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
-	go.opentelemetry.io/collector/component v1.28.0
+	go.opentelemetry.io/collector/component v1.28.1
 	go.opentelemetry.io/collector/confmap v1.28.0
 	go.opentelemetry.io/collector/pipeline v0.122.0
 	go.opentelemetry.io/collector/service v0.122.0
@@ -117,7 +117,7 @@ require (
 	go.opentelemetry.io/collector/featuregate v1.28.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.122.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.122.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.28.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.28.1 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.122.0 // indirect
 	go.opentelemetry.io/collector/pdata/testdata v0.122.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.122.0 // indirect
