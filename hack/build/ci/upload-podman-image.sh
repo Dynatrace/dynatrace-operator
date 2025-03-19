@@ -21,6 +21,8 @@ src_image=$(podman load -i "${image_tar_path}" | cut -d' ' -f3)
 podman tag "${src_image}" "${target_image}"
 pushinfo=$(podman push "${target_image}")
 
+echo $pushinfo
+
 # filtering by image-tag directly does not work currently see: https://github.com/moby/moby/issues/29901
 digest=$(echo "$pushinfo" | tail -n 1 | cut -d " " -f 3)
 echo "digest=${digest}">> "$GITHUB_OUTPUT"
