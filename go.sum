@@ -239,8 +239,8 @@ go.opentelemetry.io/collector/pdata/pprofile v0.122.0 h1:JcmYBmNNOKRO7mIBxJ79YKg
 go.opentelemetry.io/collector/pdata/pprofile v0.122.0/go.mod h1:miIYvmTQov3C2/D7T0nRMndhavG4tPqz3llKMdLjSwg=
 go.opentelemetry.io/collector/pdata/testdata v0.122.0 h1:ANXZ+h9yAy1N37ot407qnMtISjZIgjYk10atzD7wSKI=
 go.opentelemetry.io/collector/pdata/testdata v0.122.0/go.mod h1:5WxeLDGisczRoS5lnxyt0PqGI3tr2QnhxUHupGrDY64=
-go.opentelemetry.io/collector/pipeline v0.122.0 h1:DmiNzhj2IPpL6JisPo0Hs8vyS5AsUz+GlPh5wblJmTk=
-go.opentelemetry.io/collector/pipeline v0.122.0/go.mod h1:TO02zju/K6E+oFIOdi372Wk0MXd+Szy72zcTsFQwXl4=
+go.opentelemetry.io/collector/pipeline v0.122.1 h1:f0uuiDmanVyKwfYo6cWveJsGbLXidV7i+Z7u8QJwWxI=
+go.opentelemetry.io/collector/pipeline v0.122.1/go.mod h1:TO02zju/K6E+oFIOdi372Wk0MXd+Szy72zcTsFQwXl4=
 go.opentelemetry.io/collector/pipeline/xpipeline v0.122.0 h1:Zu6zvO/6epvsjZ74t7qAiMowqhScxHZURlBzBaJ00iY=
 go.opentelemetry.io/collector/pipeline/xpipeline v0.122.0/go.mod h1:uBWsvO37xU8cPgG8znDMW7bIwzrwRQ0jQ0u05rFeB/g=
 go.opentelemetry.io/collector/processor v0.122.0 h1:elkgJhXhzwrvycbMGQzLOGNwGURaQZNAx1VB8lh9uq8=
