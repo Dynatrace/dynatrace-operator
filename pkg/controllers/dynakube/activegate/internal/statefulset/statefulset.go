@@ -305,7 +305,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 		sts.Spec.PersistentVolumeClaimRetentionPolicy = defaultPVCRetentionPolicy()
 	}
 
-	statefulset.SetPVCAnnotation()(sts)
+	// statefulset.SetPVCAnnotation()(sts)
 }
 
 func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {
