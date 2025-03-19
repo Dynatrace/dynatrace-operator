@@ -356,6 +356,46 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 			},
 		})
 	})
+
+	t.Run("spec with cloudnative enabled, csi driver and node image pull enabled and image not set", func(t *testing.T) {
+		assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					dynakube.AnnotationFeatureNodeImagePull: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("spec with appmon enabled, csi driver and node image pull enabled and image not set", func(t *testing.T) {
+		assertDenied(t, []string{errorImagePullRequiresCodeModulesImage}, &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					dynakube.AnnotationFeatureNodeImagePull: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{},
+					},
+				},
+			},
+		})
+	})
 }
 
 func createDynakube(oaEnvVar ...string) *dynakube.DynaKube {
