@@ -33,7 +33,7 @@ runs:
       run: |
         touch dynatrace-operator-bin-sbom.cdx.json
     - name: Build target
-      uses: redhat-actions/buildah-build@v2.13
+      uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2.13
       with:
         build-args: |
           GO_LINKER_ARGS=${{ steps.prep.outputs.go_linker_args }}
