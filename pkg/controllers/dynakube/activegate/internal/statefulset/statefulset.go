@@ -1,6 +1,7 @@
 package statefulset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -26,6 +27,8 @@ import (
 const (
 	defaultEnvPriority = prioritymap.DefaultPriority
 	customEnvPriority  = prioritymap.HighPriority
+
+	pvcAnnotationHash = api.InternalFlagPrefix + "pvc-hash"
 )
 
 type Builder struct {
@@ -302,6 +305,14 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 			},
 		}
 		sts.Spec.PersistentVolumeClaimRetentionPolicy = defaultPVCRetentionPolicy()
+	}
+
+	if sts.Spec.VolumeClaimTemplates != nil {
+		if sts.ObjectMeta.Annotations == nil {
+			sts.ObjectMeta.Annotations = map[string]string{}
+		}
+
+		// sts.ObjectMeta.Annotations[pvcAnnotationHash], _ = hasher.GenerateHash(sts.Spec.VolumeClaimTemplates)
 	}
 }
 
