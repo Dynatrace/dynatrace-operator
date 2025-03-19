@@ -76,19 +76,19 @@ jobs:
           repository: GCR_REPOSITORY
           username: GCR_USERNAME
           password: GCR_JSON_KEY
-        - registry: dockerhub
-          url: docker.io
-          repository: DOCKERHUB_REPOSITORY
-          username: DOCKERHUB_USERNAME
-          password: DOCKERHUB_PASSWORD
-        - registry: amazon-ecr
-          url: public.ecr.aws
-          repository: ECR_REPOSITORY
-        - registry: rhcc
-          url: quay.io
-          username: RHCC_USERNAME
-          password: RHCC_PASSWORD
-          repository: RHCC_REPOSITORY
+#        - registry: dockerhub
+#          url: docker.io
+#          repository: DOCKERHUB_REPOSITORY
+#          username: DOCKERHUB_USERNAME
+#          password: DOCKERHUB_PASSWORD
+#        - registry: amazon-ecr
+#          url: public.ecr.aws
+#          repository: ECR_REPOSITORY
+#        - registry: rhcc
+#          url: quay.io
+#          username: RHCC_USERNAME
+#          password: RHCC_PASSWORD
+#          repository: RHCC_REPOSITORY
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -144,19 +144,19 @@ jobs:
             repository: GCR_REPOSITORY
             username: GCR_USERNAME
             password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
-          - registry: amazon-ecr
-            url: public.ecr.aws
-            repository: ECR_REPOSITORY
-          - registry: rhcc
-            url: quay.io
-            username: RHCC_USERNAME
-            password: RHCC_PASSWORD
-            repository: RHCC_REPOSITORY
+#          - registry: dockerhub
+#            url: docker.io
+#            repository: DOCKERHUB_REPOSITORY
+#            username: DOCKERHUB_USERNAME
+#            password: DOCKERHUB_PASSWORD
+#          - registry: amazon-ecr
+#            url: public.ecr.aws
+#            repository: ECR_REPOSITORY
+#          - registry: rhcc
+#            url: quay.io
+#            username: RHCC_USERNAME
+#            password: RHCC_PASSWORD
+#            repository: RHCC_REPOSITORY
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
