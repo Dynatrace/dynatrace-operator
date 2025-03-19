@@ -69,7 +69,7 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64, ppc64le, s390x]
-        registry: [gcr, dockerhub, amazon-ecr, rhcc]
+        registry: [gcr]
         include:
         - registry: gcr
           url: gcr.io
@@ -127,7 +127,7 @@ jobs:
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
   manifest:
-    name: Create Docker manifests
+    name: Create manifests
     environment: Release
     needs: [prepare, push]
     runs-on: ubuntu-latest
@@ -137,7 +137,7 @@ jobs:
       digest: ${{ steps.create-manifests.outputs.digest }}
     strategy:
       matrix:
-        registry: [gcr, dockerhub, amazon-ecr, rhcc]
+        registry: [gcr]
         include:
           - registry: gcr
             url: gcr.io
