@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Build Image
 description: Builds the operator docker image
 inputs:
   platform:
@@ -53,7 +53,7 @@ runs:
         buildah version
         podman version
         cat /etc/os-release
-        podman save -o /tmp/operator-${{ inputs.platform }}.tar operator-${{ inputs.platform }}:${{ inputs.image-tag }}
+        podman save --format oci-archive -o /tmp/operator-${{ inputs.platform }}.tar operator-${{ inputs.platform }}:${{ inputs.image-tag }}
     - name: Upload artifact
       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
