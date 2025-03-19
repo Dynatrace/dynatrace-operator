@@ -19,15 +19,15 @@ then
 
   for architecture in "${supported_architectures[@]}"
   do
-    docker pull "${image}-${architecture}"
+    podman pull "${image}-${architecture}"
     images+=("${image}-${architecture}")
   done
-  docker manifest create "${image}" "${images[@]}"
+  podman manifest create "${image}" "${images[@]}"
 else
   echo "Creating manifest for the AMD image "
-  docker pull "${image}-amd64"
-  docker manifest create "${image}" "${image}-amd64"
+  podman pull "${image}-amd64"
+  podman manifest create "${image}" "${image}-amd64"
 fi
 
-sha256=$(docker manifest push "${image}")
+sha256=$(podman manifest push "${image}")
 echo "digest=${sha256}">> $GITHUB_OUTPUT
