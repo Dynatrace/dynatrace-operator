@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x # # activate debugging
+
 if [ -z "$2" ]
 then
   echo "Usage: $0 <image_name> <image_tag> <enable_multiplatform>"
