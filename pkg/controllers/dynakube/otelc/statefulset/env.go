@@ -73,9 +73,9 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	}
 
 	if dk.HasProxy() {
-		envs = append(envs, getProxyEnvValue(envHttpsProxy, dk.Spec.Proxy))
-		envs = append(envs, getProxyEnvValue(envHttpProxy, dk.Spec.Proxy))
-		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getNoProxyValue(dk)})
+		envs = append(envs, getDynakubeProxyEnvValue(envHttpsProxy, dk.Spec.Proxy))
+		envs = append(envs, getDynakubeProxyEnvValue(envHttpProxy, dk.Spec.Proxy))
+		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getDynakubeNoProxyEnvValue(dk)})
 	}
 
 	if dk.IsExtensionsEnabled() {
@@ -121,7 +121,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	return envs
 }
 
-func getProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
+func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 	if src.ValueFrom != "" {
 		return corev1.EnvVar{
 			Name: envVar,
@@ -137,7 +137,7 @@ func getProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 	return corev1.EnvVar{Name: envVar, Value: src.Value}
 }
 
-func getNoProxyValue(dk *dynakube.DynaKube) string {
+func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
 	noProxyValues := []string{}
 
 	if dk.IsExtensionsEnabled() {
