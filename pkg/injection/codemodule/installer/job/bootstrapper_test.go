@@ -113,6 +113,9 @@ func TestBuildJob(t *testing.T) {
 		require.NotNil(t, job.Spec.Template.Spec.Volumes[0].HostPath)
 		assert.Equal(t, dataDir, job.Spec.Template.Spec.Volumes[0].HostPath.Path)
 
+		require.Equal(t, provisionerServiceAccount, job.Spec.Template.Spec.ServiceAccountName)
+		require.Equal(t, provisionerServiceAccount, job.Spec.Template.Spec.DeprecatedServiceAccount)
+
 		require.Len(t, job.Spec.Template.Spec.ImagePullSecrets, len(pullSecrets))
 
 		for i, ps := range pullSecrets {
