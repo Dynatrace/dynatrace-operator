@@ -1,9 +1,6 @@
 name: Upload Docker Image
 description: Uploads the operator docker image to a registry
 inputs:
-  platform:
-    description: The platform of the uploaded image
-    required: true
   labels:
     description: The labels for the uploaded image
     required: true
@@ -31,7 +28,7 @@ runs:
     - name: Download artifact
       uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
       with:
-        name: operator-${{ inputs.platform }}
+        name: operator-all-platforms
         path: /tmp
     - name: Upload image to Registry
       id: push-image
@@ -39,4 +36,4 @@ runs:
       env:
         IMAGE: "${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}"
       run: |
-        hack/build/ci/upload-podman-image.sh "${{ inputs.platform }}" "${{ env.IMAGE }}" "${{ inputs.skip-platform-suffix }}"
+        hack/build/ci/upload-podman-image.sh "${{ env.IMAGE }}" "${{ inputs.skip-platform-suffix }}"
