@@ -78,6 +78,13 @@ func SetPodAnnotations(annotations map[string]string) builder.Option[*batchv1.Jo
 	}
 }
 
+func SetServiceAccount(serviceAccountName string) builder.Option[*batchv1.Job] {
+	return func(s *batchv1.Job) {
+		s.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		s.Spec.Template.Spec.DeprecatedServiceAccount = serviceAccountName
+	}
+}
+
 func SetTTLSecondsAfterFinished(ttl int32) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
 		s.Spec.TTLSecondsAfterFinished = ptr.To(ttl)

@@ -53,7 +53,13 @@ tests:
                 - list
                 - watch
             - apiGroups:
-                - "batch"
+                - dynatrace.com
+              resources:
+                - dynakubes/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - batch
               resources:
                 - jobs
               verbs:

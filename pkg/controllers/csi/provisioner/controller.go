@@ -33,6 +33,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/mount-utils"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -86,6 +87,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynakube.DynaKube{}).
+		Owns(&batchv1.Job{}).
 		Named("provisioner-controller").
 		Complete(provisioner)
 }
