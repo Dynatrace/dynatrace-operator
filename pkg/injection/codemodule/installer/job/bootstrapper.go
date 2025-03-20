@@ -17,6 +17,8 @@ const (
 	volumeName       = "dynatrace-codemodules"
 	codeModuleSource = "/opt/dynatrace/oneagent"
 
+	provisionerServiceAccount = "dynatrace-oneagent-csi-driver" // TODO: Get it from env
+
 	activeDeadlineSeconds   int64 = 600 // 10 min, after which the Job will be put into a Failed state
 	ttlSecondsAfterFinished int32 = 10  // 10 sec after the Job is put into a Succeeded or Failed state the Job and related Pods will be terminated
 )
@@ -48,8 +50,11 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 			},
 		},
 		SecurityContext: &corev1.SecurityContext{ // TODO: Use the SecurityContext from the `provisioner` container
-			RunAsUser:              ptr.To(int64(0)),
-			ReadOnlyRootFilesystem: ptr.To(true),
+			RunAsUser:                ptr.To(int64(0)),
+			RunAsNonRoot:             ptr.To(false),
+			Privileged:               ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(true),
+			ReadOnlyRootFilesystem:   ptr.To(true),
 			SELinuxOptions: &corev1.SELinuxOptions{
 				Level: "s0",
 			},
@@ -85,6 +90,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		jobutil.SetAutomountServiceAccountToken(false),
 		jobutil.SetActiveDeadlineSeconds(activeDeadlineSeconds),
 		jobutil.SetTTLSecondsAfterFinished(ttlSecondsAfterFinished),
+		jobutil.SetServiceAccount(provisionerServiceAccount),
 	)
 }
 
