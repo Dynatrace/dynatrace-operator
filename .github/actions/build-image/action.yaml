@@ -7,6 +7,9 @@ inputs:
   image-tag:
     description: The tag of the built image
     required: true
+  platforms:
+    description: List of platforms to build
+    required: true
 runs:
   using: "composite"
   steps:
@@ -38,7 +41,7 @@ runs:
         context: .
         containerfiles: |
           ./Dockerfile
-        platforms: linux/amd64, linux/arm64, linux/ppc64le, linux/s390x
+        platforms: ${{ inputs.platforms }}
         tags: ${{ inputs.image-tag }}
         image: operator-all-platforms
         labels: ${{ inputs.labels }}
