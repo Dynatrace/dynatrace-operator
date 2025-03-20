@@ -38,7 +38,7 @@ runs:
         context: .
         containerfiles: |
           ./Dockerfile
-        platforms: [linux/amd64, linux/arm64, linux/ppc64le, linux/s390x]
+        platforms: linux/amd64, linux/arm64, linux/ppc64le, linux/s390x
         tags: ${{ inputs.image-tag }}
         image: operator-all-platforms
         labels: ${{ inputs.labels }}
