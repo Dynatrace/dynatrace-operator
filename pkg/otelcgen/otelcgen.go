@@ -122,7 +122,9 @@ func (c *Config) Marshal() ([]byte, error) {
 	if err := conf.Marshal(c); err != nil {
 		return nil, err
 	}
+
 	sm := conf.ToStringMap()
+
 	return yaml.Marshal(sm)
 }
 
