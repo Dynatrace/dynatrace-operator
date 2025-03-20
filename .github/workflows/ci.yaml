@@ -197,7 +197,7 @@ jobs:
       - name: Build image
         uses: ./.github/actions/build-image
         with:
-          platforms: [amd64, arm64, ppc64le, s390x]
+          platforms: [linux/amd64, linux/arm64, linux/ppc64le, linux/s390x]
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
 
