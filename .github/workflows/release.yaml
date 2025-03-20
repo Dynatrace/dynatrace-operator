@@ -68,7 +68,6 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        platform: [amd64, arm64, ppc64le, s390x]
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
         include:
         - registry: gcr
@@ -114,7 +113,6 @@ jobs:
         id: push-image
         uses: ./.github/actions/upload-image
         with:
-          platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
