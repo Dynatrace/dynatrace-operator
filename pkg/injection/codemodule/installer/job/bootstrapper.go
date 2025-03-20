@@ -50,8 +50,11 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 			},
 		},
 		SecurityContext: &corev1.SecurityContext{ // TODO: Use the SecurityContext from the `provisioner` container
-			RunAsUser:              ptr.To(int64(0)),
-			ReadOnlyRootFilesystem: ptr.To(true),
+			RunAsUser:                ptr.To(int64(0)),
+			RunAsNonRoot:             ptr.To(false),
+			Privileged:               ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(true),
+			ReadOnlyRootFilesystem:   ptr.To(true),
 			SELinuxOptions: &corev1.SELinuxOptions{
 				Level: "s0",
 			},
