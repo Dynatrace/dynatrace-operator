@@ -56,7 +56,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				HostMonitoring: &HostInjectSpec{},
 			},
 		}
-		assert.False(t, oneAgent.IsReadOnlyOneAgentsMode())
+		assert.True(t, oneAgent.IsReadOnlyOneAgentsMode())
 	})
 }
 

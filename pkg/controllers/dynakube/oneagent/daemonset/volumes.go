@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
@@ -15,22 +16,32 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 
 	volumeMounts = append(volumeMounts, getOneAgentSecretVolumeMount())
 
-	if dk != nil && dk.OneAgent().IsReadOnlyOneAgentsMode() {
+	if dk == nil {
+		volumeMounts = append(volumeMounts, getRootMount())
+
+		return volumeMounts
+	}
+
+	if dk.OneAgent().IsCloudNativeFullstackMode() || dk.OneAgent().IsHostMonitoringMode() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
-		volumeMounts = append(volumeMounts, getCSIStorageMount())
+		if dk.OneAgent().IsCSIAvailable() {
+			volumeMounts = append(volumeMounts, getCSIStorageMount())
+		} else {
+			volumeMounts = append(volumeMounts, getStorageVolumeMount(dk))
+		}
 	} else {
 		volumeMounts = append(volumeMounts, getRootMount())
 	}
 
-	if dk != nil && dk.Spec.TrustedCAs != "" {
+	if dk.Spec.TrustedCAs != "" {
 		volumeMounts = append(volumeMounts, getClusterCaCertVolumeMount())
 	}
 
-	if dk != nil && dk.ActiveGate().HasCaCert() {
+	if dk.ActiveGate().HasCaCert() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 
-	if dk != nil && dk.NeedsOneAgentProxy() {
+	if dk.NeedsOneAgentProxy() {
 		volumeMounts = append(volumeMounts, getHttpProxyMount())
 	}
 
@@ -81,6 +92,17 @@ func getCSIStorageMount() corev1.VolumeMount {
 	}
 }
 
+func getStorageVolumeMount(dk *dynakube.DynaKube) corev1.VolumeMount {
+	// the TenantUUID is already set
+	tenant, _ := dk.TenantUUID()
+
+	return corev1.VolumeMount{
+		Name:      storageVolumeName,
+		SubPath:   tenant,
+		MountPath: csiStorageVolumeMount,
+	}
+}
+
 func getHttpProxyMount() corev1.VolumeMount {
 	return proxy.BuildVolumeMount()
 }
@@ -94,8 +116,12 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 
 	volumes = append(volumes, getOneAgentSecretVolume(dk))
 
-	if dk.OneAgent().IsReadOnlyOneAgentsMode() {
-		volumes = append(volumes, getCSIStorageVolume(dk))
+	if dk.OneAgent().IsCloudNativeFullstackMode() || dk.OneAgent().IsHostMonitoringMode() {
+		if dk.OneAgent().IsCSIAvailable() {
+			volumes = append(volumes, getCSIStorageVolume(dk))
+		} else {
+			volumes = append(volumes, getStorageVolume(dk))
+		}
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -142,6 +168,18 @@ func getCSIStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 					csivolumes.CSIVolumeAttributeModeField:     hostvolumes.Mode,
 					csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
 				},
+			},
+		},
+	}
+}
+
+func getStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
+	return corev1.Volume{
+		Name: storageVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: dk.OneAgent().GetHostPath(),
+				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 			},
 		},
 	}

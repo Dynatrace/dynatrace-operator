@@ -41,6 +41,8 @@ const (
 	csiStorageVolumeName  = "osagent-storage"
 	csiStorageVolumeMount = "/mnt/volume_storage_mount"
 
+	storageVolumeName = "volume-storage"
+
 	podName = "dynatrace-oneagent"
 
 	inframonHostIdSource = "k8s-node-name"
