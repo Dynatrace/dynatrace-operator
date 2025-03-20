@@ -15,8 +15,10 @@ func (c *Config) buildExporters() map[component.ID]component.Config {
 
 	if c.caFile != "" {
 		serverConfig.TLSSetting = &TLSSetting{
-			CAFile:                   c.caFile,
-			IncludeSystemCACertsPool: &c.includeSystemCACertsPool,
+			CAFile: c.caFile,
+		}
+		if c.includeSystemCACertsPool {
+			serverConfig.TLSSetting.IncludeSystemCACertsPool = &c.includeSystemCACertsPool
 		}
 	}
 
@@ -26,7 +28,6 @@ func (c *Config) buildExporters() map[component.ID]component.Config {
 	}
 
 	return map[component.ID]component.Config{
-		debug:    nil,
 		otlphttp: serverConfig,
 	}
 }
