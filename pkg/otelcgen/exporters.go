@@ -15,7 +15,8 @@ func (c *Config) buildExporters() map[component.ID]component.Config {
 
 	if c.caFile != "" {
 		serverConfig.TLSSetting = &TLSSetting{
-			CAFile: c.caFile,
+			CAFile:                   c.caFile,
+			IncludeSystemCACertsPool: &c.includeSystemCACertsPool,
 		}
 	}
 

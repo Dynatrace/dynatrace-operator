@@ -212,7 +212,7 @@ func TestProxyEnvs(t *testing.T) {
 			expectedNoProxy: "dynakube-activegate.dynatrace",
 		},
 		{
-			name:            "telemetryIngest, extensions, private AG, without proxy",
+			name:            "telemetryIngest, extensions, local AG, without proxy",
 			extensions:      &dynakube.ExtensionsSpec{},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
@@ -220,7 +220,7 @@ func TestProxyEnvs(t *testing.T) {
 			expectedNoProxy: "",
 		},
 		{
-			name:            "telemetryIngest, extensions, private AG, with proxy secret",
+			name:            "telemetryIngest, extensions, local AG, with proxy secret",
 			extensions:      &dynakube.ExtensionsSpec{},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
@@ -230,7 +230,7 @@ func TestProxyEnvs(t *testing.T) {
 			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 		{
-			name:            "telemetryIngest, extensions, private AG, with proxy value",
+			name:            "telemetryIngest, extensions, local AG, with proxy value",
 			extensions:      &dynakube.ExtensionsSpec{},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
