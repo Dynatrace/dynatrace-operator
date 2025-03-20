@@ -1,9 +1,6 @@
 name: Build Image
 description: Builds the operator docker image
 inputs:
-  platforms:
-    description: The platforms for which the image will be built
-    required: true
   labels:
     description: The labels for the built image
     required: true
@@ -41,7 +38,7 @@ runs:
         context: .
         containerfiles: |
           ./Dockerfile
-        platforms: ${{ inputs.platforms }}
+        platforms: [linux/amd64, linux/arm64, linux/ppc64le, linux/s390x]
         tags: ${{ inputs.image-tag }}
         image: operator-all-platforms
         labels: ${{ inputs.labels }}
