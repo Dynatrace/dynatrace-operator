@@ -1,8 +1,8 @@
 name: Build Image
 description: Builds the operator docker image
 inputs:
-  platform:
-    description: The platform for which the image will be built
+  platforms:
+    description: The platforms for which the image will be built
     required: true
   labels:
     description: The labels for the built image
@@ -41,22 +41,19 @@ runs:
         context: .
         containerfiles: |
           ./Dockerfile
-        platforms: linux/${{ inputs.platform }}
+        platforms: ${{ inputs.platforms }}
         tags: ${{ inputs.image-tag }}
-        image: operator-${{ inputs.platform }}
+        image: operator-all-platforms
         labels: ${{ inputs.labels }}
         oci: true
     - name: Export image to file
       shell: bash
       run: |
         set -x
-        buildah version
-        podman version
-        cat /etc/os-release
-        podman save --format oci-archive -o /tmp/operator-${{ inputs.platform }}.tar operator-${{ inputs.platform }}:${{ inputs.image-tag }}
+        podman save --format oci-archive -o /tmp/operator-all-platforms.tar operator-all-platforms:${{ inputs.image-tag }}
     - name: Upload artifact
       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
       with:
-        name: operator-${{ inputs.platform }}
-        path: /tmp/operator-${{ inputs.platform }}.tar
+        name: operator-all-platforms
+        path: /tmp/operator-all-platforms.tar
         retention-days: 1
