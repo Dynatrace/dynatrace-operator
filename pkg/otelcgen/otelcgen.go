@@ -28,9 +28,10 @@ type TimerHistogramMapping struct {
 // "go.opentelemetry.io/collector/config/configtls.TLSSetting"
 // with reduced number of attributes to reduce the number of dependencies.
 type TLSSetting struct {
-	CAFile   string `mapstructure:"ca_file,omitempty"`
-	KeyFile  string `mapstructure:"key_file,omitempty"`
-	CertFile string `mapstructure:"cert_file,omitempty"`
+	CAFile                   string `mapstructure:"ca_file,omitempty"`
+	KeyFile                  string `mapstructure:"key_file,omitempty"`
+	CertFile                 string `mapstructure:"cert_file,omitempty"`
+	IncludeSystemCACertsPool *bool  `mapstructure:"include_system_ca_certs_pool,omitempty"`
 }
 
 // ServerConfig is based on "go.opentelemetry.io/collector/config/confighttp.ServerConfig" and
@@ -85,13 +86,14 @@ type Config struct {
 	// Extensions is a map of ComponentID to extensions.
 	Extensions map[component.ID]component.Config `mapstructure:"extensions"`
 
-	tlsKey    string
-	tlsCert   string
-	caFile    string
-	podIP     string
-	endpoint  string
-	apiToken  string
-	protocols Protocols
+	tlsKey                   string
+	tlsCert                  string
+	caFile                   string
+	includeSystemCACertsPool bool
+	podIP                    string
+	endpoint                 string
+	apiToken                 string
+	protocols                Protocols
 
 	Service ServiceConfig `mapstructure:"service"`
 }
@@ -233,6 +235,14 @@ func WithTLS(tlsCert, tlsKey string) Option {
 func WithCA(caFile string) Option {
 	return func(c *Config) error {
 		c.caFile = caFile
+
+		return nil
+	}
+}
+
+func WithSystemCAs(useSystemCAs bool) Option {
+	return func(c *Config) error {
+		c.includeSystemCACertsPool = useSystemCAs
 
 		return nil
 	}

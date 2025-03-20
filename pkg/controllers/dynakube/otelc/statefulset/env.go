@@ -1,6 +1,7 @@
 package statefulset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"strconv"
 	"strings"
 
@@ -72,30 +73,8 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	}
 
 	if dk.HasProxy() {
-		if dk.Spec.Proxy.ValueFrom != "" {
-			envs = append(envs, corev1.EnvVar{
-				Name: envHttpsProxy,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: dk.Spec.Proxy.ValueFrom},
-						Key:                  dynakube.ProxyKey,
-					},
-				},
-			})
-			envs = append(envs, corev1.EnvVar{
-				Name: envHttpProxy,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: dk.Spec.Proxy.ValueFrom},
-						Key:                  dynakube.ProxyKey,
-					},
-				},
-			})
-		} else {
-			envs = append(envs, corev1.EnvVar{Name: envHttpsProxy, Value: dk.Spec.Proxy.Value})
-			envs = append(envs, corev1.EnvVar{Name: envHttpProxy, Value: dk.Spec.Proxy.Value})
-		}
-
+		envs = append(envs, getProxyEnvValue(envHttpsProxy, dk.Spec.Proxy))
+		envs = append(envs, getProxyEnvValue(envHttpProxy, dk.Spec.Proxy))
 		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getNoProxyValue(dk)})
 	}
 
@@ -140,6 +119,22 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	}
 
 	return envs
+}
+
+func getProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
+	if src.ValueFrom != "" {
+		return corev1.EnvVar{
+			Name: envVar,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: src.ValueFrom},
+					Key:                  dynakube.ProxyKey,
+				},
+			},
+		}
+	}
+
+	return corev1.EnvVar{Name: envVar, Value: src.Value}
 }
 
 func getNoProxyValue(dk *dynakube.DynaKube) string {

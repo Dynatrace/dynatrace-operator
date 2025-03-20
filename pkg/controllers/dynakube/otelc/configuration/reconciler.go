@@ -110,6 +110,7 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
 	} else if r.dk.IsCACertificateNeeded() {
 		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))
+		options = append(options, otelcgen.WithSystemCAs(true))
 	}
 
 	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TlsRefName != "" {
