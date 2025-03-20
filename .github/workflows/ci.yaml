@@ -217,7 +217,7 @@ jobs:
       - name: Upload Image
         uses: ./.github/actions/upload-image
         with:
-          platform: [amd64, arm64, ppc64le, s390x]
+          platform: amd64
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
