@@ -13,10 +13,6 @@ inputs:
   repository:
     description: The repository in the registry where the image is uploaded
     required: true
-  skip-platform-suffix:
-    description: Set if platform suffix should be skipped for image
-    required: false
-    default: ""
 outputs:
   digest:
     description: The digest of the pushed image
@@ -36,4 +32,4 @@ runs:
       env:
         IMAGE: "${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}"
       run: |
-        hack/build/ci/upload-podman-image.sh "${{ env.IMAGE }}" "${{ inputs.skip-platform-suffix }}"
+        hack/build/ci/upload-podman-image.sh "${{ env.IMAGE }}"
