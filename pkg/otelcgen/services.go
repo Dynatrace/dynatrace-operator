@@ -14,7 +14,6 @@ var (
 	traces  = pipeline.MustNewID("traces")
 	metrics = pipeline.MustNewID("metrics")
 	logs    = pipeline.MustNewID("logs")
-	debug   = component.MustNewID("debug")
 
 	allowedPipelinesLogsReceiversIDs = []component.ID{OtlpID}
 
@@ -88,7 +87,7 @@ func (c *Config) buildPipelinesReceivers(allowed []component.ID) []component.ID 
 
 func buildExporters() []component.ID {
 	return []component.ID{
-		otlphttp, debug,
+		otlphttp,
 	}
 }
 

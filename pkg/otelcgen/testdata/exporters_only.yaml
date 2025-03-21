@@ -1,10 +1,10 @@
 connectors: {}
 exporters:
-  debug:
   otlphttp:
     endpoint: "test"
     tls:
       ca_file: "/run/opensignals/cacerts/certs"
+
     headers:
       Authorization: "Api-Token test-token"
 extensions: {}

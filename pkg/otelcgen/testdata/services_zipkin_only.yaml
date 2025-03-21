@@ -10,7 +10,6 @@ service:
     traces:
       exporters:
         - otlphttp
-        - debug
       receivers:
         - zipkin
       processors:

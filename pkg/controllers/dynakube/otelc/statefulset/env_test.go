@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -63,9 +67,8 @@ func TestEnvironmentVariables(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
-		dataIngestToken := getTokens(dk.Name, dk.Namespace)
-		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &dataIngestToken, &configMap)
+		statefulSet := getWorkload(t, dk)
+
 		assert.Len(t, statefulSet.Spec.Template.Spec.Containers[0].Env, 12)
 
 		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
@@ -105,4 +108,239 @@ func TestEnvironmentVariables(t *testing.T) {
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 	})
+}
+
+func TestProxyEnvsNoProxy(t *testing.T) {
+	tests := []struct {
+		name            string
+		extensions      *dynakube.ExtensionsSpec
+		telemetryIngest *telemetryingest.Spec
+		activeGate      *activegate.Spec
+	}{
+		{
+			name:            "extensions without proxy",
+			extensions:      &dynakube.ExtensionsSpec{},
+			telemetryIngest: nil,
+		},
+		{
+			name:            "telemetryIngest, public AG, without proxy",
+			extensions:      nil,
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      nil,
+		},
+		{
+			name:            "telemetryIngest, local AG, without proxy",
+			extensions:      nil,
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      getProxyTestActiveGate(),
+		},
+		{
+			name:            "telemetryIngest, extensions, local AG, without proxy",
+			extensions:      &dynakube.ExtensionsSpec{},
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := getTestDynakube()
+			dk.Spec.Extensions = tt.extensions
+			dk.Spec.TelemetryIngest = tt.telemetryIngest
+			dk.Spec.Proxy = nil
+
+			if tt.activeGate != nil {
+				dk.Spec.ActiveGate = *tt.activeGate
+			}
+
+			statefulSet := getWorkload(t, dk)
+
+			assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsProxy})
+			assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpProxy})
+			assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envNoProxy})
+		})
+	}
+}
+
+func TestProxyEnvsProxySecret(t *testing.T) {
+	const testProxySecretName = "test-proxy-secret"
+
+	tests := []struct {
+		name            string
+		extensions      *dynakube.ExtensionsSpec
+		telemetryIngest *telemetryingest.Spec
+		activeGate      *activegate.Spec
+		proxy           *value.Source
+
+		expectedNoProxy string
+	}{
+		{
+			name:            "extensions with proxy secret",
+			extensions:      &dynakube.ExtensionsSpec{},
+			telemetryIngest: nil,
+			proxy: &value.Source{
+				ValueFrom: testProxySecretName,
+			},
+			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+		},
+		{
+			name:            "telemetryIngest, public AG, with proxy secret",
+			extensions:      nil,
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      nil,
+			proxy: &value.Source{
+				ValueFrom: testProxySecretName,
+			},
+			expectedNoProxy: "",
+		},
+		{
+			name:            "telemetryIngest, local AG, with proxy secret",
+			extensions:      nil,
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      getProxyTestActiveGate(),
+			proxy: &value.Source{
+				ValueFrom: testProxySecretName,
+			},
+			expectedNoProxy: "dynakube-activegate.dynatrace",
+		},
+		{
+			name:            "telemetryIngest, extensions, local AG, with proxy secret",
+			extensions:      &dynakube.ExtensionsSpec{},
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      nil,
+			proxy: &value.Source{
+				ValueFrom: testProxySecretName,
+			},
+			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := getTestDynakube()
+			dk.Spec.Extensions = tt.extensions
+			dk.Spec.TelemetryIngest = tt.telemetryIngest
+			dk.Spec.Proxy = tt.proxy
+
+			if tt.activeGate != nil {
+				dk.Spec.ActiveGate = *tt.activeGate
+			}
+
+			statefulSet := getWorkload(t, dk)
+
+			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+				Name: envHttpsProxy,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: tt.proxy.ValueFrom},
+						Key:                  dynakube.ProxyKey,
+					},
+				},
+			})
+			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+				Name: envHttpProxy,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: tt.proxy.ValueFrom},
+						Key:                  dynakube.ProxyKey,
+					},
+				},
+			})
+			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envNoProxy, Value: tt.expectedNoProxy})
+		})
+	}
+}
+
+func TestProxyEnvsProxyValue(t *testing.T) {
+	const testProxyValue = "http://test.proxy.com:8888"
+
+	tests := []struct {
+		name            string
+		extensions      *dynakube.ExtensionsSpec
+		telemetryIngest *telemetryingest.Spec
+		activeGate      *activegate.Spec
+		proxy           *value.Source
+
+		expectedNoProxy string
+	}{
+		{
+			name:            "extensions with proxy value",
+			extensions:      &dynakube.ExtensionsSpec{},
+			telemetryIngest: nil,
+			proxy: &value.Source{
+				Value: testProxyValue,
+			},
+			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+		},
+		{
+			name:            "telemetryIngest, public AG, with proxy value",
+			extensions:      nil,
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      nil,
+			proxy: &value.Source{
+				Value: testProxyValue,
+			},
+			expectedNoProxy: "",
+		},
+		{
+			name:            "telemetryIngest, local AG, with proxy value",
+			extensions:      nil,
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      getProxyTestActiveGate(),
+			proxy: &value.Source{
+				Value: testProxyValue,
+			},
+			expectedNoProxy: "dynakube-activegate.dynatrace",
+		},
+		{
+			name:            "telemetryIngest, extensions, local AG, with proxy value",
+			extensions:      &dynakube.ExtensionsSpec{},
+			telemetryIngest: &telemetryingest.Spec{},
+			activeGate:      nil,
+			proxy: &value.Source{
+				Value: testProxyValue,
+			},
+			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := getTestDynakube()
+			dk.Spec.Extensions = tt.extensions
+			dk.Spec.TelemetryIngest = tt.telemetryIngest
+			dk.Spec.Proxy = tt.proxy
+
+			if tt.activeGate != nil {
+				dk.Spec.ActiveGate = *tt.activeGate
+			}
+
+			statefulSet := getWorkload(t, dk)
+
+			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+				Name:  envHttpsProxy,
+				Value: tt.proxy.Value,
+			})
+			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+				Name:  envHttpProxy,
+				Value: tt.proxy.Value,
+			})
+
+			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envNoProxy, Value: tt.expectedNoProxy})
+		})
+	}
+}
+
+func getWorkload(t *testing.T, dk *dynakube.DynaKube) *v1.StatefulSet {
+	dataIngestToken := getTokens(dk.Name, dk.Namespace)
+	configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+
+	return getStatefulset(t, dk, &dataIngestToken, &configMap)
+}
+
+func getProxyTestActiveGate() *activegate.Spec {
+	return &activegate.Spec{
+		CapabilityProperties: activegate.CapabilityProperties{},
+		Capabilities:         []activegate.CapabilityDisplayName{"otlp-ingest"},
+		UseEphemeralVolume:   false,
+	}
 }
