@@ -88,7 +88,7 @@ func (c *Config) buildPipelinesReceivers(allowed []component.ID) []component.ID 
 
 func buildExporters() []component.ID {
 	return []component.ID{
-		otlphttp, debug,
+		otlphttp,
 	}
 }
 
