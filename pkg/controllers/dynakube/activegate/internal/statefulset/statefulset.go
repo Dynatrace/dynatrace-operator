@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
@@ -303,6 +304,8 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 		}
 		sts.Spec.PersistentVolumeClaimRetentionPolicy = defaultPVCRetentionPolicy()
 	}
+
+	statefulset.SetPVCAnnotation()(sts)
 }
 
 func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {
