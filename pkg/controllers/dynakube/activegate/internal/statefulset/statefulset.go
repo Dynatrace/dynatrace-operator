@@ -1,8 +1,7 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -315,7 +314,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 		sts.Spec.PersistentVolumeClaimRetentionPolicy = defaultPVCRetentionPolicy()
 	}
 
-	setPvcAnnotation(statefulSetBuilder.dynakube, sts)
+	statefulset.SetPVCAnnotation()(sts)
 }
 
 func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {

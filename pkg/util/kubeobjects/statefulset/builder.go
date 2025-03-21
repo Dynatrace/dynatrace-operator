@@ -32,7 +32,7 @@ func Build(owner metav1.Object, name string, container corev1.Container, options
 	}
 	neededOpts = append(neededOpts, options...)
 
-	neededOpts = append(neededOpts, setPVCAnnotation())
+	neededOpts = append(neededOpts, SetPVCAnnotation())
 
 	return builder.Build(owner, &appsv1.StatefulSet{}, neededOpts...)
 }
@@ -125,7 +125,7 @@ func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 	}
 }
 
-func setPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
+func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		if s.Spec.VolumeClaimTemplates != nil {
 			if s.ObjectMeta.Annotations == nil {
