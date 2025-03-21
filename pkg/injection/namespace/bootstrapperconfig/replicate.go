@@ -31,18 +31,6 @@ func Replicate(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryO
 	return client.IgnoreAlreadyExists(query.Create(ctx, secret))
 }
 
-// Sync will only create or update the secret, meant for keeping the secret up to date
-func Sync(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) error {
-	secret, err := getSecretFromSource(ctx, dk, query, targetNs)
-	if err != nil {
-		return err
-	}
-
-	_, err = query.CreateOrUpdate(ctx, secret)
-
-	return client.IgnoreAlreadyExists(err)
-}
-
 func getSecretFromSource(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) (*corev1.Secret, error) {
 	source, err := query.Get(ctx, types.NamespacedName{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace})
 	if err != nil {
