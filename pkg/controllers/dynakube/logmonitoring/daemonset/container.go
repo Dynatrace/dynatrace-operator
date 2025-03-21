@@ -79,5 +79,10 @@ func getBaseSecurityContext(dk dynakube.DynaKube) corev1.SecurityContext {
 		securityContext.SeccompProfile = &corev1.SeccompProfile{LocalhostProfile: &seccomp}
 	}
 
+	if dk.OneAgent().IsPrivilegedNeeded() {
+		securityContext.Privileged = ptr.To(true)
+		securityContext.AllowPrivilegeEscalation = ptr.To(true)
+	}
+
 	return securityContext
 }
