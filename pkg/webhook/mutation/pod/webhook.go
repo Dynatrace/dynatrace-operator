@@ -11,7 +11,7 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
-	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
+	podv2 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -76,7 +76,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	wh.recorder.Setup(mutationRequest)
 
-	if mutationRequest.DynaKube.FeatureBootstrapperInjection() && oacommon.IsEnabled(mutationRequest.BaseRequest) {
+	if podv2.IsEnabled(mutationRequest) {
 		err := wh.v2.Handle(ctx, mutationRequest)
 		if err != nil {
 			return silentErrorResponse(mutationRequest.Pod, err)

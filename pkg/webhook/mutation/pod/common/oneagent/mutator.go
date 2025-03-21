@@ -8,6 +8,11 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+const (
+	CSIVolumeType       = "csi"
+	EphemeralVolumeType = "ephemeral"
+)
+
 func IsEnabled(request *dtwebhook.BaseRequest) bool {
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject, request.DynaKube.FeatureAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.OneAgent().GetNamespaceSelector() != nil

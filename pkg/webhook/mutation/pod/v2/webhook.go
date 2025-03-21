@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
@@ -21,6 +22,20 @@ type Injector struct {
 	kubeClient client.Client
 	apiReader  client.Reader
 	metaClient client.Client
+}
+
+func IsEnabled(mutationRequest *dtwebhook.MutationRequest) bool {
+	ffEnabled := mutationRequest.DynaKube.FeatureNodeImagePull()
+	oaEnabled := oacommon.IsEnabled(mutationRequest.BaseRequest)
+
+	defaultVolumeType := oacommon.EphemeralVolumeType
+	if mutationRequest.DynaKube.OneAgent().IsCSIAvailable() {
+		defaultVolumeType = oacommon.CSIVolumeType
+	}
+
+	correctVolumeType := maputils.GetField(mutationRequest.Pod.Annotations, oacommon.AnnotationVolumeType, defaultVolumeType) == oacommon.EphemeralVolumeType
+
+	return ffEnabled && oaEnabled && correctVolumeType
 }
 
 var _ dtwebhook.PodInjector = &Injector{}
@@ -135,22 +150,14 @@ func isCustomImageSet(mutationRequest *dtwebhook.MutationRequest) bool {
 }
 
 func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest) bool {
-	var initSecret corev1.Secret
-
-	secretObjectKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: mutationRequest.Namespace.Name}
-	err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
+	err := wh.replicateInputSecret(mutationRequest)
 
 	if k8serrors.IsNotFound(err) {
-		log.Info("dynatrace-bootstrapper-config is not available, trying to replicate", "pod", mutationRequest.PodName())
+		log.Info("unable to copy source of dynatrace-bootstrapper-config as it is not available, injection not possible", "pod", mutationRequest.PodName())
 
-		err = bootstrapperconfig.Replicate(mutationRequest.Context, mutationRequest.DynaKube, secret.Query(wh.kubeClient, wh.apiReader, log), mutationRequest.Namespace.Name)
-		if k8serrors.IsNotFound(err) {
-			log.Info("dynatrace-bootstrapper-config is not available, injection not possible", "pod", mutationRequest.PodName())
+		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
 
-			oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
-
-			return false
-		}
+		return false
 	}
 
 	if err != nil {
@@ -162,6 +169,21 @@ func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequ
 	}
 
 	return true
+}
+
+func (wh *Injector) replicateInputSecret(mutationRequest *dtwebhook.MutationRequest) error {
+	var initSecret corev1.Secret
+
+	secretObjectKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: mutationRequest.Namespace.Name}
+	err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
+
+	if k8serrors.IsNotFound(err) {
+		log.Info("dynatrace-bootstrapper-config is not available, trying to replicate", "pod", mutationRequest.PodName())
+
+		return bootstrapperconfig.Replicate(mutationRequest.Context, mutationRequest.DynaKube, secret.Query(wh.kubeClient, wh.apiReader, log), mutationRequest.Namespace.Name)
+	}
+
+	return nil
 }
 
 func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) {
