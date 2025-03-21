@@ -12,7 +12,5 @@ podman tag "${src_image}" "${target_image}"
 
 podman push "${target_image}"
 
-podman manifest inspect "${target_image}"
-
 # TODO: add digest later
 # echo "digest=${digest}">> "$GITHUB_OUTPUT"
