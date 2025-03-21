@@ -8086,8 +8086,8 @@ spec:
                         type: object
                     type: object
                   terminationGracePeriodSeconds:
-                    description: Configures the terminationGracePeriodSeconds paraemter
-                      of the ActiveGate pod.
+                    description: Configures the terminationGracePeriodSeconds parameter
+                      of the ActiveGate pod. Kubernetes defaults and rules apply.
                     format: int64
                     type: integer
                   tlsSecretName:

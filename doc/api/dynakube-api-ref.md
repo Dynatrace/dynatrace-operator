@@ -38,7 +38,7 @@
 |`priorityClassName`|If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that<br/>name. If not specified the setting will be removed from the StatefulSet.|-|string|
 |`replicas`|Amount of replicas for your ActiveGates|-|integer|
 |`resources`|Define resources requests and limits for single ActiveGate pods|-|object|
-|`terminationGracePeriodSeconds`|Configures the terminationGracePeriodSeconds paraemter of the ActiveGate pod.|-|integer|
+|`terminationGracePeriodSeconds`|Configures the terminationGracePeriodSeconds parameter of the ActiveGate pod. Kubernetes defaults and rules apply.|-|integer|
 |`tlsSecretName`|The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.<br/>server.p12: certificate+key pair in pkcs12 format<br/>password: passphrase to read server.p12|-|string|
 |`tolerations`|Set tolerations for the ActiveGate pods|-|array|
 |`topologySpreadConstraints`|Adds TopologySpreadConstraints for the ActiveGate pods|-|array|
