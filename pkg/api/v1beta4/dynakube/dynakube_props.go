@@ -104,9 +104,3 @@ func (dk *DynaKube) ApiRequestThreshold() time.Duration {
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
 	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.ApiRequestThreshold())
 }
-
-func (dk *DynaKube) FeatureBootstrapperInjection() bool {
-	return dk.OneAgent().IsAppInjectionNeeded() &&
-		dk.FeatureNodeImagePull() &&
-		!dk.OneAgent().IsCSIAvailable()
-}
