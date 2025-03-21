@@ -99,6 +99,11 @@ func (in *Spec) DeepCopyInto(out *Spec) {
 		*out = new(v1.PersistentVolumeClaimSpec)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.TerminationGracePeriodSeconds != nil {
+		in, out := &in.TerminationGracePeriodSeconds, &out.TerminationGracePeriodSeconds
+		*out = new(int64)
+		**out = **in
+	}
 	in.CapabilityProperties.DeepCopyInto(&out.CapabilityProperties)
 	if in.Capabilities != nil {
 		in, out := &in.Capabilities, &out.Capabilities
