@@ -86,7 +86,7 @@ type Spec struct {
 	// +kubebuilder:validation:Optional
 	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 
-	// Configures the terminationGracePeriodSeconds paraemter of the ActiveGate pod.
+	// Configures the terminationGracePeriodSeconds parameter of the ActiveGate pod. Defaults to 30 seconds. Value must be non-negative integer. Negative values will be replaced with 1 second.
 	// +kubebuild:validation:Optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 
