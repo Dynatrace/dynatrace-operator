@@ -41,7 +41,7 @@ var KubernetesSettingsNotAvailableError = errors.New("the status of the DynaKube
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.LogMonitoring().IsStandalone() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), ConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			log.Error(err, "failed to clean-up LogMonitoring config-secret")
 		}
 
-		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -70,14 +70,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	updated, err := daemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), ConditionType, err)
 
 		return err
 	}
 
 	if updated {
-		conditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, r.dk.LogMonitoring().GetDaemonSetName()) // needed to reset the timestamp
-		conditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, r.dk.LogMonitoring().GetDaemonSetName())
+		conditions.SetDaemonSetOutdated(r.dk.Conditions(), ConditionType, r.dk.LogMonitoring().GetDaemonSetName()) // needed to reset the timestamp
+		conditions.SetDaemonSetCreated(r.dk.Conditions(), ConditionType, r.dk.LogMonitoring().GetDaemonSetName())
 	}
 
 	return nil
