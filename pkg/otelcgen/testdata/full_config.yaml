@@ -197,7 +197,6 @@ service:
     logs:
       exporters:
         - otlphttp
-        - debug
       receivers:
         - otlp
       processors:
@@ -208,7 +207,6 @@ service:
     metrics:
       exporters:
         - otlphttp
-        - debug
       receivers:
         - otlp
         - statsd
@@ -221,7 +219,6 @@ service:
     traces:
       exporters:
         - otlphttp
-        - debug
       receivers:
         - otlp
         - jaeger
