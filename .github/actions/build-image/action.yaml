@@ -50,6 +50,7 @@ runs:
       shell: bash
       run: |
         set -x
+        buildah manifest inspect operator-all-platforms:${{ inputs.image-tag }}
         podman save --format oci-archive -o /tmp/operator-all-platforms.tar operator-all-platforms:${{ inputs.image-tag }}
     - name: Upload artifact
       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
