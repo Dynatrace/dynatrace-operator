@@ -28,7 +28,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
+					dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate: "true",
 				},
 				Namespace: testNamespace,
 				Name:      testDynakubeName,
@@ -50,7 +50,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
+					dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate: "true",
 				},
 				Namespace: testNamespace,
 				Name:      testDynakubeName,
@@ -106,7 +106,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
+					dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate: "true",
 				},
 				Namespace: testNamespace,
 				Name:      testDynakubeName,

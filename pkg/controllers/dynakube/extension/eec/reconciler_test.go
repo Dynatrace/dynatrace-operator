@@ -1011,7 +1011,7 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes with automatically created ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate] = "true"
+		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
 		dk.Spec.TrustedCAs = "custom-tls"
 
 		expectedVolume := corev1.Volume{

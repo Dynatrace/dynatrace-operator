@@ -91,7 +91,7 @@ func TestPrepareVolumes(t *testing.T) {
 			ObjectMeta: corev1.ObjectMeta{
 				Name: "dynakube",
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
+					dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -215,7 +215,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			ObjectMeta: corev1.ObjectMeta{
 				Name: "dynakube",
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
+					dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
