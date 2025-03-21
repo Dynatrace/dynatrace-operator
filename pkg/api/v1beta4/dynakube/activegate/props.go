@@ -152,3 +152,6 @@ func (ag *Spec) GetDefaultImage(version string) string {
 func (ag *Spec) GetCustomImage() string {
 	return ag.Image
 }
+
+// GetTerminationGracePeriodSeconds provides the configured value for the terminatGracePeriodSeconds parameter of the pod
+func (ag *Spec) GetTerminationGracePeriodSeconds() *int64 { return ag.TerminationGracePeriodSeconds }

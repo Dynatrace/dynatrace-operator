@@ -8085,6 +8085,11 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                         type: object
                     type: object
+                  terminationGracePeriodSeconds:
+                    description: Configures the terminationGracePeriodSeconds paraemter
+                      of the ActiveGate pod.
+                    format: int64
+                    type: integer
                   tlsSecretName:
                     description: |-
                       The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.

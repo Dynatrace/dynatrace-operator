@@ -86,6 +86,10 @@ type Spec struct {
 	// +kubebuilder:validation:Optional
 	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 
+	// Configures the terminationGracePeriodSeconds paraemter of the ActiveGate pod.
+	// +kubebuild:validation:Optional
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
+
 	name   string
 	apiUrl string
 
