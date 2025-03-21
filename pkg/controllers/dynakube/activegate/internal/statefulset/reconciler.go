@@ -75,6 +75,7 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 	} else if updated {
 		conditions.SetStatefulSetCreated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 	}
+
 	return nil
 }
 

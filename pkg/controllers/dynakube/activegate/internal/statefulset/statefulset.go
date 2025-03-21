@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -13,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
@@ -279,15 +279,6 @@ func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 
 func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {
 	return (dk.TelemetryIngest().IsEnabled() || dk.IsOTLPingestEnabled()) && !dk.Spec.ActiveGate.UseEphemeralVolume
-}
-
-func setPvcAnnotation(dk dynakube.DynaKube, sts *appsv1.StatefulSet) {
-	const pvcAnnotationHash = api.InternalFlagPrefix + "pvc-hash"
-
-	if sts.ObjectMeta.Annotations == nil {
-		sts.ObjectMeta.Annotations = map[string]string{}
-	}
-	sts.ObjectMeta.Annotations[pvcAnnotationHash], _ = hasher.GenerateHash(sts.Spec.VolumeClaimTemplates)
 }
 
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {
