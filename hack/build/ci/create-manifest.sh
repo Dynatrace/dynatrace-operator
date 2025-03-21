@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x # # activate debugging
+
 if [ -z "$2" ]
 then
   echo "Usage: $0 <image_name> <image_tag> <enable_multiplatform>"
@@ -19,15 +21,29 @@ then
 
   for architecture in "${supported_architectures[@]}"
   do
-    docker pull "${image}-${architecture}"
+    podman pull "${image}-${architecture}"
     images+=("${image}-${architecture}")
   done
-  docker manifest create "${image}" "${images[@]}"
+  podman manifest create "${image}" "${images[@]}"
+
+  if [[ "$image" =~ gcr.io ]]
+  then
+    podman manifest annotate --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog" "${image}" "${images[@]}"
+    podman manifest inspect "${image}"
+  fi
+
 else
   echo "Creating manifest for the AMD image "
-  docker pull "${image}-amd64"
-  docker manifest create "${image}" "${image}-amd64"
+  podman pull "${image}-amd64"
+  podman manifest create "${image}" "${image}-amd64"
+
+  if [[ "$image" =~ gcr.io ]]
+  then
+    podman manifest annotate --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog" "${image}" "${image}-amd64"
+    podman manifest inspect "${image}-amd64"
+  fi
+
 fi
 
-sha256=$(docker manifest push "${image}")
+sha256=$(podman manifest push "${image}")
 echo "digest=${sha256}">> $GITHUB_OUTPUT

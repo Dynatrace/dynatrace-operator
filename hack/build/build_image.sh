@@ -23,10 +23,9 @@ out_image="${image}:${tag}"
 mkdir -p third_party_licenses
 touch dynatrace-operator-bin-sbom.cdx.json
 
-if ! command -v docker 2>/dev/null; then
-  CONTAINER_CMD=podman
-else
-  CONTAINER_CMD=docker
+if ! command -v podman 2>/dev/null; then
+  echo "We don't support anything except podman to build images"
+  exit 1
 fi
 
 OPERATOR_BUILD_PLATFORM="--platform=linux/amd64"
@@ -35,7 +34,8 @@ if [ -n "${OPERATOR_DEV_BUILD_PLATFORM}" ]; then
   OPERATOR_BUILD_PLATFORM="--platform=${OPERATOR_DEV_BUILD_PLATFORM}"
 fi
 
-${CONTAINER_CMD} build "${OPERATOR_BUILD_PLATFORM}" . -f ./Dockerfile -t "${out_image}" \
+podman build "${OPERATOR_BUILD_PLATFORM}" . -f ./Dockerfile -t "${out_image}" \
+  --format oci \
   --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
   --build-arg "GO_BUILD_TAGS=${go_build_tags}" \
   --build-arg "DEBUG_TOOLS=${debug}" \
