@@ -637,3 +637,39 @@ func TestVolumeMounts(t *testing.T) {
 		require.Contains(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
 	})
 }
+
+func TestTerminationGracePeriodSeconds(t *testing.T) {
+	tests := []struct {
+		name               string
+		gracePeriodSeconds *int64
+	}{
+		{
+			name:               "gracePeriodSeconds is zero",
+			gracePeriodSeconds: ptr.To(int64(0)),
+		},
+		{
+			name:               "gracePeriodSeconds is positive",
+			gracePeriodSeconds: ptr.To(int64(1)),
+		},
+		{
+			name:               "gracePeriodSeconds is negative",
+			gracePeriodSeconds: ptr.To(int64(-1)),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dk := getTestDynakube()
+			dk.ActiveGate().TerminationGracePeriodSeconds = test.gracePeriodSeconds
+			assert.Equal(t, *test.gracePeriodSeconds, *dk.ActiveGate().GetTerminationGracePeriodSeconds())
+		})
+	}
+}
+
+func TestTerminationGracePeriodSecondsNil(t *testing.T) {
+	t.Run("gracePeriodSeconds is nil", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.ActiveGate().TerminationGracePeriodSeconds = nil
+		assert.Nil(t, dk.ActiveGate().GetTerminationGracePeriodSeconds())
+	})
+}
