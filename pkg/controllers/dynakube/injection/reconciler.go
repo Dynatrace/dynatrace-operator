@@ -135,11 +135,9 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 		return err
 	}
 
-	if !r.dk.FeatureBootstrapperInjection() {
-		err = r.pmcSecretreconciler.Reconcile(ctx)
-		if err != nil {
-			return err
-		}
+	err = r.pmcSecretreconciler.Reconcile(ctx)
+	if err != nil {
+		return err
 	}
 
 	if r.istioReconciler != nil {
@@ -172,7 +170,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 
 func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 	var err error
-	if r.dk.FeatureBootstrapperInjection() {
+	if r.dk.FeatureNodeImagePull() {
 		err = bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
 			if conditions.IsKubeApiError(err) {
@@ -181,7 +179,9 @@ func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 
 			return err
 		}
-	} else {
+	}
+
+	if !r.dk.FeatureNodeImagePull() || r.dk.OneAgent().IsCSIAvailable() {
 		err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
 			if conditions.IsKubeApiError(err) {
@@ -206,16 +206,14 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 			return
 		}
 
-		if r.dk.FeatureBootstrapperInjection() {
-			err = bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, *r.dk)
-			if err != nil {
-				log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
-			}
-		} else {
-			err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).Cleanup(ctx, namespaces)
-			if err != nil {
-				log.Error(err, "failed to clean-up code module injection init-secrets")
-			}
+		err = bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, *r.dk)
+		if err != nil {
+			log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
+		}
+
+		err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).Cleanup(ctx, namespaces)
+		if err != nil {
+			log.Error(err, "failed to clean-up code module injection init-secrets")
 		}
 	}
 }

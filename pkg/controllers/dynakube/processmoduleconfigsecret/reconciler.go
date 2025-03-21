@@ -49,7 +49,11 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !(r.dk.OneAgent().IsCloudNativeFullstackMode() || r.dk.OneAgent().IsApplicationMonitoringMode()) {
+	isNeeded := r.dk.OneAgent().IsCSIAvailable() &&
+		(r.dk.OneAgent().IsCloudNativeFullstackMode() ||
+			r.dk.OneAgent().IsApplicationMonitoringMode())
+
+	if !(isNeeded) {
 		if meta.FindStatusCondition(*r.dk.Conditions(), PMCConditionType) == nil {
 			return nil
 		}

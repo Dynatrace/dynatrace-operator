@@ -17,6 +17,8 @@ const (
 	// defaults to DefaultInstallPath if not set.
 	AnnotationInstallPath = "oneagent.dynatrace.com/install-path"
 
+	AnnotationVolumeType = "oneagent.dynatrace.com/volume-type"
+
 	// DefaultInstallPath is the default directory to install the app-only OneAgent package.
 	DefaultInstallPath = "/opt/dynatrace/oneagent-paas"
 

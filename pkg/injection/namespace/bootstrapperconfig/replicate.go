@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -20,18 +21,35 @@ func GetSourceSecretName(dkName string) string {
 	return fmt.Sprintf(sourceSecretTemplate, dkName)
 }
 
+// Replicate will only create the secret once, doesn't meant for keeping the secret up to date
 func Replicate(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) error {
-	source, err := query.Get(ctx, types.NamespacedName{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace})
-	if err != nil {
-		return err
-	}
-
-	secret, err := k8ssecret.BuildForNamespace(consts.BootstrapperInitSecretName, targetNs, source.Data, k8ssecret.SetLabels(source.Labels))
+	secret, err := getSecretFromSource(ctx, dk, query, targetNs)
 	if err != nil {
 		return err
 	}
 
 	return client.IgnoreAlreadyExists(query.Create(ctx, secret))
+}
+
+// Sync will only create or update the secret, meant for keeping the secret up to date
+func Sync(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) error {
+	secret, err := getSecretFromSource(ctx, dk, query, targetNs)
+	if err != nil {
+		return err
+	}
+
+	_, err = query.CreateOrUpdate(ctx, secret)
+
+	return client.IgnoreAlreadyExists(err)
+}
+
+func getSecretFromSource(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) (*corev1.Secret, error) {
+	source, err := query.Get(ctx, types.NamespacedName{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace})
+	if err != nil {
+		return nil, err
+	}
+
+	return k8ssecret.BuildForNamespace(consts.BootstrapperInitSecretName, targetNs, source.Data, k8ssecret.SetLabels(source.Labels))
 }
 
 func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
