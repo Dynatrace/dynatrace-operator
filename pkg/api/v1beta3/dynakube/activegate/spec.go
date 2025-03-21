@@ -110,7 +110,7 @@ type Spec struct {
 
 	enabledDependencies dependencies
 
-	automaticTLSCertificateEnabled bool
+	automaticTLSCertificateDisabled bool
 }
 
 // +kubebuilder:object:generate=true

@@ -218,7 +218,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemo
 
 <a name="ImageHasBeenDownloaded"></a>
 
-## func [ImageHasBeenDownloaded](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L425>)
+## func [ImageHasBeenDownloaded](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L422>)
 
 ```go
 func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func
@@ -236,7 +236,7 @@ Verification that the storage in the CSI driver directory does not increase when
 
 <a name="VolumesAreMountedCorrectly"></a>
 
-## func [VolumesAreMountedCorrectly](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L511>)
+## func [VolumesAreMountedCorrectly](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L508>)
 
 ```go
 func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func
@@ -260,7 +260,7 @@ Connectivity in the dynatrace namespace and sample application namespace is rest
 
 <a name="WithProxyAndAGCert"></a>
 
-## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L275>)
+## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L272>)
 
 ```go
 func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
@@ -276,7 +276,7 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature
 
 <a name="WithProxyCAAndAGCert"></a>
 
-## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L340>)
+## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L337>)
 
 ```go
 func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
