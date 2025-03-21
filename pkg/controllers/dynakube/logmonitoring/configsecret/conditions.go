@@ -1,5 +1,5 @@
 package configsecret
 
 const (
-	lmcConditionType = "LogMonitoringConfig"
+	LmcConditionType = "LogMonitoringConfig"
 )
