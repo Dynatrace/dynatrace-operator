@@ -223,27 +223,3 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-
-#  manifest:
-#    name: Create manifest
-#    needs: [prepare, push]
-#    runs-on: ubuntu-latest
-#    env:
-#      COMBINED: ${{ github.ref_protected }}
-#    if: ${{ !github.event.pull_request.head.repo.fork }}
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-#      - name: Login to Registry
-#        uses: redhat-actions/podman-login@4934294ad0449894bcd1e9f191899d7292469603 # v1.7
-#        with:
-#          registry: quay.io
-#          username: ${{ secrets.QUAY_USERNAME }}
-#          password: ${{ secrets.QUAY_PASSWORD }}
-#      - name: Create Manifests
-#        uses: ./.github/actions/create-manifests
-#        with:
-#          version: ${{ needs.prepare.outputs.version }}
-#          registry: ${{ needs.prepare.outputs.registry }}
-#          repository: ${{ needs.prepare.outputs.repository }}
-#          combined: ${{ env.COMBINED }}

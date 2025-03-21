@@ -46,11 +46,24 @@ runs:
         image: operator-all-platforms
         labels: ${{ inputs.labels }}
         oci: true
-    - name: Export image to file
+    - name: Annotate image manifest
       shell: bash
       run: |
         set -x
         buildah manifest inspect operator-all-platforms:${{ inputs.image-tag }}
+
+        # we need to iterate for all platforms and annotate each one, there is no option to do it all it once.
+        # for i in ${${{ inputs.image-tag }}//,/ }
+        # do
+          # call your procedure/other scripts here below
+          # platform="${i//\// }"
+          # buildah manifest annotate --annotation andrii=test operator-all-platforms:${{ inputs.image-tag }} operator-all-platforms:${{ inputs.image-tag }}-${platform}
+        # done
+        buildah manifest inspect operator-all-platforms:${{ inputs.image-tag }}
+    - name: Export image to file
+      shell: bash
+      run: |
+        set -x
         podman save --format oci-archive -o /tmp/operator-all-platforms.tar operator-all-platforms:${{ inputs.image-tag }}
     - name: Upload artifact
       uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
