@@ -135,4 +135,18 @@ func TestSecurityContext(t *testing.T) {
 		mainContainer.SecurityContext.Capabilities = nil
 		assert.Equal(t, *initContainer.SecurityContext, *mainContainer.SecurityContext)
 	})
+
+	t.Run("ocp scenario, OA needs to be privileged", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+		}
+
+		sc := getBaseSecurityContext(dk)
+
+		require.NotNil(t, sc)
+		require.NotEmpty(t, sc)
+		assert.True(t, *sc.Privileged)
+		assert.True(t, *sc.AllowPrivilegeEscalation)
+	})
 }

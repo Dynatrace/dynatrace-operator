@@ -4,6 +4,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -77,6 +78,11 @@ func getBaseSecurityContext(dk dynakube.DynaKube) corev1.SecurityContext {
 	seccomp := dk.LogMonitoring().Template().SecCompProfile
 	if seccomp != "" {
 		securityContext.SeccompProfile = &corev1.SeccompProfile{LocalhostProfile: &seccomp}
+	}
+
+	if dk.NeedsOneAgentPrivileged() {
+		securityContext.Privileged = ptr.To(true)
+		securityContext.AllowPrivilegeEscalation = ptr.To(true)
 	}
 
 	return securityContext
