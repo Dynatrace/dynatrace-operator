@@ -17,8 +17,8 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Create manifest
-      id: create-manifest
+    - name: Annotate manifest
+      id: annotate-manifest
       env:
         IMAGE: ${{ inputs.registry }}/${{ inputs.repository }}
       shell: bash
