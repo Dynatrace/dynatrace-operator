@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
