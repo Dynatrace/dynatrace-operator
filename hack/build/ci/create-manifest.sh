@@ -22,10 +22,13 @@ platforms=($(echo ${raw_platforms} | tr "," "\n"))
 
 echo "Creating manifest for ${platforms[@]}"
 
+images=()
+
 for platfrom in "${platforms[@]}"
 do
    echo "$platform"
    podman pull "${image}-${platfrom}"
+   images+=("${image}-${platfrom}")
 done
 
 podman manifest create "${image}"
