@@ -24,24 +24,26 @@ then
     podman pull "${image}-${architecture}"
     images+=("${image}-${architecture}")
   done
-  podman manifest create "${image}" "${images[@]}"
 
-  if [[ "$image" =~ gcr.io ]]
-  then
-    podman manifest annotate --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog" "${image}" "${images[@]}"
-    podman manifest inspect "${image}"
-  fi
+
+  podman manifest create --annotation="andrii=test" "${image}" "${images[@]}"
+
+#  if [[ "$image" =~ gcr.io ]]
+#  then
+#    podman manifest create --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog" "${image}" "${images[@]}"
+#  fi
 
 else
   echo "Creating manifest for the AMD image "
   podman pull "${image}-amd64"
-  podman manifest create "${image}" "${image}-amd64"
 
-  if [[ "$image" =~ gcr.io ]]
-  then
-    podman manifest annotate --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog" "${image}" "${image}-amd64"
-    podman manifest inspect "${image}-amd64"
-  fi
+  podman manifest create --annotation="andrii=test" "${image}" "${image}-amd64"
+
+#  if [[ "$image" =~ gcr.io ]]
+#  then
+#    podman manifest annotate --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog" "${image}" "${image}-amd64"
+#    podman manifest inspect "${image}"
+#  fi
 
 fi
 
