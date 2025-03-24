@@ -128,7 +128,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		ImagePullSecrets:              statefulSetBuilder.dynakube.ImagePullSecretReferences(),
 		PriorityClassName:             statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
 		DNSPolicy:                     statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
-		TerminationGracePeriodSeconds: statefulSetBuilder.dynakube.Spec.ActiveGate.GetTerminationGracePeriodSeconds(),
+		TerminationGracePeriodSeconds: statefulSetBuilder.dynakube.ActiveGate().GetTerminationGracePeriodSeconds(),
 		TopologySpreadConstraints:     statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
 		Volumes:                       statefulSetBuilder.buildVolumes(),
 	}
