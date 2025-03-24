@@ -119,18 +119,18 @@ func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
 
 func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 	podSpec := corev1.PodSpec{
-		Containers:         statefulSetBuilder.buildBaseContainer(),
-		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
-		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGate().GetServiceAccountName(),
-		Affinity:           statefulSetBuilder.nodeAffinity(),
-		Tolerations:        statefulSetBuilder.capability.Properties().Tolerations,
-		SecurityContext:    statefulSetBuilder.buildPodSecurityContext(),
-		ImagePullSecrets:   statefulSetBuilder.dynakube.ImagePullSecretReferences(),
-		PriorityClassName:  statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
-		DNSPolicy:          statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
-
-		TopologySpreadConstraints: statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
-		Volumes:                   statefulSetBuilder.buildVolumes(),
+		Containers:                    statefulSetBuilder.buildBaseContainer(),
+		NodeSelector:                  statefulSetBuilder.capability.Properties().NodeSelector,
+		ServiceAccountName:            statefulSetBuilder.dynakube.ActiveGate().GetServiceAccountName(),
+		Affinity:                      statefulSetBuilder.nodeAffinity(),
+		Tolerations:                   statefulSetBuilder.capability.Properties().Tolerations,
+		SecurityContext:               statefulSetBuilder.buildPodSecurityContext(),
+		ImagePullSecrets:              statefulSetBuilder.dynakube.ImagePullSecretReferences(),
+		PriorityClassName:             statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
+		DNSPolicy:                     statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
+		TerminationGracePeriodSeconds: statefulSetBuilder.dynakube.ActiveGate().GetTerminationGracePeriodSeconds(),
+		TopologySpreadConstraints:     statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
+		Volumes:                       statefulSetBuilder.buildVolumes(),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
