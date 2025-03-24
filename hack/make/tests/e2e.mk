@@ -149,7 +149,3 @@ test/e2e/extensions: manifests/crd/helm
 ## Runs LogMonitoring related e2e tests
 test/e2e/logmonitoring: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "logmonitoring-components-rollout" $(SKIPCLEANUP)
-
-## Runs TelemetryIngest related e2e tests
-test/e2e/telemetryingest: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "telemetryingest-.*" $(SKIPCLEANUP)
