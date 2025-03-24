@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x # # activate debugging
+set -euxo pipefail
 
 if [ -z "$3" ]
 then
@@ -37,4 +37,6 @@ podman manifest add --annotation "andrii=test" "${image}" "${images[@]}"
 
 podman manifest inspect "${image}"
 
-podman manifest push "${image}"
+podman manifest push --format oci "${image}"
+
+podman manifest inspect "${image}"
