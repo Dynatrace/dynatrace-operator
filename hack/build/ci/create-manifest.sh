@@ -2,51 +2,35 @@
 
 set -x # # activate debugging
 
-if [ -z "$2" ]
+if [ -z "$3" ]
 then
-  echo "Usage: $0 <image_name> <image_tag> <enable_multiplatform>"
+  echo "Usage: $0 <image_name> <image_tag> <platforms> <annotation>"
   exit 1
 fi
 
 image_name=$1
 image_tag=$2
-multiplatform=$3
+raw_platforms=$3
+annotation=$4
+
 image="${image_name}:${image_tag}"
 
 echo "This script is based on podman version 4.9.3"
 echo "current version of podman is $(podman --version)"
 
-if [ "$multiplatform" == "true" ]
-then
-  supported_architectures=("amd64" "arm64" "ppc64le" "s390x")
-  images=()
-  echo "Creating manifest for ${supported_architectures[*]}"
+platforms=($(echo ${raw_platforms} | tr "," "\n"))
 
-  for architecture in "${supported_architectures[@]}"
-  do
-    podman pull "${image}-${architecture}"
-    images+=("${image}-${architecture}")
-  done
+echo "Creating manifest for ${platforms[@]}"
 
-  podman manifest create "${image}"
+for platfrom in "${platforms[@]}"
+do
+   echo "$platform"
+   podman pull "${image}-${platfrom}"
+done
 
-  podman manifest add --annotation "andrii=test" "${image}" "${images[@]}"
+podman manifest create "${image}"
 
-#  if [[ "$image" =~ gcr.io ]]
-#  then
-#    podman manifest create --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog" "${image}" "${images[@]}"
-#  fi
-
-else
-  echo "Creating manifest for the AMD image "
-
-  podman pull "${image}-amd64"
-
-  podman manifest create "${image}"
-
-  podman manifest add --annotation "andrii=test" "${image}" "${image}-amd64"
-
-fi
+podman manifest add --annotation "andrii=test" "${image}" "${images[@]}"
 
 podman manifest inspect "${image}"
 

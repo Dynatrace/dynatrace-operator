@@ -254,4 +254,4 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          combined: ${{ env.COMBINED }}
+          platforms: "amd64, arm64"
