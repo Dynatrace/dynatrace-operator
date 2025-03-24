@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/internal/builder"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -9,10 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-)
-
-const (
-	pvcAnnotationHash = api.InternalFlagPrefix + "pvc-hash"
 )
 
 var (
@@ -132,7 +127,7 @@ func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
 				s.ObjectMeta.Annotations = map[string]string{}
 			}
 
-			s.ObjectMeta.Annotations[pvcAnnotationHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
+			s.ObjectMeta.Annotations[AnnotationPvcHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
 		}
 	}
 }

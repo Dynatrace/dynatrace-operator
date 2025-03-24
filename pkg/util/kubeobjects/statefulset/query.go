@@ -35,8 +35,8 @@ func isEqual(current, desired *appsv1.StatefulSet) bool {
 }
 
 func mustRecreate(current, desired *appsv1.StatefulSet) bool {
-	currentHash := current.Annotations[pvcAnnotationHash]
-	desiredHash := desired.Annotations[pvcAnnotationHash]
+	currentHash := current.Annotations[AnnotationPvcHash]
+	desiredHash := desired.Annotations[AnnotationPvcHash]
 
 	return labels.NotEqual(current.Spec.Selector.MatchLabels, desired.Spec.Selector.MatchLabels) || currentHash != desiredHash
 }

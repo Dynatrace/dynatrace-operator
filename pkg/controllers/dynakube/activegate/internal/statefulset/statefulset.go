@@ -282,15 +282,6 @@ func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {
 	return (dk.TelemetryIngest().IsEnabled() || dk.IsOTLPingestEnabled()) && !dk.Spec.ActiveGate.UseEphemeralVolume
 }
 
-func setPvcAnnotation(dk dynakube.DynaKube, sts *appsv1.StatefulSet) {
-	const pvcAnnotationHash = api.InternalFlagPrefix + "pvc-hash"
-
-	if sts.ObjectMeta.Annotations == nil {
-		sts.ObjectMeta.Annotations = map[string]string{}
-	}
-	sts.ObjectMeta.Annotations[pvcAnnotationHash], _ = hasher.GenerateHash(sts.Spec.VolumeClaimTemplates)
-}
-
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {
 	if statefulSetBuilder.dynakube.Spec.ActiveGate.PersistentVolumeClaim != nil {
 		// validation webhook ensures that statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume is false at this point
