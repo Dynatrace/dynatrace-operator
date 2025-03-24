@@ -21,18 +21,11 @@ var (
 	timeoutFlagValue = 5
 )
 
-type CommandBuilder struct {
-}
-
-func NewCommandBuilder() CommandBuilder {
-	return CommandBuilder{}
-}
-
-func (builder CommandBuilder) Build() *cobra.Command {
+func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
 		Long: "query DNS server about " + hostname,
-		RunE: builder.buildRun(),
+		RunE: run(),
 	}
 
 	cmd.PersistentFlags().IntVar(&timeoutFlagValue, "timeout", defaultTimeout, "specify a different timeout [s]")
@@ -43,7 +36,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 	return cmd
 }
 
-func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
+func run() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		f := func(_ *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutFlagValue)*time.Second)
