@@ -13,8 +13,8 @@ image_tag=$2
 multiplatform=$3
 image="${image_name}:${image_tag}"
 
-podman --version
-podman manifest create --help
+echo "This script is based on podman version 4.9.3"
+echo "current version of podman is $(podman --version)"
 
 if [ "$multiplatform" == "true" ]
 then
@@ -28,8 +28,9 @@ then
     images+=("${image}-${architecture}")
   done
 
+  podman manifest create "${image}"
 
-  podman manifest create --annotation "andrii=test" "${image}" "${images[@]}"
+  podman manifest add --annotation "andrii=test" "${image}" "${images[@]}"
 
 #  if [[ "$image" =~ gcr.io ]]
 #  then
@@ -38,17 +39,17 @@ then
 
 else
   echo "Creating manifest for the AMD image "
+
   podman pull "${image}-amd64"
 
-  podman manifest create --annotation "andrii=test" "${image}" "${image}-amd64"
+  podman manifest create "${image}"
 
-#  if [[ "$image" =~ gcr.io ]]
-#  then
-#    podman manifest annotate --annotation "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog" "${image}" "${image}-amd64"
-#    podman manifest inspect "${image}"
-#  fi
+  podman manifest add --annotation "andrii=test" "${image}" "${image}-amd64"
 
 fi
 
+podman manifest inspect "${image}
+
 sha256=$(podman manifest push "${image}")
+
 echo "digest=${sha256}">> $GITHUB_OUTPUT
