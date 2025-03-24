@@ -49,17 +49,8 @@ runs:
     - name: Annotate image manifest
       shell: bash
       run: |
-        set -x
-        buildah manifest inspect operator-all-platforms:${{ inputs.image-tag }}
-
-        # we need to iterate for all platforms and annotate each one, there is no option to do it all it once.
-        # for i in ${${{ inputs.image-tag }}//,/ }
-        # do
-          # call your procedure/other scripts here below
-          # platform="${i//\// }"
-          # buildah manifest annotate --annotation andrii=test operator-all-platforms:${{ inputs.image-tag }} operator-all-platforms:${{ inputs.image-tag }}-${platform}
-        # done
-        buildah manifest inspect operator-all-platforms:${{ inputs.image-tag }}
+        annotation="andrii=test"
+        ./hack/build/ci/annotate-manifest.sh "operator-all-platforms:"${{ inputs.image-tag }} "${{ inputs.platforms }}" "${annotation}"
     - name: Export image to file
       shell: bash
       run: |
