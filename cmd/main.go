@@ -47,13 +47,6 @@ func newRootCommand() *cobra.Command {
 	return cmd
 }
 
-func createWebhookCommandBuilder() webhook.CommandBuilder {
-	return webhook.NewWebhookCommandBuilder().
-		SetNamespace(os.Getenv(env.PodNamespace)).
-		SetPodName(os.Getenv(env.PodName)).
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
 func createOperatorCommandBuilder() operator.CommandBuilder {
 	return operator.NewOperatorCommandBuilder().
 		SetNamespace(os.Getenv(env.PodNamespace)).
@@ -81,7 +74,7 @@ func main() {
 	cmd := newRootCommand()
 
 	cmd.AddCommand(
-		createWebhookCommandBuilder().Build(),
+		webhook.New(),
 		createOperatorCommandBuilder().Build(),
 		standalone.NewStandaloneCommand(),
 		createTroubleshootCommandBuilder().Build(),
