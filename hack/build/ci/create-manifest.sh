@@ -48,8 +48,6 @@ else
 
 fi
 
-podman manifest inspect "${image}
+podman manifest inspect "${image}"
 
-sha256=$(podman manifest push "${image}")
-
-echo "digest=${sha256}">> $GITHUB_OUTPUT
+podman manifest push "${image}"
