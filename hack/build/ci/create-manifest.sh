@@ -39,10 +39,10 @@ fi
 
 podman manifest inspect "${image}"
 
-podman manifest push --format oci --digestfile=digest.sha256 "${image}"
+podman manifest push --format oci --digestfile=digestfile.sha256 "${image}"
 
 podman manifest inspect "${image}"
 
-sha256=$(cat digest.sha256)
+sha256=$(cat digestfile.sha256)
 
 echo "digest=${sha256}">> $GITHUB_OUTPUT
