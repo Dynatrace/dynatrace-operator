@@ -13,6 +13,9 @@ image_tag=$2
 multiplatform=$3
 image="${image_name}:${image_tag}"
 
+podman --version
+podman manifest create --help
+
 if [ "$multiplatform" == "true" ]
 then
   supported_architectures=("amd64" "arm64" "ppc64le" "s390x")
@@ -26,7 +29,7 @@ then
   done
 
 
-  podman manifest create --annotation="andrii=test" "${image}" "${images[@]}"
+  podman manifest create --annotation "andrii=test" "${image}" "${images[@]}"
 
 #  if [[ "$image" =~ gcr.io ]]
 #  then
@@ -37,7 +40,7 @@ else
   echo "Creating manifest for the AMD image "
   podman pull "${image}-amd64"
 
-  podman manifest create --annotation="andrii=test" "${image}" "${image}-amd64"
+  podman manifest create --annotation "andrii=test" "${image}" "${image}-amd64"
 
 #  if [[ "$image" =~ gcr.io ]]
 #  then
