@@ -211,7 +211,7 @@ jobs:
     needs: [prepare, build]
     strategy:
       matrix:
-        platform: [ amd64, arm64, ppc64le, s390x ]
+        platform: [amd64, arm64, ppc64le, s390x]
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
       - name: Checkout
