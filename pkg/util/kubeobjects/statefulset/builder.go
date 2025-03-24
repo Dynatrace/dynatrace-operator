@@ -127,7 +127,7 @@ func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
 				s.ObjectMeta.Annotations = map[string]string{}
 			}
 
-			s.ObjectMeta.Annotations[AnnotationPvcHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
+			s.ObjectMeta.Annotations[AnnotationPVCHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
 		}
 	}
 }

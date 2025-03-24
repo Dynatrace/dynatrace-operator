@@ -613,10 +613,10 @@ func TestTempVolume(t *testing.T) {
 				assert.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
 				assert.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
 
-				assert.Contains(t, sts.Annotations, statefulset.AnnotationPvcHash)
+				assert.Contains(t, sts.Annotations, statefulset.AnnotationPVCHash)
 			} else {
 				require.Empty(t, sts.Spec.VolumeClaimTemplates)
-				assert.NotContains(t, sts.Annotations, statefulset.AnnotationPvcHash)
+				assert.NotContains(t, sts.Annotations, statefulset.AnnotationPVCHash)
 			}
 		})
 	}
