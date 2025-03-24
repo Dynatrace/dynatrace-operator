@@ -10,7 +10,6 @@ service:
     metrics:
       exporters:
         - otlphttp
-        - debug
       receivers:
         - statsd
       processors:

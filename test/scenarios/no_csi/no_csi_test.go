@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/classic"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
+	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
@@ -51,6 +52,7 @@ func TestNoCSI(t *testing.T) {
 		edgeconnect.AutomationModeFeature(t),
 		classic.Feature(t),
 		bootstrapper.NoCSI(t),
+		logmonitoring.Feature(t),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
