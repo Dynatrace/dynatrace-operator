@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -exo pipefail
-
 if [ -z "$3" ]
 then
   echo "Usage: $0 <image_name> <image_tag> <platforms> <annotation>"
@@ -41,6 +39,10 @@ fi
 
 podman manifest inspect "${image}"
 
-podman manifest push --format oci "${image}"
+podman manifest push --format oci --digestfile=digest.sha256 "${image}"
 
 podman manifest inspect "${image}"
+
+sha256=$(cat digest.sha256)
+
+echo "digest=${sha256}">> $GITHUB_OUTPUT
