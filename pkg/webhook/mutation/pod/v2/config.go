@@ -10,6 +10,4 @@ const (
 	NoBootstrapperConfigReason = "NoBootstrapperConfig"
 	NoCodeModulesImageReason   = "NoCodeModulesImage"
 	NoMutationNeededReason     = "NoMutationNeeded"
-
-	AnnotationBootstrapOverride = "oneagent.dynatrace.com/bootstrap-override"
 )
