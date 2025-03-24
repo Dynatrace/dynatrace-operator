@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,4 +44,15 @@ func AssertContains(t *testing.T, logStream io.ReadCloser, contains string) {
 	require.NoError(t, err)
 	require.Equal(t, int64(buffer.Len()), copied)
 	assert.Contains(t, buffer.String(), contains)
+}
+
+func FindLineContainingText(log, searchText string) string {
+	lines := strings.Split(log, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, searchText) {
+			return line
+		}
+	}
+
+	return ""
 }

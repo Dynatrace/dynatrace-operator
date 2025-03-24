@@ -161,3 +161,7 @@ test/e2e/hostmonitoring/withoutcsi: manifests/crd/helm
 ## Runs CloudNative default e2e test only
 test/e2e/cloudnative/withoutcsi: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "cloudnative" $(SKIPCLEANUP)
+
+## Runs TelemetryIngest related e2e tests
+test/e2e/telemetryingest: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "telemetryingest-.*" $(SKIPCLEANUP)
