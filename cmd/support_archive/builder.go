@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
-	"github.com/Dynatrace/dynatrace-operator/cmd/remote_command"
+	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive/remote_command"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
