@@ -1,19 +1,15 @@
 package oneagent
 
 import (
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure"
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/move"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/move"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/arg"
 	corev1 "k8s.io/api/core/v1"
-)
-
-const (
-	bootstrapperSourceArgument = "source" // TODO import consts from bootstrapper
-	bootstrapperTargetArgument = "target"
 )
 
 func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath string) {
@@ -23,8 +19,8 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 
 func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) {
 	args := []arg.Arg{
-		{Name: bootstrapperSourceArgument, Value: consts.AgentCodeModuleSource}, // TODO import consts from bootstrapper
-		{Name: bootstrapperTargetArgument, Value: binInitMountPath},
+		{Name: cmd.SourceFolderFlag, Value: consts.AgentCodeModuleSource},
+		{Name: cmd.TargetFolderFlag, Value: binInitMountPath},
 		{Name: configure.InstallPathFlag, Value: installPath},
 	}
 

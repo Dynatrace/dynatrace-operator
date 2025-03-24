@@ -1,7 +1,8 @@
 package v2
 
 import (
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -25,7 +26,7 @@ func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Cont
 	}
 
 	if areErrorsSuppressed(pod, dk) {
-		args = append(args, arg.Arg{Name: "suppress-error"}) // TODO: import arg from bootstrapper package
+		args = append(args, arg.Arg{Name: cmd.SuppressErrorsFlag})
 	}
 
 	initContainer := &corev1.Container{
