@@ -43,7 +43,7 @@ runs:
           ./Dockerfile
         platforms: linux/${{ inputs.platform }}
         tags: ${{ inputs.image-tag }}
-        image: operator-all-platforms
+        image: operator-${{ inputs.platform }}
         labels: ${{ inputs.labels }}
         oci: true
     - name: Export image to file
