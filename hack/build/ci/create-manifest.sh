@@ -22,6 +22,8 @@ echo "Creating manifest for ${platforms[*]}"
 
 images=()
 
+images=()
+
 for platfrom in "${platforms[@]}"
 do
    podman pull "${image}-${platfrom}"
