@@ -3,6 +3,7 @@ package v2
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
@@ -124,7 +125,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := createInitContainerBase(pod, *dk)
 
-		assert.NotContains(t, initContainer.Args, "--suppress-error")
+		assert.NotContains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
 
 	t.Run("should not set suppress-error arg - according to pod", func(t *testing.T) {
@@ -135,7 +136,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := createInitContainerBase(pod, *dk)
 
-		assert.NotContains(t, initContainer.Args, "--suppress-error")
+		assert.NotContains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
 
 	t.Run("should set suppress-error arg - default", func(t *testing.T) {
@@ -146,7 +147,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--suppress-error")
+		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
 
 	t.Run("should set suppress-error arg - unknown value", func(t *testing.T) {
@@ -157,7 +158,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--suppress-error")
+		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 
 		dk = getTestDynakube()
 		dk.Annotations = map[string]string{}
@@ -166,7 +167,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer = createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--suppress-error")
+		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
 }
 

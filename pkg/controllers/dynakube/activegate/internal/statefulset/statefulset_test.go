@@ -18,6 +18,7 @@ import (
 	agutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
@@ -491,7 +492,7 @@ func TestSecurityContexts(t *testing.T) {
 }
 
 func TestTempVolume(t *testing.T) {
-	myPVCspec := corev1.PersistentVolumeClaimSpec{
+	myPVCSpec := corev1.PersistentVolumeClaimSpec{
 		StorageClassName: ptr.To("test"),
 		VolumeName:       "foo-pv",
 	}
@@ -540,39 +541,39 @@ func TestTempVolume(t *testing.T) {
 		},
 		{
 			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest enabled, UseEphemeralVolume = false",
-			pvc:              &myPVCspec,
+			pvc:              &myPVCSpec,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     false,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCspec,
+			expectedPvcSpec:  myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest enabled, UseEphemeralVolume = true",
-			pvc:              &myPVCspec,
+			pvc:              &myPVCSpec,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     true,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCspec,
+			expectedPvcSpec:  myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
-			pvc:              &myPVCspec,
+			pvc:              &myPVCSpec,
 			telemetryIngest:  nil,
 			useEphemeral:     false,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCspec,
+			expectedPvcSpec:  myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
-			pvc:              &myPVCspec,
+			pvc:              &myPVCSpec,
 			telemetryIngest:  nil,
 			useEphemeral:     true,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCspec,
+			expectedPvcSpec:  myPVCSpec,
 		},
 	}
 
@@ -608,11 +609,14 @@ func TestTempVolume(t *testing.T) {
 
 			if test.pvcExpected {
 				require.Len(t, sts.Spec.VolumeClaimTemplates, 1)
-				require.Equal(t, test.expectedPvcSpec, sts.Spec.VolumeClaimTemplates[0].Spec)
-				require.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
-				require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
+				assert.Equal(t, test.expectedPvcSpec, sts.Spec.VolumeClaimTemplates[0].Spec)
+				assert.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
+				assert.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
+
+				assert.Contains(t, sts.Annotations, statefulset.AnnotationPVCHash)
 			} else {
 				require.Empty(t, sts.Spec.VolumeClaimTemplates)
+				assert.NotContains(t, sts.Annotations, statefulset.AnnotationPVCHash)
 			}
 		})
 	}

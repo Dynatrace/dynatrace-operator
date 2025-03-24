@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/container"
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/pod"
+	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -39,9 +39,11 @@ func TestAddPodAttributes(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, request.DynaKube.Status.KubernetesClusterMEID, attr.DTClusterEntity)
-		assert.Equal(t, request.DynaKube.Status.KubeSystemUUID, attr.ClusterUId)
+		assert.Equal(t, request.DynaKube.Status.KubernetesClusterName, attr.ClusterName)
+		assert.Equal(t, request.DynaKube.Status.KubeSystemUUID, attr.ClusterUID)
 		assert.Contains(t, attr.PodName, consts.K8sPodNameEnv)
-		assert.Contains(t, attr.PodUid, consts.K8sPodUIDEnv)
+		assert.Contains(t, attr.PodUID, consts.K8sPodUIDEnv)
+		assert.Contains(t, attr.NodeName, consts.K8sNodeNameEnv)
 		assert.Equal(t, request.Pod.Namespace, attr.NamespaceName)
 
 		require.Len(t, request.InstallContainer.Env, 3)
@@ -69,7 +71,7 @@ func TestAddPodAttributes(t *testing.T) {
 			}
 		}
 
-		assert.Len(t, attr.UserDefined, metaAnnotationCount+2) // TODO: this +2 should be removed once k8s.node.name and k8s.cluster.name are part of the actual Attributes
+		assert.Len(t, attr.UserDefined, metaAnnotationCount)
 		require.Len(t, request.Pod.Annotations, 3+metaAnnotationCount)
 		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[metacommon.AnnotationWorkloadKind])
 		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[metacommon.AnnotationWorkloadName])
