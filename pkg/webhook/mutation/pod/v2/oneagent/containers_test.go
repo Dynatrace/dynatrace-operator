@@ -3,7 +3,7 @@ package oneagent
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
