@@ -255,3 +255,4 @@ jobs:
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
           platforms: "amd64, arm64"
+          annotation: "andrii=test2"

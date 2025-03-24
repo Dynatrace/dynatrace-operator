@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euxo pipefail
+set -exo pipefail
 
 if [ -z "$3" ]
 then
@@ -18,22 +18,26 @@ image="${image_name}:${image_tag}"
 echo "This script is based on podman version 4.9.3"
 echo "current version of podman is $(podman --version)"
 
-platforms=($(echo ${raw_platforms} | tr "," "\n"))
+platforms=($(echo "${raw_platforms}" | tr "," "\n"))
 
-echo "Creating manifest for ${platforms[@]}"
+echo "Creating manifest for ${platforms[*]}"
 
 images=()
 
 for platfrom in "${platforms[@]}"
 do
-   echo "$platform"
    podman pull "${image}-${platfrom}"
    images+=("${image}-${platfrom}")
 done
 
 podman manifest create "${image}"
 
-podman manifest add --annotation "andrii=test" "${image}" "${images[@]}"
+if [ -z "${annotation}" ]
+then
+  podman manifest add "${image}" "${images[@]}"
+else
+  podman manifest add --annotation "${annotation}" "${image}" "${images[@]}"
+fi
 
 podman manifest inspect "${image}"
 
