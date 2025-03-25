@@ -23,9 +23,9 @@ coverage:
         threshold: 1%  # allowed to drop X% and still result in a "success" commit status
         base: auto
   ignore:
-    - "./cmd/csi/*.go" # ignore test mocks.
-    - "./cmd/operator/*.go" # ignore test mocks.
-    - "./cmd/standalone/*.go" # ignore test mocks.
-    - "./cmd/webhook/*.go" # ignore test mocks.
-    - "./cmd/startup_probe/*.go" # ignore test mocks.
+    - "./cmd/csi/*.go"
+    - "./cmd/operator/*.go"
+    - "./cmd/standalone/*.go"
+    - "./cmd/webhook/*.go"
+    - "./cmd/startup_probe/*.go"
     - "./test/mocks/*.go" # ignore test mocks.
