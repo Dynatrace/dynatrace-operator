@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/container"
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/pod"
+	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
@@ -19,16 +19,14 @@ func (wh *Injector) addPodAttributes(request *dtwebhook.MutationRequest) error {
 	attrs := podattr.Attributes{
 		PodInfo: podattr.PodInfo{
 			PodName:       createEnvVarRef(consts.K8sPodNameEnv),
-			PodUid:        createEnvVarRef(consts.K8sPodUIDEnv),
+			PodUID:        createEnvVarRef(consts.K8sPodUIDEnv),
+			NodeName:      createEnvVarRef(consts.K8sNodeNameEnv),
 			NamespaceName: request.Pod.Namespace,
 		},
 		ClusterInfo: podattr.ClusterInfo{
-			ClusterUId:      request.DynaKube.Status.KubeSystemUUID,
+			ClusterUID:      request.DynaKube.Status.KubeSystemUUID,
 			DTClusterEntity: request.DynaKube.Status.KubernetesClusterMEID,
-		},
-		UserDefined: map[string]string{
-			"k8s.cluster.name": request.DynaKube.Status.KubernetesClusterName, // TODO: make it part of podattr.Attributes
-			"k8s.node.name":    createEnvVarRef(consts.K8sNodeNameEnv),        // TODO: make it part of podattr.Attributes
+			ClusterName:     request.DynaKube.Status.KubernetesClusterName,
 		},
 	}
 
