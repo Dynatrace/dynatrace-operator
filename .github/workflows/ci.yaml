@@ -255,4 +255,4 @@ jobs:
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
           platforms: "amd64, arm64"
-          annotation: "version=${{ needs.prepare.outputs.version }}"
+          manifest_annotation: "version=${{ needs.prepare.outputs.version }}"

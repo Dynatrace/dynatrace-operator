@@ -13,8 +13,9 @@ annotation=$4
 
 image="${image_name}:${image_tag}"
 
-echo "This script is based on podman version 4.9.3"
+# echo "This script is based on podman version 4.9.3"
 echo "current version of podman is $(podman --version)"
+echo "current version of buildah is $(buildah --version)"
 
 platforms=($(echo "${raw_platforms}" | tr "," "\n"))
 
