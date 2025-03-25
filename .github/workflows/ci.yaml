@@ -261,6 +261,7 @@ jobs:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Add annotation to index manifest
         run: |
-          set +x
+          set -x
           go install github.com/google/go-containerregistry/cmd/crane@latest
-          crane mutate ${{ steps.build-image.outputs.tags }} --annotation "version=${{ needs.prepare.outputs.version }}"
+          crane mutate ${{ inputs.registry }}/${{ inputs.repository }}:${{ needs.prepare.outputs.version }} --annotation "version=${{ needs.prepare.outputs.version }}"
+          crane digest ${{ inputs.registry }}/${{ inputs.repository }}:${{ needs.prepare.outputs.version }}
