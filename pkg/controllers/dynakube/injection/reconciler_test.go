@@ -455,18 +455,25 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		Spec: dynakube.DynaKubeSpec{},
 	}
 
+	namespaces := []*corev1.Namespace{
+		clientInjectedNamespace("ns-1", dkBase.Name),
+		clientInjectedNamespace("ns-2", dkBase.Name),
+	}
+
+	tokenSecret := clientSecret(dkBase.Name, dkBase.Namespace, map[string][]byte{
+		dtclient.ApiToken:  []byte("testAPIToken"),
+		dtclient.PaasToken: []byte("testPaasToken"),
+	})
+
+	tenantSecret := clientSecret(dkBase.OneAgent().GetTenantSecret(), dkBase.Namespace, map[string][]byte{
+		"tenant-token": []byte("token"),
+	})
+
 	t.Run("default 1 == no node-image-pull + csi enabled => only init-secret", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
-		namespaces := []*corev1.Namespace{
-			clientInjectedNamespace("ns-1", dk.Name),
-			clientInjectedNamespace("ns-2", dk.Name),
-		}
 
 		clt := fake.NewClientWithIndex(
-			clientSecret(dk.Name, dk.Namespace, map[string][]byte{
-				dtclient.ApiToken:  []byte("testAPIToken"),
-				dtclient.PaasToken: []byte("testPaasToken"),
-			}),
+			tokenSecret,
 			dk,
 			namespaces[0], namespaces[1],
 		)
@@ -487,16 +494,9 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		dk := dkBase.DeepCopy()
-		namespaces := []*corev1.Namespace{
-			clientInjectedNamespace("ns-1", dk.Name),
-			clientInjectedNamespace("ns-2", dk.Name),
-		}
 
 		clt := fake.NewClientWithIndex(
-			clientSecret(dk.Name, dk.Namespace, map[string][]byte{
-				dtclient.ApiToken:  []byte("testAPIToken"),
-				dtclient.PaasToken: []byte("testPaasToken"),
-			}),
+			tokenSecret,
 			dk,
 			namespaces[0], namespaces[1],
 		)
@@ -515,22 +515,13 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 	t.Run("node-image-pull + csi enabled => both init-secret and bootstrapper-secret", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
-		namespaces := []*corev1.Namespace{
-			clientInjectedNamespace("ns-1", dk.Name),
-			clientInjectedNamespace("ns-2", dk.Name),
-		}
 		dk.Annotations = map[string]string{
 			dynakube.AnnotationFeatureNodeImagePull: "true",
 		}
 
 		clt := fake.NewClientWithIndex(
-			clientSecret(dk.Name, dk.Namespace, map[string][]byte{
-				dtclient.ApiToken:  []byte("testAPIToken"),
-				dtclient.PaasToken: []byte("testPaasToken"),
-			}),
-			clientSecret(dk.OneAgent().GetTenantSecret(), dk.Namespace, map[string][]byte{
-				"tenant-token": []byte("token"),
-			}),
+			tokenSecret,
+			tenantSecret,
 			dk,
 			namespaces[0], namespaces[1],
 		)
@@ -555,22 +546,13 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		dk := dkBase.DeepCopy()
-		namespaces := []*corev1.Namespace{
-			clientInjectedNamespace("ns-1", dk.Name),
-			clientInjectedNamespace("ns-2", dk.Name),
-		}
 		dk.Annotations = map[string]string{
 			dynakube.AnnotationFeatureNodeImagePull: "true",
 		}
 
 		clt := fake.NewClientWithIndex(
-			clientSecret(dk.Name, dk.Namespace, map[string][]byte{
-				dtclient.ApiToken:  []byte("testAPIToken"),
-				dtclient.PaasToken: []byte("testPaasToken"),
-			}),
-			clientSecret(dk.OneAgent().GetTenantSecret(), dk.Namespace, map[string][]byte{
-				"tenant-token": []byte("token"),
-			}),
+			tokenSecret,
+			tenantSecret,
 			dk,
 			namespaces[0], namespaces[1],
 		)

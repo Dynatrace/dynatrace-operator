@@ -98,6 +98,7 @@ func TestIsEnabled(t *testing.T) {
 		t.Run(test.title, func(t *testing.T) {
 			pod := &corev1.Pod{}
 			test.podMods(pod)
+
 			dk := &dynakube.DynaKube{}
 			test.dkMods(dk)
 
