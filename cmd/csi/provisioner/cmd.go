@@ -3,7 +3,6 @@ package provisioner
 import (
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner"
@@ -18,6 +17,7 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -57,7 +57,7 @@ func run() func(*cobra.Command, []string) error {
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 
-		kubeConfig, err := config.NewKubeConfigProvider().GetConfig()
+		kubeConfig, err := config.GetConfig()
 		if err != nil {
 			return err
 		}

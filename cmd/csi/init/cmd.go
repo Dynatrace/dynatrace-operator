@@ -3,7 +3,6 @@ package init
 import (
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -17,6 +16,7 @@ import (
 	"golang.org/x/sys/unix"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -63,7 +63,7 @@ func run() func(*cobra.Command, []string) error {
 			Scheme: scheme.Scheme,
 		}
 
-		kubeconfig, err := config.NewKubeConfigProvider().GetConfig()
+		kubeconfig, err := config.GetConfig()
 		if err != nil {
 			return errors.WithStack(err)
 		}
