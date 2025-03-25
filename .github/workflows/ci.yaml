@@ -255,4 +255,12 @@ jobs:
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
           platforms: "amd64, arm64"
-          manifest_annotation: "version=${{ needs.prepare.outputs.version }}"
+      - name: Setup Golang
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+        with:
+          go-version-file: "${{ github.workspace }}/go.mod"
+      - name: Add annotation to index manifest
+        run: |
+          set +x
+          go install github.com/google/go-containerregistry/cmd/crane@latest
+          crane mutate ${{ steps.build-image.outputs.tags }} --annotation "version=${{ needs.prepare.outputs.version }}"
