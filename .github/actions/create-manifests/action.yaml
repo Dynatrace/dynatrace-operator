@@ -24,7 +24,6 @@ runs:
   steps:
     - name: Upgrade Podman
       shell: bash
-      description: remove this step as soon as podman 5.x available for new ubuntu
       run: |
         curl -OL https://github.com/containers/podman/releases/download/v5.4.1/podman-remote-static-linux_amd64.tar.gz
         tar xf podman-remote-static-linux_amd64.tar.gz
