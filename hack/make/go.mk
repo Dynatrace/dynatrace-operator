@@ -45,7 +45,7 @@ go/coverage: go/test
 
 ## Runs go integration test
 go/integration_test:
-	go test -ldflags="-X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Commit=$(shell git rev-parse HEAD)' -X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Version=$(shell git branch --show-current)'" ./cmd/test/integration/*
+	go test -ldflags="-X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Commit=$(shell git rev-parse HEAD)' -X 'github.com/Dynatrace/dynatrace-operator/pkg/version.Version=$(shell git branch --show-current)'" ./test/integration/*
 
 ## creates mocks from .mockery.yaml
 go/gen_mocks: prerequisites/mockery
