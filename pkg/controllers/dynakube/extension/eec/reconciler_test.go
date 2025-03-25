@@ -106,6 +106,10 @@ func getTLSSecret(name string, namespace string, crt string, key string) corev1.
 	}
 }
 
+func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
+	dk.Annotations[dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate] = "false"
+}
+
 func TestConditions(t *testing.T) {
 	t.Run("no kubeSystemUUID", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -309,7 +313,7 @@ func TestEnvironmentVariables(t *testing.T) {
 func TestVolumeMounts(t *testing.T) {
 	t.Run("volume mounts, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+		disableAutomaticAGCertificate(dk)
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMounts := []corev1.VolumeMount{
@@ -382,7 +386,7 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts with PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
@@ -451,7 +455,7 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts with custom configuration, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
 		statefulSet := getStatefulset(t, dk)
@@ -846,7 +850,7 @@ func TestUpdateStrategy(t *testing.T) {
 func TestVolumes(t *testing.T) {
 	t.Run("volumes without PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
 
 		statefulSet := getStatefulset(t, dk)
@@ -958,7 +962,7 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("volumes with PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
@@ -1070,7 +1074,7 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC and with custom configuration, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
@@ -1304,7 +1308,7 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes without custom ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+		disableAutomaticAGCertificate(dk)
 		statefulSet := getStatefulset(t, dk)
 
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
@@ -1317,7 +1321,7 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes with TrustedCAs certificates, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+		disableAutomaticAGCertificate(dk)
 		dk.Spec.TrustedCAs = "custom-tls"
 		statefulSet := getStatefulset(t, dk)
 

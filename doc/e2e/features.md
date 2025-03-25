@@ -213,12 +213,14 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemo
 - [func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func](<#VolumesAreMountedCorrectly>)
 - [func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxy>)
 - [func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxyAndAGCert>)
+- [func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxyAndAutomaticAGCert>)
 - [func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxyCA>)
 - [func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxyCAAndAGCert>)
+- [func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features.Feature](<#WithProxyCAAndAutomaticAGCert>)
 
 <a name="ImageHasBeenDownloaded"></a>
 
-## func [ImageHasBeenDownloaded](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L422>)
+## func [ImageHasBeenDownloaded](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L551>)
 
 ```go
 func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func
@@ -236,7 +238,7 @@ Verification that the storage in the CSI driver directory does not increase when
 
 <a name="VolumesAreMountedCorrectly"></a>
 
-## func [VolumesAreMountedCorrectly](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L508>)
+## func [VolumesAreMountedCorrectly](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L637>)
 
 ```go
 func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func
@@ -260,15 +262,23 @@ Connectivity in the dynatrace namespace and sample application namespace is rest
 
 <a name="WithProxyAndAGCert"></a>
 
-## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L272>)
+## func [WithProxyAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L270>)
 
 ```go
 func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
 ```
 
+<a name="WithProxyAndAutomaticAGCert"></a>
+
+## func [WithProxyAndAutomaticAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L335>)
+
+```go
+func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features.Feature
+```
+
 <a name="WithProxyCA"></a>
 
-## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L191>)
+## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L194>)
 
 ```go
 func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature
@@ -276,10 +286,18 @@ func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature
 
 <a name="WithProxyCAAndAGCert"></a>
 
-## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L337>)
+## func [WithProxyCAAndAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L397>)
 
 ```go
 func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature
+```
+
+<a name="WithProxyCAAndAutomaticAGCert"></a>
+
+## func [WithProxyCAAndAutomaticAGCert](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L470>)
+
+```go
+func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features.Feature
 ```
 
 # _default

@@ -46,7 +46,7 @@ const (
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
 
-	AnnotationFeatureActiveGateDisableAutomaticTLSCertificate = AnnotationFeaturePrefix + "disable-automatic-tls-certificate"
+	AnnotationFeatureActiveGateAutomaticTLSCertificate = AnnotationFeaturePrefix + "automatic-tls-certificate"
 
 	// dtClient.
 
@@ -134,9 +134,9 @@ func (dk *DynaKube) FeatureNoProxy() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
 }
 
-// FeatureActiveGateDisableAutomaticTLSCertificate is a feature flag to disable automatic creation of AG TLS certificate.
-func (dk *DynaKube) FeatureActiveGateDisableAutomaticTLSCertificate() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateDisableAutomaticTLSCertificate) == truePhrase
+// FeatureActiveGateAutomaticTLSCertificate is a feature flag to disable automatic creation of ActiveGate TLS certificate.
+func (dk *DynaKube) FeatureActiveGateAutomaticTLSCertificate() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAutomaticTLSCertificate) != falsePhrase
 }
 
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.

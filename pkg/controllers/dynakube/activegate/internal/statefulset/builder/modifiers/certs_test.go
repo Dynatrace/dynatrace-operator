@@ -18,14 +18,14 @@ func setCertUsage(dk *dynakube.DynaKube, isUsed bool) {
 	}
 }
 
-func disableAGCertFF(dk *dynakube.DynaKube) {
-	dk.Annotations[dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate] = "true"
+func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
+	dk.Annotations[dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate] = "false"
 }
 
 func TestCertEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dk := getBaseDynakube()
-		disableAGCertFF(&dk)
+		disableAutomaticAGCertificate(&dk)
 		enableKubeMonCapability(&dk)
 		setCertUsage(&dk, true)
 
@@ -36,7 +36,7 @@ func TestCertEnabled(t *testing.T) {
 
 	t.Run("false", func(t *testing.T) {
 		dk := getBaseDynakube()
-		disableAGCertFF(&dk)
+		disableAutomaticAGCertificate(&dk)
 		enableKubeMonCapability(&dk)
 		setCertUsage(&dk, false)
 

@@ -34,7 +34,7 @@ const (
     AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
     AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
 
-    AnnotationFeatureActiveGateDisableAutomaticTLSCertificate = AnnotationFeaturePrefix + "disable-automatic-tls-certificate"
+    AnnotationFeatureActiveGateAutomaticTLSCertificate = AnnotationFeaturePrefix + "automatic-tls-certificate"
 
     AnnotationFeatureNoProxy = AnnotationFeaturePrefix + "no-proxy"
 

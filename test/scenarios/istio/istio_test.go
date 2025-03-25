@@ -55,7 +55,9 @@ func TestIstio(t *testing.T) {
 		codemodules.WithProxy(t, proxy.ProxySpec),
 		codemodules.WithProxyCA(t, proxy.HttpsProxySpec),
 		codemodules.WithProxyAndAGCert(t, proxy.ProxySpec),
+		codemodules.WithProxyAndAutomaticAGCert(t, proxy.ProxySpec),
 		codemodules.WithProxyCAAndAGCert(t, proxy.HttpsProxySpec),
+		codemodules.WithProxyCAAndAutomaticAGCert(t, proxy.HttpsProxySpec),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)

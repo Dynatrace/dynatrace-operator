@@ -76,7 +76,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 				Name:      testDynakubeName,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateDisableAutomaticTLSCertificate: "true",
+					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

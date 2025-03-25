@@ -118,7 +118,7 @@ type Spec struct {
 
 	enabledDependencies dependencies
 
-	automaticTLSCertificateDisabled bool
+	automaticTLSCertificateEnabled bool
 
 	// UseEphemeralVolume
 	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
