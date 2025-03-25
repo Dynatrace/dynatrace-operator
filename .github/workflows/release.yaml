@@ -258,6 +258,7 @@ jobs:
 
   build-gcr-deployer:
     name: Build GCR deployer image
+    environment: Release
     runs-on: ubuntu-latest
     needs: [ prepare ]
     steps:
