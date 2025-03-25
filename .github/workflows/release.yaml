@@ -270,7 +270,8 @@ jobs:
           oci: true
           containerfiles: |
             ./config/helm/Dockerfile
-          tags: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version }}
+          tags: ${{ needs.prepare.outputs.version }}
+          image: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}
           extra-args: |
             --annotation=com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
       - name: Push To gcr
