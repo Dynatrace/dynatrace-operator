@@ -45,12 +45,6 @@ func newRootCommand() *cobra.Command {
 
 	return cmd
 }
-
-func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
-	return troubleshoot.NewTroubleshootCommandBuilder().
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
 func createSupportArchiveCommandBuilder() support_archive.CommandBuilder {
 	return support_archive.NewCommandBuilder().
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
@@ -69,7 +63,7 @@ func main() {
 		webhook.New(),
 		operator.New(),
 		standalone.NewStandaloneCommand(),
-		createTroubleshootCommandBuilder().Build(),
+		troubleshoot.New(),
 		createSupportArchiveCommandBuilder().Build(),
 		startupProbe.New(),
 		csiInit.New(),
