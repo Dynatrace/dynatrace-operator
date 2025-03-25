@@ -286,6 +286,7 @@ jobs:
         id: push-to-gcr
         uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2.8
         with:
+          image: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}
           tags: ${{ steps.build-image.outputs.tags }}
           username: ${{ secrets.GCR_USERNAME }}
           password: ${{ secrets.GCR_JSON_KEY }}
