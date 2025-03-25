@@ -3,7 +3,7 @@ module github.com/Dynatrace/dynatrace-operator
 go 1.23.4
 
 require (
-	github.com/Dynatrace/dynatrace-bootstrapper v1.0.1
+	github.com/Dynatrace/dynatrace-bootstrapper v1.0.2
 	github.com/container-storage-interface/spec v1.11.0
 	github.com/docker/cli v28.0.2+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
@@ -37,7 +37,7 @@ require (
 	k8s.io/client-go v0.32.3
 	k8s.io/mount-utils v0.32.3
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
-	sigs.k8s.io/controller-runtime v0.20.3
+	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/e2e-framework v0.3.0
 	sigs.k8s.io/yaml v1.4.0
 )

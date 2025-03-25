@@ -3,6 +3,7 @@ package oneagent
 import (
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/volumes"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -12,7 +13,7 @@ const (
 	binInitMountPath = "/mnt/bin"
 
 	ldPreloadPath    = "/etc/ld.so.preload"
-	ldPreloadSubPath = "oneagent/ld.so.preload" // TODO: Get from the bootsrapper lib.
+	ldPreloadSubPath = preload.ConfigPath
 )
 
 func addVolumeMounts(container *corev1.Container, installPath string) {

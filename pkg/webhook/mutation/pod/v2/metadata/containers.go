@@ -4,7 +4,7 @@ import (
 	"maps"
 	"strings"
 
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/attributes/pod"
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"

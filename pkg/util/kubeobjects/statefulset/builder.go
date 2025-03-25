@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/internal/builder"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -9,10 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-)
-
-const (
-	pvcAnnotationHash = api.InternalFlagPrefix + "pvc-hash"
 )
 
 var (
@@ -32,7 +27,7 @@ func Build(owner metav1.Object, name string, container corev1.Container, options
 	}
 	neededOpts = append(neededOpts, options...)
 
-	neededOpts = append(neededOpts, setPVCAnnotation())
+	neededOpts = append(neededOpts, SetPVCAnnotation())
 
 	return builder.Build(owner, &appsv1.StatefulSet{}, neededOpts...)
 }
@@ -125,14 +120,14 @@ func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 	}
 }
 
-func setPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
+func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		if s.Spec.VolumeClaimTemplates != nil {
 			if s.ObjectMeta.Annotations == nil {
 				s.ObjectMeta.Annotations = map[string]string{}
 			}
 
-			s.ObjectMeta.Annotations[pvcAnnotationHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
+			s.ObjectMeta.Annotations[AnnotationPVCHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
 		}
 	}
 }

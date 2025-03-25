@@ -18,6 +18,7 @@ import (
 	agutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
@@ -491,7 +492,7 @@ func TestSecurityContexts(t *testing.T) {
 }
 
 func TestTempVolume(t *testing.T) {
-	myPVCspec := corev1.PersistentVolumeClaimSpec{
+	myPVCSpec := corev1.PersistentVolumeClaimSpec{
 		StorageClassName: ptr.To("test"),
 		VolumeName:       "foo-pv",
 	}
@@ -540,39 +541,39 @@ func TestTempVolume(t *testing.T) {
 		},
 		{
 			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest enabled, UseEphemeralVolume = false",
-			pvc:              &myPVCspec,
+			pvc:              &myPVCSpec,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     false,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCspec,
+			expectedPvcSpec:  myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest enabled, UseEphemeralVolume = true",
-			pvc:              &myPVCspec,
+			pvc:              &myPVCSpec,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     true,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCspec,
+			expectedPvcSpec:  myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
-			pvc:              &myPVCspec,
+			pvc:              &myPVCSpec,
 			telemetryIngest:  nil,
 			useEphemeral:     false,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCspec,
+			expectedPvcSpec:  myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
-			pvc:              &myPVCspec,
+			pvc:              &myPVCSpec,
 			telemetryIngest:  nil,
 			useEphemeral:     true,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCspec,
+			expectedPvcSpec:  myPVCSpec,
 		},
 	}
 
@@ -608,11 +609,14 @@ func TestTempVolume(t *testing.T) {
 
 			if test.pvcExpected {
 				require.Len(t, sts.Spec.VolumeClaimTemplates, 1)
-				require.Equal(t, test.expectedPvcSpec, sts.Spec.VolumeClaimTemplates[0].Spec)
-				require.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
-				require.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
+				assert.Equal(t, test.expectedPvcSpec, sts.Spec.VolumeClaimTemplates[0].Spec)
+				assert.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
+				assert.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
+
+				assert.Contains(t, sts.Annotations, statefulset.AnnotationPVCHash)
 			} else {
 				require.Empty(t, sts.Spec.VolumeClaimTemplates)
+				assert.NotContains(t, sts.Annotations, statefulset.AnnotationPVCHash)
 			}
 		})
 	}
@@ -635,5 +639,41 @@ func TestVolumeMounts(t *testing.T) {
 			MountPath: consts.GatewayTmpMountPoint,
 		}
 		require.Contains(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+	})
+}
+
+func TestTerminationGracePeriodSeconds(t *testing.T) {
+	tests := []struct {
+		name               string
+		gracePeriodSeconds *int64
+	}{
+		{
+			name:               "gracePeriodSeconds is zero",
+			gracePeriodSeconds: ptr.To(int64(0)),
+		},
+		{
+			name:               "gracePeriodSeconds is positive",
+			gracePeriodSeconds: ptr.To(int64(1)),
+		},
+		{
+			name:               "gracePeriodSeconds is negative",
+			gracePeriodSeconds: ptr.To(int64(-1)),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dk := getTestDynakube()
+			dk.ActiveGate().TerminationGracePeriodSeconds = test.gracePeriodSeconds
+			assert.Equal(t, *test.gracePeriodSeconds, *dk.ActiveGate().GetTerminationGracePeriodSeconds())
+		})
+	}
+}
+
+func TestTerminationGracePeriodSecondsNil(t *testing.T) {
+	t.Run("gracePeriodSeconds is nil", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.ActiveGate().TerminationGracePeriodSeconds = nil
+		assert.Nil(t, dk.ActiveGate().GetTerminationGracePeriodSeconds())
 	})
 }
