@@ -28,7 +28,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,13 +44,6 @@ func newRootCommand() *cobra.Command {
 	}
 
 	return cmd
-}
-
-func createOperatorCommandBuilder() operator.CommandBuilder {
-	return operator.NewOperatorCommandBuilder().
-		SetNamespace(os.Getenv(env.PodNamespace)).
-		SetPodName(os.Getenv(env.PodName)).
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
@@ -75,7 +67,7 @@ func main() {
 
 	cmd.AddCommand(
 		webhook.New(),
-		createOperatorCommandBuilder().Build(),
+		operator.New(),
 		standalone.NewStandaloneCommand(),
 		createTroubleshootCommandBuilder().Build(),
 		createSupportArchiveCommandBuilder().Build(),
