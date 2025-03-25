@@ -13,20 +13,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func runCertBootstrapper(cfg *rest.Config, namespace string) error {
-	bootstrapManager, err := createCertBootstapperManager(cfg, namespace)
+func runCertInit(cfg *rest.Config, namespace string) error {
+	certInitManager, err := createCertInitManager(cfg, namespace)
 	if err != nil {
 		return err
 	}
 
 	ctx, cancelFn := context.WithCancel(context.Background())
 
-	err = certificates.AddBootstrap(bootstrapManager, namespace, cancelFn)
+	err = certificates.AddInit(certInitManager, namespace, cancelFn)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	err = bootstrapManager.Start(ctx)
+	err = certInitManager.Start(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -34,7 +34,7 @@ func runCertBootstrapper(cfg *rest.Config, namespace string) error {
 	return nil
 }
 
-func createCertBootstapperManager(cfg *rest.Config, namespace string) (manager.Manager, error) {
+func createCertInitManager(cfg *rest.Config, namespace string) (manager.Manager, error) {
 	controlManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
 		Cache: cache.Options{

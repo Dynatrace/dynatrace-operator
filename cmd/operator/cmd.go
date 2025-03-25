@@ -67,7 +67,7 @@ func runInPod(kubeCfg *rest.Config) error {
 
 	isOLM := kubesystem.IsDeployedViaOlm(*operatorPod)
 	if !isOLM {
-		err = runCertBootstrapper(kubeCfg, namespace)
+		err = runCertInit(kubeCfg, namespace)
 		if err != nil {
 			return err
 		}
@@ -79,7 +79,7 @@ func runInPod(kubeCfg *rest.Config) error {
 func runLocally(kubeCfg *rest.Config) error {
 	namespace := os.Getenv(env.PodNamespace)
 
-	err := runCertBootstrapper(kubeCfg, namespace)
+	err := runCertInit(kubeCfg, namespace)
 	if err != nil {
 		return err
 	}
