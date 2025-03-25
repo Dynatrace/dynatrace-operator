@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/certificates"
+	"github.com/Dynatrace/dynatrace-operator/cmd/webhook/certificates"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	edgeconnectv1alpha2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
