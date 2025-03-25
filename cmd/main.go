@@ -17,14 +17,13 @@ package main
 import (
 	"os"
 
-	cmdConfig "github.com/Dynatrace/dynatrace-operator/cmd/config"
 	csiInit "github.com/Dynatrace/dynatrace-operator/cmd/csi/init"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/cmd/csi/provisioner"
 	csiServer "github.com/Dynatrace/dynatrace-operator/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/cmd/standalone"
 	startupProbe "github.com/Dynatrace/dynatrace-operator/cmd/startup_probe"
-	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
+	supportArchive "github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -45,10 +44,6 @@ func newRootCommand() *cobra.Command {
 
 	return cmd
 }
-func createSupportArchiveCommandBuilder() support_archive.CommandBuilder {
-	return support_archive.NewCommandBuilder().
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
 
 func rootCommand(_ *cobra.Command, _ []string) error {
 	return errors.New("operator binary must be called with one of the subcommands")
@@ -64,7 +59,7 @@ func main() {
 		operator.New(),
 		standalone.NewStandaloneCommand(),
 		troubleshoot.New(),
-		createSupportArchiveCommandBuilder().Build(),
+		supportArchive.New(),
 		startupProbe.New(),
 		csiInit.New(),
 		csiProvisioner.New(),
