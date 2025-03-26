@@ -17,18 +17,16 @@ package main
 import (
 	"os"
 
-	cmdConfig "github.com/Dynatrace/dynatrace-operator/cmd/config"
 	csiInit "github.com/Dynatrace/dynatrace-operator/cmd/csi/init"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/cmd/csi/provisioner"
 	csiServer "github.com/Dynatrace/dynatrace-operator/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/cmd/standalone"
-	"github.com/Dynatrace/dynatrace-operator/cmd/startup_probe"
-	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
+	startupProbe "github.com/Dynatrace/dynatrace-operator/cmd/startup_probe"
+	supportArchive "github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,34 +45,6 @@ func newRootCommand() *cobra.Command {
 	return cmd
 }
 
-func createWebhookCommandBuilder() webhook.CommandBuilder {
-	return webhook.NewWebhookCommandBuilder().
-		SetNamespace(os.Getenv(env.PodNamespace)).
-		SetPodName(os.Getenv(env.PodName)).
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
-func createOperatorCommandBuilder() operator.CommandBuilder {
-	return operator.NewOperatorCommandBuilder().
-		SetNamespace(os.Getenv(env.PodNamespace)).
-		SetPodName(os.Getenv(env.PodName)).
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
-func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
-	return troubleshoot.NewTroubleshootCommandBuilder().
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
-func createSupportArchiveCommandBuilder() support_archive.CommandBuilder {
-	return support_archive.NewCommandBuilder().
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-}
-
-func createStartupProbe() startup_probe.CommandBuilder {
-	return startup_probe.NewCommandBuilder()
-}
-
 func rootCommand(_ *cobra.Command, _ []string) error {
 	return errors.New("operator binary must be called with one of the subcommands")
 }
@@ -85,12 +55,12 @@ func main() {
 	cmd := newRootCommand()
 
 	cmd.AddCommand(
-		createWebhookCommandBuilder().Build(),
-		createOperatorCommandBuilder().Build(),
+		webhook.New(),
+		operator.New(),
 		standalone.NewStandaloneCommand(),
-		createTroubleshootCommandBuilder().Build(),
-		createSupportArchiveCommandBuilder().Build(),
-		createStartupProbe().Build(),
+		troubleshoot.New(),
+		supportArchive.New(),
+		startupProbe.New(),
 		csiInit.New(),
 		csiProvisioner.New(),
 		csiServer.New(),

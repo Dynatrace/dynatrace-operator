@@ -36,7 +36,7 @@ func Add(mgr manager.Manager, ns string) error {
 		Complete(newWebhookCertificateController(mgr, nil))
 }
 
-func AddBootstrap(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
+func AddInit(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Named("webhook-boostrap-controller").

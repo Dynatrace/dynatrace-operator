@@ -8,8 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
-	"github.com/Dynatrace/dynatrace-operator/cmd/remote_command"
+	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive/remote_command"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -24,6 +23,7 @@ import (
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
 
@@ -58,29 +58,11 @@ var (
 	NumEventsFlagValue          int
 )
 
-type CommandBuilder struct {
-	configProvider config.Provider
-}
-
-func NewCommandBuilder() CommandBuilder {
-	return CommandBuilder{}
-}
-
-func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
-	builder.configProvider = provider
-
-	return builder
-}
-
-func clusterOptions(opts *cluster.Options) {
-	opts.Scheme = scheme.Scheme
-}
-
-func (builder CommandBuilder) Build() *cobra.Command {
+func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
 		Long: "Pack logs and manifests useful for troubleshooting into single tarball",
-		RunE: builder.buildRun(),
+		RunE: run(),
 	}
 	addFlags(cmd)
 
@@ -97,7 +79,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().IntVar(&NumEventsFlagValue, numEventsFlagName, DefaultNumEvents, fmt.Sprintf("Number of events to be fetched (default %d)", DefaultNumEvents))
 }
 
-func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
+func run() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		time.Sleep(time.Duration(delayFlagValue) * time.Second)
 
@@ -116,7 +98,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		defer archiveTargetFile.Close()
 		defer supportArchive.Close()
 
-		err = builder.runCollectors(log, supportArchive)
+		err = runCollectors(log, supportArchive)
 		if err != nil {
 			return err
 		}
@@ -155,10 +137,10 @@ func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) stri
 	return defaultOperatorAppName
 }
 
-func (builder CommandBuilder) runCollectors(log logd.Logger, supportArchive archiver) error {
+func runCollectors(log logd.Logger, supportArchive archiver) error {
 	ctx := context.Background()
 
-	kubeConfig, err := builder.configProvider.GetConfig()
+	kubeConfig, err := config.GetConfig()
 	if err != nil {
 		return err
 	}
@@ -211,6 +193,10 @@ func getK8sClients(kubeConfig *rest.Config) (*kubernetes.Clientset, client.Reade
 	apiReader := k8sCluster.GetAPIReader()
 
 	return clientSet, apiReader, nil
+}
+
+func clusterOptions(opts *cluster.Options) {
+	opts.Scheme = scheme.Scheme
 }
 
 func printCopyCommand(log logd.Logger, tarballToStdout bool, tarFileName string) {

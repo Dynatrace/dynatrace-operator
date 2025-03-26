@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/remote_command"
+	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive/remote_command"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
