@@ -1,9 +1,9 @@
 package platform
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -48,8 +48,7 @@ func (p *Resolver) GetPlatform() (string, error) {
 }
 
 func getDiscoveryClient() (discovery.DiscoveryInterface, error) {
-	kubeconfigProvider := config.KubeConfigProvider{}
-	kubeconfig, err := kubeconfigProvider.GetConfig()
+	kubeconfig, err := config.GetConfig()
 	if err != nil {
 		return nil, err
 	}

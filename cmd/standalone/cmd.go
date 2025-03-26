@@ -15,12 +15,12 @@ const (
 func NewStandaloneCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:          use,
-		RunE:         startStandAloneInit,
+		RunE:         run,
 		SilenceUsage: true,
 	}
 }
 
-func startStandAloneInit(_ *cobra.Command, _ []string) error {
+func run(_ *cobra.Command, _ []string) error {
 	unix.Umask(0000)
 
 	signalHandler := ctrl.SetupSignalHandler()

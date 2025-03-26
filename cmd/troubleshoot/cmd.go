@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -17,6 +16,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
 
@@ -33,24 +33,10 @@ var (
 	namespaceFlagValue string
 )
 
-type CommandBuilder struct {
-	configProvider config.Provider
-}
-
-func NewTroubleshootCommandBuilder() CommandBuilder {
-	return CommandBuilder{}
-}
-
-func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
-	builder.configProvider = provider
-
-	return builder
-}
-
-func (builder CommandBuilder) Build() *cobra.Command {
+func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
-		RunE: builder.buildRun(),
+		RunE: run(),
 	}
 
 	addFlags(cmd)
@@ -67,12 +53,12 @@ func clusterOptions(opts *cluster.Options) {
 	opts.Scheme = scheme.Scheme
 }
 
-func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
+func run() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 
-		kubeConfig, err := builder.configProvider.GetConfig()
+		kubeConfig, err := config.GetConfig()
 		if err != nil {
 			return err
 		}

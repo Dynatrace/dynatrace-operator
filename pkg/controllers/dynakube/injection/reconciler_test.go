@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -441,6 +442,178 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 
 		assertSecretFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace2)
+	})
+}
+
+func TestGenerateCorrectInitSecret(t *testing.T) {
+	ctx := context.Background()
+	dkBase := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-dynakube",
+			Namespace: "my-dynatrace",
+		},
+		Spec: dynakube.DynaKubeSpec{},
+	}
+
+	namespaces := []*corev1.Namespace{
+		clientInjectedNamespace("ns-1", dkBase.Name),
+		clientInjectedNamespace("ns-2", dkBase.Name),
+	}
+
+	tokenSecret := clientSecret(dkBase.Name, dkBase.Namespace, map[string][]byte{
+		dtclient.ApiToken:  []byte("testAPIToken"),
+		dtclient.PaasToken: []byte("testPaasToken"),
+	})
+
+	tenantSecret := clientSecret(dkBase.OneAgent().GetTenantSecret(), dkBase.Namespace, map[string][]byte{
+		"tenant-token": []byte("token"),
+	})
+
+	t.Run("default 1 == no node-image-pull + csi enabled => only init-secret", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+
+		clt := fake.NewClientWithIndex(
+			tokenSecret,
+			dk,
+			namespaces[0], namespaces[1],
+		)
+		r := reconciler{client: clt, apiReader: clt, dk: dk}
+
+		err := r.generateCorrectInitSecret(ctx)
+		require.NoError(t, err)
+
+		for _, ns := range namespaces {
+			assertSecretFound(t, clt, consts.AgentInitSecretName, ns.Name)
+			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
+		}
+
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+	})
+
+	t.Run("default 2 == no node-image-pull + no csi enabled => only init-secret", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := dkBase.DeepCopy()
+
+		clt := fake.NewClientWithIndex(
+			tokenSecret,
+			dk,
+			namespaces[0], namespaces[1],
+		)
+		r := reconciler{client: clt, apiReader: clt, dk: dk}
+
+		err := r.generateCorrectInitSecret(ctx)
+		require.NoError(t, err)
+
+		for _, ns := range namespaces {
+			assertSecretFound(t, clt, consts.AgentInitSecretName, ns.Name)
+			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
+		}
+
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+	})
+
+	t.Run("node-image-pull + csi enabled => both init-secret and bootstrapper-secret", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+		dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureNodeImagePull: "true",
+		}
+
+		clt := fake.NewClientWithIndex(
+			tokenSecret,
+			tenantSecret,
+			dk,
+			namespaces[0], namespaces[1],
+		)
+
+		dtClient := dtclientmock.NewClient(t)
+		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+
+		r := reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
+
+		err := r.generateCorrectInitSecret(ctx)
+		require.NoError(t, err)
+
+		for _, ns := range namespaces {
+			assertSecretFound(t, clt, consts.AgentInitSecretName, ns.Name)
+			assertSecretFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
+		}
+
+		assertSecretFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+	})
+
+	t.Run("node-image-pull + csi not enabled => only bootstrapper-secret", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := dkBase.DeepCopy()
+		dk.Annotations = map[string]string{
+			dynakube.AnnotationFeatureNodeImagePull: "true",
+		}
+
+		clt := fake.NewClientWithIndex(
+			tokenSecret,
+			tenantSecret,
+			dk,
+			namespaces[0], namespaces[1],
+		)
+
+		dtClient := dtclientmock.NewClient(t)
+		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+
+		r := reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
+
+		err := r.generateCorrectInitSecret(ctx)
+		require.NoError(t, err)
+
+		for _, ns := range namespaces {
+			assertSecretNotFound(t, clt, consts.AgentInitSecretName, ns.Name)
+			assertSecretFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
+		}
+
+		assertSecretFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+	})
+}
+
+func TestCleanupOneAgentInjection(t *testing.T) {
+	ctx := context.Background()
+	dkBase := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-dynakube",
+			Namespace: "my-dynatrace",
+		},
+		Spec: dynakube.DynaKubeSpec{},
+	}
+
+	t.Run("remove everything", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+		namespaces := []*corev1.Namespace{
+			clientInjectedNamespace("ns-1", dk.Name),
+			clientInjectedNamespace("ns-2", dk.Name),
+		}
+
+		setCodeModulesInjectionCreatedCondition(dk.Conditions())
+
+		clt := fake.NewClientWithIndex(
+			clientSecret(consts.AgentInitSecretName, namespaces[0].Name, nil),
+			clientSecret(consts.AgentInitSecretName, namespaces[1].Name, nil),
+			clientSecret(consts.BootstrapperInitSecretName, namespaces[0].Name, nil),
+			clientSecret(consts.BootstrapperInitSecretName, namespaces[1].Name, nil),
+			clientSecret(bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace, nil),
+			dk,
+			namespaces[0], namespaces[1],
+		)
+		r := reconciler{client: clt, apiReader: clt, dk: dk}
+
+		r.cleanupOneAgentInjection(ctx)
+
+		for _, ns := range namespaces {
+			assertSecretNotFound(t, clt, consts.AgentInitSecretName, ns.Name)
+			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
+		}
+
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+
+		assert.Empty(t, dk.Conditions())
 	})
 }
 

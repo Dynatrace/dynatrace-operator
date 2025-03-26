@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
@@ -29,6 +30,88 @@ const (
 	testDynakubeName  = "test-dynakube"
 	customImage       = "custom-image"
 )
+
+func TestIsEnabled(t *testing.T) {
+	type testCase struct {
+		title      string
+		podMods    func(*corev1.Pod)
+		dkMods     func(*dynakube.DynaKube)
+		withCSI    bool
+		withoutCSI bool
+	}
+
+	cases := []testCase{
+		{
+			title:      "nothing enabled => not enabled",
+			podMods:    func(p *corev1.Pod) {},
+			dkMods:     func(dk *dynakube.DynaKube) {},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+
+		{
+			title:   "only OA enabled, without FF => not enabled",
+			podMods: func(p *corev1.Pod) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+			},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+
+		{
+			title:   "OA + FF enabled => enabled with no csi",
+			podMods: func(p *corev1.Pod) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{dynakube.AnnotationFeatureNodeImagePull: "true"}
+			},
+			withCSI:    false,
+			withoutCSI: true,
+		},
+		{
+			title: "OA + FF enabled + correct Volume-Type => enabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{oacommon.AnnotationVolumeType: oacommon.EphemeralVolumeType}
+			},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{dynakube.AnnotationFeatureNodeImagePull: "true"}
+			},
+			withCSI:    true,
+			withoutCSI: true,
+		},
+		{
+			title: "OA + FF enabled + incorrect Volume-Type => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{oacommon.AnnotationVolumeType: oacommon.CSIVolumeType}
+			},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{dynakube.AnnotationFeatureNodeImagePull: "true"}
+			},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+	}
+	for _, test := range cases {
+		t.Run(test.title, func(t *testing.T) {
+			pod := &corev1.Pod{}
+			test.podMods(pod)
+
+			dk := &dynakube.DynaKube{}
+			test.dkMods(dk)
+
+			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk}}
+
+			assert.Equal(t, test.withCSI, IsEnabled(req))
+
+			installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+			assert.Equal(t, test.withoutCSI, IsEnabled(req))
+		})
+	}
+}
 
 func TestHandle(t *testing.T) {
 	ctx := context.Background()
