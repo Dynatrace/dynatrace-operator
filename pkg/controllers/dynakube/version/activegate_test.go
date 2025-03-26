@@ -47,7 +47,7 @@ func TestActiveGateUpdater(t *testing.T) {
 		assert.Equal(t, "activegate", updater.Name())
 		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dk.Spec.ActiveGate.Image, updater.CustomImage())
-		assert.Equal(t, "", updater.CustomVersion())
+		assert.Empty(t, updater.CustomVersion())
 		assert.False(t, updater.IsAutoUpdateEnabled())
 		imageInfo, err := updater.LatestImageInfo(ctx)
 		require.NoError(t, err)

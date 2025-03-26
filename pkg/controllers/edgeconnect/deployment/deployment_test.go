@@ -64,7 +64,7 @@ func Test_buildAppLabels(t *testing.T) {
 
 	t.Run("Check version label set correctly", func(t *testing.T) {
 		labels := buildAppLabels(ec)
-		assert.Equal(t, "", labels.Version)
+		assert.Empty(t, labels.Version)
 	})
 }
 

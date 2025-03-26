@@ -36,7 +36,7 @@ func proxyValueTester(t *testing.T) {
 	emptyDk := dynakube.DynaKube{}
 	proxy, err = emptyDk.Proxy(context.TODO(), nil)
 	require.NoError(t, err)
-	assert.Equal(t, "", proxy)
+	assert.Empty(t, proxy)
 }
 
 func proxyValueFromTester(t *testing.T) {
@@ -57,5 +57,5 @@ func proxyValueFromTester(t *testing.T) {
 	kubeReader = fake.NewClient()
 	proxy, err = dk.Proxy(context.TODO(), kubeReader)
 	require.Error(t, err)
-	assert.Equal(t, "", proxy)
+	assert.Empty(t, proxy)
 }

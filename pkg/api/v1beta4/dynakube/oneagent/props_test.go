@@ -63,7 +63,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 func TestDefaultOneAgentImage(t *testing.T) {
 	t.Run("OneAgentImage with no API URL", func(t *testing.T) {
 		oneAgent := OneAgent{}
-		assert.Equal(t, "", oneAgent.GetDefaultImage(""))
+		assert.Empty(t, oneAgent.GetDefaultImage(""))
 	})
 
 	t.Run("OneAgentImage adds raw postfix", func(t *testing.T) {
@@ -96,7 +96,7 @@ func TestCustomOneAgentImage(t *testing.T) {
 
 	t.Run("OneAgentImage with no custom image", func(t *testing.T) {
 		oneAgent := OneAgent{Spec: &Spec{ClassicFullStack: &HostInjectSpec{}}}
-		assert.Equal(t, "", oneAgent.GetCustomImage())
+		assert.Empty(t, oneAgent.GetCustomImage())
 	})
 }
 
@@ -287,10 +287,10 @@ func TestOneAgentArgumentsMap(t *testing.T) {
 		assert.Equal(t, "prop3=val3", argMap["--set-host-property"][5])
 
 		require.Len(t, argMap["--set-no-proxy"], 1)
-		assert.Equal(t, "", argMap["--set-no-proxy"][0])
+		assert.Empty(t, argMap["--set-no-proxy"][0])
 
 		require.Len(t, argMap["--set-proxy"], 1)
-		assert.Equal(t, "", argMap["--set-proxy"][0])
+		assert.Empty(t, argMap["--set-proxy"][0])
 
 		require.Len(t, argMap["--set-tenant"], 1)
 		assert.Equal(t, "$(DT_TENANT)", argMap["--set-tenant"][0])

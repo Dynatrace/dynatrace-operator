@@ -31,7 +31,7 @@ func TestCertsValidation(t *testing.T) {
 
 		// No changes should have been applied.
 		assert.Equal(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCert]))
-		assert.Equal(t, "", string(firstCerts.Data[RootCertOld]))
+		assert.Empty(t, string(firstCerts.Data[RootCertOld]))
 		assert.Equal(t, string(firstCerts.Data[RootKey]), string(newCerts.Data[RootKey]))
 		assert.Equal(t, string(firstCerts.Data[ServerCert]), string(newCerts.Data[ServerCert]))
 		assert.Equal(t, string(firstCerts.Data[ServerKey]), string(newCerts.Data[ServerKey]))
@@ -46,7 +46,7 @@ func TestCertsValidation(t *testing.T) {
 
 		// Server certificates should have been updated.
 		assert.Equal(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCert]))
-		assert.Equal(t, "", string(firstCerts.Data[RootCertOld]))
+		assert.Empty(t, string(firstCerts.Data[RootCertOld]))
 		assert.Equal(t, string(firstCerts.Data[RootKey]), string(newCerts.Data[RootKey]))
 		assert.NotEqual(t, string(firstCerts.Data[ServerCert]), string(newCerts.Data[ServerCert]))
 		assert.NotEqual(t, string(firstCerts.Data[ServerKey]), string(newCerts.Data[ServerKey]))

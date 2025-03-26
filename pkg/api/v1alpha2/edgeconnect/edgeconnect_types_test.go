@@ -25,6 +25,6 @@ func TestHostMappings(t *testing.T) {
 				To:   KubernetesDefaultDNS,
 			},
 		}
-		require.EqualValues(t, expected, got)
+		require.Equal(t, expected, got)
 	})
 }

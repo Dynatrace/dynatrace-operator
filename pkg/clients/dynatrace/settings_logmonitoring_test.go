@@ -38,7 +38,7 @@ func TestDynatraceClient_CreateLogMonitoringSetting(t *testing.T) {
 		require.NotNil(t, actual)
 		require.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
-		assert.EqualValues(t, testObjectID, actual)
+		assert.Equal(t, testObjectID, actual)
 	})
 	t.Run("create settings logmonitoring settings with custom rule matchers", func(t *testing.T) {
 		// arrange
@@ -72,6 +72,6 @@ func TestDynatraceClient_CreateLogMonitoringSetting(t *testing.T) {
 		require.NotNil(t, actual)
 		require.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
-		assert.EqualValues(t, testObjectID, actual)
+		assert.Equal(t, testObjectID, actual)
 	})
 }
