@@ -1,343 +1,318 @@
-linters-settings:
-  misspell:
-    locale: US
-  staticcheck:
-    checks:
-      - all
-  govet:
-    enable:
-      - fieldalignment
-    disable:
-      # Disable checking for copied locks since it causes a lot of annoying false-positives
-      - copylocks
-  goconst:
-    ignore-tests: true
-  gosec:
-    excludes:
-      - G101 # "pattern": "(?i)passwd|pass|password|pwd|secret|private_key|token"
-      - G305 # File traversal when extracting zip/tar archive
-  revive:
-    enable-all-rules: true
-    rules:
-      - name: cognitive-complexity
-        arguments: [20] # max allowed cognitive complexity factor
-      - name: function-result-limit
-        arguments: [3]
-      - name: function-length
-        # following values set to avoid further regressions:
-        arguments: [52, 468]  # the maximum allowed statements and lines. 0 disables the check
-      - name: cyclomatic
-        arguments: [12]
-      - name: banned-characters
-        disabled: true
-      - name: file-header
-        disabled: true
-      - name: max-public-structs
-        disabled: true
-      - name: argument-limit
-        arguments: [5]
-      - name: line-length-limit
-        disabled: true
-      - name: add-constant
-        disabled: true
-      - name: var-naming
-        disabled: true
-      - name: unused-receiver
-        disabled: true
-      - name: import-shadowing
-        disabled: true
-      - name: modifies-value-receiver
-        disabled: true
-      - name: bare-return
-        disabled: true
-      - name: bare-return
-        disabled: true
-      - name: if-return
-        disabled: true
-      - name: redefines-builtin-id
-        disabled: true
-      - name: context-keys-type
-        disabled: true
-      - name: unused-parameter
-        disabled: true
-      - name: time-naming
-        disabled: true
-      - name: errorf
-        disabled: true
-      - name: unexported-return
-        disabled: true
-      - name: unhandled-error
-        disabled: true
-      - name: confusing-naming
-        disabled: true
-      - name: indent-error-flow
-        disabled: true
-      - name: early-return
-        disabled: true
-      - name: bool-literal-in-expr
-        disabled: true
-      - name: error-strings
-        disabled: true
-      - name: empty-lines
-        disabled: true
-      - name: flag-parameter
-        disabled: true
-      - name: blank-imports
-        disabled: true
-      - name: increment-decrement
-        disabled: true
-      - name: context-as-argument
-        disabled: true
-      - name: confusing-results
-        disabled: true
-      - name: receiver-naming
-        disabled: true
-      - name: nested-structs
-        disabled: true
-      - name: struct-tag
-        disabled: true
-      - name: error-naming
-        disabled: true
-      - name: range-val-address
-        disabled: true
-      - name: import-alias-naming
-        arguments: ["^[a-z][\\w]{0,}$"]
-      - name: unchecked-type-assertion
-        disabled: true
-  depguard:
-    rules:
-      all:
-        files:
-          - $all
-        allow:
-          - $gostd
-          # Approved orgs.
-          - "github.com/Dynatrace"
-          - "github.com/container-storage-interface"
-          - "github.com/containers"
-          - "github.com/klauspost"
-          - "github.com/opencontainers"
-          - "github.com/prometheus"
-          - "istio.io"
-          - "k8s.io"
-          - "sigs.k8s.io"
-          - "golang.org"
-          - "go.opentelemetry.io"
-          - "go.uber.org"
-          - "gopkg.in"
-          - "google.golang.org"
-
-          # Approved packages.
-          - "github.com/mattn/go-sqlite3"
-          - "github.com/pkg/errors"
-          - "github.com/spf13/afero"
-          - "github.com/spf13/cobra" # For CLI
-          - "github.com/evanphx/json-patch"
-          - "github.com/go-logr/logr"
-          - "github.com/stretchr/testify"
-          - "github.com/google/go-containerregistry"
-          - "github.com/docker/cli"
-          - "github.com/go-gormigrate/gormigrate"
-          - "github.com/google/uuid"
-
-          # Allowed packages in container-based builder.
-        deny:
-          # TODO: (andrii) Potentially uncomment it in future, but requires some refactoring
-          # - pkg: "reflect"
-          #   desc: Please don't use reflect package
-          - pkg: "unsafe"
-            desc: Please don't use unsafe package
-
-      main:
-        files:
-          - $all
-          # Don't allow go-cmp in non-test code.
-          # NOTE: test code is allowed to use github.com/google/go-cmp (there is no
-          #       deny for it) but non-test code is not.
-          - "!$test"
-          - "!test/**/*.go"
-          - "!**/testing/**"
-          - "!**/*mock*/**/.go"
-        deny:
-          - pkg: "github.com/google/go-cmp"
-            desc: Please don't use go-cmp for non-test code.
-  mnd:
-    checks:
-      - argument
-      - case
-      - condition
-      - operation
-      - return
-    ignored-files:
-      - test*.go,testing.go
-    ignored-functions:
-      - '^time\.'
-      - strings.SplitN
-      - '^wait\.'
-      - rand.WithLength
-      - '^require\.'
-      - WaitForCondition
-      - '^int*'
-    ignored-numbers:
-      - '0666'
-      - '0644'
-      - '0755'
-      - '0770'
-      - '0755'
-      - '0000'
-      - '1001'
-      - '1000'
-      - '1234'
-  dupl:
-    threshold: 150
-  godot:
-    exclude:
-      - '^\ \+'
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-  - asasalint                 # Check for pass []any as any in variadic func(...any).
-  - asciicheck                # Checks that all code identifiers does not have non-ASCII symbols in the name.
-  - bidichk                   # Checks for dangerous unicode character sequences.
-  - copyloopvar               # Copyloopvar is a linter detects places where loop variables are copied.
-  - decorder                  # Check declaration order and count of types, constants, variables and functions.
-  - depguard                  # Go linter that checks if package imports are in a list of acceptable packages
-  - dogsled                   # Checks assignments with too many blank identifiers (e.g. x, _, _, _, := f())
-  - dupl                      # Tool for code clone detection.
-  - durationcheck             # Check for two durations multiplied together.
-  - errorlint                 # Errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
-  - forbidigo                 # Forbids identifiers.
-  - gci                       # Gci controls Go package import order and makes it always deterministic.
-  - gocheckcompilerdirectives # Checks that go compiler directive comments (//go:) are valid.
-  - gochecksumtype            # Run exhaustiveness checks on Go "sum types"
-  - gocognit                  # Computes and checks the cognitive complexity of functions.
-  - goconst                   # Finds repeated strings that could be replaced by a constant
-  - gocritic                  # Provides diagnostics that check for bugs, performance and style issues.
-  - gocyclo                   # Computes and checks the cyclomatic complexity of functions.	complexity.
-  - godot                     # Check if comments end in a period.
-  - gofmt                     # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
-  - goheader                  # Checks is file header matches to pattern.
-  - mnd                       # An analyzer to detect magic numbers.
-  - gomoddirectives           # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
-  - gomodguard                # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
-  - goprintffuncname          # Checks that printf-like functions are named with f at the end.
-  - gosec                     # Inspects source code for security problems
-  - gosimple                  # Linter for Go source code that specializes in simplifying code.
-  - gosmopolitan              # Report certain i18n/l10n anti-patterns in your Go codebase.
-  - govet                     # Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
-  - grouper                   # Analyze expression groups.
-  - importas                  # Enforces consistent import aliases.
-  - ineffassign               # Detects when assignments to existing variables are not used
-  - intrange                  # Intrange is a linter to find places where for loops could make use of an integer range.
-  - loggercheck               # Checks key value pairs for common logger libraries (kitlog,klog,logr,zap).
-  - makezero                  # Finds slice declarations with non-zero initial length.
-  - mirror                    # Reports wrong mirror patterns of bytes/strings usage.
-  - misspell                  # Finds commonly misspelled English words in comments.
-  - nakedret                  # Checks that functions with naked returns are not longer than a maximum size (can be zero).
-  - nilerr                    # Finds the code that returns nil even if it checks that the error is not nil.
-  - nilnil                    # Checks that there is no simultaneous return of nil error and an invalid value.
-  - nlreturn                  # Nlreturn checks for a new line before return and branch statements to increase code clarity.
-  - noctx                     # Finds sending http request without context.Context.
-  - nolintlint                # Reports ill-formed or insufficient nolint directives.
-  - nosprintfhostport         # Checks for misuse of Sprintf to construct a host with port in a URL.
-  - perfsprint                # Checks that fmt.Sprintf can be replaced with a faster alternative.
-  - prealloc                  # Finds slice declarations that could potentially be pre-allocated
-  - predeclared               # Find code that shadows one of Go's predeclared identifiers.
-  - protogetter               # Reports direct reads from proto message fields when getters should be used.
-  - reassign                  # Checks that package variables are not reassigned.
-  - revive                    # Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint.
-  - sloglint                  # Ensure consistent code style when using log/slog.
-  - staticcheck               # It's a set of rules from staticcheck. It's not the same thing as the staticcheck binary. The author of staticcheck doesn't support or approve the use of staticcheck as a library inside golangci-lint.
-  - tenv                      # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
-  - testableexamples          # Linter checks if examples are testable (have an expected output).
-  - testifylint               # Checks usage of github.com/stretchr/testify.
-  - thelper                   # Thelper detects tests helpers which is not start with t.Helper() method.
-  - tparallel                 # tparallel detects inappropriate usage of t.Parallel() method in your Go test codes
-  - unconvert                 # Remove unnecessary type conversions
-  - unparam                   # Reports unused function parameters
-  - unused                    # Checks Go code for unused constants, variables, functions and types
-  - usestdlibvars             # A linter that detect the possibility to use variables/constants from the Go standard library.
-  - wastedassign              # wastedassign finds wasted assignment statements.
-  - whitespace                # Tool for detection of leading and trailing whitespace.
-  - wsl                       # Add or remove empty lines.
-  - zerologlint               # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
-
-# Blocked:
-# false positive -> https://github.com/timakin/bodyclose/issues/51
-# - bodyclose         # Checks whether HTTP response body is closed successfully.
-
-# TODO: Requires some code changes before enabling:
-# - contextcheck      # Check whether the function uses a non-inherited context.
-# - cyclop            # Checks function and package cyclomatic complexity.
-# - dupword           # Checks for duplicate words in the source code.	comment
-# - errcheck          # enabled by default and recommended
-# - errchkjson        # Checks types passed to the json encoding functions. Reports unsupported types and reports occations, where the check for the returned error can be omitted.
-# - errname           # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error.
-# - execinquery       # Execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds.
-# - exhaustruct       # Checks if all structure fields are initialized.
-# - exportloopref     # Checks for pointers to enclosing loop variables.
-# - forcetypeassert   # Finds forced type assertions.
-# - funlen            # Tool for detection of long functions.
-# - gochecknoglobals  # Check that no global variables exist.
-# - gochecknoinits    # Checks that no init functions are present in Go code.
-# - goerr113          # Go linter to check the errors handling expressions.
-# - gofumpt           # Gofumpt checks whether code was gofumpt-ed.
-# - inamedparam       # reports interfaces with unnamed method parameters.
-# - ireturn           # Accept Interfaces, Return Concrete Types.
-# - maintidx          # Maintidx measures the maintainability index of each function.
-# - musttag           # Enforce field tags in (un)marshaled structs.
-# - nestif            # Reports deeply nested if statements.
-# - nonamedreturns    # Reports all named returns.
-# - paralleltest      # Detects missing usage of t.Parallel() method in your Go test.
-#  - promlinter       # Check Prometheus metrics naming via promlint.
-# - rowserrcheck      # Checks whether Rows.Err of rows is checked successfully.
-# - sqlclosecheck     # Checks that sql.Rows and sql.Stmt are closed.
-# - wrapcheck         # Checks that errors returned from external packages are wrapped.
-# TODO: Need to discuss/decide/remove
-# - exhaustive     # Check exhaustiveness of enum switch statements.
-# - godox          # Tool for detection of FIXME, TODO and other comment keywords.
-# - inamedparam    # reports interfaces with unnamed method parameters.
-# - interfacebloat # A linter that checks the number of methods inside an interface.
-# - lll            # Reports long lines.
-# - stylecheck     # Stylecheck is a replacement for golint.
-# - tagliatelle    # Checks the struct tags.
-# - testpackage    # Linter that makes you use a separate _test package.
-
-issues:
-  exclude-dirs:
-    - pkg/api/v1alpha1/dynakube # legacy version, should not be changed
-  exclude-rules:
-    # Exclude duplicate code and function length and complexity checking in test
-    # files (due to common repeats and long functions in test code)
-    - path: _(test|gen)\.go
-      linters:
-        - dupl
-        - wsl
-        - perfsprint
-    - path: (test/*)
-      linters:
-        - noctx
-        - wsl
-        - thelper
-        - perfsprint
-        - govet
-    - path: _(test|gen)\.go
-      linters:
-        - govet
-        - dupl
-    - linters:
-        - gosec
-      path: pkg/webhook/validation/proxy_url_test.go
-    - linters:
-        - gosec
-      path: pkg/ingestendpoint/secret_test.go
-    - linters:
-        - unparam
-      text: always receives
-    - linters:
-        - revive
-      path: pkg/clients/dynatrace # it's awaiting refactoring
-    # Run some linter only for test files by excluding its issues for everything else.
-    - path-except: 'pkg/api/(.+)\.go'
-      linters:
-        - godot
+    - asasalint
+    - asciicheck
+    - bidichk
+    - copyloopvar
+    - decorder
+    - depguard
+    - dogsled
+    - dupl
+    - durationcheck
+    - errorlint
+    - forbidigo
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - goheader
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosmopolitan
+    - govet
+    - grouper
+    - importas
+    - ineffassign
+    - intrange
+    - loggercheck
+    - makezero
+    - mirror
+    - misspell
+    - mnd
+    - nakedret
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint
+    - nosprintfhostport
+    - perfsprint
+    - prealloc
+    - predeclared
+    - protogetter
+    - reassign
+    - revive
+    - sloglint
+    - staticcheck
+    - testableexamples
+    - testifylint
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+    - wsl
+    - zerologlint
+  settings:
+    depguard:
+      rules:
+        all:
+          files:
+            - $all
+          allow:
+            - $gostd
+            - github.com/Dynatrace
+            - github.com/container-storage-interface
+            - github.com/containers
+            - github.com/klauspost
+            - github.com/opencontainers
+            - github.com/prometheus
+            - istio.io
+            - k8s.io
+            - sigs.k8s.io
+            - golang.org
+            - go.opentelemetry.io
+            - go.uber.org
+            - gopkg.in
+            - google.golang.org
+            - github.com/mattn/go-sqlite3
+            - github.com/pkg/errors
+            - github.com/spf13/afero
+            - github.com/spf13/cobra
+            - github.com/evanphx/json-patch
+            - github.com/go-logr/logr
+            - github.com/stretchr/testify
+            - github.com/google/go-containerregistry
+            - github.com/docker/cli
+            - github.com/go-gormigrate/gormigrate
+            - github.com/google/uuid
+          deny:
+            - pkg: unsafe
+              desc: Please don't use unsafe package
+        main:
+          files:
+            - $all
+            - '!$test'
+            - '!test/**/*.go'
+            - '!**/testing/**'
+            - '!**/*mock*/**/.go'
+          deny:
+            - pkg: github.com/google/go-cmp
+              desc: Please don't use go-cmp for non-test code.
+    dupl:
+      threshold: 150
+    godot:
+      exclude:
+        - ^\ \+
+    gosec:
+      excludes:
+        - G101
+        - G305
+    govet:
+      enable:
+        - fieldalignment
+      disable:
+        - copylocks
+    misspell:
+      locale: US
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - operation
+        - return
+      ignored-numbers:
+        - "0666"
+        - "0644"
+        - "0755"
+        - "0770"
+        - "0755"
+        - "0000"
+        - "1001"
+        - "1000"
+        - "1234"
+      ignored-files:
+        - test*.go,testing.go
+      ignored-functions:
+        - ^time\.
+        - strings.SplitN
+        - ^wait\.
+        - rand.WithLength
+        - ^require\.
+        - WaitForCondition
+        - ^int*
+    revive:
+      enable-all-rules: true
+      rules:
+        - name: cognitive-complexity
+          arguments:
+            - 20
+        - name: function-result-limit
+          arguments:
+            - 3
+        - name: function-length
+          arguments:
+            - 52
+            - 468
+        - name: cyclomatic
+          arguments:
+            - 12
+        - name: banned-characters
+          disabled: true
+        - name: file-header
+          disabled: true
+        - name: max-public-structs
+          disabled: true
+        - name: argument-limit
+          arguments:
+            - 5
+        - name: line-length-limit
+          disabled: true
+        - name: add-constant
+          disabled: true
+        - name: var-naming
+          disabled: true
+        - name: unused-receiver
+          disabled: true
+        - name: import-shadowing
+          disabled: true
+        - name: modifies-value-receiver
+          disabled: true
+        - name: bare-return
+          disabled: true
+        - name: bare-return
+          disabled: true
+        - name: if-return
+          disabled: true
+        - name: redefines-builtin-id
+          disabled: true
+        - name: context-keys-type
+          disabled: true
+        - name: unused-parameter
+          disabled: true
+        - name: time-naming
+          disabled: true
+        - name: errorf
+          disabled: true
+        - name: unexported-return
+          disabled: true
+        - name: unhandled-error
+          disabled: true
+        - name: confusing-naming
+          disabled: true
+        - name: indent-error-flow
+          disabled: true
+        - name: early-return
+          disabled: true
+        - name: bool-literal-in-expr
+          disabled: true
+        - name: error-strings
+          disabled: true
+        - name: empty-lines
+          disabled: true
+        - name: flag-parameter
+          disabled: true
+        - name: blank-imports
+          disabled: true
+        - name: increment-decrement
+          disabled: true
+        - name: context-as-argument
+          disabled: true
+        - name: confusing-results
+          disabled: true
+        - name: receiver-naming
+          disabled: true
+        - name: nested-structs
+          disabled: true
+        - name: struct-tag
+          disabled: true
+        - name: error-naming
+          disabled: true
+        - name: range-val-address
+          disabled: true
+        - name: import-alias-naming
+          arguments:
+            - ^[a-z][\w]{0,}$
+        - name: unchecked-type-assertion
+          disabled: true
+    staticcheck:
+      checks:
+        - all
+        - "-ST*" # this is stylecheck, but has been rolled into staticcheck
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - perfsprint
+          - wsl
+        path: _(test|gen)\.go
+      - linters:
+          - govet
+          - noctx
+          - perfsprint
+          - thelper
+          - wsl
+        path: (test/*)
+      - linters:
+          - dupl
+          - govet
+        path: _(test|gen)\.go
+      - linters:
+          - gosec
+        path: pkg/webhook/validation/proxy_url_test.go
+      - linters:
+          - gosec
+        path: pkg/ingestendpoint/secret_test.go
+      - linters:
+          - unparam
+        text: always receives
+      - linters:
+          - revive
+        path: pkg/clients/dynatrace
+      - linters:
+          - godot
+        path-except: pkg/api/(.+)\.go
+      - linters:
+          - goconst
+        path: (.+)_test\.go
+    paths:
+      - pkg/api/v1alpha1/dynakube
+      - pkg/api/v1alpha1/edgeconnect
+      - pkg/api/v1beta1/dynakube
+      - pkg/api/v1beta2/dynakube
+      - pkg/api/v1beta3/dynakube
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - pkg/api/v1alpha1/dynakube
+      - pkg/api/v1alpha1/edgeconnect
+      - pkg/api/v1beta1/dynakube
+      - pkg/api/v1beta2/dynakube
+      - pkg/api/v1beta3/dynakube
+      - third_party$
+      - builtin$
+      - examples$
