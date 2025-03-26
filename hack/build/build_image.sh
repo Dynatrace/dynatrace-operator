@@ -24,7 +24,7 @@ mkdir -p third_party_licenses
 touch dynatrace-operator-bin-sbom.cdx.json
 
 if ! command -v podman 2>/dev/null; then
-  echo "We don't support anything except podman to build images"
+  echo "Only podman is supported to build images"
   exit 1
 fi
 
