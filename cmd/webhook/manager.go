@@ -26,22 +26,8 @@ const (
 	readinessEndpointName         = "/" + readyzEndpointName
 )
 
-type Provider struct {
-	certificateDirectory string
-	certificateFileName  string
-	keyFileName          string
-}
-
-func NewProvider(certificateDirectory string, keyFileName string, certificateFileName string) Provider {
-	return Provider{
-		certificateDirectory: certificateDirectory,
-		certificateFileName:  certificateFileName,
-		keyFileName:          keyFileName,
-	}
-}
-
-func (provider Provider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
-	controlManager, err := ctrl.NewManager(config, provider.createOptions(namespace))
+func createManager(config *rest.Config, namespace, certificateDirectory, certificateFileName, keyFileName string) (manager.Manager, error) {
+	controlManager, err := ctrl.NewManager(config, createOptions(namespace))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -56,10 +42,10 @@ func (provider Provider) CreateManager(namespace string, config *rest.Config) (m
 		return nil, errors.WithStack(err)
 	}
 
-	return provider.setupWebhookServer(controlManager)
+	return setupWebhookServer(controlManager, certificateDirectory, certificateFileName, keyFileName)
 }
 
-func (provider Provider) createOptions(namespace string) ctrl.Options {
+func createOptions(namespace string) ctrl.Options {
 	port := defaultPort
 	webhookPortEnv := os.Getenv("WEBHOOK_PORT")
 
@@ -100,7 +86,7 @@ func (provider Provider) createOptions(namespace string) ctrl.Options {
 	}
 }
 
-func (provider Provider) setupWebhookServer(mgr manager.Manager) (manager.Manager, error) {
+func setupWebhookServer(mgr manager.Manager, certificateDirectory, certificateFileName, keyFileName string) (manager.Manager, error) {
 	tlsConfig := func(config *tls.Config) {
 		config.MinVersion = tls.VersionTLS13
 	}
@@ -110,9 +96,9 @@ func (provider Provider) setupWebhookServer(mgr manager.Manager) (manager.Manage
 		return nil, errors.WithStack(errors.New("Unable to cast webhook server"))
 	}
 
-	webhookServer.Options.CertDir = provider.certificateDirectory
-	webhookServer.Options.KeyName = provider.keyFileName
-	webhookServer.Options.CertName = provider.certificateFileName
+	webhookServer.Options.CertDir = certificateDirectory
+	webhookServer.Options.KeyName = keyFileName
+	webhookServer.Options.CertName = certificateFileName
 	webhookServer.Options.TLSOpts = []func(*tls.Config){tlsConfig}
 
 	return mgr, nil

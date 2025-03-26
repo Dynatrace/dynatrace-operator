@@ -27,8 +27,8 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.5-1741861735@sha256:8a6071b01366611fd9433bf9688f5c3150de819874fa2c06c4fcd4c25ea26f03 AS base
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.5-1741850090@sha256:8d53b60617e53e4dbd6c0d485c569801f48dbeb40b48c8424a67e33a07320968 AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.5-1742939100@sha256:414cfa255ea10eaef4528a26d5618eb67cf487b635ee20f8f14b9317bfd6a4be AS base
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.5-1742918310@sha256:a1804302f6f53e04cc1c6b20bc2204d5c9ae6e5a664174b38fbeeb30f7983d4e AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
