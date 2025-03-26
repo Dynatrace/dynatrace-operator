@@ -15,6 +15,7 @@ import (
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
+	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -64,6 +65,7 @@ func TestStandard(t *testing.T) {
 		classic.Feature(t),
 		classicToCloud.Feature(t),
 		cloudToClassic.Feature(t),
+		logmonitoring.Feature(t),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)

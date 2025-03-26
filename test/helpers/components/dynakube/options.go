@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -178,5 +179,22 @@ func WithExtensionsEECImageRefSpec(repo, tag string) Option {
 func WithCustomPullSecret(secretName string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.CustomPullSecret = secretName
+	}
+}
+
+func WithLogMonitoring() Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.LogMonitoring = &logmonitoring.Spec{}
+	}
+}
+
+func WithLogMonitoringImageRefSpec(repo, tag string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			ImageRef: image.Ref{
+				Repository: repo,
+				Tag:        tag,
+			},
+		}
 	}
 }
