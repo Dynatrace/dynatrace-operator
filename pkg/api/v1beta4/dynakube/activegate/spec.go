@@ -66,11 +66,10 @@ type ActiveGate struct {
 // dependencies is a collection of possible other feature/components that need an ActiveGate, but is not directly configured in the ActiveGate section.
 type dependencies struct {
 	extensions bool
-	otlpIngest bool
 }
 
 func (d dependencies) Any() bool {
-	return d.extensions || d.otlpIngest // kspm is a dependency too, but blocked by validation webhook to not run standalone
+	return d.extensions // kspm is a dependency too, but blocked by validation webhook to not run standalone
 }
 
 // +kubebuilder:object:generate=true

@@ -278,7 +278,7 @@ func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 }
 
 func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {
-	return (dk.TelemetryIngest().IsEnabled() || dk.IsOTLPingestEnabled()) && !dk.Spec.ActiveGate.UseEphemeralVolume
+	return dk.TelemetryIngest().IsEnabled() && !dk.Spec.ActiveGate.UseEphemeralVolume
 }
 
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {
