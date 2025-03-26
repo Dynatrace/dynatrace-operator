@@ -228,7 +228,7 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		assert.NotEmpty(t, spec.Containers)
 		assert.NotEmpty(t, spec.Affinity)
-		assert.Equal(t, len(dk.PullSecretNames()), len(spec.ImagePullSecrets))
+		assert.Len(t, dk.PullSecretNames(), len(spec.ImagePullSecrets))
 		assert.Equal(t, dk.PullSecretNames()[0], spec.ImagePullSecrets[0].Name)
 	})
 

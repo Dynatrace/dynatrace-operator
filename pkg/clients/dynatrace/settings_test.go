@@ -39,7 +39,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		require.NotNil(t, actual)
 		require.NoError(t, err)
 		assert.Len(t, actual, 2)
-		assert.EqualValues(t, expected, actual)
+		assert.Equal(t, expected, actual)
 	})
 
 	t.Run("no monitored entities for this uuid exist", func(t *testing.T) {
@@ -61,7 +61,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		require.NotNil(t, actual)
 		require.NoError(t, err)
 		assert.Empty(t, actual)
-		assert.EqualValues(t, expected, actual)
+		assert.Equal(t, expected, actual)
 	})
 
 	t.Run("no monitored entities found because no kube-system uuid is provided", func(t *testing.T) {

@@ -34,7 +34,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		require.NotNil(t, actual)
 		require.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
-		assert.EqualValues(t, testObjectID, actual)
+		assert.Equal(t, testObjectID, actual)
 	})
 
 	t.Run(`create settings for the given monitored entity id`, func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		require.NotNil(t, actual)
 		require.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
-		assert.EqualValues(t, testObjectID, actual)
+		assert.Equal(t, testObjectID, actual)
 	})
 
 	t.Run(`don't create settings for the given monitored entity id because no kube-system uuid is provided`, func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestDynatraceClient_CreateOrUpdateAppKubernetesSetting(t *testing.T) {
 		require.NotNil(t, actual)
 		require.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
-		assert.EqualValues(t, testObjectID, actual)
+		assert.Equal(t, testObjectID, actual)
 	})
 
 	t.Run(`don't create app settings for the given monitored entity id because of api error`, func(t *testing.T) {
@@ -174,7 +174,7 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		// assert
 		require.NotNil(t, actual)
 		assert.Len(t, actual, 1)
-		assert.EqualValues(t, hierarchicalMonitoringSettingsSchemaVersion, actual[0].SchemaVersion)
+		assert.Equal(t, hierarchicalMonitoringSettingsSchemaVersion, actual[0].SchemaVersion)
 		assert.IsType(t, postKubernetesSettings{}, actual[0].Value)
 		assert.True(t, actual[0].Value.(postKubernetesSettings).Enabled)
 		bodyJson, err := json.Marshal(actual[0])
@@ -203,7 +203,7 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		// assert
 		require.NotNil(t, actual)
 		assert.Len(t, actual, 1)
-		assert.EqualValues(t, schemaVersionV1, actual[0].SchemaVersion)
+		assert.Equal(t, schemaVersionV1, actual[0].SchemaVersion)
 		assert.IsType(t, postKubernetesSettings{}, actual[0].Value)
 		assert.True(t, actual[0].Value.(postKubernetesSettings).Enabled)
 		bodyJson, err := json.Marshal(actual[0])

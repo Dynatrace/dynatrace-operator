@@ -84,11 +84,11 @@ func TestConfSectionHeader(t *testing.T) {
 	header := confSectionHeader("[general]")
 	assert.Equal(t, "general", header)
 	header = confSectionHeader("general")
-	assert.Equal(t, "", header)
+	assert.Empty(t, header)
 	header = confSectionHeader("key val")
-	assert.Equal(t, "", header)
+	assert.Empty(t, header)
 	header = confSectionHeader("")
-	assert.Equal(t, "", header)
+	assert.Empty(t, header)
 }
 
 func TestStoreConfFile(t *testing.T) {

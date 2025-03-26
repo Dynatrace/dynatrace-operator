@@ -82,7 +82,7 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 
 		hash := fnv.New32a()
 		// Hash write implements Write interface, but never return err, so let's ignore it
-		_, _ = hash.Write([]byte(fmt.Sprintf("%s-%s-%d", e.Protocol, e.Host, e.Port)))
+		_, _ = fmt.Fprintf(hash, "%s-%s-%d", e.Protocol, e.Host, e.Port)
 		communicationHosts[hash.Sum32()] = e
 	}
 

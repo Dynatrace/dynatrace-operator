@@ -289,12 +289,12 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var methodName string
 
-		switch {
-		case info.FullMethod == "/csi.v1.Node/NodePublishVolume":
+		switch info.FullMethod {
+		case "/csi.v1.Node/NodePublishVolume":
 			req := req.(*csi.NodePublishVolumeRequest)
 			methodName = "NodePublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.GetVolumeId())
-		case info.FullMethod == "/csi.v1.Node/NodeUnpublishVolume":
+		case "/csi.v1.Node/NodeUnpublishVolume":
 			req := req.(*csi.NodeUnpublishVolumeRequest)
 			methodName = "NodeUnpublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.GetVolumeId())
