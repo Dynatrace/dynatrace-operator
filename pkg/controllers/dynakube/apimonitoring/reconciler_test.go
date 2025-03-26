@@ -173,7 +173,7 @@ func TestReconcile(t *testing.T) {
 
 		// assert
 		require.NoError(t, err)
-		assert.Equal(t, "", actual)
+		assert.Empty(t, actual)
 	})
 }
 
@@ -191,7 +191,7 @@ func TestReconcileErrors(t *testing.T) {
 
 		// assert
 		require.Error(t, err)
-		assert.Equal(t, "", actual)
+		assert.Empty(t, actual)
 	})
 
 	t.Run("don't create setting when get entities api response is error", func(t *testing.T) {
@@ -203,7 +203,7 @@ func TestReconcileErrors(t *testing.T) {
 
 		// assert
 		require.Error(t, err)
-		assert.Equal(t, "", actual)
+		assert.Empty(t, actual)
 	})
 
 	t.Run("don't create setting when get settings api response is error", func(t *testing.T) {
@@ -215,7 +215,7 @@ func TestReconcileErrors(t *testing.T) {
 
 		// assert
 		require.Error(t, err)
-		assert.Equal(t, "", actual)
+		assert.Empty(t, actual)
 	})
 
 	t.Run("don't create setting when create settings api response is error", func(t *testing.T) {
@@ -227,7 +227,7 @@ func TestReconcileErrors(t *testing.T) {
 
 		// assert
 		require.Error(t, err)
-		assert.Equal(t, "", actual)
+		assert.Empty(t, actual)
 	})
 
 	t.Run("create settings successful in case of CreateOrUpdateKubernetesAppSetting error", func(t *testing.T) {

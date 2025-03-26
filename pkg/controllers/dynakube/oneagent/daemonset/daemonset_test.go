@@ -660,7 +660,7 @@ func TestPriorityClass(t *testing.T) {
 		dsBuilder := builder{}
 		priorityClassName := dsBuilder.priorityClassName()
 
-		assert.Equal(t, "", priorityClassName)
+		assert.Empty(t, priorityClassName)
 	})
 	t.Run("returns nodeselector", func(t *testing.T) {
 		dsBuilder := builder{

@@ -107,7 +107,7 @@ func TestTokens(t *testing.T) {
 		assert.Len(t, tokens.ApiToken().Features, 4)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.NoError(t, err, "")
+		assert.NoError(t, err)
 	})
 	t.Run("activegate enabled dynakube, no permissions in api token => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{}

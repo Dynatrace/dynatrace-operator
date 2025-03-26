@@ -150,7 +150,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, newSecret)
-		assert.EqualValues(t, certSecret.certificates.Data, newSecret.Data)
+		assert.Equal(t, certSecret.certificates.Data, newSecret.Data)
 	})
 	t.Run(`update if secret exists`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
@@ -174,7 +174,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, newSecret)
-		require.EqualValues(t, certSecret.certificates.Data, newSecret.Data)
+		require.Equal(t, certSecret.certificates.Data, newSecret.Data)
 
 		certSecret.secret = &newSecret
 		certSecret.certificates.Data = map[string][]byte{testKey: testValue2}
@@ -187,7 +187,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, newSecret)
-		assert.EqualValues(t, certSecret.certificates.Data, newSecret.Data)
+		assert.Equal(t, certSecret.certificates.Data, newSecret.Data)
 	})
 }
 

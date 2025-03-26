@@ -95,7 +95,7 @@ func TestNewMultiCapability(t *testing.T) {
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
 		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, "", mc.ArgName())
+		assert.Empty(t, mc.ArgName())
 	})
 }
 

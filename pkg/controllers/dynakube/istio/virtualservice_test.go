@@ -57,7 +57,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		}}
 		result := buildVirtualService(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts)
 
-		assert.EqualValues(t, expected, result)
+		assert.Equal(t, expected, result)
 	})
 	t.Run("generate for http connection", func(t *testing.T) {
 		expected := &istiov1beta1.VirtualService{
@@ -87,7 +87,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		}}
 		result := buildVirtualService(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts)
 
-		assert.EqualValues(t, expected, result)
+		assert.Equal(t, expected, result)
 	})
 	t.Run("generate for invalid protocol", func(t *testing.T) {
 		commHosts := []dtclient.CommunicationHost{{

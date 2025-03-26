@@ -250,6 +250,7 @@ linters:
       checks:
         - all
         - "-ST*" # this is stylecheck, but has been rolled into staticcheck
+        - "-QF1008" # could remove embedded field from selector, example: dk.ObjectMeta.Labels == dk.Labels
   exclusions:
     generated: lax
     presets:
