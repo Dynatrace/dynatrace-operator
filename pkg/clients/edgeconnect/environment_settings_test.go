@@ -164,8 +164,7 @@ func writeEnvironmentSettingsResponse(w http.ResponseWriter, status int) {
 }
 
 func writeSettingsApiResponse(w http.ResponseWriter, status int) {
-	errorResponse := []SettingsApiResponse{}
-	errorResponse = append(errorResponse, SettingsApiResponse{
+	errorResponse := SettingsApiResponse{
 		Error: SettingsApiError{
 			Message: "test-message",
 			ConstraintViolations: []ConstraintViolations{
@@ -178,8 +177,8 @@ func writeSettingsApiResponse(w http.ResponseWriter, status int) {
 			Code: status,
 		},
 		Code: status,
-	},
-	)
+	}
+
 	result, _ := json.Marshal(&errorResponse)
 
 	w.WriteHeader(status)
