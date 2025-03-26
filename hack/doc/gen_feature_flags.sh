@@ -17,7 +17,8 @@ output=$(echo "${output}" | sed '$d')
 
 # remove gomarkdoc headers and add custom one
 output=$(echo "${output}" | sed s/"$gomarkdoc_header"//)
-output="${script_header}\n${output}"
+output="${script_header}
+${output}"
 
 # write output to file
 mkdir -p $output_dir

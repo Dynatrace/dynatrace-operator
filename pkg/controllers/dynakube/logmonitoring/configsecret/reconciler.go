@@ -44,7 +44,7 @@ func NewReconciler(clt client.Client,
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.LogMonitoring().IsStandalone() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), lmcConditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), LmcConditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
@@ -55,7 +55,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			log.Error(err, "failed to clean-up LogMonitoring config-secret")
 		}
 
-		meta.RemoveStatusCondition(r.dk.Conditions(), lmcConditionType)
+		meta.RemoveStatusCondition(r.dk.Conditions(), LmcConditionType)
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -73,14 +73,14 @@ func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 
 	changed, err := query.CreateOrUpdate(ctx, newSecret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), lmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), LmcConditionType, err)
 
 		return err
 	} else if changed {
-		conditions.SetSecretOutdated(r.dk.Conditions(), lmcConditionType, newSecret.Name) // needed so the timestamp updates, will never actually show up in the status
+		conditions.SetSecretOutdated(r.dk.Conditions(), LmcConditionType, newSecret.Name) // needed so the timestamp updates, will never actually show up in the status
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), lmcConditionType, newSecret.Name)
+	conditions.SetSecretCreated(r.dk.Conditions(), LmcConditionType, newSecret.Name)
 
 	return nil
 }
@@ -99,7 +99,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		k8ssecret.SetLabels(coreLabels),
 	)
 	if err != nil {
-		conditions.SetSecretGenFailed(r.dk.Conditions(), lmcConditionType, err)
+		conditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
@@ -113,14 +113,14 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), lmcConditionType, err)
+		conditions.SetKubeApiError(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
 
 	tenantUUID, err := r.dk.TenantUUIDFromConnectionInfoStatus()
 	if err != nil {
-		conditions.SetSecretGenFailed(r.dk.Conditions(), lmcConditionType, err)
+		conditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
