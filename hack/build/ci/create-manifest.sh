@@ -13,6 +13,7 @@ annotation=$4
 
 image="${image_name}:${image_tag}"
 
+echo "This script is based on podman version 4.9.3"
 echo "current version of podman is $(podman --version)"
 
 platforms=($(echo "${raw_platforms}" | tr "," "\n"))
@@ -29,7 +30,12 @@ done
 
 podman manifest create "${image}"
 
-podman manifest add "${image}" "${images[@]}"
+if [ -z "${annotation}" ]
+then
+  podman manifest add "${image}" "${images[@]}"
+else
+  podman manifest add --annotation "${annotation}" "${image}" "${images[@]}"
+fi
 
 podman manifest inspect "${image}"
 
