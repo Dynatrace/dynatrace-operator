@@ -299,14 +299,14 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/defaul
 
 ## Index
 
-- [func Feature(t *testing.T, istioEnabled bool) features.Feature](<#Feature>)
+- [func Feature(t *testing.T, istioEnabled bool, withCSI bool) features.Feature](<#Feature>)
 
 <a name="Feature"></a>
 
 ## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/default/default.go#L50>)
 
 ```go
-func Feature(t *testing.T, istioEnabled bool) features.Feature
+func Feature(t *testing.T, istioEnabled bool, withCSI bool) features.Feature
 ```
 
 ### With istio enabled
@@ -494,6 +494,26 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/extensions"
 ```go
 func Feature(t *testing.T) features.Feature
 ```
+
+# hostmonitoring
+
+```go
+import "github.com/Dynatrace/dynatrace-operator/test/features/hostmonitoring"
+```
+
+## Index
+
+- [func WithoutCSI(t *testing.T) features.Feature](<#WithoutCSI>)
+
+<a name="WithoutCSI"></a>
+
+## func [WithoutCSI](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/hostmonitoring/without_csi.go#L17>)
+
+```go
+func WithoutCSI(t *testing.T) features.Feature
+```
+
+ApplicationMonitoring deployment without CSI driver
 
 # logmonitoring
 

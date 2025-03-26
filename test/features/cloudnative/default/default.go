@@ -47,7 +47,7 @@ import (
 //
 // Sample application Deployment is installed and restarted to check if OneAgent is
 // injected and VERSION environment variable is correct.
-func Feature(t *testing.T, istioEnabled bool) features.Feature {
+func Feature(t *testing.T, istioEnabled bool, withCSI bool) features.Feature {
 	builder := features.New("cloudnative")
 	t.Logf("istio enabled: %v", istioEnabled)
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -80,7 +80,9 @@ func Feature(t *testing.T, istioEnabled bool) features.Feature {
 		istio.AssessIstio(builder, testDynakube, *sampleApp)
 	}
 
-	builder.Assess(fmt.Sprintf("check %s has no conn info", codemodules.RuxitAgentProcFile), codemodules.CheckRuxitAgentProcFileHasNoConnInfo(testDynakube))
+	if withCSI {
+		builder.Assess(fmt.Sprintf("check %s has no conn info", codemodules.RuxitAgentProcFile), codemodules.CheckRuxitAgentProcFileHasNoConnInfo(testDynakube))
+	}
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())

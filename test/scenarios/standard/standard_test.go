@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 
 func TestStandard(t *testing.T) {
 	feats := []features.Feature{
-		cloudnativeDefault.Feature(t, false),
+		cloudnativeDefault.Feature(t, false, true),
 		applicationmonitoring.ReadOnlyCSIVolume(t),
 		codemodules.InstallFromImage(t),
 		publicregistry.Feature(t),

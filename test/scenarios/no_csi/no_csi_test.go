@@ -9,8 +9,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/test/features/classic"
+	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
+	"github.com/Dynatrace/dynatrace-operator/test/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
@@ -53,6 +55,8 @@ func TestNoCSI(t *testing.T) {
 		classic.Feature(t),
 		bootstrapper.NoCSI(t),
 		logmonitoring.Feature(t),
+		hostmonitoring.WithoutCSI(t),
+		cloudnativeDefault.Feature(t, false, false),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)

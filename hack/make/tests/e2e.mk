@@ -153,3 +153,11 @@ test/e2e/extensions: manifests/crd/helm
 ## Runs LogMonitoring related e2e tests
 test/e2e/logmonitoring: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "logmonitoring-components-rollout" $(SKIPCLEANUP)
+
+## Runs Host Monitoring without CSI e2e test only
+test/e2e/hostmonitoring/withoutcsi: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "host-monitoring-without-csi" $(SKIPCLEANUP)
+
+## Runs CloudNative default e2e test only
+test/e2e/cloudnative/withoutcsi: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "cloudnative" $(SKIPCLEANUP)
