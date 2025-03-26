@@ -145,12 +145,12 @@ func (c *client) handleErrorResponseFromAPI(response []byte, statusCode int) err
 }
 
 func (c *client) handleErrorResponseFromSettingsApi(response []byte, statusCode int) error {
-	se := []SettingsApiResponse{}
+	se := SettingsApiResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
 		return errors.WithStack(errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode))
 	}
 
-	return se[0].Error
+	return se.Error
 }
 
 func (c *client) getServerResponseData(response *http.Response) ([]byte, error) {
