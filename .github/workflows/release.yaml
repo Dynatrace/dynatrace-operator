@@ -25,11 +25,14 @@ jobs:
         id: meta
         with:
           images: dynatrace/dynatrace-operator
-          tags: ${{ steps.prep.outputs.docker_image_tag }}
+          tags: |
+            type=semver,pattern={{major}}.{{minor}}
+            ${{ steps.prep.outputs.docker_image_tag }}
           labels: |
             ${{ steps.prep.outputs.docker_image_labels }}
             vcs-ref=${{ github.sha }}
     outputs:
+      version_with_major_minor: ${{ fromJSON(steps.meta.outputs.json).tags }}
       labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
@@ -278,7 +281,7 @@ jobs:
           context: ./config/helm/
           containerfiles: |
             ./config/helm/Dockerfile
-          tags: ${{ needs.prepare.outputs.version_without_prefix }}
+          tags: ${{ needs.prepare.outputs.version_with_major_minor }} ${{ needs.prepare.outputs.version_without_prefix }}
           image: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}
           extra-args: |
             --annotation=com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
@@ -288,7 +291,7 @@ jobs:
         with:
           image: ${{ secrets.GCR_REPOSITORY_DEPLOYER }}
           registry: gcr.io
-          tags: ${{ steps.build-image.outputs.tags }}
+          tags: ${{ steps.prepare.outputs.tags }}
           username: ${{ secrets.GCR_USERNAME }}
           password: ${{ secrets.GCR_JSON_KEY }}
 
