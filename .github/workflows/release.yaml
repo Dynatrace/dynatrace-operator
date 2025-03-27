@@ -278,7 +278,7 @@ jobs:
           context: ./config/helm/
           containerfiles: |
             ./config/helm/Dockerfile
-          tags: ${{ needs.prepare.outputs.version }}
+          tags: ${{ needs.prepare.outputs.version_without_prefix }}
           image: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}
           extra-args: |
             --annotation=com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
