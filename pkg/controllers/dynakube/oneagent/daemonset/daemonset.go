@@ -321,7 +321,7 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 
 func (b *builder) securityContext() *corev1.SecurityContext {
 	var securityContext corev1.SecurityContext
-	if b.dk != nil && b.dk.OneAgent().IsReadOnlyOneAgentsMode() {
+	if b.dk != nil && b.dk.OneAgent().IsOneAgentModeSupportingReadOnlyFS() {
 		securityContext.RunAsNonRoot = ptr.To(true)
 		securityContext.RunAsUser = ptr.To(int64(1000))
 		securityContext.RunAsGroup = ptr.To(int64(1000))
@@ -417,7 +417,7 @@ func (b *builder) getReadinessProbe() *corev1.Probe {
 // if the version is not set, ie.: unknown, we  consider the OneAgent to support `ReadOnlyRootFilesystem`.
 func (b *builder) isRootFsReadonly() bool {
 	if b.dk != nil &&
-		b.dk.OneAgent().IsReadOnlyOneAgentsMode() &&
+		b.dk.OneAgent().IsOneAgentModeSupportingReadOnlyFS() &&
 		b.dk.OneAgent().GetVersion() != "" &&
 		b.dk.OneAgent().GetVersion() != string(status.CustomImageVersionSource) {
 		agentSemver, err := dtversion.ToSemver(b.dk.OneAgent().GetVersion())

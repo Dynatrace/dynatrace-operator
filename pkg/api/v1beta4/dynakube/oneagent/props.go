@@ -104,7 +104,7 @@ func (oa *OneAgent) GetConnectionInfoConfigMapName() string {
 	return oa.name + OneAgentConnectionInfoConfigMapSuffix
 }
 
-func (oa *OneAgent) IsReadOnlyOneAgentsMode() bool {
+func (oa *OneAgent) IsOneAgentModeSupportingReadOnlyFS() bool {
 	return oa.IsCloudNativeFullstackMode() || oa.IsHostMonitoringMode()
 }
 
@@ -331,16 +331,16 @@ func (oa *OneAgent) GetArgumentsMap() map[string][]string {
 // GetHostPath provides the host path for the storage volume if CSI driver is absent.
 func (oa *OneAgent) GetHostPath() string {
 	if oa.IsCloudNativeFullstackMode() {
-		if oa.Spec.CloudNativeFullStack.StorageHostPath != "" {
-			return oa.Spec.CloudNativeFullStack.StorageHostPath
+		if oa.CloudNativeFullStack.StorageHostPath != "" {
+			return oa.CloudNativeFullStack.StorageHostPath
 		}
 
 		return storageVolumeDefaultHostPath
 	}
 
 	if oa.IsHostMonitoringMode() {
-		if oa.Spec.HostMonitoring.StorageHostPath != "" {
-			return oa.Spec.HostMonitoring.StorageHostPath
+		if oa.HostMonitoring.StorageHostPath != "" {
+			return oa.HostMonitoring.StorageHostPath
 		}
 
 		return storageVolumeDefaultHostPath
