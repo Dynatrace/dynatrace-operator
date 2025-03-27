@@ -152,6 +152,12 @@ func WithCloudNativeSpec(cloudNativeFullStackSpec *oneagent.CloudNativeFullStack
 	}
 }
 
+func WithHostMonitoringSpec(hostInjectSpec *oneagent.HostInjectSpec) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.OneAgent.HostMonitoring = hostInjectSpec
+	}
+}
+
 func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.ApplicationMonitoringSpec) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec

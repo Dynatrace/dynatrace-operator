@@ -16,6 +16,7 @@ const (
 	OneAgentConnectionInfoConfigMapSuffix = "-oneagent-connection-info"
 	PodNameOsAgent                        = "oneagent"
 	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
+	storageVolumeDefaultHostPath          = "/var/opt/dynatrace"
 )
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
@@ -103,8 +104,8 @@ func (oa *OneAgent) GetConnectionInfoConfigMapName() string {
 	return oa.name + OneAgentConnectionInfoConfigMapSuffix
 }
 
-func (oa *OneAgent) IsReadOnlyOneAgentsMode() bool {
-	return oa.IsCloudNativeFullstackMode() || (oa.IsHostMonitoringMode() && oa.IsCSIAvailable())
+func (oa *OneAgent) IsReadOnlyFSSupported() bool {
+	return oa.IsCloudNativeFullstackMode() || oa.IsHostMonitoringMode()
 }
 
 func (oa *OneAgent) IsAppInjectionNeeded() bool {
@@ -325,4 +326,25 @@ func (oa *OneAgent) GetArgumentsMap() map[string][]string {
 	}
 
 	return argMap
+}
+
+// GetHostPath provides the host path for the storage volume if CSI driver is absent.
+func (oa *OneAgent) GetHostPath() string {
+	if oa.IsCloudNativeFullstackMode() {
+		if oa.CloudNativeFullStack.StorageHostPath != "" {
+			return oa.CloudNativeFullStack.StorageHostPath
+		}
+
+		return storageVolumeDefaultHostPath
+	}
+
+	if oa.IsHostMonitoringMode() {
+		if oa.HostMonitoring.StorageHostPath != "" {
+			return oa.HostMonitoring.StorageHostPath
+		}
+
+		return storageVolumeDefaultHostPath
+	}
+
+	return ""
 }

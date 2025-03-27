@@ -585,7 +585,7 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 	t.Run("reject dk with hostMon without csi and custom image", func(t *testing.T) {
 		setupDisabledCSIEnv(t)
-		assertAllowedWithWarnings(t, 1,
+		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
