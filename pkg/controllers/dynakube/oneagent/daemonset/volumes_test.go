@@ -86,13 +86,10 @@ func TestPrepareVolumes(t *testing.T) {
 		volumes := prepareVolumes(dk)
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
 	})
-	t.Run(`has automatically created tls volume`, func(t *testing.T) {
+	t.Run(`has automatically created AG tls volume`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name: "dynakube",
-				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
-				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -214,9 +211,6 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name: "dynakube",
-				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
-				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{

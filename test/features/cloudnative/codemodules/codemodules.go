@@ -135,7 +135,7 @@ const (
 // the local cluster. Sample application is installed. The test checks if DT_PROXY environment
 // variable is defined in the *dynakubeComponents-oneagent* container and the *application container*.
 func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
-	builder := features.New("codemodules-with-proxy")
+	builder := features.New("codemodules-with-proxy-no-certs")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
@@ -146,6 +146,9 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithIstioIntegration(),
 		dynakubeComponents.WithProxy(proxySpec),
+		dynakubeComponents.WithAnnotations(map[string]string{
+			dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "false",
+		}),
 	)
 
 	sampleNamespace := *namespace.New("codemodules-sample-with-proxy", namespace.WithIstio())
@@ -184,78 +187,6 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
-
-	return builder.Feature()
-}
-
-func WithProxyCA(t *testing.T, proxySpec *value.Source) features.Feature {
-	const configMapName = "proxy-ca"
-	builder := features.New("codemodules-with-proxy-custom-ca")
-	secretConfigs := tenant.GetMultiTenantSecret(t)
-	require.Len(t, secretConfigs, 2)
-
-	cloudNativeDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithName("codemodules-with-proxy-custom-ca"),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
-		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
-		dynakubeComponents.WithCustomCAs(configMapName),
-		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithIstioIntegration(),
-		dynakubeComponents.WithProxy(proxySpec),
-		dynakubeComponents.WithAnnotations(map[string]string{
-			dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
-		}),
-	)
-
-	sampleNamespace := *namespace.New("codemodules-sample-with-proxy-custom-ca", namespace.WithIstio())
-	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
-		sample.AsDeployment(),
-		sample.WithNamespace(sampleNamespace),
-	)
-
-	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
-
-	// Add customCA config map
-	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), proxyCertificate))
-	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
-		map[string]string{dynakube.TrustedCAKey: string(trustedCa)})
-	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
-
-	// Register proxy create and delete
-	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube)
-	proxy.CutOffDynatraceNamespace(builder, proxySpec)
-	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
-
-	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
-
-	// Register sample app install
-	builder.Assess("install sample app", sampleApp.Install())
-
-	// Register actual test
-	cloudnative.AssessSampleInitContainers(builder, sampleApp)
-	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
-
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
-
-	agTlsSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
-			Namespace: cloudNativeDynakube.Namespace,
-		},
-	}
-	builder.Assess("read AG TLS secret", getAgTlsSecret(&agTlsSecret))
-
-	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, trustedCa)
-	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
-
-	// Register sample, dynakubeComponents and operator uninstall
-	builder.Teardown(sampleApp.Uninstall())
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
-	builder.WithTeardown("deleted trusted CAs config map", configmap.Delete(caConfigMap))
 
 	return builder.Feature()
 }
@@ -337,6 +268,68 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	return builder.Feature()
 }
 
+func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
+	builder := features.New("codemodules-with-proxy-and-auto-ag-cert")
+	secretConfigs := tenant.GetMultiTenantSecret(t)
+	require.Len(t, secretConfigs, 2)
+
+	cloudNativeDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithName("codemodules-with-proxy"),
+		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
+		dynakubeComponents.WithActiveGate(),
+		dynakubeComponents.WithIstioIntegration(),
+		dynakubeComponents.WithProxy(proxySpec),
+	)
+
+	sampleNamespace := *namespace.New("codemodules-sample-with-proxy", namespace.WithIstio())
+	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+		sample.AsDeployment(),
+		sample.WithNamespace(sampleNamespace),
+	)
+
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
+
+	// Register proxy create and delete
+	proxy.SetupProxyWithTeardown(t, builder, cloudNativeDynakube)
+	proxy.CutOffDynatraceNamespace(builder, proxySpec)
+	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
+
+	// Register dynakubeComponents install
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+
+	// Register sample app install
+	builder.Assess("install sample app", sampleApp.Install())
+
+	// Register actual test
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
+	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
+	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
+
+	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
+	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
+
+	agTlsSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
+			Namespace: cloudNativeDynakube.Namespace,
+		},
+	}
+	builder.Assess("read AG TLS secret", getAgTlsSecret(&agTlsSecret))
+
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, nil)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, nil)
+	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
+
+	// Register sample, dynakubeComponents and operator uninstall
+	builder.Teardown(sampleApp.Uninstall())
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
+
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
+
+	return builder.Feature()
+}
+
 func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
 	builder := features.New("codemodules-with-proxy-custom-ca-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
@@ -398,6 +391,75 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, trustedCa)
+	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
+
+	// Register sample, dynakubeComponents and operator uninstall
+	builder.Teardown(sampleApp.Uninstall())
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
+
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
+	builder.WithTeardown("deleted trusted CAs config map", configmap.Delete(caConfigMap))
+
+	return builder.Feature()
+}
+
+func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
+	builder := features.New("codemodules-with-proxy-custom-ca-auto-ag-cert")
+	secretConfigs := tenant.GetMultiTenantSecret(t)
+	require.Len(t, secretConfigs, 2)
+
+	cloudNativeDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithName("codemodules-with-proxy-custom-ca-ag-cert"),
+		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
+		dynakubeComponents.WithCustomCAs(configMapName),
+		dynakubeComponents.WithActiveGate(),
+		dynakubeComponents.WithActiveGateTLSSecret(agSecretName),
+		dynakubeComponents.WithIstioIntegration(),
+		dynakubeComponents.WithProxy(proxySpec),
+	)
+
+	sampleNamespace := *namespace.New("codemodules-sample-with-proxy-custom-ca", namespace.WithIstio())
+	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+		sample.AsDeployment(),
+		sample.WithNamespace(sampleNamespace),
+	)
+
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
+
+	// Add customCA config map
+	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), proxyCertificate))
+	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
+		map[string]string{dynakube.TrustedCAKey: string(trustedCa)})
+	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
+
+	// Register proxy create and delete
+	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube)
+	proxy.CutOffDynatraceNamespace(builder, proxySpec)
+	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
+
+	// Register dynakubeComponents install
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfigs[0], cloudNativeDynakube)
+
+	// Register sample app install
+	builder.Assess("install sample app", sampleApp.Install())
+
+	// Register actual test
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
+	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
+
+	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
+
+	agTlsSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
+			Namespace: cloudNativeDynakube.Namespace,
+		},
+	}
+	builder.Assess("read AG TLS secret", getAgTlsSecret(&agTlsSecret))
+
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
