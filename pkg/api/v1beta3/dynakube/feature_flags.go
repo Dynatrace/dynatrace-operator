@@ -129,9 +129,9 @@ func (dk *DynaKube) FeatureNoProxy() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
 }
 
-// FeatureActiveGateAutomaticTLSCertificate is a feature flag to enable automatic creation of AG TLS certificate if TrustedCAs are used.
+// FeatureActiveGateAutomaticTLSCertificate is a feature flag to disable automatic creation of ActiveGate TLS certificate.
 func (dk *DynaKube) FeatureActiveGateAutomaticTLSCertificate() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAutomaticTLSCertificate) == truePhrase
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAutomaticTLSCertificate) != falsePhrase
 }
 
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
