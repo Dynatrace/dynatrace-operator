@@ -64,7 +64,7 @@ test/e2e/cloudnative/codemodules: manifests/crd/helm
 
 ## Runs CloudNative codemodules-with-proxy e2e test only
 test/e2e/cloudnative/codemodules-with-proxy: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --feature "codemodules-with-proxy$$" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --feature "codemodules-with-proxy-no-certs" $(SKIPCLEANUP)
 
 ## Runs CloudNative codemodules e2e test with proxy and AG custom certificate
 test/e2e/cloudnative/codemodules-with-proxy-and-ag-cert: manifests/crd/helm

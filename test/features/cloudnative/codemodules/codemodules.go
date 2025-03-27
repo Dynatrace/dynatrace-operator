@@ -135,7 +135,7 @@ const (
 // the local cluster. Sample application is installed. The test checks if DT_PROXY environment
 // variable is defined in the *dynakubeComponents-oneagent* container and the *application container*.
 func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
-	builder := features.New("codemodules-with-proxy")
+	builder := features.New("codemodules-with-proxy-no-certs")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
