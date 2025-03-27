@@ -32,7 +32,7 @@ jobs:
             ${{ steps.prep.outputs.docker_image_labels }}
             vcs-ref=${{ github.sha }}
     outputs:
-      version_with_major_minor: ${{ fromJSON(steps.meta.outputs.json).tags }}
+      version_with_major_minor: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
       labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
