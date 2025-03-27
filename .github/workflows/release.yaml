@@ -300,7 +300,7 @@ jobs:
         with:
           image: ${{ secrets.GCR_REPOSITORY_DEPLOYER }}
           registry: gcr.io
-          tags: ${{ steps.prepare.outputs.tags }}
+          tags: ${{ needs.prepare.outputs.version_with_major_minor }} ${{ needs.prepare.outputs.version_without_prefix }}
           username: ${{ secrets.GCR_USERNAME }}
           password: ${{ secrets.GCR_JSON_KEY }}
 
