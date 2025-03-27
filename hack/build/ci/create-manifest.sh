@@ -1,33 +1,46 @@
 #!/bin/bash
 
-if [ -z "$2" ]
+if [ -z "$3" ]
 then
-  echo "Usage: $0 <image_name> <image_tag> <enable_multiplatform>"
+  echo "Usage: $0 <image_name> <image_tag> <platforms> <annotation>"
   exit 1
 fi
 
 image_name=$1
 image_tag=$2
-multiplatform=$3
+raw_platforms=$3
+annotation=$4
+
 image="${image_name}:${image_tag}"
 
-if [ "$multiplatform" == "true" ]
-then
-  supported_architectures=("amd64" "arm64" "ppc64le" "s390x")
-  images=()
-  echo "Creating manifest for ${supported_architectures[*]}"
+echo "This script is based on podman version 4.9.3"
+echo "current version of podman is $(podman --version)"
 
-  for architecture in "${supported_architectures[@]}"
-  do
-    docker pull "${image}-${architecture}"
-    images+=("${image}-${architecture}")
-  done
-  docker manifest create "${image}" "${images[@]}"
+platforms=($(echo "${raw_platforms}" | tr "," "\n"))
+
+echo "Creating manifest for ${platforms[*]}"
+
+images=()
+
+for platfrom in "${platforms[@]}"
+do
+   podman pull "${image}-${platfrom}"
+   images+=("${image}-${platfrom}")
+done
+
+podman manifest create "${image}"
+
+if [ -z "${annotation}" ]
+then
+  podman manifest add "${image}" "${images[@]}"
 else
-  echo "Creating manifest for the AMD image "
-  docker pull "${image}-amd64"
-  docker manifest create "${image}" "${image}-amd64"
+  podman manifest add --annotation "${annotation}" "${image}" "${images[@]}"
 fi
 
-sha256=$(docker manifest push "${image}")
+podman manifest inspect "${image}"
+
+podman manifest push --format oci --digestfile=digestfile.sha256 "${image}"
+
+sha256=$(cat digestfile.sha256)
+
 echo "digest=${sha256}">> $GITHUB_OUTPUT
