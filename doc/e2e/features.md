@@ -602,25 +602,26 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
 
 ## Index
 
-- [func OtelCollectorCleanup(t *testing.T) features.Feature](<#OtelCollectorCleanup>)
+- [Constants](<#constants>)
 - [func OtelCollectorConfigUpdate(t *testing.T) features.Feature](<#OtelCollectorConfigUpdate>)
-- [func WithLocalActiveGate(t *testing.T) features.Feature](<#WithLocalActiveGate>)
+- [func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature](<#WithLocalActiveGateAndCleanup>)
 - [func WithPublicActiveGate(t *testing.T) features.Feature](<#WithPublicActiveGate>)
 - [func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature](<#WithTelemetryIngestEndpointTLS>)
 
-<a name="OtelCollectorCleanup"></a>
+## Constants
 
-## func [OtelCollectorCleanup](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L195>)
+<a name="TelemetryIngestTLSCrt"></a>
 
 ```go
-func OtelCollectorCleanup(t *testing.T) features.Feature
+const (
+    TelemetryIngestTLSCrt = "custom-cas/tls-telemetry-ingest.crt"
+    TelemetryIngestTLSKey = "custom-cas/tls-telemetry-ingest.key"
+)
 ```
-
-Make sure the Otel collector StS and config ConfigMap are removed when telemetryIngest gets disabled
 
 <a name="OtelCollectorConfigUpdate"></a>
 
-## func [OtelCollectorConfigUpdate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L135>)
+## func [OtelCollectorConfigUpdate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L151>)
 
 ```go
 func OtelCollectorConfigUpdate(t *testing.T) features.Feature
@@ -628,19 +629,19 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature
 
 Make sure the Otel collector configuration is updated and pods are restarted when protocols for telemetryIngest change
 
-<a name="WithLocalActiveGate"></a>
+<a name="WithLocalActiveGateAndCleanup"></a>
 
-## func [WithLocalActiveGate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L70>)
+## func [WithLocalActiveGateAndCleanup](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L72>)
 
 ```go
-func WithLocalActiveGate(t *testing.T) features.Feature
+func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature
 ```
 
-Rollout of OTel collector and a local in-cluster ActiveGate
+Rollout of OTel collector and a local in-cluster ActiveGate. Make sure that components are cleaned up after telemetryIngest gets disabled.
 
 <a name="WithPublicActiveGate"></a>
 
-## func [WithPublicActiveGate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L44>)
+## func [WithPublicActiveGate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L46>)
 
 ```go
 func WithPublicActiveGate(t *testing.T) features.Feature
@@ -650,7 +651,7 @@ Rollout of OTel collector when no ActiveGate is configured in the Dynakube
 
 <a name="WithTelemetryIngestEndpointTLS"></a>
 
-## func [WithTelemetryIngestEndpointTLS](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L103>)
+## func [WithTelemetryIngestEndpointTLS](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L119>)
 
 ```go
 func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature

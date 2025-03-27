@@ -34,7 +34,6 @@ append root certificate to agcrt.pem
 >
 > openssl pkcs12 -info -in agcrtkey.p12 -nodes
 
-
 ## Create telemetry ingest TLS certificate
 
 > openssl genpkey -algorithm RSA -out tls-telemetry-ingest.key -pkeyopt rsa_keygen_bits:2048
