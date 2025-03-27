@@ -94,7 +94,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 	}
 
 	for _, dk := range dks {
-		if !dk.OneAgent().IsOneAgentModeSupportingReadOnlyFS() {
+		if !dk.OneAgent().IsReadOnlyFSSupported() {
 			continue
 		}
 
@@ -147,7 +147,7 @@ func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynak
 	var relevantDks []dynakube.DynaKube
 
 	for _, dk := range dkList.Items {
-		if dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsOneAgentModeSupportingReadOnlyFS() {
+		if dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsReadOnlyFSSupported() {
 			relevantDks = append(relevantDks, dk)
 		}
 	}

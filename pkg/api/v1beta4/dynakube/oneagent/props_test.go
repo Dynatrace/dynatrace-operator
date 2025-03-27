@@ -36,7 +36,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				CloudNativeFullStack: &CloudNativeFullStackSpec{},
 			},
 		}
-		assert.True(t, oneagent.IsOneAgentModeSupportingReadOnlyFS())
+		assert.True(t, oneagent.IsReadOnlyFSSupported())
 	})
 
 	t.Run("host monitoring with readonly host agent", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				HostMonitoring: &HostInjectSpec{},
 			},
 		}
-		assert.True(t, oneAgent.IsOneAgentModeSupportingReadOnlyFS())
+		assert.True(t, oneAgent.IsReadOnlyFSSupported())
 	})
 
 	t.Run("host monitoring without readonly host agent", func(t *testing.T) {
@@ -56,7 +56,7 @@ func TestNeedsReadonlyOneagent(t *testing.T) {
 				HostMonitoring: &HostInjectSpec{},
 			},
 		}
-		assert.True(t, oneAgent.IsOneAgentModeSupportingReadOnlyFS())
+		assert.True(t, oneAgent.IsReadOnlyFSSupported())
 	})
 }
 

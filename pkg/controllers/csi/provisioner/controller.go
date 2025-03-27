@@ -151,7 +151,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 }
 
 func isProvisionerNeeded(dk *dynakube.DynaKube) bool {
-	return dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsOneAgentModeSupportingReadOnlyFS()
+	return dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsReadOnlyFSSupported()
 }
 
 func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) error {

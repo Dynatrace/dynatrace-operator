@@ -22,7 +22,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		return volumeMounts
 	}
 
-	if dk.OneAgent().IsOneAgentModeSupportingReadOnlyFS() {
+	if dk.OneAgent().IsReadOnlyFSSupported() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
 		if dk.OneAgent().IsCSIAvailable() {
 			volumeMounts = append(volumeMounts, getCSIStorageMount())
@@ -116,7 +116,7 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 
 	volumes = append(volumes, getOneAgentSecretVolume(dk))
 
-	if dk.OneAgent().IsOneAgentModeSupportingReadOnlyFS() {
+	if dk.OneAgent().IsReadOnlyFSSupported() {
 		if dk.OneAgent().IsCSIAvailable() {
 			volumes = append(volumes, getCSIStorageVolume(dk))
 		} else {

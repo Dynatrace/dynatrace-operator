@@ -104,7 +104,7 @@ func (oa *OneAgent) GetConnectionInfoConfigMapName() string {
 	return oa.name + OneAgentConnectionInfoConfigMapSuffix
 }
 
-func (oa *OneAgent) IsOneAgentModeSupportingReadOnlyFS() bool {
+func (oa *OneAgent) IsReadOnlyFSSupported() bool {
 	return oa.IsCloudNativeFullstackMode() || oa.IsHostMonitoringMode()
 }
 
