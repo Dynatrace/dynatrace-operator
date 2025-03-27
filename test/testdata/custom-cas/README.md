@@ -33,3 +33,10 @@ append root certificate to agcrt.pem
 > openssl x509 -text -noout -in agcrt.pem
 >
 > openssl pkcs12 -info -in agcrtkey.p12 -nodes
+
+
+## Create telemetry ingest TLS certificate
+
+> openssl genpkey -algorithm RSA -out tls-telemetry-ingest.key -pkeyopt rsa_keygen_bits:2048
+> openssl req -new -key tls-telemetry-ingest.key -out tls-telemetry-ingest.csr
+> openssl x509 -req -in tls-telemetry-ingest.csr -signkey tls-telemetry-ingest.key -out tls-telemetry-ingest.crt -days 36500 -subj '/CN=dynakube-telemetry-ingest.dynatrace'

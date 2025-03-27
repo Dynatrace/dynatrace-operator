@@ -58,11 +58,10 @@ func TestNoCSI(t *testing.T) {
 		logmonitoring.Feature(t),
 		hostmonitoring.WithoutCSI(t),
 		cloudnativeDefault.Feature(t, false, false),
-		telemetryingest.WithLocalActiveGate(t),
+		telemetryingest.WithLocalActiveGateAndCleanup(t),
 		telemetryingest.WithPublicActiveGate(t),
 		telemetryingest.WithTelemetryIngestEndpointTLS(t),
 		telemetryingest.OtelCollectorConfigUpdate(t),
-		telemetryingest.OtelCollectorCleanup(t),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)

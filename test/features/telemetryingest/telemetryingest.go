@@ -37,7 +37,9 @@ import (
 )
 
 const (
-	activeGateComponent = "activegate"
+	activeGateComponent   = "activegate"
+	TelemetryIngestTLSCrt = "custom-cas/tls-telemetry-ingest.crt"
+	TelemetryIngestTLSKey = "custom-cas/tls-telemetry-ingest.key"
 )
 
 // Rollout of OTel collector when no ActiveGate is configured in the Dynakube
@@ -66,20 +68,20 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-// Rollout of OTel collector and a local in-cluster ActiveGate
-func WithLocalActiveGate(t *testing.T) features.Feature {
-	builder := features.New("telemetryingest-with-local-ag-components-rollout")
+// Rollout of OTel collector and a local in-cluster ActiveGate. Make sure that components are cleaned up after telemetryIngest gets disabled.
+func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
+	builder := features.New("telemetryingest-with-local-active-gate-component-rollout-and-cleanup-after-disable")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	options := []componentDynakube.Option{
+	optionsTelemetryIngestEnabled := []componentDynakube.Option{
 		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
-		componentDynakube.WithTelemetryIngestEnabled(true),
+		componentDynakube.WithTelemetryIngestEnabled(true, "zipkin"),
 		componentDynakube.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := *componentDynakube.New(optionsTelemetryIngestEnabled...)
 
 	agSecret, err := createAgTlsSecret(testDynakube.Namespace)
 	require.NoError(t, err, "failed to create ag-tls secret")
@@ -92,9 +94,23 @@ func WithLocalActiveGate(t *testing.T) features.Feature {
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
 
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
-	builder.WithTeardown("deleted ag secret", secret.Delete(agSecret))
+	optionsTelemetryIngestDisabled := []componentDynakube.Option{
+		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
+		componentDynakube.WithTelemetryIngestEnabled(false),
+		componentDynakube.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
+		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
+	}
+
+	testDynakubeNoTelemetryIngest := *componentDynakube.New(optionsTelemetryIngestDisabled...)
+	componentDynakube.Update(builder, helpers.LevelAssess, testDynakubeNoTelemetryIngest)
+
+	builder.Assess("otel collector shutdown", waitForShutdown(testDynakubeNoTelemetryIngest.OtelCollectorStatefulsetName(), testDynakubeNoTelemetryIngest.Namespace))
+	builder.Assess("otel collector config removed", checkOtelCollectorConfigRemoved(&testDynakubeNoTelemetryIngest))
+	builder.Assess("otel collector service removed", checkOtelCollectorServiceRemoved(&testDynakubeNoTelemetryIngest))
+
+	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakubeNoTelemetryIngest)
+
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakubeNoTelemetryIngest.Name, testDynakubeNoTelemetryIngest.Namespace))
 
 	return builder.Feature()
 }
@@ -113,7 +129,7 @@ func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	tlsSecret, err := tls.CreateTestdataTLSSecret(testDynakube.Namespace, consts.TelemetryIngestTLSSecretName)
+	tlsSecret, err := tls.CreateTestdataTLSSecret(testDynakube.Namespace, consts.TelemetryIngestTLSSecretName, TelemetryIngestTLSKey, TelemetryIngestTLSCrt)
 	require.NoError(t, err, "failed to create TLS secret for otel collector endpoints")
 
 	builder.Assess("create OTel collector endpoint TLS secret", secret.Create(tlsSecret))
@@ -187,52 +203,6 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakubeJaeger)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakubeJaeger.Name, testDynakubeJaeger.Namespace))
-
-	return builder.Feature()
-}
-
-// Make sure the Otel collector StS and config ConfigMap are removed when telemetryIngest gets disabled
-func OtelCollectorCleanup(t *testing.T) features.Feature {
-	builder := features.New("telemetryingest-gets-disabled")
-
-	secretConfig := tenant.GetSingleTenantSecret(t)
-
-	optionsTelemetryIngestEnabled := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
-		componentDynakube.WithTelemetryIngestEnabled(true, "zipkin"),
-		componentDynakube.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
-		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
-	}
-
-	testDynakube := *componentDynakube.New(optionsTelemetryIngestEnabled...)
-
-	agSecret, err := createAgTlsSecret(testDynakube.Namespace)
-	require.NoError(t, err, "failed to create ag-tls secret")
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
-
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-
-	builder.Assess("otel collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
-	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
-
-	optionsTelemetryIngestDisabled := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
-		componentDynakube.WithTelemetryIngestEnabled(false),
-		componentDynakube.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
-		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
-	}
-
-	testDynakubeNoTelemetryIngest := *componentDynakube.New(optionsTelemetryIngestDisabled...)
-	componentDynakube.Update(builder, helpers.LevelAssess, testDynakubeNoTelemetryIngest)
-
-	builder.Assess("otel collector shutdown", waitForShutdown(testDynakubeNoTelemetryIngest.OtelCollectorStatefulsetName(), testDynakubeNoTelemetryIngest.Namespace))
-	builder.Assess("otel collector config removed", checkOtelCollectorConfigRemoved(&testDynakubeNoTelemetryIngest))
-	builder.Assess("otel collector service removed", checkOtelCollectorServiceRemoved(&testDynakubeNoTelemetryIngest))
-
-	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakubeNoTelemetryIngest)
-
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakubeNoTelemetryIngest.Name, testDynakubeNoTelemetryIngest.Namespace))
 
 	return builder.Feature()
 }

@@ -14,22 +14,22 @@ import (
 )
 
 const (
-	portNameZipkin              = "zipkin"
-	portZipkin                  = 9411
-	portNameOtlpGrpc            = "otlp-grpc"
-	portOtlpGrpc                = 4317
-	portNameOtlpHttp            = "otlp-http"
-	portOtlpHttp                = 4318
-	portNameJaegerGrpc          = "jaeger-grpc"
-	portJaegerGrpc              = 14250
-	portNameJaegerThriftBinary  = "jaeger-thrift-binary"
-	portJaegerThriftBinary      = 6832
-	portNameJaegerThriftCompact = "jaeger-thrift-compact"
-	portJaegerThriftCompact     = 6831
-	portNameJaegerThriftHttp    = "jaeger-thrift-http"
-	portJaegerThriftHttp        = 14268
-	portNameStatsd              = "statsd"
-	portStatsd                  = 8125
+	zipkinPortName              = "zipkin"
+	zipkinPort                  = 9411
+	otlpGrpcPortName            = "otlp-grpc"
+	otlpGrpcPort                = 4317
+	otlpHttpPortName            = "otlp-http"
+	otlpHttpPort                = 4318
+	jaegerGrpcPortName          = "jaeger-grpc"
+	jaegerGrpcPort              = 14250
+	jaegerThriftBinaryPortName  = "jaeger-thrift-binary"
+	jaegerThriftBinaryPort      = 6832
+	jaegerThriftCompactPortName = "jaeger-thrift-compact"
+	jaegerThriftCompactPort     = 6831
+	jaegerThriftHttpPortName    = "jaeger-thrift-http"
+	jaegerThriftHttpPort        = 14268
+	statsdPortName              = "statsd"
+	statsdPort                  = 8125
 )
 
 type Reconciler struct {
@@ -143,58 +143,58 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 		switch protocol {
 		case otelcgen.ZipkinProtocol:
 			svcPorts = append(svcPorts, corev1.ServicePort{
-				Name:       portNameZipkin,
-				Port:       portZipkin,
+				Name:       zipkinPortName,
+				Port:       zipkinPort,
 				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt32(portZipkin),
+				TargetPort: intstr.FromInt32(zipkinPort),
 			})
 		case otelcgen.OtlpProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
-					Name:       portNameOtlpGrpc,
-					Port:       portOtlpGrpc,
+					Name:       otlpGrpcPortName,
+					Port:       otlpGrpcPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(portOtlpGrpc),
+					TargetPort: intstr.FromInt32(otlpGrpcPort),
 				},
 				corev1.ServicePort{
-					Name:       portNameOtlpHttp,
-					Port:       portOtlpHttp,
+					Name:       otlpHttpPortName,
+					Port:       otlpHttpPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(portOtlpHttp),
+					TargetPort: intstr.FromInt32(otlpHttpPort),
 				})
 		case otelcgen.JaegerProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
-					Name:       portNameJaegerGrpc,
-					Port:       portJaegerGrpc,
+					Name:       jaegerGrpcPortName,
+					Port:       jaegerGrpcPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(portJaegerGrpc),
+					TargetPort: intstr.FromInt32(jaegerGrpcPort),
 				},
 				corev1.ServicePort{
-					Name:       portNameJaegerThriftBinary,
-					Port:       portJaegerThriftBinary,
+					Name:       jaegerThriftBinaryPortName,
+					Port:       jaegerThriftBinaryPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(portJaegerThriftBinary),
+					TargetPort: intstr.FromInt32(jaegerThriftBinaryPort),
 				},
 				corev1.ServicePort{
-					Name:       portNameJaegerThriftCompact,
-					Port:       portJaegerThriftCompact,
+					Name:       jaegerThriftCompactPortName,
+					Port:       jaegerThriftCompactPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(portJaegerThriftCompact),
+					TargetPort: intstr.FromInt32(jaegerThriftCompactPort),
 				},
 				corev1.ServicePort{
-					Name:       portNameJaegerThriftHttp,
-					Port:       portJaegerThriftHttp,
+					Name:       jaegerThriftHttpPortName,
+					Port:       jaegerThriftHttpPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(portJaegerThriftHttp),
+					TargetPort: intstr.FromInt32(jaegerThriftHttpPort),
 				})
 		case otelcgen.StatsdProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
-					Name:       portNameStatsd,
-					Port:       portStatsd,
+					Name:       statsdPortName,
+					Port:       statsdPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(portStatsd),
+					TargetPort: intstr.FromInt32(statsdPort),
 				})
 		default:
 			log.Info("unknown telemetry service protocol ignored", "protocol", protocol)

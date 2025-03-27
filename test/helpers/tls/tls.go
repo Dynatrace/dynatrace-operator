@@ -12,18 +12,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	TelemetryIngestTLSCrt = "custom-cas/tls.crt"
-	TelemetryIngestTLSKey = "custom-cas/tls.key"
-)
-
-func CreateTestdataTLSSecret(namespace string, name string) (corev1.Secret, error) {
-	tlsCrt, err := os.ReadFile(path.Join(project.TestDataDir(), TelemetryIngestTLSCrt))
+func CreateTestdataTLSSecret(namespace string, name string, keyFile string, crtFile string) (corev1.Secret, error) {
+	tlsCrt, err := os.ReadFile(path.Join(project.TestDataDir(), crtFile))
 	if err != nil {
 		return corev1.Secret{}, err
 	}
 
-	tlsKey, err := os.ReadFile(path.Join(project.TestDataDir(), TelemetryIngestTLSKey))
+	tlsKey, err := os.ReadFile(path.Join(project.TestDataDir(), keyFile))
 	if err != nil {
 		return corev1.Secret{}, err
 	}
