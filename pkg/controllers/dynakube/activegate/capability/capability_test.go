@@ -13,18 +13,15 @@ import (
 )
 
 const (
-	testNamespace                              = "test-namespace"
-	testName                                   = "test-name"
-	testApiUrl                                 = "https://demo.dev.dynatracelabs.com/api"
-	expectedShortName                          = "activegate"
-	expectedArgName                            = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface"
-	expectedArgNameWithDebugging               = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,debugging"
-	expectedArgNameWithExtensions              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller"
-	expectedArgNameWithExtensionsOnly          = "extension_controller"
-	expectedArgNameWithOTLPingest              = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest,otlp_ingest"
-	expectedArgNameWithOTLPingestOnly          = "log_analytics_collector,generic_ingest,otlp_ingest"
-	expectedArgNameWithExtensionsAndOTLPingest = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller,log_analytics_collector,generic_ingest,otlp_ingest"
-	expectedArgNameWithTelemetryIngest         = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest,otlp_ingest"
+	testNamespace                      = "test-namespace"
+	testName                           = "test-name"
+	testApiUrl                         = "https://demo.dev.dynatracelabs.com/api"
+	expectedShortName                  = "activegate"
+	expectedArgName                    = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface"
+	expectedArgNameWithDebugging       = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,debugging"
+	expectedArgNameWithExtensions      = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,extension_controller"
+	expectedArgNameWithExtensionsOnly  = "extension_controller"
+	expectedArgNameWithTelemetryIngest = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,log_analytics_collector,generic_ingest,otlp_ingest"
 )
 
 var capabilities = []activegate.CapabilityDisplayName{
@@ -34,7 +31,7 @@ var capabilities = []activegate.CapabilityDisplayName{
 	activegate.DynatraceApiCapability.DisplayName,
 }
 
-func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableOTLPingest bool, enableTelemetryIngest bool) *dynakube.DynaKube {
+func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableTelemetryIngest bool) *dynakube.DynaKube {
 	extensionsSpec := &dynakube.ExtensionsSpec{}
 	if !enableExtensions {
 		extensionsSpec = nil
@@ -54,9 +51,8 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},
-			Extensions:       extensionsSpec,
-			EnableOTLPingest: enableOTLPingest,
-			TelemetryIngest:  telemetryIngestSpec,
+			Extensions:      extensionsSpec,
+			TelemetryIngest: telemetryIngestSpec,
 		},
 	}
 }
@@ -81,7 +77,7 @@ func TestBuildServiceName(t *testing.T) {
 
 func TestNewMultiCapability(t *testing.T) {
 	t.Run(`creates new multicapability`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, false, false, false)
+		dk := buildDynakube(capabilities, false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -90,7 +86,7 @@ func TestNewMultiCapability(t *testing.T) {
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
-		dk := buildDynakube(emptyCapabilites, false, false, false)
+		dk := buildDynakube(emptyCapabilites, false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
@@ -101,7 +97,7 @@ func TestNewMultiCapability(t *testing.T) {
 
 func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 	t.Run(`creates new multicapability with Extensions enabled`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, true, false, false)
+		dk := buildDynakube(capabilities, true, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -110,7 +106,7 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube and Extensions enabled`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
-		dk := buildDynakube(emptyCapabilites, true, false, false)
+		dk := buildDynakube(emptyCapabilites, true, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -119,40 +115,9 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 	})
 }
 
-func TestNewMultiCapabilityWithOTLPingest(t *testing.T) {
-	t.Run(`creates new multicapability with OTLPingest enabled`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, false, true, false)
-		mc := NewMultiCapability(dk)
-		require.NotNil(t, mc)
-		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, expectedArgNameWithOTLPingest, mc.ArgName())
-	})
-	t.Run(`creates new multicapability without capabilities set in dynakube and OTLPingest enabled`, func(t *testing.T) {
-		var emptyCapabilites []activegate.CapabilityDisplayName
-		dk := buildDynakube(emptyCapabilites, false, true, false)
-		mc := NewMultiCapability(dk)
-		require.NotNil(t, mc)
-		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, expectedArgNameWithOTLPingestOnly, mc.ArgName())
-	})
-}
-
-func TestNewMultiCapabilityWithExtensionsAndOTLPingest(t *testing.T) {
-	t.Run(`creates new multicapability with Extensions and OTLPingest enabled`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, true, true, false)
-		mc := NewMultiCapability(dk)
-		require.NotNil(t, mc)
-		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, expectedArgNameWithExtensionsAndOTLPingest, mc.ArgName())
-	})
-}
-
 func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
 	t.Run(`creates new multicapability with TelemetryIngest enabled`, func(t *testing.T) {
-		dk := buildDynakube(capabilities, false, false, true)
+		dk := buildDynakube(capabilities, false, true)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -161,7 +126,7 @@ func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled`, func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
-		dk := buildDynakube(emptyCapabilites, false, false, true)
+		dk := buildDynakube(emptyCapabilites, false, true)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
@@ -170,21 +135,9 @@ func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
 	})
 }
 
-func TestNewMultiCapabilityWithOTLPingestAndTelemetryIngest(t *testing.T) {
-	t.Run(`creates new multicapability without capabilities set in dynakube and with OTLPingest and TelemetryIngest enabled`, func(t *testing.T) {
-		var emptyCapabilites []activegate.CapabilityDisplayName
-		dk := buildDynakube(emptyCapabilites, false, true, true)
-		mc := NewMultiCapability(dk)
-		require.NotNil(t, mc)
-		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
-		assert.Equal(t, expectedArgNameWithOTLPingestOnly, mc.ArgName())
-	})
-}
-
 func TestNewMultiCapabilityWithDebugging(t *testing.T) {
 	t.Run(`creates new multicapability with debugging capability enabled`, func(t *testing.T) {
-		dk := buildDynakube(append(capabilities, activegate.DebuggingCapability.DisplayName), false, false, false)
+		dk := buildDynakube(append(capabilities, activegate.DebuggingCapability.DisplayName), false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
