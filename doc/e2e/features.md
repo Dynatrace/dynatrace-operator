@@ -433,11 +433,13 @@ const (
     AgCertificateAndPrivateKey      = "custom-cas/agcrtkey.p12"
     AgCertificateAndPrivateKeyField = "server.p12"
     AgSecretName                    = "ag-ca"
-    DevRegistryPullSecretName       = "devregistry"
-    EecImageRepo                    = "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-eec"
-    EecImageTag                     = "1.303.0.20240930-183404"
-    LogMonitoringImageRepo          = "public.ecr.aws/dynatrace/dynatrace-logmodule"
-    LogMonitoringImageTag           = "1.309.59.20250319-140247"
+    TelemetryIngestTLSSecretName    = "telemetry-ingest-tls"
+
+    DevRegistryPullSecretName = "devregistry"
+    EecImageRepo              = "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-eec"
+    EecImageTag               = "1.303.0.20240930-183404"
+    LogMonitoringImageRepo    = "public.ecr.aws/dynatrace/dynatrace-logmodule"
+    LogMonitoringImageTag     = "1.309.59.20250319-140247"
 )
 ```
 
@@ -591,3 +593,67 @@ type CustomResources struct {
     // contains filtered or unexported fields
 }
 ```
+
+# telemetryingest
+
+```go
+import "github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
+```
+
+## Index
+
+- [func OtelCollectorCleanup(t *testing.T) features.Feature](<#OtelCollectorCleanup>)
+- [func OtelCollectorConfigUpdate(t *testing.T) features.Feature](<#OtelCollectorConfigUpdate>)
+- [func WithLocalActiveGate(t *testing.T) features.Feature](<#WithLocalActiveGate>)
+- [func WithPublicActiveGate(t *testing.T) features.Feature](<#WithPublicActiveGate>)
+- [func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature](<#WithTelemetryIngestEndpointTLS>)
+
+<a name="OtelCollectorCleanup"></a>
+
+## func [OtelCollectorCleanup](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L195>)
+
+```go
+func OtelCollectorCleanup(t *testing.T) features.Feature
+```
+
+Make sure the Otel collector StS and config ConfigMap are removed when telemetryIngest gets disabled
+
+<a name="OtelCollectorConfigUpdate"></a>
+
+## func [OtelCollectorConfigUpdate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L135>)
+
+```go
+func OtelCollectorConfigUpdate(t *testing.T) features.Feature
+```
+
+Make sure the Otel collector configuration is updated and pods are restarted when protocols for telemetryIngest change
+
+<a name="WithLocalActiveGate"></a>
+
+## func [WithLocalActiveGate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L70>)
+
+```go
+func WithLocalActiveGate(t *testing.T) features.Feature
+```
+
+Rollout of OTel collector and a local in-cluster ActiveGate
+
+<a name="WithPublicActiveGate"></a>
+
+## func [WithPublicActiveGate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L44>)
+
+```go
+func WithPublicActiveGate(t *testing.T) features.Feature
+```
+
+Rollout of OTel collector when no ActiveGate is configured in the Dynakube
+
+<a name="WithTelemetryIngestEndpointTLS"></a>
+
+## func [WithTelemetryIngestEndpointTLS](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L103>)
+
+```go
+func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature
+```
+
+Rollout of OTel collector with TLS secret to secure the telemetryIngest endpoints
