@@ -36,7 +36,8 @@ jobs:
         shell: bash
         id: prepare-major-minor-tag
         run: |
-          tag = ${{ join(fromJSON(steps.meta.outputs.json).tags[0]) }}
+          set -x
+          tag="${{ join(fromJSON(steps.meta.outputs.json).tags[0]) }}"
           version_with_major_minor=${tag##*:}
           echo "version_with_major_minor=$version_with_major_minor" >> $GITHUB_OUTPUT
     outputs:
