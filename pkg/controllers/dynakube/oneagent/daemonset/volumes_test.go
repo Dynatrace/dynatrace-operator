@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,13 +87,10 @@ func TestPrepareVolumes(t *testing.T) {
 		volumes := prepareVolumes(dk)
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
 	})
-	t.Run(`has automatically created tls volume`, func(t *testing.T) {
+	t.Run(`has automatically created AG tls volume`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name: "dynakube",
-				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
-				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -214,9 +212,6 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name: "dynakube",
-				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
-				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -304,4 +299,142 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.NotContains(t, volumes, buildHttpProxyVolume(dk))
 		assert.NotContains(t, mounts, getHttpProxyMount())
 	})
+}
+
+func TestVolumesAndVolumeMountsVsCSIDriver(t *testing.T) {
+	dkHostMonitoring := &dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				HostMonitoring: &oneagent.HostInjectSpec{},
+			},
+		},
+	}
+	dkCloudNativeFullStack := &dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+			},
+		},
+	}
+	dkClassicFullStack := &dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				ClassicFullStack: &oneagent.HostInjectSpec{},
+			},
+		},
+	}
+
+	type oneAgentVolumeTest struct {
+		testName                string
+		dk                      *dynakube.DynaKube
+		csi                     bool
+		csiVolume               bool
+		storageVolume           bool
+		rootReadOnlyVolumeMount bool
+	}
+
+	testCases := []oneAgentVolumeTest{
+		{
+			testName:                "hostMonitoring w/ CSI driver",
+			dk:                      dkHostMonitoring,
+			csi:                     true,
+			csiVolume:               true,
+			storageVolume:           false,
+			rootReadOnlyVolumeMount: true,
+		},
+		{
+			testName:                "hostMonitoring w/o CSI driver",
+			dk:                      dkHostMonitoring,
+			csi:                     false,
+			csiVolume:               false,
+			storageVolume:           true,
+			rootReadOnlyVolumeMount: true,
+		},
+
+		{
+			testName:                "cloudNativeFullStack w/ CSI driver",
+			dk:                      dkCloudNativeFullStack,
+			csi:                     true,
+			csiVolume:               true,
+			storageVolume:           false,
+			rootReadOnlyVolumeMount: true,
+		},
+		{
+			testName:                "cloudNativeFullStack w/o CSI driver",
+			dk:                      dkCloudNativeFullStack,
+			csi:                     false,
+			csiVolume:               false,
+			storageVolume:           true,
+			rootReadOnlyVolumeMount: true,
+		},
+
+		{
+			testName:                "classicFullStack w/o CSI driver",
+			dk:                      dkClassicFullStack,
+			csi:                     false,
+			csiVolume:               false,
+			storageVolume:           false,
+			rootReadOnlyVolumeMount: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run("Volumes:"+tc.testName, func(t *testing.T) {
+			testVolumesVsCSIDriver(t, tc.dk, tc.csi, tc.csiVolume, tc.storageVolume)
+		})
+
+		t.Run("VolumeMounts:"+tc.testName, func(t *testing.T) {
+			testVolumeMountsVsCSIDriver(t, tc.dk, tc.csi, tc.csiVolume, tc.storageVolume, tc.rootReadOnlyVolumeMount)
+		})
+	}
+}
+
+func testVolumesVsCSIDriver(t *testing.T, dk *dynakube.DynaKube, csi bool, csiVolume bool, storageVolume bool) {
+	if csi {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+	} else {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+	}
+
+	volumes := prepareVolumes(dk)
+
+	if csiVolume {
+		assert.Contains(t, volumes, getCSIStorageVolume(dk))
+	} else {
+		assert.NotContains(t, volumes, getCSIStorageVolume(dk))
+	}
+
+	if storageVolume {
+		assert.Contains(t, volumes, getStorageVolume(dk))
+	} else {
+		assert.NotContains(t, volumes, getStorageVolume(dk))
+	}
+}
+
+func testVolumeMountsVsCSIDriver(t *testing.T, dk *dynakube.DynaKube, csi bool, csiVolume bool, storageVolume bool, rootReadOnlyVolumeMount bool) { //nolint:revive
+	if csi {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+	} else {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+	}
+
+	volumeMounts := prepareVolumeMounts(dk)
+
+	if csiVolume {
+		assert.Contains(t, volumeMounts, getCSIStorageMount())
+	} else {
+		assert.NotContains(t, volumeMounts, getCSIStorageMount())
+	}
+
+	if storageVolume {
+		assert.Contains(t, volumeMounts, getStorageVolumeMount(dk))
+	} else {
+		assert.NotContains(t, volumeMounts, getStorageVolumeMount(dk))
+	}
+
+	if rootReadOnlyVolumeMount {
+		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
+	} else {
+		assert.Contains(t, volumeMounts, getRootMount())
+	}
 }

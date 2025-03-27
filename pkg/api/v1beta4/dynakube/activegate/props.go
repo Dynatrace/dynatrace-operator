@@ -95,6 +95,7 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 func (ag *Spec) IsAutomaticTlsSecretEnabled() bool {
 	return ag.automaticTLSCertificateEnabled
 }
+
 func (ag *Spec) HasCaCert() bool {
 	return ag.IsEnabled() && (ag.TlsSecretName != "" || ag.IsAutomaticTlsSecretEnabled())
 }

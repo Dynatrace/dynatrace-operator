@@ -196,7 +196,8 @@ func TestGenerateForDynakube(t *testing.T) {
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureOneAgentInitialConnectRetry: "6500",
+					dynakube.AnnotationFeatureOneAgentInitialConnectRetry:       "6500",
+					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

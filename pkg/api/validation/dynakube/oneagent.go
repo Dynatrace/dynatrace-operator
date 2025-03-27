@@ -131,7 +131,7 @@ func mapKeysToString(m map[string]bool, sep string) string {
 
 func publicImageSetWithoutReadOnlyMode(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().GetCustomImage() != "" {
-		if dk.OneAgent().IsReadOnlyOneAgentsMode() {
+		if dk.OneAgent().IsReadOnlyFSSupported() {
 			return ""
 		}
 
@@ -197,7 +197,7 @@ func unsupportedOneAgentImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 
 func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dk)
-	if dk.OneAgent().IsReadOnlyOneAgentsMode() && volumeStorageSet && !volumeStorageEnabled {
+	if dk.OneAgent().IsReadOnlyFSSupported() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
 	}
 

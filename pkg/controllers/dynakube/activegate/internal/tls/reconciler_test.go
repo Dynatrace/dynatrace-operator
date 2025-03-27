@@ -27,9 +27,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`ActiveGate disabled`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
-				},
 				Namespace: testNamespace,
 				Name:      testDynakubeName,
 			},
@@ -49,9 +46,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`custom ActiveGate TLS secret exists`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
-				},
 				Namespace: testNamespace,
 				Name:      testDynakubeName,
 			},
@@ -81,6 +75,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testDynakubeName,
+				Annotations: map[string]string{
+					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "false",
+				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -105,9 +102,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`secret created`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "true",
-				},
 				Namespace: testNamespace,
 				Name:      testDynakubeName,
 			},

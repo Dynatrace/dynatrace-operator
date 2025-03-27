@@ -53,7 +53,7 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 	hostDirs := map[string]bool{}
 
 	for _, dk := range dks {
-		if !dk.OneAgent().IsReadOnlyOneAgentsMode() {
+		if !dk.OneAgent().IsReadOnlyFSSupported() {
 			continue
 		}
 

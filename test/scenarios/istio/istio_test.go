@@ -51,11 +51,12 @@ func TestIstio(t *testing.T) {
 	feats := []features.Feature{
 		networkProblems.ResilienceFeature(t), // TODO: Fix so order do not matter, because its the first feature here for a reason => we don’t want to have any downloaded codemodules in the filesystem of the CSI-driver, and we can't clean the filesystem between features as the operator is not reinstalled and therefore the csi-driver is running, and you would have to mess with the database because removing it just bricks things.
 		activegate.Feature(t, proxy.ProxySpec),
-		cloudnativeDefault.Feature(t, true),
+		cloudnativeDefault.Feature(t, true, true),
 		codemodules.WithProxy(t, proxy.ProxySpec),
-		codemodules.WithProxyCA(t, proxy.HttpsProxySpec),
 		codemodules.WithProxyAndAGCert(t, proxy.ProxySpec),
+		codemodules.WithProxyAndAutomaticAGCert(t, proxy.ProxySpec),
 		codemodules.WithProxyCAAndAGCert(t, proxy.HttpsProxySpec),
+		codemodules.WithProxyCAAndAutomaticAGCert(t, proxy.HttpsProxySpec),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
