@@ -234,7 +234,7 @@ jobs:
 
   manifest:
     name: Create manifest
-    needs: [prepare, push]
+    needs: [ prepare, push ]
     runs-on: ubuntu-latest
     env:
       COMBINED: ${{ github.ref_protected }}

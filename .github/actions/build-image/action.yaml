@@ -50,9 +50,6 @@ runs:
       shell: bash
       run: |
         set -x
-        buildah version
-        podman version
-        cat /etc/os-release
         podman save --format oci-archive -o /tmp/operator-${{ inputs.platform }}.tar operator-${{ inputs.platform }}:${{ inputs.image-tag }}
     - name: Upload artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
