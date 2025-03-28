@@ -30,9 +30,10 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUid string `yaml:"tenantUid"`
-	ApiUrl    string `yaml:"apiUrl"`
-	ApiToken  string `yaml:"apiToken"`
+	TenantUid       string `yaml:"tenantUid"`
+	ApiUrl          string `yaml:"apiUrl"`
+	ApiToken        string `yaml:"apiToken"`
+	DataIngestToken string `yaml:"dataIngestToken"`
 }
 
 type EdgeConnectSecret struct {
@@ -115,6 +116,10 @@ func CreateTenantSecret(secretConfig Secret, name, namespace string) features.Fu
 			Data: map[string][]byte{
 				"apiToken": []byte(secretConfig.ApiToken),
 			},
+		}
+
+		if secretConfig.DataIngestToken != "" {
+			defaultSecret.Data["dataIngestToken"] = []byte(secretConfig.DataIngestToken)
 		}
 
 		err := envConfig.Client().Resources().Create(ctx, &defaultSecret)

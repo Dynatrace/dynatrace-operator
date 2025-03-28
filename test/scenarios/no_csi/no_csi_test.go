@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
@@ -57,6 +58,10 @@ func TestNoCSI(t *testing.T) {
 		logmonitoring.Feature(t),
 		hostmonitoring.WithoutCSI(t),
 		cloudnativeDefault.Feature(t, false, false),
+		telemetryingest.WithLocalActiveGateAndCleanup(t),
+		telemetryingest.WithPublicActiveGate(t),
+		telemetryingest.WithTelemetryIngestEndpointTLS(t),
+		telemetryingest.OtelCollectorConfigUpdate(t),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)

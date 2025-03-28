@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -69,6 +70,15 @@ func WithActiveGate() Option {
 				activegate.DebuggingCapability.DisplayName,
 			},
 		}
+	}
+}
+
+func WithActiveGateModules(capabilities ...activegate.CapabilityDisplayName) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{},
+		}
+		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, capabilities...)
 	}
 }
 
@@ -204,5 +214,25 @@ func WithLogMonitoringImageRefSpec(repo, tag string) Option {
 				Tag:        tag,
 			},
 		}
+	}
+}
+
+func WithTelemetryIngestEnabled(enabled bool, protocols ...string) Option {
+	return func(dk *dynakube.DynaKube) {
+		if enabled {
+			dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
+			dk.Spec.TelemetryIngest.Protocols = append(dk.Spec.TelemetryIngest.Protocols, protocols...)
+		} else {
+			dk.Spec.TelemetryIngest = nil
+		}
+	}
+}
+
+func WithTelemetryIngestEndpointTLS(secretName string) Option {
+	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.TelemetryIngest == nil {
+			dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
+		}
+		dk.Spec.TelemetryIngest.TlsRefName = secretName
 	}
 }

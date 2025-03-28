@@ -161,3 +161,19 @@ test/e2e/hostmonitoring/withoutcsi: manifests/crd/helm
 ## Runs CloudNative default e2e test only
 test/e2e/cloudnative/withoutcsi: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "cloudnative" $(SKIPCLEANUP)
+
+## Runs TelemetryIngest related e2e tests
+test/e2e/telemetryingest: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "telemetryingest-.*" $(SKIPCLEANUP)
+
+test/e2e/telemetryingest/public-active-gate: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "telemetryingest-with-public-ag-components-rollout" $(SKIPCLEANUP)
+
+test/e2e/telemetryingest/local-active-gate-and-cleanup: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "telemetryingest-with-local-active-gate-component-rollout-and-cleanup-after-disable" $(SKIPCLEANUP)
+
+test/e2e/telemetryingest/otel-collector-endpoint-tls: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "telemetryingest-with-otel-collector-endpoint-tls" $(SKIPCLEANUP)
+
+test/e2e/telemetryingest/otel-collector-config-udpate: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/no_csi -args --feature "telemetryingest-configuration-update" $(SKIPCLEANUP)

@@ -17,6 +17,9 @@ inputs:
   tenant1-apitoken:
     description: The API token of Tenant 1
     required: true
+  tenant1-dataingesttoken:
+    description: The data ingest token of Tenant 1
+    required: true
   tenant1-oauth-client-id:
     description: The OAuth client ID of Tenant 1
     required: true
@@ -31,6 +34,9 @@ inputs:
     required: true
   tenant2-apitoken:
     description: The API token of Tenant 2
+    required: true
+  tenant2-dataingesttoken:
+    description: The data ingest token of Tenant 2
     required: true
   github-token:
     description: The GitHub token
@@ -75,11 +81,13 @@ runs:
         TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
         TENANT1_NAME: ${{ inputs.tenant1-name }}
         TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
+        TENANT1_DATAINGESTTOKEN: ${{ inputs.tenant1-dataingesttoken }}
         TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
         TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
         TENANT1_OAUTH_URN: ${{ inputs.tenant1-oauth-urn }}
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
+        TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
     - name: Destroy cluster
       shell: bash
       run: ref/.github/scripts/destroy-cluster.sh
