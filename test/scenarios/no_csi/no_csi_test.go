@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -34,11 +33,11 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
-		operator.InstallViaMake(false),
+		//		operator.InstallViaMake(false),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
-		testEnv.Finish(operator.UninstallViaMake(false))
+		//		testEnv.Finish(operator.UninstallViaMake(false))
 	}
 	testEnv.Run(m)
 }

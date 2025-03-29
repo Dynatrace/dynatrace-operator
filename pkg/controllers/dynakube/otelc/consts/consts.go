@@ -1,7 +1,7 @@
 package consts
 
 const (
-	TelemetryApiCredentialsSecretName = "dynatrace-telemetry-api-credentials"
+	TelemetryApiEndpointConfigMapName = "dynatrace-telemetry-api-endpoint"
 
 	ConfigFieldName                   = "telemetry.yaml"
 	TelemetryCollectorConfigmapSuffix = "-telemetry-collector-config"

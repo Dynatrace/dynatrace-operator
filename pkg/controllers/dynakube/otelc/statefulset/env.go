@@ -95,8 +95,8 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	if dk.TelemetryIngest().IsEnabled() {
 		envs = append(envs,
 			corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiCredentialsSecretName},
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiEndpointConfigMapName},
 					Key:                  envDTendpoint,
 				},
 			}},
