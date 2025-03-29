@@ -14,7 +14,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -34,37 +34,37 @@ const (
 func TestSecretCreation(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("creates secret if it does not exist", func(t *testing.T) {
+	t.Run("creates config map if it does not exist", func(t *testing.T) {
 		dk := createDynaKube(true)
 
-		testSecret, err := secret.Build(&dk, dk.Name, map[string][]byte{
-			dtclient.ApiToken: []byte(testApiToken),
+		testConfigMap, err := configmap.Build(&dk, dk.Name, map[string]string{
+			dtclient.ApiToken: testApiToken,
 		})
 		require.NoError(t, err)
 
-		clt := fake.NewFakeClient(testSecret)
+		clt := fake.NewFakeClient(testConfigMap)
 
 		r := NewReconciler(clt, clt, &dk)
 
-		err = r.ensureTelemetryIngestApiCredentialsSecret(ctx)
+		err = r.ensureTelemetryIngestApiEndpointConfigMap(ctx)
 		require.NoError(t, err)
 
-		var apiCredsSecret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiCredentialsSecretName, Namespace: dk.Namespace}, &apiCredsSecret)
+		var apiEndpointConfigMap corev1.ConfigMap
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
 		require.NoError(t, err)
-		assert.NotEmpty(t, apiCredsSecret)
-		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), secretConditionType))
-		assert.Equal(t, conditions.SecretCreatedReason, meta.FindStatusCondition(*dk.Conditions(), secretConditionType).Reason)
+		assert.NotEmpty(t, apiEndpointConfigMap)
+		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType))
+		assert.Equal(t, conditions.ConfigMapCreatedOrUpdatedReason, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType).Reason)
 	})
 
 	t.Run("removes secret if exists but we don't need it", func(t *testing.T) {
 		dk := createDynaKube(false)
-		conditions.SetSecretCreated(dk.Conditions(), secretConditionType, consts.TelemetryApiCredentialsSecretName)
+		conditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.TelemetryApiEndpointConfigMapName)
 
 		objs := []client.Object{
-			&corev1.Secret{
+			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.TelemetryApiCredentialsSecretName,
+					Name:      consts.TelemetryApiEndpointConfigMapName,
 					Namespace: dk.Namespace,
 				},
 			},
@@ -76,85 +76,69 @@ func TestSecretCreation(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		var apiTokenSecret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiCredentialsSecretName, Namespace: dk.Namespace}, &apiTokenSecret)
+		var apiEndpointConfigmap corev1.ConfigMap
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
 
 		require.Error(t, err)
-		assert.Empty(t, apiTokenSecret)
+		assert.Empty(t, apiEndpointConfigmap)
 	})
 }
 
 func TestEndpoint(t *testing.T) {
-	t.Run("in-cluster ActiveGate", func(t *testing.T) {
-		dk := createDynaKube(true)
-		apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID)
-		dk.Spec.APIURL = apiUrl
-		dk.Spec.ActiveGate = activegate.Spec{
-			Capabilities: []activegate.CapabilityDisplayName{"dynatrace-api"},
-		}
+	tests := []struct {
+		name             string
+		apiUrl           string
+		expectedEndpoint string
+		inClusterAg      bool
+	}{
+		{
+			name:             "in-cluster ActiveGate",
+			apiUrl:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
+			inClusterAg:      true,
+			expectedEndpoint: fmt.Sprintf("https://test-dk-activegate.dynatrace.svc/e/%s/api/v2/otlp", testTenantUUID),
+		},
+		{
+			name:             "public ActiveGate",
+			apiUrl:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
+			inClusterAg:      false,
+			expectedEndpoint: fmt.Sprintf("https://%s.dev.dynatracelabs.com/api/v2/otlp", testTenantUUID),
+		},
+		{
+			name:             "managed ActiveGate",
+			apiUrl:           "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api",
+			inClusterAg:      false,
+			expectedEndpoint: "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api/v2/otlp",
+		},
+	}
 
-		objs := []client.Object{
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.TelemetryApiCredentialsSecretName,
-					Namespace: dk.Namespace,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := createDynaKube(true)
+			dk.Spec.APIURL = tt.apiUrl
+
+			if tt.inClusterAg {
+				dk.Spec.ActiveGate = activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{"dynatrace-api"},
+				}
+			}
+
+			objs := []client.Object{
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      consts.TelemetryApiEndpointConfigMapName,
+						Namespace: dk.Namespace,
+					},
 				},
-			},
-		}
+			}
 
-		clt := schemeFake.NewClient(objs...)
-		r := NewReconciler(clt, clt, &dk)
+			clt := schemeFake.NewClient(objs...)
+			r := NewReconciler(clt, clt, &dk)
 
-		endpoint, err := r.getDtEndpoint()
-		require.NoError(t, err)
-
-		expected := fmt.Sprintf("https://%s-activegate.dynatrace.svc/e/%s/api/v2/otlp", dk.Name, testTenantUUID)
-		assert.Equal(t, expected, string(endpoint))
-	})
-
-	t.Run("public ActiveGate", func(t *testing.T) {
-		dk := createDynaKube(true)
-		apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID)
-		dk.Spec.APIURL = apiUrl
-
-		objs := []client.Object{
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.TelemetryApiCredentialsSecretName,
-					Namespace: dk.Namespace,
-				},
-			},
-		}
-
-		clt := schemeFake.NewClient(objs...)
-		r := NewReconciler(clt, clt, &dk)
-
-		endpoint, err := r.getDtEndpoint()
-		require.NoError(t, err)
-		assert.Equal(t, apiUrl+"/v2/otlp", string(endpoint))
-	})
-
-	t.Run("managed ActiveGate", func(t *testing.T) {
-		dk := createDynaKube(true)
-		apiUrl := "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api"
-		dk.Spec.APIURL = apiUrl
-
-		objs := []client.Object{
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.TelemetryApiCredentialsSecretName,
-					Namespace: dk.Namespace,
-				},
-			},
-		}
-
-		clt := schemeFake.NewClient(objs...)
-		r := NewReconciler(clt, clt, &dk)
-
-		endpoint, err := r.getDtEndpoint()
-		require.NoError(t, err)
-		assert.Equal(t, apiUrl+"/v2/otlp", string(endpoint))
-	})
+			endpoint, err := r.getDtEndpoint()
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedEndpoint, endpoint)
+		})
+	}
 }
 
 func createDynaKube(telemetryIngestEnabled bool) dynakube.DynaKube {

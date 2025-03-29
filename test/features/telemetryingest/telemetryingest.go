@@ -93,6 +93,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 	builder.Assess("otel collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
+	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakube))
 
 	optionsTelemetryIngestDisabled := []componentDynakube.Option{
 		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
@@ -107,6 +108,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 	builder.Assess("otel collector shutdown", waitForShutdown(testDynakubeNoTelemetryIngest.OtelCollectorStatefulsetName(), testDynakubeNoTelemetryIngest.Namespace))
 	builder.Assess("otel collector config removed", checkOtelCollectorConfigRemoved(&testDynakubeNoTelemetryIngest))
 	builder.Assess("otel collector service removed", checkOtelCollectorServiceRemoved(&testDynakubeNoTelemetryIngest))
+	builder.Assess("otel collector endpoint configmap removed", checkOtelCollectorEndpointConfigMapRemoved(&testDynakubeNoTelemetryIngest))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakubeNoTelemetryIngest)
 
@@ -139,6 +141,7 @@ func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature {
 	builder.Assess("otel collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
+	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakube))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
@@ -165,6 +168,7 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	builder.Assess("otel collector started", statefulset.WaitFor(testDynakubeZipkin.OtelCollectorStatefulsetName(), testDynakubeZipkin.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakubeZipkin))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakubeZipkin))
+	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakubeZipkin))
 
 	var zipkinConfigResourceVersion string
 	builder.Assess("otel collector configuration timestamp", getOtelCollectorConfigResourceVersion(&testDynakubeZipkin, &zipkinConfigResourceVersion))
@@ -298,9 +302,28 @@ func checkOtelCollectorService(dk *dynakube.DynaKube) features.Func {
 	}
 }
 
+func checkOtelCollectorEndpointConfigMap(dk *dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		_, err := getOtelCollectorEndpointConfigMap(dk, ctx, envConfig)
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
 func checkOtelCollectorServiceRemoved(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		_, err := getOtelCollectorService(dk, ctx, envConfig)
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err), "Service still exists")
+
+		return ctx
+	}
+}
+
+func checkOtelCollectorEndpointConfigMapRemoved(dk *dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		_, err := getOtelCollectorEndpointConfigMap(dk, ctx, envConfig)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err), "Service still exists")
 
@@ -351,6 +374,19 @@ func getOtelCollectorService(dk *dynakube.DynaKube, ctx context.Context, envConf
 	}
 
 	return &otelCollectorService, nil
+}
+
+func getOtelCollectorEndpointConfigMap(dk *dynakube.DynaKube, ctx context.Context, envConfig *envconf.Config) (*corev1.ConfigMap, error) {
+	resources := envConfig.Client().Resources()
+
+	var otelCollectorEndpointConfigMap corev1.ConfigMap
+	err := resources.WithNamespace(dk.Namespace).Get(ctx, otelcconsts.TelemetryApiEndpointConfigMapName, dk.Namespace, &otelCollectorEndpointConfigMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &otelCollectorEndpointConfigMap, nil
 }
 
 func waitForShutdown(name string, namespace string) features.Func {
