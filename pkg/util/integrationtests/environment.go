@@ -1,6 +1,7 @@
 package integrationtests
 
 import (
+	"go/build"
 	"os"
 	"path/filepath"
 	"testing"
@@ -64,8 +65,14 @@ func SetupTestEnvironment(t *testing.T) client.Client {
 // properly set up, run 'make setup-envtest' beforehand.
 func getFirstFoundEnvTestBinaryDir() string {
 	gobin := os.Getenv("GOBIN")
+	gopath := os.Getenv("GOPATH")
+
+	if gopath == "" {
+		gopath = build.Default.GOPATH
+	}
+
 	if gobin == "" {
-		gobin = filepath.Join(os.Getenv("GOPATH"), "bin")
+		gobin = filepath.Join(gopath, "bin")
 	}
 	basePath := filepath.Join(gobin, "k8s")
 
