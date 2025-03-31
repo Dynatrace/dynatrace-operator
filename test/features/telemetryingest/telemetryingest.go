@@ -304,8 +304,9 @@ func checkOtelCollectorService(dk *dynakube.DynaKube) features.Func {
 
 func checkOtelCollectorEndpointConfigMap(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		_, err := getOtelCollectorEndpointConfigMap(dk, ctx, envConfig)
+		cm, err := getOtelCollectorEndpointConfigMap(dk, ctx, envConfig)
 		require.NoError(t, err)
+		assert.NotNil(t, cm)
 
 		return ctx
 	}

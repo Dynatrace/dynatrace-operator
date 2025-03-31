@@ -3,7 +3,6 @@
 package no_csi
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -17,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
