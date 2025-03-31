@@ -1,4 +1,4 @@
-package secret
+package endpoint
 
 const (
 	configMapConditionType = "TelemetryIngestApiEndpointConfigMap"

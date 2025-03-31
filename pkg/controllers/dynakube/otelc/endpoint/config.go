@@ -1,4 +1,4 @@
-package secret
+package endpoint
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/logd"
 
