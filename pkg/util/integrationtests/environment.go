@@ -64,6 +64,9 @@ func SetupTestEnvironment(t *testing.T) client.Client {
 // properly set up, run 'make setup-envtest' beforehand.
 func getFirstFoundEnvTestBinaryDir() string {
 	gobin := os.Getenv("GOBIN")
+	if gobin == "" {
+		gobin = filepath.Join(os.Getenv("GOPATH"), "bin")
+	}
 	basePath := filepath.Join(gobin, "k8s")
 
 	entries, err := os.ReadDir(basePath)
