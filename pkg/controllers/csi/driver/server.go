@@ -181,7 +181,7 @@ func (srv *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	return publisher.PublishVolume(ctx, volumeCfg)
+	return publisher.PublishVolume(ctx, &volumeCfg)
 }
 
 func (srv *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
@@ -190,7 +190,7 @@ func (srv *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 		return nil, err
 	}
 
-	srv.unmount(*volumeInfo)
+	srv.unmount(volumeInfo)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
@@ -288,11 +288,13 @@ func (srv *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeReques
 func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var methodName string
+
 		var logValues []any
 
 		switch info.FullMethod {
 		case "/csi.v1.Node/NodePublishVolume":
 			req := req.(*csi.NodePublishVolumeRequest)
+			methodName = "NodePublishVolume"
 			vc, _ := csivolumes.ParseNodePublishVolumeRequest(req)
 			logValues = []any{
 				"method", methodName,
@@ -302,17 +304,16 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 				"dynakube", vc.DynakubeName,
 				"mode", vc.Mode,
 			}
-			methodName = "NodePublishVolume"
 			log.Info("GRPC call", logValues...)
 		case "/csi.v1.Node/NodeUnpublishVolume":
 			req := req.(*csi.NodeUnpublishVolumeRequest)
+			methodName = "NodeUnpublishVolume"
 			vi, _ := csivolumes.ParseNodeUnpublishVolumeRequest(req)
 			logValues = []any{ // this is all we get
 				"method", methodName,
 				"volume-id", vi.VolumeID,
 				"target-path", vi.TargetPath,
 			}
-			methodName = "NodeUnpublishVolume"
 			log.Info("GRPC call", logValues...)
 		default:
 			log.Debug("GRPC call", "full_method", info.FullMethod)
