@@ -3,6 +3,7 @@
 - [Pull requests](#pull-requests)
 - [Quick start](#quick-start)
 - [Unit tests](#unit-tests)
+- [Integration tests](#integration-tests)
 - [E2E tests](#e2e-tests)
 - [Useful commands](#useful-commands)
   - [Remove all Dynatrace pods in force mode (useful debugging E2E tests)](#remove-all-dynatrace-pods-in-force-mode-useful-debugging-e2e-tests)
@@ -159,6 +160,23 @@ To move our existing codebase to mockery you have to look out for these pitfalls
   > installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
   > reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
   > ```
+
+## Integration tests
+
+Based on [controller-runtime/pkg/envtest](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#pkg-overview)
+
+### setup
+
+```bash
+make integrationtest
+```
+
+### motivation:
+
+Mocking everything during unit-tests is not a good idea if we want to test some limitations of api-server
+(especially different versions): e.g. But from another side e2e tests requires lots of setup
+(even kind, you need to set up a cluster, deploy operator and wait when it's ready, and
+only after you can try to run you test).
 
 ## E2E tests
 

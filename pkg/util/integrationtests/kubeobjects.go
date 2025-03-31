@@ -1,15 +1,14 @@
-//go:build integrationtests
-
 package integrationtests
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func CreateNamespace(t *testing.T, ctx context.Context, clt client.Client, namespace string) {

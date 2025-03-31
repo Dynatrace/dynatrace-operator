@@ -4,10 +4,10 @@ package statefulset
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"github.com/stretchr/testify/require"
 )
 
