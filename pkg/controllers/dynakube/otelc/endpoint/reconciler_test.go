@@ -31,7 +31,7 @@ const (
 	testKubeSystemUUID = "12345"
 )
 
-func TestSecretCreation(t *testing.T) {
+func TestConfigMapCreation(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("creates config map if it does not exist", func(t *testing.T) {
