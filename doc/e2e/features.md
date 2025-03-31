@@ -621,7 +621,7 @@ const (
 
 <a name="OtelCollectorConfigUpdate"></a>
 
-## func [OtelCollectorConfigUpdate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L151>)
+## func [OtelCollectorConfigUpdate](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L154>)
 
 ```go
 func OtelCollectorConfigUpdate(t *testing.T) features.Feature
@@ -651,7 +651,7 @@ Rollout of OTel collector when no ActiveGate is configured in the Dynakube
 
 <a name="WithTelemetryIngestEndpointTLS"></a>
 
-## func [WithTelemetryIngestEndpointTLS](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L119>)
+## func [WithTelemetryIngestEndpointTLS](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/telemetryingest/telemetryingest.go#L121>)
 
 ```go
 func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature
