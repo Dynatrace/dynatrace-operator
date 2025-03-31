@@ -96,7 +96,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs,
 			corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiEndpointConfigMapName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpApiEndpointConfigMapName},
 					Key:                  envDTendpoint,
 				},
 			}},

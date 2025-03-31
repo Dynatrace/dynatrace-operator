@@ -91,7 +91,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Equal(t, corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.TelemetryApiEndpointConfigMapName},
+				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpApiEndpointConfigMapName},
 				Key:                  envDTendpoint,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])

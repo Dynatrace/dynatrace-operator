@@ -46,11 +46,11 @@ func TestSecretCreation(t *testing.T) {
 
 		r := NewReconciler(clt, clt, &dk)
 
-		err = r.ensureTelemetryIngestApiEndpointConfigMap(ctx)
+		err = r.ensureOtlpApiEndpointConfigMap(ctx)
 		require.NoError(t, err)
 
 		var apiEndpointConfigMap corev1.ConfigMap
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpApiEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
 		require.NoError(t, err)
 		assert.NotEmpty(t, apiEndpointConfigMap)
 		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType))
@@ -59,12 +59,12 @@ func TestSecretCreation(t *testing.T) {
 
 	t.Run("removes secret if exists but we don't need it", func(t *testing.T) {
 		dk := createDynaKube(false)
-		conditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.TelemetryApiEndpointConfigMapName)
+		conditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.OtlpApiEndpointConfigMapName)
 
 		objs := []client.Object{
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.TelemetryApiEndpointConfigMapName,
+					Name:      consts.OtlpApiEndpointConfigMapName,
 					Namespace: dk.Namespace,
 				},
 			},
@@ -77,7 +77,7 @@ func TestSecretCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var apiEndpointConfigmap corev1.ConfigMap
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.TelemetryApiEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpApiEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
 
 		require.Error(t, err)
 		assert.Empty(t, apiEndpointConfigmap)
@@ -125,7 +125,7 @@ func TestEndpoint(t *testing.T) {
 			objs := []client.Object{
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      consts.TelemetryApiEndpointConfigMapName,
+						Name:      consts.OtlpApiEndpointConfigMapName,
 						Namespace: dk.Namespace,
 					},
 				},

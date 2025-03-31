@@ -1,7 +1,7 @@
 package consts
 
 const (
-	TelemetryApiEndpointConfigMapName = "dynatrace-telemetry-api-endpoint"
+	OtlpApiEndpointConfigMapName = "dynatrace-otlp-api-endpoint"
 
 	ConfigFieldName                   = "telemetry.yaml"
 	TelemetryCollectorConfigmapSuffix = "-telemetry-collector-config"

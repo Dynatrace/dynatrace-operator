@@ -381,7 +381,7 @@ func getOtelCollectorEndpointConfigMap(dk *dynakube.DynaKube, ctx context.Contex
 	resources := envConfig.Client().Resources()
 
 	var otelCollectorEndpointConfigMap corev1.ConfigMap
-	err := resources.WithNamespace(dk.Namespace).Get(ctx, otelcconsts.TelemetryApiEndpointConfigMapName, dk.Namespace, &otelCollectorEndpointConfigMap)
+	err := resources.WithNamespace(dk.Namespace).Get(ctx, otelcconsts.OtlpApiEndpointConfigMapName, dk.Namespace, &otelCollectorEndpointConfigMap)
 
 	if err != nil {
 		return nil, err
