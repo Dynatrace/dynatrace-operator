@@ -1,5 +1,5 @@
 package endpoint
 
 const (
-	configMapConditionType = "TelemetryIngestApiEndpointConfigMap"
+	configMapConditionType = "OtelpApiEndpointConfigMap"
 )
