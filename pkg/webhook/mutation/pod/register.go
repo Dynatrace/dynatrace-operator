@@ -2,6 +2,7 @@ package pod
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
@@ -19,6 +20,8 @@ import (
 	webhooks "sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+const dkWildCard = "dk"
 
 func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
 	eventRecorder := events.NewRecorder(mgr.GetEventRecorderFor("dynatrace-webhook"))
@@ -58,14 +61,22 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 		return err
 	}
 
-	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
-		v1:               podv1.NewInjector(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
-		v2:               podv2.NewInjector(kubeClient, apiReader, metaClient, eventRecorder),
-		apiReader:        apiReader,
-		webhookNamespace: webhookNamespace,
-		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
-		decoder:          admission.NewDecoder(mgr.GetScheme()),
-	}})
+	wh := &webhooks.Admission{
+		Handler: &webhook{
+			v1:               podv1.NewInjector(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
+			v2:               podv2.NewInjector(kubeClient, apiReader, metaClient, eventRecorder),
+			apiReader:        apiReader,
+			webhookNamespace: webhookNamespace,
+			deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
+			decoder:          admission.NewDecoder(mgr.GetScheme()),
+		},
+		WithContextFunc: func(ctx context.Context, r *http.Request) context.Context {
+			return context.WithValue(r.Context(), dkWildCard, r.PathValue(dkWildCard))
+		},
+	}
+
+	mgr.GetWebhookServer().Register(fmt.Sprintf("/inject/{%s}", dkWildCard), wh)
+
 	log.Info("registered /inject endpoint")
 
 	return nil

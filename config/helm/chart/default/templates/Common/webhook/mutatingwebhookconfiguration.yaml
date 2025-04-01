@@ -18,7 +18,26 @@ metadata:
   labels:
   {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 webhooks:
-  - name: webhook.pod.dynatrace.com
+  - name: dk1.pod.dynatrace.com
+    reinvocationPolicy: IfNeeded
+    failurePolicy: {{.Values.webhook.mutatingWebhook.failurePolicy}}
+    timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
+    rules:
+      - apiGroups: [ "" ]
+        apiVersions: [ "v1" ]
+        operations: [ "CREATE" ]
+        resources: [ "pods" ]
+        scope: Namespaced
+    namespaceSelector:
+
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /inject/dk
+    admissionReviewVersions: [ "v1beta1", "v1" ]
+    sideEffects: None
+  - name: dk2.pod.dynatrace.com
     reinvocationPolicy: IfNeeded
     failurePolicy: {{.Values.webhook.mutatingWebhook.failurePolicy}}
     timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
@@ -36,23 +55,6 @@ webhooks:
       service:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
-        path: /inject
-    admissionReviewVersions: [ "v1beta1", "v1" ]
-    sideEffects: None
-  - name: webhook.ns.dynatrace.com
-    reinvocationPolicy: IfNeeded
-    failurePolicy: {{.Values.webhook.mutatingWebhook.failurePolicy}}
-    timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
-    rules:
-      - apiGroups: [ "" ]
-        apiVersions: [ "v1" ]
-        operations: [ "CREATE", "UPDATE"]
-        resources: [ "namespaces" ]
-        scope: Cluster
-    clientConfig:
-      service:
-        name: dynatrace-webhook
-        namespace: {{ .Release.Namespace }}
-        path: /label-ns
+        path: /inject/dk
     admissionReviewVersions: [ "v1beta1", "v1" ]
     sideEffects: None

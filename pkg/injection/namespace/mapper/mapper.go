@@ -45,6 +45,49 @@ func GetNamespacesForDynakube(ctx context.Context, clt client.Reader, dkName str
 	return nsList.Items, err
 }
 
+func XGetNamespacesForDynakube(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) ([]corev1.Namespace, error) {
+	oaList := &corev1.NamespaceList{}
+	if dk.OneAgent().IsAppInjectionNeeded() {
+		selector, _ := metav1.LabelSelectorAsSelector(dk.OneAgent().GetNamespaceSelector())
+		listOps := []client.ListOption{
+			client.MatchingLabelsSelector{Selector: selector},
+		}
+
+		err := clt.List(ctx, oaList, listOps...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	meList := &corev1.NamespaceList{}
+	if dk.MetadataEnrichmentEnabled() {
+		selector, _ := metav1.LabelSelectorAsSelector(dk.MetadataEnrichmentNamespaceSelector())
+		listOps := []client.ListOption{
+			client.MatchingLabelsSelector{Selector: selector},
+		}
+
+		err := clt.List(ctx, meList, listOps...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	allNs := map[string]corev1.Namespace{}
+	for _, item := range oaList.Items {
+		allNs[item.Name] = item
+	}
+	for _, item := range meList.Items {
+		allNs[item.Name] = item
+	}
+
+	nsList := []corev1.Namespace{}
+	for _, ns := range allNs {
+		nsList = append(nsList, ns)
+	}
+
+	return nsList, nil
+}
+
 func addNamespaceInjectLabel(dkName string, ns *corev1.Namespace) {
 	if ns.Labels == nil {
 		ns.Labels = make(map[string]string)

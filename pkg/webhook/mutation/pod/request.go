@@ -23,6 +23,8 @@ func (wh *webhook) createMutationRequestBase(ctx context.Context, request admiss
 		return nil, err
 	}
 
+	log.Info("dk from request", "name", ctx.Value(dkWildCard))
+
 	dynakubeName, err := getDynakubeName(*namespace)
 	if err != nil && !wh.deployedViaOLM {
 		return nil, err
