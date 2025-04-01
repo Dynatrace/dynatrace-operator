@@ -75,20 +75,6 @@ func NewReconciler(
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	// because the 2 injection type we have share the label that the webhook is listening to, we can only clean that label up if both are disabled
-	// but we should only clean-up the labels after everything else is cleaned up because the clean-up for the secrets depend on the label still being there
-	// but we have to do the mapping before everything when its necessary
-	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichmentEnabled() {
-		defer r.unmapDynakube(ctx)
-	} else {
-		dkMapper := r.createDynakubeMapper(ctx)
-		if err := dkMapper.MapFromDynakube(); err != nil {
-			log.Info("update of a map of namespaces failed")
-
-			return err
-		}
-	}
-
 	var setupErrors []error
 	if err := r.setupOneAgentInjection(ctx); err != nil {
 		setupErrors = append(setupErrors, err)
@@ -105,23 +91,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	log.Info("app injection reconciled")
 
 	return nil
-}
-
-func (r *reconciler) unmapDynakube(ctx context.Context) {
-	if meta.FindStatusCondition(*r.dk.Conditions(), codeModulesInjectionConditionType) != nil &&
-		meta.FindStatusCondition(*r.dk.Conditions(), metaDataEnrichmentConditionType) != nil {
-		return
-	}
-
-	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
-	if err != nil {
-		log.Error(err, "failed to list namespaces for dynakube", "dkName", r.dk.Name)
-	}
-
-	dkMapper := r.createDynakubeMapper(ctx)
-	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
-		log.Error(err, "could not unmap dynakube from namespace", "dkName", r.dk.Name)
-	}
 }
 
 func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
@@ -199,7 +168,7 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 	if meta.FindStatusCondition(*r.dk.Conditions(), codeModulesInjectionConditionType) != nil {
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), codeModulesInjectionConditionType)
 
-		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
+		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk)
 		if err != nil {
 			log.Error(err, "failed to list injected namespace during code module injection cleanup")
 
@@ -257,7 +226,7 @@ func (r *reconciler) cleanupEnrichmentInjection(ctx context.Context) {
 	if meta.FindStatusCondition(*r.dk.Conditions(), metaDataEnrichmentConditionType) != nil {
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), metaDataEnrichmentConditionType)
 
-		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
+		namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk)
 		if err != nil {
 			log.Error(err, "failed to list injected namespace during metadata-enrichment injection cleanup")
 
@@ -269,11 +238,4 @@ func (r *reconciler) cleanupEnrichmentInjection(ctx context.Context) {
 			log.Error(err, "failed to clean-up metadata-enrichment injection secrets")
 		}
 	}
-}
-
-func (r *reconciler) createDynakubeMapper(ctx context.Context) *mapper.DynakubeMapper {
-	operatorNamespace := r.dk.GetNamespace()
-	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, operatorNamespace, r.dk)
-
-	return &dkMapper
 }

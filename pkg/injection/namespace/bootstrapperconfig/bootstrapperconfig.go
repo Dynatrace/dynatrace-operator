@@ -44,7 +44,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		return errors.WithStack(err)
 	}
 
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, s.apiReader, dk.Name)
+	nsList, err := mapper.GetNamespacesForDynakube(ctx, s.apiReader, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}

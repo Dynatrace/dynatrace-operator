@@ -25,7 +25,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -33,7 +32,6 @@ import (
 	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -137,7 +135,7 @@ type Controller struct {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
-	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
+	dk, err := controller.getDynakube(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
 	} else if dk == nil {
@@ -156,7 +154,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	return result, err
 }
 
-func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, dkNamespace string) (*dynakube.DynaKube, error) {
+func (controller *Controller) getDynakube(ctx context.Context, dkName, dkNamespace string) (*dynakube.DynaKube, error) {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dkName,
@@ -164,19 +162,7 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 		},
 	}
 	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
-
-	if k8serrors.IsNotFound(err) {
-		namespaces, err := mapper.GetNamespacesForDynakube(ctx, controller.apiReader, dkName)
-		if err != nil {
-			return nil, errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dkName)
-		}
-
-		return nil, controller.createDynakubeMapper(ctx, dk).UnmapFromDynaKube(namespaces)
-	} else if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return dk, nil
+	return dk, err
 }
 
 func (controller *Controller) handleError(
@@ -421,10 +407,4 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	}
 
 	return goerrors.Join(componentErrors...)
-}
-
-func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dynakube.DynaKube) *mapper.DynakubeMapper {
-	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dk)
-
-	return &dkMapper
 }

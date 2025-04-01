@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -284,7 +283,6 @@ func TestRemoveAppInjection(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, namespace.ObjectMeta.Labels)
 	require.NotNil(t, namespace.ObjectMeta.Annotations)
-	assert.Equal(t, "true", namespace.Annotations[mapper.UpdatedViaDynakubeAnnotation])
 
 	err = clt.Get(context.Background(), client.ObjectKey{Name: testNamespace2, Namespace: ""}, &namespace)
 	require.NoError(t, err)

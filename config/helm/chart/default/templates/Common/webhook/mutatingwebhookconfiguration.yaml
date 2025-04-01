@@ -28,31 +28,11 @@ webhooks:
         operations: [ "CREATE" ]
         resources: [ "pods" ]
         scope: Namespaced
-    namespaceSelector:
-      matchExpressions:
-        - key: dynakube.internal.dynatrace.com/instance
-          operator: Exists
+    namespaceSelector: {}
     clientConfig:
       service:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
         path: /inject
-    admissionReviewVersions: [ "v1beta1", "v1" ]
-    sideEffects: None
-  - name: webhook.ns.dynatrace.com
-    reinvocationPolicy: IfNeeded
-    failurePolicy: {{.Values.webhook.mutatingWebhook.failurePolicy}}
-    timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
-    rules:
-      - apiGroups: [ "" ]
-        apiVersions: [ "v1" ]
-        operations: [ "CREATE", "UPDATE"]
-        resources: [ "namespaces" ]
-        scope: Cluster
-    clientConfig:
-      service:
-        name: dynatrace-webhook
-        namespace: {{ .Release.Namespace }}
-        path: /label-ns
     admissionReviewVersions: [ "v1beta1", "v1" ]
     sideEffects: None

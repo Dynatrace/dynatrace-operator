@@ -250,7 +250,7 @@ func TestRemoveEndpointSecrets(t *testing.T) {
 	dk := buildTestDynakube()
 	fakeClient := buildTestClientAfterGenerate(dk)
 
-	namespaces, err := mapper.GetNamespacesForDynakube(context.Background(), fakeClient, dk.Name)
+	namespaces, err := mapper.GetNamespacesForDynakube(context.Background(), fakeClient, dk)
 	require.NoError(t, err)
 
 	endpointSecretGenerator := NewSecretGenerator(fakeClient, fakeClient, dk.Namespace)

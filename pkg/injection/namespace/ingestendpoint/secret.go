@@ -86,7 +86,7 @@ func (g *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 	coreLabels := labels.NewCoreLabels(dk.Name, labels.ActiveGateComponentLabel)
 
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
+	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}

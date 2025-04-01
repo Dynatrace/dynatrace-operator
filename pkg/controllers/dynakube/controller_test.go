@@ -93,7 +93,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 			apiReader: fakeClient,
 		}
 
-		dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
+		dk, err := controller.getDynakube(ctx, request.Name, request.Namespace)
 		require.NoError(t, err)
 		assert.Nil(t, dk)
 
@@ -117,7 +117,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 			apiReader: fakeClient,
 		}
 
-		dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
+		dk, err := controller.getDynakube(ctx, request.Name, request.Namespace)
 		require.NoError(t, err)
 		assert.Equal(t, expectedDynakube.Name, dk.Name)
 		assert.Equal(t, expectedDynakube.Namespace, dk.Namespace)
@@ -483,7 +483,7 @@ func TestGetDynakube(t *testing.T) {
 			apiReader: fakeClient,
 		}
 		ctx := context.Background()
-		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
+		dynakube, err := controller.getDynakube(ctx, testName, testNamespace)
 
 		assert.NotNil(t, dynakube)
 		require.NoError(t, err)
@@ -505,7 +505,7 @@ func TestGetDynakube(t *testing.T) {
 			apiReader: fakeClient,
 		}
 		ctx := context.Background()
-		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
+		dynakube, err := controller.getDynakube(ctx, testName, testNamespace)
 
 		assert.Nil(t, dynakube)
 		require.NoError(t, err)
@@ -521,7 +521,7 @@ func TestGetDynakube(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		dk, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
+		dk, err := controller.getDynakube(ctx, testName, testNamespace)
 
 		assert.Nil(t, dk)
 		require.EqualError(t, err, "fake error")

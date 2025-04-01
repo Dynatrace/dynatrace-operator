@@ -20,7 +20,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	namespacemutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace"
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -82,11 +81,6 @@ func run() func(*cobra.Command, []string) error {
 		signalHandler := ctrl.SetupSignalHandler()
 
 		err = startCertificateWatcher(webhookManager, namespace, podName)
-		if err != nil {
-			return err
-		}
-
-		err = namespacemutator.AddWebhookToManager(webhookManager, namespace)
 		if err != nil {
 			return err
 		}

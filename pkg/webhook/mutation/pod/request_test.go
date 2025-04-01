@@ -91,22 +91,6 @@ func TestGetDynakubeName(t *testing.T) {
 	})
 }
 
-func TestGetDynakube(t *testing.T) {
-	t.Run("should return the dynakube struct", func(t *testing.T) {
-		expected := getTestDynakube()
-		podWebhook := createTestWebhook(
-			webhookmock.NewPodInjector(t),
-			webhookmock.NewPodInjector(t),
-			[]client.Object{expected},
-		)
-
-		dynakube, err := podWebhook.getDynakube(context.Background(), testDynakubeName)
-		require.NoError(t, err)
-		assert.Equal(t, expected.ObjectMeta, dynakube.ObjectMeta)
-		assert.Equal(t, expected.Spec.OneAgent.CloudNativeFullStack, dynakube.Spec.OneAgent.CloudNativeFullStack)
-	})
-}
-
 func createTestMutationRequest(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
