@@ -93,6 +93,8 @@ spec:
               value: ":{{ .Values.webhook.ports.healthProbe | default "10080" }}"
             - name: METRICS_BIND_ADDRESS
               value: ":{{ .Values.webhook.ports.metrics | default "8383" }}"
+            - name: IGNORED_NAMESPACES
+              value: '{{ .Values.ignoredNamespaces | toJson }}'
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
           readinessProbe:
             httpGet:

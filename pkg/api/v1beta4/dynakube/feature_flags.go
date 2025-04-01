@@ -17,8 +17,6 @@ limitations under the License.
 package dynakube
 
 import (
-	"encoding/json"
-	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -63,7 +61,6 @@ const (
 	AnnotationFeatureOneAgentSkipLivenessProbe      = AnnotationFeaturePrefix + "oneagent-skip-liveness-probe"
 
 	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
-	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
 	AnnotationFeatureAutomaticInjection    = AnnotationFeaturePrefix + "automatic-injection"
 	AnnotationFeatureLabelVersionDetection = AnnotationFeaturePrefix + "label-version-detection"
 	AnnotationInjectionFailurePolicy       = AnnotationFeaturePrefix + "injection-failure-policy"
@@ -148,38 +145,6 @@ func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 // this may cause extra host to appear in the tenant for each process.
 func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureIgnoreUnknownState) == truePhrase
-}
-
-// FeatureIgnoredNamespaces is a feature flag for ignoring certain namespaces.
-// defaults to "[ \"^dynatrace$\", \"^kube-.*\", \"openshift(-.*)?\" ]".
-func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
-	raw := dk.getFeatureFlagRaw(AnnotationFeatureIgnoredNamespaces)
-	if raw == "" {
-		return dk.getDefaultIgnoredNamespaces()
-	}
-
-	ignoredNamespaces := &[]string{}
-
-	err := json.Unmarshal([]byte(raw), ignoredNamespaces)
-	if err != nil {
-		log.Error(err, "failed to unmarshal ignoredNamespaces feature-flag")
-
-		return dk.getDefaultIgnoredNamespaces()
-	}
-
-	return *ignoredNamespaces
-}
-
-func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
-	defaultIgnoredNamespaces := []string{
-		fmt.Sprintf("^%s$", dk.Namespace),
-		"^kube-.*",
-		"^openshift(-.*)?",
-		"^gke-.*",
-		"^gmp-.*",
-	}
-
-	return defaultIgnoredNamespaces
 }
 
 // FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,

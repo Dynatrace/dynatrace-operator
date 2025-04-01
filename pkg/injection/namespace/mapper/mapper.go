@@ -21,6 +21,10 @@ func (err MissingError) Error() string {
 }
 
 func GetDynakubeForNamespace(ctx context.Context, clt client.Reader, ns corev1.Namespace, dtNs string) (*dynakube.DynaKube, error) {
+	if IsIgnoredNamespace(ns.Name) {
+		return nil, IgnoredError{namespace: ns.Name}
+	}
+
 	dks := &dynakube.DynaKubeList{}
 
 	err := clt.List(ctx, dks, client.InNamespace(dtNs))
@@ -56,7 +60,7 @@ func HasConflict(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) 
 
 	for _, ns := range namespaces {
 		_, err := GetDynakubeForNamespace(ctx, clt, ns, dk.Namespace)
-		if !errors.As(err, &MissingError{}) {
+		if !errors.As(err, &MissingError{}) && !errors.As(err, &IgnoredError{}){
 			return true, nil
 		}
 	}
@@ -102,6 +106,9 @@ func GetNamespacesForDynakube(ctx context.Context, clt client.Reader, dk *dynaku
 
 	nsList := []corev1.Namespace{}
 	for _, ns := range allNs {
+		if IsIgnoredNamespace(ns.Name) {
+			continue
+		}
 		nsList = append(nsList, ns)
 	}
 

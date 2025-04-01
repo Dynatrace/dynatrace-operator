@@ -27,6 +27,12 @@ imageRef:
 customPullSecret: ""
 installCRD: true
 
+ignoredNamespaces:
+  - ^kube-.*
+  - ^openshift(-.*)?
+  - ^gke-.*
+  - ^gmp-.*
+
 operator:
   nodeSelector: {}
   tolerations: []

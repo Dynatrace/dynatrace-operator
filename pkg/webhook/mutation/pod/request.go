@@ -24,6 +24,18 @@ func (wh *webhook) createMutationRequestBase(ctx context.Context, request admiss
 
 	dynakube, err := mapper.GetDynakubeForNamespace(ctx, wh.apiReader, *namespace, wh.webhookNamespace)
 	if err != nil {
+		var ignored mapper.IgnoredError
+		if errors.As(err, &ignored) {
+			log.Debug("skipping mutation", "reason", ignored.Error(), "pod", pod.GetGenerateName())
+			return nil, nil
+		}
+
+		var missing mapper.MissingError
+		if errors.As(err, &missing) {
+			log.Debug("skipping mutation", "reason", missing.Error(), "pod", pod.GetGenerateName())
+			return nil, nil
+		}
+
 		return nil, err
 	}
 

@@ -1,7 +1,6 @@
 package dynakube
 
 import (
-	"regexp"
 	"testing"
 	"time"
 
@@ -213,30 +212,6 @@ func TestMountAttemptsToTimeout(t *testing.T) {
 			assert.InDelta(t, test.expected, duration, test.delta)
 		})
 	}
-}
-
-func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
-	dk := DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "test",
-		},
-	}
-	ignoredNamespaces := dk.getDefaultIgnoredNamespaces()
-	dynakubeNamespaceMatches := false
-
-	for _, namespace := range ignoredNamespaces {
-		regex, err := regexp.Compile(namespace)
-
-		require.NoError(t, err)
-
-		match := regex.MatchString(dk.Namespace)
-
-		if match {
-			dynakubeNamespaceMatches = true
-		}
-	}
-
-	assert.True(t, dynakubeNamespaceMatches)
 }
 
 func TestDefaultEnabledFeatureFlags(t *testing.T) {
