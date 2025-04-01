@@ -16,3 +16,12 @@ func getDynaKubeWithCerts(t *testing.T) dynakube.DynaKube {
 
 	return dk
 }
+
+func getDynaKubeWithAutomaticCerts(t *testing.T) dynakube.DynaKube {
+	t.Helper()
+
+	dk := dynakube.DynaKube{}
+	dk.ActiveGate().Capabilities = []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}
+
+	return dk
+}
