@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/service"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/statefulset"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,7 +18,7 @@ type Reconciler struct {
 	dk                      *dynakube.DynaKube
 	statefulsetReconciler   controllers.Reconciler
 	serviceReconciler       *service.Reconciler
-	secretReconciler        *secret.Reconciler
+	endpointReconciler      *endpoint.Reconciler
 	configurationReconciler *configuration.Reconciler
 }
 
@@ -31,7 +31,7 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 		dk:                      dk,
 		statefulsetReconciler:   statefulset.NewReconciler(client, apiReader, dk),
 		serviceReconciler:       service.NewReconciler(client, apiReader, dk),
-		secretReconciler:        secret.NewReconciler(client, apiReader, dk),
+		endpointReconciler:      endpoint.NewReconciler(client, apiReader, dk),
 		configurationReconciler: configuration.NewReconciler(client, apiReader, dk),
 	}
 }
@@ -42,7 +42,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	err = r.secretReconciler.Reconcile(ctx)
+	err = r.endpointReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}
