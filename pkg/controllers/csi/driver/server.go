@@ -181,7 +181,7 @@ func (srv *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVo
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	return publisher.PublishVolume(ctx, volumeCfg)
+	return publisher.PublishVolume(ctx, &volumeCfg)
 }
 
 func (srv *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
@@ -190,7 +190,7 @@ func (srv *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 		return nil, err
 	}
 
-	srv.unmount(*volumeInfo)
+	srv.unmount(volumeInfo)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
@@ -289,21 +289,38 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		var methodName string
 
+		var logValues []any
+
 		switch info.FullMethod {
 		case "/csi.v1.Node/NodePublishVolume":
 			req := req.(*csi.NodePublishVolumeRequest)
 			methodName = "NodePublishVolume"
-			log.Info("GRPC call", "method", methodName, "volume-id", req.GetVolumeId())
+			vc, _ := csivolumes.ParseNodePublishVolumeRequest(req)
+			logValues = []any{
+				"method", methodName,
+				"volume-id", vc.VolumeID,
+				"pod", vc.PodName,
+				"namespace", vc.PodNamespace,
+				"dynakube", vc.DynakubeName,
+				"mode", vc.Mode,
+			}
+			log.Info("GRPC call", logValues...)
 		case "/csi.v1.Node/NodeUnpublishVolume":
 			req := req.(*csi.NodeUnpublishVolumeRequest)
 			methodName = "NodeUnpublishVolume"
-			log.Info("GRPC call", "method", methodName, "volume-id", req.GetVolumeId())
+			vi, _ := csivolumes.ParseNodeUnpublishVolumeRequest(req)
+			logValues = []any{ // this is all we get
+				"method", methodName,
+				"volume-id", vi.VolumeID,
+				"target-path", vi.TargetPath,
+			}
+			log.Info("GRPC call", logValues...)
 		default:
 			log.Debug("GRPC call", "full_method", info.FullMethod)
 
 			resp, err := handler(ctx, req)
 			if err != nil {
-				log.Error(err, "GRPC failed", "full_method", info.FullMethod)
+				log.Info("GRPC failed", "full_method", info.FullMethod, "err", err.Error())
 			}
 
 			return resp, err
@@ -313,13 +330,19 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 		defer counter.Add(-1)
 
 		if counter.Load() > maxGrpcRequests {
-			return nil, status.Error(codes.ResourceExhausted, fmt.Sprintf("rate limit exceeded, current value %d more than max %d", counter.Load(), MaxGrpcRequests))
+			msg := fmt.Sprintf("rate limit exceeded, current value %d more than max %d", counter.Load(), MaxGrpcRequests)
+
+			log.Info(msg, logValues...)
+
+			return nil, status.Error(codes.ResourceExhausted, msg)
 		}
 
 		resp, err := handler(ctx, req)
 
 		if err != nil {
-			log.Error(err, "GRPC call failed", "method", methodName, "full_method", info.FullMethod)
+			logValues = append(logValues, "error", err.Error())
+
+			log.Info("GRPC call failed", logValues...)
 		}
 
 		return resp, err

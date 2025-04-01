@@ -36,48 +36,60 @@ type VolumeConfig struct {
 }
 
 // Transforms the NodePublishVolumeRequest into a VolumeConfig
-func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeConfig, error) {
+func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (VolumeConfig, error) {
+	volumeConfig := VolumeConfig{}
+
 	volumeInfo, err := newVolumeInfo(req)
+	volumeConfig.VolumeInfo = volumeInfo
+
 	if err != nil {
-		return nil, err
+		return volumeConfig, err
 	}
 
 	if req.GetVolumeCapability() == nil {
-		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
+		return volumeConfig, status.Error(codes.InvalidArgument, "Volume capability missing in request")
 	}
 
 	if req.GetVolumeCapability().GetBlock() != nil {
-		return nil, status.Error(codes.InvalidArgument, "cannot have block access type")
+		return volumeConfig, status.Error(codes.InvalidArgument, "cannot have block access type")
 	}
 
 	if req.GetVolumeCapability().GetMount() == nil {
-		return nil, status.Error(codes.InvalidArgument, "expecting to have mount access type")
+		return volumeConfig, status.Error(codes.InvalidArgument, "expecting to have mount access type")
 	}
 
 	volCtx := req.GetVolumeContext()
 	if volCtx == nil {
-		return nil, status.Error(codes.InvalidArgument, "Publish context missing in request")
+		return volumeConfig, status.Error(codes.InvalidArgument, "Publish context missing in request")
 	}
 
 	podName := volCtx[PodNameContextKey]
 	if podName == "" {
-		return nil, status.Error(codes.InvalidArgument, "No Pod Name included in request")
+		return volumeConfig, status.Error(codes.InvalidArgument, "No Pod Name included in request")
 	}
+
+	volumeConfig.PodName = podName
 
 	podNamespace := volCtx[PodNamespaceContextKey]
 	if podNamespace == "" {
-		return nil, status.Error(codes.InvalidArgument, "No Pod Namespace included in request")
+		return volumeConfig, status.Error(codes.InvalidArgument, "No Pod Namespace included in request")
 	}
+
+	volumeConfig.PodNamespace = podNamespace
 
 	mode := volCtx[CSIVolumeAttributeModeField]
 	if mode == "" {
-		return nil, status.Error(codes.InvalidArgument, "No mode attribute included in request")
+		return volumeConfig, status.Error(codes.InvalidArgument, "No mode attribute included in request")
 	}
+
+	volumeConfig.Mode = mode
 
 	dynakubeName := volCtx[CSIVolumeAttributeDynakubeField]
 	if dynakubeName == "" {
-		return nil, status.Error(codes.InvalidArgument, "No dynakube attribute included in request")
+		return volumeConfig, status.Error(codes.InvalidArgument, "No dynakube attribute included in request")
 	}
+
+	volumeConfig.DynakubeName = dynakubeName
 
 	retryTimeoutValue := volCtx[CSIVolumeAttributeRetryTimeout]
 	if retryTimeoutValue == "" {
@@ -86,21 +98,16 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 
 	retryTimeout, err := time.ParseDuration(retryTimeoutValue)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "The retryTimeout attribute has incorrect format")
+		return volumeConfig, status.Error(codes.InvalidArgument, "The retryTimeout attribute has incorrect format")
 	}
 
-	return &VolumeConfig{
-		VolumeInfo:   *volumeInfo,
-		PodName:      podName,
-		PodNamespace: podNamespace,
-		Mode:         mode,
-		DynakubeName: dynakubeName,
-		RetryTimeout: retryTimeout,
-	}, nil
+	volumeConfig.RetryTimeout = retryTimeout
+
+	return volumeConfig, nil
 }
 
 // Transforms the NodeUnpublishVolumeRequest into a VolumeInfo
-func ParseNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) (*VolumeInfo, error) {
+func ParseNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) (VolumeInfo, error) {
 	return newVolumeInfo(req)
 }
 
@@ -109,16 +116,22 @@ type baseRequest interface {
 	GetTargetPath() string
 }
 
-func newVolumeInfo(req baseRequest) (*VolumeInfo, error) {
+func newVolumeInfo(req baseRequest) (VolumeInfo, error) {
+	info := VolumeInfo{}
+
 	volumeID := req.GetVolumeId()
 	if volumeID == "" {
-		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
+		return info, status.Error(codes.InvalidArgument, "Volume ID missing in request")
 	}
+
+	info.VolumeID = volumeID
 
 	targetPath := req.GetTargetPath()
 	if targetPath == "" {
-		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
+		return info, status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
 
-	return &VolumeInfo{volumeID, targetPath}, nil
+	info.TargetPath = targetPath
+
+	return info, nil
 }

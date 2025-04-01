@@ -17,32 +17,36 @@ const (
 )
 
 func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
-	t.Run(`No volume id`, func(t *testing.T) {
+	t.Run("No volume id", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = Volume ID missing in request")
-		assert.Nil(t, volumeCfg)
+		assert.NotNil(t, volumeCfg)
 	})
-	t.Run(`No target path`, func(t *testing.T) {
+	t.Run("No target path", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeId: testVolumeId,
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = Target path missing in request")
-		assert.Nil(t, volumeCfg)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 	})
-	t.Run(`No volume capability`, func(t *testing.T) {
-		volumeCfg, err := ParseNodePublishVolumeRequest(&csi.NodePublishVolumeRequest{
+	t.Run("No volume capability", func(t *testing.T) {
+		request := &csi.NodePublishVolumeRequest{
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
-		})
+		}
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = Volume capability missing in request")
-		assert.Nil(t, volumeCfg)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
-	t.Run(`Access type is of type block access`, func(t *testing.T) {
+	t.Run("Access type is of type block access", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
 				AccessType: &csi.VolumeCapability_Block{
@@ -55,9 +59,11 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = cannot have block access type")
-		assert.Nil(t, volumeCfg)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
-	t.Run(`Access type is not of type mount access`, func(t *testing.T) {
+	t.Run("Access type is not of type mount access", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{},
 			VolumeId:         testVolumeId,
@@ -66,9 +72,11 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = expecting to have mount access type")
-		assert.Nil(t, volumeCfg)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
-	t.Run(`No volume context`, func(t *testing.T) {
+	t.Run("No volume context", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
 				AccessType: &csi.VolumeCapability_Mount{
@@ -81,9 +89,29 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = Publish context missing in request")
-		assert.Nil(t, volumeCfg)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
-	t.Run(`Pod name missing from requests volume context`, func(t *testing.T) {
+	t.Run("Pod name missing from requests volume context", func(t *testing.T) {
+		request := &csi.NodePublishVolumeRequest{
+			VolumeCapability: &csi.VolumeCapability{
+				AccessType: &csi.VolumeCapability_Mount{
+					Mount: &csi.VolumeCapability_MountVolume{},
+				},
+			},
+			VolumeId:      testVolumeId,
+			TargetPath:    testTargetPath,
+			VolumeContext: map[string]string{},
+		}
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
+
+		require.Error(t, err)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
+	})
+	t.Run("Pod namespace missing from requests volume context", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
 				AccessType: &csi.VolumeCapability_Mount{
@@ -93,17 +121,18 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				CSIVolumeAttributeDynakubeField: testDynakubeName,
-				CSIVolumeAttributeModeField:     "test",
-				CSIVolumeAttributeRetryTimeout:  "5m",
+				PodNameContextKey: testPodUID,
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.Error(t, err)
-		assert.Nil(t, volumeCfg)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
+		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
 	})
-	t.Run(`mode missing from requests volume context`, func(t *testing.T) {
+	t.Run("mode missing from requests volume context", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
 				AccessType: &csi.VolumeCapability_Mount{
@@ -113,17 +142,20 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey:               testPodUID,
-				CSIVolumeAttributeDynakubeField: testDynakubeName,
-				CSIVolumeAttributeRetryTimeout:  "5m",
+				PodNameContextKey:      testPodUID,
+				PodNamespaceContextKey: testNs,
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.Error(t, err)
-		assert.Nil(t, volumeCfg)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
+		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
+		assert.Equal(t, request.GetVolumeContext()[PodNamespaceContextKey], volumeCfg.PodNamespace)
 	})
-	t.Run(`dynakube missing from requests volume context`, func(t *testing.T) {
+	t.Run("dk name missing from requests volume context", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
 				AccessType: &csi.VolumeCapability_Mount{
@@ -133,17 +165,23 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNameContextKey:              testPodUID,
-				CSIVolumeAttributeModeField:    "test",
-				CSIVolumeAttributeRetryTimeout: "5m",
+				PodNameContextKey:           testPodUID,
+				PodNamespaceContextKey:      testNs,
+				CSIVolumeAttributeModeField: "test",
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.Error(t, err)
-		assert.Nil(t, volumeCfg)
+		require.NotNil(t, volumeCfg)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
+		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
+		assert.Equal(t, request.GetVolumeContext()[PodNamespaceContextKey], volumeCfg.PodNamespace)
+		assert.Equal(t, request.GetVolumeContext()[CSIVolumeAttributeModeField], volumeCfg.Mode)
 	})
-	t.Run(`request is parsed correctly`, func(t *testing.T) {
+
+	t.Run("happy path", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
 				AccessType: &csi.VolumeCapability_Mount{
@@ -155,19 +193,20 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeContext: map[string]string{
 				PodNameContextKey:               testPodUID,
 				PodNamespaceContextKey:          testNs,
-				CSIVolumeAttributeDynakubeField: testDynakubeName,
 				CSIVolumeAttributeModeField:     "test",
+				CSIVolumeAttributeDynakubeField: "dk",
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.NoError(t, err)
 		assert.NotNil(t, volumeCfg)
-		assert.Equal(t, testVolumeId, volumeCfg.VolumeID)
-		assert.Equal(t, testTargetPath, volumeCfg.TargetPath)
-		assert.Equal(t, testPodUID, volumeCfg.PodName)
-		assert.Equal(t, testNs, volumeCfg.PodNamespace)
-		assert.Equal(t, "test", volumeCfg.Mode)
-		assert.Equal(t, testDynakubeName, volumeCfg.DynakubeName)
+		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
+		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
+		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
+		assert.Equal(t, request.GetVolumeContext()[PodNamespaceContextKey], volumeCfg.PodNamespace)
+		assert.Equal(t, request.GetVolumeContext()[CSIVolumeAttributeModeField], volumeCfg.Mode)
+		assert.Equal(t, request.GetVolumeContext()[CSIVolumeAttributeDynakubeField], volumeCfg.DynakubeName)
+		assert.NotNil(t, volumeCfg.RetryTimeout)
 	})
 }
