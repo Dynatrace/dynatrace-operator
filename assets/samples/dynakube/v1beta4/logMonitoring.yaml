@@ -3,8 +3,8 @@ kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
-#  annotations:
-#    feature.dynatrace.com/oneagent-privileged: "true" # Required on Openshift
+  # annotations:
+  #   feature.dynatrace.com/oneagent-privileged: "true" # Required on Openshift
 spec:
   # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 
@@ -47,8 +47,8 @@ spec:
 
   # Configuration for Metadata Enrichment.
   #
-  # metadataEnrichment:
-  #  enabled: true
+  metadataEnrichment:
+    enabled: true
 
     # Optional: The namespaces where you want Dynatrace Operator to inject
     #
@@ -63,6 +63,7 @@ spec:
   # Configuration for Log monitoring.
   #
   logMonitoring: {}
+
     # Optional: Specifies the rules and conditions for matching ingest attributes.
     #
     # ingestRuleMatchers:
