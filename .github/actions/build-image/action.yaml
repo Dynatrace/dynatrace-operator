@@ -47,7 +47,8 @@ runs:
         push: false
         tags: operator-${{ inputs.platform }}:${{ inputs.image-tag }}
         labels: ${{ inputs.labels }}
-        outputs: type=oci,dest=/tmp/operator-${{ inputs.platform }}.tar,annotation.com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
+        annotations: com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
+        outputs: type=oci,dest=/tmp/operator-${{ inputs.platform }}.tar
     - name: Upload artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
