@@ -45,8 +45,6 @@ runs:
         tags: ${{ inputs.image-tag }}
         image: operator-${{ inputs.platform }}
         labels: ${{ inputs.labels }}
-        extra-args: |
-          --platform=linux/${{ inputs.platform }}
         oci: true
     - name: Export image to file
       shell: bash
