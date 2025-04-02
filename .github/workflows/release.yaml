@@ -197,7 +197,8 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
-          combined: true
+          platforms: "amd64, arm64, ppc64le, s390x"
+          annotation: "com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog"
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
