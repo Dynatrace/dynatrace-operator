@@ -41,7 +41,7 @@ runs:
         context: .
         containerfiles: |
           ./Dockerfile
-        archs: {{ inputs.platform }}
+        archs: ${{ inputs.platform }}
         tags: ${{ inputs.image-tag }}
         image: operator-${{ inputs.platform }}
         labels: ${{ inputs.labels }}
