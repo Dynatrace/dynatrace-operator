@@ -4,7 +4,7 @@ metadata:
   name: dynakube
   namespace: dynatrace
   # annotations:
-    # feature.dynatrace.com/k8s-app-enabled: "true"
+  #   feature.dynatrace.com/k8s-app-enabled: "true"
 spec:
   # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 
@@ -48,7 +48,7 @@ spec:
   # Configuration for Metadata Enrichment.
   #
   # metadataEnrichment:
-  #  enabled: true
+  #   enabled: true
 
     # Optional: The namespaces where you want Dynatrace Operator to inject
     #
