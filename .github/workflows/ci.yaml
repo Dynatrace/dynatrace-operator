@@ -236,8 +236,6 @@ jobs:
     name: Create manifest
     needs: [prepare, push]
     runs-on: ubuntu-latest
-    env:
-      COMBINED: ${{ github.ref_protected }}
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
       - name: Checkout
