@@ -13,6 +13,9 @@ annotation=$4
 
 image="${image_name}:${image_tag}"
 
+echo "This script is based on podman version 4.9.3"
+echo "current version of podman is $(podman --version)"
+
 platforms=($(echo "${raw_platforms}" | tr "," "\n"))
 
 echo "Creating manifest for ${platforms[*]}"
@@ -21,22 +24,22 @@ images=()
 
 for platfrom in "${platforms[@]}"
 do
-   docker pull "${image}-${platfrom}"
+   podman pull "${image}-${platfrom}"
    images+=("${image}-${platfrom}")
 done
 
-docker manifest create "${image}"
+podman manifest create "${image}"
 
 if [ -z "${annotation}" ]
 then
-  docker manifest add "${image}" "${images[@]}"
+  podman manifest add "${image}" "${images[@]}"
 else
-  docker manifest add --annotation "${annotation}" "${image}" "${images[@]}"
+  podman manifest add --annotation "${annotation}" "${image}" "${images[@]}"
 fi
 
-docker manifest inspect "${image}"
+podman manifest inspect "${image}"
 
-docker manifest push --format oci --digestfile=digestfile.sha256 "${image}"
+podman manifest push --format oci --digestfile=digestfile.sha256 "${image}"
 
 sha256=$(cat digestfile.sha256)
 
