@@ -31,6 +31,7 @@ else
   docker pull "${image}-amd64"
   docker pull "${image}-arm64"
   docker manifest create "${image}" "${image}-amd64" "${image}-arm64"
+  docker manifest add --annotation "${gcp_annotation}" "${image}" "${image}-amd64" "${image}-arm64"
 fi
 
 sha256=$(docker manifest push "${image}")
