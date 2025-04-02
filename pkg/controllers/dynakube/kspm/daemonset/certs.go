@@ -16,7 +16,7 @@ func getCertVolume(dk dynakube.DynaKube) corev1.Volume {
 		Name: certVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: dk.ActiveGate().TlsSecretName,
+				SecretName: dk.ActiveGate().GetTLSSecretName(),
 			},
 		},
 	}

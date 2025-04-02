@@ -39,6 +39,19 @@ func TestGetMounts(t *testing.T) {
 			assert.NotEmpty(t, mount.MountPath)
 		}
 	})
+
+	t.Run("get cert mount with automatic AG cert", func(t *testing.T) {
+		dk := getDynaKubeWithAutomaticCerts(t)
+		mounts := getMounts(dk)
+
+		require.NotEmpty(t, mounts)
+		assert.Len(t, mounts, expectedMountLen+1)
+
+		for _, mount := range mounts {
+			assert.NotEmpty(t, mount.Name)
+			assert.NotEmpty(t, mount.MountPath)
+		}
+	})
 }
 
 func TestGetVolumes(t *testing.T) {
@@ -64,7 +77,28 @@ func TestGetVolumes(t *testing.T) {
 
 		for _, volume := range volumes {
 			assert.NotEmpty(t, volume.Name)
-			assert.NotEmpty(t, volume.VolumeSource)
+			require.NotEmpty(t, volume.VolumeSource)
+
+			if volume.Name == certVolumeName {
+				assert.NotEmpty(t, volume.VolumeSource.Secret.SecretName)
+			}
+		}
+	})
+
+	t.Run("add cert volume with automatic AG cert", func(t *testing.T) {
+		dk := getDynaKubeWithAutomaticCerts(t)
+		volumes := getVolumes(dk)
+
+		require.NotEmpty(t, volumes)
+		assert.Len(t, volumes, expectedMountLen+1)
+
+		for _, volume := range volumes {
+			assert.NotEmpty(t, volume.Name)
+			require.NotEmpty(t, volume.VolumeSource)
+
+			if volume.Name == certVolumeName {
+				assert.NotEmpty(t, volume.VolumeSource.Secret.SecretName)
+			}
 		}
 	})
 }
