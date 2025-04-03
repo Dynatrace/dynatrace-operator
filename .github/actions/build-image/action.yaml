@@ -45,6 +45,7 @@ runs:
           GO_BUILD_TAGS=${{ steps.prep.outputs.go_build_tags }}
         context: .
         file: ./Dockerfile
+        provenance: false
         platforms: linux/${{ inputs.platform }}
         push: true
         tags: ${{ inputs.image }}
