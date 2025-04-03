@@ -8,7 +8,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -266,4 +268,56 @@ func TestManageStatefulSet(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, testValue, labelValue)
 	})
+}
+
+func TestStatefulSetUpdateWeakness(t *testing.T) {
+	ctx := context.Background()
+
+	clt := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: kubesystem.Namespace,
+				UID:  testUID,
+			},
+		}).
+		WithObjects(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName + activegate.AuthTokenSecretSuffix,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
+		}).
+		Build()
+	dk := &dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.RoutingCapability.DisplayName,
+				}},
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+		},
+		Status: dynakube.DynaKubeStatus{
+			ActiveGate: activegate.Status{
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID: testTenantUUID,
+				},
+				VersionStatus: status.VersionStatus{},
+			},
+			KubeSystemUUID: testKubeSystemUUID,
+		},
+	}
+
+	mcap := capability.NewMultiCapability(dk)
+	reconciler := NewReconciler(clt, clt, dk, mcap)
+
+	err := reconciler.Reconcile(ctx)
+	require.NoError(t, err)
+
+	dk.Spec.ActiveGate.UseEphemeralVolume = true
+	err = reconciler.Reconcile(ctx)
+	require.NoError(t, err)
 }
