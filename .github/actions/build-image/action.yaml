@@ -7,9 +7,11 @@ inputs:
   labels:
     description: The labels for the built image
     required: true
-  image-tag:
+  image:
     description: The tag of the built image
     required: true
+  annotation:
+    description: The annotation added to the built image
 runs:
   using: "composite"
   steps:
@@ -43,15 +45,10 @@ runs:
           GO_BUILD_TAGS=${{ steps.prep.outputs.go_build_tags }}
         context: .
         file: ./Dockerfile
+        provenance: false
         platforms: linux/${{ inputs.platform }}
-        push: false
-        tags: operator-${{ inputs.platform }}:${{ inputs.image-tag }}
+        push: true
+        tags: ${{ inputs.image }}
         labels: ${{ inputs.labels }}
-        outputs: type=oci,dest=/tmp/operator-${{ inputs.platform }}.tar
-    - name: Upload artifact
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: operator-${{ inputs.platform }}
-        path: /tmp/operator-${{ inputs.platform }}.tar
-        retention-days: 1
+        annotations: ${{ inputs.annotation }}
 
