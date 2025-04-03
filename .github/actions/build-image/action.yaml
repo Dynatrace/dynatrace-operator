@@ -53,6 +53,10 @@ runs:
         platforms: linux/${{ inputs.platform }}
         push: true
         tags: ${{ inputs.image }}
-        labels: ${{ join([inputs.labels, steps.meta.outputs.labels], '\n') }}
-        annotations: ${{ join([inputs.annotation, steps.meta.outputs.annotations], '\n') }}
+        labels: |
+          ${{ inputs.labels }}
+          ${{ steps.meta.outputs.labels }}
+        annotations: |
+          ${{ inputs.annotation }}
+          ${{ steps.meta.outputs.annotations }}
 
