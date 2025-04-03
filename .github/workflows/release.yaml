@@ -87,13 +87,13 @@ jobs:
         id: sbom
         run: |
           make release/gen-sbom
-          - name: Login to Registry
-          if: ${{ matrix.registry != 'amazon-ecr' }}
-          uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-          with:
-            registry: ${{ matrix.url }}
-            username: ${{ secrets[matrix.username] }}
-            password: ${{ secrets[matrix.password] }}
+      - name: Login to Registry
+        if: ${{ matrix.registry != 'amazon-ecr' }}
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ${{ matrix.url }}
+          username: ${{ secrets[matrix.username] }}
+          password: ${{ secrets[matrix.password] }}
       - name: Configure aws credentials
         if: ${{ matrix.registry == 'amazon-ecr' }}
         uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
