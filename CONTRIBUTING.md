@@ -171,7 +171,7 @@ Based on [controller-runtime/pkg/envtest](https://pkg.go.dev/sigs.k8s.io/control
 make integrationtest
 ```
 
-### motivation:
+### motivation
 
 Mocking everything during unit-tests is not a good idea if we want to test some limitations of api-server
 (especially different versions): e.g. But from another side e2e tests requires lots of setup

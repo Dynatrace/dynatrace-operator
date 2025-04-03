@@ -74,6 +74,7 @@ func getFirstFoundEnvTestBinaryDir() string {
 	if gobin == "" {
 		gobin = filepath.Join(gopath, "bin")
 	}
+
 	basePath := filepath.Join(gobin, "k8s")
 
 	entries, err := os.ReadDir(basePath)
