@@ -22,28 +22,8 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
-      - name: Docker metadata
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
-        id: meta
-        with:
-          images: dynatrace/dynatrace-operator
-          tags: |
-            type=semver,pattern={{major}}.{{minor}}
-            ${{ steps.prep.outputs.docker_image_tag }}
-          labels: |
-            ${{ steps.prep.outputs.docker_image_labels }}
-            vcs-ref=${{ github.sha }}
-      - name: Prepare major_minor tag
-        shell: bash
-        id: prepare-major-minor-tag
-        run: |
-          set -x
-          tag="${{ join(fromJSON(steps.meta.outputs.json).tags[0]) }}"
-          version_with_major_minor=${tag##*:}
-          echo "version_with_major_minor=$version_with_major_minor" >> $GITHUB_OUTPUT
     outputs:
-      version_with_major_minor: ${{ steps.prepare-major-minor-tag.outputs.version_with_major_minor }}
-      labels: ${{ steps.meta.outputs.labels }}
+      labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
@@ -255,7 +235,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ prepare ]
     env:
-      IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version_with_major_minor }}
+      IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version }}
       IMAGE_NO_PREFIX: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version_without_prefix }}
     steps:
     - name: Checkout

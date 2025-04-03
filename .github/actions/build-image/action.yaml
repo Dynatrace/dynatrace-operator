@@ -42,7 +42,6 @@ runs:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |
           GO_LINKER_ARGS=${{ steps.prep.outputs.go_linker_args }}
-          GO_BUILD_TAGS=${{ steps.prep.outputs.go_build_tags }}
         context: .
         file: ./Dockerfile
         provenance: false
