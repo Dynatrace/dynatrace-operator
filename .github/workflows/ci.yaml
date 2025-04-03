@@ -25,8 +25,6 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -40,8 +38,6 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Linting
         id: helm-linting
         run: |
@@ -107,8 +103,6 @@ jobs:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Set up Helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
       - name: Check deepcopy files are up-to-date
         id: deepcopy
@@ -197,44 +191,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Build image
-        if: matrix.platform == 'amd64' || matrix.platform == 'arm64' || github.ref_protected
-        uses: ./.github/actions/build-image
-        with:
-          platform: ${{ matrix.platform }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          image-tag: ${{ needs.prepare.outputs.version }}
-
-  push:
-    name: Push images
-    runs-on: ubuntu-latest
-    needs: [prepare, build]
-    strategy:
-      matrix:
-        platform: [amd64, arm64, ppc64le, s390x]
-    if: ${{ !github.event.pull_request.head.repo.fork }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Login to Registry
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Upload Image
+      - name: Build image
         if: matrix.platform == 'amd64' || matrix.platform == 'arm64' || github.ref_protected
-        uses: ./.github/actions/upload-image
+        uses: ./.github/actions/build-image
         with:
           platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ needs.prepare.outputs.registry }}
-          repository: ${{ needs.prepare.outputs.repository }}
+          image: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
+          annotation: "version=${{ needs.prepare.outputs.version }}"
 
   manifest:
     name: Create manifest
-    needs: [prepare, push]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
@@ -249,8 +223,7 @@ jobs:
       - name: Create Manifests
         uses: ./.github/actions/create-manifests
         with:
+          platforms: ${{github.ref_protected &&  'amd64, arm64, ppc64le, s390x' || 'amd64, arm64'}}
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          platforms: "amd64, arm64"
-          annotation: "version=${{ needs.prepare.outputs.version }}"
