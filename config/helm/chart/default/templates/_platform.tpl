@@ -26,6 +26,15 @@ Auto-detect the platform (if not set), according to the available APIVersions
 {{- end }}
 
 {{/*
+Auto-detect wether or not we need allowlisting of csi-driver and logagent
+*/}}
+{{- define "dynatrace-operator.needAutopilotAllowlisting" -}}
+    {{- if .Capabilities.APIVersions.Has "auto.gke.io/v1/AllowlistSynchronizer" }}
+        {{- printf "true" -}}
+    {{- end -}}
+{{- end }}
+
+{{/*
 Set install source how the Operator was installed
 */}}
 {{- define "dynatrace-operator.installSource" -}}
