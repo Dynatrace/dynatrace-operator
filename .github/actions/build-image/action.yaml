@@ -7,7 +7,7 @@ inputs:
   labels:
     description: The labels for the built image
     required: true
-  image-tag:
+  image:
     description: The tag of the built image
     required: true
   annotation:
@@ -47,7 +47,7 @@ runs:
         file: ./Dockerfile
         platforms: linux/${{ inputs.platform }}
         push: true
-        tags: operator-${{ inputs.platform }}:${{ inputs.image-tag }}
+        tags: ${{ inputs.image }}
         labels: ${{ inputs.labels }}
         annotations: ${{ inputs.annotation }}
 

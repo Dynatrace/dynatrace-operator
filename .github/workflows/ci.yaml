@@ -203,7 +203,7 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
-          image-tag: ${{ needs.prepare.outputs.version }}
+          image: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
           annotation: "version=${{ needs.prepare.outputs.version }}"
 
   manifest:

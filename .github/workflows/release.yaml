@@ -111,7 +111,7 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
-          image-tag: ${{ needs.prepare.outputs.version }}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
           annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
       - name: Sign image for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
