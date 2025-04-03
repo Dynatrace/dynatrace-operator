@@ -35,8 +35,8 @@ go/betteralign:
 ## Runs all the linting tools
 go/lint: prerequisites/go-linting go/format go/vet go/wsl go/betteralign go/golangci go/deadcode
 
-## Runs all go unit tests and writes the coverprofile to coverage.txt
-go/test:
+## Runs all go unit and integration tests and writes the coverprofile to coverage.txt
+go/test: prerequisites/setup-envtest
 	go test ./... -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 
 ## Runs all go unit tests and opens coverage report in a browser
