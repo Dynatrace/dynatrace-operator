@@ -33,16 +33,7 @@ jobs:
           labels: |
             ${{ steps.prep.outputs.docker_image_labels }}
             vcs-ref=${{ github.sha }}
-      - name: Prepare major_minor tag
-        shell: bash
-        id: prepare-major-minor-tag
-        run: |
-          set -x
-          tag="${{ join(fromJSON(steps.meta.outputs.json).tags[0]) }}"
-          version_with_major_minor=${tag##*:}
-          echo "version_with_major_minor=$version_with_major_minor" >> $GITHUB_OUTPUT
     outputs:
-      version_with_major_minor: ${{ steps.prepare-major-minor-tag.outputs.version_with_major_minor }}
       labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
@@ -187,57 +178,11 @@ jobs:
           image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.create-manifests.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-
-  attach-sbom:
-    name: Attach sbom
-    environment: Release
-    needs: [ prepare, build, manifest ]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    strategy:
-      matrix:
-        registry: [gcr, dockerhub, amazon-ecr]
-        include:
-          - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
-          - registry: amazon-ecr
-            url: public.ecr.aws
-            repository: ECR_REPOSITORY
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Login to Registry
-        if: ${{ matrix.registry != 'amazon-ecr' }}
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        with:
-          registry: ${{ matrix.url }}
-          username: ${{ secrets[matrix.username] }}
-          password: ${{ secrets[matrix.password] }}
-      - name: Configure aws credentials
-        if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
-        with:
-          role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
-          aws-region: us-east-1
-      - name: Login to Amazon ECR
-        if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
-        with:
-          registry-type: public
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # 0.30.0
         with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
+          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.create-manifests.outputs.digest }}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
@@ -245,7 +190,7 @@ jobs:
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.create-manifests.outputs.digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -256,7 +201,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ prepare ]
     env:
-      IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version_with_major_minor }}
+      IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version_without_prefix }}
       IMAGE_NO_PREFIX: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version_without_prefix }}
     steps:
     - name: Checkout
@@ -309,7 +254,7 @@ jobs:
 
   release:
     name: Create release
-    needs: [prepare, build, attach-sbom, manifest, run-preflight-rhcc]
+    needs: [prepare, build, manifest, run-preflight-rhcc]
     environment: Release
     permissions:
       contents: write
