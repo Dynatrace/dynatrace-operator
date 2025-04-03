@@ -249,8 +249,8 @@ jobs:
       - name: Create Manifests
         uses: ./.github/actions/create-manifests
         with:
+          platforms: ${{github.ref_protected && 'amd64, arm64' || 'amd64, arm64, ppc64le, s390x'}}
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          platforms: "amd64, arm64"
           annotation: "version=${{ needs.prepare.outputs.version }}"
