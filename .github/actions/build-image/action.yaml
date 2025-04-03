@@ -36,6 +36,11 @@ runs:
       shell: bash
       run: |
         touch dynatrace-operator-bin-sbom.cdx.json
+    - name: Docker metadata
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+      id: meta
+      with:
+        images: ${{ inputs.image }}
     - name: Build target
       uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
       with:
@@ -48,6 +53,6 @@ runs:
         platforms: linux/${{ inputs.platform }}
         push: true
         tags: ${{ inputs.image }}
-        labels: ${{ inputs.labels }}
-        annotations: ${{ inputs.annotation }}
+        labels: ${{ join([inputs.labels, steps.meta.outputs.labels], '\n') }}
+        annotations: ${{ join([inputs.annotation, steps.meta.outputs.annotations], '\n') }}
 
