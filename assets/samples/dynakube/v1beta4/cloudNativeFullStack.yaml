@@ -45,8 +45,8 @@ spec:
 
   # Configuration for Metadata Enrichment.
   #
-  # metadataEnrichment:
-  #  enabled: true
+  metadataEnrichment:
+    enabled: true
 
     # Optional: The namespaces where you want Dynatrace Operator to inject
     #
@@ -61,6 +61,7 @@ spec:
   # Configuration for Log monitoring.
   #
   # logMonitoring: {}
+
     # Optional: Specifies the rules and conditions for matching ingest attributes.
     #
     # ingestRuleMatchers:
@@ -82,6 +83,7 @@ spec:
     # hostGroup: ""
 
     cloudNativeFullStack:
+    
       # Optional: The namespaces where you want Dynatrace Operator to inject
       #
       # namespaceSelector:

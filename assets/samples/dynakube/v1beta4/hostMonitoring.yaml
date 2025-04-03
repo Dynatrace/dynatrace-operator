@@ -46,7 +46,7 @@ spec:
   # Configuration for Metadata Enrichment.
   #
   # metadataEnrichment:
-  #  enabled: true
+  #   enabled: true
 
     # Optional: The namespaces where you want Dynatrace Operator to inject
     #
@@ -61,6 +61,7 @@ spec:
   # Configuration for Log monitoring.
   #
   # logMonitoring: {}
+
     # Optional: Specifies the rules and conditions for matching ingest attributes.
     #
     # ingestRuleMatchers:
@@ -77,7 +78,7 @@ spec:
   # Configuration for OneAgent
   #
   oneAgent:
-    # Optional: Set a host group for OneAgent.
+    # Optional: Set a host group for OneAgent
     #
     # hostGroup: ""
 
