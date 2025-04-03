@@ -13,8 +13,6 @@ inputs:
   platforms:
     description: List of platforms
     required: true
-  annotation:
-    description: Annotation information about an entry in a manifest list
 outputs:
   digest:
     description: The digest of the created manifest
@@ -28,4 +26,4 @@ runs:
         IMAGE: ${{ inputs.registry }}/${{ inputs.repository }}
       shell: bash
       run: |
-        hack/build/ci/create-manifest.sh "${IMAGE}" "${{ inputs.version }}" "${{ inputs.platforms }}" "${{ inputs.annotation }}"
+        hack/build/ci/create-manifest.sh "${IMAGE}" "${{ inputs.version }}" "${{ inputs.platforms }}"

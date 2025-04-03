@@ -198,6 +198,7 @@ jobs:
           platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
+          annotation: "version=${{ needs.prepare.outputs.version }}"
 
   push:
     name: Push images
@@ -247,4 +248,3 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          annotation: "version=${{ needs.prepare.outputs.version }}"
