@@ -48,7 +48,7 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64, ppc64le, s390x]
-        registry: [gcr, dockerhub, amazon-ecr, rhcc]
+        registry: [gcr, dockerhub, rhcc, amazon-ecr]
         include:
         - registry: gcr
           url: gcr.io
@@ -123,7 +123,7 @@ jobs:
       digest: ${{ steps.create-manifests.outputs.digest }}
     strategy:
       matrix:
-        registry: [gcr, dockerhub, amazon-ecr, rhcc]
+        registry: [gcr, dockerhub, rhcc, amazon-ecr]
         include:
           - registry: gcr
             url: gcr.io
