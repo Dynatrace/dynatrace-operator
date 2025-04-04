@@ -120,7 +120,10 @@ jobs:
     permissions:
       id-token: write
     outputs:
-      digest: ${{ steps.create-manifests.outputs.digest }}
+      digest-rhcc: ${{ steps.store-digest.outputs.digest-rhcc }}
+      digest-gcr: ${{ steps.store-digest.outputs.digest-gcr }}
+      digest-dockerhub: ${{ steps.store-digest.outputs.digest-dockerhub }}
+      digest-amazon-ecr: ${{ steps.store-digest.outputs.digest-amazon-ecr }}
     strategy:
       matrix:
         registry: [gcr, dockerhub, rhcc, amazon-ecr]
@@ -172,6 +175,13 @@ jobs:
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
           platforms: "amd64, arm64, ppc64le, s390x"
+      - name: Store digest
+        id: store-digest
+        shell: bash
+        run: |
+          registry="${{ matrix.registry }}"
+          digest="${{ steps.create-manifests.outputs.digest }}"
+          echo "digest-${registry}=${digest}" >> "$GITHUB_OUTPUT"
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
@@ -282,10 +292,10 @@ jobs:
         run: |
           make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
 
-          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
-          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
-          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
-          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
+          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest-ecr}}"
+          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest-ecr}}"
+          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest-rhcc}}"
+          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest-rhcc}}"
           cp config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/gke-autopilot.yaml
       - name: Build helm packages
         uses: ./.github/actions/build-helm
