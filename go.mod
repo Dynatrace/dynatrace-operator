@@ -26,7 +26,7 @@ require (
 	golang.org/x/mod v0.24.0
 	golang.org/x/net v0.38.0
 	golang.org/x/oauth2 v0.29.0
-	golang.org/x/sys v0.31.0
+	golang.org/x/sys v0.32.0
 	google.golang.org/grpc v1.71.1
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.25.1
