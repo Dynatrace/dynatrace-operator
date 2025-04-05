@@ -157,29 +157,9 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
-      - name: Docker metadata
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
-        id: meta
-        with:
-          images: dynatrace/dynatrace-operator
-          tags: ${{ steps.prep.outputs.docker_image_tag }}
-          labels: |
-            ${{ steps.prep.outputs.docker_image_labels }}
-            vcs-ref=${{ github.sha }}
-      - name: Prepare build parameters
-        id: prepenv
-        run: |
-          # Set output parameters.
-          # Reason: global envs do not work in workflow calls
-          # More info: https://github.com/actions/runner/issues/480#issuecomment-1021278915
-
-          echo "registry=${{ env.DOCKER_REGISTRY }}" >> "$GITHUB_OUTPUT"
-          echo "repository=${{ env.DOCKER_REPOSITORY }}" >> "$GITHUB_OUTPUT"
     outputs:
-      labels: ${{ steps.meta.outputs.labels }}
+      labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
-      registry: ${{ steps.prepenv.outputs.registry }}
-      repository: ${{ steps.prepenv.outputs.repository }}
 
   build:
     name: Build images
@@ -203,7 +183,7 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
-          image: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
+          image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
           annotation: "version=${{ needs.prepare.outputs.version }}"
 
   manifest:
@@ -225,5 +205,5 @@ jobs:
         with:
           platforms: ${{github.ref_protected &&  'amd64, arm64, ppc64le, s390x' || 'amd64, arm64'}}
           version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ needs.prepare.outputs.registry }}
-          repository: ${{ needs.prepare.outputs.repository }}
+          registry: ${{ env.DOCKER_REGISTRY }}
+          repository: ${{ env.DOCKER_REPOSITORY }}
