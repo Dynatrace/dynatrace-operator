@@ -26,7 +26,7 @@ Auto-detect the platform (if not set), according to the available APIVersions
 {{- end }}
 
 {{/*
-Auto-detect wether or not we need allowlisting of csi-driver and logagent
+Auto-detect wether or not we need allowlisting on GKE-Autopilot
 */}}
 {{- define "dynatrace-operator.needAutopilotAllowlisting" -}}
     {{- if .Capabilities.APIVersions.Has "auto.gke.io/v1/AllowlistSynchronizer" }}
