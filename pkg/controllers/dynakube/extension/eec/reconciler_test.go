@@ -1,6 +1,7 @@
 package eec
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
@@ -19,7 +20,6 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
