@@ -15,27 +15,13 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.4.1
+  publishedVersion: 1.4.2
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v1.4.1 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Add automountServiceAccountToken:\
-      \ true to fullstack OA serviceAccount by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/4175\n\
-      * Change logMonitoring error handling in case of no kubernetesClusterMEID by\
-      \ @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/4174\n* Always\
-      \ lowercase workload kind in enrichment file by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/4191\n\
-      * Remove tenant image registry restriction for image fields by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/4220\n\
-      * Remove yet unused csi-volume-attribute `retryTimeout` by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/4233\n\
-      * Make Log agent host path static by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/4323\n\
-      * Log agent args must not contain dynamic strings by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/4324\n\
-      * Fix OneAgent command line arguments by @StefanHauth in https://github.com/Dynatrace/dynatrace-operator/pull/4357\n\
-      * Reject dynakubes that use public image and not read only oneAgents (release-1.4)\
-      \ by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/4346\n\
-      * Fix/restart on tenanttokenchange without fieldchange (release-1.4) by @gkrenn\
-      \ in https://github.com/Dynatrace/dynatrace-operator/pull/4376\n* Increase CSI\
-      \ driver server container livenessProbe default timeouts (release-1.4) by @andriisoldatenko\
-      \ in https://github.com/Dynatrace/dynatrace-operator/pull/4406\n* Change readonly\
-      \ oneAgent + custom image validation to a warning by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/4426\n\
-      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.4.0...v1.4.1"
+      \ at v1.4.2 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Fix multiple\
+      \ set host property arguments by @StefanHauth in https://github.com/Dynatrace/dynatrace-operator/pull/4581\n\
+      * Make standalone logmon privileged with FF by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/4633\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.4.1...v1.4.2"
     releaseTypes:
     - Feature
     recommended: true
