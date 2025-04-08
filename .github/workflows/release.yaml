@@ -224,7 +224,7 @@ jobs:
 
   release:
     name: Create release
-    needs: [prepare, build, signing]
+    needs: [prepare, build, signing, run-preflight-rhcc]
     environment: Release
     permissions:
       contents: write
