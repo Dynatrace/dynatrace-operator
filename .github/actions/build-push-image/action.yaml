@@ -1,17 +1,22 @@
-name: Build Docker Image
-description: Builds the operator docker image
+name: Build and Push Docker Image
+description: Builds and pushes the operator docker image
 inputs:
-  platform:
-    description: The platform for which the image will be built
+  platforms:
+    description: The platforms for which the image will be built
+    defaults: linux/amd64,linux/arm64
     required: true
   labels:
     description: The labels for the built image
     required: true
-  image:
-    description: The tag of the built image
+  tags:
+    description: The tags of the built image. Should be the whole image URIs, like docker.io/dynatrace/dynatrace-operator:snapshot,quay.io/dynatrace/dynatrace-operator:snapshot
     required: true
   annotation:
     description: The annotation added to the built image
+outputs:
+  digest:
+    description: The digest of the built image
+    value: ${{ steps.build-target.outputs.digest }}
 runs:
   using: "composite"
   steps:
@@ -36,6 +41,13 @@ runs:
       shell: bash
       run: |
         touch dynatrace-operator-bin-sbom.cdx.json
+    - name: Docker metadata
+      uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+      id: meta
+      env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+      with:
+        images: ${{ inputs.image }}
     - name: Build target
       uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
       with:
@@ -46,9 +58,13 @@ runs:
         context: .
         file: ./Dockerfile
         provenance: false
-        platforms: linux/${{ inputs.platform }}
+        platforms: ${{ inputs.platforms }}
         push: true
-        tags: ${{ inputs.image }}
-        labels: ${{ inputs.labels }}
-        annotations: ${{ inputs.annotation }}
+        tags: ${{ inputs.tags }}
+        labels: |
+          ${{ inputs.labels }}
+          ${{ steps.meta.outputs.labels }}
+        annotations: |
+          ${{ inputs.annotation }}
+          ${{ steps.meta.outputs.annotations }}
 
