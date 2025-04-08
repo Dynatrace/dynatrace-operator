@@ -154,7 +154,7 @@ jobs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
 
-  build:
+  build-push:
     name: Build images
     runs-on: ubuntu-latest
     needs: [prepare, tests, linting, generated-files]
@@ -168,7 +168,7 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build image
-        uses: ./.github/actions/build-image
+        uses: ./.github/actions/build-push-image
         with:
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
           labels: ${{ needs.prepare.outputs.labels }}
