@@ -1,6 +1,7 @@
 package startup_probe
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 )
 
 const (

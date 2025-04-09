@@ -1,6 +1,7 @@
 package statefulset
 
 import (
+	"context"
 	"hash/fnv"
 	"strconv"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
