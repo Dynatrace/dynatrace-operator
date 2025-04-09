@@ -19,4 +19,4 @@ tests:
       webhook.highAvailability: false
     asserts:
       - hasDocuments:
-        count: 0
+          count: 0
