@@ -2,9 +2,9 @@ package remote_command
 
 import (
 	"bytes"
+	"context"
 
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
