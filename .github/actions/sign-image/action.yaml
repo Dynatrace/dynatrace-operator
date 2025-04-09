@@ -18,13 +18,13 @@ runs:
     - name: Sign image with a key
       shell: bash
       run: |
-        cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE}
+        cosign sign -y --key env://COSIGN_PRIVATE_KEY --recursive ${IMAGE}
       env:
         IMAGE: ${{ inputs.image }}
         COSIGN_PRIVATE_KEY: ${{ inputs.signing-key }}
         COSIGN_PASSWORD: ${{ inputs.signing-password }}
     - name: Sign the images with GitHub OIDC Token
       shell: bash
-      run: cosign sign -y ${IMAGE}
+      run: cosign sign -y --recursive ${IMAGE}
       env:
         IMAGE: ${{ inputs.image }}

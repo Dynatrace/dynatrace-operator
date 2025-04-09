@@ -13,8 +13,10 @@ permissions:
   contents: read
 
 env:
-  DOCKER_REGISTRY: "quay.io"
-  DOCKER_REPOSITORY: "dynatrace/dynatrace-operator"
+  DOCKER_REGISTRY: quay.io
+  DOCKER_REPOSITORY: dynatrace/dynatrace-operator
+  PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+  PR_PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   helm-test:
@@ -62,15 +64,6 @@ jobs:
         id: check-code-coverage
         run: |
           make go/check-coverage
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@0565863a31f2c772f9f0395002a31e3f06189574 # v5.4.0
-        with:
-          fail_ci_if_error: true
-          verbose: true
-          files: ./coverage.txt
-          flags: unittests # optional
-          name: codecov-umbrella # optional
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   linting:
     name: Run linting
@@ -157,37 +150,14 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
-      - name: Docker metadata
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
-        id: meta
-        with:
-          images: dynatrace/dynatrace-operator
-          tags: ${{ steps.prep.outputs.docker_image_tag }}
-          labels: |
-            ${{ steps.prep.outputs.docker_image_labels }}
-            vcs-ref=${{ github.sha }}
-      - name: Prepare build parameters
-        id: prepenv
-        run: |
-          # Set output parameters.
-          # Reason: global envs do not work in workflow calls
-          # More info: https://github.com/actions/runner/issues/480#issuecomment-1021278915
-
-          echo "registry=${{ env.DOCKER_REGISTRY }}" >> "$GITHUB_OUTPUT"
-          echo "repository=${{ env.DOCKER_REPOSITORY }}" >> "$GITHUB_OUTPUT"
     outputs:
-      labels: ${{ steps.meta.outputs.labels }}
+      labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
-      registry: ${{ steps.prepenv.outputs.registry }}
-      repository: ${{ steps.prepenv.outputs.repository }}
 
-  build:
+  build-push:
     name: Build images
     runs-on: ubuntu-latest
     needs: [prepare, tests, linting, generated-files]
-    strategy:
-      matrix:
-        platform: [amd64, arm64, ppc64le, s390x]
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -198,32 +168,9 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build image
-        if: matrix.platform == 'amd64' || matrix.platform == 'arm64' || github.ref_protected
-        uses: ./.github/actions/build-image
+        uses: ./.github/actions/build-push-image
         with:
-          platform: ${{ matrix.platform }}
+          platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
           labels: ${{ needs.prepare.outputs.labels }}
-          image: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}
           annotation: "version=${{ needs.prepare.outputs.version }}"
-
-  manifest:
-    name: Create manifest
-    needs: [prepare, build]
-    runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.head.repo.fork }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Login to Registry
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Create Manifests
-        uses: ./.github/actions/create-manifests
-        with:
-          platforms: ${{github.ref_protected &&  'amd64, arm64, ppc64le, s390x' || 'amd64, arm64'}}
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ needs.prepare.outputs.registry }}
-          repository: ${{ needs.prepare.outputs.repository }}

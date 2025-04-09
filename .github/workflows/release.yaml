@@ -7,6 +7,8 @@ on:
 
 env:
   GOOGLE_MARKETPLACE_ANNOTATION: com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
+  PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+  DEPLOYER_PLATFORMS: linux/amd64
 
 jobs:
   prepare:
@@ -22,60 +24,23 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
-      - name: Docker metadata
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
-        id: meta
-        with:
-          images: dynatrace/dynatrace-operator
-          tags: |
-            type=semver,pattern={{major}}.{{minor}}
-            ${{ steps.prep.outputs.docker_image_tag }}
-          labels: |
-            ${{ steps.prep.outputs.docker_image_labels }}
-            vcs-ref=${{ github.sha }}
-      - name: Prepare major_minor tag
-        shell: bash
-        id: prepare-major-minor-tag
-        run: |
-          set -x
-          tag="${{ join(fromJSON(steps.meta.outputs.json).tags[0]) }}"
-          version_with_major_minor=${tag##*:}
-          echo "version_with_major_minor=$version_with_major_minor" >> $GITHUB_OUTPUT
     outputs:
-      version_with_major_minor: ${{ steps.prepare-major-minor-tag.outputs.version_with_major_minor }}
-      labels: ${{ steps.meta.outputs.labels }}
+      labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
-  build:
+  build-push:
     name: Build images
+    environment: Release
     runs-on: ubuntu-latest
     permissions:
       id-token: write
     needs: [prepare]
-    strategy:
-      matrix:
-        platform: [amd64, arm64, ppc64le, s390x]
-        registry: [gcr, dockerhub, amazon-ecr, rhcc]
-        include:
-        - registry: gcr
-          url: gcr.io
-          repository: GCR_REPOSITORY
-          username: GCR_USERNAME
-          password: GCR_JSON_KEY
-        - registry: dockerhub
-          url: docker.io
-          repository: DOCKERHUB_REPOSITORY
-          username: DOCKERHUB_USERNAME
-          password: DOCKERHUB_PASSWORD
-        - registry: amazon-ecr
-          url: public.ecr.aws
-          repository: ECR_REPOSITORY
-        - registry: rhcc
-          url: quay.io
-          username: RHCC_USERNAME
-          password: RHCC_PASSWORD
-          repository: RHCC_REPOSITORY
+    env:
+      GCR_IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
+      ECR_IMAGE: public.ecr.aws.io/${{ secrets.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
+      RHCC_IMAGE: quay.io/${{ secrets.RHCC_REPOSITORY }}:${{ needs.prepare.outputs.version }}
+      DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -87,48 +52,51 @@ jobs:
         id: sbom
         run: |
           make release/gen-sbom
-      - name: Login to Registry
-        if: ${{ matrix.registry != 'amazon-ecr' }}
+      - name: Login to GCR
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
-          registry: ${{ matrix.url }}
-          username: ${{ secrets[matrix.username] }}
-          password: ${{ secrets[matrix.password] }}
+          registry: gcr.io
+          username: ${{ secrets.GCR_USERNAME }}
+          password: ${{ secrets.GCR_JSON_KEY }}
+      - name: Login to RHCC
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: quay.io
+          username: ${{ secrets.RHCC_USERNAME }}
+          password: ${{ secrets.RHCC_PASSWORD }}
+      - name: Login to Docker
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Configure aws credentials
-        if: ${{ matrix.registry == 'amazon-ecr' }}
         uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
       - name: Login to Amazon ECR
-        if: ${{ matrix.registry == 'amazon-ecr' }}
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
         with:
           registry-type: public
       - name: Build image
         id: build-image
-        uses: ./.github/actions/build-image
+        uses: ./.github/actions/build-push-image
         with:
-          platform: ${{ matrix.platform }}
+          platforms: ${{ env.PLATFORMS }}
           labels: ${{ needs.prepare.outputs.labels }}
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
+          tags: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
           annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
-      - name: Sign image for ${{matrix.registry}}
-        uses: ./.github/actions/sign-image
-        with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.build-image.outputs.digest}}
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+    outputs:
+      digest: ${{steps.build-image.outputs.digest}}
 
-  manifest:
-    name: Create Docker manifests
+  signing:
+    name: Sign the image index/manifests + Add SBOM
     environment: Release
-    needs: [prepare, build]
+    needs: [prepare, build-push]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-    outputs:
-      digest: ${{ steps.create-manifests.outputs.digest }}
     strategy:
       matrix:
         registry: [gcr, dockerhub, amazon-ecr, rhcc]
@@ -172,71 +140,17 @@ jobs:
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
         with:
           registry-type: public
-      - name: Create manifests for ${{matrix.registry}}
-        uses: ./.github/actions/create-manifests
-        id: create-manifests
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ matrix.url }}
-          repository: ${{ secrets[matrix.repository] }}
-          platforms: "amd64, arm64, ppc64le, s390x"
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.create-manifests.outputs.digest }}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-
-  attach-sbom:
-    name: Attach sbom
-    environment: Release
-    needs: [ prepare, build, manifest ]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    strategy:
-      matrix:
-        registry: [gcr, dockerhub, amazon-ecr]
-        include:
-          - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
-          - registry: amazon-ecr
-            url: public.ecr.aws
-            repository: ECR_REPOSITORY
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Login to Registry
-        if: ${{ matrix.registry != 'amazon-ecr' }}
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        with:
-          registry: ${{ matrix.url }}
-          username: ${{ secrets[matrix.username] }}
-          password: ${{ secrets[matrix.password] }}
-      - name: Configure aws credentials
-        if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
-        with:
-          role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
-          aws-region: us-east-1
-      - name: Login to Amazon ECR
-        if: ${{ matrix.registry == 'amazon-ecr' }}
-        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
-        with:
-          registry-type: public
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # 0.30.0
         with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
+          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
@@ -244,7 +158,7 @@ jobs:
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -255,7 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ prepare ]
     env:
-      IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version_with_major_minor }}
+      IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version }}
       IMAGE_NO_PREFIX: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version_without_prefix }}
     steps:
     - name: Checkout
@@ -273,17 +187,19 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # 6.15.0
       with:
-        platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+        platforms: ${{ env.DEPLOYER_PLATFORMS }}
         provenance: false
+        context: ./config/helm
         file: ./config/helm/Dockerfile
         push: true
         tags: ${{ env.IMAGE }},${{ env.IMAGE_NO_PREFIX }}
-        annotations: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
+        annotations: |
+         ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
 
   run-preflight-rhcc:
     name: Run preflight for rhcc
     environment: Release
-    needs: [ prepare, build, manifest]
+    needs: [ prepare, build-push]
     runs-on: ubuntu-latest
     env:
       SCAN_REGISTRY: "quay.io"
@@ -308,7 +224,7 @@ jobs:
 
   release:
     name: Create release
-    needs: [prepare, build, attach-sbom, manifest, run-preflight-rhcc]
+    needs: [prepare, build-push, signing, run-preflight-rhcc]
     environment: Release
     permissions:
       contents: write
@@ -336,10 +252,10 @@ jobs:
         run: |
           make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
 
-          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
-          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
-          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
-          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.manifest.outputs.digest}}"
+          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
+          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
+          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
+          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
           cp config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/gke-autopilot.yaml
       - name: Build helm packages
         uses: ./.github/actions/build-helm
