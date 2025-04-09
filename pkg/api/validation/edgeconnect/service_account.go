@@ -1,8 +1,9 @@
 package validation
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"golang.org/x/net/context"
 )
 
 const (

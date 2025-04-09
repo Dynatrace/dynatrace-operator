@@ -1,10 +1,10 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"golang.org/x/net/context"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
