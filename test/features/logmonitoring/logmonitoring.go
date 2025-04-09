@@ -3,6 +3,7 @@
 package logmonitoring
 
 import (
+	"context"
 	"os"
 	"path"
 	"testing"
@@ -23,7 +24,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
