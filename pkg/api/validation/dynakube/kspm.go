@@ -21,7 +21,7 @@ func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) s
 }
 
 func kspmWithoutK8SMonitoring(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.KSPM().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FeatureAutomaticKubernetesApiMonitoring()) {
+	if dk.KSPM().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticKubernetesApiMonitoring()) {
 		return warningKSPMMissingKubemon
 	}
 

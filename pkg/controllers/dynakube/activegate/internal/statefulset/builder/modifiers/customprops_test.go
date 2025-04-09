@@ -3,8 +3,8 @@ package modifiers
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +40,7 @@ func TestCustomPropertyEnabled(t *testing.T) {
 			Value: "test",
 		}
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNoProxy: "test.example.com",
+			exp.NoProxyKey: "test.example.com",
 		}
 
 		enableKubeMonCapability(&dk)

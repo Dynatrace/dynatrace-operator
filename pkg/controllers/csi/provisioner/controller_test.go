@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
@@ -254,7 +255,7 @@ func createDynaKubeWithJobFF(t *testing.T) *dynakube.DynaKube {
 	}
 	dk.Status.CodeModules.ImageID = imageId
 	dk.Annotations = map[string]string{
-		dynakube.AnnotationFeatureNodeImagePull: "true",
+		exp.OANodeImagePullKey: "true",
 	}
 
 	return dk

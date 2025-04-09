@@ -49,15 +49,15 @@ func (dk *DynaKube) HasProxy() bool {
 }
 
 func (dk *DynaKube) NeedsCustomNoProxy() bool {
-	return dk.HasProxy() && dk.FeatureNoProxy() != ""
+	return dk.HasProxy() && dk.FF().GetNoProxy() != ""
 }
 
 func (dk *DynaKube) NeedsActiveGateProxy() bool {
-	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy() && dk.ActiveGate().IsEnabled()
+	return !dk.FF().IsActiveGateIgnoreProxy() && dk.HasProxy() && dk.ActiveGate().IsEnabled()
 }
 
 func (dk *DynaKube) NeedsOneAgentProxy() bool {
-	return !dk.FeatureOneAgentIgnoreProxy() && dk.HasProxy()
+	return !dk.FF().IgnoreOneAgentProxy() && dk.HasProxy()
 }
 
 func (dk *DynaKube) proxyUrlFromUserSecret(ctx context.Context, kubeReader client.Reader) (string, error) {

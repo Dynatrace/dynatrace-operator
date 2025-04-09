@@ -40,7 +40,7 @@ func getTechnology(pod corev1.Pod, dk dynakube.DynaKube) string {
 		return technology
 	}
 
-	technology := dk.FeatureNodeImagePullTechnology()
+	technology := dk.FF().GetNodeImagePullTechnology()
 	if technology != "" {
 		return technology
 	}

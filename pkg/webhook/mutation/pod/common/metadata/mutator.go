@@ -10,7 +10,7 @@ import (
 
 func IsEnabled(request *dtwebhook.BaseRequest) bool {
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject,
-		request.DynaKube.FeatureAutomaticInjection())
+		request.DynaKube.FF().IsInjectionAutomatic())
 	enabledOnDynakube := request.DynaKube.MetadataEnrichmentEnabled()
 
 	matchesNamespace := true // if no namespace selector is configured, we just pass set this to true

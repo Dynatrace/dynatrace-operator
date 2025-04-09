@@ -114,8 +114,8 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		endpoint.InputFileName:   []byte(endpointProperties),
 	}
 
-	if dk.FeatureAgentInitialConnectRetry() > -1 {
-		initialConnectRetryMs := strconv.Itoa(dk.FeatureAgentInitialConnectRetry())
+	if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > -1 {
+		initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio))
 		data[curl.InputFileName] = []byte(initialConnectRetryMs)
 	}
 

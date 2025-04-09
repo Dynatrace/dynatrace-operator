@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
@@ -108,7 +109,7 @@ func TestReconcile(t *testing.T) {
 			Value: "myproxy.at",
 		}
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNoProxy: "dynatraceurl.com",
+			exp.NoProxyKey: "dynatraceurl.com",
 		}
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(testTokenValue)
 
