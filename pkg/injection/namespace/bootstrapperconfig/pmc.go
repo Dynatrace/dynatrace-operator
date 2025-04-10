@@ -77,6 +77,8 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 		pmc.AddNoProxy(dnsEntry)
 	}
 
+	pmc.SortPropertiesByKey()
+
 	marshaled, err := json.Marshal(pmc)
 	if err != nil {
 		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
