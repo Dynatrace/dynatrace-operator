@@ -38,7 +38,7 @@ jobs:
     needs: [prepare]
     env:
       GCR_IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
-      ECR_IMAGE: public.ecr.aws.io/${{ secrets.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
+      ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
       RHCC_IMAGE: quay.io/${{ secrets.RHCC_REPOSITORY }}:${{ needs.prepare.outputs.version }}
       DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}
     steps:
