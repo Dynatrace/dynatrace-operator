@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
@@ -143,6 +144,12 @@ func (pmc ProcessModuleConfig) ToMap() ConfMap {
 	}
 
 	return sections
+}
+
+func (pmc *ProcessModuleConfig) SortPropertiesByKey() {
+	sort.Slice(pmc.Properties, func(i, j int) bool {
+		return pmc.Properties[i].Key < pmc.Properties[j].Key
+	})
 }
 
 func (pmc ProcessModuleConfig) IsEmpty() bool {
