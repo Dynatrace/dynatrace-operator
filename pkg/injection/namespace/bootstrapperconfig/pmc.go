@@ -16,6 +16,8 @@ import (
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
 	if !conditions.IsOutdated(s.timeProvider, dk, ConditionType) {
+		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
+
 		source, err := getSecretFromSource(ctx, *dk, k8ssecret.Query(s.client, s.apiReader, log), dk.Namespace)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
@@ -25,6 +27,8 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 			return source.Data[pmc.InputFileName], nil
 		}
 	}
+
+	log.Debug("calling the Dynatrace API for ruxitagentproc content")
 
 	conditions.SetSecretOutdated(dk.Conditions(), ConditionType, "secret is outdated, update in progress")
 
@@ -52,6 +56,8 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 		AddProxy("")
 
 	if dk.NeedsOneAgentProxy() {
+		log.Debug("proxy is needed")
+
 		proxy, err := dk.Proxy(ctx, s.apiReader)
 		if err != nil {
 			conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
