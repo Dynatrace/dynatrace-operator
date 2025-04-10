@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -104,6 +105,10 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
 	t.Run("succcessfully generate secret with fields for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -189,6 +194,10 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
 	t.Run("update secret with preexisting secret + fields", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -278,9 +287,13 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
 	t.Run("fail while generating secret for dynakube", func(t *testing.T) {
-		dynakube := &dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
@@ -291,7 +304,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		}
 
 		clt := fake.NewClientWithIndex(
-			dynakube,
+			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.ApiToken:  []byte(testAPIToken),
@@ -304,8 +317,12 @@ func TestGenerateForDynakube(t *testing.T) {
 		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dynakube)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
 		require.Error(t, err)
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionFalse, c.Status)
 	})
 }
 
@@ -317,6 +334,12 @@ func TestCleanup(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testApiUrl,
+		},
+		Status: dynakube.DynaKubeStatus{
+			Conditions: []metav1.Condition{
+				{Type: ConditionType},
+				{Type: "other"},
+			},
 		},
 	}
 
@@ -353,7 +376,7 @@ func TestCleanup(t *testing.T) {
 	require.NotEmpty(t, secretNS2)
 	assert.Equal(t, consts.BootstrapperInitSecretName, secretNS2.Name)
 
-	err = Cleanup(context.Background(), clt, clt, namespaces, *dk)
+	err = Cleanup(context.Background(), clt, clt, namespaces, dk)
 	require.NoError(t, err)
 
 	var deleted corev1.Secret
@@ -368,6 +391,7 @@ func TestCleanup(t *testing.T) {
 	err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &deleted)
 	require.Error(t, err)
 	assert.True(t, errors.IsNotFound(err))
+	require.Nil(t, meta.FindStatusCondition(*dk.Conditions(), ConditionType))
 }
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
