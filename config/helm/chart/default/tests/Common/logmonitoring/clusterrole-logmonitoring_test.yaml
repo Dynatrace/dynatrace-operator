@@ -58,4 +58,4 @@ tests:
       rbac.oneagent.create: true
     asserts:
       - hasDocuments:
-        count: 0
+          count: 0

@@ -82,4 +82,4 @@ tests:
       rbac.telemetryIngest.create: false
     asserts:
       - hasDocuments:
-        count: 0
+          count: 0
