@@ -307,10 +307,9 @@ tests:
                     name: mountpoint-dir
                     readOnly: true
               - args:
+                  - "csi-registrar"
                   - "--csi-address=/csi/csi.sock"
                   - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-                command:
-                  - csi-node-driver-registrar
                 env:
                   - name: DRIVER_REG_SOCK_PATH
                     value: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
@@ -341,11 +340,10 @@ tests:
                   - mountPath: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/"
                     name: lockfile-dir
               - args:
+                  - "csi-livenessprobe"
                   - "--csi-address=/csi/csi.sock"
                   - "--health-port=9808"
                   - "--probe-timeout=9s"
-                command:
-                  - livenessprobe
                 image: image-name
                 imagePullPolicy: Always
                 name: liveness-probe
@@ -396,6 +394,34 @@ tests:
                 name: lockfile-dir
               - emptyDir: { }
                 name: tmp-dir
+
+  - it: should use native livenessprobe and csi-node-driver-registrar commands if they are preferred
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.livenessprobe.operatorcmd: false
+      csidriver.registrar.operatorcmd: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].args
+          value:
+          - "--csi-address=/csi/csi.sock"
+          - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+      - equal:
+          path: spec.template.spec.containers[2].command
+          value:
+            - csi-node-driver-registrar
+      - equal:
+          path: spec.template.spec.containers[3].args
+          value:
+          - "--csi-address=/csi/csi.sock"
+          - "--health-port=9808"
+          - "--probe-timeout=9s"
+      - equal:
+          path: spec.template.spec.containers[3].command
+          value:
+          - livenessprobe
 
   - it: should have default updateStrategy
     set:
