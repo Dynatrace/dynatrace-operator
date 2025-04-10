@@ -206,7 +206,7 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 			return
 		}
 
-		err = bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, *r.dk)
+		err = bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, r.dk)
 		if err != nil {
 			log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
 		}

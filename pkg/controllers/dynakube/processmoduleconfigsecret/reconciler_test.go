@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), PMCConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotNil(t, condition)
 		require.NotEmpty(t, oldTransitionTime)
@@ -63,7 +63,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":0")
 
-		condition = meta.FindStatusCondition(*dk.Conditions(), PMCConditionType)
+		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		require.NotNil(t, condition)
 		require.Equal(t, condition.LastTransitionTime, oldTransitionTime)
 
@@ -74,7 +74,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, "\"revision\":1")
 
-		condition = meta.FindStatusCondition(*dk.Conditions(), PMCConditionType)
+		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		require.NotNil(t, condition)
 		require.Greater(t, condition.LastTransitionTime.Time, oldTransitionTime.Time)
 		assert.Equal(t, conditions.SecretCreatedOrUpdatedReason, condition.Reason)
@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition and pmc secret", func(t *testing.T) {
 		dk := createDynakube(oneagent.Spec{
 			ClassicFullStack: &oneagent.HostInjectSpec{}})
-		conditions.SetSecretCreated(dk.Conditions(), PMCConditionType, "this is a test")
+		conditions.SetSecretCreated(dk.Conditions(), ConditionType, "this is a test")
 
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -134,7 +134,7 @@ func TestReconcile(t *testing.T) {
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
-		condition := meta.FindStatusCondition(*dk.Conditions(), PMCConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
@@ -155,7 +155,7 @@ func TestReconcile(t *testing.T) {
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
-		condition := meta.FindStatusCondition(*dk.Conditions(), PMCConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
