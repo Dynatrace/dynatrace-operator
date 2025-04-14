@@ -96,7 +96,7 @@ jobs:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Set up Helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       - name: Check deepcopy files are up-to-date
         id: deepcopy
         run: |
