@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	// Deprecated: Dedicated field since v1beta3
+	// Deprecated: Dedicated field since v1beta3.
 	InjectionDisableMetadataEnrichmentKey = FFPrefix + "disable-metadata-enrichment"
-	// Deprecated: Dedicated field since v1beta3
+	// Deprecated: Dedicated field since v1beta3.
 	InjectionMetadataEnrichmentKey = FFPrefix + "metadata-enrichment"
 
 	InjectionIgnoreUnknownStateKey    = FFPrefix + "ignore-unknown-state"
@@ -20,7 +20,7 @@ const (
 	InjectionEnforcementModeKey       = FFPrefix + "enforcement-mode"
 )
 
-// Deprecated: Dedicated field since v1beta3
+// Deprecated: Dedicated field since v1beta3.
 func (ff *FeatureFlags) DisableMetadataEnrichment() bool {
 	return ff.getDisableFlagWithDeprecatedAnnotation(InjectionMetadataEnrichmentKey, InjectionDisableMetadataEnrichmentKey)
 }

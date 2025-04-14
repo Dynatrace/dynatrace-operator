@@ -53,11 +53,11 @@ func (dk *DynaKube) NeedsCustomNoProxy() bool {
 }
 
 func (dk *DynaKube) NeedsActiveGateProxy() bool {
-	return !dk.FF().AGIgnoresProxy() && dk.HasProxy() && dk.ActiveGate().IsEnabled()
+	return !dk.FF().AGIgnoresProxy() && dk.HasProxy() && dk.ActiveGate().IsEnabled() //nolint:staticcheck
 }
 
 func (dk *DynaKube) NeedsOneAgentProxy() bool {
-	return !dk.FF().OneAgentIgnoresProxy() && dk.HasProxy()
+	return !dk.FF().OneAgentIgnoresProxy() && dk.HasProxy() //nolint:staticcheck
 }
 
 func (dk *DynaKube) proxyUrlFromUserSecret(ctx context.Context, kubeReader client.Reader) (string, error) {

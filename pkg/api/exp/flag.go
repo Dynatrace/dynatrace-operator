@@ -8,10 +8,10 @@ import (
 const (
 	FFPrefix = "feature.dynatrace.com/"
 
-	PublicRegistryKey      = FFPrefix + "public-registry"
-	NoProxyKey             = FFPrefix + "no-proxy"
+	PublicRegistryKey = FFPrefix + "public-registry"
+	NoProxyKey        = FFPrefix + "no-proxy"
 
-	// Deprecated: Dedicated field since v1beta2
+	// Deprecated: Dedicated field since v1beta2.
 	ApiRequestThresholdKey = FFPrefix + "dynatrace-api-request-threshold"
 
 	silentPhrase = "silent"
@@ -28,7 +28,7 @@ func NewFlags(annotations map[string]string) *FeatureFlags {
 	return &FeatureFlags{annotations: annotations}
 }
 
-// Deprecated: Dedicated field since v1beta2
+// Deprecated: Dedicated field since v1beta2.
 func (ff *FeatureFlags) GetApiRequestThreshold() time.Duration {
 	interval := ff.getFeatureFlagInt(ApiRequestThresholdKey, DefaultMinRequestThresholdMinutes)
 	if interval < 0 {
@@ -47,7 +47,7 @@ func (ff *FeatureFlags) IsPublicRegistry() bool {
 	return ff.getFeatureFlagBool(PublicRegistryKey, false)
 }
 
-// Deprecated: Do not use "disable" feature flags
+// Deprecated: Do not use "disable" feature flags.
 func (ff *FeatureFlags) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
 	if ff.getFeatureFlagRaw(annotation) != "" {
 		return !ff.getFeatureFlagBool(annotation, true)

@@ -43,6 +43,7 @@ func MountAttemptsToTimeout(maxAttempts int) string {
 	if maxAttempts <= 0 {
 		return time.Duration(0).String()
 	}
+
 	var baseDelay = time.Second / 2
 
 	delay := time.Duration(math.Exp2(float64(maxAttempts))) * baseDelay

@@ -181,7 +181,7 @@ func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 		}
 	}
 
-	if !r.dk.FF().IsNodeImagePull()|| r.dk.OneAgent().IsCSIAvailable() {
+	if !r.dk.FF().IsNodeImagePull() || r.dk.OneAgent().IsCSIAvailable() {
 		err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
 			if conditions.IsKubeApiError(err) {

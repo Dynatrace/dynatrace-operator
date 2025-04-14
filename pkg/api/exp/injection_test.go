@@ -44,7 +44,7 @@ func TestDisableMetadataEnrichment(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				InjectionMetadataEnrichmentKey: c.in,
+				InjectionMetadataEnrichmentKey:        c.in,
 				InjectionDisableMetadataEnrichmentKey: c.depIn,
 			}}
 
@@ -232,7 +232,6 @@ func TestIsLabelVersionDetection(t *testing.T) {
 		})
 	}
 }
-
 
 func TestHasInitSeccomp(t *testing.T) {
 	type testCase struct {

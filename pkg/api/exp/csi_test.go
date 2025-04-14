@@ -48,6 +48,7 @@ func TestGetCSIMaxRetryTimeout(t *testing.T) {
 		in    string
 		out   time.Duration
 	}
+
 	defaultDuration, err := time.ParseDuration(DefaultCSIMaxMountTimeout)
 	require.NoError(t, err)
 
@@ -147,30 +148,30 @@ func TestGetCSIMaxFailedMountAttempts(t *testing.T) {
 
 func TestMountAttemptsToTimeout(t *testing.T) {
 	type testCase struct {
-		in    int
-		out   string
+		in  int
+		out string
 	}
 
 	cases := []testCase{
 		{
-			in:    -100,
-			out:   "0s",
+			in:  -100,
+			out: "0s",
 		},
 		{
-			in:    0,
-			out:   "0s",
+			in:  0,
+			out: "0s",
 		},
 		{
-			in:    5,
-			out:   "16s",
+			in:  5,
+			out: "16s",
 		},
 		{
-			in:    8,
-			out:   "2m8s",
+			in:  8,
+			out: "2m8s",
 		},
 		{
-			in:    10,
-			out:   "8m32s",
+			in:  10,
+			out: "8m32s",
 		},
 	}
 
