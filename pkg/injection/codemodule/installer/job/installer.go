@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
 	"github.com/pkg/errors"
@@ -30,16 +31,18 @@ type Properties struct {
 
 func NewInstaller(ctx context.Context, fs afero.Fs, props *Properties) installer.Installer {
 	return &Installer{
-		fs:       fs,
-		props:    props,
-		nodeName: env.GetNodeName(),
+		fs:          fs,
+		props:       props,
+		nodeName:    env.GetNodeName(),
+		isOpenShift: installconfig.GetModules().IsOpenShift,
 	}
 }
 
 type Installer struct {
-	fs       afero.Fs
-	props    *Properties
-	nodeName string
+	fs          afero.Fs
+	props       *Properties
+	nodeName    string
+	isOpenShift bool
 }
 
 func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {

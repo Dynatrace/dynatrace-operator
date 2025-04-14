@@ -36,7 +36,8 @@ func TestGet(t *testing.T) {
 			"logMonitoring": false,
 			"edgeConnect": true,
 			"supportability": false,
-			"kspm": true
+			"kspm": true,
+			"isOpenShift": false
 		}`
 		expected := Modules{
 			CSIDriver:      false,
@@ -47,6 +48,7 @@ func TestGet(t *testing.T) {
 			EdgeConnect:    true,
 			Supportability: false,
 			KSPM:           true,
+			IsOpenShift:    false,
 		}
 
 		t.Setenv(ModulesJsonEnv, jsonValue)
@@ -67,7 +69,8 @@ func TestGet(t *testing.T) {
 			"logMonitoring": false,
 			"edgeConnect": true,
 			"supportability": false,
-			"kspm": true
+			"kspm": true,
+			"isOpenShift": false
 		}`
 		expected := Modules{
 			CSIDriver:      false,
@@ -78,6 +81,7 @@ func TestGet(t *testing.T) {
 			EdgeConnect:    true,
 			Supportability: false,
 			KSPM:           true,
+			IsOpenShift:    false,
 		}
 
 		t.Setenv(ModulesJsonEnv, jsonValue)

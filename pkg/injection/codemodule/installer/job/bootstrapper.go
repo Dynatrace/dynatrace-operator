@@ -49,19 +49,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 				MountPath: inst.props.PathResolver.RootDir,
 			},
 		},
-		SecurityContext: &corev1.SecurityContext{ // TODO: Use the SecurityContext from the `provisioner` container
-			RunAsUser:                ptr.To(int64(0)),
-			RunAsNonRoot:             ptr.To(false),
-			Privileged:               ptr.To(true),
-			AllowPrivilegeEscalation: ptr.To(true),
-			ReadOnlyRootFilesystem:   ptr.To(true),
-			SELinuxOptions: &corev1.SELinuxOptions{
-				Level: "s0",
-			},
-			SeccompProfile: &corev1.SeccompProfile{
-				Type: corev1.SeccompProfileTypeRuntimeDefault,
-			},
-		},
+		SecurityContext: inst.createCorrectSecurityContext(),
 	}
 
 	hostVolume := corev1.Volume{
@@ -100,4 +88,38 @@ func (inst *Installer) buildArgs(jobName, targetDir string) []string {
 		"--target=" + targetDir,
 		"--work=" + inst.props.PathResolver.AgentJobWorkDirForJob(jobName),
 	}
+}
+
+func (inst *Installer) createCorrectSecurityContext() *corev1.SecurityContext {
+	var sc *corev1.SecurityContext
+
+	if inst.isOpenShift {
+		sc = &corev1.SecurityContext{ // TODO: Use the SecurityContext from the `provisioner` container
+			RunAsUser:                ptr.To(int64(0)),
+			RunAsNonRoot:             ptr.To(false),
+			Privileged:               ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(true),
+			ReadOnlyRootFilesystem:   ptr.To(true),
+			SELinuxOptions: &corev1.SELinuxOptions{
+				Level: "s0",
+			},
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+		}
+	} else {
+		sc = &corev1.SecurityContext{
+			RunAsUser:                ptr.To(int64(1001)),
+			RunAsNonRoot:             ptr.To(true),
+			Privileged:               ptr.To(false),
+			AllowPrivilegeEscalation: ptr.To(false),
+			ReadOnlyRootFilesystem:   ptr.To(true),
+			SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{"ALL"},
+			},
+		}
+	}
+
+	return sc
 }

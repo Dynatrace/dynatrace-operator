@@ -33,6 +33,7 @@ var (
 		EdgeConnect:    true,
 		Supportability: true,
 		KSPM:           true,
+		IsOpenShift:    false,
 	}
 
 	log = logd.Get().WithName("install-config")
@@ -47,6 +48,7 @@ type Modules struct {
 	EdgeConnect    bool `json:"edgeConnect"`
 	Supportability bool `json:"supportability"`
 	KSPM           bool `json:"kspm"`
+	IsOpenShift    bool `json:"platform"`
 }
 
 func GetModules() Modules {
