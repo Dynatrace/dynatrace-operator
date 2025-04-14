@@ -153,7 +153,7 @@ func TestGetOneAgentSecCompProfile(t *testing.T) {
 	}
 }
 
-func TestIgnoreOneAgentProxy(t *testing.T) {
+func TestOneAgentIgnoresProxyProxy(t *testing.T) {
 	type testCase struct {
 		title string
 		in    string
@@ -179,7 +179,7 @@ func TestIgnoreOneAgentProxy(t *testing.T) {
 				OAProxyIgnoredKey: c.in,
 			}}
 
-			out := ff.IgnoreOneAgentProxy()
+			out := ff.OneAgentIgnoresProxy()
 
 			assert.Equal(t, c.out, out)
 		})

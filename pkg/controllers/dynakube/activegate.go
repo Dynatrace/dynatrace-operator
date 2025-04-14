@@ -26,7 +26,7 @@ func (controller *Controller) setupAutomaticApiMonitoring(ctx context.Context, d
 	if dk.Status.KubeSystemUUID != "" &&
 		dk.FF().IsInjectionAutomatic() &&
 		dk.ActiveGate().IsKubernetesMonitoringEnabled() {
-		clusterLabel := dk.FF().GetAutomaticKubernetesApiMonitoringClusterName()
+		clusterLabel := dk.FF().GetAutomaticK8sApiMonitoringClusterName()
 		if clusterLabel == "" {
 			clusterLabel = dk.Name
 		}

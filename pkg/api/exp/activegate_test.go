@@ -44,7 +44,7 @@ func TestIsActiveGateUpdatesDisabled(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				AGUpdatesKey: c.in,
+				AGUpdatesKey:        c.in,
 				AGDisableUpdatesKey: c.depIn,
 			}}
 
@@ -88,7 +88,7 @@ func TestIsActiveGateAutomaticTLSCertificate(t *testing.T) {
 	}
 }
 
-func TestIsAutomaticKubernetesApiMonitoring(t *testing.T) {
+func TestIsAutomaticK8sApiMonitoring(t *testing.T) {
 	type testCase struct {
 		title string
 		in    string
@@ -114,14 +114,14 @@ func TestIsAutomaticKubernetesApiMonitoring(t *testing.T) {
 				AGAutomaticK8sApiMonitoringKey: c.in,
 			}}
 
-			out := ff.IsAutomaticKubernetesApiMonitoring()
+			out := ff.IsAutomaticK8sApiMonitoring()
 
 			assert.Equal(t, c.out, out)
 		})
 	}
 }
 
-func TestGetAutomaticKubernetesApiMonitoringClusterName(t *testing.T) {
+func TestGetAutomaticK8sApiMonitoringClusterName(t *testing.T) {
 	type testCase struct {
 		title string
 		in    string
@@ -147,13 +147,12 @@ func TestGetAutomaticKubernetesApiMonitoringClusterName(t *testing.T) {
 				AGAutomaticK8sApiMonitoringClusterNameKey: c.in,
 			}}
 
-			out := ff.GetAutomaticKubernetesApiMonitoringClusterName()
+			out := ff.GetAutomaticK8sApiMonitoringClusterName()
 
 			assert.Equal(t, c.out, out)
 		})
 	}
 }
-
 
 func TestIsK8sAppEnabled(t *testing.T) {
 	type testCase struct {
@@ -221,7 +220,7 @@ func TestIsActiveGateAppArmor(t *testing.T) {
 	}
 }
 
-func TestIsActiveGateIgnoreProxy(t *testing.T) {
+func TestAGIgnoresProxyProxy(t *testing.T) {
 	type testCase struct {
 		title string
 		in    string
@@ -247,7 +246,7 @@ func TestIsActiveGateIgnoreProxy(t *testing.T) {
 				AGIgnoreProxyKey: c.in,
 			}}
 
-			out := ff.IsActiveGateIgnoreProxy()
+			out := ff.AGIgnoresProxy()
 
 			assert.Equal(t, c.out, out)
 		})

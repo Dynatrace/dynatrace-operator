@@ -33,8 +33,8 @@ func (ff *FeatureFlags) GetOneAgentMaxUnavailable() int {
 }
 
 // Deprecated: Use NoProxy annotation instead.
-// IgnoreOneAgentProxy is a feature flag to ignore the proxy for oneAgents when set in CR.
-func (ff *FeatureFlags) IgnoreOneAgentProxy() bool {
+// OneAgentIgnoresProxy is a feature flag to ignore the proxy for oneAgents when set in CR.
+func (ff *FeatureFlags) OneAgentIgnoresProxy() bool {
 	return ff.getFeatureFlagBool(OAProxyIgnoredKey, false)
 }
 

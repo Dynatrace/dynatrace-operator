@@ -24,14 +24,14 @@ func (ff *FeatureFlags) IsActiveGateAutomaticTLSCertificate() bool {
 	return ff.getFeatureFlagBool(AGAutomaticTLSCertificateKey, true)
 }
 
-// IsAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
+// IsAutomaticK8sApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
 // which ensures that settings for this kubernetes cluster exist in Dynatrace.
-func (ff *FeatureFlags) IsAutomaticKubernetesApiMonitoring() bool {
+func (ff *FeatureFlags) IsAutomaticK8sApiMonitoring() bool {
 	return ff.getFeatureFlagBool(AGAutomaticK8sApiMonitoringKey, true)
 }
 
-// GetAutomaticKubernetesApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring.
-func (ff *FeatureFlags) GetAutomaticKubernetesApiMonitoringClusterName() string {
+// GetAutomaticK8sApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring.
+func (ff *FeatureFlags) GetAutomaticK8sApiMonitoringClusterName() string {
 	return ff.getFeatureFlagRaw(AGAutomaticK8sApiMonitoringClusterNameKey)
 }
 
@@ -46,7 +46,7 @@ func (ff *FeatureFlags) IsActiveGateAppArmor() bool {
 }
 
 // Deprecated: Use NoProxy annotation instead.
-// IsActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR.
-func (ff *FeatureFlags) IsActiveGateIgnoreProxy() bool {
+// AGIgnoresProxy is a feature flag to ignore the proxy for ActiveGate when set in CR.
+func (ff *FeatureFlags) AGIgnoresProxy() bool {
 	return ff.getFeatureFlagBool(AGIgnoreProxyKey, false)
 }
