@@ -400,8 +400,8 @@ tests:
       platform: kubernetes
       image: image-name
       csidriver.enabled: true
-      csidriver.livenessprobe.operatorcmd: false
-      csidriver.registrar.operatorcmd: false
+      csidriver.livenessprobe.byOperatorCommand: false
+      csidriver.registrar.byOperatorCommand: false
     asserts:
       - equal:
           path: spec.template.spec.containers[2].args

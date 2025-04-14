@@ -1,6 +1,7 @@
 package livenessprobe
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -19,13 +20,13 @@ var (
 )
 
 type Server struct {
-	endpoint     string
+	csiAddress   string
 	healthPort   string
 	driverName   string
 	probeTimeout time.Duration
 }
 
-func NewServer(driverName string, endpoint string, healthPort string, probeTimeout string) *Server {
+func NewServer(driverName string, csiAddress string, healthPort string, probeTimeout string) *Server {
 	probeTimeoutDuration, err := time.ParseDuration(probeTimeout)
 	if err != nil {
 		log.Error(err, "unable to parse probe timeout duration. Value set to 9s", "probe timeout", probeTimeout)
@@ -34,7 +35,7 @@ func NewServer(driverName string, endpoint string, healthPort string, probeTimeo
 	}
 
 	return &Server{
-		endpoint:     endpoint,
+		csiAddress:   csiAddress,
 		healthPort:   healthPort,
 		driverName:   driverName,
 		probeTimeout: probeTimeoutDuration,
@@ -44,23 +45,9 @@ func NewServer(driverName string, endpoint string, healthPort string, probeTimeo
 func (srv *Server) Start(ctx context.Context) error {
 	log.Info("starting livenessprobe")
 
-	conn, err := connection.Connect(ctx, srv.endpoint, nil, connection.WithTimeout(0))
-	if err != nil {
-		log.Error(err, "failed to establish connection to CSI driver")
-
+	if err := srv.isDriverRunning(ctx); err != nil {
 		return err
 	}
-
-	driverName, err := rpc.GetDriverName(ctx, conn)
-	conn.Close()
-
-	if err != nil {
-		log.Error(err, "failed to get driver name")
-
-		return err
-	}
-
-	log.Info("starting server", "driver name", driverName)
 
 	http.HandleFunc(" /healthz", srv.probeRequest)
 
@@ -69,7 +56,23 @@ func (srv *Server) Start(ctx context.Context) error {
 		ReadHeaderTimeout: 3 * time.Second,
 	}
 
-	return httpServer.ListenAndServe()
+	go func() {
+		<-ctx.Done()
+		log.Info("stopping HTTP server")
+
+		sctx, cancelFunc := context.WithTimeout(context.Background(), srv.probeTimeout)
+		defer cancelFunc()
+
+		httpServer.Shutdown(sctx)
+
+		log.Info("stopped HTTP server")
+	}()
+
+	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	return nil
 }
 
 func (srv *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +81,7 @@ func (srv *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 	ctx, cancelFunc := context.WithTimeout(r.Context(), srv.probeTimeout)
 	defer cancelFunc()
 
-	conn, err := connection.Connect(ctx, srv.endpoint, nil, connection.WithTimeout(srv.probeTimeout))
+	conn, err := connection.Connect(ctx, srv.csiAddress, nil, connection.WithTimeout(srv.probeTimeout))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -110,4 +113,26 @@ func (srv *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`ok`))
 	log.Debug("health check succeeded")
+}
+
+func (srv *Server) isDriverRunning(ctx context.Context) error {
+	conn, err := connection.Connect(ctx, srv.csiAddress, nil, connection.WithTimeout(0))
+	if err != nil {
+		log.Error(err, "failed to establish connection to CSI driver")
+
+		return err
+	}
+
+	driverName, err := rpc.GetDriverName(ctx, conn)
+	conn.Close()
+
+	if err != nil {
+		log.Error(err, "failed to get driver name")
+
+		return err
+	}
+
+	log.Info("CSI driver is running", "driver name", driverName)
+
+	return nil
 }

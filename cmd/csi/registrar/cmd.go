@@ -12,7 +12,7 @@ import (
 
 const use = "csi-registrar"
 
-var csiAddress, kubeletRegistrationPath string
+var csiAddress, kubeletRegistrationPath, pluginRegistrationPath string
 
 func New() *cobra.Command {
 	cmd := &cobra.Command{
@@ -27,6 +27,7 @@ func New() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&csiAddress, "csi-address", "/csi/csi.sock", "CSI endpoint")
+	cmd.PersistentFlags().StringVar(&pluginRegistrationPath, "plugin-registration-path", "/registration", "Kubernetes plugin registration path.")
 	cmd.PersistentFlags().StringVar(&kubeletRegistrationPath, "kubelet-registration-path", "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock", "Kubelet registration path.")
 }
 
@@ -36,7 +37,7 @@ func run() func(*cobra.Command, []string) error {
 		logd.LogBaseLoggerSettings()
 
 		signalHandler := ctrl.SetupSignalHandler()
-		err := registrar.NewServer(dtcsi.DriverName, kubeletRegistrationPath, []string{"v1.0.0"}).Start(signalHandler)
+		err := registrar.NewServer(dtcsi.DriverName, csiAddress, kubeletRegistrationPath, pluginRegistrationPath, []string{"v1.0.0"}).Start(signalHandler)
 
 		return errors.WithStack(err)
 	}
