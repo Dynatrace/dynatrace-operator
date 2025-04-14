@@ -48,7 +48,7 @@ type Modules struct {
 	EdgeConnect    bool `json:"edgeConnect"`
 	Supportability bool `json:"supportability"`
 	KSPM           bool `json:"kspm"`
-	IsOpenShift    bool `json:"platform"`
+	IsOpenShift    bool `json:"isOpenShift"`
 }
 
 func GetModules() Modules {
