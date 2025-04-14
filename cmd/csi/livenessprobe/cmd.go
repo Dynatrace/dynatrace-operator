@@ -12,7 +12,7 @@ import (
 
 const use = "csi-livenessprobe"
 
-var probeTimeout, endpoint, healthPort string
+var probeTimeout, csiAddress, healthPort string
 
 func New() *cobra.Command {
 	cmd := &cobra.Command{
@@ -27,7 +27,7 @@ func New() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&probeTimeout, "probe-timeout", "9s", "probe timeout")
-	cmd.PersistentFlags().StringVar(&endpoint, "csi-address", "/csi/csi.sock", "CSI endpoint")
+	cmd.PersistentFlags().StringVar(&csiAddress, "csi-address", "/csi/csi.sock", "CSI endpoint")
 	cmd.PersistentFlags().StringVar(&healthPort, "health-port", "9808", "health port")
 }
 
@@ -37,7 +37,7 @@ func run() func(*cobra.Command, []string) error {
 		logd.LogBaseLoggerSettings()
 
 		signalHandler := ctrl.SetupSignalHandler()
-		err := livenessprobe.NewServer(dtcsi.DriverName, endpoint, healthPort, probeTimeout).Start(signalHandler)
+		err := livenessprobe.NewServer(dtcsi.DriverName, csiAddress, healthPort, probeTimeout).Start(signalHandler)
 
 		return errors.WithStack(err)
 	}
