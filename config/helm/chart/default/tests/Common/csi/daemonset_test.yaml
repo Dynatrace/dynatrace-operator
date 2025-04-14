@@ -253,7 +253,8 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
-                        "kspm": true
+                        "kspm": true,
+                        "isOpenShift": false
                       }
                 image: image-name
                 imagePullPolicy: Always

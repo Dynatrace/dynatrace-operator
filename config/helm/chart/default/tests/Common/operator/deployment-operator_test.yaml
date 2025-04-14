@@ -96,7 +96,8 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
-                        "kspm": true
+                        "kspm": true,
+                        "isOpenShift": false
                       }
                 ports:
                   - containerPort: 10080
@@ -283,7 +284,8 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
-                        "kspm": true
+                        "kspm": true,
+                        "isOpenShift": true
                       }
                 ports:
                   - containerPort: 10080

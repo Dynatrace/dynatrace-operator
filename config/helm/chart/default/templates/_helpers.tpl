@@ -81,6 +81,7 @@ startupProbe:
       "logMonitoring": {{ .Values.rbac.logMonitoring.create }},
       "edgeConnect": {{ .Values.rbac.edgeConnect.create }},
       "supportability": {{ .Values.rbac.supportability }},
-      "kspm": {{ .Values.rbac.kspm.create }}
+      "kspm": {{ .Values.rbac.kspm.create }},
+      "isOpenShift": {{ if eq .Values.platform "openshift" }}true{{ else }}false{{ end }}
     }
 {{- end -}}
