@@ -35,7 +35,7 @@ func (ff *FeatureFlags) GetOneAgentMaxUnavailable() int {
 // Deprecated: Use NoProxy annotation instead.
 // IgnoreOneAgentProxy is a feature flag to ignore the proxy for oneAgents when set in CR.
 func (ff *FeatureFlags) IgnoreOneAgentProxy() bool {
-	return ff.getFeatureFlagRaw(OAProxyIgnoredKey) == truePhrase
+	return ff.getFeatureFlagBool(OAProxyIgnoredKey, false)
 }
 
 // GetAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents.
@@ -52,15 +52,15 @@ func (ff *FeatureFlags) GetAgentInitialConnectRetry(isIstio bool) int {
 }
 
 func (ff *FeatureFlags) IsOneAgentPrivileged() bool {
-	return ff.getFeatureFlagRaw(OAPrivilegedKey) == truePhrase
+	return ff.getFeatureFlagBool(OAPrivilegedKey, false)
 }
 
 func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {
-	return ff.getFeatureFlagRaw(OASkipLivenessProbeKey) == truePhrase
+	return ff.getFeatureFlagBool(OASkipLivenessProbeKey, false)
 }
 
 func (ff *FeatureFlags) IsNodeImagePull() bool {
-	return ff.getFeatureFlagRaw(OANodeImagePullKey) == truePhrase
+	return ff.getFeatureFlagBool(OANodeImagePullKey, false)
 }
 
 func (ff *FeatureFlags) GetNodeImagePullTechnology() string {

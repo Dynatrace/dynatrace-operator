@@ -40,6 +40,9 @@ func (ff *FeatureFlags) GetCSIMaxRetryTimeout() time.Duration {
 // The converted value is based on the exponential backoff's algorithm.
 // The output is string because it's main purpose is to convert the value of an annotation to another annotation.
 func MountAttemptsToTimeout(maxAttempts int) string {
+	if maxAttempts <= 0 {
+		return time.Duration(0).String()
+	}
 	var baseDelay = time.Second / 2
 
 	delay := time.Duration(math.Exp2(float64(maxAttempts))) * baseDelay
@@ -48,5 +51,5 @@ func MountAttemptsToTimeout(maxAttempts int) string {
 }
 
 func (ff *FeatureFlags) IsCSIVolumeReadOnly() bool {
-	return ff.getFeatureFlagRaw(CSIReadOnlyVolumeKey) == truePhrase
+	return ff.getFeatureFlagBool(CSIReadOnlyVolumeKey, false)
 }

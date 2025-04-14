@@ -14,8 +14,6 @@ const (
 	// Deprecated: Dedicated field since v1beta2
 	ApiRequestThresholdKey = FFPrefix + "dynatrace-api-request-threshold"
 
-	falsePhrase  = "false"
-	truePhrase   = "true"
 	silentPhrase = "silent"
 	failPhrase   = "fail"
 
@@ -46,20 +44,42 @@ func (ff *FeatureFlags) GetNoProxy() string {
 }
 
 func (ff *FeatureFlags) IsPublicRegistry() bool {
-	return ff.getFeatureFlagRaw(PublicRegistryKey) == truePhrase
+	return ff.getFeatureFlagBool(PublicRegistryKey, false)
 }
 
+// Deprecated: Do not use "disable" feature flags
 func (ff *FeatureFlags) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
-	return ff.getFeatureFlagRaw(annotation) == falsePhrase ||
-		ff.getFeatureFlagRaw(deprecatedAnnotation) == truePhrase && ff.getFeatureFlagRaw(annotation) == ""
+	if ff.getFeatureFlagRaw(annotation) != "" {
+		return !ff.getFeatureFlagBool(annotation, true)
+	} else {
+		return ff.getFeatureFlagBool(deprecatedAnnotation, false)
+	}
 }
 
 func (ff *FeatureFlags) getFeatureFlagRaw(annotation string) string {
+	if ff.annotations == nil {
+		return ""
+	}
+
 	if raw, ok := ff.annotations[annotation]; ok {
 		return raw
 	}
 
 	return ""
+}
+
+func (ff *FeatureFlags) getFeatureFlagBool(annotation string, defaultVal bool) bool {
+	raw := ff.getFeatureFlagRaw(annotation)
+	if raw == "" {
+		return defaultVal
+	}
+
+	val, err := strconv.ParseBool(raw)
+	if err != nil {
+		return defaultVal
+	}
+
+	return val
 }
 
 func (ff *FeatureFlags) getFeatureFlagInt(annotation string, defaultVal int) int {
