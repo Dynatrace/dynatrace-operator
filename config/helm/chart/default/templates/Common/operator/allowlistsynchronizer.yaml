@@ -22,5 +22,5 @@ spec:
   allowlistPaths:
   - Dynatrace/csidriver/{{ .Chart.AppVersion }}/*
   - Dynatrace/logmonitoring/{{ .Chart.AppVersion }}/*
-  - Dynatrace/minimal-security-footprint/{{ .Chart.AppVersion }}/*
+  - Dynatrace/csijob/{{ .Chart.AppVersion }}/*
 {{- end -}}
