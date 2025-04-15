@@ -12,6 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,7 +21,8 @@ import (
 )
 
 const (
-	use = "operator"
+	use             = "operator"
+	expectedVersion = "v1beta4"
 )
 
 func New() *cobra.Command {
@@ -88,6 +91,33 @@ func runLocally(kubeCfg *rest.Config) error {
 }
 
 func runOperator(kubeCfg *rest.Config, namespace string, isOLM bool) error {
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(kubeCfg)
+	if err != nil {
+		return err
+	}
+
+	groupVersion := schema.GroupVersion{
+		Group:   "dynatrace.com",
+		Version: expectedVersion,
+	}
+
+	resourceList, err := discoveryClient.ServerResourcesForGroupVersion(groupVersion.String())
+	if err != nil {
+		return errors.WithMessagef(err, "required DynaKube CRD version %s not found", groupVersion.String())
+	}
+
+	var versionFound bool
+	for _, resource := range resourceList.APIResources {
+		if resource.Kind == "DynaKube" {
+			versionFound = true
+			break
+		}
+	}
+
+	if !versionFound {
+		return errors.New("DynaKube kind not found in group version")
+	}
+
 	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
 	if err != nil {
 		return err
