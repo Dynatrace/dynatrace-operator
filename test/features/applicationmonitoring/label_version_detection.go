@@ -217,7 +217,7 @@ func assertValue(ctx context.Context, t *testing.T, resource *resources.Resource
 	require.NoError(t, err)
 
 	stdOut := strings.TrimSpace(executionResult.StdOut.String())
-	assert.Equal(t, "", executionResult.StdErr.String())
+	assert.Empty(t, executionResult.StdErr.String())
 	assert.Equal(t, expectedValue, stdOut, "%s:%s pod - %s variable has invalid value", podItem.Namespace, podItem.Name, variableName)
 }
 
