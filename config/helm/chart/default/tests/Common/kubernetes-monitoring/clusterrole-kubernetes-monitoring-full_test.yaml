@@ -6,7 +6,7 @@ tests:
     documentIndex: 0
     set:
       rbac.activeGate.create: true
-      rbac.kubernetesMonitoringFull.create.create: true
+      preview.fullObjectCoverage.enabled.create: true
 
     asserts:
       - isKind:
@@ -44,7 +44,7 @@ tests:
     set:
       platform: openshift
       rbac.activeGate.create: true
-      rbac.kubernetesMonitoringFull.create.create: true
+      preview.fullObjectCoverage.enabled.create: true
     asserts:
       - isKind:
           of: ClusterRole
@@ -67,7 +67,7 @@ tests:
               - use
   - it: shouldn't exist if activeGate is turned off
     set:
-      rbac.kubernetesMonitoringFull.create: true
+      preview.fullObjectCoverage.enabled: true
       rbac.activeGate.create: false
     asserts:
       - hasDocuments:
