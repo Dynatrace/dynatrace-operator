@@ -4,6 +4,12 @@ on:
   schedule:
     # every work day at 00:00 UTC
     - cron: 0 0 * * 1-5
+  pull_request:
+    types:
+      - labeled
+  issue_comment:
+    types:
+      - created
   workflow_dispatch:
     inputs:
       target:
@@ -13,6 +19,8 @@ on:
 
 permissions:
   checks: write
+  pull-requests: write
+  issues: write
 
 jobs:
   run-in-k8s:
@@ -24,12 +32,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Get e2e test target
+        env:
+          PR_COMMENT: ${{ github.event.comment.body }}
+        id: get-e2e-target
+        if: startsWith(github.event.comment.body, '/run e2e')
+        run: |
+          target=$(echo $PR_COMMENT | cut -d " " -f 3)
+          if [ -n "${target}" ]; then
+            echo "target=e2e/${target}" >> $GITHUB_OUTPUT
+          fi
       - name: Run e2e test
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto-daily
           flc-environment: dto-k8s-latest-flc
-          target-branch: ${{ github.event.inputs.target }}
+          target-branch: ${{ github.head_ref || github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
@@ -40,12 +58,14 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          test-target: ${{ steps.get-e2e-target.outputs.target }}
   run-in-ocp:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
       - self-hosted
       - operator-e2e
+    if: ${{ !contains(github.event.comment.html_url, '/pull/') }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -81,3 +101,36 @@ jobs:
           payload: |
             "message": "tests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on kubernetes :kubernetes:\ntests ${{needs.run-in-ocp.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on openshift :openshift:\n using ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
             "run_id": "${{ github.run_id }}"
+  notify-github:
+    name: Publish test results on GitHub
+    environment: E2E
+    needs: [ "run-in-k8s", "run-in-ocp" ]
+    runs-on: ubuntu-latest
+    if: {{ startsWith(github.event.comment.body, '/run e2e') || contains(github.event.pull_request.labels.*.name, 'e2e test') }}
+    steps:
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea #v7.0.1
+        with:
+          script: |
+            github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '# E2E test results\n' +
+                    'See ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+            })
+
+            if (context.payload.comment) {
+                github.rest.reactions.createForIssueComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: context.payload.comment.id,
+                    content: 'hooray'
+                })
+            } else {
+                github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    name: 'e2e test'
+                })
+            }
