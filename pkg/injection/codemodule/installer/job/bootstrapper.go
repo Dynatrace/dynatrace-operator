@@ -73,7 +73,17 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		},
 	}
 
-	container.Args = inst.buildArgs(name, targetDir)
+	container.Args = inst.buildArgs()
+	container.Env = []corev1.EnvVar{
+		{
+			Name:  "TARGET_PATH",
+			Value: targetDir,
+		},
+		{
+			Name:  "WORK_PATH",
+			Value: inst.props.PathResolver.AgentJobWorkDirForJob(name),
+		},
+	}
 
 	annotations := map[string]string{
 		webhook.AnnotationDynatraceInject: "false",
@@ -94,10 +104,10 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 	)
 }
 
-func (inst *Installer) buildArgs(jobName, targetDir string) []string {
+func (inst *Installer) buildArgs() []string {
 	return []string{
 		"--source=" + codeModuleSource,
-		"--target=" + targetDir,
-		"--work=" + inst.props.PathResolver.AgentJobWorkDirForJob(jobName),
+		"--target=$(TARGET_PATH)",
+		"--work=$(WORK_PATH)",
 	}
 }

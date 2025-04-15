@@ -43,8 +43,6 @@ func TestBuildJobName(t *testing.T) {
 
 func TestBuildArgs(t *testing.T) {
 	t.Run("args are built correctly", func(t *testing.T) {
-		targetDir := "1.2.3"
-		jobName := "test-job-123"
 		props := &Properties{
 			PathResolver: metadata.PathResolver{RootDir: "root"},
 		}
@@ -52,18 +50,12 @@ func TestBuildArgs(t *testing.T) {
 			props: props,
 		}
 
-		args := inst.buildArgs(jobName, targetDir)
+		args := inst.buildArgs()
 
 		require.Len(t, args, 3)
-		assert.Contains(t, args[0], "--source")
-		assert.Contains(t, args[0], codeModuleSource)
-
-		assert.Contains(t, args[1], "--target")
-		assert.Contains(t, args[1], targetDir)
-
-		assert.Contains(t, args[2], "--work")
-		assert.Contains(t, args[2], props.PathResolver.RootDir)
-		assert.Contains(t, args[2], jobName)
+		assert.Equal(t, "--source=/opt/dynatrace/oneagent", args[0])
+		assert.Equal(t, "--target=$(TARGET_PATH)", args[1])
+		assert.Equal(t, "--work=$(WORK_PATH)", args[2])
 	})
 }
 
@@ -130,6 +122,21 @@ func TestBuildJob(t *testing.T) {
 		assert.Empty(t, container.Command)
 		assert.NotEmpty(t, container.Args)
 		assert.NotEmpty(t, container.SecurityContext)
+
+		require.Len(t, container.Env, 2)
+
+		targetEnv := corev1.EnvVar{
+			Name:  "TARGET_PATH",
+			Value: targetDir,
+		}
+
+		workEnv := corev1.EnvVar{
+			Name:  "WORK_PATH",
+			Value: props.PathResolver.AgentJobWorkDirForJob(name),
+		}
+
+		assert.Contains(t, container.Env, targetEnv)
+		assert.Contains(t, container.Env, workEnv)
 
 		require.Len(t, container.VolumeMounts, 1)
 		assert.Equal(t, job.Spec.Template.Spec.Volumes[0].Name, container.VolumeMounts[0].Name)
