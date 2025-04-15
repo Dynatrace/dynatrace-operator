@@ -107,9 +107,11 @@ func runOperator(kubeCfg *rest.Config, namespace string, isOLM bool) error {
 	}
 
 	var versionFound bool
+
 	for _, resource := range resourceList.APIResources {
 		if resource.Kind == "DynaKube" {
 			versionFound = true
+
 			break
 		}
 	}
