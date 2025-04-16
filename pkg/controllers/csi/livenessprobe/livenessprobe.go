@@ -42,17 +42,17 @@ func NewServer(driverName string, csiAddress string, healthPort string, probeTim
 	}
 }
 
-func (srv *Server) Start(ctx context.Context) error {
+func (s *Server) Start(ctx context.Context) error {
 	log.Info("starting livenessprobe")
 
-	if err := srv.isDriverRunning(ctx); err != nil {
+	if err := s.isDriverRunning(ctx); err != nil {
 		return err
 	}
 
-	http.HandleFunc(" /healthz", srv.probeRequest)
+	http.HandleFunc(" /healthz", s.probeRequest)
 
 	httpServer := &http.Server{
-		Addr:              ":" + srv.healthPort,
+		Addr:              ":" + s.healthPort,
 		ReadHeaderTimeout: 3 * time.Second,
 	}
 
@@ -60,7 +60,7 @@ func (srv *Server) Start(ctx context.Context) error {
 		<-ctx.Done()
 		log.Info("stopping HTTP server")
 
-		sctx, cancelFunc := context.WithTimeout(context.Background(), srv.probeTimeout)
+		sctx, cancelFunc := context.WithTimeout(context.Background(), s.probeTimeout)
 		defer cancelFunc()
 
 		httpServer.Shutdown(sctx)
@@ -75,13 +75,13 @@ func (srv *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-func (srv *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
+func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 	log.Debug("probeRequest")
 
-	ctx, cancelFunc := context.WithTimeout(r.Context(), srv.probeTimeout)
+	ctx, cancelFunc := context.WithTimeout(r.Context(), s.probeTimeout)
 	defer cancelFunc()
 
-	conn, err := connection.Connect(ctx, srv.csiAddress, nil, connection.WithTimeout(srv.probeTimeout))
+	conn, err := connection.Connect(ctx, s.csiAddress, nil, connection.WithTimeout(s.probeTimeout))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -115,8 +115,8 @@ func (srv *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 	log.Debug("health check succeeded")
 }
 
-func (srv *Server) isDriverRunning(ctx context.Context) error {
-	conn, err := connection.Connect(ctx, srv.csiAddress, nil, connection.WithTimeout(0))
+func (s *Server) isDriverRunning(ctx context.Context) error {
+	conn, err := connection.Connect(ctx, s.csiAddress, nil, connection.WithTimeout(0))
 	if err != nil {
 		log.Error(err, "failed to establish connection to CSI driver")
 
