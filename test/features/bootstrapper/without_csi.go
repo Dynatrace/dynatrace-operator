@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -29,8 +29,8 @@ func NoCSI(t *testing.T) features.Feature {
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: bootstrapperImage}}),
 		dynakubeComponents.WithAnnotations(map[string]string{
-			dynakube.AnnotationFeatureNodeImagePull: "true",
-			dynakube.AnnotationTechnologies:         "php",
+			exp.OANodeImagePullKey:             "true",
+			exp.OANodeImagePullTechnologiesKey: "php",
 		}),
 	)
 

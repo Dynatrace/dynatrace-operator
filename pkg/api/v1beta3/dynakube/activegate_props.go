@@ -7,7 +7,7 @@ import (
 func (dk *DynaKube) ActiveGate() *activegate.ActiveGate {
 	dk.Spec.ActiveGate.SetApiUrl(dk.ApiUrl())
 	dk.Spec.ActiveGate.SetName(dk.Name)
-	dk.Spec.ActiveGate.SetAutomaticTLSCertificate(dk.FeatureActiveGateAutomaticTLSCertificate())
+	dk.Spec.ActiveGate.SetAutomaticTLSCertificate(dk.FF().IsActiveGateAutomaticTLSCertificate())
 	dk.Spec.ActiveGate.SetExtensionsDependency(dk.IsExtensionsEnabled())
 
 	return &activegate.ActiveGate{

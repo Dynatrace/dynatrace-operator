@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -164,13 +165,13 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 }
 
 func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
-	assert.Equal(t, oldDk.FeatureApiRequestThreshold(), newDk.ApiRequestThreshold())
-	assert.Equal(t, oldDk.FeatureOneAgentSecCompProfile(), newDk.OneAgent().GetSecCompProfile())
-	assert.Equal(t, !oldDk.FeatureDisableMetadataEnrichment(), newDk.MetadataEnrichmentEnabled())
+	assert.Equal(t, oldDk.FF().GetApiRequestThreshold(), newDk.ApiRequestThreshold())
+	assert.Equal(t, oldDk.FF().GetOneAgentSecCompProfile(), newDk.OneAgent().GetSecCompProfile())
+	assert.Equal(t, !oldDk.FF().DisableMetadataEnrichment(), newDk.MetadataEnrichmentEnabled())
 	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
-	if oldDk.FeatureMaxFailedCsiMountAttempts() != DefaultMaxFailedCsiMountAttempts {
-		assert.Equal(t, dynakube.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
+	if oldDk.FF().GetCSIMaxFailedMountAttempts() != exp.DefaultCSIMaxFailedMountAttempts {
+		assert.Equal(t, exp.MountAttemptsToTimeout(oldDk.FF().GetCSIMaxFailedMountAttempts()), newDk.FF().GetCSIMaxRetryTimeout().String())
 	}
 
 	if newDk.OneAgent().IsAppInjectionNeeded() {
@@ -281,8 +282,8 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				AnnotationFeatureActiveGateIgnoreProxy:     "true",
-				AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				exp.AGIgnoreProxyKey:               "true",
+				exp.AGAutomaticK8sApiMonitoringKey: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",

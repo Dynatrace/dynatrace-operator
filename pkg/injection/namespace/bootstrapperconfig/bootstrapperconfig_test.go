@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/curl"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
@@ -116,7 +117,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureOneAgentInitialConnectRetry: "6500",
+					exp.OAInitialConnectRetryKey: "6500",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -205,8 +206,8 @@ func TestGenerateForDynakube(t *testing.T) {
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureOneAgentInitialConnectRetry:       "6500",
-					dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "false",
+					exp.OAInitialConnectRetryKey:     "6500",
+					exp.AGAutomaticTLSCertificateKey: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

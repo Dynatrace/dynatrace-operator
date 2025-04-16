@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
@@ -182,7 +183,7 @@ func TestHandle(t *testing.T) {
 	t.Run("FF appmon-dk WITHOUT CSI ==> v2 injector", func(t *testing.T) {
 		dk := getTestDynakubeDefaultAppMon()
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNodeImagePull: "true",
+			exp.OANodeImagePullKey: "true",
 		}
 
 		v2Injector := webhookmock.NewPodInjector(t)
@@ -208,7 +209,7 @@ func TestHandle(t *testing.T) {
 	t.Run("FF metadata-dk WITHOUT CSI ==> v1 injector", func(t *testing.T) {
 		dk := getTestMetadataDynakube()
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNodeImagePull: "true",
+			exp.OANodeImagePullKey: "true",
 		}
 
 		v1Injector := webhookmock.NewPodInjector(t)
@@ -234,7 +235,7 @@ func TestHandle(t *testing.T) {
 	t.Run("FF appmon-dk WITH CSI ==> v1 injector", func(t *testing.T) {
 		dk := getTestDynakubeDefaultAppMon()
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNodeImagePull: "true",
+			exp.OANodeImagePullKey: "true",
 		}
 
 		v1Injector := webhookmock.NewPodInjector(t)
@@ -283,7 +284,7 @@ func TestHandle(t *testing.T) {
 	t.Run("v2 injector error => silent error", func(t *testing.T) {
 		dk := getTestDynakubeDefaultAppMon()
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNodeImagePull: "true",
+			exp.OANodeImagePullKey: "true",
 		}
 
 		v2Injector := webhookmock.NewPodInjector(t)

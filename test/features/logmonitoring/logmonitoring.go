@@ -8,6 +8,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	lmdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
@@ -49,7 +50,7 @@ func Feature(t *testing.T) features.Feature {
 	require.NoError(t, err)
 	if isOpenshift {
 		options = append(options, componentDynakube.WithAnnotations(map[string]string{
-			dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+			exp.OAPrivilegedKey: "true",
 		}))
 	}
 

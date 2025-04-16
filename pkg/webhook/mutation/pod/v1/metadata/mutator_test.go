@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
@@ -46,7 +47,7 @@ func TestEnabled(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, false)
 		request.DynaKube.Spec.MetadataEnrichment.Enabled = ptr.To(true)
-		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "false"}
+		request.DynaKube.Annotations = map[string]string{exp.InjectionAutomaticKey: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -60,7 +61,7 @@ func TestEnabled(t *testing.T) {
 			},
 		}
 		request := createTestMutationRequest(&dk, nil, false)
-		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{exp.InjectionAutomaticKey: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -81,7 +82,7 @@ func TestEnabled(t *testing.T) {
 			},
 		}
 		request := createTestMutationRequest(&dk, nil, true)
-		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{exp.InjectionAutomaticKey: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -102,7 +103,7 @@ func TestEnabled(t *testing.T) {
 			},
 		}
 		request := createTestMutationRequest(&dk, nil, true)
-		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{exp.InjectionAutomaticKey: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 

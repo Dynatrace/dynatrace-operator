@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
@@ -147,7 +148,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 		dynakubeComponents.WithIstioIntegration(),
 		dynakubeComponents.WithProxy(proxySpec),
 		dynakubeComponents.WithAnnotations(map[string]string{
-			dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate: "false",
+			exp.AGAutomaticTLSCertificateKey: "false",
 		}),
 	)
 

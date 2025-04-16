@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
@@ -32,7 +33,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 	appMonDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: bootstrapperImage}}),
-		dynakubeComponents.WithAnnotations(map[string]string{dynakube.AnnotationFeatureNodeImagePull: "true"}),
+		dynakubeComponents.WithAnnotations(map[string]string{exp.OANodeImagePullKey: "true"}),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 	)
 

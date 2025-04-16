@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +19,15 @@ const (
 
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix = "-pull-secret"
+
+	DefaultMinRequestThresholdMinutes = 15
 )
+
+var log = logd.Get().WithName("dynakube-v1beta4")
+
+func (dk *DynaKube) FF() *exp.FeatureFlags {
+	return exp.NewFlags(dk.Annotations)
+}
 
 // ApiUrl is a getter for dk.Spec.APIURL.
 func (dk *DynaKube) ApiUrl() string {

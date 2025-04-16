@@ -42,7 +42,7 @@ func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Cont
 }
 
 func areErrorsSuppressed(pod *corev1.Pod, dk dynakube.DynaKube) bool {
-	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FeatureInjectionFailurePolicy()) != "fail" // safer than == silent
+	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FF().GetInjectionFailurePolicy()) != "fail" // safer than == silent
 }
 
 func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
@@ -98,7 +98,7 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 }
 
 func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
-	if dk.FeatureInitContainerSeccomp() {
+	if dk.FF().HasInitSeccomp() {
 		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
 	}
 }

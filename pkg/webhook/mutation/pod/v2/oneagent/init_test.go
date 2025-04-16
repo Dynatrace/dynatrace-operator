@@ -3,6 +3,7 @@ package oneagent
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func TestAddInitArgs(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationTechnologies: "nodejs",
+					exp.OANodeImagePullTechnologiesKey: "nodejs",
 				},
 			},
 		}

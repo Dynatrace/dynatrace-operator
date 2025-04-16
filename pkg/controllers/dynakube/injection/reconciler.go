@@ -170,7 +170,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 
 func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 	var err error
-	if r.dk.FeatureNodeImagePull() {
+	if r.dk.FF().IsNodeImagePull() {
 		err = bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
 			if conditions.IsKubeApiError(err) {
@@ -181,7 +181,7 @@ func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 		}
 	}
 
-	if !r.dk.FeatureNodeImagePull() || r.dk.OneAgent().IsCSIAvailable() {
+	if !r.dk.FF().IsNodeImagePull() || r.dk.OneAgent().IsCSIAvailable() {
 		err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
 			if conditions.IsKubeApiError(err) {

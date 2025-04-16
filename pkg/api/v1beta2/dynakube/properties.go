@@ -19,6 +19,8 @@ package dynakube
 import (
 	"fmt"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,6 +28,12 @@ const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PodNameOsAgent = "oneagent"
 )
+
+var log = logd.Get().WithName("dynakube-v1beta2")
+
+func (dk *DynaKube) FF() *exp.FeatureFlags {
+	return exp.NewFlags(dk.Annotations)
+}
 
 // ApplicationMonitoringMode returns true when application only section is used.
 func (dk *DynaKube) ApplicationMonitoringMode() bool {

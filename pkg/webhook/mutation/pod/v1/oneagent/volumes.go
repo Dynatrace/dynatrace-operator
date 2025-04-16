@@ -17,7 +17,7 @@ func (mut *Mutator) addVolumes(pod *corev1.Pod, dk dynakube.DynaKube) {
 	addInjectionConfigVolume(pod)
 	addOneAgentVolumes(pod, dk)
 
-	if dk.FeatureReadOnlyCsiVolume() {
+	if dk.FF().IsCSIVolumeReadOnly() {
 		addVolumesForReadOnlyCSI(pod)
 	}
 }
@@ -87,7 +87,7 @@ func addInitVolumeMounts(initContainer *corev1.Container, dk dynakube.DynaKube) 
 		{Name: OneAgentBinVolumeName, MountPath: consts.AgentBinDirMount},
 		{Name: oneAgentShareVolumeName, MountPath: consts.AgentShareDirMount},
 	}
-	if dk.FeatureReadOnlyCsiVolume() {
+	if dk.FF().IsCSIVolumeReadOnly() {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: oneagentConfVolumeName, MountPath: consts.AgentConfInitDirMount})
 	}
 
@@ -164,11 +164,11 @@ func getInstallerVolumeSource(dk dynakube.DynaKube) corev1.VolumeSource {
 	if dk.OneAgent().IsCSIAvailable() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{
 			Driver:   dtcsi.DriverName,
-			ReadOnly: ptr.To(dk.FeatureReadOnlyCsiVolume()),
+			ReadOnly: ptr.To(dk.FF().IsCSIVolumeReadOnly()),
 			VolumeAttributes: map[string]string{
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
 				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
-				csivolumes.CSIVolumeAttributeRetryTimeout:  dk.FeatureMaxCSIRetryTimeout().String(),
+				csivolumes.CSIVolumeAttributeRetryTimeout:  dk.FF().GetCSIMaxRetryTimeout().String(),
 			},
 		}
 	} else {

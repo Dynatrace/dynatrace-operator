@@ -158,8 +158,8 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		multiCap := capability.NewMultiCapability(r.dk)
 		dnsEntry := capability.BuildDNSEntryPointWithoutEnvVars(r.dk.Name, r.dk.Namespace, multiCap)
 
-		if r.dk.FeatureNoProxy() != "" {
-			dnsEntry += "," + r.dk.FeatureNoProxy()
+		if r.dk.FF().GetNoProxy() != "" {
+			dnsEntry += "," + r.dk.FF().GetNoProxy()
 		}
 
 		pmc.AddNoProxy(dnsEntry)

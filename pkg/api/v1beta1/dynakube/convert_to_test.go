@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -109,9 +110,9 @@ func TestConvertTo(t *testing.T) {
 
 func getMovedFeatureFlagList() []string {
 	return []string{
-		AnnotationFeatureApiRequestThreshold,
-		AnnotationFeatureOneAgentSecCompProfile,
-		AnnotationFeatureMetadataEnrichment,
+		exp.ApiRequestThresholdKey,
+		exp.OASecCompProfileKey,
+		exp.InjectionMetadataEnrichmentKey,
 	}
 }
 
@@ -136,12 +137,12 @@ func getOldDynakubeBase() DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				AnnotationFeatureApiRequestThreshold:       "42",
-				AnnotationFeatureOneAgentSecCompProfile:    "seccomp",
-				AnnotationFeatureMetadataEnrichment:        "false",
-				AnnotationFeatureActiveGateIgnoreProxy:     "true",
-				AnnotationFeatureAutomaticK8sApiMonitoring: "true",
-				AnnotationFeatureMaxFailedCsiMountAttempts: "9",
+				exp.ApiRequestThresholdKey:         "42",
+				exp.OASecCompProfileKey:            "seccomp",
+				exp.InjectionMetadataEnrichmentKey: "false",
+				exp.AGIgnoreProxyKey:               "true",
+				exp.AGAutomaticK8sApiMonitoringKey: "true",
+				exp.CSIMaxFailedMountAttemptsKey:   "9",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
