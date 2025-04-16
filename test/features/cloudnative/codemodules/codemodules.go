@@ -58,7 +58,6 @@ const (
 
 	agSecretName                    = "ag-ca"
 	configMapName                   = "proxy-ca"
-	proxyCertificate                = "custom-cas/custom.pem"
 	agCertificate                   = "custom-cas/agcrt.pem"
 	agCertificateAndPrivateKey      = "custom-cas/agcrtkey.p12"
 	agCertificateAndPrivateKeyField = "server.p12"
@@ -367,14 +366,17 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
 
+	proxyCert, proxyPk, err := proxy.CreateProxyTLSCertAndKey()
+	require.NoError(t, err, "failed to create proxy TLS secret")
+
 	// Add customCA config map
-	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), proxyCertificate))
+	trustedCa := proxyCert
 	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
 		map[string]string{dynakube.TrustedCAKey: string(trustedCa)})
 	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
 
 	// Register proxy create and delete
-	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube)
+	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube, proxyCert, proxyPk)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
@@ -428,14 +430,17 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
+	proxyCert, proxyPk, err := proxy.CreateProxyTLSCertAndKey()
+	require.NoError(t, err, "failed to create proxy TLS secret")
+
 	// Add customCA config map
-	trustedCa, _ := os.ReadFile(path.Join(project.TestDataDir(), proxyCertificate))
+	trustedCa := proxyCert
 	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
 		map[string]string{dynakube.TrustedCAKey: string(trustedCa)})
 	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
 
 	// Register proxy create and delete
-	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube)
+	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube, proxyCert, proxyPk)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
