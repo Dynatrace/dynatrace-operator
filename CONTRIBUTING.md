@@ -169,6 +169,7 @@ Based on [controller-runtime/pkg/envtest](https://pkg.go.dev/sigs.k8s.io/control
 
 ```bash
 make prerequisites/setup-envtest
+```
 
 ### motivation
 
