@@ -17,7 +17,7 @@ const (
 )
 
 func (ff *FeatureFlags) GetCSIMaxFailedMountAttempts() int {
-	maxCsiMountAttemptsValue := ff.getFeatureFlagInt(CSIMaxFailedMountAttemptsKey, DefaultCSIMaxFailedMountAttempts)
+	maxCsiMountAttemptsValue := ff.getIntWithDefault(CSIMaxFailedMountAttemptsKey, DefaultCSIMaxFailedMountAttempts)
 	if maxCsiMountAttemptsValue < 0 {
 		return DefaultCSIMaxFailedMountAttempts
 	}
@@ -26,7 +26,7 @@ func (ff *FeatureFlags) GetCSIMaxFailedMountAttempts() int {
 }
 
 func (ff *FeatureFlags) GetCSIMaxRetryTimeout() time.Duration {
-	maxCsiMountTimeoutValue := ff.getFeatureFlagRaw(CSIMaxMountTimeoutKey)
+	maxCsiMountTimeoutValue := ff.getRaw(CSIMaxMountTimeoutKey)
 
 	duration, err := time.ParseDuration(maxCsiMountTimeoutValue)
 	if err != nil || duration < 0 {
@@ -52,5 +52,5 @@ func MountAttemptsToTimeout(maxAttempts int) string {
 }
 
 func (ff *FeatureFlags) IsCSIVolumeReadOnly() bool {
-	return ff.getFeatureFlagBool(CSIReadOnlyVolumeKey, false)
+	return ff.getBoolWithDefault(CSIReadOnlyVolumeKey, false)
 }

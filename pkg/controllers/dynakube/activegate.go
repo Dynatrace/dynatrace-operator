@@ -24,7 +24,7 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynak
 
 func (controller *Controller) setupAutomaticApiMonitoring(ctx context.Context, dtc dynatrace.Client, dk *dynakube.DynaKube) {
 	if dk.Status.KubeSystemUUID != "" &&
-		dk.FF().IsInjectionAutomatic() &&
+		dk.FF().IsAutomaticInjection() &&
 		dk.ActiveGate().IsKubernetesMonitoringEnabled() {
 		clusterLabel := dk.FF().GetAutomaticK8sApiMonitoringClusterName()
 		if clusterLabel == "" {

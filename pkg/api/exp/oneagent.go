@@ -24,24 +24,24 @@ const (
 
 // Deprecated: Dedicated field since v1beta2.
 func (ff *FeatureFlags) GetOneAgentSecCompProfile() string {
-	return ff.getFeatureFlagRaw(OASecCompProfileKey)
+	return ff.getRaw(OASecCompProfileKey)
 }
 
 // GetOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (ff *FeatureFlags) GetOneAgentMaxUnavailable() int {
-	return ff.getFeatureFlagInt(OAMaxUnavailableKey, 1)
+	return ff.getIntWithDefault(OAMaxUnavailableKey, 1)
 }
 
 // Deprecated: Use NoProxy annotation instead.
 // OneAgentIgnoresProxy is a feature flag to ignore the proxy for oneAgents when set in CR.
 func (ff *FeatureFlags) OneAgentIgnoresProxy() bool {
-	return ff.getFeatureFlagBool(OAProxyIgnoredKey, false)
+	return ff.getBoolWithDefault(OAProxyIgnoredKey, false)
 }
 
 // GetAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents.
 func (ff *FeatureFlags) GetAgentInitialConnectRetry(isIstio bool) int {
 	defaultValue := -1
-	ffValue := ff.getFeatureFlagInt(OAInitialConnectRetryKey, defaultValue)
+	ffValue := ff.getIntWithDefault(OAInitialConnectRetryKey, defaultValue)
 
 	// In case of istio, we want to have a longer initial delay for codemodules to ensure the DT service is created consistently
 	if ffValue == defaultValue && isIstio {
@@ -52,17 +52,17 @@ func (ff *FeatureFlags) GetAgentInitialConnectRetry(isIstio bool) int {
 }
 
 func (ff *FeatureFlags) IsOneAgentPrivileged() bool {
-	return ff.getFeatureFlagBool(OAPrivilegedKey, false)
+	return ff.getBoolWithDefault(OAPrivilegedKey, false)
 }
 
 func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {
-	return ff.getFeatureFlagBool(OASkipLivenessProbeKey, false)
+	return ff.getBoolWithDefault(OASkipLivenessProbeKey, false)
 }
 
 func (ff *FeatureFlags) IsNodeImagePull() bool {
-	return ff.getFeatureFlagBool(OANodeImagePullKey, false)
+	return ff.getBoolWithDefault(OANodeImagePullKey, false)
 }
 
 func (ff *FeatureFlags) GetNodeImagePullTechnology() string {
-	return ff.getFeatureFlagRaw(OANodeImagePullTechnologiesKey)
+	return ff.getRaw(OANodeImagePullTechnologiesKey)
 }

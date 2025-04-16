@@ -28,19 +28,19 @@ func (ff *FeatureFlags) DisableMetadataEnrichment() bool {
 // IgnoreUnknownState is a feature flag that makes the operator inject into applications even when the dynakube is in an UNKNOWN state,
 // this may cause extra host to appear in the tenant for each process.
 func (ff *FeatureFlags) IgnoreUnknownState() bool {
-	return ff.getFeatureFlagBool(InjectionIgnoreUnknownStateKey, false)
+	return ff.getBoolWithDefault(InjectionIgnoreUnknownStateKey, false)
 }
 
-// IsInjectionAutomatic controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
+// IsAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
 // or if pods need to be opted-in one by one ("automatic-injection=false").
-func (ff *FeatureFlags) IsInjectionAutomatic() bool {
-	return ff.getFeatureFlagBool(InjectionAutomaticKey, true)
+func (ff *FeatureFlags) IsAutomaticInjection() bool {
+	return ff.getBoolWithDefault(InjectionAutomaticKey, true)
 }
 
 // GetIgnoredNamespaces is a feature flag for ignoring certain namespaces.
 // defaults to "[ \"^dynatrace$\", \"^kube-.*\", \"openshift(-.*)?\" ]".
 func (ff *FeatureFlags) GetIgnoredNamespaces(ns string) []string {
-	raw := ff.getFeatureFlagRaw(InjectionIgnoredNamespacesKey)
+	raw := ff.getRaw(InjectionIgnoredNamespacesKey)
 	if raw == "" {
 		return getDefaultIgnoredNamespaces(ns)
 	}
@@ -69,11 +69,11 @@ func getDefaultIgnoredNamespaces(ns string) []string {
 
 // IsLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels.
 func (ff *FeatureFlags) IsLabelVersionDetection() bool {
-	return ff.getFeatureFlagBool(InjectionLabelVersionDetectionKey, false)
+	return ff.getBoolWithDefault(InjectionLabelVersionDetectionKey, false)
 }
 
 func (ff *FeatureFlags) GetInjectionFailurePolicy() string {
-	if ff.getFeatureFlagRaw(InjectionFailurePolicyKey) == failPhrase {
+	if ff.getRaw(InjectionFailurePolicyKey) == failPhrase {
 		return failPhrase
 	}
 
@@ -81,11 +81,11 @@ func (ff *FeatureFlags) GetInjectionFailurePolicy() string {
 }
 
 func (ff *FeatureFlags) HasInitSeccomp() bool {
-	return ff.getFeatureFlagBool(InjectionSeccompKey, false)
+	return ff.getBoolWithDefault(InjectionSeccompKey, false)
 }
 
 // IsEnforcementMode is a feature flag to control how the initContainer
 // sets the tenantUUID to the container.conf file (always vs if oneAgent is present).
 func (ff *FeatureFlags) IsEnforcementMode() bool {
-	return ff.getFeatureFlagBool(InjectionEnforcementModeKey, true)
+	return ff.getBoolWithDefault(InjectionEnforcementModeKey, true)
 }

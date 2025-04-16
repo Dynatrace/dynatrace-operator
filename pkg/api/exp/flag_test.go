@@ -93,7 +93,7 @@ func TestGetApiRequestThreshold(t *testing.T) {
 	}
 }
 
-func TestGetFeatureFlagInt(t *testing.T) {
+func TestGetIntWithDefault(t *testing.T) {
 	type testCase struct {
 		title       string
 		annotations map[string]string
@@ -150,7 +150,7 @@ func TestGetFeatureFlagInt(t *testing.T) {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: c.annotations}
 
-			out := ff.getFeatureFlagInt(c.targetKey, c.defaultVal)
+			out := ff.getIntWithDefault(c.targetKey, c.defaultVal)
 
 			assert.Equal(t, c.expected, out)
 		})
@@ -224,7 +224,7 @@ func TestGetDisableFlagWithDeprecatedAnnotation(t *testing.T) {
 	}
 }
 
-func TestGetFeatureFlagBool(t *testing.T) {
+func TestGetFlagBoolWithDefault(t *testing.T) {
 	type testCase struct {
 		title       string
 		annotations map[string]string
@@ -281,7 +281,7 @@ func TestGetFeatureFlagBool(t *testing.T) {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: c.annotations}
 
-			out := ff.getFeatureFlagBool(c.targetKey, c.defaultVal)
+			out := ff.getBoolWithDefault(c.targetKey, c.defaultVal)
 
 			assert.Equal(t, c.expected, out)
 		})

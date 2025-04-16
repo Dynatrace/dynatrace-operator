@@ -14,7 +14,7 @@ const (
 )
 
 func IsEnabled(request *dtwebhook.BaseRequest) bool {
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject, request.DynaKube.FF().IsInjectionAutomatic())
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject, request.DynaKube.FF().IsAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.OneAgent().GetNamespaceSelector() != nil
 
 	matchesNamespaceSelector := true // if no namespace selector is configured, we just pass set this to true

@@ -193,7 +193,7 @@ func TestIsInjectionAutomatic(t *testing.T) {
 				InjectionAutomaticKey: c.in,
 			}}
 
-			out := ff.IsInjectionAutomatic()
+			out := ff.IsAutomaticInjection()
 
 			assert.Equal(t, c.out, out)
 		})

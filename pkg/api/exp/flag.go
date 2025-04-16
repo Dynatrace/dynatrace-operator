@@ -30,7 +30,7 @@ func NewFlags(annotations map[string]string) *FeatureFlags {
 
 // Deprecated: Dedicated field since v1beta2.
 func (ff *FeatureFlags) GetApiRequestThreshold() time.Duration {
-	interval := ff.getFeatureFlagInt(ApiRequestThresholdKey, DefaultMinRequestThresholdMinutes)
+	interval := ff.getIntWithDefault(ApiRequestThresholdKey, DefaultMinRequestThresholdMinutes)
 	if interval < 0 {
 		interval = DefaultMinRequestThresholdMinutes
 	}
@@ -40,23 +40,23 @@ func (ff *FeatureFlags) GetApiRequestThreshold() time.Duration {
 
 // GetNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
 func (ff *FeatureFlags) GetNoProxy() string {
-	return ff.getFeatureFlagRaw(NoProxyKey)
+	return ff.getRaw(NoProxyKey)
 }
 
 func (ff *FeatureFlags) IsPublicRegistry() bool {
-	return ff.getFeatureFlagBool(PublicRegistryKey, false)
+	return ff.getBoolWithDefault(PublicRegistryKey, false)
 }
 
 // Deprecated: Do not use "disable" feature flags.
 func (ff *FeatureFlags) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
-	if ff.getFeatureFlagRaw(annotation) != "" {
-		return !ff.getFeatureFlagBool(annotation, true)
+	if ff.getRaw(annotation) != "" {
+		return !ff.getBoolWithDefault(annotation, true)
 	} else {
-		return ff.getFeatureFlagBool(deprecatedAnnotation, false)
+		return ff.getBoolWithDefault(deprecatedAnnotation, false)
 	}
 }
 
-func (ff *FeatureFlags) getFeatureFlagRaw(annotation string) string {
+func (ff *FeatureFlags) getRaw(annotation string) string {
 	if ff.annotations == nil {
 		return ""
 	}
@@ -68,8 +68,8 @@ func (ff *FeatureFlags) getFeatureFlagRaw(annotation string) string {
 	return ""
 }
 
-func (ff *FeatureFlags) getFeatureFlagBool(annotation string, defaultVal bool) bool {
-	raw := ff.getFeatureFlagRaw(annotation)
+func (ff *FeatureFlags) getBoolWithDefault(annotation string, defaultVal bool) bool {
+	raw := ff.getRaw(annotation)
 	if raw == "" {
 		return defaultVal
 	}
@@ -82,8 +82,8 @@ func (ff *FeatureFlags) getFeatureFlagBool(annotation string, defaultVal bool) b
 	return val
 }
 
-func (ff *FeatureFlags) getFeatureFlagInt(annotation string, defaultVal int) int {
-	raw := ff.getFeatureFlagRaw(annotation)
+func (ff *FeatureFlags) getIntWithDefault(annotation string, defaultVal int) int {
+	raw := ff.getRaw(annotation)
 	if raw == "" {
 		return defaultVal
 	}
