@@ -2,7 +2,7 @@ package registrar
 
 import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/registrar"
+	"github.com/Dynatrace/dynatrace-operator/pkg/csi/registrar"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -10,7 +10,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const use = "csi-registrar"
+const use = "csi-node-driver-registrar"
 
 var csiAddress, kubeletRegistrationPath, pluginRegistrationPath string
 

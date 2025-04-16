@@ -224,7 +224,7 @@ spec:
           value: {{ include "dynatrace-operator.CSISocketPath" . }}
         args:
         {{- if .Values.csidriver.registrar.byOperatorCommand }}
-        - csi-registrar
+        - csi-node-driver-registrar
         {{- end }}
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
@@ -254,7 +254,7 @@ spec:
         imagePullPolicy: Always
         args:
         {{- if .Values.csidriver.livenessprobe.byOperatorCommand }}
-        - csi-livenessprobe
+        - livenessprobe
         {{- end }}
         - --csi-address=/csi/csi.sock
         - --health-port=9808
