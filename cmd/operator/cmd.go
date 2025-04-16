@@ -131,7 +131,7 @@ func checkCRDs(operatorManager manager.Manager) error {
 
 	_, err = operatorManager.GetRESTMapper().RESTMapping(groupKind, v1alpha2.GroupVersion.Version)
 	if err != nil {
-		log.Info("missing CRD for EdgeConnect")
+		log.Info("missing expected CRD version for EdgeConnect", "version", v1alpha2.GroupVersion.Version)
 
 		return err
 	}
