@@ -4,6 +4,7 @@ package proxy
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"path"
 	"path/filepath"
@@ -12,6 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -20,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
@@ -45,9 +49,10 @@ const (
 var (
 	dynatraceNetworkPolicy = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
 
-	proxyDeploymentPath             = path.Join(project.TestDataDir(), "network/proxy.yaml")
-	proxyWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network/proxy-ssl.yaml")
-	proxySCCPath                    = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
+	proxyDeploymentPath                      = path.Join(project.TestDataDir(), "network/proxy.yaml")
+	proxyWithCustomCADeploymentPath          = path.Join(project.TestDataDir(), "network/proxy-ssl.yaml")
+	proxyNamespaceWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network/proxy-ssl-namespace.yaml")
+	proxySCCPath                             = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
 	ProxySpec = &value.Source{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
@@ -67,8 +72,11 @@ func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, test
 	}
 }
 
-func SetupProxyWithCustomCAandTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
+func SetupProxyWithCustomCAandTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynakube.DynaKube, pemCert []byte, pemPk []byte) {
 	if testDynakube.Spec.Proxy != nil {
+		builder.Assess("create proxy namespace", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyNamespaceWithCustomCADeploymentPath), true))
+		proxySecret := createProxyTLSSecret(pemCert, pemPk)
+		builder.Assess("create proxy TLS secret", secret.Create(proxySecret))
 		installProxySCC(builder, t)
 		builder.Assess("install proxy", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyWithCustomCADeploymentPath), true))
 		builder.Assess("proxy started", helpers.ToFeatureFunc(deployment.WaitFor(proxyDeploymentName, proxyNamespaceName), true))
@@ -140,4 +148,44 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *val
 
 func getWebhookServiceUrl(dk dynakube.DynaKube) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dk.Namespace)
+}
+
+func createProxyTLSSecret(pemCert []byte, pemPK []byte) corev1.Secret {
+	pem := pemCert
+	pem = append(pem, byte('\n'))
+	pem = append(pem, pemPK...)
+
+	secretData := map[string][]byte{
+		"squid-ca-cert.pem": pem,
+	}
+
+	proxySecret := secret.New("proxy-ca", "proxy", secretData)
+	proxySecret.Type = corev1.SecretTypeOpaque
+
+	return proxySecret
+}
+
+func CreateProxyTLSCertAndKey() (pemCert []byte, pemKey []byte, err error) {
+	cert, err := certificates.New(timeprovider.New())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cert.Cert.DNSNames = []string{
+		"squid.proxy",
+		"squid.proxy.svc",
+		"squid.proxy.svc.cluster.local",
+	}
+	cert.Cert.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDataEncipherment
+	cert.Cert.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+	cert.Cert.Subject.CommonName = "squid.proxy"
+	cert.Cert.IsCA = true
+	cert.Cert.BasicConstraintsValid = true
+
+	err = cert.SelfSign()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return cert.ToPEM()
 }
