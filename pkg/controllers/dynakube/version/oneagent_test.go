@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
@@ -85,7 +86,7 @@ func TestOneAgentPublicRegistry(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeaturePublicRegistry: "true",
+					exp.PublicRegistryKey: "true",
 				},
 			},
 		}
@@ -118,7 +119,7 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeaturePublicRegistry: "true",
+					exp.PublicRegistryKey: "true",
 				},
 			},
 		}

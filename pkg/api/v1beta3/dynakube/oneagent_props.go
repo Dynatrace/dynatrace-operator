@@ -11,8 +11,8 @@ func (dk *DynaKube) OneAgent() *oneagent.OneAgent {
 		&dk.Status.CodeModules,
 		dk.Name,
 		dk.ApiUrlHost(),
-		dk.FeatureOneAgentPrivileged(),
-		dk.FeatureOneAgentSkipLivenessProbe())
+		dk.FF().IsOneAgentPrivileged(),
+		dk.FF().SkipOneAgentLivenessProbe())
 
 	return oa
 }

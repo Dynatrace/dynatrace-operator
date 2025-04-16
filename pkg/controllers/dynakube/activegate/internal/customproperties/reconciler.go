@@ -128,7 +128,7 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, er
 }
 
 func (r *Reconciler) addNonProxyHostsSettingsToValue(lines []string) []string {
-	noProxyValue := r.dk.FeatureNoProxy()
+	noProxyValue := r.dk.FF().GetNoProxy()
 	noProxyValue = strings.ReplaceAll(noProxyValue, ",", "|")
 	proxySettings := fmt.Sprintf("%s\n%s=%s", clientInternalSection, noProxyFieldName, noProxyValue)
 

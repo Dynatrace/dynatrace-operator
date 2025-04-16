@@ -3,6 +3,7 @@ package validation
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
@@ -45,7 +46,7 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "false",
+					exp.AGAutomaticK8sApiMonitoringKey: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -72,7 +73,7 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 		assertAllowedWithWarnings(t, 1, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "false",
+					exp.AGAutomaticK8sApiMonitoringKey: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

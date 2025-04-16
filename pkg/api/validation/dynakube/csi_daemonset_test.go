@@ -3,6 +3,7 @@ package validation
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 )
@@ -10,7 +11,7 @@ import (
 func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 	objectMeta := defaultDynakubeObjectMeta.DeepCopy()
 	objectMeta.Annotations = map[string]string{
-		dynakube.AnnotationFeatureReadOnlyCsiVolume: "true",
+		exp.CSIReadOnlyVolumeKey: "true",
 	}
 
 	t.Run("valid cloud-native dynakube specs", func(t *testing.T) {

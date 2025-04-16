@@ -93,7 +93,7 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 }
 
 func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEntity *dtclient.MonitoredEntity) (string, error) {
-	if r.dk.FeatureEnableK8sAppEnabled() {
+	if r.dk.FF().IsK8sAppEnabled() {
 		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.AppTransitionSchemaId)
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")

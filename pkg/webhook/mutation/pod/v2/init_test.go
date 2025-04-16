@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -108,7 +108,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 	})
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationFeatureInitContainerSeccomp: "true"}
+		dk.Annotations = map[string]string{exp.InjectionSeccompKey: "true"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
@@ -119,7 +119,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 	t.Run("should not set suppress-error arg - according to dk", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "fail"}
+		dk.Annotations = map[string]string{exp.InjectionFailurePolicyKey: "fail"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
@@ -130,7 +130,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 	t.Run("should not set suppress-error arg - according to pod", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "silent"}
+		dk.Annotations = map[string]string{exp.InjectionFailurePolicyKey: "silent"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"}
 
@@ -152,7 +152,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 	t.Run("should set suppress-error arg - unknown value", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "asd"}
+		dk.Annotations = map[string]string{exp.InjectionFailurePolicyKey: "asd"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 

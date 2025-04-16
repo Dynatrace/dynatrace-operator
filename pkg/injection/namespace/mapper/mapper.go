@@ -165,7 +165,7 @@ func updateLabels(matches bool, dk *dynakube.DynaKube, namespace *corev1.Namespa
 }
 
 func isIgnoredNamespace(dk *dynakube.DynaKube, namespaceName string) bool {
-	for _, pattern := range dk.FeatureIgnoredNamespaces() {
+	for _, pattern := range dk.FF().GetIgnoredNamespaces(dk.Namespace) {
 		if matched, _ := regexp.MatchString(pattern, namespaceName); matched {
 			return true
 		}

@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -127,8 +128,8 @@ func getOldDynakubeBase() DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				dynakube.AnnotationFeatureActiveGateIgnoreProxy:     "true", //nolint:staticcheck
-				dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
+				exp.AGAutomaticK8sApiMonitoringKey: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",

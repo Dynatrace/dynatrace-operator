@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -316,7 +317,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureNodeImagePull: "true",
+					exp.OANodeImagePullKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -341,7 +342,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureNodeImagePull: "false",
+					exp.OANodeImagePullKey: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -363,7 +364,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureNodeImagePull: "true",
+					exp.OANodeImagePullKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -383,7 +384,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureNodeImagePull: "true",
+					exp.OANodeImagePullKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

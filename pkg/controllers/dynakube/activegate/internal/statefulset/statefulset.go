@@ -70,7 +70,7 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	statefulSetBuilder.addTemplateSpec(&sts)
 	statefulSetBuilder.addPersistentVolumeClaim(&sts)
 
-	if statefulSetBuilder.dynakube.FeatureActiveGateAppArmor() {
+	if statefulSetBuilder.dynakube.FF().IsActiveGateAppArmor() {
 		sts.Spec.Template.ObjectMeta.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
 	}
 

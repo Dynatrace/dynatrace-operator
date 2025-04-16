@@ -2,6 +2,7 @@ package dynatrace
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -410,4 +411,75 @@ func TestProcessModuleConfig_AddNoProxy(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProcessModuleConfig_SortPropertiesByKey(t *testing.T) {
+	processModuleConfig := &ProcessModuleConfig{
+		Revision: 0,
+		Properties: []ProcessModuleProperty{
+			{
+				Section: "general",
+				Key:     "baa",
+				Value:   "random",
+			},
+			{
+				Section: "general",
+				Key:     "aaa",
+				Value:   "random",
+			},
+			{
+				Section: "general",
+				Key:     "aba",
+				Value:   "random",
+			},
+			{
+				Section: "general",
+				Key:     "bbb",
+				Value:   "random",
+			},
+			{
+				Section: "general",
+				Key:     "aab",
+				Value:   "random",
+			},
+		},
+	}
+	processModuleConfig.SortPropertiesByKey()
+
+	expected := []ProcessModuleProperty{
+		{
+			Section: "general",
+			Key:     "aaa",
+			Value:   "random",
+		},
+		{
+			Section: "general",
+			Key:     "aab",
+			Value:   "random",
+		},
+		{
+			Section: "general",
+			Key:     "aba",
+			Value:   "random",
+		},
+		{
+			Section: "general",
+			Key:     "baa",
+			Value:   "random",
+		},
+		{
+			Section: "general",
+			Key:     "bbb",
+			Value:   "random",
+		},
+	}
+	assert.Equal(t, expected, processModuleConfig.Properties)
+
+	expectedByteds, err := json.Marshal(expected)
+	require.NoError(t, err)
+
+	actualBytes, err := json.Marshal(processModuleConfig.Properties)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedByteds, actualBytes)
 }

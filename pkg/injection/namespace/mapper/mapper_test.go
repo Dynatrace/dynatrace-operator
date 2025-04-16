@@ -3,6 +3,7 @@ package mapper
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -58,7 +59,7 @@ func createDynakubeWithNodeImagePullAndNoCSI(name string, selector metav1.LabelS
 
 	dk.Annotations = make(map[string]string)
 
-	dk.Annotations[dynakube.AnnotationFeatureNodeImagePull] = "true"
+	dk.Annotations[exp.OANodeImagePullKey] = "true"
 
 	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = selector
 
@@ -183,7 +184,7 @@ func TestUpdateNamespace(t *testing.T) {
 		ignoreDk := createDynakubeWithAppInject("appMonitoring", convertToLabelSelector(otherLabels))
 		notIgnoreDk := createDynakubeWithAppInject("boom", convertToLabelSelector(labels))
 		notIgnoreDk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
+			exp.InjectionIgnoredNamespacesKey: "[\"asd\"]",
 		}
 		namespace := createNamespace("openshift-something", labels)
 
@@ -200,7 +201,7 @@ func TestUpdateNamespace(t *testing.T) {
 		ignoreDk := createDynakubeWithAppInject("appMonitoring", convertToLabelSelector(otherLabels))
 		notIgnoreDk := createDynakubeWithAppInject("boom", convertToLabelSelector(labels))
 		notIgnoreDk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
+			exp.InjectionIgnoredNamespacesKey: "[\"asd\"]",
 		}
 		namespace := createNamespace("openshift-something", labels)
 
@@ -235,7 +236,7 @@ func TestUpdateNamespace(t *testing.T) {
 		require.True(t, updated)
 		assert.Len(t, namespace.Labels, 2)
 		require.Equal(t, namespace.Labels[dtwebhook.InjectionInstanceLabel], dk.Name)
-		dk.SetAnnotations(map[string]string{dynakube.AnnotationFeatureIgnoredNamespaces: "[\"" + namespace.Name + "\"]"})
+		dk.SetAnnotations(map[string]string{exp.InjectionIgnoredNamespacesKey: "[\"" + namespace.Name + "\"]"})
 		updated, err = updateNamespace(namespace, &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}})
 
 		require.NoError(t, err)

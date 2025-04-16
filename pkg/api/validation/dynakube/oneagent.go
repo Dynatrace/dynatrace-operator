@@ -147,7 +147,7 @@ func publicImageSetWithoutReadOnlyMode(_ context.Context, v *Validator, dk *dyna
 
 func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().IsApplicationMonitoringMode() {
-		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver && !dk.FeatureNodeImagePull() {
+		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
 			return errorImageFieldSetWithoutCSIFlag
 		}
 	}
@@ -157,7 +157,7 @@ func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.D
 
 func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().IsAppInjectionNeeded() &&
-		dk.FeatureNodeImagePull() &&
+		dk.FF().IsNodeImagePull() &&
 		len(dk.OneAgent().GetCustomCodeModulesImage()) == 0 {
 		return errorImagePullRequiresCodeModulesImage
 	}

@@ -14,4 +14,3 @@ doc/permissions: manifests prerequisites/python
 ## Run scripts that generate markdown documentation using gomarkdoc (./hack/doc)
 doc/gen-gomarkdoc: prerequisites/gomarkdoc prerequisites/markdownlint
 	./hack/doc/gen_e2e_features.sh
-	./hack/doc/gen_feature_flags.sh

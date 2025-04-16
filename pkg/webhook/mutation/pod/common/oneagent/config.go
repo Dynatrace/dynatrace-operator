@@ -1,6 +1,8 @@
 package oneagent
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+)
 
 const (
 	AnnotationPrefix = "oneagent"
@@ -11,7 +13,7 @@ const (
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.
-	AnnotationTechnologies = dynakube.AnnotationTechnologies
+	AnnotationTechnologies = exp.OANodeImagePullTechnologiesKey
 
 	// AnnotationInstallPath can be set on a Pod to configure on which directory the OneAgent will be available from,
 	// defaults to DefaultInstallPath if not set.

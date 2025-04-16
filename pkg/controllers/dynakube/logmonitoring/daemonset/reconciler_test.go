@@ -171,7 +171,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Empty(t, daemonset.Spec.Template.Spec.Tolerations)
 		assert.Len(t, daemonset.Spec.Template.Spec.ImagePullSecrets, 1)
 		require.NotNil(t, daemonset.Spec.UpdateStrategy.RollingUpdate)
-		assert.Equal(t, intstr.FromInt(dk.FeatureOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
+		assert.Equal(t, intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable()), *daemonset.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable)
 	})
 
 	t.Run("respect custom labels", func(t *testing.T) {

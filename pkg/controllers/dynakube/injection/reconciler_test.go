@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
@@ -397,7 +398,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.dynatraceClient = dtClient
 
 		rec.dk.Annotations = make(map[string]string)
-		rec.dk.Annotations[dynakube.AnnotationFeatureNodeImagePull] = "true"
+		rec.dk.Annotations[exp.OANodeImagePullKey] = "true"
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
 		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
@@ -516,7 +517,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 	t.Run("node-image-pull + csi enabled => both init-secret and bootstrapper-secret", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNodeImagePull: "true",
+			exp.OANodeImagePullKey: "true",
 		}
 
 		clt := fake.NewClientWithIndex(
@@ -547,7 +548,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 		dk := dkBase.DeepCopy()
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureNodeImagePull: "true",
+			exp.OANodeImagePullKey: "true",
 		}
 
 		clt := fake.NewClientWithIndex(

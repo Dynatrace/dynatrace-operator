@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	corev1 "k8s.io/api/core/v1"
@@ -45,11 +46,15 @@ func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynaku
 
 	secret, err := k8ssecret.BuildForNamespace(GetSourceSecretName(dk.Name), dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
+		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+
 		return err
 	}
 
 	_, err = k8ssecret.Query(s.client, s.apiReader, log).WithOwner(dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
+		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+
 		return err
 	}
 

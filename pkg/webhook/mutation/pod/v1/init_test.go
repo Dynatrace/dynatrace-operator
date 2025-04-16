@@ -3,7 +3,7 @@ package v1
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -136,7 +136,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 	})
 	t.Run("should handle failure policy feature flag correctly", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "fail"}
+		dk.Annotations = map[string]string{exp.InjectionFailurePolicyKey: "fail"}
 		pod := getTestPod()
 		webhookImage := "test-image"
 		clusterID := "id"
@@ -148,7 +148,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 	})
 	t.Run("should set default failure policy to silent", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "test"}
+		dk.Annotations = map[string]string{exp.InjectionFailurePolicyKey: "test"}
 		pod := getTestPod()
 		webhookImage := "test-image"
 		clusterID := "id"
@@ -160,7 +160,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 	})
 	t.Run("should take silent as failure policy if set explicitly", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "silent"}
+		dk.Annotations = map[string]string{exp.InjectionFailurePolicyKey: "silent"}
 		pod := getTestPod()
 		webhookImage := "test-image"
 		clusterID := "id"
@@ -172,7 +172,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 	})
 	t.Run("should take pod annotation when set", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "silent"}
+		dk.Annotations = map[string]string{exp.InjectionFailurePolicyKey: "silent"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 		pod.Annotations[dtwebhook.AnnotationFailurePolicy] = "fail"
@@ -186,7 +186,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 	})
 	t.Run("should fall back to feature flag if invalid value is set to pod annotation", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationInjectionFailurePolicy: "fail"}
+		dk.Annotations = map[string]string{exp.InjectionFailurePolicyKey: "fail"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 		pod.Annotations[dtwebhook.AnnotationFailurePolicy] = "silent"
@@ -200,7 +200,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 	})
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{dynakube.AnnotationFeatureInitContainerSeccomp: "true"}
+		dk.Annotations = map[string]string{exp.InjectionSeccompKey: "true"}
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 		webhookImage := "test-image"

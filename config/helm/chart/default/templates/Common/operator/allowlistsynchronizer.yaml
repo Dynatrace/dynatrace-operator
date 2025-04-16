@@ -16,8 +16,11 @@ apiVersion: auto.gke.io/v1
 kind: AllowlistSynchronizer
 metadata:
   name: dynatrace-operator
+  annotations:
+    "helm.sh/hook": pre-install, post-delete, pre-upgrade, pre-rollback
 spec:
   allowlistPaths:
   - Dynatrace/csidriver/{{ .Chart.AppVersion }}/*
   - Dynatrace/logmonitoring/{{ .Chart.AppVersion }}/*
+  - Dynatrace/csijob/{{ .Chart.AppVersion }}/*
 {{- end -}}

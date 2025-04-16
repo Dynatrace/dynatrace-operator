@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
@@ -64,7 +65,7 @@ func TestIsEnabled(t *testing.T) {
 			podMods: func(p *corev1.Pod) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{dynakube.AnnotationFeatureNodeImagePull: "true"}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 			},
 			withCSI:    false,
 			withoutCSI: true,
@@ -76,7 +77,7 @@ func TestIsEnabled(t *testing.T) {
 			},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{dynakube.AnnotationFeatureNodeImagePull: "true"}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 			},
 			withCSI:    true,
 			withoutCSI: true,
@@ -88,7 +89,7 @@ func TestIsEnabled(t *testing.T) {
 			},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{dynakube.AnnotationFeatureNodeImagePull: "true"}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 			},
 			withCSI:    false,
 			withoutCSI: false,
@@ -269,7 +270,7 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 		Name:      testDynakubeName,
 		Namespace: testNamespaceName,
 		Annotations: map[string]string{
-			dynakube.AnnotationFeatureNodeImagePull: "true",
+			exp.OANodeImagePullKey: "true",
 		},
 	}
 }

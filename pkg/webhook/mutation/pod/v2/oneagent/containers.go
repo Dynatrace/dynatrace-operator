@@ -51,7 +51,7 @@ func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, n
 		oacommon.AddNetworkZoneEnv(container, dk.Spec.NetworkZone)
 	}
 
-	if dk.FeatureLabelVersionDetection() {
+	if dk.FF().IsLabelVersionDetection() {
 		oacommon.AddVersionDetectionEnvs(container, namespace)
 	}
 

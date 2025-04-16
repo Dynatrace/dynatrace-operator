@@ -3,6 +3,7 @@ package daemonset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
@@ -139,7 +140,7 @@ func TestSecurityContext(t *testing.T) {
 	t.Run("ocp scenario, OA needs to be privileged", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Annotations = map[string]string{
-			dynakube.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+			exp.OAPrivilegedKey: "true",
 		}
 
 		sc := getBaseSecurityContext(dk)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
@@ -71,7 +72,7 @@ func TestReconcileActiveGate(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+					exp.AGAutomaticK8sApiMonitoringKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -124,8 +125,8 @@ func TestReconcileActiveGate(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureAutomaticK8sApiMonitoring:            "true",
-					dynakube.AnnotationFeatureAutomaticK8sApiMonitoringClusterName: clusterLabel,
+					exp.AGAutomaticK8sApiMonitoringKey:            "true",
+					exp.AGAutomaticK8sApiMonitoringClusterNameKey: clusterLabel,
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

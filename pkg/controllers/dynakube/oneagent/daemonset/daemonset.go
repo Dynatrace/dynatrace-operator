@@ -148,7 +148,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		appLabels.BuildLabels(),
 		b.hostInjectSpec.Labels,
 	)
-	maxUnavailable := intstr.FromInt(dk.FeatureOneAgentMaxUnavailable())
+	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
 	annotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
 		webhook.AnnotationDynatraceInject: "false",

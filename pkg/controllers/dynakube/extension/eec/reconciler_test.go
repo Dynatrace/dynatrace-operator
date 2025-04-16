@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -107,7 +108,7 @@ func getTLSSecret(name string, namespace string, crt string, key string) corev1.
 }
 
 func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
-	dk.Annotations[dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate] = "false"
+	dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
 }
 
 func TestConditions(t *testing.T) {

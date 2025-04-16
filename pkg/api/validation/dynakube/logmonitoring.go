@@ -13,7 +13,7 @@ const (
 )
 
 func logMonitoringWithoutK8SMonitoring(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if dk.LogMonitoring().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FeatureAutomaticKubernetesApiMonitoring()) {
+	if dk.LogMonitoring().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sApiMonitoring()) {
 		return warningLogMonitoringWithoutK8SMonitoring
 	}
 

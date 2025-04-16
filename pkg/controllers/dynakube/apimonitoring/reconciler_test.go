@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -320,7 +321,7 @@ func newDynaKube() *dynakube.DynaKube {
 			Namespace: "my-namespace",
 			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
 			Annotations: map[string]string{
-				dynakube.AnnotationFeatureK8sAppEnabled: "true",
+				exp.AGK8sAppEnabledKey: "true",
 			},
 		},
 		Spec: dynakube.DynaKubeSpec{
