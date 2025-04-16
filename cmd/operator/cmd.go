@@ -5,10 +5,10 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -121,6 +121,7 @@ func checkCRDs(operatorManager manager.Manager) error {
 	_, err := operatorManager.GetRESTMapper().RESTMapping(groupKind, v1beta4.GroupVersion.Version)
 	if err != nil {
 		log.Info("missing CRD for DynaKube")
+
 		return err
 	}
 
@@ -132,6 +133,7 @@ func checkCRDs(operatorManager manager.Manager) error {
 	_, err = operatorManager.GetRESTMapper().RESTMapping(groupKind, v1alpha2.GroupVersion.Version)
 	if err != nil {
 		log.Info("missing CRD for EdgeConnect")
+
 		return err
 	}
 
