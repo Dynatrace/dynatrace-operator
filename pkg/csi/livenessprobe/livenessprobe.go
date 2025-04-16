@@ -11,10 +11,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-const (
-	defaultProbeTimeout = 9 * time.Second
-)
-
 var (
 	log = logd.Get().WithName("csi-livenessprobe")
 )
@@ -26,19 +22,12 @@ type Server struct {
 	probeTimeout time.Duration
 }
 
-func NewServer(driverName string, csiAddress string, healthPort string, probeTimeout string) *Server {
-	probeTimeoutDuration, err := time.ParseDuration(probeTimeout)
-	if err != nil {
-		log.Error(err, "unable to parse probe timeout duration. Value set to 9s", "probe timeout", probeTimeout)
-
-		probeTimeoutDuration = defaultProbeTimeout
-	}
-
+func NewServer(driverName string, csiAddress string, healthPort string, probeTimeout time.Duration) *Server {
 	return &Server{
 		csiAddress:   csiAddress,
 		healthPort:   healthPort,
 		driverName:   driverName,
-		probeTimeout: probeTimeoutDuration,
+		probeTimeout: probeTimeout,
 	}
 }
 

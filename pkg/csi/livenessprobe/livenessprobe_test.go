@@ -93,7 +93,7 @@ func TestDelayedResponse(t *testing.T) {
 }
 
 func launchTestLivenessprobeServer(t *testing.T, ctx context.Context, wg *sync.WaitGroup, csiAddress string, probeTimeout time.Duration) *Server {
-	server := NewServer(driverName, csiAddress, healthPort, probeTimeout.String())
+	server := NewServer(driverName, csiAddress, healthPort, probeTimeout)
 
 	go func() {
 		err := server.Start(ctx)

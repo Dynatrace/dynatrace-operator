@@ -1,8 +1,10 @@
 package livenessprobe
 
 import (
+	"time"
+
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/livenessprobe"
+	"github.com/Dynatrace/dynatrace-operator/pkg/csi/livenessprobe"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -10,9 +12,16 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const use = "csi-livenessprobe"
+const (
+	use = "livenessprobe"
 
-var probeTimeout, csiAddress, healthPort string
+	defaultProbeTimeout = 9 * time.Second
+)
+
+var (
+	probeTimeout           time.Duration
+	csiAddress, healthPort string
+)
 
 func New() *cobra.Command {
 	cmd := &cobra.Command{
@@ -26,7 +35,7 @@ func New() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&probeTimeout, "probe-timeout", "9s", "probe timeout")
+	cmd.PersistentFlags().DurationVar(&probeTimeout, "probe-timeout", defaultProbeTimeout, "probe timeout")
 	cmd.PersistentFlags().StringVar(&csiAddress, "csi-address", "/csi/csi.sock", "CSI endpoint")
 	cmd.PersistentFlags().StringVar(&healthPort, "health-port", "9808", "health port")
 }

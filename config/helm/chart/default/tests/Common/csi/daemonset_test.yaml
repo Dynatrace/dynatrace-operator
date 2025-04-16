@@ -307,7 +307,7 @@ tests:
                     name: mountpoint-dir
                     readOnly: true
               - args:
-                  - "csi-registrar"
+                  - "csi-node-driver-registrar"
                   - "--csi-address=/csi/csi.sock"
                   - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
                 env:
@@ -340,7 +340,7 @@ tests:
                   - mountPath: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/"
                     name: lockfile-dir
               - args:
-                  - "csi-livenessprobe"
+                  - "livenessprobe"
                   - "--csi-address=/csi/csi.sock"
                   - "--health-port=9808"
                   - "--probe-timeout=9s"
