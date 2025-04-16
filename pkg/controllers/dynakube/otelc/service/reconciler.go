@@ -174,13 +174,13 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 				corev1.ServicePort{
 					Name:       jaegerThriftBinaryPortName,
 					Port:       jaegerThriftBinaryPort,
-					Protocol:   corev1.ProtocolTCP,
+					Protocol:   corev1.ProtocolUDP,
 					TargetPort: intstr.FromInt32(jaegerThriftBinaryPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftCompactPortName,
 					Port:       jaegerThriftCompactPort,
-					Protocol:   corev1.ProtocolTCP,
+					Protocol:   corev1.ProtocolUDP,
 					TargetPort: intstr.FromInt32(jaegerThriftCompactPort),
 				},
 				corev1.ServicePort{
@@ -194,7 +194,7 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 				corev1.ServicePort{
 					Name:       statsdPortName,
 					Port:       statsdPort,
-					Protocol:   corev1.ProtocolTCP,
+					Protocol:   corev1.ProtocolUDP,
 					TargetPort: intstr.FromInt32(statsdPort),
 				})
 		default:

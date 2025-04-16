@@ -12,25 +12,30 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // SecretGenerator manages the bootstrapper init secret generation for the user namespaces.
 type SecretGenerator struct {
-	client    client.Client
-	dtClient  dtclient.Client
-	apiReader client.Reader
+	client       client.Client
+	dtClient     dtclient.Client
+	apiReader    client.Reader
+	timeProvider *timeprovider.Provider
 }
 
 func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient dtclient.Client) *SecretGenerator {
 	return &SecretGenerator{
-		client:    client,
-		dtClient:  dtClient,
-		apiReader: apiReader,
+		client:       client,
+		dtClient:     dtClient,
+		apiReader:    apiReader,
+		timeProvider: timeprovider.New(),
 	}
 }
 
@@ -44,8 +49,15 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		return errors.WithStack(err)
 	}
 
+	err = s.createSourceForWebhook(ctx, dk, data)
+	if err != nil {
+		return err
+	}
+
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, s.apiReader, dk.Name)
 	if err != nil {
+		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+
 		return errors.WithStack(err)
 	}
 
@@ -53,25 +65,27 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 	secret, err := k8ssecret.BuildForNamespace(consts.BootstrapperInitSecretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
+		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+
 		return err
 	}
 
 	err = k8ssecret.Query(s.client, s.apiReader, log).CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
-		return err
-	}
+		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
 
-	err = s.createSourceForWebhook(ctx, dk, data)
-	if err != nil {
 		return err
 	}
 
 	log.Info("done updating init secrets")
+	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), ConditionType, GetSourceSecretName(dk.Name))
 
 	return nil
 }
 
-func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk dynakube.DynaKube) error {
+func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	defer meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
+
 	nsList := make([]string, 0, len(namespaces))
 	for _, ns := range namespaces {
 		nsList = append(nsList, ns.Name)
@@ -89,15 +103,19 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
+		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+
 		return nil, errors.WithStack(err)
 	}
 
 	trustedCAs, err := dk.TrustedCAs(ctx, s.apiReader)
 	if err != nil {
+		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+
 		return nil, errors.WithStack(err)
 	}
 
-	pmcSecret, err := s.preparePMC(ctx, *dk)
+	pmcSecret, err := s.preparePMC(ctx, dk)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

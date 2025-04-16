@@ -1,0 +1,20 @@
+suite: test allowlistsynchronizer for GKE-Autopilot
+templates:
+  - Common/operator/allowlistsynchronizer.yaml
+tests:
+  - it: shouldn't exist by default
+    asserts:
+    - hasDocuments:
+        count: 0
+  - it: should exist on GKE-Autopilot
+    capabilities:
+      apiVersions:
+        - auto.gke.io/v1/AllowlistSynchronizer
+    asserts:
+      - isKind:
+          of: AllowlistSynchronizer
+      - isAPIVersion:
+          of: auto.gke.io/v1
+      - equal:
+          path: metadata.name
+          value: dynatrace-operator
