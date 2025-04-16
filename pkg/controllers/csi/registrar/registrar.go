@@ -39,14 +39,14 @@ func NewServer(driverName string, csiAddress string, endpoint string, pluginRegi
 	}
 }
 
-func (srv Server) Start(ctx context.Context) error {
+func (s Server) Start(ctx context.Context) error {
 	log.Info("starting registrar")
 
-	if err := srv.isDriverRunning(ctx); err != nil {
+	if err := s.isDriverRunning(ctx); err != nil {
 		return err
 	}
 
-	socketPath := srv.buildRegistrationDir()
+	socketPath := s.buildRegistrationDir()
 	if err := removeExistingSocketFile(socketPath); err != nil {
 		log.Error(err, "failed to clean up socket file")
 
@@ -63,7 +63,7 @@ func (srv Server) Start(ctx context.Context) error {
 
 	server := grpc.NewServer()
 
-	registerapi.RegisterRegistrationServer(server, srv)
+	registerapi.RegisterRegistrationServer(server, s)
 
 	log.Info("starting registration server", "address", lis.Addr())
 
@@ -83,18 +83,18 @@ func (srv Server) Start(ctx context.Context) error {
 	return nil
 }
 
-func (srv Server) GetInfo(_ context.Context, req *registerapi.InfoRequest) (*registerapi.PluginInfo, error) {
+func (s Server) GetInfo(_ context.Context, req *registerapi.InfoRequest) (*registerapi.PluginInfo, error) {
 	log.Info("received GetInfo", "request", req)
 
 	return &registerapi.PluginInfo{
 		Type:              registerapi.CSIPlugin,
-		Name:              srv.driverName,
-		Endpoint:          srv.endpoint,
-		SupportedVersions: srv.version,
+		Name:              s.driverName,
+		Endpoint:          s.endpoint,
+		SupportedVersions: s.version,
 	}, nil
 }
 
-func (srv Server) NotifyRegistrationStatus(_ context.Context, status *registerapi.RegistrationStatus) (*registerapi.RegistrationStatusResponse, error) {
+func (s Server) NotifyRegistrationStatus(_ context.Context, status *registerapi.RegistrationStatus) (*registerapi.RegistrationStatusResponse, error) {
 	log.Info("received NotifyRegistrationStatus", "status", status)
 
 	if !status.PluginRegistered {
@@ -104,9 +104,9 @@ func (srv Server) NotifyRegistrationStatus(_ context.Context, status *registerap
 	return &registerapi.RegistrationStatusResponse{}, nil
 }
 
-func (srv Server) buildRegistrationDir() string {
+func (s Server) buildRegistrationDir() string {
 	// registrar.VolumeMounts.registration-dir
-	return fmt.Sprintf("%s/%s-reg.sock", srv.pluginRegistrationPath, dtcsi.DriverName)
+	return fmt.Sprintf("%s/%s-reg.sock", s.pluginRegistrationPath, dtcsi.DriverName)
 }
 
 func removeExistingSocketFile(path string) error {
@@ -117,8 +117,8 @@ func removeExistingSocketFile(path string) error {
 	return nil
 }
 
-func (srv Server) isDriverRunning(ctx context.Context) error {
-	conn, err := connection.Connect(ctx, srv.csiAddress, nil, connection.WithTimeout(0))
+func (s Server) isDriverRunning(ctx context.Context) error {
+	conn, err := connection.Connect(ctx, s.csiAddress, nil, connection.WithTimeout(0))
 	if err != nil {
 		log.Error(err, "failed to establish connection to CSI driver")
 
