@@ -3,7 +3,12 @@ package operator
 import (
 	"context"
 	"os"
+	"reflect"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -13,11 +18,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
@@ -91,36 +96,12 @@ func runLocally(kubeCfg *rest.Config) error {
 }
 
 func runOperator(kubeCfg *rest.Config, namespace string, isOLM bool) error {
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(kubeCfg)
+	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
 	if err != nil {
 		return err
 	}
 
-	groupVersion := schema.GroupVersion{
-		Group:   "dynatrace.com",
-		Version: expectedVersion,
-	}
-
-	resourceList, err := discoveryClient.ServerResourcesForGroupVersion(groupVersion.String())
-	if err != nil {
-		return errors.WithMessagef(err, "required DynaKube CRD version %s not found", groupVersion.String())
-	}
-
-	var versionFound bool
-
-	for _, resource := range resourceList.APIResources {
-		if resource.Kind == "DynaKube" {
-			versionFound = true
-
-			break
-		}
-	}
-
-	if !versionFound {
-		return errors.New("DynaKube kind not found in group version")
-	}
-
-	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
+	err = checkCRDs(operatorManager)
 	if err != nil {
 		return err
 	}
@@ -129,4 +110,30 @@ func runOperator(kubeCfg *rest.Config, namespace string, isOLM bool) error {
 	err = operatorManager.Start(ctx)
 
 	return errors.WithStack(err)
+}
+
+func checkCRDs(operatorManager manager.Manager) error {
+	groupKind := schema.GroupKind{
+		Group: v1beta4.GroupVersion.Group,
+		Kind:  reflect.TypeOf(dynakube.DynaKube{}).Name(),
+	}
+
+	_, err := operatorManager.GetRESTMapper().RESTMapping(groupKind, v1beta4.GroupVersion.Version)
+	if err != nil {
+		log.Info("missing CRD for DynaKube")
+		return err
+	}
+
+	groupKind = schema.GroupKind{
+		Group: v1alpha2.GroupVersion.Group,
+		Kind:  reflect.TypeOf(edgeconnect.EdgeConnect{}).Name(),
+	}
+
+	_, err = operatorManager.GetRESTMapper().RESTMapping(groupKind, v1alpha2.GroupVersion.Version)
+	if err != nil {
+		log.Info("missing CRD for EdgeConnect")
+		return err
+	}
+
+	return nil
 }
