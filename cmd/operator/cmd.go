@@ -119,7 +119,7 @@ func checkCRDs(operatorManager manager.Manager) error {
 
 	_, err := operatorManager.GetRESTMapper().RESTMapping(groupKind, v1beta4.GroupVersion.Version)
 	if err != nil {
-		log.Info("missing CRD for DynaKube")
+		log.Info("missing expected CRD version for DynaKube", "version", v1beta4.GroupVersion.Version)
 
 		return err
 	}
