@@ -26,8 +26,7 @@ import (
 )
 
 const (
-	use             = "operator"
-	expectedVersion = "v1beta4"
+	use = "operator"
 )
 
 func New() *cobra.Command {
