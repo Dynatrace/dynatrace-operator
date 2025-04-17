@@ -128,16 +128,18 @@ func checkCRDs(operatorManager manager.Manager) error {
 		return err
 	}
 
-	groupKind = schema.GroupKind{
-		Group: v1alpha2.GroupVersion.Group,
-		Kind:  reflect.TypeOf(edgeconnect.EdgeConnect{}).Name(),
-	}
+	if installconfig.GetModules().EdgeConnect {
+		groupKind = schema.GroupKind{
+			Group: v1alpha2.GroupVersion.Group,
+			Kind:  reflect.TypeOf(edgeconnect.EdgeConnect{}).Name(),
+		}
 
-	_, err = operatorManager.GetRESTMapper().RESTMapping(groupKind, v1alpha2.GroupVersion.Version)
-	if err != nil {
-		log.Info("missing expected CRD version for EdgeConnect", "version", v1alpha2.GroupVersion.Version)
+		_, err = operatorManager.GetRESTMapper().RESTMapping(groupKind, v1alpha2.GroupVersion.Version)
+		if err != nil {
+			log.Info("missing expected CRD version for EdgeConnect", "version", v1alpha2.GroupVersion.Version)
 
-		return err
+			return err
+		}
 	}
 
 	return nil
