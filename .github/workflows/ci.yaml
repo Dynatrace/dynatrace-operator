@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 env:
   DOCKER_REGISTRY: quay.io
@@ -89,7 +90,7 @@ jobs:
           branch: main
           workflow_conclusion: success
           name: main.breakdown
-          if_no_artifact_found: fail
+          if_no_artifact_found: warn
       - name: check test coverage
         id: coverage
         uses: vladopajic/go-test-coverage@v2
@@ -101,6 +102,24 @@ jobs:
           git-token: ${{ github.ref_name == 'main' && secrets.GITHUB_TOKEN || '' }}
           breakdown-file-name: ${{ github.ref_name == 'main' && 'main.breakdown' || '' }}
           diff-base-breakdown-file-name: ${{ steps.download-main-breakdown.outputs.found_artifact == 'true' && 'main.breakdown' || '' }}
+      - name: upload artifact (main.breakdown)
+        uses: actions/upload-artifact@v4
+        if: github.ref_name == 'main'
+        with:
+          name: main.breakdown
+          path: main.breakdown
+          if-no-files-found: error
+      - name: find PR ID
+        run: |
+          PR_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                      "https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:${{ github.ref_name }}&state=open")
+          PR_ID=$(echo "$PR_DATA" | jq -r '.[0].number')
+
+          if [ "$PR_ID" != "null" ]; then
+            echo "pull_request_id=$PR_ID" >> $GITHUB_ENV
+          else
+            echo "No open pull request found for this branch."
+          fi
       - name: post coverage report
         if: env.pull_request_id
         uses: thollander/actions-comment-pull-request@v3
@@ -115,7 +134,8 @@ jobs:
       - name: "finally check coverage"
         if: steps.coverage.outcome == 'failure'
         shell: bash
-        run: echo "coverage check failed" && exit 1
+        run: |
+          echo "coverage check failed" && exit 1
 
   linting:
     name: Run linting
