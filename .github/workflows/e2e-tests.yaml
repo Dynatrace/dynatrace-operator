@@ -63,36 +63,10 @@ jobs:
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           test-target: ${{ steps.get-e2e-target.outputs.target }}
-  run-in-ocp:
-    name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
-    environment: E2E
-    runs-on:
-      - self-hosted
-      - operator-e2e
-    if: ${{ !contains(github.event.comment.html_url, '/pull/') || github.event.inputs.e2e-test-command == '' }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Run e2e test
-        uses: ./.github/actions/run-e2e
-        with:
-          flc-namespace: dto-daily
-          flc-environment: dto-ocp-latest-flc
-          target-branch: ${{ github.event.inputs.target }}
-          tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
-          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
-          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
-          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
-          tenant2-name: ${{ secrets.TENANT2_NAME }}
-          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
-          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
   notify-slack:
     name: Notify test results in Slack
     environment: E2E
-    needs: [ "run-in-k8s", "run-in-ocp" ]
+    needs: [ "run-in-k8s" ]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
@@ -103,12 +77,12 @@ jobs:
           webhook-type: webhook-trigger
           payload-templated: true
           payload: |
-            "message": "tests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on kubernetes :kubernetes:\ntests ${{needs.run-in-ocp.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on openshift :openshift:\n using ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            "message": "tests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on kubernetes :kubernetes:\nusing ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
             "run_id": "${{ github.run_id }}"
   notify-github:
     name: Publish test results on GitHub
     environment: E2E
-    needs: [ "run-in-k8s", "run-in-ocp" ]
+    needs: [ "run-in-k8s" ]
     runs-on: ubuntu-latest
     if: startsWith(github.event.inputs.e2e-test-command, '/run e2e') || contains(github.event.pull_request.labels.*.name, 'e2e test')
     steps:
