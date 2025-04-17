@@ -84,7 +84,7 @@ jobs:
     environment: E2E
     needs: [ "run-in-k8s" ]
     runs-on: ubuntu-latest
-    if: startsWith(github.event.inputs.e2e-test-command, '/run e2e') || contains(github.event.pull_request.labels.*.name, 'e2e test')
+    if: ${{ startsWith(github.event.inputs.e2e-test-command, '/run e2e') || contains(github.event.pull_request.labels.*.name, 'e2e test') }}
     steps:
       - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea #v7.0.1
         with:
