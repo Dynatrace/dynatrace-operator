@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -20,7 +21,7 @@ import (
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -265,8 +266,8 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubev1beta4.DynaKube) {
 	assert.Equal(t, oldDk.MetadataEnrichmentEnabled(), newDk.MetadataEnrichmentEnabled())
 	assert.Equal(t, oldDk.Spec.MetadataEnrichment.NamespaceSelector, newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
-	if oldDk.FeatureMaxFailedCsiMountAttempts() != DefaultMaxFailedCsiMountAttempts {
-		assert.Equal(t, dynakubev1beta4.MountAttemptsToTimeout(oldDk.FeatureMaxFailedCsiMountAttempts()), newDk.FeatureMaxCSIRetryTimeout().String())
+	if oldDk.FF().GetCSIMaxFailedMountAttempts() != exp.DefaultCSIMaxFailedMountAttempts {
+		assert.Equal(t, exp.MountAttemptsToTimeout(oldDk.FF().GetCSIMaxFailedMountAttempts()), newDk.FF().GetCSIMaxRetryTimeout().String())
 	}
 }
 
@@ -460,8 +461,8 @@ func getNewDynakubeBase() dynakubev1beta4.DynaKube {
 			Namespace:    "namespace",
 			Generation:   0xDEADBEEF,
 			Annotations: map[string]string{
-				dynakubev1beta4.AnnotationFeatureActiveGateIgnoreProxy:     "true", //nolint:staticcheck
-				dynakubev1beta4.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
+				exp.AGAutomaticK8sApiMonitoringKey: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",

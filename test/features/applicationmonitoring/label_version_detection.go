@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -109,7 +110,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 
 	labelVersionDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("dynakube-components-labels"),
-		dynakubeComponents.WithAnnotations(map[string]string{dynakube.AnnotationFeatureLabelVersionDetection: "true"}),
+		dynakubeComponents.WithAnnotations(map[string]string{exp.InjectionLabelVersionDetectionKey: "true"}),
 		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),

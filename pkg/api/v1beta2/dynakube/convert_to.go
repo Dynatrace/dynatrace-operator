@@ -3,6 +3,7 @@ package dynakube
 import (
 	"math"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
@@ -58,9 +59,9 @@ func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube)
 }
 
 func (src *DynaKube) convertMaxMountAttempts(dst *dynakube.DynaKube) {
-	configuredMountAttempts := src.FeatureMaxFailedCsiMountAttempts()
-	if configuredMountAttempts != DefaultMaxFailedCsiMountAttempts {
-		dst.Annotations[dynakube.AnnotationFeatureMaxCsiMountTimeout] = dynakube.MountAttemptsToTimeout(configuredMountAttempts)
+	configuredMountAttempts := src.FF().GetCSIMaxFailedMountAttempts()
+	if configuredMountAttempts != exp.DefaultCSIMaxFailedMountAttempts {
+		dst.Annotations[exp.CSIMaxMountTimeoutKey] = exp.MountAttemptsToTimeout(configuredMountAttempts)
 	}
 }
 

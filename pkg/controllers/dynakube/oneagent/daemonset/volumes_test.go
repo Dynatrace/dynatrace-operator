@@ -3,6 +3,7 @@ package daemonset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
@@ -282,7 +283,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
 				Annotations: map[string]string{
-					dynakube.AnnotationFeatureOneAgentIgnoreProxy: "true", //nolint:staticcheck
+					exp.OAProxyIgnoredKey: "true", //nolint:staticcheck
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

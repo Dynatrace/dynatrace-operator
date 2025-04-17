@@ -49,7 +49,7 @@ func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationReques
 
 	addCertVolumeMounts(container, dk)
 
-	if dk.FeatureAgentInitialConnectRetry() > 0 {
+	if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > 0 {
 		addCurlOptionsVolumeMount(container)
 	}
 
@@ -57,11 +57,11 @@ func (mut *Mutator) addOneAgentToContainer(request *dtwebhook.ReinvocationReques
 		oacommon.AddNetworkZoneEnv(container, dk.Spec.NetworkZone)
 	}
 
-	if dk.FeatureLabelVersionDetection() {
+	if dk.FF().IsLabelVersionDetection() {
 		oacommon.AddVersionDetectionEnvs(container, request.Namespace)
 	}
 
-	if dk.FeatureReadOnlyCsiVolume() {
+	if dk.FF().IsCSIVolumeReadOnly() {
 		addVolumeMountsForReadOnlyCSI(container)
 	}
 }

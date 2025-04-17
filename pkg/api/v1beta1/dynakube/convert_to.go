@@ -4,6 +4,7 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
@@ -47,9 +48,9 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 }
 
 func (src *DynaKube) convertMaxMountAttempts(dst *dynakube.DynaKube) {
-	configuredMountAttempts := src.FeatureMaxFailedCsiMountAttempts()
-	if configuredMountAttempts != DefaultMaxFailedCsiMountAttempts {
-		dst.Annotations[dynakube.AnnotationFeatureMaxCsiMountTimeout] = dynakube.MountAttemptsToTimeout(configuredMountAttempts)
+	configuredMountAttempts := src.FF().GetCSIMaxFailedMountAttempts()
+	if configuredMountAttempts != exp.DefaultCSIMaxFailedMountAttempts {
+		dst.Annotations[exp.CSIMaxMountTimeoutKey] = exp.MountAttemptsToTimeout(configuredMountAttempts)
 	}
 }
 
@@ -101,22 +102,22 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 }
 
 func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
-	if src.Annotations[AnnotationFeatureMetadataEnrichment] == "false" ||
+	if src.Annotations[exp.InjectionMetadataEnrichmentKey] == "false" ||
 		!src.NeedAppInjection() {
 		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: ptr.To(false)}
-		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
+		delete(dst.Annotations, exp.InjectionMetadataEnrichmentKey)
 	} else {
 		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: ptr.To(true)}
-		delete(dst.Annotations, AnnotationFeatureMetadataEnrichment)
+		delete(dst.Annotations, exp.InjectionMetadataEnrichmentKey)
 	}
 
 	src.convertMaxMountAttempts(dst)
 
 	src.convertDynatraceApiRequestThreshold(dst)
 
-	if src.Annotations[AnnotationFeatureOneAgentSecCompProfile] != "" {
-		secCompProfile := src.Annotations[AnnotationFeatureOneAgentSecCompProfile]
-		delete(dst.Annotations, AnnotationFeatureOneAgentSecCompProfile)
+	if src.Annotations[exp.OASecCompProfileKey] != "" {
+		secCompProfile := src.Annotations[exp.OASecCompProfileKey]
+		delete(dst.Annotations, exp.OASecCompProfileKey)
 
 		switch {
 		case src.CloudNativeFullstackMode():
@@ -142,8 +143,8 @@ func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 }
 
 func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) error {
-	if src.Annotations[AnnotationFeatureApiRequestThreshold] != "" {
-		duration, err := strconv.ParseInt(src.Annotations[AnnotationFeatureApiRequestThreshold], 10, 32)
+	if src.Annotations[exp.ApiRequestThresholdKey] != "" {
+		duration, err := strconv.ParseInt(src.Annotations[exp.ApiRequestThresholdKey], 10, 32)
 		if err != nil {
 			return err
 		}
@@ -157,7 +158,7 @@ func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube)
 			}
 		}
 
-		delete(dst.Annotations, AnnotationFeatureApiRequestThreshold)
+		delete(dst.Annotations, exp.ApiRequestThresholdKey)
 	}
 
 	return nil

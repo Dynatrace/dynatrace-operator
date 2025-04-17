@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -53,7 +54,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
-		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "false"}
+		request.DynaKube.Annotations = map[string]string{exp.InjectionAutomaticKey: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -63,7 +64,7 @@ func TestEnabled(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
 		request.DynaKube.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{exp.InjectionAutomaticKey: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -72,7 +73,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on with namespaceselector", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespaceWithMatchingLabel(nil, testLabelKeyMatching, testLabelValue))
-		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{exp.InjectionAutomaticKey: "true"}
 		request.DynaKube = *addNamespaceSelector(&request.DynaKube)
 
 		enabled := mutator.Enabled(request.BaseRequest)
@@ -82,7 +83,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("off due to not matching namespaceselector", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespaceWithMatchingLabel(nil, testLabelKeyNotMatching, testLabelValue))
-		request.DynaKube.Annotations = map[string]string{dynakube.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{exp.InjectionAutomaticKey: "true"}
 		request.DynaKube = *addNamespaceSelector(&request.DynaKube)
 
 		enabled := mutator.Enabled(request.BaseRequest)
@@ -438,7 +439,7 @@ func getTestCSIDynakube() *dynakube.DynaKube {
 
 func getTestReadOnlyCSIDynakube() *dynakube.DynaKube {
 	dk := getTestCSIDynakube()
-	dk.Annotations[dynakube.AnnotationFeatureReadOnlyCsiVolume] = "true"
+	dk.Annotations[exp.CSIReadOnlyVolumeKey] = "true"
 
 	return dk
 }
@@ -520,8 +521,8 @@ func getTestComplexDynakube() *dynakube.DynaKube {
 		TlsSecretName: "super-secret",
 	}
 	dk.Annotations = map[string]string{
-		dynakube.AnnotationFeatureOneAgentInitialConnectRetry: "5",
-		dynakube.AnnotationFeatureLabelVersionDetection:       "true",
+		exp.OAInitialConnectRetryKey:          "5",
+		exp.InjectionLabelVersionDetectionKey: "true",
 	}
 
 	return dk

@@ -25,7 +25,7 @@ type Injector struct {
 }
 
 func IsEnabled(mutationRequest *dtwebhook.MutationRequest) bool {
-	ffEnabled := mutationRequest.DynaKube.FeatureNodeImagePull()
+	ffEnabled := mutationRequest.DynaKube.FF().IsNodeImagePull()
 	oaEnabled := oacommon.IsEnabled(mutationRequest.BaseRequest)
 
 	defaultVolumeType := oacommon.EphemeralVolumeType

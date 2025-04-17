@@ -156,7 +156,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 	oneAgentNoProxyValues := []string{}
 
 	if dk.NeedsCustomNoProxy() {
-		oneAgentNoProxyValues = append(oneAgentNoProxyValues, dk.FeatureNoProxy())
+		oneAgentNoProxyValues = append(oneAgentNoProxyValues, dk.FF().GetNoProxy())
 	}
 
 	if dk.ActiveGate().IsRoutingEnabled() {
@@ -171,16 +171,16 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 		PaasToken:           getPaasToken(tokens),
 		TenantUUID:          dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID,
 		Proxy:               proxy,
-		NoProxy:             dk.FeatureNoProxy(),
+		NoProxy:             dk.FF().GetNoProxy(),
 		OneAgentNoProxy:     strings.Join(oneAgentNoProxyValues, ","),
 		NetworkZone:         dk.Spec.NetworkZone,
 		SkipCertCheck:       dk.Spec.SkipCertCheck,
 		HasHost:             dk.OneAgent().IsCloudNativeFullstackMode(),
 		MonitoringNodes:     hostMonitoringNodes,
 		HostGroup:           dk.OneAgent().GetHostGroup(),
-		InitialConnectRetry: dk.FeatureAgentInitialConnectRetry(),
-		EnforcementMode:     dk.FeatureEnforcementMode(),
-		ReadOnlyCSIDriver:   dk.FeatureReadOnlyCsiVolume(),
+		InitialConnectRetry: dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio),
+		EnforcementMode:     dk.FF().IsEnforcementMode(),
+		ReadOnlyCSIDriver:   dk.FF().IsCSIVolumeReadOnly(),
 		CSIMode:             dk.OneAgent().IsCSIAvailable(),
 	}, nil
 }
@@ -242,7 +242,7 @@ func updateImNodes(dk *dynakube.DynaKube, tenantUUID string, imNodes map[string]
 	for nodeName := range dk.Status.OneAgent.Instances {
 		if tenantUUID != "" {
 			imNodes[nodeName] = tenantUUID
-		} else if !dk.FeatureIgnoreUnknownState() {
+		} else if !dk.FF().IgnoreUnknownState() {
 			delete(imNodes, nodeName)
 		}
 	}
@@ -254,7 +254,7 @@ func updateNodeInfImNodes(dk *dynakube.DynaKube, nodeInf nodeInfo, nodeSelector 
 		if nodeSelector.Matches(nodeLabels) {
 			if tenantUUID != "" {
 				nodeInf.imNodes[node.Name] = tenantUUID
-			} else if !dk.FeatureIgnoreUnknownState() {
+			} else if !dk.FF().IgnoreUnknownState() {
 				delete(nodeInf.imNodes, node.Name)
 			}
 		}

@@ -3,7 +3,7 @@ package csivolumes
 import (
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -93,7 +93,7 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (VolumeCon
 
 	retryTimeoutValue := volCtx[CSIVolumeAttributeRetryTimeout]
 	if retryTimeoutValue == "" {
-		retryTimeoutValue = dynakube.DefaultMaxCsiMountTimeout
+		retryTimeoutValue = exp.DefaultCSIMaxMountTimeout
 	}
 
 	retryTimeout, err := time.ParseDuration(retryTimeoutValue)

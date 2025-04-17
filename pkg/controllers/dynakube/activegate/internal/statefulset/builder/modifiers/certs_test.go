@@ -3,6 +3,7 @@ package modifiers
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +20,7 @@ func setCertUsage(dk *dynakube.DynaKube, isUsed bool) {
 }
 
 func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
-	dk.Annotations[dynakube.AnnotationFeatureActiveGateAutomaticTLSCertificate] = "false"
+	dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
 }
 
 func TestCertEnabled(t *testing.T) {

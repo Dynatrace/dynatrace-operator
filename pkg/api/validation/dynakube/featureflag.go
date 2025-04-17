@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 )
 
@@ -13,8 +14,8 @@ const (
 )
 
 var deprecatedFeatureFlags = []string{
-	dynakube.AnnotationFeatureOneAgentIgnoreProxy,   //nolint:staticcheck
-	dynakube.AnnotationFeatureActiveGateIgnoreProxy, //nolint:staticcheck
+	exp.OAProxyIgnoredKey, //nolint:staticcheck
+	exp.AGUpdatesKey,
 }
 
 func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {

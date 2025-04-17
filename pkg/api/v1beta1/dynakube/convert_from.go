@@ -3,6 +3,7 @@ package dynakube
 import (
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -91,9 +92,9 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 }
 
 func (dst *DynaKube) fromMovedFields(src *dynakube.DynaKube) error {
-	dst.Annotations[AnnotationFeatureMetadataEnrichment] = strconv.FormatBool(src.MetadataEnrichmentEnabled())
-	dst.Annotations[AnnotationFeatureApiRequestThreshold] = strconv.FormatInt(int64(src.GetDynatraceApiRequestThreshold()), 10)
-	dst.Annotations[AnnotationFeatureOneAgentSecCompProfile] = src.OneAgent().GetSecCompProfile()
+	dst.Annotations[exp.InjectionMetadataEnrichmentKey] = strconv.FormatBool(src.MetadataEnrichmentEnabled())
+	dst.Annotations[exp.ApiRequestThresholdKey] = strconv.FormatInt(int64(src.GetDynatraceApiRequestThreshold()), 10)
+	dst.Annotations[exp.OASecCompProfileKey] = src.OneAgent().GetSecCompProfile()
 
 	if selector := src.OneAgent().GetNamespaceSelector(); selector != nil {
 		dst.Spec.NamespaceSelector = *selector

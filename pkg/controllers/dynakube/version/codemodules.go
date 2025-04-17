@@ -64,7 +64,7 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 }
 
 func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FeaturePublicRegistry()
+	isPublicRegistry := updater.dk.FF().IsPublicRegistry()
 	if isPublicRegistry {
 		setVerifiedCondition(updater.dk.Conditions(), cmConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
 	}
