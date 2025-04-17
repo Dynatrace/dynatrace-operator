@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/csi/csitest/driver"
+	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/golang/mock/gomock"
 	"github.com/kubernetes-csi/csi-lib-utils/connection"
-	"github.com/kubernetes-csi/csi-test/v5/driver"
-	"github.com/kubernetes-csi/csi-test/v5/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
 	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
@@ -28,7 +28,7 @@ var (
 )
 
 func TestPluginInfoResponse(t *testing.T) {
-	csiAddress, cleanUpFunc := testLaunchCSIServer(t)
+	csiAddress, cleanUpFunc := launchCSIServer(t)
 	defer cleanUpFunc()
 
 	var wg sync.WaitGroup
@@ -73,28 +73,25 @@ func launchTestRegistrarServer(t *testing.T, ctx context.Context, wg *sync.WaitG
 	return server
 }
 
-func testLaunchCSIServer(t *testing.T) (string, func()) {
+func launchCSIServer(t *testing.T) (string, func()) {
 	driver, idServer, cleanUpFunc := createMockServer(t)
 
 	var injectedErr error
 
-	inPluginInfo := &csi.GetPluginInfoRequest{}
 	outPluginInfo := &csi.GetPluginInfoResponse{
 		Name:          driverName,
 		VendorVersion: "test",
 	}
-	idServer.EXPECT().GetPluginInfo(gomock.Any(), utils.Protobuf(inPluginInfo)).Return(outPluginInfo, injectedErr).Times(1)
+	idServer.EXPECT().GetPluginInfo(mock.Anything, mock.Anything).Return(outPluginInfo, injectedErr).Times(1)
 
 	return driver.Address(), cleanUpFunc
 }
 
 func createMockServer(t *testing.T) (
 	*driver.MockCSIDriver,
-	*driver.MockIdentityServer,
+	*mocks.IdentityServer,
 	func()) {
-	// Start the mock server
-	mockController := gomock.NewController(t)
-	identityServer := driver.NewMockIdentityServer(mockController)
+	identityServer := mocks.NewIdentityServer(t)
 	drv := driver.NewMockCSIDriver(&driver.MockCSIDriverServers{
 		Identity: identityServer,
 	})
@@ -109,7 +106,6 @@ func createMockServer(t *testing.T) (
 	}
 
 	return drv, identityServer, func() {
-		mockController.Finish()
 		drv.Stop()
 		os.RemoveAll(csiEndpoint)
 	}
