@@ -64,63 +64,58 @@ jobs:
         id: check-code-coverage
         run: |
           make go/check-coverage
-      - name: upload cover profile artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload cover profile artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: coverage.txt
           path: coverage.txt
           if-no-files-found: error
 
-#  check-coverage-profile:
-#    name: Check coverage profile
-#    needs: tests
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-#
-#      - name: download coverage-txt-profile
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: coverage.txt
-#
-#      - name: download artifact (main.breakdown)
-#        id: download-main-breakdown
-#        uses: dawidd6/action-download-artifact@v9
-#        with:
-#          branch: main
-#          workflow_conclusion: success
-#          name: main.breakdown
-#          if_no_artifact_found: fail
-#
-#      - name: check test coverage
-#        id: coverage
-#        uses: vladopajic/go-test-coverage@v2
-#        continue-on-error: true # Should fail after coverage comment is posted
-#        with:
-#          config: ./.testcoverage.yml
-#          profile: coverage.txt
-#          git-branch: badges
-#          git-token: ${{ github.ref_name == 'main' && secrets.GITHUB_TOKEN || '' }}
-#          breakdown-file-name: ${{ github.ref_name == 'main' && 'main.breakdown' || '' }}
-#          diff-base-breakdown-file-name: ${{ steps.download-main-breakdown.outputs.found_artifact == 'true' && 'main.breakdown' || '' }}
-#
-#      - name: post coverage report
-#        if: env.pull_request_id
-#        uses: thollander/actions-comment-pull-request@v3
-#        with:
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          comment-tag: coverage-report
-#          pr-number: ${{ env.pull_request_id }}
-#          message: |
-#            go-test-coverage report:
-#            ```
-#            ${{ fromJSON(steps.coverage.outputs.report) }}```
-#
-#      - name: "finally check coverage"
-#        if: steps.coverage.outcome == 'failure'
-#        shell: bash
-#        run: echo "coverage check failed" && exit 1
+  check-coverage-profile:
+    name: Check coverage profile
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: download coverage-txt-profile
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
+        with:
+          name: coverage.txt
+      - name: download artifact (main.breakdown)
+        id: download-main-breakdown
+        uses: dawidd6/action-download-artifact@07ab29fd4a977ae4d2b275087cf67563dfdf0295 # v9
+        with:
+          branch: main
+          workflow_conclusion: success
+          name: main.breakdown
+          if_no_artifact_found: fail
+      - name: check test coverage
+        id: coverage
+        uses: vladopajic/go-test-coverage@v2
+        continue-on-error: true # Should fail after coverage comment is posted
+        with:
+          config: ./.testcoverage.yml
+          profile: coverage.txt
+          git-branch: badges
+          git-token: ${{ github.ref_name == 'main' && secrets.GITHUB_TOKEN || '' }}
+          breakdown-file-name: ${{ github.ref_name == 'main' && 'main.breakdown' || '' }}
+          diff-base-breakdown-file-name: ${{ steps.download-main-breakdown.outputs.found_artifact == 'true' && 'main.breakdown' || '' }}
+      - name: post coverage report
+        if: env.pull_request_id
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-tag: coverage-report
+          pr-number: ${{ env.pull_request_id }}
+          message: |
+            go-test-coverage report:
+            ```
+            ${{ fromJSON(steps.coverage.outputs.report) }}```
+      - name: "finally check coverage"
+        if: steps.coverage.outcome == 'failure'
+        shell: bash
+        run: echo "coverage check failed" && exit 1
 
   linting:
     name: Run linting
