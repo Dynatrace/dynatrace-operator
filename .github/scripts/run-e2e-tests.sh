@@ -52,7 +52,7 @@ EOF
 
 popd
 
-echo "Running tests (${test_target}) for environment '$FLC_ENVIRONMENT'..."
+echo "Running tests (${TEST_TARGET}) for environment '$FLC_ENVIRONMENT'..."
 make BRANCH="$TARGET_BRANCH" "test/${TEST_TARGET:-e2e-publish}"
 
 echo "Success!"
