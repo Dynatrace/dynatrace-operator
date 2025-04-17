@@ -2,19 +2,19 @@ package registrar
 
 import (
 	"fmt"
-	"net"
-	"net/url"
+	"os"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/golang/mock/gomock"
 	"github.com/kubernetes-csi/csi-lib-utils/connection"
-	"github.com/pkg/errors"
+	"github.com/kubernetes-csi/csi-test/v5/driver"
+	"github.com/kubernetes-csi/csi-test/v5/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
 )
 
@@ -27,29 +27,21 @@ var (
 	testVersions = []string{"2.0.0", "3.0.0"}
 )
 
-type testCSIServer struct {
-	csi.UnimplementedIdentityServer
-
-	probeTimeout time.Duration
-}
-
 func TestPluginInfoResponse(t *testing.T) {
+	csiAddress, cleanUpFunc := testLaunchCSIServer(t)
+	defer cleanUpFunc()
+
 	var wg sync.WaitGroup
 
-	wg.Add(2)
+	wg.Add(1)
 
-	csiAddress := t.TempDir() + "/csi.sock"
 	pluginRegistrationPath := t.TempDir()
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	_, err := launchTestCSIServer(t, ctx, &wg, "unix://"+csiAddress, 0)
-	require.NoError(t, err)
-	time.Sleep(1 * time.Second)
-
 	server := launchTestRegistrarServer(t, ctx, &wg, csiAddress, pluginRegistrationPath)
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(time.Second)
 
 	conn, err := connection.Connect(ctx, server.buildRegistrationDir(), nil, connection.WithTimeout(0))
 	require.NoError(t, err)
@@ -81,42 +73,44 @@ func launchTestRegistrarServer(t *testing.T, ctx context.Context, wg *sync.WaitG
 	return server
 }
 
-func launchTestCSIServer(t *testing.T, ctx context.Context, wg *sync.WaitGroup, csiAddress string, probeTimeout time.Duration) (*testCSIServer, error) {
-	csiServer := &testCSIServer{
-		probeTimeout: probeTimeout,
+func testLaunchCSIServer(t *testing.T) (string, func()) {
+	driver, idServer, cleanUpFunc := createMockServer(t)
+
+	var injectedErr error
+
+	inPluginInfo := &csi.GetPluginInfoRequest{}
+	outPluginInfo := &csi.GetPluginInfoResponse{
+		Name:          driverName,
+		VendorVersion: "test",
 	}
+	idServer.EXPECT().GetPluginInfo(gomock.Any(), utils.Protobuf(inPluginInfo)).Return(outPluginInfo, injectedErr).Times(1)
 
-	endpoint, err := url.Parse(csiAddress)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("failed to parse endpoint '%s'", csiAddress))
-	}
-
-	addr := endpoint.Host + endpoint.Path
-
-	listener, err := net.Listen(endpoint.Scheme, addr)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to start testCSIServer")
-	}
-
-	server := grpc.NewServer()
-
-	go func() {
-		<-ctx.Done()
-		server.GracefulStop()
-	}()
-
-	csi.RegisterIdentityServer(server, csiServer)
-
-	go func() {
-		server.Serve(listener)
-		t.Log("stopped CSI server", "err", err)
-
-		wg.Done()
-	}()
-
-	return csiServer, nil
+	return driver.Address(), cleanUpFunc
 }
 
-func (srv *testCSIServer) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	return &csi.GetPluginInfoResponse{Name: driverName, VendorVersion: "test"}, nil
+func createMockServer(t *testing.T) (
+	*driver.MockCSIDriver,
+	*driver.MockIdentityServer,
+	func()) {
+	// Start the mock server
+	mockController := gomock.NewController(t)
+	identityServer := driver.NewMockIdentityServer(mockController)
+	drv := driver.NewMockCSIDriver(&driver.MockCSIDriverServers{
+		Identity: identityServer,
+	})
+
+	tmpDir := t.TempDir()
+
+	csiEndpoint := fmt.Sprintf("%s/csi.sock", tmpDir)
+	err := drv.StartOnAddress("unix", csiEndpoint)
+
+	if err != nil {
+		t.Errorf("failed to start the csi driver at %s: %v", csiEndpoint, err)
+	}
+
+	return drv, identityServer, func() {
+		mockController.Finish()
+		drv.Stop()
+		os.RemoveAll(csiEndpoint)
+	}
 }

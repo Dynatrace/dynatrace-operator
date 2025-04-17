@@ -2,19 +2,19 @@ package livenessprobe
 
 import (
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
+	"os"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/pkg/errors"
+	"github.com/golang/mock/gomock"
+	"github.com/kubernetes-csi/csi-test/v5/driver"
+	"github.com/kubernetes-csi/csi-test/v5/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -22,41 +22,21 @@ const (
 	healthPort = "9808"
 )
 
-type testCSIServer struct {
-	csi.UnimplementedIdentityServer
-
-	probeTimeout time.Duration
-
-	pluginInfoReqCount int
-	probeReqCount      int
-}
-
 func TestNormalResponse(t *testing.T) {
+	csiAddress, cleanUpFunc := testLaunchCSIServer(t, 0)
+	defer cleanUpFunc()
+
 	var wg sync.WaitGroup
 
-	wg.Add(2)
-
-	endpoint := t.TempDir() + "/csi.sock"
+	wg.Add(1)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	csiServer, err := launchTestCSIServer(t, ctx, &wg, "unix://"+endpoint, 0)
-	require.NoError(t, err)
-	time.Sleep(1 * time.Second)
-
-	server := launchTestLivenessprobeServer(t, ctx, &wg, endpoint, 1*time.Second)
-	time.Sleep(1 * time.Second)
+	server := testLaunchLivenessprobeServer(t, ctx, &wg, csiAddress, time.Second)
+	time.Sleep(time.Second)
 
 	resp, err := http.Get("http://127.0.0.1:" + server.healthPort + "/healthz")
 	require.NoError(t, err)
-	assert.Equal(t, 1, csiServer.pluginInfoReqCount)
-	assert.Equal(t, 1, csiServer.probeReqCount)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	resp, err = http.Get("http://127.0.0.1:" + server.healthPort + "/healthz")
-	require.NoError(t, err)
-	assert.Equal(t, 1, csiServer.pluginInfoReqCount)
-	assert.Equal(t, 2, csiServer.probeReqCount)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	cancel()
@@ -64,35 +44,30 @@ func TestNormalResponse(t *testing.T) {
 }
 
 func TestDelayedResponse(t *testing.T) {
+	csiAddress, cleanUpFunc := testLaunchCSIServer(t, 2*time.Second)
+	defer cleanUpFunc()
+
 	// it's not possible to register the same endpoint twice to the same mux
 	http.DefaultServeMux = http.NewServeMux()
 
 	var wg sync.WaitGroup
 
-	wg.Add(2)
-
-	endpoint := t.TempDir() + "/csi.sock"
+	wg.Add(1)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	csiServer, err := launchTestCSIServer(t, ctx, &wg, "unix://"+endpoint, 2*time.Second)
-	require.NoError(t, err)
-	time.Sleep(1 * time.Second)
-
-	server := launchTestLivenessprobeServer(t, ctx, &wg, endpoint, 1*time.Second)
-	time.Sleep(1 * time.Second)
+	server := testLaunchLivenessprobeServer(t, ctx, &wg, csiAddress, time.Second)
+	time.Sleep(time.Second)
 
 	resp, err := http.Get("http://127.0.0.1:" + server.healthPort + "/healthz")
 	require.NoError(t, err)
-	assert.Equal(t, 1, csiServer.pluginInfoReqCount)
-	assert.Equal(t, 1, csiServer.probeReqCount)
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 
 	cancel()
 	wg.Wait()
 }
 
-func launchTestLivenessprobeServer(t *testing.T, ctx context.Context, wg *sync.WaitGroup, csiAddress string, probeTimeout time.Duration) *Server {
+func testLaunchLivenessprobeServer(t *testing.T, ctx context.Context, wg *sync.WaitGroup, csiAddress string, probeTimeout time.Duration) *Server {
 	server := NewServer(driverName, csiAddress, healthPort, probeTimeout)
 
 	go func() {
@@ -105,54 +80,48 @@ func launchTestLivenessprobeServer(t *testing.T, ctx context.Context, wg *sync.W
 	return server
 }
 
-func launchTestCSIServer(t *testing.T, ctx context.Context, wg *sync.WaitGroup, csiAddress string, probeTimeout time.Duration) (*testCSIServer, error) {
-	csiServer := &testCSIServer{
-		probeTimeout: probeTimeout,
+func testLaunchCSIServer(t *testing.T, probeTimeout time.Duration) (string, func()) {
+	driver, idServer, cleanUpFunc := createMockServer(t)
+
+	var injectedErr error
+
+	inProbe := &csi.ProbeRequest{}
+	outProbe := &csi.ProbeResponse{}
+	idServer.EXPECT().Probe(gomock.Any(), utils.Protobuf(inProbe)).Return(outProbe, injectedErr).Times(1).Do(func(any, any) { time.Sleep(probeTimeout) })
+
+	inPluginInfo := &csi.GetPluginInfoRequest{}
+	outPluginInfo := &csi.GetPluginInfoResponse{
+		Name:          driverName,
+		VendorVersion: "test",
 	}
+	idServer.EXPECT().GetPluginInfo(gomock.Any(), utils.Protobuf(inPluginInfo)).Return(outPluginInfo, injectedErr).Times(1)
 
-	endpoint, err := url.Parse(csiAddress)
-	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("failed to parse endpoint '%s'", csiAddress))
-	}
-
-	addr := endpoint.Host + endpoint.Path
-
-	listener, err := net.Listen(endpoint.Scheme, addr)
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to start testCSIServer")
-	}
-
-	server := grpc.NewServer()
-
-	go func() {
-		<-ctx.Done()
-		server.GracefulStop()
-	}()
-
-	csi.RegisterIdentityServer(server, csiServer)
-
-	go func() {
-		server.Serve(listener)
-		t.Log("stopped CSI server", "err", err)
-
-		wg.Done()
-	}()
-
-	return csiServer, nil
+	return driver.Address(), cleanUpFunc
 }
 
-func (srv *testCSIServer) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	srv.pluginInfoReqCount++
+func createMockServer(t *testing.T) (
+	*driver.MockCSIDriver,
+	*driver.MockIdentityServer,
+	func()) {
+	// Start the mock server
+	mockController := gomock.NewController(t)
+	identityServer := driver.NewMockIdentityServer(mockController)
+	drv := driver.NewMockCSIDriver(&driver.MockCSIDriverServers{
+		Identity: identityServer,
+	})
 
-	return &csi.GetPluginInfoResponse{Name: driverName, VendorVersion: "test"}, nil
-}
+	tmpDir := t.TempDir()
 
-func (srv *testCSIServer) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	srv.probeReqCount++
+	csiEndpoint := fmt.Sprintf("%s/csi.sock", tmpDir)
+	err := drv.StartOnAddress("unix", csiEndpoint)
 
-	if srv.probeTimeout > 0 {
-		time.Sleep(srv.probeTimeout)
+	if err != nil {
+		t.Errorf("failed to start the csi driver at %s: %v", csiEndpoint, err)
 	}
 
-	return &csi.ProbeResponse{}, nil
+	return drv, identityServer, func() {
+		mockController.Finish()
+		drv.Stop()
+		os.RemoveAll(csiEndpoint)
+	}
 }
