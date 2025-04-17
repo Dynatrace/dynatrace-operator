@@ -64,10 +64,6 @@ jobs:
         id: check-code-coverage
         run: |
           make go/check-coverage
-      - name: Check test coverage
-        id: check-code-coverage
-        run: |
-          make go/check-coverage
       - name: upload cover profile artifact
         uses: actions/upload-artifact@v4
         with:
