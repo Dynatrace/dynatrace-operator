@@ -65,7 +65,7 @@ jobs:
     runs-on:
       - self-hosted
       - operator-e2e
-    if: !contains(github.event.comment.html_url, '/pull/')
+    if: ${{ !contains(github.event.comment.html_url, '/pull/') }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
