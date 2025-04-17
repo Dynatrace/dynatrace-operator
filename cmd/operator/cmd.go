@@ -73,28 +73,7 @@ func runInPod(kubeCfg *rest.Config) error {
 	}
 
 	isOLM := kubesystem.IsDeployedViaOlm(*operatorPod)
-	if !isOLM {
-		err = runCertInit(kubeCfg, namespace)
-		if err != nil {
-			return err
-		}
-	}
 
-	return runOperator(kubeCfg, namespace, isOLM)
-}
-
-func runLocally(kubeCfg *rest.Config) error {
-	namespace := os.Getenv(env.PodNamespace)
-
-	err := runCertInit(kubeCfg, namespace)
-	if err != nil {
-		return err
-	}
-
-	return runOperator(kubeCfg, namespace, false)
-}
-
-func runOperator(kubeCfg *rest.Config, namespace string, isOLM bool) error {
 	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
 	if err != nil {
 		return err
@@ -105,10 +84,35 @@ func runOperator(kubeCfg *rest.Config, namespace string, isOLM bool) error {
 		return err
 	}
 
-	ctx := ctrl.SetupSignalHandler()
-	err = operatorManager.Start(ctx)
+	if !isOLM {
+		err = runCertInit(kubeCfg, namespace)
+		if err != nil {
+			return err
+		}
+	}
 
-	return errors.WithStack(err)
+	return errors.WithStack(operatorManager.Start(ctrl.SetupSignalHandler()))
+}
+
+func runLocally(kubeCfg *rest.Config) error {
+	namespace := os.Getenv(env.PodNamespace)
+
+	err := runCertInit(kubeCfg, namespace)
+	if err != nil {
+		return err
+	}
+
+	operatorManager, err := createOperatorManager(kubeCfg, namespace, false)
+	if err != nil {
+		return err
+	}
+
+	err = checkCRDs(operatorManager)
+	if err != nil {
+		return err
+	}
+
+	return errors.WithStack(operatorManager.Start(ctrl.SetupSignalHandler()))
 }
 
 func checkCRDs(operatorManager manager.Manager) error {
