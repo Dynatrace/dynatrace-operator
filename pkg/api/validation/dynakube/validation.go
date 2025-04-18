@@ -70,7 +70,6 @@ var (
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingApiUrlForExtensions,
-		publicImageSetWithoutReadOnlyMode,
 		logMonitoringWithoutK8SMonitoring,
 		kspmWithoutK8SMonitoring,
 		extensionsWithoutK8SMonitoring,
