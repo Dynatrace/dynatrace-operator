@@ -39,7 +39,7 @@ func TestPluginInfoResponse(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	server := launchTestRegistrarServer(t, ctx, &wg, csiAddress, pluginRegistrationPath)
+	server := launchRegistrarServer(t, ctx, &wg, csiAddress, pluginRegistrationPath)
 
 	time.Sleep(time.Second)
 
@@ -60,7 +60,7 @@ func TestPluginInfoResponse(t *testing.T) {
 	wg.Wait()
 }
 
-func launchTestRegistrarServer(t *testing.T, ctx context.Context, wg *sync.WaitGroup, endpoint string, pluginRegistrationPath string) *Server {
+func launchRegistrarServer(t *testing.T, ctx context.Context, wg *sync.WaitGroup, endpoint string, pluginRegistrationPath string) *Server {
 	server := NewServer(driverName, endpoint, testKubeletRegistrationPath, pluginRegistrationPath, testVersions)
 
 	go func() {
