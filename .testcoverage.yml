@@ -46,6 +46,7 @@ exclude:
     - \.pb\.go$    # excludes all protobuf generated files
     - ^test/mocks
     - /test/*
+    - "/pkg/csi/csitest/*"
 
 # NOTES:
 # - symbol `/` in all paths regexps will be replaced by current OS file path separator

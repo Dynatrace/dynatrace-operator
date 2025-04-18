@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
+	"golang.org/x/net/nettest"
 	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
 )
 
@@ -31,15 +32,35 @@ func TestPluginInfoResponse(t *testing.T) {
 	csiAddress, cleanUpFunc := launchCSIServer(t)
 	defer cleanUpFunc()
 
-	var wg sync.WaitGroup
+	// Use nettest.LocalPath() instead of t.TempDir() for the pluginRegistrationPath.
+	// The shorter temp paths avoid problems with long unix socket paths composed
+	// See https://github.com/golang/go/issues/62614.
+	pluginRegistrationPath := func() string {
+		tempDir, err := nettest.LocalPath()
+		require.NoError(t, err, "nettest.LocalPath failed")
 
-	wg.Add(1)
+		os.Mkdir(tempDir, 0777)
+		t.Cleanup(func() { os.RemoveAll(tempDir) })
 
-	pluginRegistrationPath := t.TempDir()
+		return tempDir
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	server := launchRegistrarServer(t, ctx, &wg, csiAddress, pluginRegistrationPath)
+	server := NewServer(driverName, csiAddress, testKubeletRegistrationPath, pluginRegistrationPath(), testVersions)
+
+	var wg sync.WaitGroup
+	// start register server
+	wg.Add(1)
+
+	go func() {
+		err := server.Start(ctx)
+		if err != nil {
+			t.Errorf("failed to start server: %v", err)
+		}
+
+		defer wg.Done()
+	}()
 
 	time.Sleep(time.Second)
 
@@ -58,19 +79,6 @@ func TestPluginInfoResponse(t *testing.T) {
 
 	cancel()
 	wg.Wait()
-}
-
-func launchRegistrarServer(t *testing.T, ctx context.Context, wg *sync.WaitGroup, endpoint string, pluginRegistrationPath string) *Server {
-	server := NewServer(driverName, endpoint, testKubeletRegistrationPath, pluginRegistrationPath, testVersions)
-
-	go func() {
-		err := server.Start(ctx)
-		t.Log("stopped registrar server", "err", err)
-
-		wg.Done()
-	}()
-
-	return server
 }
 
 func launchCSIServer(t *testing.T) (string, func()) {
