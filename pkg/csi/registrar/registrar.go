@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"runtime"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -11,8 +12,13 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/rpc"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
+)
+
+const (
+	permAllUG = 0077
 )
 
 var (
@@ -54,6 +60,12 @@ func (s Server) Start(ctx context.Context) error {
 	}
 	defer removeExistingSocketFile(socketPath)
 
+	var oldmask int
+	if runtime.GOOS == "linux" {
+		// Default to only user accessible socket, caller can open up later if desired
+		oldmask = unix.Umask(permAllUG)
+	}
+
 	lis, err := net.Listen("unix", socketPath)
 	if err != nil {
 		log.Error(err, "failed to listen on socket")
@@ -61,7 +73,11 @@ func (s Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	server := grpc.NewServer()
+	if runtime.GOOS == "linux" {
+		unix.Umask(oldmask)
+	}
+
+	server := grpc.NewServer(grpc.UnaryInterceptor(grpcMessageLogger()))
 
 	registerapi.RegisterRegistrationServer(server, s)
 
@@ -104,6 +120,19 @@ func (s Server) NotifyRegistrationStatus(_ context.Context, status *registerapi.
 	return &registerapi.RegistrationStatusResponse{}, nil
 }
 
+func grpcMessageLogger() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		log.Debug("GRPC call", "full_method", info.FullMethod)
+
+		resp, err := handler(ctx, req)
+		if err != nil {
+			log.Info("GRPC failed", "full_method", info.FullMethod, "err", err.Error())
+		}
+
+		return resp, err
+	}
+}
+
 func (s Server) buildRegistrationDir() string {
 	// registrar.VolumeMounts.registration-dir
 	return fmt.Sprintf("%s/%s-reg.sock", s.pluginRegistrationPath, dtcsi.DriverName)
@@ -124,10 +153,9 @@ func (s Server) isDriverRunning(ctx context.Context) error {
 
 		return err
 	}
+	defer conn.Close()
 
 	driverName, err := rpc.GetDriverName(ctx, conn)
-	conn.Close()
-
 	if err != nil {
 		log.Error(err, "failed to get driver name")
 

@@ -99,8 +99,6 @@ linters:
             - github.com/google/uuid
             - github.com/kubernetes-csi/csi-lib-utils/connection
             - github.com/kubernetes-csi/csi-lib-utils/rpc
-            - github.com/kubernetes-csi/csi-test/v5/driver
-            - github.com/kubernetes-csi/csi-test/v5/utils
           deny:
             - pkg: unsafe
               desc: Please don't use unsafe package

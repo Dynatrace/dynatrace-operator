@@ -111,10 +111,9 @@ func (s *Server) isDriverRunning(ctx context.Context) error {
 
 		return err
 	}
+	defer conn.Close()
 
 	driverName, err := rpc.GetDriverName(ctx, conn)
-	conn.Close()
-
 	if err != nil {
 		log.Error(err, "failed to get driver name")
 
