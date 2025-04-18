@@ -9,8 +9,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-// CSIDriverServers is a unified driver component with both Controller and Node
-// services.
+// https://github.com/kubernetes-csi/csi-test/blob/master/driver/driver.go
 type CSIDriverServers struct {
 	Identity csi.IdentityServer
 }
