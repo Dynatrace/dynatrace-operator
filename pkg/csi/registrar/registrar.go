@@ -53,11 +53,14 @@ func (s Server) Start(ctx context.Context) error {
 	}
 
 	socketPath := s.buildRegistrationDir()
+	log.Info("socket path", "path", s.pluginRegistrationPath)
+
 	if err := removeExistingSocketFile(socketPath); err != nil {
 		log.Error(err, "failed to clean up socket file")
 
 		return err
 	}
+
 	defer removeExistingSocketFile(socketPath)
 
 	var oldmask int
@@ -68,7 +71,7 @@ func (s Server) Start(ctx context.Context) error {
 
 	lis, err := net.Listen("unix", socketPath)
 	if err != nil {
-		log.Error(err, "failed to listen on socket")
+		log.Error(err, "failed to listen on socket "+socketPath)
 
 		return err
 	}

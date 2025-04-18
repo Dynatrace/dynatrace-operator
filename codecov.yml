@@ -24,3 +24,4 @@ coverage:
     - "./cmd/webhook/*.go"
     - "./cmd/startup_probe/*.go"
     - "./test/mocks/*.go" # ignore test mocks.
+    - "./pkg/csi/csitest/*.go"
