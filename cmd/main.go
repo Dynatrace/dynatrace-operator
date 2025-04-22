@@ -17,6 +17,7 @@ package main
 import (
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	csiInit "github.com/Dynatrace/dynatrace-operator/cmd/csi/init"
 	"github.com/Dynatrace/dynatrace-operator/cmd/csi/livenessprobe"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/cmd/csi/provisioner"
@@ -68,6 +69,7 @@ func main() {
 		csiServer.New(),
 		livenessprobe.New(),
 		registrar.New(),
+		bootstrapper.New(),
 	)
 
 	err := cmd.Execute()
