@@ -67,10 +67,6 @@ RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
         ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make; \
     fi
 
-
-RUN /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && ( [[ "$TARGETPLATFORM" == *"amd"* ]] && make test TESTS="-test_afalg" || echo "Skipping -test_afalg" )
-
-
 # Do not install man pages
 RUN make DESTDIR=/tmp/rootfs-dependency install_sw install_ssldirs install_fips
 

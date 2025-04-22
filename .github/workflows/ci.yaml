@@ -194,7 +194,7 @@ jobs:
       - name: Build image
         uses: ./.github/actions/build-push-image
         with:
-          platforms: ${{github.ref_protected && env.FIPS_PLATFORMS || env.FIPS_PR_PLATFORMS }}
+          platforms: ${{github.ref_protected && env.PLATFORMS || env.FIPS_PR_PLATFORMS }}
           labels: ${{ needs.prepare.outputs.labels }}
           tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}-fips
           annotation: "version=${{ needs.prepare.outputs.version }}"
