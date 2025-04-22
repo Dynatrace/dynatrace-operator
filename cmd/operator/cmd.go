@@ -74,18 +74,24 @@ func runInPod(kubeCfg *rest.Config) error {
 
 	isOLM := kubesystem.IsDeployedViaOlm(*operatorPod)
 
+	if !isOLM {
+		err = runCertInit(kubeCfg, namespace)
+		if err != nil {
+			return err
+		}
+	}
+
 	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
 	if err != nil {
 		return err
 	}
 
-	err = checkCRDs(operatorManager)
-	if err != nil {
-		return err
-	}
-
-	if !isOLM {
-		err = runCertInit(kubeCfg, namespace)
+	if isOLM {
+		// in most cases checkCRDs happen in the runCertInit,
+		// the reason for that is we run a manager to create the certs
+		// this manager uses the same ports for livez
+		// the controller-runtime will error with "port already in use" even if we didn't .Start the manager
+		err = checkCRDs(operatorManager)
 		if err != nil {
 			return err
 		}
@@ -103,11 +109,6 @@ func runLocally(kubeCfg *rest.Config) error {
 	}
 
 	operatorManager, err := createOperatorManager(kubeCfg, namespace, false)
-	if err != nil {
-		return err
-	}
-
-	err = checkCRDs(operatorManager)
 	if err != nil {
 		return err
 	}
