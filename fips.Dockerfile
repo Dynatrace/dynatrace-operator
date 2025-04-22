@@ -1,6 +1,6 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/oss/go/microsoft/golang@sha256:28ab4742d3b5feb0b3c7450629b4e105128d8709dd6ca22898472ab302140c37 AS operator-build
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/oss/go/microsoft/golang@sha256:28ab4742d3b5feb0b3c7450629b4e105128d8709dd6ca22898472ab302140c37 AS operator-build
 
 ENV GOEXPERIMENT=systemcrypto
 
@@ -61,6 +61,15 @@ RUN curl -L -o src.tgz https://github.com/openssl/openssl/releases/download/open
     tar --strip-components=1 -xzf src.tgz
 
 # Disable the aflag test because it doesn't work on qemu (aka arm build), maybe do it conditional (see https://github.com/openssl/openssl/pull/17945)
+
+# Use the argument in a conditional RUN statement
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+    /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && make test TESTS="-test_afalg" \
+else \
+    /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make \
+fi
+
+
 RUN /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && ( [[ "$TARGETPLATFORM" == *"amd"* ]] && make test TESTS="-test_afalg" || echo "Skipping -test_afalg" )
 
 

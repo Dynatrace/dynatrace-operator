@@ -179,7 +179,7 @@ jobs:
           annotation: "version=${{ needs.prepare.outputs.version }}"
 
   build-push-fips:
-    name: Build images
+    name: Build FIPS images
     runs-on: ubuntu-latest
     needs: [prepare]
     steps:
