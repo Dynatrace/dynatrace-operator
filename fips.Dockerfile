@@ -46,9 +46,9 @@ RUN dnf install --installroot /tmp/rootfs-dependency \
       /tmp/rootfs-dependency/var/log/yum.*
 
 # Build and Install OpenSSL
-# Version must be FIPS certified
+# Version must be FIPS certified, details https://openssl-library.org/source/
 ENV OPENSSL_BUILD_VERSION="3.1.2"
-# Get this from trusted source (e.g. Github release)
+# Get this from trusted source (e.g. Github release, https://github.com/openssl/openssl/releases)
 ENV OPENSSL_BUILD_TARBALL_SHA256="a0ce69b8b97ea6a35b96875235aa453b966ba3cba8af2de23657d8b6767d6539"
 ENV OPENSSL_BUILD_CONFIGURE_ARGS="enable-fips"
 # Dependencies

@@ -48,7 +48,7 @@ runs:
       uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
       id: meta
       env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ contains(inputs.platforms, 'arm64') && 'manifest,index' || 'manifest' }} # hack == we never build arm64 standalone
       with:
         images: ${{ inputs.image }}
     - name: Build target
