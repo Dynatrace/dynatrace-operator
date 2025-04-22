@@ -3,7 +3,7 @@ description: Builds and pushes the operator docker image
 inputs:
   platforms:
     description: The platforms for which the image will be built
-    defaults: linux/amd64,linux/arm64
+    default: linux/amd64,linux/arm64
     required: true
   labels:
     description: The labels for the built image
@@ -13,6 +13,9 @@ inputs:
     required: true
   annotation:
     description: The annotation added to the built image
+  dockerfile:
+    description: The path to the Dockerfile to be used
+    default: ./Dockerfile
 outputs:
   digest:
     description: The digest of the built image
@@ -57,7 +60,7 @@ runs:
           GO_LINKER_ARGS=${{ steps.prep.outputs.go_linker_args }}
           GO_BUILD_TAGS=${{ steps.prep.outputs.go_build_tags }}
         context: .
-        file: ./Dockerfile
+        file: ${{ inputs.dockerfile }}
         provenance: false
         platforms: ${{ inputs.platforms }}
         push: true
