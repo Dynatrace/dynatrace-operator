@@ -3,7 +3,7 @@ module github.com/Dynatrace/dynatrace-operator
 go 1.23.4
 
 require (
-	github.com/Dynatrace/dynatrace-bootstrapper v1.0.2
+	github.com/Dynatrace/dynatrace-bootstrapper v1.0.3
 	github.com/container-storage-interface/spec v1.11.0
 	github.com/docker/cli v28.0.4+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
@@ -26,7 +26,7 @@ require (
 	golang.org/x/mod v0.24.0
 	golang.org/x/net v0.38.0
 	golang.org/x/oauth2 v0.28.0
-	golang.org/x/sys v0.31.0
+	golang.org/x/sys v0.32.0
 	google.golang.org/grpc v1.71.1
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.25.2
