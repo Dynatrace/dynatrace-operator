@@ -60,14 +60,12 @@ RUN curl -L -o src.tgz https://github.com/openssl/openssl/releases/download/open
     sha256sum --quiet -c - <<< "${OPENSSL_BUILD_TARBALL_SHA256}  src.tgz" && \
     tar --strip-components=1 -xzf src.tgz
 
-# Disable the aflag test because it doesn't work on qemu (aka arm build), maybe do it conditional (see https://github.com/openssl/openssl/pull/17945)
-
-# Use the argument in a conditional RUN statement
+# Disable the aflag test because it doesn't work on qemu (aka cross compile, see https://github.com/openssl/openssl/pull/17945)
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
-    /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && make test TESTS="-test_afalg"; \
-else \
-    /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make; \
-fi
+        ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && make test TESTS="-test_afalg"; \
+    else \
+        ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make; \
+    fi
 
 
 RUN /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && ( [[ "$TARGETPLATFORM" == *"amd"* ]] && make test TESTS="-test_afalg" || echo "Skipping -test_afalg" )
