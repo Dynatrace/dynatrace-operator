@@ -64,9 +64,9 @@ RUN curl -L -o src.tgz https://github.com/openssl/openssl/releases/download/open
 
 # Use the argument in a conditional RUN statement
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
-    /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && make test TESTS="-test_afalg" \
+    /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && make test TESTS="-test_afalg"; \
 else \
-    /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make \
+    /Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make; \
 fi
 
 
