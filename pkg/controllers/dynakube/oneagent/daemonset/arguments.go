@@ -81,24 +81,22 @@ func (b *builder) appendHostGroupArg(argMap *prioritymap.Map) {
 }
 
 func (b *builder) appendNoProxyArg(argMap *prioritymap.Map) {
+	var noProxyValue string
+
 	if b.dk.NeedsCustomNoProxy() {
-		noProxyValue := b.dk.FF().GetNoProxy()
-
-		if b.dk.ActiveGate().IsEnabled() {
-			noProxyActiveGateValue := capability.BuildHostEntries(*b.dk)
-
-			if noProxyValue != "" {
-				noProxyValue = strings.Join([]string{noProxyValue, noProxyActiveGateValue}, ",")
-			} else {
-				noProxyValue = noProxyActiveGateValue
-			}
-		}
-
-		argMap.Append(argumentPrefix+"set-no-proxy", noProxyValue)
-	} else {
-		// if no-proxy is not set, we still have to set it as empty to clear proxy settings the OA might have cached
-		argMap.Append(argumentPrefix+"set-no-proxy", "")
+		noProxyValue = b.dk.FF().GetNoProxy()
 	}
+
+	if b.dk.ActiveGate().IsEnabled() {
+		noProxyActiveGateValue := capability.BuildHostEntries(*b.dk)
+		if noProxyValue != "" {
+			noProxyValue = strings.Join([]string{noProxyValue, noProxyActiveGateValue}, ",")
+		} else {
+			noProxyValue = noProxyActiveGateValue
+		}
+	}
+
+	argMap.Append(argumentPrefix+"set-no-proxy", noProxyValue)
 }
 
 // deprecated
