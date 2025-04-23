@@ -201,6 +201,5 @@ func (controller *Controller) numberOfMissingActiveGatePods(dk *dynakube.DynaKub
 		scheduledReplicas = *activeGateStatefulSet.Spec.Replicas
 	}
 
-
 	return scheduledReplicas - activeGateStatefulSet.Status.ReadyReplicas, nil
 }
