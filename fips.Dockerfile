@@ -1,6 +1,6 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/oss/go/microsoft/golang:1.24.2-fips-bullseye@sha256:28ab4742d3b5feb0b3c7450629b4e105128d8709dd6ca22898472ab302140c37 AS operator-build
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/oss/go/microsoft/golang:1.24.2-fips-bullseye@sha256:28ab4742d3b5feb0b3c7450629b4e105128d8709dd6ca22898472ab302140c37 AS operator-build
 
 ENV GOEXPERIMENT=systemcrypto
 

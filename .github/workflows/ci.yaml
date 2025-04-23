@@ -18,8 +18,8 @@ env:
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
   PR_PLATFORMS: linux/amd64,linux/arm64
 
-  FIPS_PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
-  FIPS_PR_PLATFORMS: linux/amd64
+  FIPS_PLATFORMS: linux/amd64,linux/arm64
+  FIPS_PR_PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   helm-test:
@@ -194,7 +194,7 @@ jobs:
       - name: Build image
         uses: ./.github/actions/build-push-image
         with:
-          platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
+          platforms: ${{github.ref_protected && env.FIPS_PLATFORMS || env.FIPS_PR_PLATFORMS }}
           labels: ${{ needs.prepare.outputs.labels }}
           tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}-fips
           annotation: "version=${{ needs.prepare.outputs.version }}"
