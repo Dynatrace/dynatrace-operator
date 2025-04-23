@@ -90,12 +90,6 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 	return &mc
 }
 
-func GenerateActiveGateCapabilities(dk *dynakube.DynaKube) []Capability {
-	return []Capability{
-		NewMultiCapability(dk),
-	}
-}
-
 func BuildServiceName(dynakubeName string) string {
 	return dynakubeName + "-" + consts.MultiActiveGateName
 }

@@ -182,39 +182,25 @@ func (controller *Controller) numberOfMissingDaemonSetPods(dk *dynakube.DynaKube
 }
 
 func (controller *Controller) numberOfMissingActiveGatePods(dk *dynakube.DynaKube) (int32, error) {
-	capabilities := capability.GenerateActiveGateCapabilities(dk)
+	activeGateStatefulSet := &appsv1.StatefulSet{}
+	instanceName := capability.CalculateStatefulSetName(dk.Name)
 
-	sum := int32(0)
-	capabilityFound := false
-
-	for range capabilities {
-		activeGateStatefulSet := &appsv1.StatefulSet{}
-		instanceName := capability.CalculateStatefulSetName(dk.Name)
-
-		err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, activeGateStatefulSet)
-		if k8serrors.IsNotFound(err) {
-			continue
-		}
-
-		if err != nil {
-			return -1, err
-		}
-
-		capabilityFound = true
-
-		// This check is needed as in our unit tests replicas is always nil. We can't set it manually as this function
-		// is called from the same function where the statefulset is created
-		scheduledReplicas := int32(0)
-		if activeGateStatefulSet.Spec.Replicas != nil {
-			scheduledReplicas = *activeGateStatefulSet.Spec.Replicas
-		}
-
-		sum += scheduledReplicas - activeGateStatefulSet.Status.ReadyReplicas
-	}
-
-	if !capabilityFound {
+	err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, activeGateStatefulSet)
+	if k8serrors.IsNotFound(err) {
 		return -1, nil
 	}
 
-	return sum, nil
+	if err != nil {
+		return -1, err
+	}
+
+	// This check is needed as in our unit tests replicas is always nil. We can't set it manually as this function
+	// is called from the same function where the statefulset is created
+	scheduledReplicas := int32(0)
+	if activeGateStatefulSet.Spec.Replicas != nil {
+		scheduledReplicas = *activeGateStatefulSet.Spec.Replicas
+	}
+
+
+	return scheduledReplicas - activeGateStatefulSet.Status.ReadyReplicas, nil
 }

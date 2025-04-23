@@ -121,16 +121,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 	}
 
-	for _, agCapability := range capability.GenerateActiveGateCapabilities(r.dk) {
-		if agCapability.Enabled() {
-			return r.createCapability(ctx, agCapability)
-		} else {
-			if err := r.deleteCapability(ctx); err != nil {
-				return err
-			}
+	agCapability := capability.NewMultiCapability(r.dk)
+	if agCapability.Enabled() {
+		return r.createCapability(ctx, agCapability)
+	} else {
+		if err := r.deleteCapability(ctx); err != nil {
+			return err
 		}
 	}
-
 	// TODO: move cleanup to ActiveGate reconciler
 	meta.RemoveStatusCondition(r.dk.Conditions(), statefulset.ActiveGateStatefulSetConditionType)
 
