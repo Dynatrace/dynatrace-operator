@@ -55,14 +55,15 @@ ENV OPENSSL_BUILD_VERSION="3.1.2"
 ENV OPENSSL_BUILD_TARBALL_SHA256="a0ce69b8b97ea6a35b96875235aa453b966ba3cba8af2de23657d8b6767d6539"
 ENV OPENSSL_BUILD_CONFIGURE_ARGS="enable-fips"
 
-RUN curl -L -o src.tgz https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_BUILD_VERSION}/openssl-${OPENSSL_BUILD_VERSION}.tar.gz && \
-    sha256sum --quiet -c - <<< "${OPENSSL_BUILD_TARBALL_SHA256}  src.tgz" && \
-    tar --strip-components=1 -xzf src.tgz
+RUN curl -L -o openssl.tar.gz https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_BUILD_VERSION}/openssl-${OPENSSL_BUILD_VERSION}.tar.gz && \
+    sha256sum --quiet -c - <<< "${OPENSSL_BUILD_TARBALL_SHA256}  openssl.tar.gz" && \
+    tar --strip-components=1 -xzf openssl.tar.gz
 
 # disable the aflag test because it doesn't work on qemu (aka cross compile, see https://github.com/openssl/openssl/pull/17945)
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
         ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && make test TESTS="-test_afalg"; \
     else \
+        echo "skipping -test_afalg"; \
         ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make; \
     fi
 
