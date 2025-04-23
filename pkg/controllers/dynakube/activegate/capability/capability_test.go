@@ -141,7 +141,7 @@ func TestNewMultiCapabilityWithDebugging(t *testing.T) {
 }
 
 func TestBuildServiceDomainNameForDNSEntryPoint(t *testing.T) {
-	actual := buildServiceDomainName("test-name", "test-namespace",)
+	actual := buildServiceDomainName("test-name", "test-namespace")
 	assert.NotEmpty(t, actual)
 
 	expected := "test-name-activegate.test-namespace:443"

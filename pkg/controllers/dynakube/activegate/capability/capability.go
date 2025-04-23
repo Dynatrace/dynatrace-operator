@@ -44,7 +44,7 @@ func (capability *capabilityBase) ArgName() string {
 	return capability.argName
 }
 
-func CalculateStatefulSetName(capability Capability, dynakubeName string) string {
+func CalculateStatefulSetName(dynakubeName string) string {
 	return dynakubeName + "-" + consts.MultiActiveGateName
 }
 

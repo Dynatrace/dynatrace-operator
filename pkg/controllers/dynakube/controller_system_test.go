@@ -238,8 +238,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	_, err = r.Reconcile(context.Background(), request)
 	require.NoError(t, err)
 
-	multiCapability := capability.NewMultiCapability(dk)
-	stsName := capability.CalculateStatefulSetName(multiCapability, testName)
+	stsName := capability.CalculateStatefulSetName(testName)
 
 	routingSts := &appsv1.StatefulSet{}
 	err = r.client.Get(context.Background(), client.ObjectKey{

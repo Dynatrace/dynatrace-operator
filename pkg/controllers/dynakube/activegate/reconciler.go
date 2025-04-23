@@ -125,7 +125,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		if agCapability.Enabled() {
 			return r.createCapability(ctx, agCapability)
 		} else {
-			if err := r.deleteCapability(ctx, agCapability); err != nil {
+			if err := r.deleteCapability(ctx); err != nil {
 				return err
 			}
 		}
@@ -189,19 +189,19 @@ func (r *Reconciler) createCapability(ctx context.Context, agCapability capabili
 	return capabilityReconciler.Reconcile(ctx)
 }
 
-func (r *Reconciler) deleteCapability(ctx context.Context, agCapability capability.Capability) error {
-	if err := r.deleteStatefulset(ctx, agCapability); err != nil {
+func (r *Reconciler) deleteCapability(ctx context.Context) error {
+	if err := r.deleteStatefulset(ctx); err != nil {
 		return err
 	}
 
-	if err := r.deleteService(ctx, agCapability); err != nil {
+	if err := r.deleteService(ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.Capability) error {
+func (r *Reconciler) deleteService(ctx context.Context) error {
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      capability.BuildServiceName(r.dk.Name),
@@ -212,10 +212,10 @@ func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.
 	return client.IgnoreNotFound(r.client.Delete(ctx, &svc))
 }
 
-func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capability.Capability) error {
+func (r *Reconciler) deleteStatefulset(ctx context.Context) error {
 	sts := appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.CalculateStatefulSetName(agCapability, r.dk.Name),
+			Name:      capability.CalculateStatefulSetName(r.dk.Name),
 			Namespace: r.dk.Namespace,
 		},
 	}
