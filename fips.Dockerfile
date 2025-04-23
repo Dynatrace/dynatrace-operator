@@ -28,7 +28,6 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
-# ---------------- Install Packages in Final Image -----------------------
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.5-1744118077@sha256:dca8bc186bb579f36414c6ad28f1dbeda33e5cf0bd5fc1c51430cc578e25f819 AS base
 FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.5-1744101466@sha256:ea57285741f007e83f2ee20423c20b0cbcce0b59cc3da027c671692cc7efe4dd AS dependency
@@ -45,36 +44,33 @@ RUN dnf install --installroot /tmp/rootfs-dependency \
       /tmp/rootfs-dependency/var/log/dnf* \
       /tmp/rootfs-dependency/var/log/yum.*
 
-# Build and Install OpenSSL
-# Version must be FIPS certified, details https://openssl-library.org/source/
-ENV OPENSSL_BUILD_VERSION="3.1.2"
-# Get this from trusted source (e.g. Github release, https://github.com/openssl/openssl/releases)
-ENV OPENSSL_BUILD_TARBALL_SHA256="a0ce69b8b97ea6a35b96875235aa453b966ba3cba8af2de23657d8b6767d6539"
-ENV OPENSSL_BUILD_CONFIGURE_ARGS="enable-fips"
-# Dependencies
+# install openssl-dependencies
 RUN dnf install --setopt install_weak_deps=false --nodocs -y make gcc perl
 
 WORKDIR /openssl_build
+# build and install openssl
+# version must be FIPS certified, details https://openssl-library.org/source/
+# get the sha256 from trusted source (e.g. Github release, https://github.com/openssl/openssl/releases)
+ENV OPENSSL_BUILD_VERSION="3.1.2"
+ENV OPENSSL_BUILD_TARBALL_SHA256="a0ce69b8b97ea6a35b96875235aa453b966ba3cba8af2de23657d8b6767d6539"
+ENV OPENSSL_BUILD_CONFIGURE_ARGS="enable-fips"
 
 RUN curl -L -o src.tgz https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_BUILD_VERSION}/openssl-${OPENSSL_BUILD_VERSION}.tar.gz && \
     sha256sum --quiet -c - <<< "${OPENSSL_BUILD_TARBALL_SHA256}  src.tgz" && \
     tar --strip-components=1 -xzf src.tgz
 
-# Disable the aflag test because it doesn't work on qemu (aka cross compile, see https://github.com/openssl/openssl/pull/17945)
+# disable the aflag test because it doesn't work on qemu (aka cross compile, see https://github.com/openssl/openssl/pull/17945)
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
         ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && make test TESTS="-test_afalg"; \
     else \
         ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make; \
     fi
 
-# Do not install man pages
+# do not install man pages
 RUN make DESTDIR=/tmp/rootfs-dependency install_sw install_ssldirs install_fips
 
-# ---------------- Assemble Final Image -----------------------
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM --platform=$TARGETPLATFORM base
-
-ARG TARGETPLATFORM
 
 COPY --from=dependency /tmp/rootfs-dependency /
 
@@ -116,7 +112,7 @@ RUN /usr/local/bin/user_setup
 ENV LIBGCRYPT_FORCE_FIPS_MODE=1
 ENV GOFIPS=1
 
-# Generate openssl FIPS config and run self-tests (these are required to be compliant)
+# generate openssl FIPS config and run self-tests (these are required to be compliant)
 RUN case "${TARGETPLATFORM}" in \
         *amd64) LIB_DIR=/usr/local/lib64 ;; \
         *arm64) LIB_DIR=/usr/local/lib ;; \
@@ -126,7 +122,7 @@ RUN case "${TARGETPLATFORM}" in \
     ldconfig "${LIB_DIR}" && \
     openssl fipsinstall -out /usr/local/ssl/fipsmodule.cnf -module "${LIB_DIR}/ossl-modules/fips.so"
 
-# Always use FIPS (sets the default openssl config to use the FIPS provider), also the config dir for the self-built openssl is /usr/local/ssl and NOT /etc/ssl
+# always use FIPS (sets the default openssl config to use the FIPS provider), also the config dir for the self-built openssl is /usr/local/ssl and NOT /etc/ssl
 RUN sed -i '/\.include fipsmodule\.cnf/s/^# //g' /usr/local/ssl/openssl.cnf && sed -i '/fips = fips_sect/s/^# //g' /usr/local/ssl/openssl.cnf && sed -i 's#\.include fipsmodule\.cnf#\.include /usr/local/ssl/fipsmodule\.cnf#g' /usr/local/ssl/openssl.cnf
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
