@@ -5,6 +5,9 @@ PLATFORM ?= "kubernetes"
 deploy/no-csi:
 	@make ENABLE_CSI=false $(@D)
 
+deploy/fips:
+	@make IMAGE_URI="$(IMAGE_URI)"-fips $(@D)
+
 ## Deploy the operator with csi-driver
 deploy: manifests/crd/helm
 	helm upgrade dynatrace-operator config/helm/chart/default \
