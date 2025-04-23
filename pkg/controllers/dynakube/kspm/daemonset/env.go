@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -47,7 +46,7 @@ func getEnvs(dk dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
 
 func getActiveGateEndpointTemplate(dk dynakube.DynaKube, tenantUUID string) string {
 	activeGateEndpointTemplate := "https://%s.%s/e/%s/api/v2/kubernetes/node-config"
-	serviceName := capability.BuildServiceName(dk.Name, agconsts.MultiActiveGateName)
+	serviceName := capability.BuildServiceName(dk.Name)
 
 	return fmt.Sprintf(activeGateEndpointTemplate, serviceName, dk.Namespace, tenantUUID)
 }

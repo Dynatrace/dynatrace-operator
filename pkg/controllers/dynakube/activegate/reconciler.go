@@ -204,7 +204,7 @@ func (r *Reconciler) deleteCapability(ctx context.Context, agCapability capabili
 func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.Capability) error {
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(r.dk.Name, agCapability.ShortName()),
+			Name:      capability.BuildServiceName(r.dk.Name),
 			Namespace: r.dk.Namespace,
 		},
 	}

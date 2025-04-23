@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -111,6 +112,7 @@ func TestReconcile(t *testing.T) {
 		dk.Annotations = map[string]string{
 			exp.NoProxyKey: "dynatraceurl.com",
 		}
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(testTokenValue)
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, createMockDtClient(t, 0), dk, timeprovider.New())

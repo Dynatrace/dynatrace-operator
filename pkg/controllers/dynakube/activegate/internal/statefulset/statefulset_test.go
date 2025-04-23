@@ -79,7 +79,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 
 		require.NotEmpty(t, objectMeta)
 		assert.Contains(t, objectMeta.Name, dk.Name)
-		assert.Contains(t, objectMeta.Name, multiCapability.ShortName())
+		assert.Contains(t, objectMeta.Name, consts.MultiActiveGateName)
 		assert.NotNil(t, objectMeta.Annotations)
 	})
 	t.Run("default annotations", func(t *testing.T) {
@@ -185,7 +185,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
+		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
@@ -205,7 +205,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
+		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 

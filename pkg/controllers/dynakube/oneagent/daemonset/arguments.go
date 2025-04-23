@@ -85,8 +85,7 @@ func (b *builder) appendNoProxyArg(argMap *prioritymap.Map) {
 		noProxyValue := b.dk.FF().GetNoProxy()
 
 		if b.dk.ActiveGate().IsEnabled() {
-			multiCap := capability.NewMultiCapability(b.dk)
-			noProxyActiveGateValue := capability.BuildDNSEntryPointWithoutEnvVars(b.dk.Name, b.dk.Namespace, multiCap)
+			noProxyActiveGateValue := capability.BuildHostEntries(*b.dk)
 
 			if noProxyValue != "" {
 				noProxyValue = strings.Join([]string{noProxyValue, noProxyActiveGateValue}, ",")

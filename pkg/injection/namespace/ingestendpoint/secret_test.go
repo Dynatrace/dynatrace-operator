@@ -192,8 +192,8 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 		fakeClient := buildTestClientBeforeGenerate(buildTestDynakube())
 		{
 			dk := buildTestDynakubeWithMetricsIngestCapability([]activegate.CapabilityDisplayName{
-				activegate.CapabilityDisplayName(activegate.KubeMonCapability.ShortName),
-				activegate.CapabilityDisplayName(activegate.MetricsIngestCapability.ShortName),
+				activegate.CapabilityDisplayName(activegate.KubeMonCapability.DisplayName),
+				activegate.CapabilityDisplayName(activegate.MetricsIngestCapability.DisplayName),
 			})
 			addFakeTenantUUID(dk)
 
@@ -204,8 +204,8 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 		}
 		{
 			newInstance := updatedTestDynakubeWithMetricsIngestCapability([]activegate.CapabilityDisplayName{
-				activegate.CapabilityDisplayName(activegate.KubeMonCapability.ShortName),
-				activegate.CapabilityDisplayName(activegate.MetricsIngestCapability.ShortName),
+				activegate.CapabilityDisplayName(activegate.KubeMonCapability.DisplayName),
+				activegate.CapabilityDisplayName(activegate.MetricsIngestCapability.DisplayName),
 			})
 			addFakeTenantUUID(newInstance)
 

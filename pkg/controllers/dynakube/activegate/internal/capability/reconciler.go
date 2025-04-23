@@ -65,7 +65,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
-	template := CreateService(r.dk, r.capability.ShortName())
+	template := CreateService(r.dk)
 	present := &corev1.Service{}
 
 	err := r.client.Get(ctx, client.ObjectKeyFromObject(template), present)
@@ -79,12 +79,12 @@ func (r *Reconciler) setAGServiceIPs(ctx context.Context) error {
 }
 
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
-	desired := CreateService(r.dk, r.capability.ShortName())
+	desired := CreateService(r.dk)
 	installed := &corev1.Service{}
 
 	err := r.client.Get(ctx, client.ObjectKeyFromObject(desired), installed)
 	if k8serrors.IsNotFound(err) {
-		log.Info("creating AG service", "module", r.capability.ShortName())
+		log.Info("creating AG service", "dk", r.dk.Name)
 
 		err = controllerutil.SetControllerReference(r.dk, desired, r.client.Scheme())
 		if err != nil {

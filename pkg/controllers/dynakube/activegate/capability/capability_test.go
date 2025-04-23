@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,8 +69,8 @@ func TestBuildProxySecretName(t *testing.T) {
 
 func TestBuildServiceName(t *testing.T) {
 	t.Run(`build service name`, func(t *testing.T) {
-		expectedServiceName := "testName-testModule"
-		actualServiceName := BuildServiceName("testName", "testModule")
+		expectedServiceName := "testName-" + consts.MultiActiveGateName
+		actualServiceName := BuildServiceName("testName")
 		require.NotEmpty(t, actualServiceName)
 		assert.Equal(t, expectedServiceName, actualServiceName)
 	})
@@ -81,7 +82,6 @@ func TestNewMultiCapability(t *testing.T) {
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgName, mc.ArgName())
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
@@ -90,7 +90,6 @@ func TestNewMultiCapability(t *testing.T) {
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Empty(t, mc.ArgName())
 	})
 }
@@ -101,7 +100,6 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgNameWithExtensions, mc.ArgName())
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube and Extensions enabled`, func(t *testing.T) {
@@ -110,7 +108,6 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgNameWithExtensionsOnly, mc.ArgName())
 	})
 }
@@ -121,7 +118,6 @@ func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgNameWithTelemetryIngest, mc.ArgName())
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled`, func(t *testing.T) {
@@ -130,7 +126,6 @@ func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Empty(t, mc.ArgName())
 	})
 }
@@ -141,23 +136,21 @@ func TestNewMultiCapabilityWithDebugging(t *testing.T) {
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
-		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgNameWithDebugging, mc.ArgName())
 	})
 }
 
 func TestBuildServiceDomainNameForDNSEntryPoint(t *testing.T) {
-	actual := buildServiceDomainName("test-name", "test-namespace", "test-component-feature")
+	actual := buildServiceDomainName("test-name", "test-namespace",)
 	assert.NotEmpty(t, actual)
 
-	expected := "test-name-test-component-feature.test-namespace:443"
+	expected := "test-name-activegate.test-namespace:443"
 	assert.Equal(t, expected, actual)
 
 	testStringName := "this---dynakube_string"
 	testNamespace := "this_is---namespace_string"
-	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
-	expected = "this---dynakube_string-SHOULD--_--PaRsEcORrEcTlY.this_is---namespace_string:443"
-	actual = buildServiceDomainName(testStringName, testNamespace, testStringFeature)
+	expected = "this---dynakube_string-activegate.this_is---namespace_string:443"
+	actual = buildServiceDomainName(testStringName, testNamespace)
 	assert.Equal(t, expected, actual)
 }
 
@@ -329,8 +322,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.title, func(t *testing.T) {
-			capability := test.capability(test.dk)
-			dnsEntryPoint := BuildDNSEntryPoint(*test.dk, capability)
+			dnsEntryPoint := BuildDNSEntryPoint(*test.dk)
 			assert.Equal(t, test.expectedDNS, dnsEntryPoint)
 		})
 	}
