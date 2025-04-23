@@ -72,6 +72,8 @@ RUN make DESTDIR=/tmp/rootfs-dependency install_sw install_ssldirs install_fips
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM --platform=$TARGETPLATFORM base
 
+ARG TARGETPLATFORM
+
 COPY --from=dependency /tmp/rootfs-dependency /
 
 # operator binary
