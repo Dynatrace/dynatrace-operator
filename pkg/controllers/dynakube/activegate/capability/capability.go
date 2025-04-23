@@ -66,7 +66,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 		mc.properties.Replicas = ptr.To(int32(1))
 	}
 
-	capabilityNames := []string{}
+	capabilityArgs := []string{}
 
 	for _, capName := range dk.Spec.ActiveGate.Capabilities {
 		argName, ok := activeGateCapabilities[capName]
@@ -74,18 +74,18 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 			continue
 		}
 
-		capabilityNames = append(capabilityNames, argName)
+		capabilityArgs = append(capabilityArgs, argName)
 	}
 
 	if dk.IsExtensionsEnabled() {
-		capabilityNames = append(capabilityNames, "extension_controller")
+		capabilityArgs = append(capabilityArgs, "extension_controller")
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
-		capabilityNames = append(capabilityNames, "log_analytics_collector", "generic_ingest", "otlp_ingest")
+		capabilityArgs = append(capabilityArgs, "log_analytics_collector", "generic_ingest", "otlp_ingest")
 	}
 
-	mc.argName = strings.Join(capabilityNames, ",")
+	mc.argName = strings.Join(capabilityArgs, ",")
 
 	return &mc
 }
