@@ -92,7 +92,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(ctx, client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, statefulSet)
+		err = r.client.Get(ctx, client.ObjectKey{Name: capability.BuildServiceName(r.dk.Name), Namespace: r.dk.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
@@ -109,7 +109,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(ctx, client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, statefulSet)
+		err = r.client.Get(ctx, client.ObjectKey{Name: capability.BuildServiceName(r.dk.Name), Namespace: r.dk.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)
@@ -120,7 +120,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(ctx, client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, newStatefulSet)
+		err = r.client.Get(ctx, client.ObjectKey{Name: capability.BuildServiceName(r.dk.Name), Namespace: r.dk.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
 		require.NoError(t, err)

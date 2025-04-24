@@ -49,10 +49,10 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check service name, labels and selector", func(t *testing.T) {
 		dk := createTestDynaKube()
-		service := CreateService(dk, testComponentFeature)
+		service := CreateService(dk)
 
 		assert.NotNil(t, service)
-		assert.Equal(t, dk.Name+"-"+testComponentFeature, service.Name)
+		assert.Equal(t, dk.Name+"-"+consts.MultiActiveGateName, service.Name)
 		assert.Equal(t, dk.Namespace, service.Namespace)
 
 		expectedLabels := map[string]string{
@@ -77,7 +77,7 @@ func TestCreateService(t *testing.T) {
 		dk := createTestDynaKube()
 		agutil.SwitchCapability(dk, activegate.RoutingCapability, true)
 
-		service := CreateService(dk, testComponentFeature)
+		service := CreateService(dk)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort)
@@ -87,7 +87,7 @@ func TestCreateService(t *testing.T) {
 		dk := createTestDynaKube()
 		agutil.SwitchCapability(dk, activegate.MetricsIngestCapability, true)
 
-		service := CreateService(dk, testComponentFeature)
+		service := CreateService(dk)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort)
