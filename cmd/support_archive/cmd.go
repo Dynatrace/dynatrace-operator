@@ -63,6 +63,15 @@ func New() *cobra.Command {
 		Use:  use,
 		Long: "Pack logs and manifests useful for troubleshooting into single tarball",
 		RunE: run(),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed(archiveToStdoutFlagName) {
+				return nil
+			}
+			return fmt.Errorf("%s %s %s\n",
+				"The only option to retrieve the support archive is by using '--stdout'.",
+				"Please provide this parameter and make sure that you pipe the command output to a file.",
+				"Otherwise, your terminal will be flooded with binary data.")
+		},
 	}
 	addFlags(cmd)
 
