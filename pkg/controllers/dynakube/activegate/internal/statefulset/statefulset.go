@@ -79,7 +79,7 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 
 func (statefulSetBuilder Builder) getBaseObjectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:        statefulSetBuilder.dynakube.Name + "-" + statefulSetBuilder.capability.ShortName(),
+		Name:        statefulSetBuilder.dynakube.Name + "-" + consts.MultiActiveGateName,
 		Namespace:   statefulSetBuilder.dynakube.Namespace,
 		Annotations: map[string]string{},
 	}
@@ -110,7 +110,7 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
 	version := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 
-	return labels.NewAppLabels(labels.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), version)
+	return labels.NewAppLabels(labels.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, consts.MultiActiveGateName, version)
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
