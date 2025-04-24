@@ -39,6 +39,8 @@ func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer.Ports = append(baseContainer.Ports, mod.getPorts()...)
 	baseContainer.Env = mod.getEnvs()
 
+	sts.Spec.ServiceName = capability.BuildServiceName(mod.dk.Name)
+
 	return nil
 }
 
@@ -62,14 +64,10 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 		[]corev1.EnvVar{
 			{
 				Name:  consts.EnvDtDnsEntryPoint,
-				Value: mod.buildDNSEntryPoint(),
+				Value: capability.BuildDNSEntryPoint(mod.dk),
 			},
 		},
 		prioritymap.WithPriority(modifierEnvPriority))
 
 	return mod.envMap.AsEnvVars()
-}
-
-func (mod ServicePortModifier) buildDNSEntryPoint() string {
-	return capability.BuildDNSEntryPoint(mod.dk, mod.capability)
 }

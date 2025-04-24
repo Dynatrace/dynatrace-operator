@@ -45,7 +45,7 @@ func TestReconcile(t *testing.T) {
 			},
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
-					activegate.CapabilityDisplayName(activegate.KubeMonCapability.ShortName),
+					activegate.KubeMonCapability.DisplayName,
 				},
 			},
 		},

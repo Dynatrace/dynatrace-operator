@@ -225,8 +225,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var statefulSet appsv1.StatefulSet
 
-		kubeMonCapability := capability.NewMultiCapability(dk)
-		name := capability.CalculateStatefulSetName(kubeMonCapability, dk.Name)
+		name := capability.CalculateStatefulSetName(dk.Name)
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		require.NoError(t, err)

@@ -238,8 +238,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	_, err = r.Reconcile(context.Background(), request)
 	require.NoError(t, err)
 
-	multiCapability := capability.NewMultiCapability(dk)
-	stsName := capability.CalculateStatefulSetName(multiCapability, testName)
+	stsName := capability.CalculateStatefulSetName(testName)
 
 	routingSts := &appsv1.StatefulSet{}
 	err = r.client.Get(context.Background(), client.ObjectKey{
@@ -252,7 +251,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = r.client.Get(context.Background(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testName + "-" + multiCapability.ShortName(),
+		Name:      capability.BuildServiceName(dk.Name),
 	}, routingSvc)
 	require.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -276,7 +275,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 
 	err = r.client.Get(context.Background(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testName + "-" + multiCapability.ShortName(),
+		Name:      capability.BuildServiceName(dk.Name),
 	}, routingSvc)
 	require.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
