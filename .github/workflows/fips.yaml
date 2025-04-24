@@ -1,0 +1,96 @@
+name: CI-FIPS
+
+on:
+  push:
+    branches:
+      - main
+      - release-*
+  pull_request:
+    branches:
+      - "*"
+
+permissions:
+  contents: read
+
+env:
+  DOCKER_REGISTRY: quay.io
+  DOCKER_REPOSITORY: dynatrace/dynatrace-operator
+
+jobs:
+  prepare:
+    name: Prepare properties
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Prepare build parameters
+        id: prep
+        run: |
+          hack/build/ci/prepare-build-variables.sh
+    outputs:
+      labels: ${{ steps.prep.outputs.docker_image_labels }}
+      version: ${{ steps.prep.outputs.docker_image_tag }}
+
+  build-images:
+    name: Build images
+    needs: [prepare]
+    strategy:
+      matrix:
+        platform: [linux/arm64, linux/amd64]
+        include:
+          - platform: linux/arm64
+            image-postfix: fips-arm64
+            runner: ubuntu-24.04-arm
+          - platform: linux/amd64
+            image-postfix: fips-amd64
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Login to Registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Build ${{ matrix.platform }} image
+        uses: ./.github/actions/build-push-image
+        with:
+          platforms: ${{ matrix.platform }}
+          labels: ${{ needs.prepare.outputs.labels }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
+          annotation: "version=${{ needs.prepare.outputs.version }}"
+          dockerfile: ./fips.Dockerfile
+
+  index:
+    name: Create image-index
+    needs: [prepare, build-images]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Login to Registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Create Manifests
+        env:
+          IMAGE: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}-fips
+        shell: bash
+        run: |
+          supported_architectures=("amd64" "arm64")
+          images=()
+          echo "Creating manifest for ${supported_architectures[*]}"
+
+          for architecture in "${supported_architectures[@]}"
+          do
+            docker pull "${IMAGE}-${architecture}"
+            images+=("${IMAGE}-${architecture}")
+          done
+          docker manifest create "${IMAGE}" "${images[@]}"
+
+          sha256=$(docker manifest push "${IMAGE}")
+          echo "digest=${sha256}">> $GITHUB_OUTPUT
