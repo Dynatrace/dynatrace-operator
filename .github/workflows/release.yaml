@@ -36,11 +36,23 @@ jobs:
     permissions:
       id-token: write
     needs: [prepare]
+    strategy:
+      matrix:
+        platform: [linux/arm64, linux/amd64, linux/s390x, linux/ppc64le]
+        include:
+          - platform: linux/arm64
+            image-postfix: arm64
+          - platform: linux/amd64
+            image-postfix: amd64
+          - platform: linux/s390x
+            image-postfix: s390x
+          - platform: linux/ppc64le
+            image-postfix: ppc64le
     env:
-      GCR_IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
-      ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
-      RHCC_IMAGE: quay.io/${{ secrets.RHCC_REPOSITORY }}:${{ needs.prepare.outputs.version }}
-      DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}
+      GCR_IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
+      ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
+      RHCC_IMAGE: quay.io/${{ secrets.RHCC_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
+      DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -83,12 +95,10 @@ jobs:
         id: build-image
         uses: ./.github/actions/build-push-image
         with:
-          platforms: ${{ env.PLATFORMS }}
+          platforms: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           tags: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
           annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
-    outputs:
-      digest: ${{steps.build-image.outputs.digest}}
 
   signing:
     name: Sign the image index/manifests + Add SBOM
@@ -140,17 +150,36 @@ jobs:
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
         with:
           registry-type: public
+      - name: Create Manifests
+        id: manifest
+        env:
+          IMAGE: ${{ matrix.registry }}/${{ matrix.repository }}:${{ needs.prepare.outputs.version }}
+        shell: bash
+        run: |
+          supported_architectures=("amd64" "arm64", "ppc64le", "s390x")
+          images=()
+          echo "Creating manifest for ${supported_architectures[*]}"
+
+          for architecture in "${supported_architectures[@]}"
+          do
+            docker pull "${IMAGE}-${architecture}"
+            images+=("${IMAGE}-${architecture}")
+          done
+          docker manifest create "${IMAGE}" "${images[@]}"
+
+          sha256=$(docker manifest push "${IMAGE}")
+          echo "digest=${sha256}">> $GITHUB_OUTPUT
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.manifest.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
         uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # 0.30.0
         with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.manifest.outputs.digest }}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
@@ -158,10 +187,12 @@ jobs:
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.manifest.outputs.digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
+    outputs:
+      digest: ${{steps.manifest.outputs.digest}}
 
   build-gcr-deployer:
     name: Build GCR deployer image
@@ -252,10 +283,10 @@ jobs:
         run: |
           make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
 
-          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
-          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
-          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
-          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
+          make manifests/kubernetes/olm IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.signing.outputs.digest}}"
+          make manifests/kubernetes IMAGE="public.ecr.aws/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.signing.outputs.digest}}"
+          make manifests/openshift/olm IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.signing.outputs.digest}}"
+          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}@${{needs.signing.outputs.digest}}"
           cp config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/gke-autopilot.yaml
       - name: Build helm packages
         uses: ./.github/actions/build-helm
