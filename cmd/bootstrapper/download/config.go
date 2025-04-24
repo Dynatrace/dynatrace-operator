@@ -34,10 +34,6 @@ func (c Config) toDTClientOptions() []dtclient.Option {
 		options = append(options, dtclient.NetworkZone(c.NetworkZone))
 	}
 
-	if c.NetworkZone != "" {
-		options = append(options, dtclient.NetworkZone(c.NetworkZone))
-	}
-
 	if c.Proxy != "" {
 		options = append(options, dtclient.Proxy(c.Proxy, c.NoProxy))
 	}
