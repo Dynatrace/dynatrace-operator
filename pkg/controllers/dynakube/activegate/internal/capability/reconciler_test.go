@@ -161,7 +161,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		service := corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, &service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, &service)
 
 		assert.NotNil(t, service)
 		require.NoError(t, err)
@@ -183,7 +183,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		service := corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, &service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, &service)
 
 		require.NoError(t, err)
 
@@ -204,7 +204,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		verifyReconciler(t, r)
 
 		service := &corev1.Service{}
-		err := r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, service)
+		err := r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.Error(t, err)
 		assert.NotNil(t, service)
 
@@ -212,7 +212,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 	})
@@ -224,7 +224,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -235,7 +235,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 		actualService := &corev1.Service{}
 
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, actualService)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, actualService)
 		require.NoError(t, err)
 		assert.NotNil(t, actualService)
 
@@ -252,7 +252,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -263,7 +263,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 		actualService := &corev1.Service{}
 
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, actualService)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, actualService)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -282,14 +282,14 @@ func TestPortsAreOutdated(t *testing.T) {
 	r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 	verifyReconciler(t, r)
 
-	desiredService := CreateService(r.dk, r.capability.ShortName())
+	desiredService := CreateService(r.dk)
 
 	err := r.Reconcile(context.Background())
 	require.NoError(t, err)
 
 	t.Run(`ports are detected as outdated`, func(t *testing.T) {
 		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -311,14 +311,14 @@ func TestLabelsAreOutdated(t *testing.T) {
 	r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTlsSecretReconciler).(*Reconciler)
 	verifyReconciler(t, r)
 
-	desiredService := CreateService(r.dk, r.capability.ShortName())
+	desiredService := CreateService(r.dk)
 
 	err := r.Reconcile(context.Background())
 	require.NoError(t, err)
 
 	t.Run(`labels are detected as outdated`, func(t *testing.T) {
 		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -330,7 +330,7 @@ func TestLabelsAreOutdated(t *testing.T) {
 	})
 	t.Run(`labelSelectors are detected as outdated`, func(t *testing.T) {
 		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.Name + "-" + r.capability.ShortName(), Namespace: r.dk.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 

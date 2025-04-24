@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
@@ -91,13 +90,13 @@ func curlNamespace(dk dynakube.DynaKube) string {
 }
 
 func getActiveGateHttpsServiceUrl(dk dynakube.DynaKube) string {
-	serviceName := capability.BuildServiceName(dk.Name, consts.MultiActiveGateName)
+	serviceName := capability.BuildServiceName(dk.Name)
 
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dk.Namespace)
 }
 
 func getActiveGateHttpServiceUrl(dk dynakube.DynaKube) string {
-	serviceName := capability.BuildServiceName(dk.Name, consts.MultiActiveGateName)
+	serviceName := capability.BuildServiceName(dk.Name)
 
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local", serviceName, dk.Namespace)
 }

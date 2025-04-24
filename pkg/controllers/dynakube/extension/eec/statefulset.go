@@ -270,9 +270,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 }
 
 func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
-	multiCap := capability.NewMultiCapability(dk)
-
-	return capability.CalculateStatefulSetName(multiCap, dk.Name)
+	return capability.CalculateStatefulSetName(dk.Name)
 }
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
