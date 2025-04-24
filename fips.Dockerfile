@@ -34,7 +34,7 @@ FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.5-1745854298@s
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
-      util-linux-core tar \
+      util-linux-core \
       --releasever 9 \
       --setopt install_weak_deps=false \
       --nodocs -y \
