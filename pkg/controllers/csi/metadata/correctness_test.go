@@ -12,9 +12,9 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 	t.Run("get only relevant mounts", func(t *testing.T) {
 		baseFolder := "/test/folder"
 		expectedPath := baseFolder + "/some/sub/folder"
-		expectedLowerDir := "/test/lower"
-		expectedUpperDir := "/test/upper"
-		expectedWorkDir := "/test/work"
+		expectedLowerDir := "/data/codemodules/cXVheS5pby9keW5hdHJhY2UvZHluYXRyYWNlLWJvb3RzdHJhcHBlcjpzbmFwc2hvdA=="
+		expectedUpperDir := "/data/appmounts/csi-a3dd8a9ab6e64e92efca99a0d180da60ab807f0e31a04e11edb451311130211c/var"
+		expectedWorkDir := "/data/appmounts/csi-a3dd8a9ab6e64e92efca99a0d180da60ab807f0e31a04e11edb451311130211c/work"
 
 		relevantMountPoint := mount.MountPoint{
 			Device: "overlay",

@@ -160,8 +160,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 	}
 
 	if dk.ActiveGate().IsRoutingEnabled() {
-		multiCap := capability.NewMultiCapability(dk)
-		oneAgentDNSEntry := capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap)
+		oneAgentDNSEntry := capability.BuildHostEntries(*dk)
 		oneAgentNoProxyValues = append(oneAgentNoProxyValues, oneAgentDNSEntry)
 	}
 
