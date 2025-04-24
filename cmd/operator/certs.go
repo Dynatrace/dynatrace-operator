@@ -19,6 +19,11 @@ func runCertInit(cfg *rest.Config, namespace string) error {
 		return err
 	}
 
+	err = checkCRDs(certInitManager)
+	if err != nil {
+		return err
+	}
+
 	ctx, cancelFn := context.WithCancel(context.Background())
 
 	err = certificates.AddInit(certInitManager, namespace, cancelFn)
