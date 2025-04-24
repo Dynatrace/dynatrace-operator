@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func CreateService(dk *dynakube.DynaKube, feature string) *corev1.Service {
+func CreateService(dk *dynakube.DynaKube) *corev1.Service {
 	var ports []corev1.ServicePort
 
 	ports = append(ports,
@@ -30,7 +30,7 @@ func CreateService(dk *dynakube.DynaKube, feature string) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(dk.Name, feature),
+			Name:      capability.BuildServiceName(dk.Name),
 			Namespace: dk.Namespace,
 			Labels:    coreLabels.BuildLabels(),
 		},

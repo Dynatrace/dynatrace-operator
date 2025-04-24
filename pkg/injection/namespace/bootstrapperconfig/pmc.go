@@ -67,8 +67,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 		pmc.AddProxy(proxy)
 
-		multiCap := capability.NewMultiCapability(dk)
-		dnsEntry := capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap)
+		dnsEntry := capability.BuildHostEntries(*dk)
 
 		if dk.FF().GetNoProxy() != "" {
 			dnsEntry += "," + dk.FF().GetNoProxy()

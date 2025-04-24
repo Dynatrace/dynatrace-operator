@@ -267,6 +267,29 @@ func TestArguments(t *testing.T) {
 
 		assert.Contains(t, arguments, "--set-no-proxy=*.dev.dynatracelabs.com,dynakube-activegate.dynatrace")
 	})
+	t.Run("default no-proxy is set if AG is configured", func(t *testing.T) {
+		builder := builder{
+			dk: &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynakube",
+					Namespace: "dynatrace",
+				},
+				Spec: dynakube.DynaKubeSpec{
+					Proxy: &value.Source{Value: testValue},
+					OneAgent: oneagent.Spec{
+						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+					},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
+					},
+				},
+			},
+		}
+
+		arguments, _ := builder.arguments()
+
+		assert.Contains(t, arguments, "--set-no-proxy=dynakube-activegate.dynatrace")
+	})
 	t.Run("allow arguments without value, but deduplicate", func(t *testing.T) {
 		custArgs := []string{
 			"--enable-feature-a",
