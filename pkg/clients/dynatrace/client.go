@@ -185,6 +185,10 @@ func SkipCertificateValidation(skip bool) Option {
 
 func Proxy(proxyURL string, noProxy string) Option {
 	return func(dtclient *dynatraceClient) {
+		if proxyURL == "" {
+			return
+		}
+
 		parsedURL, err := url.Parse(proxyURL)
 		if err != nil {
 			log.Info("could not parse proxy URL!")
