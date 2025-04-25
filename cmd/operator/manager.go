@@ -31,7 +31,7 @@ func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool) (mana
 		return nil, errors.WithStack(err)
 	}
 
-	if isOLM {
+	if !isOLM {
 		err = certificates.Add(mgr, namespace)
 		if err != nil {
 			return nil, err
