@@ -19,6 +19,10 @@ gomarkdoc_version=v1.1.0
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 cyclonedx_gomod_version=v1.9.0
 
+ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
+# ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
+ENVTEST_K8S_VERSION = 1.32 # TODO: change it when env test list add it and cotroller-runtime lib updated
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -52,6 +56,17 @@ prerequisites/go-deadcode:
 ## Install go test coverage
 prerequisites/go-test-coverage:
 	go install github.com/vladopajic/go-test-coverage/v2@latest
+
+## Install setup-envtest locally
+prerequisites/envtest:
+	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+prerequisites/setup-envtest: prerequisites/envtest
+	@echo "Setting up envtest binaries for Kubernetes version $(ENVTEST_K8S_VERSION)..."
+	setup-envtest use $(ENVTEST_K8S_VERSION) --bin-dir $(GOBIN) -p path || { \
+		echo "Error: Failed to set up envtest binaries for version $(ENVTEST_K8S_VERSION)."; \
+		exit 1; \
+	}
 
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?
