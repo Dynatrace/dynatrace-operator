@@ -34,7 +34,6 @@ func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 	}
 
 	return funcs
-
 }
 
 func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool) (manager.Manager, error) {
