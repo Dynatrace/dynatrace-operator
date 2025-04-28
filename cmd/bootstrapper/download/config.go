@@ -16,11 +16,12 @@ type Config struct {
 	URL      string `json:"url"`
 	ApiToken string `json:"apiToken"`
 
-	SkipCertCheck bool   `json:"skipCertCheck"`
-	Proxy         string `json:"proxy"`
-	NoProxy       string `json:"noProxy"`
-	NetworkZone   string `json:"networkZone"`
-	HostGroup     string `json:"hostGroup"`
+	Proxy       string `json:"proxy"`
+	NoProxy     string `json:"noProxy"`
+	NetworkZone string `json:"networkZone"`
+	HostGroup   string `json:"hostGroup"`
+
+	SkipCertCheck bool `json:"skipCertCheck"`
 }
 
 func (c Config) toDTClientOptions() []dtclient.Option {

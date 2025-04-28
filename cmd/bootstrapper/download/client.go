@@ -60,6 +60,7 @@ func (cl *Client) Do(ctx context.Context, fs afero.Afero, inputDir string, targe
 	)
 
 	_, err = oneAgentInstaller.InstallAgent(ctx, targetDir)
+
 	return err
 }
 
@@ -70,6 +71,7 @@ func (cl *Client) createClientFromFs(fs afero.Afero, inputDir string) (dtclient.
 	}
 
 	caFile := filepath.Join(inputDir, ca.TrustedCertsInputFile) // TODO: Replace with ca.GetFromFs
+
 	certs, err := fs.ReadFile(caFile)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err

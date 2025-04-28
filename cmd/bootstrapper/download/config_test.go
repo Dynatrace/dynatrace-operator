@@ -125,7 +125,6 @@ func setupConfig(t *testing.T, fs *afero.Afero, inputDir string, config Config) 
 	require.NoError(t, err)
 
 	fs.WriteFile(filepath.Join(inputDir, InputFileName), raw, os.ModePerm)
-
 }
 
 func compareDTOptions(t *testing.T, opts1 []dtclient.Option, opts2 []dtclient.Option) {
@@ -141,5 +140,6 @@ func getNameOfCalledFunc(t *testing.T, option dtclient.Option) string {
 	t.Helper()
 
 	funcPath := strings.Split(runtime.FuncForPC(reflect.ValueOf(option).Pointer()).Name(), ".")
+
 	return funcPath[len(funcPath)-2]
 }

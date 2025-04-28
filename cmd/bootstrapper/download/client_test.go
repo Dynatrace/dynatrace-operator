@@ -50,7 +50,6 @@ func TestNew(t *testing.T) {
 		installer := client.newInstaller(fs, dtClient, props)
 		require.NotNil(t, installer)
 		require.IsType(t, &installermock.Installer{}, installer)
-
 	})
 }
 
@@ -164,7 +163,6 @@ func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockC
 
 		return mock
 	}
-
 }
 
 func dtClientTester(t *testing.T, expectedOpts ...dtclient.Option) DTClientBuilder {
@@ -179,5 +177,4 @@ func dtClientTester(t *testing.T, expectedOpts ...dtclient.Option) DTClientBuild
 
 		return dtclientmocks.NewClient(t), nil
 	}
-
 }
