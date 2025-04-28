@@ -65,21 +65,9 @@ func TestToDTClientOptions(t *testing.T) {
 		t.Run(test.title, func(t *testing.T) {
 			options := test.in.toDTClientOptions()
 
-			require.Len(t, options, len(test.out))
-			for i := range options {
-				expected := getNameOfCalledFunc(t, test.out[i])
-				actual := getNameOfCalledFunc(t, options[i])
-				assert.Equal(t, expected, actual)
-			}
+			compareDTOptions(t, test.out, options)
 		})
 	}
-}
-
-func getNameOfCalledFunc(t *testing.T, option dtclient.Option) string {
-	t.Helper()
-
-	funcPath := strings.Split(runtime.FuncForPC(reflect.ValueOf(option).Pointer()).Name(), ".")
-	return funcPath[len(funcPath)-2]
 }
 
 func TestConfigFromFs(t *testing.T) {
@@ -107,7 +95,7 @@ func TestConfigFromFs(t *testing.T) {
 		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 
 		expected := testConfig(t)
-		setupConfig(t, &fs, inputFile, expected)
+		setupConfig(t, &fs, inputDir, expected)
 
 		config, err := configFromFs(fs, inputDir)
 		require.NoError(t, err)
@@ -130,12 +118,28 @@ func testConfig(t *testing.T) Config {
 	}
 }
 
-func setupConfig(t *testing.T, fs *afero.Afero, path string, config Config) {
+func setupConfig(t *testing.T, fs *afero.Afero, inputDir string, config Config) {
 	t.Helper()
 
 	raw, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	fs.WriteFile(path, raw, os.ModePerm)
+	fs.WriteFile(filepath.Join(inputDir, InputFileName), raw, os.ModePerm)
 
+}
+
+func compareDTOptions(t *testing.T, opts1 []dtclient.Option, opts2 []dtclient.Option) {
+	require.Len(t, opts1, len(opts2))
+	for i := range opts1 {
+		expected := getNameOfCalledFunc(t, opts1[i])
+		actual := getNameOfCalledFunc(t, opts2[i])
+		assert.Equal(t, expected, actual)
+	}
+}
+
+func getNameOfCalledFunc(t *testing.T, option dtclient.Option) string {
+	t.Helper()
+
+	funcPath := strings.Split(runtime.FuncForPC(reflect.ValueOf(option).Pointer()).Name(), ".")
+	return funcPath[len(funcPath)-2]
 }
