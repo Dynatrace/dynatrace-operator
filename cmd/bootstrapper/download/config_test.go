@@ -124,7 +124,9 @@ func setupConfig(t *testing.T, fs *afero.Afero, inputDir string, config Config) 
 	raw, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	fs.WriteFile(filepath.Join(inputDir, InputFileName), raw, os.ModePerm)
+	fs.Mkdir(inputDir, os.ModePerm)
+	err = fs.WriteFile(filepath.Join(inputDir, InputFileName), raw, os.ModePerm)
+	require.NoError(t, err)
 }
 
 func compareDTOptions(t *testing.T, opts1 []dtclient.Option, opts2 []dtclient.Option) {
