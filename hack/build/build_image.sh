@@ -1,4 +1,6 @@
 #!/bin/bash
+set -x
+
 
 if [[ ! "${1}" ]]; then
   echo "first param is not set, should be the image without the tag"
@@ -35,7 +37,13 @@ if [ -n "${OPERATOR_DEV_BUILD_PLATFORM}" ]; then
   OPERATOR_BUILD_PLATFORM="--platform=${OPERATOR_DEV_BUILD_PLATFORM}"
 fi
 
-${CONTAINER_CMD} build "${OPERATOR_BUILD_PLATFORM}" . -f ./Dockerfile -t "${out_image}" \
+DOCKERFILE="Dockerfile"
+if [ -n "${OPERATOR_DEV_FIPS}" ]; then
+  echo "fips docker file"
+  DOCKERFILE="fips.Dockerfile"
+fi
+
+${CONTAINER_CMD} build "${OPERATOR_BUILD_PLATFORM}" . -f ${DOCKERFILE} -t "${out_image}" \
   --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
   --build-arg "GO_BUILD_TAGS=${go_build_tags}" \
   --build-arg "DEBUG_TOOLS=${debug}" \
