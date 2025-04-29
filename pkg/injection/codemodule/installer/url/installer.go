@@ -42,6 +42,10 @@ type Installer struct {
 	props     *Properties
 }
 
+type NewFunc func(afero.Fs, dtclient.Client, *Properties) installer.Installer
+
+var _ NewFunc = NewUrlInstaller
+
 func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) installer.Installer {
 	return &Installer{
 		fs:        fs,

@@ -127,6 +127,10 @@ const (
 	TokenScopeActiveGateTokenCreate = "activeGateTokenManagement.create"
 )
 
+type NewFunc func(url, apiToken, paasToken string, opts ...Option) (Client, error)
+
+var _ NewFunc = NewClient
+
 // NewClient creates a REST client for the given API base URL and authentication tokens.
 // Returns an error if a token or the URL is empty.
 //
@@ -185,6 +189,10 @@ func SkipCertificateValidation(skip bool) Option {
 
 func Proxy(proxyURL string, noProxy string) Option {
 	return func(dtclient *dynatraceClient) {
+		if proxyURL == "" {
+			return
+		}
+
 		parsedURL, err := url.Parse(proxyURL)
 		if err != nil {
 			log.Info("could not parse proxy URL!")
