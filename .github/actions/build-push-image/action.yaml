@@ -48,12 +48,12 @@ runs:
       uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
       id: meta
       env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ contains(inputs.platforms, 'arm64') && 'manifest,index' || 'manifest' }} # hack == we never build arm64 standalone
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ contains(inputs.platforms, ',') && 'manifest,index' || 'manifest' }}
       with:
         images: ${{ inputs.image }}
     - name: Build target
       id: build-target
-      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+      uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
       with:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |

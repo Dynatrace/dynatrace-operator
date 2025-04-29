@@ -84,6 +84,7 @@ linters:
             - go.opentelemetry.io
             - go.uber.org
             - gopkg.in
+            - go/build
             - google.golang.org
             - github.com/mattn/go-sqlite3
             - github.com/pkg/errors

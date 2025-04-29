@@ -20,6 +20,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
+type controllerSetupFunc func(manager.Manager, string) error
+
+func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
+	funcs := []controllerSetupFunc{
+		dynakube.Add,
+		nodes.Add,
+		edgeconnect.Add,
+	}
+
+	if !isOLM {
+		funcs = append(funcs, certificates.Add)
+	}
+
+	return funcs
+}
+
 func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, createOptions(namespace))
 	if err != nil {
@@ -31,26 +47,13 @@ func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool) (mana
 		return nil, errors.WithStack(err)
 	}
 
-	if isOLM {
-		err = certificates.Add(mgr, namespace)
+	addFuncs := getControllerAddFuncs(isOLM)
+
+	for _, add := range addFuncs {
+		err = add(mgr, namespace)
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	err = dynakube.Add(mgr, namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	err = nodes.Add(mgr, namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	err = edgeconnect.Add(mgr, namespace)
-	if err != nil {
-		return nil, err
 	}
 
 	return mgr, nil
