@@ -146,7 +146,7 @@ func TestDo(t *testing.T) {
 
 type mockConfigFunc func(*installermock.Installer)
 
-func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockConfigFunc) InstallerBuilder {
+func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockConfigFunc) url.NewFunc {
 	t.Helper()
 
 	return func(fs afero.Fs, dtc dtclient.Client, props *url.Properties) installer.Installer {
@@ -165,7 +165,7 @@ func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockC
 	}
 }
 
-func dtClientTester(t *testing.T, expectedOpts ...dtclient.Option) DTClientBuilder {
+func dtClientTester(t *testing.T, expectedOpts ...dtclient.Option) dtclient.NewFunc {
 	t.Helper()
 
 	return func(url, apiToken, paasToken string, opts ...dtclient.Option) (dtclient.Client, error) {

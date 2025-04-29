@@ -127,6 +127,8 @@ const (
 	TokenScopeActiveGateTokenCreate = "activeGateTokenManagement.create"
 )
 
+type NewFunc func(url, apiToken, paasToken string, opts ...Option) (Client, error)
+
 // NewClient creates a REST client for the given API base URL and authentication tokens.
 // Returns an error if a token or the URL is empty.
 //
