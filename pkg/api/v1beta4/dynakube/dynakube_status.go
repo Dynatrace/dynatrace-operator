@@ -80,17 +80,17 @@ const (
 	EnrichmentAnnotationRule EnrichmentRuleType = "ANNOTATION"
 )
 
-const MetadataPrefix string = "metadata.dynatrace.com/"
+const MetadataAnnotation string = "metadata.dynatrace.com"
+const MetadataPrefix string = MetadataAnnotation + "/"
 
 type MetadataEnrichmentStatus struct {
 	Rules []EnrichmentRule `json:"rules,omitempty"`
 }
 
 type EnrichmentRule struct {
-	Type    EnrichmentRuleType `json:"type,omitempty"`
-	Source  string             `json:"source,omitempty"`
-	Target  string             `json:"target,omitempty"`
-	Enabled bool               `json:"enabled,omitempty"`
+	Type   EnrichmentRuleType `json:"type,omitempty"`
+	Source string             `json:"source,omitempty"`
+	Target string             `json:"target,omitempty"`
 }
 
 func (rule EnrichmentRule) ToAnnotationKey() string {

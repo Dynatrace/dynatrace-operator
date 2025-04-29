@@ -10965,8 +10965,6 @@ spec:
                   rules:
                     items:
                       properties:
-                        enabled:
-                          type: boolean
                         source:
                           type: string
                         target:

@@ -20,12 +20,20 @@ func addMetadataToInitEnv(pod *corev1.Pod, installContainer *corev1.Container) {
 	metadataAnnotations := map[string]string{}
 
 	for key, value := range pod.Annotations {
-		if !strings.HasPrefix(key, dynakube.MetadataPrefix) {
-			continue
-		}
+		if strings.EqualFold(key, dynakube.MetadataAnnotation) {
+			var unmarshaledMetadata map[string]string
+			err := json.Unmarshal([]byte(value), &unmarshaledMetadata)
+			if err != nil {
+				log.Error(err, "failed to unmarshal metadata annotation", "key", key, "value", value)
+			}
 
-		split := strings.Split(key, dynakube.MetadataPrefix)
-		metadataAnnotations[split[1]] = value
+			for key, value := range unmarshaledMetadata {
+				metadataAnnotations[key] = value
+			}
+		} else if strings.HasPrefix(key, dynakube.MetadataPrefix) {
+			split := strings.Split(key, dynakube.MetadataPrefix)
+			metadataAnnotations[split[1]] = value
+		}
 	}
 
 	workloadAnnotationsJson, _ := json.Marshal(metadataAnnotations)
