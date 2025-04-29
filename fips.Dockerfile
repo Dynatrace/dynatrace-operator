@@ -1,6 +1,6 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/oss/go/microsoft/golang:1.24.2-fips-bullseye@sha256:28ab4742d3b5feb0b3c7450629b4e105128d8709dd6ca22898472ab302140c37 AS operator-build
+FROM mcr.microsoft.com/oss/go/microsoft/golang:1.24.2-fips-bookworm@sha256:28ab4742d3b5feb0b3c7450629b4e105128d8709dd6ca22898472ab302140c37 AS operator-build
 
 ENV GOEXPERIMENT=systemcrypto
 
@@ -19,12 +19,9 @@ COPY cmd ./cmd
 
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
-ARG TARGETARCH
-ARG TARGETOS
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
-    --mount=type=cache,target="/go/pkg" \
-    CGO_ENABLED=1 GOFIPS=1 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    CGO_ENABLED=1 GOFIPS=1 \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
