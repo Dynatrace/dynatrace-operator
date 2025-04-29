@@ -7,11 +7,7 @@ fi
 
 needs_e2e_tag=$1
 
-go_build_tags=(
-     # If CGO is enabled, certain standard libraries will also use CGO, these explicitly disallow that
-    "osusergo"
-    "netgo"
-)
+go_build_tags=()
 
 if "${needs_e2e_tag}"; then
     # Used for enabling e2e testing code
