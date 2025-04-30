@@ -67,6 +67,7 @@ func New() *cobra.Command {
 			if cmd.Flags().Changed(archiveToStdoutFlagName) {
 				return nil
 			}
+
 			return fmt.Errorf("%s %s %s\n",
 				"The only option to retrieve the support archive is by using '--stdout'.",
 				"Please provide this parameter and make sure that you pipe the command output to a file.",
