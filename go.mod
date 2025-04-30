@@ -36,7 +36,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.33.0
 	k8s.io/apimachinery v0.33.0
 	k8s.io/client-go v0.33.0
-	k8s.io/kubelet v0.32.3
+	k8s.io/kubelet v0.33.0
 	k8s.io/mount-utils v0.33.0
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.20.4
