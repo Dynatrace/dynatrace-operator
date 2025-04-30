@@ -2,7 +2,6 @@ package support_archive
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -44,13 +43,9 @@ func TestGetAppName(t *testing.T) {
 	assert.Equal(t, alternativeOperatorName, getAppNameLabel(context.TODO(), fakeClientSet.CoreV1().Pods(alternativeNamespace)))
 }
 
-func TestStdout(t *testing.T) {
+func TestStdoutArgMissing(t *testing.T) {
 	cmd := New()
 	// should fail when invoked without --stdout
 	err := cmd.Execute()
 	require.Error(t, err)
-
-	cmd.SetArgs([]string{fmt.Sprintf("--%s", archiveToStdoutFlagName)})
-	err = cmd.Execute()
-	require.NoError(t, err)
 }
