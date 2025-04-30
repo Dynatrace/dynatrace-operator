@@ -40,6 +40,7 @@ fi
 DOCKERFILE="Dockerfile"
 if [ -n "${OPERATOR_DEV_FIPS}" ]; then
   echo "fips docker file"
+  out_image="${image}:${tag}-fips"
   DOCKERFILE="fips.Dockerfile"
 fi
 
