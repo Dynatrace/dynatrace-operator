@@ -81,16 +81,4 @@ jobs:
           IMAGE: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}-fips
         shell: bash
         run: |
-          supported_architectures=("amd64" "arm64")
-          images=()
-          echo "Creating manifest for ${supported_architectures[*]}"
-
-          for architecture in "${supported_architectures[@]}"
-          do
-            docker pull "${IMAGE}-${architecture}"
-            images+=("${IMAGE}-${architecture}")
-          done
-          docker manifest create "${IMAGE}" "${images[@]}"
-
-          sha256=$(docker manifest push "${IMAGE}")
-          echo "digest=${sha256}">> $GITHUB_OUTPUT
+          hack/build/ci/create-fips-image-index.sh "${IMAGE}"
