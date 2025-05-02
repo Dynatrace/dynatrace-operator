@@ -45,7 +45,7 @@ jobs:
       - name: Prepare SBOM # Needs setup-go, uses a binary installed via `go install`
         id: sbom
         run: |
-          make release/gen-sbom
+          make release/gen-sbom/fips
       - name: Login to Docker
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
