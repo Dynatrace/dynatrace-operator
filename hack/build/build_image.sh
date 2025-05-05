@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 if [[ ! "${1}" ]]; then
   echo "first param is not set, should be the image without the tag"
   exit 1
