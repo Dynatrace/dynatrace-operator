@@ -41,7 +41,7 @@ jobs:
           fi
           CHANGED_FILES=$(git diff --name-only "$BASE_REF")
           echo "go_changed=$(echo "$CHANGED_FILES" | grep -E '\.go$|go\.mod' | wc -l)" >> $GITHUB_OUTPUT
-          echo "docker_changed=$(echo "$CHANGED_FILES" | grep -E '(^|/)Dockerfile$' | wc -l)" >> $GITHUB_OUTPUT
+          echo "docker_changed=$(echo "$CHANGED_FILES" | grep -E 'Dockerfile' | wc -l)" >> $GITHUB_OUTPUT
           echo "helm_changed=$(echo "$CHANGED_FILES" | grep -E '^config/' | wc -l)" >> $GITHUB_OUTPUT
 
   helm-test:
