@@ -30,7 +30,7 @@ images/build: ensure-tag-not-snapshot
 
 ## Build an Operator FIPS image with a give IMAGE and TAG
 # because cross-compile takes ~1h, we want to build fips locally only for local architecture
-# so that's why the recomended way to run it (assuming local platfrom is arm64) is `OPERATOR_DEV_BUILD_PLATFORM="--platform=linux/arm64" make image/build/fips
+# so that's why the recommended way to run it (assuming local platfrom is arm64) is `OPERATOR_DEV_BUILD_PLATFORM="linux/arm64" make images/build/fips
 images/build/fips: ensure-tag-not-snapshot
 	./hack/build/build_image.sh "${IMAGE}" "${TAG}-fips" "${DEBUG}" "fips.Dockerfile" "true"
 
