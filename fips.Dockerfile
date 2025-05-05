@@ -1,6 +1,4 @@
-# check=skip=RedundantTargetPlatform
-# setup build image
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/oss/go/microsoft/golang:1.24.2-fips-bullseye@sha256:28ab4742d3b5feb0b3c7450629b4e105128d8709dd6ca22898472ab302140c37 AS operator-build
+FROM mcr.microsoft.com/oss/go/microsoft/golang:1.24.2-fips-bookworm@sha256:28ab4742d3b5feb0b3c7450629b4e105128d8709dd6ca22898472ab302140c37 AS operator-build
 
 ENV GOEXPERIMENT=systemcrypto
 
@@ -19,18 +17,15 @@ COPY cmd ./cmd
 
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
-ARG TARGETARCH
-ARG TARGETOS
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
-    --mount=type=cache,target="/go/pkg" \
-    CGO_ENABLED=1 GOFIPS=1 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    CGO_ENABLED=1 GOFIPS=1 \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.5-1746002938@sha256:839f16991579b023d4452eadd0efa925e438f8b73063afe4f75bdc6cf7a09b12 AS base
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.5-1745854298@sha256:f4ebd46d3ba96feb016d798009e1cc2404c3a4ebdac8b2479a2ac053e59f41b4 AS dependency
+FROM registry.access.redhat.com/ubi9-micro:9.5-1746002938@sha256:839f16991579b023d4452eadd0efa925e438f8b73063afe4f75bdc6cf7a09b12 AS base
+FROM registry.access.redhat.com/ubi9:9.5-1745854298@sha256:f4ebd46d3ba96feb016d798009e1cc2404c3a4ebdac8b2479a2ac053e59f41b4 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
@@ -71,7 +66,7 @@ RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
 RUN make DESTDIR=/tmp/rootfs-dependency install_sw install_ssldirs install_fips
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM --platform=$TARGETPLATFORM base
+FROM base
 
 ARG TARGETPLATFORM
 

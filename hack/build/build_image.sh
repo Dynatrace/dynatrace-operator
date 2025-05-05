@@ -12,6 +12,8 @@ fi
 image=${1}
 tag=${2}
 debug=${3:-false}
+dockerfile=${4:-Dockerfile}
+
 
 commit=$(git rev-parse HEAD)
 go_linker_args=$(hack/build/create_go_linker_args.sh "${tag}" "${commit}" "${debug}")
@@ -35,7 +37,7 @@ if [ -n "${OPERATOR_DEV_BUILD_PLATFORM}" ]; then
   OPERATOR_BUILD_PLATFORM="--platform=${OPERATOR_DEV_BUILD_PLATFORM}"
 fi
 
-${CONTAINER_CMD} build "${OPERATOR_BUILD_PLATFORM}" . -f ./Dockerfile -t "${out_image}" \
+${CONTAINER_CMD} build "${OPERATOR_BUILD_PLATFORM}" . -f ${dockerfile} -t "${out_image}" \
   --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
   --build-arg "GO_BUILD_TAGS=${go_build_tags}" \
   --build-arg "DEBUG_TOOLS=${debug}" \
