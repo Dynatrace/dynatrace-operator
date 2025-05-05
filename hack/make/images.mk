@@ -31,7 +31,6 @@ images/build: ensure-tag-not-snapshot
 ## Build an Operator FIPS image with a give IMAGE and TAG
 # because cross-compile takes ~1h, we want to build fips locally only for local architecture
 # so that's why we run it with no_platform=true to build image without platform and fallback decision to podman
-.PHONY:
 images/build/fips: ensure-tag-not-snapshot
 	./hack/build/build_image.sh "${IMAGE}" "${TAG}-fips" "${DEBUG}" "fips.Dockerfile" "true"
 
