@@ -64,13 +64,14 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 }
 
 func setMetadataAnnotationValue(pod *corev1.Pod, annotations map[string]string) {
-	metadataAnnotations := map[string]string{} // Annotations added to the json must not have metadata.dynatrace.com/ prefix
+	metadataAnnotations := map[string]string{}
 	for key, value := range annotations {
-		if !strings.HasPrefix(key, dynakube.MetadataPrefix) {
-			metadataAnnotations[key] = value
-		} else {
+		// Annotations added to the json must not have metadata.dynatrace.com/ prefix
+		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
 			split := strings.Split(key, dynakube.MetadataPrefix)
 			metadataAnnotations[split[1]] = value
+		} else {
+			metadataAnnotations[key] = value
 		}
 	}
 
