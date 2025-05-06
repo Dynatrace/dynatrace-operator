@@ -5,7 +5,6 @@ import (
 	"crypto/md5" //nolint:gosec
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -15,14 +14,6 @@ import (
 )
 
 const ApiTokenHeader = "Api-Token "
-
-type HostNotFoundErr struct {
-	IP string
-}
-
-func (e HostNotFoundErr) Error() string {
-	return fmt.Sprintf("host not found for ip: %v", e.IP)
-}
 
 // client implements the Client interface.
 type dynatraceClient struct {
