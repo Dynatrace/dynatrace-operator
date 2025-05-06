@@ -112,7 +112,6 @@ const (
 // Relevant token scopes
 const (
 	TokenScopeInstallerDownload     = "InstallerDownload"
-	TokenScopeDataExport            = "DataExport"
 	TokenScopeMetricsIngest         = "metrics.ingest"
 	TokenScopeEntitiesRead          = "entities.read"
 	TokenScopeSettingsRead          = "settings.read"
