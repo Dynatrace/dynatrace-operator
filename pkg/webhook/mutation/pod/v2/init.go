@@ -29,13 +29,16 @@ func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Cont
 		args = append(args, arg.Arg{Name: cmd.SuppressErrorsFlag})
 	}
 
+	argsWithBootstrap := []string{"bootstrap"}
+	argsWithBootstrap = append(argsWithBootstrap, arg.ConvertArgsToStrings(args)...)
+
 	initContainer := &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           dk.OneAgent().GetCustomCodeModulesImage(),
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		ImagePullPolicy: corev1.PullAlways, //  corev1.PullIfNotPresent,
 		SecurityContext: securityContextForInitContainer(pod, dk),
 		Resources:       initContainerResources(dk),
-		Args:            arg.ConvertArgsToStrings(args),
+		Args:            argsWithBootstrap,
 	}
 
 	return initContainer

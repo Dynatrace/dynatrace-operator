@@ -26,6 +26,8 @@ func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.Dy
 
 	if technology := getTechnology(pod, dk); technology != "" {
 		args = append(args, arg.Arg{Name: move.TechnologyFlag, Value: technology})
+		args = append(args, arg.Arg{Name: "technologies", Value: technology})
+		args = append(args, arg.Arg{Name: "version", Value: "1.316.0.20250505-212724"})
 	}
 
 	if initContainer.Args == nil {
