@@ -53,13 +53,6 @@ type Client interface {
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
 	GetCommunicationHostForClient() (CommunicationHost, error)
 
-	// SendEvent posts events to dynatrace API
-	SendEvent(ctx context.Context, eventData *EventData) error
-
-	// GetEntityIDForIP returns the entity id for a given IP address.
-	// Returns an error in case the lookup failed.
-	GetEntityIDForIP(ctx context.Context, ip string) (string, error)
-
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(ctx context.Context, token string) (TokenScopes, error)
 

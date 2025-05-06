@@ -1339,53 +1339,6 @@ func (_c *Client_GetTokenScopes_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
-// SendEvent provides a mock function with given fields: ctx, eventData
-func (_m *Client) SendEvent(ctx context.Context, eventData *dynatrace.EventData) error {
-	ret := _m.Called(ctx, eventData)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SendEvent")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *dynatrace.EventData) error); ok {
-		r0 = rf(ctx, eventData)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Client_SendEvent_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendEvent'
-type Client_SendEvent_Call struct {
-	*mock.Call
-}
-
-// SendEvent is a helper method to define mock.On call
-//   - ctx context.Context
-//   - eventData *dynatrace.EventData
-func (_e *Client_Expecter) SendEvent(ctx interface{}, eventData interface{}) *Client_SendEvent_Call {
-	return &Client_SendEvent_Call{Call: _e.mock.On("SendEvent", ctx, eventData)}
-}
-
-func (_c *Client_SendEvent_Call) Run(run func(ctx context.Context, eventData *dynatrace.EventData)) *Client_SendEvent_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*dynatrace.EventData))
-	})
-	return _c
-}
-
-func (_c *Client_SendEvent_Call) Return(_a0 error) *Client_SendEvent_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Client_SendEvent_Call) RunAndReturn(run func(context.Context, *dynatrace.EventData) error) *Client_SendEvent_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewClient creates a new instance of Client. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewClient(t interface {

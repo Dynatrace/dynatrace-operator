@@ -83,10 +83,6 @@ func (dtc *dynatraceClient) getProcessModuleConfigUrl() string {
 	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
 }
 
-func (dtc *dynatraceClient) getEventsUrl() string {
-	return dtc.url + "/v1/events"
-}
-
 func (dtc *dynatraceClient) getTokensLookupUrl() string {
 	return dtc.url + "/v2/apiTokens/lookup"
 }
