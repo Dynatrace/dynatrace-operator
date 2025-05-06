@@ -51,6 +51,10 @@ runs:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ contains(inputs.platforms, ',') && 'manifest,index' || 'manifest' }}
       with:
         images: ${{ inputs.image }}
+        annotations: |
+          ${{ inputs.annotation }}
+        labels: |
+          ${{ inputs.labels }}
     - name: Build target
       id: build-target
       uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
@@ -66,9 +70,7 @@ runs:
         push: true
         tags: ${{ inputs.tags }}
         labels: |
-          ${{ inputs.labels }}
           ${{ steps.meta.outputs.labels }}
         annotations: |
-          ${{ inputs.annotation }}
           ${{ steps.meta.outputs.annotations }}
 
