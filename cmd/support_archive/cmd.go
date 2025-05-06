@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -94,40 +93,25 @@ func run() func(*cobra.Command, []string) error {
 		time.Sleep(time.Duration(delayFlagValue) * time.Second)
 
 		logBuffer := bytes.Buffer{}
-		log := newSupportArchiveLogger(getLogOutput(archiveToStdoutFlagValue, &logBuffer))
+		log := newSupportArchiveLogger(&logBuffer)
 		installconfig.ReadModulesToLogger(log)
 		version.LogVersionToLogger(log)
 
-		archiveTargetFile, err := createZipArchiveTargetFile(archiveToStdoutFlagValue, defaultSupportArchiveTargetDir)
-		if err != nil {
-			return err
-		}
-
+		archiveTargetFile := os.Stdout
 		supportArchive := newZipArchive(archiveTargetFile)
 
 		defer archiveTargetFile.Close()
 		defer supportArchive.Close()
 
-		err = runCollectors(log, supportArchive)
+		err := runCollectors(log, supportArchive)
 		if err != nil {
 			return err
 		}
-
-		printCopyCommand(log, archiveToStdoutFlagValue, archiveTargetFile.Name())
 
 		// make sure to run this collector at the very end
 		newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
 
 		return nil
-	}
-}
-
-func getLogOutput(tarballToStdout bool, logBuffer *bytes.Buffer) io.Writer {
-	if tarballToStdout {
-		// avoid corrupting tarball
-		return io.MultiWriter(os.Stderr, logBuffer)
-	} else {
-		return io.MultiWriter(os.Stdout, logBuffer)
 	}
 }
 
@@ -207,21 +191,4 @@ func getK8sClients(kubeConfig *rest.Config) (*kubernetes.Clientset, client.Reade
 
 func clusterOptions(opts *cluster.Options) {
 	opts.Scheme = scheme.Scheme
-}
-
-func printCopyCommand(log logd.Logger, tarballToStdout bool, tarFileName string) {
-	podNamespace := os.Getenv(env.PodNamespace)
-	podName := os.Getenv(env.PodName)
-
-	if tarballToStdout {
-		return
-	}
-
-	if podNamespace == "" || podName == "" {
-		// most probably not running on a pod
-		logInfof(log, "cp %s .", tarFileName)
-	} else {
-		logInfof(log, "kubectl -n %s cp %s:%s .%s\n",
-			podNamespace, podName, tarFileName, tarFileName)
-	}
 }
