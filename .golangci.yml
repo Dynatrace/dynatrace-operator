@@ -97,6 +97,8 @@ linters:
             - github.com/docker/cli
             - github.com/go-gormigrate/gormigrate
             - github.com/google/uuid
+            - github.com/kubernetes-csi/csi-lib-utils/connection
+            - github.com/kubernetes-csi/csi-lib-utils/rpc
           deny:
             - pkg: unsafe
               desc: Please don't use unsafe package
