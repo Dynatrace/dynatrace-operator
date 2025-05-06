@@ -1,11 +1,7 @@
 package support_archive
 
 import (
-	"fmt"
 	"io"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/klauspost/compress/zip"
 	"github.com/pkg/errors"
@@ -60,29 +56,4 @@ func (z zipArchive) Close() error {
 	}
 
 	return nil
-}
-
-func createZipArchiveTargetFile(useStdout bool, targetDir string) (*os.File, error) {
-	if useStdout {
-		return os.Stdout, nil
-	} else {
-		archiveFile, err := createZipArchiveFile(targetDir)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		return archiveFile, nil
-	}
-}
-
-func createZipArchiveFile(targetDir string) (*os.File, error) {
-	archiveFilePath := fmt.Sprintf(zipArchiveFileName, targetDir, time.Now().Format(time.RFC3339))
-	archiveFilePath = strings.ReplaceAll(archiveFilePath, ":", "_")
-
-	tarFile, err := os.Create(archiveFilePath)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return tarFile, nil
 }
