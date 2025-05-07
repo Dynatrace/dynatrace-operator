@@ -453,7 +453,9 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			Name:      "my-dynakube",
 			Namespace: "my-dynatrace",
 		},
-		Spec: dynakube.DynaKubeSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: "url",
+		},
 	}
 
 	namespaces := []*corev1.Namespace{

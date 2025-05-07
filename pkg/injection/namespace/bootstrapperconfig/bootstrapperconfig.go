@@ -112,7 +112,6 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		data[endpoint.InputFileName] = []byte(endpointProperties)
 	}
 
-
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
 		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
@@ -134,7 +133,6 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 	if len(trustedCAs) != 0 {
 		data[ca.TrustedCertsInputFile] = trustedCAs
 	}
-
 
 	pmcSecret, err := s.preparePMC(ctx, dk)
 	if err != nil {
