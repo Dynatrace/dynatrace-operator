@@ -84,10 +84,12 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	command := exec.Command("make", "-C", rootDir, makeTarget)
 	command.Env = os.Environ()
 	command.Env = append(command.Env, envVariables...)
-	b := new(bytes.Buffer)
+	b, bErr := new(bytes.Buffer), new(bytes.Buffer)
 	command.Stdout = b
+	command.Stderr = bErr
 	err := command.Run()
-	fmt.Println("out:", b.String()) //nolint
+	fmt.Println("out:", b.String())    //nolint
+	fmt.Println("err:", bErr.String()) //nolint
 
 	return err
 }
