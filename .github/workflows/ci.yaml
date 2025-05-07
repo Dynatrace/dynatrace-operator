@@ -30,16 +30,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
       - name: Detect file changes
         id: filter
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            BASE_REF=origin/${{ steps.base.outputs.BASE_REF }}
+          git fetch origin "+refs/heads/*:refs/remotes/origin/*" "+refs/pull/*/head:refs/remotes/origin/pr/*"
+          if [[ ${{ github.event_name }} == "pull_request" ]]; then
+            CHANGED_FILES=$(git diff --name-only origin/pr/${{ github.event.pull_request.number }}..origin/${{ github.base_ref }})
           else
-            BASE_REF=HEAD^
+            CHANGED_FILES=$(git diff --name-only origin/${{ github.ref_name }}..HEAD^)
           fi
-          CHANGED_FILES=$(git diff --name-only "$BASE_REF")
           echo "go_changed=$(echo "$CHANGED_FILES" | grep -E '\.go$|go\.mod' | wc -l)" >> $GITHUB_OUTPUT
           echo "docker_changed=$(echo "$CHANGED_FILES" | grep -E 'Dockerfile' | wc -l)" >> $GITHUB_OUTPUT
           echo "helm_changed=$(echo "$CHANGED_FILES" | grep -E '^config/' | wc -l)" >> $GITHUB_OUTPUT
