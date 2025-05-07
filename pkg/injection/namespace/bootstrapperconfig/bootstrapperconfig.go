@@ -2,15 +2,18 @@ package bootstrapperconfig
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/curl"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
+	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper/download"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -125,11 +128,39 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		return nil, errors.WithStack(err)
 	}
 
+	tokenReader := token.NewReader(s.apiReader, dk)
+
+	tokens, err := tokenReader.ReadTokens(ctx)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	apiToken := tokens.ApiToken()
+	if apiToken == nil {
+		return nil, errors.New("unknown api token")
+	}
+
+	dtClientConfig := download.Config{
+		URL:           dk.Spec.APIURL,
+		ApiToken:      apiToken.Value,
+		Proxy:         "",
+		NoProxy:       "",
+		NetworkZone:   dk.Spec.NetworkZone,
+		HostGroup:     dk.Spec.OneAgent.HostGroup,
+		SkipCertCheck: false,
+	}
+
+	dtClientConfigBytes, err := json.Marshal(dtClientConfig)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	data := map[string][]byte{
 		pmc.InputFileName:        pmcSecret,
 		ca.TrustedCertsInputFile: trustedCAs,
 		ca.AgCertsInputFile:      agCerts,
 		endpoint.InputFileName:   []byte(endpointProperties),
+		"dtclient.config":        dtClientConfigBytes,
 	}
 
 	if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > -1 {
