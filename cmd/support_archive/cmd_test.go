@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -40,4 +41,11 @@ func TestGetAppName(t *testing.T) {
 
 	t.Setenv(env.PodName, alternativeOperatorName)
 	assert.Equal(t, alternativeOperatorName, getAppNameLabel(context.TODO(), fakeClientSet.CoreV1().Pods(alternativeNamespace)))
+}
+
+func TestStdoutArgMissing(t *testing.T) {
+	cmd := New()
+	// should fail when invoked without --stdout
+	err := cmd.Execute()
+	require.Error(t, err)
 }

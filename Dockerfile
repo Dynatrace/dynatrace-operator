@@ -1,6 +1,6 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$BUILDPLATFORM golang:1.24.2@sha256:991aa6a6e4431f2f01e869a812934bd60fbc87fb939e4a1ea54b8494ab9d2fc6 AS operator-build
+FROM --platform=$BUILDPLATFORM golang:1.24.3@sha256:39d9e7d9c5d9c9e4baf0d8fff579f06d5032c0f4425cdec9e86732e8e4e374dc AS operator-build
 
 WORKDIR /app
 
@@ -32,7 +32,7 @@ FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.5-1745854298@s
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
-      util-linux-core tar \
+      util-linux-core \
       --releasever 9 \
       --setopt install_weak_deps=false \
       --nodocs -y \
