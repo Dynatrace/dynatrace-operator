@@ -103,6 +103,16 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
+	endpointProperties, err := s.prepareEndpoints(ctx, dk)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if len(endpointProperties) != 0 {
+		data[endpoint.InputFileName] = []byte(endpointProperties)
+	}
+
+
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
 		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
@@ -133,15 +143,6 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 
 	if len(pmcSecret) != 0 {
 		data[pmc.InputFileName] = pmcSecret
-	}
-
-	endpointProperties, err := s.prepareEndpoints(ctx, dk)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if len(endpointProperties) != 0 {
-		data[endpoint.InputFileName] = []byte(endpointProperties)
 	}
 
 	if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > -1 {

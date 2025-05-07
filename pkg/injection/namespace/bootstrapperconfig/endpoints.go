@@ -22,18 +22,16 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 
 	endpointPropertiesBuilder := strings.Builder{}
 
-	if dk.MetadataEnrichmentEnabled() {
-		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsUrlSecretField, fields[dtingestendpoint.MetricsUrlSecretField])); err != nil {
-			conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsUrlSecretField, fields[dtingestendpoint.MetricsUrlSecretField])); err != nil {
+		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
 
-			return "", errors.WithStack(err)
-		}
+		return "", errors.WithStack(err)
+	}
 
-		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsTokenSecretField, fields[dtingestendpoint.MetricsTokenSecretField])); err != nil {
-			conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsTokenSecretField, fields[dtingestendpoint.MetricsTokenSecretField])); err != nil {
+		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
 
-			return "", errors.WithStack(err)
-		}
+		return "", errors.WithStack(err)
 	}
 
 	return endpointPropertiesBuilder.String(), nil
@@ -49,18 +47,16 @@ func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dyn
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if dk.MetadataEnrichmentEnabled() {
-		if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
-			fields[dtingestendpoint.MetricsTokenSecretField] = string(token)
-		} else {
-			log.Info("data ingest token not found in secret", "dk", dk.Name)
-		}
+	if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
+		fields[dtingestendpoint.MetricsTokenSecretField] = string(token)
+	} else {
+		log.Info("data ingest token not found in secret", "dk", dk.Name)
+	}
 
-		if ingestUrl, err := dtingestendpoint.IngestUrlFor(dk); err != nil {
-			return nil, err
-		} else {
-			fields[dtingestendpoint.MetricsUrlSecretField] = ingestUrl
-		}
+	if ingestUrl, err := dtingestendpoint.IngestUrlFor(dk); err != nil {
+		return nil, err
+	} else {
+		fields[dtingestendpoint.MetricsUrlSecretField] = ingestUrl
 	}
 
 	return fields, nil
