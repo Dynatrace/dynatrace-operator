@@ -3,9 +3,13 @@ package support_archive
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
+	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -43,4 +47,16 @@ func TestAddFile(t *testing.T) {
 
 	err = zipReader.Close()
 	require.NoError(t, err)
+}
+
+func createZipArchiveFile(targetDir string) (*os.File, error) {
+	archiveFilePath := fmt.Sprintf(zipArchiveFileName, targetDir, time.Now().Format(time.RFC3339))
+	archiveFilePath = strings.ReplaceAll(archiveFilePath, ":", "_")
+
+	tarFile, err := os.Create(archiveFilePath)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return tarFile, nil
 }

@@ -1,8 +1,10 @@
 package support_archive
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"go.uber.org/zap"
@@ -14,7 +16,7 @@ const (
 	supportArchiveLoggerName = "[support-archive]"
 )
 
-func newSupportArchiveLogger(out io.Writer) logd.Logger {
+func newSupportArchiveLogger(logBuffer *bytes.Buffer) logd.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
@@ -22,7 +24,7 @@ func newSupportArchiveLogger(out io.Writer) logd.Logger {
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	return logd.Logger{
-		Logger: ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(supportArchiveLoggerName),
+		Logger: ctrlzap.New(ctrlzap.WriteTo(io.MultiWriter(os.Stderr, logBuffer)), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(supportArchiveLoggerName),
 	}
 }
 
