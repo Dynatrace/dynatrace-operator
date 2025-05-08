@@ -101,11 +101,26 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 
 // generate gets the necessary info the create the init secret data
 func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	data := map[string][]byte{}
+
+	endpointProperties, err := s.prepareEndpoints(ctx, dk)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if len(endpointProperties) != 0 {
+		data[endpoint.InputFileName] = []byte(endpointProperties)
+	}
+
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
 		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
 
 		return nil, errors.WithStack(err)
+	}
+
+	if len(agCerts) != 0 {
+		data[ca.AgCertsInputFile] = agCerts
 	}
 
 	trustedCAs, err := dk.TrustedCAs(ctx, s.apiReader)
@@ -115,21 +130,17 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		return nil, errors.WithStack(err)
 	}
 
+	if len(trustedCAs) != 0 {
+		data[ca.TrustedCertsInputFile] = trustedCAs
+	}
+
 	pmcSecret, err := s.preparePMC(ctx, dk)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	endpointProperties, err := s.prepareEndpoints(ctx, dk)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	data := map[string][]byte{
-		pmc.InputFileName:        pmcSecret,
-		ca.TrustedCertsInputFile: trustedCAs,
-		ca.AgCertsInputFile:      agCerts,
-		endpoint.InputFileName:   []byte(endpointProperties),
+	if len(pmcSecret) != 0 {
+		data[pmc.InputFileName] = pmcSecret
 	}
 
 	if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > -1 {

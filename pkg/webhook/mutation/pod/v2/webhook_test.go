@@ -211,7 +211,7 @@ func TestHandle(t *testing.T) {
 		installContainer := container.FindInitContainerInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
 		require.NotNil(t, installContainer)
 		assert.Len(t, installContainer.Env, 3)
-		assert.Len(t, installContainer.Args, 14)
+		assert.Len(t, installContainer.Args, 15)
 	})
 }
 

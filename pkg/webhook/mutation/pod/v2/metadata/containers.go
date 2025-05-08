@@ -12,10 +12,6 @@ import (
 )
 
 func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attributes *podattr.Attributes) error {
-	if !metacommon.IsEnabled(request.BaseRequest) {
-		return nil
-	}
-
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
 	workloadInfo, err := metacommon.RetrieveWorkload(metaClient, request)

@@ -266,15 +266,11 @@ func TestGenerateForDynakube(t *testing.T) {
 		_, ok := secret.Data[pmc.InputFileName]
 		require.True(t, ok)
 
-		val, ok := secret.Data[ca.TrustedCertsInputFile]
-		require.True(t, ok)
-		assert.NotEqual(t, oldTrustedCa, val)
-		require.Empty(t, val)
+		_, ok = secret.Data[ca.TrustedCertsInputFile]
+		require.False(t, ok)
 
 		_, ok = secret.Data[ca.AgCertsInputFile]
-		require.True(t, ok)
-		assert.NotEqual(t, oldCertValue, val)
-		require.Empty(t, val)
+		require.False(t, ok)
 
 		_, ok = secret.Data[curl.InputFileName]
 		require.True(t, ok)

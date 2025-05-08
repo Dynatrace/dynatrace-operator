@@ -78,41 +78,6 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Equal(t, "true", request.Pod.Annotations[metacommon.AnnotationInjected])
 	}
 
-	t.Run("add attributes and related envs, do not change pod or app-container", func(t *testing.T) {
-		injector := createTestInjectorBase()
-
-		initContainer := corev1.Container{
-			Args: []string{},
-		}
-		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "test",
-			},
-		}
-
-		expectedPod := pod.DeepCopy()
-
-		request := dtwebhook.MutationRequest{
-			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
-					Status: dynakube.DynaKubeStatus{
-						KubernetesClusterMEID: "meid",
-						KubeSystemUUID:        "systemuuid",
-						KubernetesClusterName: "meidname",
-					},
-				},
-			},
-			InstallContainer: &initContainer,
-		}
-
-		err := injector.addPodAttributes(&request)
-		require.NoError(t, err)
-
-		require.Equal(t, *expectedPod, *request.BaseRequest.Pod)
-		validateAttributes(t, request)
-	})
-
 	t.Run("metadata enrichment passes => additional args and annotations", func(t *testing.T) {
 		initContainer := corev1.Container{
 			Args: []string{},
