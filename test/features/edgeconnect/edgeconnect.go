@@ -5,6 +5,7 @@ package edgeconnect
 import (
 	"context"
 	"fmt"
+	"path"
 	"testing"
 	"time"
 
@@ -14,23 +15,18 @@ import (
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	ecComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-)
-
-const (
-	testServiceAccountName = "custom-edgeconnect-service-name"
-	testNamespaceName      = "dynatrace"
 )
 
 func NormalModeFeature(t *testing.T) features.Feature {
@@ -110,7 +106,14 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
+
+var (
+	customServiceAccount = path.Join(project.TestDataDir(), "edgeconnect/custom-service-account.yaml")
+)
+
 func AutomationModeFeature(t *testing.T) features.Feature {
+	const customServiceAccountName = "custom-edgeconnect"
+
 	builder := features.New("edgeconnect-install-k8s-automation")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
@@ -127,7 +130,7 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 		ecComponents.WithOAuthResource(secretConfig.Resource),
 		ecComponents.WithProvisionerMode(true),
 		ecComponents.WithK8SAutomationMode(true),
-		ecComponents.WithServiceAccount(testServiceAccountName),
+		ecComponents.WithServiceAccount(customServiceAccountName),
 	)
 
 	builder.Assess("create ServiceAccount", createServiceAccount())
@@ -239,38 +242,11 @@ func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, te
 }
 
 func createServiceAccount() features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := envConfig.Client().Resources().Create(ctx, serviceAccount(testServiceAccountName, testNamespaceName))
-		if err != nil {
-			t.Error("failed to create service account", err)
-
-			return ctx
-		}
-
-		return ctx
-	}
+	return helpers.ToFeatureFunc(manifests.InstallFromFile(customServiceAccount), true)
 }
 
 func deleteServiceAccount() features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := envConfig.Client().Resources().Delete(ctx, serviceAccount(testServiceAccountName, testNamespaceName))
-		if err != nil {
-			t.Error("failed to delete service account", err)
-
-			return ctx
-		}
-
-		return ctx
-	}
-}
-
-func serviceAccount(name string, namespace string) *corev1.ServiceAccount {
-	return &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-	}
+	return helpers.ToFeatureFunc(manifests.UninstallFromFile(customServiceAccount), true)
 }
 
 func updateHostPatterns(testEdgeConnect *edgeconnect.EdgeConnect, hostPattern string) features.Func {

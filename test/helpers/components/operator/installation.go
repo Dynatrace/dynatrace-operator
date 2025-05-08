@@ -88,8 +88,14 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	command.Stdout = b
 	command.Stderr = bErr
 	err := command.Run()
-	fmt.Println("out:", b.String())    //nolint
-	fmt.Println("err:", bErr.String()) //nolint
+
+	if len(b.String()) != 0 {
+		fmt.Println("out:", b.String())    //nolint
+	}
+
+	if len(bErr.String()) != 0 {
+		fmt.Println("err:", bErr.String()) //nolint
+	}
 
 	return err
 }
