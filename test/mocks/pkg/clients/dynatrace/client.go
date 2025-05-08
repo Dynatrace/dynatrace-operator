@@ -534,63 +534,6 @@ func (_c *Client_GetCommunicationHostForClient_Call) RunAndReturn(run func() (dy
 	return _c
 }
 
-// GetEntityIDForIP provides a mock function with given fields: ctx, ip
-func (_m *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
-	ret := _m.Called(ctx, ip)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetEntityIDForIP")
-	}
-
-	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(ctx, ip)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, ip)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, ip)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Client_GetEntityIDForIP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEntityIDForIP'
-type Client_GetEntityIDForIP_Call struct {
-	*mock.Call
-}
-
-// GetEntityIDForIP is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ip string
-func (_e *Client_Expecter) GetEntityIDForIP(ctx interface{}, ip interface{}) *Client_GetEntityIDForIP_Call {
-	return &Client_GetEntityIDForIP_Call{Call: _e.mock.On("GetEntityIDForIP", ctx, ip)}
-}
-
-func (_c *Client_GetEntityIDForIP_Call) Run(run func(ctx context.Context, ip string)) *Client_GetEntityIDForIP_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *Client_GetEntityIDForIP_Call) Return(_a0 string, _a1 error) *Client_GetEntityIDForIP_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Client_GetEntityIDForIP_Call) RunAndReturn(run func(context.Context, string) (string, error)) *Client_GetEntityIDForIP_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetLatestActiveGateImage provides a mock function with given fields: ctx
 func (_m *Client) GetLatestActiveGateImage(ctx context.Context) (*dynatrace.LatestImageInfo, error) {
 	ret := _m.Called(ctx)
@@ -1335,53 +1278,6 @@ func (_c *Client_GetTokenScopes_Call) Return(_a0 dynatrace.TokenScopes, _a1 erro
 }
 
 func (_c *Client_GetTokenScopes_Call) RunAndReturn(run func(context.Context, string) (dynatrace.TokenScopes, error)) *Client_GetTokenScopes_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// SendEvent provides a mock function with given fields: ctx, eventData
-func (_m *Client) SendEvent(ctx context.Context, eventData *dynatrace.EventData) error {
-	ret := _m.Called(ctx, eventData)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SendEvent")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *dynatrace.EventData) error); ok {
-		r0 = rf(ctx, eventData)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Client_SendEvent_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendEvent'
-type Client_SendEvent_Call struct {
-	*mock.Call
-}
-
-// SendEvent is a helper method to define mock.On call
-//   - ctx context.Context
-//   - eventData *dynatrace.EventData
-func (_e *Client_Expecter) SendEvent(ctx interface{}, eventData interface{}) *Client_SendEvent_Call {
-	return &Client_SendEvent_Call{Call: _e.mock.On("SendEvent", ctx, eventData)}
-}
-
-func (_c *Client_SendEvent_Call) Run(run func(ctx context.Context, eventData *dynatrace.EventData)) *Client_SendEvent_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*dynatrace.EventData))
-	})
-	return _c
-}
-
-func (_c *Client_SendEvent_Call) Return(_a0 error) *Client_SendEvent_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Client_SendEvent_Call) RunAndReturn(run func(context.Context, *dynatrace.EventData) error) *Client_SendEvent_Call {
 	_c.Call.Return(run)
 	return _c
 }
