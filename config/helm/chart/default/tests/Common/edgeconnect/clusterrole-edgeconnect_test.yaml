@@ -1,0 +1,56 @@
+suite: test logmonitoring clusterrole
+templates:
+  - Common/edge-connect/clusterrole-edgeconnect.yaml
+tests:
+  - it: EdgeConnect ClusterRole should exist on OCP
+    set:
+      rbac.edgeConnect.create: true
+      platform: openshift
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-edgeconnect
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - nonroot
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+  - it: EdgeConnect ClusterRoleBinding should exist on OCP
+    documentIndex: 1
+    set:
+      rbac.edgeConnect.create: true
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-edgeconnect
+      - isNotEmpty:
+          path: metadata.labels
+  - it: shouldn't exist if turned off
+    set:
+      rbac.edgeConnect.create: false
+      platform: openshift
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: shouldn't exist on k8s
+    set:
+      rbac.edgeConnect.create: true
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0
