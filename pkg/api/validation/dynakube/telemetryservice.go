@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"

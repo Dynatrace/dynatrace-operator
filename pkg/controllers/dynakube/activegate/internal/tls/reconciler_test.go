@@ -7,8 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -16,7 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
-	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 

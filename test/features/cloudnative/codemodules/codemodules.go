@@ -15,8 +15,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	"sigs.k8s.io/controller-runtime/pkg/client"

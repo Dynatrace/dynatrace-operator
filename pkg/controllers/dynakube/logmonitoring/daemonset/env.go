@@ -1,7 +1,7 @@
 package daemonset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	corev1 "k8s.io/api/core/v1"
 )
 

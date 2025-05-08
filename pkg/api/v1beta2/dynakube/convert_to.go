@@ -6,14 +6,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertTo converts this v1beta2.DynaKube to the Hub version (dynakube.DynaKube).
+// ConvertTo converts this v1beta2 to the Hub version (v1beta5).
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*dynakube.DynaKube)
 

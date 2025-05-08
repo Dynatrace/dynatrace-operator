@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

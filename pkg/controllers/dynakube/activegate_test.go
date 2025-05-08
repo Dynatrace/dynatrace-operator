@@ -7,8 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
