@@ -90,7 +90,7 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	err := command.Run()
 
 	if len(b.String()) != 0 {
-		fmt.Println("out:", b.String())    //nolint
+		fmt.Println("out:", b.String()) //nolint
 	}
 
 	if len(bErr.String()) != 0 {

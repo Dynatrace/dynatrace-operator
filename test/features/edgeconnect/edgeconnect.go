@@ -106,7 +106,6 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-
 var (
 	customServiceAccount = path.Join(project.TestDataDir(), "edgeconnect/custom-service-account.yaml")
 )
