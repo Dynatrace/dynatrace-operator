@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -177,7 +178,10 @@ func (app *App) installClusterRole(ctx context.Context, t *testing.T, c *envconf
 		ctx = helpers.ToFeatureFunc(manifests.InstallFromFile(clusterRolePath), true)(ctx, t, c)
 		binding := app.createBinding(t)
 
-		require.NoError(t, c.Client().Resources().Create(ctx, binding))
+		err := c.Client().Resources().Create(ctx, binding)
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			require.NoError(t, err)
+		}
 	}
 
 	return ctx
@@ -196,12 +200,12 @@ func (app *App) Uninstall() features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		defer func() {
 			app.installedNamespace = false
+			ctx = app.uninstallClusterRole(ctx, t, c)
 		}()
 		resource := c.Client().Resources()
 		object := app.build()
 
 		require.NoError(t, resource.Delete(ctx, object))
-		ctx = app.uninstallClusterRole(ctx, t, c)
 		require.NoError(t, wait.For(conditions.New(resource).ResourceDeleted(object), wait.WithTimeout(2*time.Minute)))
 		if dep, ok := object.(*appsv1.Deployment); ok {
 			ctx = pod.WaitForPodsDeletionWithOwner(dep.Name, dep.Namespace)(ctx, t, c)
@@ -218,7 +222,10 @@ func (app *App) uninstallClusterRole(ctx context.Context, t *testing.T, c *envco
 		ctx = helpers.ToFeatureFunc(manifests.UninstallFromFile(clusterRolePath), true)(ctx, t, c)
 		binding := app.createBinding(t)
 
-		require.NoError(t, c.Client().Resources().Delete(ctx, binding))
+		err := c.Client().Resources().Delete(ctx, binding)
+		if err != nil && !k8serrors.IsNotFound(err) {
+			require.NoError(t, err)
+		}
 	}
 
 	return ctx
