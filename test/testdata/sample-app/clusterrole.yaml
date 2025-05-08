@@ -11,4 +11,3 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
-
