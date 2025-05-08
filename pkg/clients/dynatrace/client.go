@@ -53,13 +53,6 @@ type Client interface {
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
 	GetCommunicationHostForClient() (CommunicationHost, error)
 
-	// SendEvent posts events to dynatrace API
-	SendEvent(ctx context.Context, eventData *EventData) error
-
-	// GetEntityIDForIP returns the entity id for a given IP address.
-	// Returns an error in case the lookup failed.
-	GetEntityIDForIP(ctx context.Context, ip string) (string, error)
-
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(ctx context.Context, token string) (TokenScopes, error)
 
@@ -119,7 +112,6 @@ const (
 // Relevant token scopes
 const (
 	TokenScopeInstallerDownload     = "InstallerDownload"
-	TokenScopeDataExport            = "DataExport"
 	TokenScopeMetricsIngest         = "metrics.ingest"
 	TokenScopeEntitiesRead          = "entities.read"
 	TokenScopeSettingsRead          = "settings.read"
@@ -155,7 +147,6 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		apiToken:  apiToken,
 		paasToken: paasToken,
 
-		hostCache: make(map[string]hostInfo),
 		httpClient: &http.Client{
 			Transport: http.DefaultTransport.(*http.Transport).Clone(),
 			Timeout:   15 * time.Minute,

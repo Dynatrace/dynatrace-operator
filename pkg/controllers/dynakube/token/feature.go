@@ -27,13 +27,6 @@ func (feature *Feature) IsScopeMissing(scopes []string) (bool, []string) {
 func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 	return []Feature{
 		{
-			Name:           "Access problem and event feed, metrics, and topology",
-			RequiredScopes: []string{dtclient.TokenScopeDataExport},
-			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return true
-			},
-		},
-		{
 			Name: "Kubernetes API Monitoring",
 			RequiredScopes: []string{
 				dtclient.TokenScopeEntitiesRead,
