@@ -34,7 +34,7 @@ import (
 var (
 	defaultNameTemplate        = "sample-%s"
 	podTemplatePath            = path.Join(project.TestDataDir(), "sample-app/pod-base.yaml")
-	serviceAccountTemplatePath = path.Join(project.TestDataDir(), "sample-app/service-account.yaml")
+	serviceAccountTemplatePath = path.Join(project.TestDataDir(), "sample-app/serviceaccount.yaml")
 	clusterRolePath            = path.Join(project.TestDataDir(), "sample-app/clusterrole.yaml")
 	bindingPath                = path.Join(project.TestDataDir(), "sample-app/binding.yaml")
 )
