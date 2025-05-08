@@ -188,6 +188,7 @@ func (app *App) createBinding(t *testing.T) *rbacv1.ClusterRoleBinding {
 	binding.Namespace = app.Namespace()
 	require.Len(t, binding.Subjects, 1)
 	binding.Subjects[0].Namespace = app.Namespace()
+
 	return binding
 }
 
