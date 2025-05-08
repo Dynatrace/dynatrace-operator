@@ -37,7 +37,7 @@ var (
 func TestMakeRequest(t *testing.T) {
 	ctx := context.Background()
 
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
+	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
 	dc := &dynatraceClient{
@@ -45,6 +45,7 @@ func TestMakeRequest(t *testing.T) {
 		apiToken:  apiToken,
 		paasToken: paasToken,
 
+		hostCache:  make(map[string]hostInfo),
 		httpClient: http.DefaultClient,
 	}
 
@@ -68,7 +69,7 @@ func TestMakeRequest(t *testing.T) {
 func TestGetResponseOrServerError(t *testing.T) {
 	ctx := context.Background()
 
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
+	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
 	dc := &dynatraceClient{
@@ -76,6 +77,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 		apiToken:  apiToken,
 		paasToken: paasToken,
 
+		hostCache:  make(map[string]hostInfo),
 		httpClient: http.DefaultClient,
 	}
 
@@ -159,7 +161,7 @@ func TestServerError(t *testing.T) {
 }
 
 func TestDynatraceClientWithServer(t *testing.T) {
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
+	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
 	skipCert := SkipCertificateValidation(true)
@@ -173,24 +175,25 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	testAgentVersionGetLatestAgentVersion(t, dtc)
 	testActiveGateVersionGetLatestActiveGateVersion(t, dtc)
 	testCommunicationHostsGetCommunicationHosts(t, dtc)
+	testSendEvent(t, dtc)
 	testGetTokenScopes(t, dtc)
 
 	testServerErrors(t)
 }
 
-func dynatraceServerHandler(t *testing.T) http.HandlerFunc {
+func dynatraceServerHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
 			writeError(w, http.StatusUnauthorized)
 		} else {
-			handleRequest(t, r, w)
+			handleRequest(r, w)
 		}
 	}
 }
 
-func handleRequest(t *testing.T, request *http.Request, writer http.ResponseWriter) {
+func handleRequest(request *http.Request, writer http.ResponseWriter) {
 	latestAgentVersion := fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo", OsUnix, InstallerTypePaaS)
 	latestActiveGateVersion := fmt.Sprintf("/v1/deployment/installer/gateway/%s/latest/metainfo", OsUnix)
 	agentVersions := fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", OsUnix, InstallerTypePaaS)
@@ -207,7 +210,7 @@ func handleRequest(t *testing.T, request *http.Request, writer http.ResponseWrit
 	case "/v1/deployment/installer/agent/connectioninfo":
 		handleCommunicationHosts(request, writer)
 	case "/v1/events":
-		t.Error("/v1/events endpoint should not be called")
+		handleSendEvent(request, writer)
 	case "/v2/apiTokens/lookup":
 		handleTokenScopes(request, writer)
 	default:
@@ -226,6 +229,53 @@ func writeError(w http.ResponseWriter, status int) {
 
 	w.WriteHeader(status)
 	_, _ = w.Write(result)
+}
+
+func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
+	ctx := context.Background()
+	// now:                         20/05/2020 10:10 AM UTC
+	// HOST-42 - lastSeenTimestamp: 20/05/2020 10:04 AM UTC
+	// HOST-84 - lastSeenTimestamp: 19/05/2020 01:49 AM UTC
+	c := dynatraceClient{
+		now: time.Unix(1589969400, 0).UTC(),
+	}
+
+	require.NoError(t, c.setHostCacheFromResponse([]byte(`[
+	{
+		"entityId": "HOST-42",
+		"displayName": "A",
+		"firstSeenTimestamp": 1589940921731,
+		"lastSeenTimestamp": 1589969061511,
+		"ipAddresses": [
+			"1.1.1.1"
+		],
+		"monitoringMode": "FULL_STACK",
+		"networkZoneId": "default",
+		"agentVersion": {
+			"major": 1,
+			"minor": 195,
+			"revision": 0,
+			"timestamp": "20200515-045253",
+			"sourceRevision": ""
+		}
+	},
+	{
+		"entityId": "HOST-84",
+		"displayName": "B",
+		"firstSeenTimestamp": 1589767448722,
+		"lastSeenTimestamp": 1589852948530,
+		"ipAddresses": [
+			"1.1.1.1"
+		],
+		"monitoringMode": "FULL_STACK",
+		"networkZoneId": "default"
+	}
+]`)))
+
+	info, err := c.getHostInfoForIP(ctx, "1.1.1.1")
+	require.NoError(t, err)
+	require.Equal(t, "HOST-42", info.entityID)
+	require.Equal(t, "1.195.0.20200515-045253", info.version)
 }
 
 func createTestDynatraceServer(t *testing.T, handler http.Handler, networkZoneName string) (*httptest.Server, Client) {
