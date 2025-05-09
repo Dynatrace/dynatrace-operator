@@ -344,7 +344,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAPrivilegedKey: annotationTrueValue,
+					exp.OAPrivilegedKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -375,7 +375,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAPrivilegedKey: annotationTrueValue,
+					exp.OAPrivilegedKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -438,7 +438,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAPrivilegedKey: annotationTrueValue,
+					exp.OAPrivilegedKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -482,7 +482,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						exp.OAPrivilegedKey: annotationTrueValue,
+						exp.OAPrivilegedKey: "true",
 					},
 				},
 			},
@@ -495,7 +495,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAPrivilegedKey: annotationFalseValue,
+					exp.OAPrivilegedKey: "false",
 				},
 			},
 		}
@@ -584,7 +584,7 @@ func TestPodSpecProbes(t *testing.T) {
 			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						exp.OASkipLivenessProbeKey: annotationTrueValue,
+						exp.OASkipLivenessProbeKey: "true",
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
@@ -773,11 +773,11 @@ func TestAnnotations(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
 		expectedDaemonsetAnnotations := map[string]string{
-			annotationEnableDsEviction: annotationFalseValue,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: annotationFalseValue,
+			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
 		}
@@ -801,11 +801,11 @@ func TestAnnotations(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
 		expectedDaemonsetAnnotations := map[string]string{
-			annotationEnableDsEviction: annotationFalseValue,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: annotationFalseValue,
+			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
 		}
@@ -829,11 +829,11 @@ func TestAnnotations(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
 		expectedDaemonsetAnnotations := map[string]string{
-			annotationEnableDsEviction: annotationFalseValue,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: annotationFalseValue,
+			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
 		}
@@ -863,11 +863,11 @@ func TestAnnotations(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
 		expectedDaemonsetAnnotations := map[string]string{
-			annotationEnableDsEviction: annotationFalseValue,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: annotationFalseValue,
+			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
@@ -896,11 +896,11 @@ func TestAnnotations(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
 		expectedDaemonsetAnnotations := map[string]string{
-			annotationEnableDsEviction: annotationFalseValue,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: annotationFalseValue,
+			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
@@ -929,11 +929,11 @@ func TestAnnotations(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
 		expectedDaemonsetAnnotations := map[string]string{
-			annotationEnableDsEviction: annotationFalseValue,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		expectedTemplateAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: annotationFalseValue,
+			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,

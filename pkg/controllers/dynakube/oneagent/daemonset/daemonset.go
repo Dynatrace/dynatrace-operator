@@ -20,13 +20,10 @@ import (
 )
 
 const (
-	annotationUnprivileged     = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
-	annotationTenantTokenHash  = api.InternalFlagPrefix + "tenant-token-hash"
-	annotationEnableDsEviction = "cluster-autoscaler.kubernetes.io/enable-ds-eviction"
-
-	annotationUnprivilegedValue = "unconfined"
-	annotationTrueValue         = "true"
-	annotationFalseValue        = "false"
+	annotationUnprivileged            = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
+	annotationUnprivilegedValue       = "unconfined"
+	annotationTenantTokenHash         = api.InternalFlagPrefix + "tenant-token-hash"
+	annotationEnableDaemonSetEviction = "cluster-autoscaler.kubernetes.io/enable-ds-eviction"
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 
@@ -155,16 +152,16 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
 
 	daemonsetAnnotations := map[string]string{
-		annotationEnableDsEviction: annotationFalseValue,
+		annotationEnableDaemonSetEviction: "false",
 	}
 
-	annotations := map[string]string{
+	templateAnnotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
-		webhook.AnnotationDynatraceInject: annotationFalseValue,
+		webhook.AnnotationDynatraceInject: "false",
 		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash,
 	}
 
-	annotations = maputils.MergeMap(annotations, b.hostInjectSpec.Annotations)
+	templateAnnotations = maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations)
 
 	result := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -180,7 +177,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: annotations,
+					Annotations: templateAnnotations,
 				},
 				Spec: podSpec,
 			},
