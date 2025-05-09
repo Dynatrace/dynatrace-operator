@@ -20,9 +20,13 @@ import (
 )
 
 const (
-	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
+	annotationUnprivileged     = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
+	annotationTenantTokenHash  = api.InternalFlagPrefix + "tenant-token-hash"
+	annotationEnableDsEviction = "cluster-autoscaler.kubernetes.io/enable-ds-eviction"
+
 	annotationUnprivilegedValue = "unconfined"
-	annotationTenantTokenHash   = api.InternalFlagPrefix + "tenant-token-hash"
+	annotationTrueValue         = "true"
+	annotationFalseValue        = "false"
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 
@@ -149,9 +153,14 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		b.hostInjectSpec.Labels,
 	)
 	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
+
+	daemonsetAnnotations := map[string]string{
+		annotationEnableDsEviction: annotationFalseValue,
+	}
+
 	annotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
-		webhook.AnnotationDynatraceInject: "false",
+		webhook.AnnotationDynatraceInject: annotationFalseValue,
 		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash,
 	}
 
@@ -162,7 +171,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 			Name:        dk.Name,
 			Namespace:   dk.Namespace,
 			Labels:      labels,
-			Annotations: map[string]string{},
+			Annotations: daemonsetAnnotations,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{

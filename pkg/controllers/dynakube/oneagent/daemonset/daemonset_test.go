@@ -344,7 +344,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "true",
+					exp.OAPrivilegedKey: annotationTrueValue,
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -375,7 +375,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "true",
+					exp.OAPrivilegedKey: annotationTrueValue,
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -438,7 +438,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "true",
+					exp.OAPrivilegedKey: annotationTrueValue,
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -482,7 +482,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						exp.OAPrivilegedKey: "true",
+						exp.OAPrivilegedKey: annotationTrueValue,
 					},
 				},
 			},
@@ -495,7 +495,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "false",
+					exp.OAPrivilegedKey: annotationFalseValue,
 				},
 			},
 		}
@@ -584,7 +584,7 @@ func TestPodSpecProbes(t *testing.T) {
 			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						exp.OASkipLivenessProbeKey: "true",
+						exp.OASkipLivenessProbeKey: annotationTrueValue,
 					},
 				},
 				Status: dynakube.DynaKubeStatus{
@@ -771,8 +771,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
+
+		expectedDaemonsetAnnotations := map[string]string{
+			annotationEnableDsEviction: annotationFalseValue,
+		}
+
+		expectedTemplateAnnotations := map[string]string{
+			webhook.AnnotationDynatraceInject: annotationFalseValue,
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
 		}
@@ -782,7 +787,8 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("host monitoring has apparmor annotation by default", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -793,8 +799,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
+
+		expectedDaemonsetAnnotations := map[string]string{
+			annotationEnableDsEviction: annotationFalseValue,
+		}
+
+		expectedTemplateAnnotations := map[string]string{
+			webhook.AnnotationDynatraceInject: annotationFalseValue,
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
 		}
@@ -804,7 +815,8 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("classic fullstack has apparmor annotation by default", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -815,8 +827,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
+
+		expectedDaemonsetAnnotations := map[string]string{
+			annotationEnableDsEviction: annotationFalseValue,
+		}
+
+		expectedTemplateAnnotations := map[string]string{
+			webhook.AnnotationDynatraceInject: annotationFalseValue,
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
 		}
@@ -826,7 +843,8 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with cloud native", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -843,8 +861,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
+
+		expectedDaemonsetAnnotations := map[string]string{
+			annotationEnableDsEviction: annotationFalseValue,
+		}
+
+		expectedTemplateAnnotations := map[string]string{
+			webhook.AnnotationDynatraceInject: annotationFalseValue,
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
@@ -855,7 +878,8 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with host monitoring", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -870,8 +894,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
+
+		expectedDaemonsetAnnotations := map[string]string{
+			annotationEnableDsEviction: annotationFalseValue,
+		}
+
+		expectedTemplateAnnotations := map[string]string{
+			webhook.AnnotationDynatraceInject: annotationFalseValue,
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
@@ -882,7 +911,8 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with classic fullstack", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -897,8 +927,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
-			webhook.AnnotationDynatraceInject: "false",
+
+		expectedDaemonsetAnnotations := map[string]string{
+			annotationEnableDsEviction: annotationFalseValue,
+		}
+
+		expectedTemplateAnnotations := map[string]string{
+			webhook.AnnotationDynatraceInject: annotationFalseValue,
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
@@ -909,7 +944,8 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 }
 
