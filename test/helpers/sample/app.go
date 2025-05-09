@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -31,14 +33,17 @@ import (
 )
 
 var (
-	defaultNameTemplate = "sample-%s"
-	podTemplatePath     = path.Join(project.TestDataDir(), "sample-app/pod-base.yaml")
-	sccPath             = path.Join(project.TestDataDir(), "sample-app/restricted-csi.yaml")
+	defaultNameTemplate        = "sample-%s"
+	podTemplatePath            = path.Join(project.TestDataDir(), "sample-app/pod-base.yaml")
+	serviceAccountTemplatePath = path.Join(project.TestDataDir(), "sample-app/serviceaccount.yaml")
+	clusterRolePath            = path.Join(project.TestDataDir(), "sample-app/clusterrole.yaml")
+	bindingPath                = path.Join(project.TestDataDir(), "sample-app/binding.yaml")
 )
 
 type App struct {
 	t         *testing.T
 	base      *corev1.Pod
+	scBase    *corev1.ServiceAccount
 	owner     metav1.Object
 	namespace corev1.Namespace
 
@@ -52,10 +57,15 @@ func NewApp(t *testing.T, owner metav1.Object, options ...Option) *App {
 	base := manifests.ObjectFromFile[*corev1.Pod](t, podTemplatePath)
 	base.Name = fmt.Sprintf(defaultNameTemplate, owner.GetName())
 	base.Namespace = base.Name
+
+	sc := manifests.ObjectFromFile[*corev1.ServiceAccount](t, serviceAccountTemplatePath)
+	sc.Namespace = base.Name
+
 	app := &App{
 		t:         t,
 		owner:     owner,
 		base:      base,
+		scBase:    sc,
 		namespace: *namespace.New(base.Namespace),
 	}
 	for _, opt := range options {
@@ -70,6 +80,7 @@ func WithName(name string) Option {
 		if app.base.Namespace == app.base.Name {
 			app.base.Namespace = name
 			app.namespace = *namespace.New(name)
+			app.scBase.Namespace = name
 		}
 		app.base.Name = name
 	}
@@ -85,6 +96,7 @@ func WithNamespace(namespace corev1.Namespace) Option {
 	return func(app *App) {
 		app.namespace = namespace
 		app.base.Namespace = namespace.Name
+		app.scBase.Namespace = namespace.Name
 	}
 }
 
@@ -142,7 +154,9 @@ func (app *App) Install() features.Func {
 		if !app.installedNamespace {
 			ctx = app.InstallNamespace()(ctx, t, c)
 		}
-		ctx = app.installSCC(ctx, t, c)
+		ctx = app.installClusterRole(ctx, t, c)
+
+		require.NoError(t, resource.Create(ctx, app.scBase))
 
 		object := app.build()
 
@@ -157,26 +171,41 @@ func (app *App) Install() features.Func {
 	}
 }
 
-func (app *App) installSCC(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+func (app *App) installClusterRole(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 	isOpenshift, err := platform.NewResolver().IsOpenshift()
 	require.NoError(t, err)
 	if isOpenshift {
-		ctx = helpers.ToFeatureFunc(manifests.InstallFromFile(sccPath), true)(ctx, t, c)
+		ctx = helpers.ToFeatureFunc(manifests.InstallFromFile(clusterRolePath), true)(ctx, t, c)
+		binding := app.createBinding(t)
+
+		err := c.Client().Resources().Create(ctx, binding)
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			require.NoError(t, err)
+		}
 	}
 
 	return ctx
+}
+
+func (app *App) createBinding(t *testing.T) *rbacv1.RoleBinding {
+	binding := manifests.ObjectFromFile[*rbacv1.RoleBinding](t, bindingPath)
+	binding.Namespace = app.Namespace()
+	require.Len(t, binding.Subjects, 1)
+	binding.Subjects[0].Namespace = app.Namespace()
+
+	return binding
 }
 
 func (app *App) Uninstall() features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		defer func() {
 			app.installedNamespace = false
+			ctx = app.uninstallClusterRole(ctx, t, c)
 		}()
 		resource := c.Client().Resources()
 		object := app.build()
 
 		require.NoError(t, resource.Delete(ctx, object))
-		ctx = app.uninstallSCC(ctx, t, c)
 		require.NoError(t, wait.For(conditions.New(resource).ResourceDeleted(object), wait.WithTimeout(2*time.Minute)))
 		if dep, ok := object.(*appsv1.Deployment); ok {
 			ctx = pod.WaitForPodsDeletionWithOwner(dep.Name, dep.Namespace)(ctx, t, c)
@@ -186,11 +215,17 @@ func (app *App) Uninstall() features.Func {
 	}
 }
 
-func (app *App) uninstallSCC(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+func (app *App) uninstallClusterRole(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 	isOpenshift, err := platform.NewResolver().IsOpenshift()
 	require.NoError(t, err)
 	if isOpenshift {
-		ctx = helpers.ToFeatureFunc(manifests.UninstallFromFile(sccPath), true)(ctx, t, c)
+		ctx = helpers.ToFeatureFunc(manifests.UninstallFromFile(clusterRolePath), true)(ctx, t, c)
+		binding := app.createBinding(t)
+
+		err := c.Client().Resources().Delete(ctx, binding)
+		if err != nil && !k8serrors.IsNotFound(err) {
+			require.NoError(t, err)
+		}
 	}
 
 	return ctx
