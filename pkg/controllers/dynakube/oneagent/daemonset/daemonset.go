@@ -151,7 +151,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	)
 	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
 
-	daemonsetAnnotations := map[string]string{
+	daemonSetAnnotations := map[string]string{
 		annotationEnableDaemonSetEviction: "false",
 	}
 
@@ -168,7 +168,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 			Name:        dk.Name,
 			Namespace:   dk.Namespace,
 			Labels:      labels,
-			Annotations: daemonsetAnnotations,
+			Annotations: daemonSetAnnotations,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{

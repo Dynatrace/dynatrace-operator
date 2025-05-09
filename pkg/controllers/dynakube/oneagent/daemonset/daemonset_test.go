@@ -772,7 +772,7 @@ func TestAnnotations(t *testing.T) {
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
-		expectedDaemonsetAnnotations := map[string]string{
+		expectedDaemonSetAnnotations := map[string]string{
 			annotationEnableDaemonSetEviction: "false",
 		}
 
@@ -787,7 +787,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedDaemonSetAnnotations, daemonset.Annotations)
 		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("host monitoring has apparmor annotation by default", func(t *testing.T) {
@@ -800,7 +800,7 @@ func TestAnnotations(t *testing.T) {
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
-		expectedDaemonsetAnnotations := map[string]string{
+		expectedDaemonSetAnnotations := map[string]string{
 			annotationEnableDaemonSetEviction: "false",
 		}
 
@@ -815,7 +815,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedDaemonSetAnnotations, daemonset.Annotations)
 		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("classic fullstack has apparmor annotation by default", func(t *testing.T) {
@@ -828,7 +828,7 @@ func TestAnnotations(t *testing.T) {
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
-		expectedDaemonsetAnnotations := map[string]string{
+		expectedDaemonSetAnnotations := map[string]string{
 			annotationEnableDaemonSetEviction: "false",
 		}
 
@@ -843,7 +843,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedDaemonSetAnnotations, daemonset.Annotations)
 		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with cloud native", func(t *testing.T) {
@@ -862,7 +862,7 @@ func TestAnnotations(t *testing.T) {
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
-		expectedDaemonsetAnnotations := map[string]string{
+		expectedDaemonSetAnnotations := map[string]string{
 			annotationEnableDaemonSetEviction: "false",
 		}
 
@@ -878,7 +878,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedDaemonSetAnnotations, daemonset.Annotations)
 		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with host monitoring", func(t *testing.T) {
@@ -895,7 +895,7 @@ func TestAnnotations(t *testing.T) {
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
-		expectedDaemonsetAnnotations := map[string]string{
+		expectedDaemonSetAnnotations := map[string]string{
 			annotationEnableDaemonSetEviction: "false",
 		}
 
@@ -911,7 +911,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedDaemonSetAnnotations, daemonset.Annotations)
 		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with classic fullstack", func(t *testing.T) {
@@ -928,7 +928,7 @@ func TestAnnotations(t *testing.T) {
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
-		expectedDaemonsetAnnotations := map[string]string{
+		expectedDaemonSetAnnotations := map[string]string{
 			annotationEnableDaemonSetEviction: "false",
 		}
 
@@ -944,7 +944,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedDaemonsetAnnotations, daemonset.Annotations)
+		assert.Equal(t, expectedDaemonSetAnnotations, daemonset.Annotations)
 		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 }
