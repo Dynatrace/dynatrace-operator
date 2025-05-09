@@ -41,6 +41,9 @@ inputs:
   github-token:
     description: The GitHub token
     required: true
+  test-target:
+    description: E2E test target (i.e. make test/<target>)
+    required: false
 runs:
   using: composite
   steps:
@@ -88,6 +91,7 @@ runs:
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
+        TEST_TARGET: ${{ inputs.test-target }}
     - name: Destroy cluster
       shell: bash
       run: ref/.github/scripts/destroy-cluster.sh
