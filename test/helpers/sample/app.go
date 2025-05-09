@@ -16,12 +16,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -187,8 +187,8 @@ func (app *App) installClusterRole(ctx context.Context, t *testing.T, c *envconf
 	return ctx
 }
 
-func (app *App) createBinding(t *testing.T) *rbacv1.ClusterRoleBinding {
-	binding := manifests.ObjectFromFile[*rbacv1.ClusterRoleBinding](t, bindingPath)
+func (app *App) createBinding(t *testing.T) *rbacv1.RoleBinding {
+	binding := manifests.ObjectFromFile[*rbacv1.RoleBinding](t, bindingPath)
 	binding.Namespace = app.Namespace()
 	require.Len(t, binding.Subjects, 1)
 	binding.Subjects[0].Namespace = app.Namespace()
