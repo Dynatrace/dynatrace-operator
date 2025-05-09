@@ -151,14 +151,11 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	)
 	maxUnavailable := intstr.FromInt(dk.FF().GetOneAgentMaxUnavailable())
 
-	daemonSetAnnotations := map[string]string{
-		annotationEnableDaemonSetEviction: "false",
-	}
-
 	templateAnnotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
 		webhook.AnnotationDynatraceInject: "false",
 		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash,
+		annotationEnableDaemonSetEviction: "false",
 	}
 
 	templateAnnotations = maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations)
@@ -168,7 +165,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 			Name:        dk.Name,
 			Namespace:   dk.Namespace,
 			Labels:      labels,
-			Annotations: daemonSetAnnotations,
+			Annotations: map[string]string{},
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
