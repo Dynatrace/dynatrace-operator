@@ -12,7 +12,7 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
 * OneAgentasdfjfjdd
   * `classicFullStack` rolls out a OneAgent pod per node to monitor pods on it and the node itself
   * `applicationMonitoring` is a webhook based injection mechanism for automatic app-only injection
-    * CSI Driver can be enabled to cache OneAgent downloads per node
+    * CSI Driver can be enabled to cache OneAgent downloads per nodedd
   * `hostMonitoring` is only monitoring the hosts (i.e. nodes) in the cluster without app-only injection
     * CSI Driver is used to provide a writeable volume for the Oneagent as it's running in read-only mode
   * `cloudNativeFullStack` is a combination of `applicationMonitoring` and `hostMonitoring`
