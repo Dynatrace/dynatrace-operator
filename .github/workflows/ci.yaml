@@ -26,27 +26,27 @@ jobs:
       go_changed: ${{ steps.filter.outputs.go_changed }}
       docker_changed: ${{ steps.filter.outputs.docker_changed }}
       helm_changed: ${{ steps.filter.outputs.helm_changed }}
+      prerequisites_changed: ${{ steps.filter.outputs.prerequisites_changed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
+          ref: ${{ github.event.pull_request.head.sha || github.event.after }}
       - name: Detect file changes
         id: filter
         run: |
-          git fetch origin "+refs/heads/*:refs/remotes/origin/*" "+refs/pull/*/head:refs/remotes/origin/pr/*"
-          if [[ ${{ github.event_name }} == "pull_request" ]]; then
-            CHANGED_FILES=$(git diff --name-only origin/pr/${{ github.event.pull_request.number }}..origin/${{ github.base_ref }})
-          else
-            CHANGED_FILES=$(git diff --name-only origin/${{ github.ref_name }}..HEAD^)
-          fi
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+
           echo "go_changed=$(echo "$CHANGED_FILES" | grep -E '\.go$|go\.mod' | wc -l)" >> $GITHUB_OUTPUT
           echo "docker_changed=$(echo "$CHANGED_FILES" | grep -E 'Dockerfile' | wc -l)" >> $GITHUB_OUTPUT
           echo "helm_changed=$(echo "$CHANGED_FILES" | grep -E '^config/' | wc -l)" >> $GITHUB_OUTPUT
+          echo "prerequisites_changed=$(echo "$CHANGED_FILES" | grep -E '^prerequisites\.mk$' | wc -l)" >> $GITHUB_OUTPUT
+          echo Changed files: $CHANGED_FILES
 
   helm-test:
     needs: detect-changes
-    if: needs.detect-changes.outputs.helm_changed != '0'
+    if: needs.detect-changes.outputs.helm_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
     name: Run helm unit tests
     runs-on: ubuntu-latest
     steps:
@@ -61,7 +61,7 @@ jobs:
 
   helm-lint:
     needs: detect-changes
-    if: needs.detect-changes.outputs.helm_changed != '0'
+    if: needs.detect-changes.outputs.helm_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
     name: Run helm linting
     runs-on: ubuntu-latest
     steps:
@@ -76,7 +76,7 @@ jobs:
 
   tests:
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed != '0'
+    if: needs.detect-changes.outputs.go_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
     name: Run unit tests
     runs-on: ubuntu-latest
     steps:
@@ -98,7 +98,7 @@ jobs:
 
   linting:
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed != '0'
+    if: needs.detect-changes.outputs.go_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
     name: Run linting
     runs-on: ubuntu-latest
     steps:
@@ -120,6 +120,8 @@ jobs:
 
   generated-files:
     name: Check generated files
+    needs: detect-changes
+    if: needs.detect-changes.outputs.go_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
