@@ -158,6 +158,7 @@ func TestConvertTo(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.NotNil(t, to.Spec.Kspm)
+		assert.Equal(t, []string{"/"}, to.Spec.Kspm.MappedHostPaths)
 		compareBase(t, from, to)
 	})
 

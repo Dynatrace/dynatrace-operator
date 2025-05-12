@@ -65,6 +65,7 @@ func (src *DynaKube) toLogMonitoringSpec(dst *dynakubev1beta5.DynaKube) {
 func (src *DynaKube) toKspmSpec(dst *dynakubev1beta5.DynaKube) {
 	if src.Spec.Kspm != nil {
 		dst.Spec.Kspm = &kspmv1beta5.Spec{}
+		dst.Spec.Kspm.MappedHostPaths = []string{"/"}
 	}
 }
 

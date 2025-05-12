@@ -11712,6 +11712,13 @@ spec:
                 type: object
               kspm:
                 description: General configuration about the KSPM feature.
+                properties:
+                  mappedHostPaths:
+                    description: 'MappedHostPaths contains host paths are mounted
+                      to the container. Default value: `/`'
+                    items:
+                      type: string
+                    type: array
                 type: object
               logMonitoring:
                 description: General configuration about the LogMonitoring feature.
