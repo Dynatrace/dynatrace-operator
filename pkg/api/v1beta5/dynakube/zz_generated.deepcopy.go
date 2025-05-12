@@ -104,7 +104,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	if in.Kspm != nil {
 		in, out := &in.Kspm, &out.Kspm
 		*out = new(kspm.Spec)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.DynatraceApiRequestThreshold != nil {
 		in, out := &in.DynatraceApiRequestThreshold, &out.DynatraceApiRequestThreshold
