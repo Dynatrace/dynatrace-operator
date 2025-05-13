@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -27,9 +27,9 @@ import (
 var testTime = metav1.Now()
 
 func TestConvertTo(t *testing.T) {
-	t.Run("migrate from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -37,9 +37,9 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate metadata-enrichment from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate metadata-enrichment from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -48,11 +48,11 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate host-monitoring from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate host-monitoring from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -62,11 +62,11 @@ func TestConvertTo(t *testing.T) {
 		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
-	t.Run("migrate classic-fullstack from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate classic-fullstack from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -79,11 +79,11 @@ func TestConvertTo(t *testing.T) {
 		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
-	t.Run("migrate cloud-native from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate cloud-native from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		spec := getOldCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -95,11 +95,11 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate application-monitoring from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate application-monitoring from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		appSpec := getOldApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -111,11 +111,11 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate activegate from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate activegate from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		agSpec := getOldActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -125,10 +125,10 @@ func TestConvertTo(t *testing.T) {
 		assert.False(t, to.MetadataEnrichmentEnabled())
 	})
 
-	t.Run("migrate extensions from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate extensions from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Extensions = &ExtensionsSpec{}
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -137,10 +137,10 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate log-monitoring from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate log-monitoring from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.LogMonitoring = getOldLogMonitoringSpec()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -149,10 +149,10 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate kspm from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate kspm from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Kspm = &kspm.Spec{}
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -162,12 +162,12 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate extensions templates from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate extensions templates from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getOldOpenTelemetryTemplateSpec()
 		from.Spec.Templates.ExtensionExecutionController = getOldExtensionExecutionControllerSpec()
 
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -178,11 +178,11 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate log-monitoring templates from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate log-monitoring templates from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Templates.LogMonitoring = getOldLogMonitoringTemplateSpec()
 
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -191,11 +191,11 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate kspm templates from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate kspm templates from latest to v1beta3", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Templates.KspmNodeConfigurationCollector = getOldNodeConfigurationCollectorTemplateSpec()
 
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -204,10 +204,10 @@ func TestConvertTo(t *testing.T) {
 		compareBase(t, from, to)
 	})
 
-	t.Run("migrate status from v1beta3 to v1beta5", func(t *testing.T) {
+	t.Run("migrate status from v1beta3 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate hostGroup", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)

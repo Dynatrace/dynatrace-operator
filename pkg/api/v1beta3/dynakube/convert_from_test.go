@@ -30,7 +30,7 @@ import (
 )
 
 func TestConvertFrom(t *testing.T) {
-	t.Run("migrate base from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate base from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
@@ -40,7 +40,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate metadata-enrichment from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate metadata-enrichment from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
@@ -51,7 +51,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate host-monitoring from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate host-monitoring from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
@@ -64,7 +64,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate classic-fullstack from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate classic-fullstack from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
@@ -81,7 +81,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate cloud-native from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate cloud-native from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		spec := getNewCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
@@ -98,7 +98,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate application-monitoring from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate application-monitoring from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		appSpec := getNewApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
@@ -115,7 +115,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate activegate from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate activegate from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		agSpec := getNewActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
@@ -128,7 +128,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate extensions from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate extensions from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Extensions = &dynakubelatest.ExtensionsSpec{}
 		to := DynaKube{}
@@ -140,7 +140,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate log-monitoring from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate log-monitoring from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.LogMonitoring = getNewLogMonitoringSpec()
 		to := DynaKube{}
@@ -152,7 +152,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate kspm from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate kspm from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Kspm = &kspmlatest.Spec{}
 		to := DynaKube{}
@@ -164,7 +164,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate extensions templates from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate extensions templates from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
 		from.Spec.Templates.ExtensionExecutionController = getNewExtensionExecutionControllerSpec()
@@ -180,7 +180,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate log-monitoring templates from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate log-monitoring templates from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.LogMonitoring = getNewLogMonitoringTemplateSpec()
 
@@ -193,7 +193,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate kspm templates from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate kspm templates from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.KspmNodeConfigurationCollector = getNewNodeConfigurationCollectorTemplateSpec()
 
@@ -206,7 +206,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate status from v1beta5 to v1beta3", func(t *testing.T) {
+	t.Run("migrate status from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Status = getNewStatus()
 		to := DynaKube{}

@@ -2,9 +2,9 @@ package dynakube
 
 import (
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	kspmv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
-	logmonitoringv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
-	oneagentv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertFrom converts from the Hub version (v1beta5) to this version (v1beta4).
+// ConvertFrom converts from the Hub version (latest) to this version (v1beta4).
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*dynakubelatest.DynaKube)
 
@@ -100,7 +100,7 @@ func (dst *DynaKube) fromTemplatesSpec(src *dynakubelatest.DynaKube) {
 	dst.Spec.Templates.ExtensionExecutionController = fromExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
 
-func fromLogMonitoringTemplate(src *logmonitoringv1beta5.TemplateSpec) *logmonitoring.TemplateSpec {
+func fromLogMonitoringTemplate(src *logmonitoringlatest.TemplateSpec) *logmonitoring.TemplateSpec {
 	if src == nil {
 		return nil
 	}
@@ -121,7 +121,7 @@ func fromLogMonitoringTemplate(src *logmonitoringv1beta5.TemplateSpec) *logmonit
 	return dst
 }
 
-func fromKspmNodeConfigurationCollectorTemplate(src kspmv1beta5.NodeConfigurationCollectorSpec) kspm.NodeConfigurationCollectorSpec {
+func fromKspmNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfigurationCollectorSpec) kspm.NodeConfigurationCollectorSpec {
 	dst := kspm.NodeConfigurationCollectorSpec{}
 
 	dst.UpdateStrategy = src.UpdateStrategy
@@ -257,7 +257,7 @@ func (dst *DynaKube) fromActiveGateStatus(src dynakubelatest.DynaKube) {
 	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
 }
 
-func fromHostInjectSpec(src oneagentv1beta5.HostInjectSpec) *oneagent.HostInjectSpec {
+func fromHostInjectSpec(src oneagentlatest.HostInjectSpec) *oneagent.HostInjectSpec {
 	dst := &oneagent.HostInjectSpec{}
 
 	dst.Annotations = src.Annotations
@@ -277,7 +277,7 @@ func fromHostInjectSpec(src oneagentv1beta5.HostInjectSpec) *oneagent.HostInject
 	return dst
 }
 
-func fromAppInjectSpec(src oneagentv1beta5.AppInjectionSpec) *oneagent.AppInjectionSpec {
+func fromAppInjectSpec(src oneagentlatest.AppInjectionSpec) *oneagent.AppInjectionSpec {
 	dst := &oneagent.AppInjectionSpec{}
 
 	dst.InitResources = src.InitResources
