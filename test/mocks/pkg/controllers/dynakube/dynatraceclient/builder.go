@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	dynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	dynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 
 	dynatraceclient "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"

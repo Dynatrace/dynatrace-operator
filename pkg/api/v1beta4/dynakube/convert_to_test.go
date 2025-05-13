@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -12,11 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
-	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +29,7 @@ var testTime = metav1.Now()
 func TestConvertTo(t *testing.T) {
 	t.Run("migrate from v1beta4 to v1beta5", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -39,7 +39,7 @@ func TestConvertTo(t *testing.T) {
 
 	t.Run("migrate metadata-enrichment from v1beta4 to v1beta5", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		hostSpec := getOldHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		spec := getOldCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -99,7 +99,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		appSpec := getOldApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		agSpec := getOldActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -128,7 +128,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate extensions from v1beta4 to v1beta5", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Extensions = &ExtensionsSpec{}
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate log-monitoring from v1beta4 to v1beta5", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.LogMonitoring = getOldLogMonitoringSpec()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -152,7 +152,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate kspm from v1beta4 to v1beta5", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Kspm = &kspm.Spec{}
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -167,7 +167,7 @@ func TestConvertTo(t *testing.T) {
 		from.Spec.Templates.OpenTelemetryCollector = getOldOpenTelemetryTemplateSpec()
 		from.Spec.Templates.ExtensionExecutionController = getOldExtensionExecutionControllerSpec()
 
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Templates.LogMonitoring = getOldLogMonitoringTemplateSpec()
 
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -195,7 +195,7 @@ func TestConvertTo(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.Templates.KspmNodeConfigurationCollector = getOldNodeConfigurationCollectorTemplateSpec()
 
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -207,7 +207,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate status from v1beta4 to v1beta5", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("migrate hostGroup", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Status = getOldStatus()
-		to := dynakubev1beta5.DynaKube{}
+		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
@@ -539,9 +539,9 @@ func getOldLogMonitoringTemplateSpec() *logmonitoring.TemplateSpec {
 
 func getOldNodeConfigurationCollectorTemplateSpec() kspm.NodeConfigurationCollectorSpec {
 	return kspm.NodeConfigurationCollectorSpec{
-		UpdateStrategy: &v1.DaemonSetUpdateStrategy{
+		UpdateStrategy: &appsv1.DaemonSetUpdateStrategy{
 			Type: "daemonset-update-strategy-type",
-			RollingUpdate: &v1.RollingUpdateDaemonSet{
+			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 				MaxUnavailable: &intstr.IntOrString{
 					Type:   0,
 					IntVal: 42,

@@ -1,7 +1,7 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 )
 
 func (dk *DynaKube) TelemetryIngest() *telemetryingest.TelemetryIngest {

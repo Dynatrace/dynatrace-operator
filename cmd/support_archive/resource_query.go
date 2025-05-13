@@ -3,10 +3,10 @@ package support_archive
 import (
 	"reflect"
 
+	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
@@ -89,7 +89,7 @@ func getComponentsQueryGroup(namespace string, appName string, labelKey string) 
 func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
-			toGroupVersionKind(v1beta5.GroupVersion, dynakube.DynaKube{}),
+			toGroupVersionKind(latest.GroupVersion, dynakube.DynaKube{}),
 			toGroupVersionKind(v1alpha2.GroupVersion, edgeconnect.EdgeConnect{}),
 		},
 		filters: []client.ListOption{

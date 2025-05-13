@@ -1,7 +1,7 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 )
 
 func (dk *DynaKube) ActiveGate() *activegate.ActiveGate {

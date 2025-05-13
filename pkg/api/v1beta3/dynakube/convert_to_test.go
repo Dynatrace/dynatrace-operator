@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -12,11 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
-	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -539,9 +539,9 @@ func getOldLogMonitoringTemplateSpec() *logmonitoring.TemplateSpec {
 
 func getOldNodeConfigurationCollectorTemplateSpec() kspm.NodeConfigurationCollectorSpec {
 	return kspm.NodeConfigurationCollectorSpec{
-		UpdateStrategy: &v1.DaemonSetUpdateStrategy{
+		UpdateStrategy: &appsv1.DaemonSetUpdateStrategy{
 			Type: "daemonset-update-strategy-type",
-			RollingUpdate: &v1.RollingUpdateDaemonSet{
+			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 				MaxUnavailable: &intstr.IntOrString{
 					Type:   0,
 					IntVal: 42,

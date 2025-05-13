@@ -1,14 +1,14 @@
 package dynakube
 
 import (
+	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	kspmv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	logmonitoringv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	oneagentv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
-	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
-	kspmv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
-	logmonitoringv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
-	oneagentv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 

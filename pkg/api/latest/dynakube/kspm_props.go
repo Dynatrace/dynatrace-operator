@@ -1,6 +1,6 @@
 package dynakube
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
+import "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 
 func (dk *DynaKube) KSPM() *kspm.Kspm {
 	_kspm := &kspm.Kspm{

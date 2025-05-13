@@ -3,7 +3,7 @@ package oneagent
 import (
 	"net/url"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
 	corev1 "k8s.io/api/core/v1"

@@ -2,8 +2,8 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	corev1 "k8s.io/api/core/v1"
 )
 

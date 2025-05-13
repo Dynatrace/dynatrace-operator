@@ -5,10 +5,10 @@ import (
 	"os"
 	"reflect"
 
+	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -118,13 +118,13 @@ func runLocally(kubeCfg *rest.Config) error {
 
 func checkCRDs(operatorManager manager.Manager) error {
 	groupKind := schema.GroupKind{
-		Group: v1beta5.GroupVersion.Group,
+		Group: latest.GroupVersion.Group,
 		Kind:  reflect.TypeOf(dynakube.DynaKube{}).Name(),
 	}
 
-	_, err := operatorManager.GetRESTMapper().RESTMapping(groupKind, v1beta5.GroupVersion.Version)
+	_, err := operatorManager.GetRESTMapper().RESTMapping(groupKind, latest.GroupVersion.Version)
 	if err != nil {
-		log.Info("missing expected CRD version for DynaKube", "version", v1beta5.GroupVersion.Version)
+		log.Info("missing expected CRD version for DynaKube", "version", latest.GroupVersion.Version)
 
 		return err
 	}

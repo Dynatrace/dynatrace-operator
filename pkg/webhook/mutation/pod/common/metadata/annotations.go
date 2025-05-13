@@ -3,7 +3,7 @@ package metadata
 import (
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	corev1 "k8s.io/api/core/v1"
 )
 

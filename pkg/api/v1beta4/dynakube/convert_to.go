@@ -1,20 +1,20 @@
 package dynakube
 
 import (
+	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
-	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
-	activegatev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
-	kspmv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
-	logmonitoringv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
-	oneagentv1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // Convertto converts this version (src=v1beta4) to the Hub version.
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*dynakubev1beta5.DynaKube)
+	dst := dstRaw.(*dynakubelatest.DynaKube)
 
 	src.toStatus(dst)
 
@@ -30,7 +30,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func (src *DynaKube) toBase(dst *dynakubev1beta5.DynaKube) {
+func (src *DynaKube) toBase(dst *dynakubelatest.DynaKube) {
 	if src.Annotations == nil {
 		dst.Annotations = map[string]string{}
 	}
@@ -48,13 +48,13 @@ func (src *DynaKube) toBase(dst *dynakubev1beta5.DynaKube) {
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 }
 
-func (src *DynaKube) toLogMonitoringSpec(dst *dynakubev1beta5.DynaKube) {
+func (src *DynaKube) toLogMonitoringSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.LogMonitoring != nil {
-		dst.Spec.LogMonitoring = &logmonitoringv1beta5.Spec{}
-		dst.Spec.LogMonitoring.IngestRuleMatchers = make([]logmonitoringv1beta5.IngestRuleMatchers, 0)
+		dst.Spec.LogMonitoring = &logmonitoringlatest.Spec{}
+		dst.Spec.LogMonitoring.IngestRuleMatchers = make([]logmonitoringlatest.IngestRuleMatchers, 0)
 
 		for _, rule := range src.Spec.LogMonitoring.IngestRuleMatchers {
-			dst.Spec.LogMonitoring.IngestRuleMatchers = append(dst.Spec.LogMonitoring.IngestRuleMatchers, logmonitoringv1beta5.IngestRuleMatchers{
+			dst.Spec.LogMonitoring.IngestRuleMatchers = append(dst.Spec.LogMonitoring.IngestRuleMatchers, logmonitoringlatest.IngestRuleMatchers{
 				Attribute: rule.Attribute,
 				Values:    rule.Values,
 			})
@@ -62,29 +62,29 @@ func (src *DynaKube) toLogMonitoringSpec(dst *dynakubev1beta5.DynaKube) {
 	}
 }
 
-func (src *DynaKube) toKspmSpec(dst *dynakubev1beta5.DynaKube) {
+func (src *DynaKube) toKspmSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.Kspm != nil {
-		dst.Spec.Kspm = &kspmv1beta5.Spec{}
+		dst.Spec.Kspm = &kspmlatest.Spec{}
 		dst.Spec.Kspm.MappedHostPaths = []string{"/"}
 	}
 }
 
-func (src *DynaKube) toExtensionsSpec(dst *dynakubev1beta5.DynaKube) {
+func (src *DynaKube) toExtensionsSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.Extensions != nil {
-		dst.Spec.Extensions = &dynakubev1beta5.ExtensionsSpec{}
+		dst.Spec.Extensions = &dynakubelatest.ExtensionsSpec{}
 	}
 }
 
-func (src *DynaKube) toOneAgentSpec(dst *dynakubev1beta5.DynaKube) { //nolint:dupl
+func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dupl
 	switch {
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = toHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
 	case src.OneAgent().IsCloudNativeFullstackMode():
-		dst.Spec.OneAgent.CloudNativeFullStack = &oneagentv1beta5.CloudNativeFullStackSpec{}
+		dst.Spec.OneAgent.CloudNativeFullStack = &oneagentlatest.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *toHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.OneAgent().IsApplicationMonitoringMode():
-		dst.Spec.OneAgent.ApplicationMonitoring = &oneagentv1beta5.ApplicationMonitoringSpec{}
+		dst.Spec.OneAgent.ApplicationMonitoring = &oneagentlatest.ApplicationMonitoringSpec{}
 		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 	case src.OneAgent().IsHostMonitoringMode():
@@ -94,19 +94,19 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubev1beta5.DynaKube) { //nolint:du
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 }
 
-func (src *DynaKube) toTemplatesSpec(dst *dynakubev1beta5.DynaKube) {
+func (src *DynaKube) toTemplatesSpec(dst *dynakubelatest.DynaKube) {
 	dst.Spec.Templates.LogMonitoring = toLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
 	dst.Spec.Templates.KspmNodeConfigurationCollector = toKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KspmNodeConfigurationCollector)
 	dst.Spec.Templates.OpenTelemetryCollector = toOpenTelemetryCollectorTemplate(src.Spec.Templates.OpenTelemetryCollector)
 	dst.Spec.Templates.ExtensionExecutionController = toExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
 
-func toLogMonitoringTemplate(src *logmonitoring.TemplateSpec) *logmonitoringv1beta5.TemplateSpec {
+func toLogMonitoringTemplate(src *logmonitoring.TemplateSpec) *logmonitoringlatest.TemplateSpec {
 	if src == nil {
 		return nil
 	}
 
-	dst := &logmonitoringv1beta5.TemplateSpec{}
+	dst := &logmonitoringlatest.TemplateSpec{}
 
 	dst.Annotations = src.Annotations
 	dst.Labels = src.Labels
@@ -122,8 +122,8 @@ func toLogMonitoringTemplate(src *logmonitoring.TemplateSpec) *logmonitoringv1be
 	return dst
 }
 
-func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollectorSpec) kspmv1beta5.NodeConfigurationCollectorSpec {
-	dst := kspmv1beta5.NodeConfigurationCollectorSpec{}
+func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollectorSpec) kspmlatest.NodeConfigurationCollectorSpec {
+	dst := kspmlatest.NodeConfigurationCollectorSpec{}
 
 	dst.UpdateStrategy = src.UpdateStrategy
 	dst.Labels = src.Labels
@@ -140,8 +140,8 @@ func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollecto
 	return dst
 }
 
-func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubev1beta5.OpenTelemetryCollectorSpec {
-	dst := dynakubev1beta5.OpenTelemetryCollectorSpec{}
+func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubelatest.OpenTelemetryCollectorSpec {
+	dst := dynakubelatest.OpenTelemetryCollectorSpec{}
 
 	dst.Labels = src.Labels
 	dst.Annotations = src.Annotations
@@ -155,8 +155,8 @@ func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubev1
 	return dst
 }
 
-func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) dynakubev1beta5.ExtensionExecutionControllerSpec {
-	dst := dynakubev1beta5.ExtensionExecutionControllerSpec{}
+func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) dynakubelatest.ExtensionExecutionControllerSpec {
+	dst := dynakubelatest.ExtensionExecutionControllerSpec{}
 
 	dst.PersistentVolumeClaim = src.PersistentVolumeClaim
 	dst.Labels = src.Labels
@@ -173,7 +173,7 @@ func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) dynakub
 	return dst
 }
 
-func (src *DynaKube) toActiveGateSpec(dst *dynakubev1beta5.DynaKube) { //nolint:dupl
+func (src *DynaKube) toActiveGateSpec(dst *dynakubelatest.DynaKube) { //nolint:dupl
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
 	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
@@ -190,24 +190,24 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakubev1beta5.DynaKube) { //nolint:
 	dst.Spec.ActiveGate.CapabilityProperties.Env = src.Spec.ActiveGate.CapabilityProperties.Env
 	dst.Spec.ActiveGate.CapabilityProperties.TopologySpreadConstraints = src.Spec.ActiveGate.CapabilityProperties.TopologySpreadConstraints
 
-	dst.Spec.ActiveGate.Capabilities = make([]activegatev1beta5.CapabilityDisplayName, 0)
+	dst.Spec.ActiveGate.Capabilities = make([]activegatelatest.CapabilityDisplayName, 0)
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
-		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, activegatev1beta5.CapabilityDisplayName(capability))
+		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, activegatelatest.CapabilityDisplayName(capability))
 	}
 }
 
-func (src *DynaKube) toStatus(dst *dynakubev1beta5.DynaKube) {
+func (src *DynaKube) toStatus(dst *dynakubelatest.DynaKube) {
 	src.toOneAgentStatus(dst)
 	src.toActiveGateStatus(dst)
-	dst.Status.CodeModules = oneagentv1beta5.CodeModulesStatus{
+	dst.Status.CodeModules = oneagentlatest.CodeModulesStatus{
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.MetadataEnrichment.Rules = make([]dynakubev1beta5.EnrichmentRule, 0)
+	dst.Status.MetadataEnrichment.Rules = make([]dynakubelatest.EnrichmentRule, 0)
 	for _, rule := range src.Status.MetadataEnrichment.Rules {
 		dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
-			dynakubev1beta5.EnrichmentRule{
-				Type:    dynakubev1beta5.EnrichmentRuleType(rule.Type),
+			dynakubelatest.EnrichmentRule{
+				Type:    dynakubelatest.EnrichmentRuleType(rule.Type),
 				Source:  rule.Source,
 				Target:  rule.Target,
 				Enabled: rule.Enabled,
@@ -216,7 +216,7 @@ func (src *DynaKube) toStatus(dst *dynakubev1beta5.DynaKube) {
 
 	dst.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
-	dst.Status.DynatraceApi = dynakubev1beta5.DynatraceApiStatus{
+	dst.Status.DynatraceApi = dynakubelatest.DynatraceApiStatus{
 		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
 	}
 	dst.Status.Phase = src.Status.Phase
@@ -226,12 +226,12 @@ func (src *DynaKube) toStatus(dst *dynakubev1beta5.DynaKube) {
 	dst.Status.Conditions = src.Status.Conditions
 }
 
-func (src *DynaKube) toOneAgentStatus(dst *dynakubev1beta5.DynaKube) { //nolint:dupl
+func (src *DynaKube) toOneAgentStatus(dst *dynakubelatest.DynaKube) { //nolint:dupl
 	dst.Status.OneAgent.VersionStatus = src.Status.OneAgent.VersionStatus
 
-	dst.Status.OneAgent.Instances = map[string]oneagentv1beta5.Instance{}
+	dst.Status.OneAgent.Instances = map[string]oneagentlatest.Instance{}
 	for key, instance := range src.Status.OneAgent.Instances {
-		dst.Status.OneAgent.Instances[key] = oneagentv1beta5.Instance{
+		dst.Status.OneAgent.Instances[key] = oneagentlatest.Instance{
 			PodName:   instance.PodName,
 			IPAddress: instance.IPAddress,
 		}
@@ -241,11 +241,11 @@ func (src *DynaKube) toOneAgentStatus(dst *dynakubev1beta5.DynaKube) { //nolint:
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
 
 	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo
-	dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = make([]oneagentv1beta5.CommunicationHostStatus, 0)
+	dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = make([]oneagentlatest.CommunicationHostStatus, 0)
 
 	for _, host := range src.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
 		dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts =
-			append(dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts, oneagentv1beta5.CommunicationHostStatus{
+			append(dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts, oneagentlatest.CommunicationHostStatus{
 				Protocol: host.Protocol,
 				Host:     host.Host,
 				Port:     host.Port,
@@ -253,14 +253,14 @@ func (src *DynaKube) toOneAgentStatus(dst *dynakubev1beta5.DynaKube) { //nolint:
 	}
 }
 
-func (src *DynaKube) toActiveGateStatus(dst *dynakubev1beta5.DynaKube) {
+func (src *DynaKube) toActiveGateStatus(dst *dynakubelatest.DynaKube) {
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 	dst.Status.ActiveGate.ConnectionInfo = src.Status.ActiveGate.ConnectionInfo
 	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
 }
 
-func toHostInjectSpec(src oneagent.HostInjectSpec) *oneagentv1beta5.HostInjectSpec {
-	dst := &oneagentv1beta5.HostInjectSpec{}
+func toHostInjectSpec(src oneagent.HostInjectSpec) *oneagentlatest.HostInjectSpec {
+	dst := &oneagentlatest.HostInjectSpec{}
 
 	dst.Annotations = src.Annotations
 	dst.Labels = src.Labels
@@ -279,8 +279,8 @@ func toHostInjectSpec(src oneagent.HostInjectSpec) *oneagentv1beta5.HostInjectSp
 	return dst
 }
 
-func toAppInjectSpec(src oneagent.AppInjectionSpec) *oneagentv1beta5.AppInjectionSpec {
-	dst := &oneagentv1beta5.AppInjectionSpec{}
+func toAppInjectSpec(src oneagent.AppInjectionSpec) *oneagentlatest.AppInjectionSpec {
+	dst := &oneagentlatest.AppInjectionSpec{}
 
 	dst.InitResources = src.InitResources
 	dst.CodeModulesImage = src.CodeModulesImage
@@ -289,7 +289,7 @@ func toAppInjectSpec(src oneagent.AppInjectionSpec) *oneagentv1beta5.AppInjectio
 	return dst
 }
 
-func (src *DynaKube) toMetadataEnrichment(dst *dynakubev1beta5.DynaKube) {
+func (src *DynaKube) toMetadataEnrichment(dst *dynakubelatest.DynaKube) {
 	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 }
