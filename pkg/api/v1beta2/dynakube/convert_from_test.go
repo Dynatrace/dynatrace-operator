@@ -21,7 +21,7 @@ import (
 )
 
 func TestConvertFrom(t *testing.T) {
-	t.Run("migrate base from v1beta5 to v1beta2", func(t *testing.T) {
+	t.Run("migrate base from latest to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
@@ -31,7 +31,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate host-monitoring from v1beta5 to v1beta2", func(t *testing.T) {
+	t.Run("migrate host-monitoring from latest to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
@@ -49,7 +49,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate classic-fullstack from v1beta5 to v1beta2", func(t *testing.T) {
+	t.Run("migrate classic-fullstack from latest to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
@@ -67,7 +67,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate cloud-native from v1beta5 to v1beta2", func(t *testing.T) {
+	t.Run("migrate cloud-native from latest to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		spec := getNewCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
@@ -85,7 +85,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate application-monitoring from v1beta5 to v1beta2", func(t *testing.T) {
+	t.Run("migrate application-monitoring from latest to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		appSpec := getNewApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
@@ -102,7 +102,7 @@ func TestConvertFrom(t *testing.T) {
 		compareApplicationMonitoringSpec(t, *to.Spec.OneAgent.ApplicationMonitoring, *from.Spec.OneAgent.ApplicationMonitoring)
 	})
 
-	t.Run("migrate activegate from v1beta5 to v1beta2", func(t *testing.T) {
+	t.Run("migrate activegate from latest to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		agSpec := getNewActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
@@ -114,7 +114,7 @@ func TestConvertFrom(t *testing.T) {
 		compareActiveGateSpec(t, to.Spec.ActiveGate, from.Spec.ActiveGate)
 	})
 
-	t.Run("migrate status from v1beta5 to v1beta2", func(t *testing.T) {
+	t.Run("migrate status from latest to v1beta2", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Status = getNewStatus()
 		to := DynaKube{}

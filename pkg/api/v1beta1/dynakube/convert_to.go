@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertTo converts v1beta1 to v1beta5.
+// ConvertTo converts v1beta1 to latest.
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*dynakube.DynaKube)
 	src.toBase(dst)

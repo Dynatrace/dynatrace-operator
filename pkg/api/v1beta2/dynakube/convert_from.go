@@ -7,7 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertFrom converts from the Hub version (v1beta5) to this version (v1beta2).
+// ConvertFrom converts from the Hub version (latest) to this version (v1beta2).
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*dynakube.DynaKube)
 

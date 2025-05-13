@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertTo converts this v1beta2 to the Hub version (v1beta5).
+// ConvertTo converts this v1beta2 to the Hub version (latest).
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*dynakube.DynaKube)
 
