@@ -54,7 +54,7 @@ popd
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
-if [[ -z "${$TARGET_IMAGE}" ]]; then
+if [[ -z "${TARGET_IMAGE}" ]]; then
   make IMG="$TARGET_IMAGE" test/e2e-publish
 else
   echo "fall back to default branch target"
