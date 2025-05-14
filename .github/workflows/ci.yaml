@@ -80,6 +80,7 @@ jobs:
           # renovate depName=github.com/golangci/golangci-lint
           version: v2.1.6
           args: --build-tags e2e --timeout 300s
+          skip-cache: true
       - name: Run deadcode
         id: deadcode
         run: |
