@@ -23,30 +23,55 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      go_changed: ${{ steps.filter.outputs.go_changed }}
-      docker_changed: ${{ steps.filter.outputs.docker_changed }}
-      helm_changed: ${{ steps.filter.outputs.helm_changed }}
-      prerequisites_changed: ${{ steps.filter.outputs.prerequisites_changed }}
+      go_changed: ${{ steps.go-files.outputs.any_changed }}
+      docker_changed: ${{ steps.dockerfile.outputs.any_changed }}
+      helm_changed: ${{ steps.helm.outputs.any_changed }}
+      prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
-          ref: ${{ github.event.pull_request.head.sha || github.event.after }}
-      - name: Detect file changes
-        id: filter
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Detect Go file changes
+        uses: tj-actions/changed-files@v46
+        id: go-files
+        with:
+          files: |
+            **/*.go
+            go.mod
+          base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
+      - name: Detect Dockerfile changes
+        uses: tj-actions/changed-files@v46
+        id: dockerfile
+        with:
+          files: |
+            Dockerfile
+          base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
+      - name: Detect Helm config changes
+        uses: tj-actions/changed-files@v46
+        id: helm
+        with:
+          files: |
+            config/**
+          base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
+      - name: Detect prerequisites.mk changes
+        uses: tj-actions/changed-files@v46
+        id: prerequisites
+        with:
+          files: |
+            hack/make/prerequisites.mk
+          base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
+      - name: Debug Changed Files
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-
-          echo "go_changed=$(echo "$CHANGED_FILES" | grep -E '\.go$|go\.mod' | wc -l)" >> $GITHUB_OUTPUT
-          echo "docker_changed=$(echo "$CHANGED_FILES" | grep -E 'Dockerfile' | wc -l)" >> $GITHUB_OUTPUT
-          echo "helm_changed=$(echo "$CHANGED_FILES" | grep -E '^config/' | wc -l)" >> $GITHUB_OUTPUT
-          echo "prerequisites_changed=$(echo "$CHANGED_FILES" | grep -E '^prerequisites\.mk$' | wc -l)" >> $GITHUB_OUTPUT
-          echo Changed files: $CHANGED_FILES
+          echo "Go changed: ${{ steps.go-files.outputs.all_changed_files }}"
+          echo "Dockerfile changed: ${{ steps.dockerfile.outputs.all_changed_files }}"
+          echo "Helm changed: ${{ steps.helm.outputs.all_changed_files }}"
+          echo "Prerequisites changed: ${{ steps.prerequisites.outputs.all_changed_files }}"
 
   helm-test:
     needs: detect-changes
-    if: needs.detect-changes.outputs.helm_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
+    if: needs.detect-changes.outputs.helm_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true'
     name: Run helm unit tests
     runs-on: ubuntu-latest
     steps:
@@ -61,7 +86,7 @@ jobs:
 
   helm-lint:
     needs: detect-changes
-    if: needs.detect-changes.outputs.helm_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
+    if: needs.detect-changes.outputs.helm_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true'
     name: Run helm linting
     runs-on: ubuntu-latest
     steps:
@@ -76,7 +101,7 @@ jobs:
 
   tests:
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
+    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true'
     name: Run unit tests
     runs-on: ubuntu-latest
     steps:
@@ -98,7 +123,7 @@ jobs:
 
   linting:
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
+    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true'
     name: Run linting
     runs-on: ubuntu-latest
     steps:
@@ -121,7 +146,7 @@ jobs:
   generated-files:
     name: Check generated files
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed != '0' || needs.detect-changes.outputs.prerequisites_changed != '0'
+    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -151,7 +176,7 @@ jobs:
 
   security:
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed != '0' || needs.detect-changes.outputs.docker_changed != '0'
+    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true'
     name: Code security scanning alerts
     runs-on: ubuntu-latest
     steps:
@@ -193,7 +218,7 @@ jobs:
 
   build-push:
     needs: [detect-changes, prepare, tests, linting, generated-files]
-    if: needs.detect-changes.outputs.go_changed != '0' || needs.detect-changes.outputs.docker_changed != '0'
+    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true'
     name: Build images
     runs-on: ubuntu-latest
     steps:
