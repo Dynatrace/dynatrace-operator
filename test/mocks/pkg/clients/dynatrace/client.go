@@ -8,7 +8,7 @@ import (
 
 	dynatrace "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 
-	logmonitoring "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
+	logmonitoring "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 
 	mock "github.com/stretchr/testify/mock"
 )

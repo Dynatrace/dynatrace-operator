@@ -17,6 +17,8 @@ limitations under the License.
 package scheme
 
 import (
+	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
@@ -48,6 +50,7 @@ func init() {
 	utilruntime.Must(v1beta2.AddToScheme(Scheme))
 	utilruntime.Must(v1beta3.AddToScheme(Scheme))
 	utilruntime.Must(v1beta4.AddToScheme(Scheme))
+	utilruntime.Must(latest.AddToScheme(Scheme))
 	utilruntime.Must(istiov1beta1.AddToScheme(Scheme))
 	utilruntime.Must(corev1.AddToScheme(Scheme))
 	utilruntime.Must(apiv1.AddToScheme(Scheme))

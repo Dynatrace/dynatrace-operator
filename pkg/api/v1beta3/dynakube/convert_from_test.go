@@ -5,6 +5,11 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -13,11 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
-	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	activegatev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
-	kspmv1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
-	logmonitoringv1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
-	oneagentv1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +30,7 @@ import (
 )
 
 func TestConvertFrom(t *testing.T) {
-	t.Run("migrate base from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate base from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
@@ -40,7 +40,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate metadata-enrichment from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate metadata-enrichment from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		to := DynaKube{}
 
@@ -51,7 +51,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate host-monitoring from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate host-monitoring from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.HostMonitoring = &hostSpec
@@ -64,7 +64,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate classic-fullstack from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate classic-fullstack from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		hostSpec := getNewHostInjectSpec()
 		from.Spec.OneAgent.ClassicFullStack = &hostSpec
@@ -81,7 +81,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate cloud-native from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate cloud-native from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		spec := getNewCloudNativeSpec()
 		from.Spec.OneAgent.CloudNativeFullStack = &spec
@@ -98,7 +98,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate application-monitoring from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate application-monitoring from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		appSpec := getNewApplicationMonitoringSpec()
 		from.Spec.OneAgent.ApplicationMonitoring = &appSpec
@@ -115,7 +115,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate activegate from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate activegate from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		agSpec := getNewActiveGateSpec()
 		from.Spec.ActiveGate = agSpec
@@ -128,9 +128,9 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate extensions from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate extensions from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
-		from.Spec.Extensions = &dynakubev1beta4.ExtensionsSpec{}
+		from.Spec.Extensions = &dynakubelatest.ExtensionsSpec{}
 		to := DynaKube{}
 
 		err := to.ConvertFrom(&from)
@@ -140,7 +140,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate log-monitoring from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate log-monitoring from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.LogMonitoring = getNewLogMonitoringSpec()
 		to := DynaKube{}
@@ -152,9 +152,9 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate kspm from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate kspm from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
-		from.Spec.Kspm = &kspmv1beta4.Spec{}
+		from.Spec.Kspm = &kspmlatest.Spec{}
 		to := DynaKube{}
 
 		err := to.ConvertFrom(&from)
@@ -164,7 +164,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate extensions templates from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate extensions templates from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
 		from.Spec.Templates.ExtensionExecutionController = getNewExtensionExecutionControllerSpec()
@@ -180,7 +180,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate log-monitoring templates from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate log-monitoring templates from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.LogMonitoring = getNewLogMonitoringTemplateSpec()
 
@@ -193,7 +193,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate kspm templates from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate kspm templates from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.KspmNodeConfigurationCollector = getNewNodeConfigurationCollectorTemplateSpec()
 
@@ -206,7 +206,7 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate status from v1beta4 to v1beta3", func(t *testing.T) {
+	t.Run("migrate status from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Status = getNewStatus()
 		to := DynaKube{}
@@ -228,7 +228,7 @@ func TestConvertFrom(t *testing.T) {
 	})
 }
 
-func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubev1beta4.DynaKube) {
+func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
 	require.NotEmpty(t, oldDk)
 	require.NotEmpty(t, newDk)
 
@@ -271,7 +271,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubev1beta4.DynaKube) {
 	}
 }
 
-func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentv1beta4.HostInjectSpec) {
+func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentlatest.HostInjectSpec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
 	assert.Equal(t, *oldSpec.AutoUpdate, *newSpec.AutoUpdate)
@@ -287,23 +287,23 @@ func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpe
 	assert.Equal(t, oldSpec.SecCompProfile, newSpec.SecCompProfile)
 }
 
-func compareAppInjectionSpec(t *testing.T, oldSpec oneagent.AppInjectionSpec, newSpec oneagentv1beta4.AppInjectionSpec) {
+func compareAppInjectionSpec(t *testing.T, oldSpec oneagent.AppInjectionSpec, newSpec oneagentlatest.AppInjectionSpec) {
 	assert.Equal(t, oldSpec.InitResources, newSpec.InitResources)
 	assert.Equal(t, oldSpec.CodeModulesImage, newSpec.CodeModulesImage)
 	assert.Equal(t, oldSpec.NamespaceSelector, newSpec.NamespaceSelector)
 }
 
-func compareCloudNativeSpec(t *testing.T, oldSpec oneagent.CloudNativeFullStackSpec, newSpec oneagentv1beta4.CloudNativeFullStackSpec) {
+func compareCloudNativeSpec(t *testing.T, oldSpec oneagent.CloudNativeFullStackSpec, newSpec oneagentlatest.CloudNativeFullStackSpec) {
 	compareHostInjectSpec(t, oldSpec.HostInjectSpec, newSpec.HostInjectSpec)
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 }
 
-func compareApplicationMonitoringSpec(t *testing.T, oldSpec oneagent.ApplicationMonitoringSpec, newSpec oneagentv1beta4.ApplicationMonitoringSpec) {
+func compareApplicationMonitoringSpec(t *testing.T, oldSpec oneagent.ApplicationMonitoringSpec, newSpec oneagentlatest.ApplicationMonitoringSpec) {
 	assert.Equal(t, oldSpec.Version, newSpec.Version)
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 }
 
-func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec activegatev1beta4.Spec) {
+func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec activegatelatest.Spec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TlsSecretName)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
@@ -329,11 +329,11 @@ func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec active
 	assert.Len(t, newSpec.Capabilities, len(oldSpec.Capabilities))
 
 	for _, oldCapability := range oldSpec.Capabilities {
-		assert.Contains(t, newSpec.Capabilities, activegatev1beta4.CapabilityDisplayName(oldCapability))
+		assert.Contains(t, newSpec.Capabilities, activegatelatest.CapabilityDisplayName(oldCapability))
 	}
 }
 
-func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubev1beta4.DynaKubeStatus) {
+func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubelatest.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
 	assert.Equal(t, oldStatus.DynatraceApi.LastTokenScopeRequest, newStatus.DynatraceApi.LastTokenScopeRequest)
@@ -375,7 +375,7 @@ func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubev1b
 	}
 }
 
-func compareLogMonitoringSpec(t *testing.T, oldSpec *logmonitoring.Spec, newSpec *logmonitoringv1beta4.Spec) {
+func compareLogMonitoringSpec(t *testing.T, oldSpec *logmonitoring.Spec, newSpec *logmonitoringlatest.Spec) {
 	if oldSpec == nil {
 		assert.Nil(t, newSpec)
 
@@ -387,13 +387,13 @@ func compareLogMonitoringSpec(t *testing.T, oldSpec *logmonitoring.Spec, newSpec
 	assert.Len(t, newSpec.IngestRuleMatchers, len(oldSpec.IngestRuleMatchers))
 
 	for _, oldMatchers := range oldSpec.IngestRuleMatchers {
-		assert.True(t, slices.ContainsFunc(newSpec.IngestRuleMatchers, func(newMatchers logmonitoringv1beta4.IngestRuleMatchers) bool {
+		assert.True(t, slices.ContainsFunc(newSpec.IngestRuleMatchers, func(newMatchers logmonitoringlatest.IngestRuleMatchers) bool {
 			return slices.Equal(newMatchers.Values, oldMatchers.Values) && newMatchers.Attribute == oldMatchers.Attribute
 		}))
 	}
 }
 
-func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollectorSpec, newSpec dynakubev1beta4.OpenTelemetryCollectorSpec) {
+func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollectorSpec, newSpec dynakubelatest.OpenTelemetryCollectorSpec) {
 	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
@@ -404,7 +404,7 @@ func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollect
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 }
 
-func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec ExtensionExecutionControllerSpec, newSpec dynakubev1beta4.ExtensionExecutionControllerSpec) {
+func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec ExtensionExecutionControllerSpec, newSpec dynakubelatest.ExtensionExecutionControllerSpec) {
 	assert.Equal(t, *oldSpec.PersistentVolumeClaim, *newSpec.PersistentVolumeClaim)
 	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
@@ -418,7 +418,7 @@ func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec Exte
 	assert.Equal(t, oldSpec.UseEphemeralVolume, newSpec.UseEphemeralVolume)
 }
 
-func compareLogMonitoringTemplateSpec(t *testing.T, oldSpec *logmonitoring.TemplateSpec, newSpec *logmonitoringv1beta4.TemplateSpec) {
+func compareLogMonitoringTemplateSpec(t *testing.T, oldSpec *logmonitoring.TemplateSpec, newSpec *logmonitoringlatest.TemplateSpec) {
 	if oldSpec == nil {
 		assert.Nil(t, newSpec)
 
@@ -439,7 +439,7 @@ func compareLogMonitoringTemplateSpec(t *testing.T, oldSpec *logmonitoring.Templ
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
 }
 
-func compareNodeConfigurationCollectorTemplateSpec(t *testing.T, oldSpec kspm.NodeConfigurationCollectorSpec, newSpec kspmv1beta4.NodeConfigurationCollectorSpec) {
+func compareNodeConfigurationCollectorTemplateSpec(t *testing.T, oldSpec kspm.NodeConfigurationCollectorSpec, newSpec kspmlatest.NodeConfigurationCollectorSpec) {
 	assert.Equal(t, oldSpec.UpdateStrategy, newSpec.UpdateStrategy)
 	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
@@ -453,8 +453,8 @@ func compareNodeConfigurationCollectorTemplateSpec(t *testing.T, oldSpec kspm.No
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
 }
 
-func getNewDynakubeBase() dynakubev1beta4.DynaKube {
-	return dynakubev1beta4.DynaKube{
+func getNewDynakubeBase() dynakubelatest.DynaKube {
+	return dynakubelatest.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:         "name",
 			GenerateName: "generateName",
@@ -469,7 +469,7 @@ func getNewDynakubeBase() dynakubev1beta4.DynaKube {
 			},
 			Finalizers: []string{"finalizer1", "finalizer2"},
 		},
-		Spec: dynakubev1beta4.DynaKubeSpec{
+		Spec: dynakubelatest.DynaKubeSpec{
 			Proxy: &value.Source{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
@@ -482,7 +482,7 @@ func getNewDynakubeBase() dynakubev1beta4.DynaKube {
 			CustomPullSecret:             "pull-secret",
 			SkipCertCheck:                true,
 			EnableIstio:                  true,
-			MetadataEnrichment: dynakubev1beta4.MetadataEnrichment{
+			MetadataEnrichment: dynakubelatest.MetadataEnrichment{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
 			},
@@ -490,8 +490,8 @@ func getNewDynakubeBase() dynakubev1beta4.DynaKube {
 	}
 }
 
-func getNewHostInjectSpec() oneagentv1beta4.HostInjectSpec {
-	return oneagentv1beta4.HostInjectSpec{
+func getNewHostInjectSpec() oneagentlatest.HostInjectSpec {
+	return oneagentlatest.HostInjectSpec{
 		Version: "host-inject-version",
 		Image:   "host-inject-image",
 		Tolerations: []corev1.Toleration{
@@ -533,8 +533,8 @@ func getNewHostInjectSpec() oneagentv1beta4.HostInjectSpec {
 	}
 }
 
-func getNewAppInjectionSpec() oneagentv1beta4.AppInjectionSpec {
-	return oneagentv1beta4.AppInjectionSpec{
+func getNewAppInjectionSpec() oneagentlatest.AppInjectionSpec {
+	return oneagentlatest.AppInjectionSpec{
 		InitResources: &corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1)},
@@ -544,34 +544,34 @@ func getNewAppInjectionSpec() oneagentv1beta4.AppInjectionSpec {
 	}
 }
 
-func getNewCloudNativeSpec() oneagentv1beta4.CloudNativeFullStackSpec {
-	return oneagentv1beta4.CloudNativeFullStackSpec{
+func getNewCloudNativeSpec() oneagentlatest.CloudNativeFullStackSpec {
+	return oneagentlatest.CloudNativeFullStackSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
 		HostInjectSpec:   getNewHostInjectSpec(),
 	}
 }
 
-func getNewApplicationMonitoringSpec() oneagentv1beta4.ApplicationMonitoringSpec {
-	return oneagentv1beta4.ApplicationMonitoringSpec{
+func getNewApplicationMonitoringSpec() oneagentlatest.ApplicationMonitoringSpec {
+	return oneagentlatest.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
 		Version:          "app-monitoring-version",
 	}
 }
 
-func getNewActiveGateSpec() activegatev1beta4.Spec {
-	return activegatev1beta4.Spec{
+func getNewActiveGateSpec() activegatelatest.Spec {
+	return activegatelatest.Spec{
 		DNSPolicy: corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
 		TlsSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
-		Capabilities: []activegatev1beta4.CapabilityDisplayName{
-			activegatev1beta4.DynatraceApiCapability.DisplayName,
-			activegatev1beta4.KubeMonCapability.DisplayName,
-			activegatev1beta4.MetricsIngestCapability.DisplayName,
+		Capabilities: []activegatelatest.CapabilityDisplayName{
+			activegatelatest.DynatraceApiCapability.DisplayName,
+			activegatelatest.KubeMonCapability.DisplayName,
+			activegatelatest.MetricsIngestCapability.DisplayName,
 		},
-		CapabilityProperties: activegatev1beta4.CapabilityProperties{
+		CapabilityProperties: activegatelatest.CapabilityProperties{
 			Labels: map[string]string{
 				"activegate-label-key": "activegate-label-value",
 			},
@@ -618,22 +618,22 @@ func getNewActiveGateSpec() activegatev1beta4.Spec {
 	}
 }
 
-func getNewLogMonitoringSpec() *logmonitoringv1beta4.Spec {
-	newSpec := logmonitoringv1beta4.Spec{
-		IngestRuleMatchers: make([]logmonitoringv1beta4.IngestRuleMatchers, 0),
+func getNewLogMonitoringSpec() *logmonitoringlatest.Spec {
+	newSpec := logmonitoringlatest.Spec{
+		IngestRuleMatchers: make([]logmonitoringlatest.IngestRuleMatchers, 0),
 	}
 
-	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringv1beta4.IngestRuleMatchers{
+	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringlatest.IngestRuleMatchers{
 		Attribute: "attribute1",
 		Values:    []string{"matcher1", "matcher2", "matcher3"},
 	})
 
-	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringv1beta4.IngestRuleMatchers{
+	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringlatest.IngestRuleMatchers{
 		Attribute: "attribute2",
 		Values:    []string{"matcher1", "matcher2", "matcher3"},
 	})
 
-	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringv1beta4.IngestRuleMatchers{
+	newSpec.IngestRuleMatchers = append(newSpec.IngestRuleMatchers, logmonitoringlatest.IngestRuleMatchers{
 		Attribute: "attribute3",
 		Values:    []string{"matcher1", "matcher2", "matcher3"},
 	})
@@ -641,8 +641,8 @@ func getNewLogMonitoringSpec() *logmonitoringv1beta4.Spec {
 	return &newSpec
 }
 
-func getNewOpenTelemetryTemplateSpec() dynakubev1beta4.OpenTelemetryCollectorSpec {
-	return dynakubev1beta4.OpenTelemetryCollectorSpec{
+func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec {
+	return dynakubelatest.OpenTelemetryCollectorSpec{
 		Labels: map[string]string{
 			"otelc-label-key1": "otelc-label-value1",
 			"otelc-label-key2": "otelc-label-value2",
@@ -678,8 +678,8 @@ func getNewOpenTelemetryTemplateSpec() dynakubev1beta4.OpenTelemetryCollectorSpe
 	}
 }
 
-func getNewExtensionExecutionControllerSpec() dynakubev1beta4.ExtensionExecutionControllerSpec {
-	return dynakubev1beta4.ExtensionExecutionControllerSpec{
+func getNewExtensionExecutionControllerSpec() dynakubelatest.ExtensionExecutionControllerSpec {
+	return dynakubelatest.ExtensionExecutionControllerSpec{
 		PersistentVolumeClaim: getPersistentVolumeClaimSpec(),
 		Labels: map[string]string{
 			"eec-label-key1": "eec-label-value1",
@@ -749,8 +749,8 @@ func getPersistentVolumeClaimSpec() *corev1.PersistentVolumeClaimSpec {
 	}
 }
 
-func getNewLogMonitoringTemplateSpec() *logmonitoringv1beta4.TemplateSpec {
-	return &logmonitoringv1beta4.TemplateSpec{
+func getNewLogMonitoringTemplateSpec() *logmonitoringlatest.TemplateSpec {
+	return &logmonitoringlatest.TemplateSpec{
 		Labels: map[string]string{
 			"logagent-label-key1": "logagent-label-value1",
 			"logagent-label-key2": "logagent-label-value2",
@@ -789,8 +789,8 @@ func getNewLogMonitoringTemplateSpec() *logmonitoringv1beta4.TemplateSpec {
 	}
 }
 
-func getNewNodeConfigurationCollectorTemplateSpec() kspmv1beta4.NodeConfigurationCollectorSpec {
-	return kspmv1beta4.NodeConfigurationCollectorSpec{
+func getNewNodeConfigurationCollectorTemplateSpec() kspmlatest.NodeConfigurationCollectorSpec {
+	return kspmlatest.NodeConfigurationCollectorSpec{
 		UpdateStrategy: &v1.DaemonSetUpdateStrategy{
 			Type: "daemonset-update-strategy-type",
 			RollingUpdate: &v1.RollingUpdateDaemonSet{
@@ -875,9 +875,9 @@ func getNewNodeConfigurationCollectorTemplateSpec() kspmv1beta4.NodeConfiguratio
 	}
 }
 
-func getNewStatus() dynakubev1beta4.DynaKubeStatus {
-	return dynakubev1beta4.DynaKubeStatus{
-		OneAgent: oneagentv1beta4.Status{
+func getNewStatus() dynakubelatest.DynaKubeStatus {
+	return dynakubelatest.DynaKubeStatus{
+		OneAgent: oneagentlatest.Status{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "oa-image-id",
 				Version:            "oa-version",
@@ -885,7 +885,7 @@ func getNewStatus() dynakubev1beta4.DynaKubeStatus {
 				Source:             status.CustomImageVersionSource,
 				LastProbeTimestamp: &testTime,
 			},
-			Instances: map[string]oneagentv1beta4.Instance{
+			Instances: map[string]oneagentlatest.Instance{
 				"oa-instance-key-1": {
 					PodName:   "oa-instance-pod-1",
 					IPAddress: "oa-instance-ip-1",
@@ -899,13 +899,13 @@ func getNewStatus() dynakubev1beta4.DynaKubeStatus {
 			Healthcheck: &registryv1.HealthConfig{
 				Test: []string{"oa-health-check-test"},
 			},
-			ConnectionInfoStatus: oneagentv1beta4.ConnectionInfoStatus{
+			ConnectionInfoStatus: oneagentlatest.ConnectionInfoStatus{
 				ConnectionInfo: communication.ConnectionInfo{
 					LastRequest: testTime,
 					TenantUUID:  "oa-tenant-uuid",
 					Endpoints:   "oa-endpoints",
 				},
-				CommunicationHosts: []oneagentv1beta4.CommunicationHostStatus{
+				CommunicationHosts: []oneagentlatest.CommunicationHostStatus{
 					{
 						Protocol: "oa-protocol-1",
 						Host:     "oa-host-1",
@@ -919,7 +919,7 @@ func getNewStatus() dynakubev1beta4.DynaKubeStatus {
 				},
 			},
 		},
-		ActiveGate: activegatev1beta4.Status{
+		ActiveGate: activegatelatest.Status{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "ag-image-id",
 				Version:            "ag-version",
@@ -928,7 +928,7 @@ func getNewStatus() dynakubev1beta4.DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		CodeModules: oneagentv1beta4.CodeModulesStatus{
+		CodeModules: oneagentlatest.CodeModulesStatus{
 			VersionStatus: status.VersionStatus{
 				ImageID:            "cm-image-id",
 				Version:            "cm-version",
@@ -937,7 +937,7 @@ func getNewStatus() dynakubev1beta4.DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		DynatraceApi: dynakubev1beta4.DynatraceApiStatus{
+		DynatraceApi: dynakubelatest.DynatraceApiStatus{
 			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{

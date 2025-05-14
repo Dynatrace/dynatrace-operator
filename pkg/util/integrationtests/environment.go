@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
@@ -92,7 +93,12 @@ func getFirstFoundEnvTestBinaryDir() string {
 }
 
 func addScheme(testEnv *envtest.Environment) error {
-	err := v1beta4.AddToScheme(testEnv.Scheme)
+	err := latest.AddToScheme(testEnv.Scheme)
+	if err != nil {
+		return err
+	}
+
+	err = v1beta4.AddToScheme(testEnv.Scheme)
 	if err != nil {
 		return err
 	}

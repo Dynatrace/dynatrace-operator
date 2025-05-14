@@ -108,6 +108,27 @@ webhooks:
       service:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1beta5-dynakube
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1beta5
+        resources:
+          - dynakubes
+    name: v1beta5.dynakube.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
         path: /validate-dynatrace-com-v1alpha1-edgeconnect
     rules:
       - operations:
