@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/confmap"
 	"gopkg.in/yaml.v3"
 )
@@ -24,19 +25,10 @@ type TimerHistogramMapping struct {
 	Histogram    HistogramConfig `mapstructure:"histogram"`
 }
 
-// TLSSetting is based on:
-// "go.opentelemetry.io/collector/config/configtls.TLSSetting"
-// with reduced number of attributes to reduce the number of dependencies.
-type TLSSetting struct {
-	IncludeSystemCACertsPool *bool  `mapstructure:"include_system_ca_certs_pool,omitempty"`
-	CAFile                   string `mapstructure:"ca_file,omitempty"`
-	KeyFile                  string `mapstructure:"key_file,omitempty"`
-	CertFile                 string `mapstructure:"cert_file,omitempty"`
-}
+type TLSSetting = configtls.ServerConfig
 
-// ServerConfig is based on "go.opentelemetry.io/collector/config/confighttp.ServerConfig" and
-// "go.opentelemetry.io/collector/config/confighttp.ServerConfig" with reduced number of attributes
-// to reduce the number of dependencies.
+// ServerConfig is based on "go.opentelemetry.io/collector/config/confighttp.ServerConfig"
+// with reduced number of attributes  to reduce the number of dependencies.
 type ServerConfig struct {
 	// TLSSetting struct exposes TLS client configuration.
 	TLSSetting *TLSSetting `mapstructure:"tls,omitempty"`
