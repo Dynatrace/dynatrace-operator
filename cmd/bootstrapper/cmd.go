@@ -90,7 +90,7 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 				TargetVersion: targetVersion,
 				Url:           "",
 				SkipMetadata:  false,
-				PathResolver:  metadata.PathResolver{RootDir: consts.AgentBinDirMount}, // ?
+				PathResolver:  metadata.PathResolver{RootDir: consts.AgentBinDirMount},
 			}
 
 			client := download.New()
