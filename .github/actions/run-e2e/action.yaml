@@ -11,6 +11,9 @@ inputs:
     description: Target branch to run E2E tests over
     required: true
     default: main
+  target-image:
+    description: Target image to run E2E tests over
+    required: false
   tenant1-name:
     description: The name of Tenant 1
     required: true
@@ -79,6 +82,7 @@ runs:
         FLC_NAMESPACE: ${{ inputs.flc-namespace }}
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
         TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
+        TARGET_IMAGE: ${{ inputs.target-image }}
         TENANT1_NAME: ${{ inputs.tenant1-name }}
         TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
         TENANT1_DATAINGESTTOKEN: ${{ inputs.tenant1-dataingesttoken }}
