@@ -2,13 +2,14 @@ package bootstrapperconfig
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/curl"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper/download"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -44,7 +45,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
-	data, err := s.generate(ctx, dk)
+	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -100,7 +101,7 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 }
 
 // generate gets the necessary info the create the init secret data
-func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
 	endpointProperties, err := s.prepareEndpoints(ctx, dk)
@@ -112,27 +113,19 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 		data[endpoint.InputFileName] = []byte(endpointProperties)
 	}
 
-	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
+	downloadConfigJSON := download.Config{
+		URL:      "",
+		APIToken: "",
+	}
+
+	downloadConfigBytes, err := json.Marshal(downloadConfigJSON)
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
 
-	if len(agCerts) != 0 {
-		data[ca.AgCertsInputFile] = agCerts
-	}
-
-	trustedCAs, err := dk.TrustedCAs(ctx, s.apiReader)
-	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
-
-		return nil, errors.WithStack(err)
-	}
-
-	if len(trustedCAs) != 0 {
-		data[ca.TrustedCertsInputFile] = trustedCAs
-	}
+	data[download.InputFileName] = downloadConfigBytes
 
 	pmcSecret, err := s.preparePMC(ctx, dk)
 	if err != nil {
