@@ -402,8 +402,8 @@ tests:
       platform: kubernetes
       image: image-name
       csidriver.enabled: true
-      csidriver.livenessprobe.byOperatorCommand: true
-      csidriver.registrar.byOperatorCommand: true
+      csidriver.livenessprobe.builtIn: true
+      csidriver.registrar.builtIn: true
     asserts:
       - equal:
           path: spec.template.spec.containers[2].args
@@ -411,6 +411,8 @@ tests:
           - "csi-node-driver-registrar"
           - "--csi-address=/csi/csi.sock"
           - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+      - isNull:
+          path: spec.template.spec.containers[2].command
       - equal:
           path: spec.template.spec.containers[3].args
           value:
@@ -418,6 +420,8 @@ tests:
             - "--csi-address=/csi/csi.sock"
             - "--health-port=9808"
             - "--probe-timeout=9s"
+      - isNull:
+          path: spec.template.spec.containers[3].command
 
   - it: should have default updateStrategy
     set:
