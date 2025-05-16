@@ -54,6 +54,8 @@ operator:
   limits:
     cpu: 100m
     memory: 128Mi
+  tmpDir:
+    sizeLimit: 200Mi
 
 webhook:
   hostNetwork: false
@@ -93,6 +95,8 @@ webhook:
   mutatingWebhook:
     failurePolicy: Ignore
     timeoutSeconds: 10
+  certsDir:
+    sizeLimit: 10Mi
 
 csidriver:
   enabled: true
@@ -199,6 +203,8 @@ csidriver:
         cpu: 20m
         memory: 30Mi
     builtIn: false
+  tmpDir:
+    sizeLimit: 10Mi
 
 rbac:
   activeGate:
