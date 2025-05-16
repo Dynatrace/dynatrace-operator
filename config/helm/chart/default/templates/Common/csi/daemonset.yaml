@@ -303,10 +303,12 @@ spec:
           type: DirectoryOrCreate
         # Used by the registrar to create its lockfile
       - name: lockfile-dir
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: {{ .Values.csidriver.lockFileDir.sizeLimit }}
         # A volume for the driver to write temporary files to
       - name: tmp-dir
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: {{ .Values.csidriver.tmpDir.sizeLimit }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}
