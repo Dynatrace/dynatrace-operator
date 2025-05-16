@@ -30,12 +30,12 @@ jobs:
       ci_changed: ${{ steps.ci.outputs.any_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 2
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Detect CI file changes
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: ci
         with:
           files: |
@@ -43,7 +43,7 @@ jobs:
             .github/actions/**
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
       - name: Detect Go file changes
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: go-files
         with:
           files: |
@@ -51,7 +51,7 @@ jobs:
             go.mod
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
       - name: Detect Dockerfile changes
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: dockerfile
         with:
           files: |
@@ -65,7 +65,7 @@ jobs:
             config/**
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
       - name: Detect prerequisites.mk changes
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: prerequisites
         with:
           files: |
