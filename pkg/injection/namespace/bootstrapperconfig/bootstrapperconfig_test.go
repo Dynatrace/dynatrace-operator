@@ -9,9 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/curl"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -266,15 +266,11 @@ func TestGenerateForDynakube(t *testing.T) {
 		_, ok := secret.Data[pmc.InputFileName]
 		require.True(t, ok)
 
-		val, ok := secret.Data[ca.TrustedCertsInputFile]
-		require.True(t, ok)
-		assert.NotEqual(t, oldTrustedCa, val)
-		require.Empty(t, val)
+		_, ok = secret.Data[ca.TrustedCertsInputFile]
+		require.False(t, ok)
 
 		_, ok = secret.Data[ca.AgCertsInputFile]
-		require.True(t, ok)
-		assert.NotEqual(t, oldCertValue, val)
-		require.Empty(t, val)
+		require.False(t, ok)
 
 		_, ok = secret.Data[curl.InputFileName]
 		require.True(t, ok)

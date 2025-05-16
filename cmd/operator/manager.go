@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
 	"github.com/pkg/errors"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for running operator locally
 	"k8s.io/client-go/rest"
@@ -25,7 +24,6 @@ type controllerSetupFunc func(manager.Manager, string) error
 func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 	funcs := []controllerSetupFunc{
 		dynakube.Add,
-		nodes.Add,
 		edgeconnect.Add,
 	}
 

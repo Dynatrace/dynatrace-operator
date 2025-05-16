@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -771,10 +771,12 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
+
+		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		builder := NewCloudNativeFullStack(&dk, testClusterID)
@@ -782,7 +784,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("host monitoring has apparmor annotation by default", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -793,10 +795,12 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
+
+		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		builder := NewHostMonitoring(&dk, testClusterID)
@@ -804,7 +808,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("classic fullstack has apparmor annotation by default", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -815,10 +819,12 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
+
+		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			annotationTenantTokenHash:         testTokenHash,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		builder := NewClassicFullStack(&dk, testClusterID)
@@ -826,7 +832,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with cloud native", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -843,11 +849,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
+
+		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		builder := NewCloudNativeFullStack(&dk, testClusterID)
@@ -855,7 +863,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with host monitoring", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -870,11 +878,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
+
+		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		builder := NewHostMonitoring(&dk, testClusterID)
@@ -882,7 +892,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with classic fullstack", func(t *testing.T) {
 		dk := dynakube.DynaKube{
@@ -897,11 +907,13 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
-		expectedAnnotations := map[string]string{
+
+		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
 			annotationUnprivileged:            annotationUnprivilegedValue,
 			testKey:                           testName,
 			annotationTenantTokenHash:         testTokenHash,
+			annotationEnableDaemonSetEviction: "false",
 		}
 
 		builder := NewClassicFullStack(&dk, testClusterID)
@@ -909,7 +921,7 @@ func TestAnnotations(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, daemonset)
-		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+		assert.Equal(t, expectedTemplateAnnotations, daemonset.Spec.Template.Annotations)
 	})
 }
 

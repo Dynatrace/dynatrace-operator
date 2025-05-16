@@ -5,17 +5,13 @@ import (
 	"strings"
 
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attributes *podattr.Attributes) error {
-	if !metacommon.IsEnabled(request.BaseRequest) {
-		return nil
-	}
-
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
 	workloadInfo, err := metacommon.RetrieveWorkload(metaClient, request)

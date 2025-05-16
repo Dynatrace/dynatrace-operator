@@ -7,8 +7,8 @@ import (
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -77,41 +77,6 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[metacommon.AnnotationWorkloadName])
 		assert.Equal(t, "true", request.Pod.Annotations[metacommon.AnnotationInjected])
 	}
-
-	t.Run("add attributes and related envs, do not change pod or app-container", func(t *testing.T) {
-		injector := createTestInjectorBase()
-
-		initContainer := corev1.Container{
-			Args: []string{},
-		}
-		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "test",
-			},
-		}
-
-		expectedPod := pod.DeepCopy()
-
-		request := dtwebhook.MutationRequest{
-			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
-					Status: dynakube.DynaKubeStatus{
-						KubernetesClusterMEID: "meid",
-						KubeSystemUUID:        "systemuuid",
-						KubernetesClusterName: "meidname",
-					},
-				},
-			},
-			InstallContainer: &initContainer,
-		}
-
-		err := injector.addPodAttributes(&request)
-		require.NoError(t, err)
-
-		require.Equal(t, *expectedPod, *request.BaseRequest.Pod)
-		validateAttributes(t, request)
-	})
 
 	t.Run("metadata enrichment passes => additional args and annotations", func(t *testing.T) {
 		initContainer := corev1.Container{

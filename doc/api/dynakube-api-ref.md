@@ -9,12 +9,17 @@
 |`dynatraceApiRequestThreshold`|Configuration for thresholding Dynatrace API requests.|-|integer|
 |`enableIstio`|When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding<br/>VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.<br/>Disabled by default.|-|boolean|
 |`extensions`|When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)<br/>are deployed by the operator.|-|object|
-|`kspm`|General configuration about the KSPM feature.|-|object|
 |`networkZone`|Sets a network zone for the OneAgent and ActiveGate pods.|-|string|
 |`proxy`|Set custom proxy settings either directly or from a secret with the field proxy.<br/>Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.|-|object|
 |`skipCertCheck`|Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.<br/>Set to true if you want to skip certification validation checks.|-|boolean|
 |`tokens`|Name of the secret holding the tokens used for connecting to Dynatrace.|-|string|
 |`trustedCAs`|Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.<br/>Note: Applies to Dynatrace Operator, OneAgent and ActiveGate.|-|string|
+
+### .spec.kspm
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`mappedHostPaths`|MappedHostPaths contains host paths are mounted to the container. Default value: `/`|-|array|
 
 ### .spec.oneAgent
 
