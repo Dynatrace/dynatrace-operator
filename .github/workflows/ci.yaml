@@ -58,7 +58,7 @@ jobs:
             Dockerfile
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
       - name: Detect Helm config changes
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: helm
         with:
           files: |
