@@ -51,9 +51,11 @@ operator:
   requests:
     cpu: 50m
     memory: 64Mi
+    ephemeral-storage: 200Mi
   limits:
     cpu: 100m
     memory: 128Mi
+    ephemeral-storage: 200Mi
   tmpDir:
     sizeLimit: 200Mi
 
@@ -86,9 +88,11 @@ webhook:
   requests:
     cpu: 300m
     memory: 128Mi
+    ephemeral-storage: 10Mi # size of the certs dir
   limits:
     cpu: 300m
     memory: 128Mi
+    ephemeral-storage: 10Mi # size of the certs dir
   highAvailability: true
   validatingWebhook:
     timeoutSeconds: 10
@@ -152,9 +156,11 @@ csidriver:
       requests:
         cpu: 50m
         memory: 100Mi
+        ephemeral-storage: 10Mi # size of the tmpdir
       limits:
         cpu: 50m
         memory: 100Mi
+        ephemeral-storage: 10Mi # size of the tmpdir
   provisioner:
     securityContext:
       runAsUser: 0
@@ -170,6 +176,9 @@ csidriver:
       requests:
         cpu: 300m
         memory: 100Mi
+        ephemeral-storage: 10Mi # size of the tmpdir
+      limits:
+        ephemeral-storage: 10Mi # size of the tmpdir
   registrar:
     securityContext:
       runAsUser: 0
