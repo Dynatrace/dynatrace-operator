@@ -156,11 +156,9 @@ csidriver:
       requests:
         cpu: 50m
         memory: 100Mi
-        ephemeral-storage: 10Mi # size of the tmpdir
       limits:
         cpu: 50m
         memory: 100Mi
-        ephemeral-storage: 10Mi # size of the tmpdir
   provisioner:
     securityContext:
       runAsUser: 0
@@ -176,9 +174,6 @@ csidriver:
       requests:
         cpu: 300m
         memory: 100Mi
-        ephemeral-storage: 10Mi # size of the tmpdir
-      limits:
-        ephemeral-storage: 10Mi # size of the tmpdir
   registrar:
     securityContext:
       runAsUser: 0
@@ -212,8 +207,6 @@ csidriver:
         cpu: 20m
         memory: 30Mi
     builtIn: false
-  tmpDir:
-    sizeLimit: 10Mi
 
 rbac:
   activeGate:

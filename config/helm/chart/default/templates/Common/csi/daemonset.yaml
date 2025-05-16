@@ -137,8 +137,6 @@ spec:
         - mountPath: /data
           name: data-dir
           mountPropagation: Bidirectional
-        - name: tmp-dir
-          mountPath: /tmp
       - name: provisioner
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
@@ -206,12 +204,9 @@ spec:
           - mountPath: /data
             name: data-dir
             mountPropagation: Bidirectional
-          - mountPath: /tmp
-            name: tmp-dir
           - mountPath: {{ include "dynatrace-operator.CSIMountPointDir" . }}
             name: mountpoint-dir # needed for garbage-collection
             readOnly: true
-
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
@@ -299,10 +294,6 @@ spec:
         hostPath:
           path: {{ include "dynatrace-operator.CSIMountPointDir" . }}
           type: DirectoryOrCreate
-        # A volume for the driver to write temporary files to
-      - name: tmp-dir
-        emptyDir:
-          sizeLimit: {{ .Values.csidriver.tmpDir.sizeLimit }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}
