@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -8,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -96,8 +98,10 @@ func TestMissingKSPMDependency(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
-					Kspm:       &kspm.Spec{},
+					APIURL: testApiUrl,
+					Kspm: &kspm.Spec{
+						MappedHostPaths: []string{"/"},
+					},
 					ActiveGate: activegate.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
@@ -123,7 +127,9 @@ func TestMissingKSPMDependency(t *testing.T) {
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
-					Kspm:   &kspm.Spec{},
+					Kspm: &kspm.Spec{
+						MappedHostPaths: []string{"/"},
+					},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -152,8 +158,10 @@ func TestMissingKSPMDependency(t *testing.T) {
 					},
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
-					Kspm:       &kspm.Spec{},
+					APIURL: testApiUrl,
+					Kspm: &kspm.Spec{
+						MappedHostPaths: []string{"/"},
+					},
 					ActiveGate: activegate.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
@@ -256,5 +264,67 @@ func TestMissingKSPMImage(t *testing.T) {
 					},
 				},
 			})
+	})
+}
+
+func TestMappedHostPath(t *testing.T) {
+	getDynakube := func() dynakube.DynaKube {
+		return dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testApiUrl,
+				Kspm:   &kspm.Spec{},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					CapabilityProperties: activegate.CapabilityProperties{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{},
+						},
+					},
+				},
+				Templates: dynakube.TemplatesSpec{
+					KspmNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+						ImageRef: image.Ref{
+							Repository: "repo/image",
+							Tag:        "version",
+						},
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("empty list", func(t *testing.T) {
+		dk := getDynakube()
+		assertAllowedWithWarnings(t, 1, &dk)
+	})
+
+	t.Run("single root path", func(t *testing.T) {
+		dk := getDynakube()
+		dk.Spec.Kspm.MappedHostPaths = []string{"/"}
+		assertAllowedWithoutWarnings(t, &dk)
+	})
+
+	t.Run("many paths", func(t *testing.T) {
+		dk := getDynakube()
+		dk.Spec.Kspm.MappedHostPaths = []string{"/a", "/b"}
+		assertAllowedWithoutWarnings(t, &dk)
+	})
+
+	t.Run("many paths with root directory", func(t *testing.T) {
+		dk := getDynakube()
+		dk.Spec.Kspm.MappedHostPaths = []string{"/a", "/b", "/"}
+		assertDenied(t, []string{errorKSPMRootHostPath}, &dk)
+	})
+
+	t.Run("relative path", func(t *testing.T) {
+		dk := getDynakube()
+		dk.Spec.Kspm.MappedHostPaths = []string{"/a", "b"}
+		assertDenied(t, []string{fmt.Sprintf(errorKSPMRelativeHostPath, "b")}, &dk)
 	})
 }

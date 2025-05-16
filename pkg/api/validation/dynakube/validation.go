@@ -56,6 +56,8 @@ var (
 		extensionControllerPVCStorageDevice,
 		tooManyAGReplicas,
 		missingKSPMImage,
+		mappedHostPathsWithRootPath,
+		relativeMappedHostPaths,
 		missingLogMonitoringImage,
 		emptyTelemetryIngestProtocolsList,
 		unknownTelemetryIngestProtocols,
@@ -73,6 +75,7 @@ var (
 		conflictingApiUrlForExtensions,
 		logMonitoringWithoutK8SMonitoring,
 		kspmWithoutK8SMonitoring,
+		noMappedHostPaths,
 		extensionsWithoutK8SMonitoring,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
