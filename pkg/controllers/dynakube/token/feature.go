@@ -1,7 +1,7 @@
 package token
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"golang.org/x/exp/slices"
 )
@@ -26,13 +26,6 @@ func (feature *Feature) IsScopeMissing(scopes []string) (bool, []string) {
 
 func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 	return []Feature{
-		{
-			Name:           "Access problem and event feed, metrics, and topology",
-			RequiredScopes: []string{dtclient.TokenScopeDataExport},
-			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return true
-			},
-		},
 		{
 			Name: "Kubernetes API Monitoring",
 			RequiredScopes: []string{

@@ -465,7 +465,7 @@ func AutomationModeFeature(t *testing.T) features.Feature
 
 <a name="NormalModeFeature"></a>
 
-## func [NormalModeFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/edgeconnect/edgeconnect.go#L36>)
+## func [NormalModeFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/edgeconnect/edgeconnect.go#L32>)
 
 ```go
 func NormalModeFeature(t *testing.T) features.Feature
@@ -473,7 +473,7 @@ func NormalModeFeature(t *testing.T) features.Feature
 
 <a name="ProvisionerModeFeature"></a>
 
-## func [ProvisionerModeFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/edgeconnect/edgeconnect.go#L73>)
+## func [ProvisionerModeFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/edgeconnect/edgeconnect.go#L69>)
 
 ```go
 func ProvisionerModeFeature(t *testing.T) features.Feature

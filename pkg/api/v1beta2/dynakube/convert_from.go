@@ -1,13 +1,13 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// ConvertFrom converts from the Hub version (v1beta3) to this version (v1beta3).
+// ConvertFrom converts from the Hub version (latest) to this version (v1beta2).
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*dynakube.DynaKube)
 

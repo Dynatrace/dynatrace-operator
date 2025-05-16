@@ -3,7 +3,7 @@ package webhook
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	corev1 "k8s.io/api/core/v1"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/google/go-containerregistry/pkg/authn"

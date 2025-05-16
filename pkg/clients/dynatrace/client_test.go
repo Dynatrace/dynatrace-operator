@@ -126,6 +126,5 @@ func createTestDynatraceClient(dynatraceServer httptest.Server) dynatraceClient 
 		apiToken:   apiToken,
 		paasToken:  paasToken,
 		httpClient: dynatraceServer.Client(),
-		hostCache:  nil,
 	}
 }
