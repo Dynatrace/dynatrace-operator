@@ -1,5 +1,9 @@
 package kspm
 
+import (
+	"slices"
+)
+
 func (kspm *Kspm) SetName(name string) {
 	kspm.name = name
 }
@@ -14,4 +18,11 @@ func (kspm *Kspm) GetTokenSecretName() string {
 
 func (kspm *Kspm) GetDaemonSetName() string {
 	return kspm.name + "-" + NodeCollectorNameSuffix
+}
+
+func (kspm *Kspm) GetUniqueMappedHostPaths() []string {
+	tmpMappedHostPaths := append([]string{}, kspm.Spec.MappedHostPaths...)
+	slices.Sort(tmpMappedHostPaths)
+
+	return slices.Compact(tmpMappedHostPaths)
 }
