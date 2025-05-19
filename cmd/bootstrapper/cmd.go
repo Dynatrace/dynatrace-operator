@@ -57,7 +57,6 @@ func newCmd(fs afero.Fs) *cobra.Command {
 
 func AddFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&targetFolder, TargetFolderFlag, "", "Base path where to copy the codemodule to.")
-	_ = cmd.MarkPersistentFlagRequired(TargetFolderFlag)
 
 	cmd.PersistentFlags().StringVar(&targetVersion, TargetVersionFlag, "", "Version of the zip to be downloaded. If not set, CSI-driver mount is expected to be used.")
 
