@@ -3,6 +3,7 @@ package dockerkeychain
 import (
 	"bytes"
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dterror"
 	"sync"
 
 	"github.com/docker/cli/cli/config"
@@ -43,9 +44,7 @@ func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceN
 
 		dockerAuths, err := extractDockerAuthsFromSecret(&pullSecret)
 		if err != nil {
-			log.Info("failed to parse pull secret content", "name", pullSecret.Name, "namespace", pullSecret.Namespace)
-
-			return keychain, err
+			return keychain, errors.WithMessagef(err, "failed to parse pull secret (%s/%s)", pullSecret.Namespace, pullSecret.Name)
 		}
 
 		err = configFile.LoadFromReader(bytes.NewReader(dockerAuths))
@@ -72,7 +71,7 @@ func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret 
 	}
 
 	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: pullSecret.Namespace, Name: pullSecret.Name}, &pullSecret); err != nil {
-		log.Info("No registry pull secret loaded", "name", pullSecret.Name, "namespace", pullSecret.Namespace, "err", err)
+		log.Info("no registry pull secret loaded", "name", pullSecret.Name, "namespace", pullSecret.Namespace, "err", err)
 
 		return keychain, nil
 	}
@@ -81,7 +80,7 @@ func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret 
 	if err != nil {
 		log.Info("failed to parse pull secret content", "name", pullSecret.Name, "namespace", pullSecret.Namespace)
 
-		return keychain, err
+		return keychain, errors.WithMessagef(err, "failed to parse pull secret (%s/%s)", pullSecret.Namespace, pullSecret.Name)
 	}
 
 	cf, err := config.LoadFromReader(bytes.NewReader(dockerAuths))
@@ -101,7 +100,7 @@ func extractDockerAuthsFromSecret(secret *corev1.Secret) ([]byte, error) {
 
 	cfg, hasConfig := secret.Data[".dockerconfigjson"]
 	if !hasConfig {
-		return nil, errors.New("could not find any docker config in image pull secret")
+		return nil, dterror.WithErrorCode(errors.New("could not find docker config in image pull secret"), "DEC:C3")
 	}
 
 	return cfg, nil

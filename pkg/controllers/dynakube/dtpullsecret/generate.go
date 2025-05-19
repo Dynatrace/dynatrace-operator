@@ -4,6 +4,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dterror"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -49,7 +50,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	case r.tokens.APIToken().Value != "":
 		registryToken = r.tokens.APIToken().Value
 	default:
-		return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
+		return nil, dterror.New("DEC:xxx", "token secret does not contain a PaaS or API token, cannot generate docker config")
 	}
 
 	tenantUUID, err := r.dk.TenantUUID()

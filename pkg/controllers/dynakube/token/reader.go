@@ -2,7 +2,7 @@ package token
 
 import (
 	"context"
-	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dterror"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -48,7 +48,9 @@ func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
 	}, &tokenSecret)
 
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, dterror.WithErrorCode(
+			errors.WithMessage(errors.WithStack(err), "reading API token secret failed"),
+			"DEC:xxxx")
 	}
 
 	for tokenType, rawToken := range tokenSecret.Data {
@@ -63,7 +65,7 @@ func (reader Reader) verifyAPITokenExists(tokens Tokens) error {
 	apiToken, hasAPIToken := tokens[dtclient.APIToken]
 
 	if !hasAPIToken || len(apiToken.Value) == 0 {
-		return errors.New(fmt.Sprintf("the API token is missing from the token secret '%s:%s'", reader.dk.Namespace, reader.dk.Tokens()))
+		return dterror.Errorf("DEC:C2", "the API token is missing in the token secret '%s:%s'", reader.dk.Namespace, reader.dk.Tokens())
 	}
 
 	return nil

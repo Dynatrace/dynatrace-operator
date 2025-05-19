@@ -1,6 +1,8 @@
 package logd
 
 import (
+	"errors"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dterror"
 	"io"
 	"os"
 	"sync"
@@ -82,4 +84,22 @@ func (l Logger) WithValues(keysAndValues ...any) Logger {
 
 func (l *Logger) debugLog(message string, keysAndValues ...any) {
 	l.Logger.V(debugLogLevelElevation).Info(message, keysAndValues...)
+}
+
+func (l *Logger) Error(err error, msg string, keysAndValues ...any) {
+	if err == nil {
+		return
+	}
+
+	var dtErr dterror.DtError
+	if errors.As(err, &dtErr) {
+		l.DtError(dtErr.Unwrap(), msg, dtErr.GetErrorCode(), keysAndValues...)
+	} else {
+		l.Logger.Error(err, msg, keysAndValues...)
+	}
+}
+
+func (l *Logger) DtError(err error, msg string, errorCode string, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, "dtErrorCode", errorCode)
+	l.Logger.Error(err, msg, keysAndValues...)
 }

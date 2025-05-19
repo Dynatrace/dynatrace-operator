@@ -19,6 +19,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dterror"
 	"io"
 	"os"
 	"path/filepath"
@@ -83,14 +84,14 @@ func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) b
 		// First run, create folder, to keep track of time
 		err := pub.fs.MkdirAll(appDir, os.ModePerm)
 		if err != nil {
-			log.Error(err, "failed to create base dir for app mount, skipping injection", "dir", appDir)
+			log.Error(dterror.WithErrorCode(err, "DEC:xxxx"), "failed to create base dir for app mount, skipping injection", "dir", appDir)
 
 			return true
 		}
 
 		return false
 	} else if err != nil {
-		log.Error(err, "unexpected failure in checking filesystem state, skipping injection", "dir", appDir)
+		log.Error(dterror.WithErrorCode(err, "DEC:xxxx"), "unexpected failure in checking filesystem state, skipping injection", "dir", appDir)
 
 		return true
 	}
@@ -111,7 +112,7 @@ func (pub *Publisher) isCodeModuleAvailable(volumeCfg *csivolumes.VolumeConfig) 
 
 		return false
 	} else if err != nil {
-		log.Error(err, "unexpected failure while checking for the latest available CodeModule", "dynakube", volumeCfg.DynakubeName)
+		log.DtError(err, "unexpected failure while checking for the latest available CodeModule", "DEC:xxxx", "dynakube", volumeCfg.DynakubeName)
 
 		return false
 	}
@@ -147,7 +148,7 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 		if err != nil {
 			log.Info("failed to read symlink for latest CodeModule", "symlink", lowerDir)
 
-			return err
+			return errors.WithMessage(errors.WithStack(err), "failed to read symlink for latest CodeModule")
 		}
 	}
 
