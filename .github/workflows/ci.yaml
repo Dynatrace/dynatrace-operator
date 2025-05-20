@@ -73,7 +73,7 @@ jobs:
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
       - name: List Changed Files
         run: |
-          echo "Go changed: ${{ steps.ci.outputs.all_changed_files }}"
+          echo "CI changed: ${{ steps.ci.outputs.all_changed_files }}"
           echo "Go changed: ${{ steps.go-files.outputs.all_changed_files }}"
           echo "Dockerfile changed: ${{ steps.dockerfile.outputs.all_changed_files }}"
           echo "Helm changed: ${{ steps.helm.outputs.all_changed_files }}"
