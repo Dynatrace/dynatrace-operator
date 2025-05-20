@@ -11714,8 +11714,8 @@ spec:
                 description: General configuration about the KSPM feature.
                 properties:
                   mappedHostPaths:
-                    description: 'MappedHostPaths contains host paths are mounted
-                      to the container. Default value: `/`'
+                    description: MappedHostPaths define the host paths that are mounted
+                      to the container.
                     items:
                       type: string
                     type: array

@@ -61,7 +61,9 @@ spec:
   #     values: [my-frontend, my-backend, my-database]
 
   kspm:
-    # default path list
+    #  Define the host paths that are mounted to the container.
+    #
+    #  Default list of paths:
     mappedHostPaths:
       - /boot
       - /etc
