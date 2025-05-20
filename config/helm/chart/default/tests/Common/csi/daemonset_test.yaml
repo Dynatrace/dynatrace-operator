@@ -307,9 +307,10 @@ tests:
                     name: mountpoint-dir
                     readOnly: true
               - args:
-                  - "csi-node-driver-registrar"
                   - "--csi-address=/csi/csi.sock"
                   - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+                command:
+                  - csi-node-driver-registrar
                 env:
                   - name: DRIVER_REG_SOCK_PATH
                     value: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
@@ -340,10 +341,11 @@ tests:
                   - mountPath: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/"
                     name: lockfile-dir
               - args:
-                  - "livenessprobe"
                   - "--csi-address=/csi/csi.sock"
                   - "--health-port=9808"
                   - "--probe-timeout=9s"
+                command:
+                  - livenessprobe
                 image: image-name
                 imagePullPolicy: Always
                 name: liveness-probe
@@ -395,33 +397,31 @@ tests:
               - emptyDir: { }
                 name: tmp-dir
 
-  - it: should use native livenessprobe and csi-node-driver-registrar commands if they are preferred
+  - it: should use livenessprobe and csi-node-driver-registrar commands provided by the operator if they are preferred
     set:
       platform: kubernetes
       image: image-name
       csidriver.enabled: true
-      csidriver.livenessprobe.byOperatorCommand: false
-      csidriver.registrar.byOperatorCommand: false
+      csidriver.livenessprobe.builtIn: true
+      csidriver.registrar.builtIn: true
     asserts:
       - equal:
           path: spec.template.spec.containers[2].args
           value:
+          - "csi-node-driver-registrar"
           - "--csi-address=/csi/csi.sock"
           - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-      - equal:
+      - isNull:
           path: spec.template.spec.containers[2].command
-          value:
-            - csi-node-driver-registrar
       - equal:
           path: spec.template.spec.containers[3].args
           value:
-          - "--csi-address=/csi/csi.sock"
-          - "--health-port=9808"
-          - "--probe-timeout=9s"
-      - equal:
+            - "livenessprobe"
+            - "--csi-address=/csi/csi.sock"
+            - "--health-port=9808"
+            - "--probe-timeout=9s"
+      - isNull:
           path: spec.template.spec.containers[3].command
-          value:
-          - livenessprobe
 
   - it: should have default updateStrategy
     set:
