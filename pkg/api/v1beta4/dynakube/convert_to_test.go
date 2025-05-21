@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/telemetryingest"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -225,6 +226,20 @@ func TestConvertTo(t *testing.T) {
 
 		assert.Equal(t, from.Spec.OneAgent.HostGroup, to.Spec.OneAgent.HostGroup)
 	})
+
+	t.Run("migrate telemetryIngest", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Status = getOldStatus()
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		require.NotNil(t, to.Spec.TelemetryIngest)
+		assert.Equal(t, from.Spec.TelemetryIngest.Protocols, to.Spec.TelemetryIngest.Protocols)
+		assert.Equal(t, from.Spec.TelemetryIngest.ServiceName, to.Spec.TelemetryIngest.ServiceName)
+		assert.Equal(t, from.Spec.TelemetryIngest.TlsRefName, to.Spec.TelemetryIngest.TlsRefName)
+	})
 }
 
 func getTestNamespaceSelector() metav1.LabelSelector {
@@ -271,6 +286,11 @@ func getOldDynakubeBase() DynaKube {
 			DynatraceApiRequestThreshold: ptr.To(uint16(42)),
 			MetadataEnrichment: MetadataEnrichment{
 				Enabled: ptr.To(false),
+			},
+			TelemetryIngest: &telemetryingest.Spec{
+				ServiceName: "telemetry-ingest-service-name",
+				TlsRefName:  "telemetry-ingest-tls-secret-name",
+				Protocols:   []string{"protocol1", "protocol2"},
 			},
 		},
 	}
