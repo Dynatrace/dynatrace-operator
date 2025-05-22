@@ -63,7 +63,7 @@ spec:
   kspm:
     #  Define the host paths that are mounted to the container.
     #
-    #  Default list of paths:
+    #  Suggested list of paths:
     mappedHostPaths:
       - /boot
       - /etc
