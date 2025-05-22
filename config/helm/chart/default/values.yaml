@@ -51,13 +51,9 @@ operator:
   requests:
     cpu: 50m
     memory: 64Mi
-    ephemeral-storage: 200Mi
   limits:
     cpu: 100m
     memory: 128Mi
-    ephemeral-storage: 200Mi
-  tmpDir:
-    sizeLimit: 200Mi
 
 webhook:
   hostNetwork: false
