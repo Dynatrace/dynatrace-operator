@@ -110,9 +110,6 @@ tests:
                   limits:
                     cpu: 100m
                     memory: 128Mi
-                volumeMounts:
-                  - name: tmp-cert-dir
-                    mountPath: /tmp/dynatrace-operator
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -156,9 +153,6 @@ tests:
                           operator: In
                           values:
                             - linux
-            volumes:
-              - emptyDir: { }
-                name: tmp-cert-dir
             securityContext:
               seccompProfile:
                 type: RuntimeDefault
@@ -297,9 +291,6 @@ tests:
                   limits:
                     cpu: 100m
                     memory: 128Mi
-                volumeMounts:
-                  - name: tmp-cert-dir
-                    mountPath: /tmp/dynatrace-operator
                 livenessProbe:
                   httpGet:
                     path: /livez
@@ -343,9 +334,6 @@ tests:
                           operator: In
                           values:
                             - linux
-            volumes:
-              - emptyDir: { }
-                name: tmp-cert-dir
             securityContext:
               seccompProfile:
                 type: RuntimeDefault

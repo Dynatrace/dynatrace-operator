@@ -78,9 +78,6 @@ spec:
               {{- toYaml (.Values.operator).requests | nindent 14 }}
             limits:
               {{- toYaml (.Values.operator).limits | nindent 14 }}
-          volumeMounts:
-            - name: tmp-cert-dir
-              mountPath: /tmp/dynatrace-operator
           livenessProbe:
             httpGet:
               path: /livez
@@ -92,9 +89,6 @@ spec:
           securityContext:
           {{- toYaml .Values.operator.securityContext | nindent 12 }}
       {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}
-      volumes:
-        - emptyDir: { }
-          name: tmp-cert-dir
       serviceAccountName: dynatrace-operator
       securityContext:
         {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
