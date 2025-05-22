@@ -66,7 +66,7 @@ func getNodeVolumeMounts(mappedHostPaths []string) []corev1.VolumeMount {
 	volumeMounts := make([]corev1.VolumeMount, 0)
 	for i, path := range mappedHostPaths {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      getVolumeName(i),
+			Name:      getVolumeName(i + 1),
 			MountPath: filepath.Join(nodeRootMountPath, path),
 			ReadOnly:  true,
 		})
@@ -79,7 +79,7 @@ func getNodeVolumes(mappedHostPaths []string) []corev1.Volume {
 	volumes := make([]corev1.Volume, 0)
 	for i, path := range mappedHostPaths {
 		volumes = append(volumes, corev1.Volume{
-			Name: getVolumeName(i),
+			Name: getVolumeName(i + 1),
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: path,

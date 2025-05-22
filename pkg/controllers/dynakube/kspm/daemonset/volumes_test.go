@@ -30,12 +30,12 @@ func TestGetMounts(t *testing.T) {
 		}
 
 		assert.Contains(t, mounts, corev1.VolumeMount{
-			Name:      getVolumeName(0),
+			Name:      getVolumeName(1),
 			MountPath: filepath.Join(nodeRootMountPath, hostPathA),
 			ReadOnly:  true,
 		})
 		assert.Contains(t, mounts, corev1.VolumeMount{
-			Name:      getVolumeName(1),
+			Name:      getVolumeName(2),
 			MountPath: filepath.Join(nodeRootMountPath, hostPathB),
 			ReadOnly:  true,
 		})
@@ -132,7 +132,7 @@ func TestGetVolumes(t *testing.T) {
 		}
 
 		assert.Contains(t, volumes, corev1.Volume{
-			Name: getVolumeName(0),
+			Name: getVolumeName(1),
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: hostPathA,
@@ -141,7 +141,7 @@ func TestGetVolumes(t *testing.T) {
 			},
 		})
 		assert.Contains(t, volumes, corev1.Volume{
-			Name: getVolumeName(1),
+			Name: getVolumeName(2),
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: hostPathB,
