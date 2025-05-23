@@ -19,7 +19,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`mappedHostPaths`|MappedHostPaths contains host paths are mounted to the container. Default value: `/`|-|array|
+|`mappedHostPaths`|MappedHostPaths define the host paths that are mounted to the container.|-|array|
 
 ### .spec.oneAgent
 
