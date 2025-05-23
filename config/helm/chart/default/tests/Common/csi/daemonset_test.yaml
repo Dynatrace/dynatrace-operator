@@ -223,8 +223,6 @@ tests:
                   - mountPath: "/data"
                     mountPropagation: Bidirectional
                     name: data-dir
-                  - mountPath: "/tmp"
-                    name: tmp-dir
               - args:
                   - csi-provisioner
                   - "--health-probe-bind-address=:10090"
@@ -301,8 +299,6 @@ tests:
                   - mountPath: "/data"
                     mountPropagation: Bidirectional
                     name: data-dir
-                  - mountPath: "/tmp"
-                    name: tmp-dir
                   - mountPath: "/var/lib/kubelet/pods/"
                     name: mountpoint-dir
                     readOnly: true
@@ -338,8 +334,6 @@ tests:
                     name: plugin-dir
                   - mountPath: "/registration"
                     name: registration-dir
-                  - mountPath: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/"
-                    name: lockfile-dir
               - args:
                   - "--csi-address=/csi/csi.sock"
                   - "--health-port=9808"
@@ -392,10 +386,6 @@ tests:
                   path: /var/lib/kubelet/pods/
                   type: DirectoryOrCreate
                 name: mountpoint-dir
-              - emptyDir: { }
-                name: lockfile-dir
-              - emptyDir: { }
-                name: tmp-dir
 
   - it: should use livenessprobe and csi-node-driver-registrar commands provided by the operator if they are preferred
     set:
@@ -656,9 +646,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[2].env[0].value
           value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
-      - equal:
-          path: spec.template.spec.containers[2].volumeMounts[2].mountPath
-          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/"
   - it: should use existing priority class if given
     set:
       platform: kubernetes
