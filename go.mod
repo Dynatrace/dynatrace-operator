@@ -8,7 +8,7 @@ require (
 	github.com/docker/cli v28.1.1+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.2
-	github.com/google/go-containerregistry v0.20.4
+	github.com/google/go-containerregistry v0.20.5
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.18.0
 	github.com/kubernetes-csi/csi-lib-utils v0.22.0
