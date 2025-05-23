@@ -95,8 +95,9 @@ webhook:
   mutatingWebhook:
     failurePolicy: Ignore
     timeoutSeconds: 10
-  certsDir:
-    sizeLimit: 10Mi
+  volumes:
+    certsDir:
+      sizeLimit: 10Mi
 
 csidriver:
   enabled: true
