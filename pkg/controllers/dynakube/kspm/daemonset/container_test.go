@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +14,11 @@ func TestGetContainer(t *testing.T) {
 	tenant := "test-tenant"
 
 	t.Run("get main container", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				Kspm: &kspm.Spec{},
+			},
+		}
 		mainContainer := getContainer(dk, tenant)
 
 		require.NotEmpty(t, mainContainer)
@@ -31,7 +36,11 @@ func TestGetContainer(t *testing.T) {
 	t.Run("image-ref is respected", func(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
-		dk := dynakube.DynaKube{}
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				Kspm: &kspm.Spec{},
+			},
+		}
 		dk.KSPM().ImageRef = image.Ref{
 			Repository: expectedRepo,
 			Tag:        expectedTag,
