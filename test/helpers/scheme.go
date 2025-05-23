@@ -5,6 +5,7 @@ package helpers
 import (
 	"context"
 
+	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -21,7 +22,11 @@ import (
 )
 
 func SetScheme(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-	err := v1beta4.AddToScheme(envConfig.Client().Resources().GetScheme())
+	err := latest.AddToScheme(envConfig.Client().Resources().GetScheme())
+	if err != nil {
+		return ctx, err
+	}
+	err = v1beta4.AddToScheme(envConfig.Client().Resources().GetScheme())
 	if err != nil {
 		return ctx, err
 	}
