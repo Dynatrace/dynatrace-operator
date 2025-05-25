@@ -2,7 +2,6 @@ package metadata
 
 import (
 	"encoding/json"
-	"github.com/vladimirvivien/gexe/str"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -19,13 +18,14 @@ func CopyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk d
 		}
 	}
 
-	setMetadataAnnotationValue(pod, copiedCustomRuleAnnotations) //json
+	setMetadataAnnotationValue(pod, copiedCustomRuleAnnotations)
 
 	return copiedCustomRuleAnnotations
 }
 
 func copyAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) map[string]string {
 	addedAnnotations := make(map[string]string)
+
 	for key, value := range namespace.Annotations {
 		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
 			added := setPodAnnotationIfNotExists(pod, key, value)
@@ -35,13 +35,16 @@ func copyAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) map[stri
 			}
 		}
 	}
+
 	return addedAnnotations
 }
 
 func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
 	copiedAnnotations := make(map[string]string)
+
 	for _, rule := range dk.Status.MetadataEnrichment.Rules {
 		var valueFromNamespace string
+
 		var exists bool
 
 		switch rule.Type {
@@ -52,21 +55,23 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 		}
 
 		if exists {
-			if str.IsEmpty(rule.Target) { // Empty target rules are not copied as a single annotation but bulk into the json annotation
-				copiedAnnotations[getEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
-			} else {
+			if len(rule.Target) > 1 { // Empty target rules are not copied as a single annotation but bulk into the json annotation
 				added := setPodAnnotationIfNotExists(pod, rule.ToAnnotationKey(), valueFromNamespace)
 				if added {
 					copiedAnnotations[rule.ToAnnotationKey()] = valueFromNamespace
 				}
+			} else {
+				copiedAnnotations[getEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
 			}
 		}
 	}
+
 	return copiedAnnotations
 }
 
 func setMetadataAnnotationValue(pod *corev1.Pod, annotations map[string]string) {
 	metadataAnnotations := make(map[string]string)
+
 	for key, value := range annotations {
 		// Annotations added to the json must not have metadata.dynatrace.com/ prefix
 		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
@@ -92,8 +97,10 @@ func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) bool {
 
 	if _, ok := pod.Annotations[key]; !ok {
 		pod.Annotations[key] = value
+
 		return true
 	}
+
 	return false
 }
 

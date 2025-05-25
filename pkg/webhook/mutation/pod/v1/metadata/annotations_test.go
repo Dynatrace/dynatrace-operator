@@ -2,16 +2,15 @@ package metadata
 
 import (
 	"encoding/json"
-	corev1 "k8s.io/api/core/v1"
 	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestAddMetadataToInitEnv(t *testing.T) {
@@ -26,6 +25,7 @@ func TestAddMetadataToInitEnv(t *testing.T) {
 		request.Pod.Annotations = map[string]string{
 			"test-annotation": "boom",
 		}
+
 		for _, key := range expectedKeys {
 			request.Pod.Annotations[dynakube.MetadataPrefix+key] = key + "-value"
 		}
@@ -35,11 +35,12 @@ func TestAddMetadataToInitEnv(t *testing.T) {
 
 		annotationsEnv := env.FindEnvVar(request.InstallContainer.Env, consts.EnrichmentWorkloadAnnotationsEnv)
 		require.NotNil(t, annotationsEnv)
+
 		propagatedAnnotations := map[string]string{}
 		err := json.Unmarshal([]byte(annotationsEnv.Value), &propagatedAnnotations)
 		require.NoError(t, err)
 
-		assert.Equal(t, len(expectedKeys)+1, len(propagatedAnnotations))
+		assert.Len(t, len(expectedKeys)+1, len(propagatedAnnotations))
 
 		for _, key := range expectedKeys {
 			require.Contains(t, propagatedAnnotations, key)
@@ -50,6 +51,7 @@ func TestAddMetadataToInitEnv(t *testing.T) {
 
 func setMetadataAnnotationValue(pod *corev1.Pod, annotations map[string]string) {
 	metadataAnnotations := map[string]string{}
+
 	for key, value := range annotations {
 		// Annotations added to the json must not have metadata.dynatrace.com/ prefix
 		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
