@@ -78,19 +78,19 @@ type EnrichmentRuleType string
 const (
 	EnrichmentLabelRule      EnrichmentRuleType = "LABEL"
 	EnrichmentAnnotationRule EnrichmentRuleType = "ANNOTATION"
+	MetadataAnnotation       string             = "metadata.dynatrace.com"
+	MetadataPrefix           string             = MetadataAnnotation + "/"
+	EnrichmentNamespaceKey   string             = "k8s.namespace."
 )
-
-const MetadataPrefix string = "metadata.dynatrace.com/"
 
 type MetadataEnrichmentStatus struct {
 	Rules []EnrichmentRule `json:"rules,omitempty"`
 }
 
 type EnrichmentRule struct {
-	Type    EnrichmentRuleType `json:"type,omitempty"`
-	Source  string             `json:"source,omitempty"`
-	Target  string             `json:"target,omitempty"`
-	Enabled bool               `json:"enabled,omitempty"`
+	Type   EnrichmentRuleType `json:"type,omitempty"`
+	Source string             `json:"source,omitempty"`
+	Target string             `json:"target,omitempty"`
 }
 
 func (rule EnrichmentRule) ToAnnotationKey() string {
