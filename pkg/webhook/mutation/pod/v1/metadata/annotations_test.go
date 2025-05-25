@@ -40,7 +40,7 @@ func TestAddMetadataToInitEnv(t *testing.T) {
 		err := json.Unmarshal([]byte(annotationsEnv.Value), &propagatedAnnotations)
 		require.NoError(t, err)
 
-		assert.Len(t, len(expectedKeys)+1, len(propagatedAnnotations))
+		assert.Len(t, propagatedAnnotations, len(expectedKeys)+1)
 
 		for _, key := range expectedKeys {
 			require.Contains(t, propagatedAnnotations, key)

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -12,13 +13,10 @@ func CopyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk d
 	copiedCustomRuleAnnotations := copyAccordingToCustomRules(pod, namespace, dk)
 	copiedPrefixAnnotations := copyAccordingToPrefix(pod, namespace)
 
-	for k, v := range copiedPrefixAnnotations {
-		if _, ok := copiedCustomRuleAnnotations[k]; !ok {
-			copiedCustomRuleAnnotations[k] = v
-		}
-	}
+	maps.Copy(copiedCustomRuleAnnotations, copiedPrefixAnnotations)
 
-	setMetadataAnnotationValue(pod, copiedCustomRuleAnnotations)
+	copiedCustomRuleAnnotations = removeMetadataPrefix(copiedCustomRuleAnnotations)
+	setPodMetadataJsonAnnotation(pod, copiedCustomRuleAnnotations)
 
 	return copiedCustomRuleAnnotations
 }
@@ -55,7 +53,7 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 		}
 
 		if exists {
-			if len(rule.Target) > 1 { // Empty target rules are not copied as a single annotation but bulk into the json annotation
+			if len(rule.Target) > 0 {
 				added := setPodAnnotationIfNotExists(pod, rule.ToAnnotationKey(), valueFromNamespace)
 				if added {
 					copiedAnnotations[rule.ToAnnotationKey()] = valueFromNamespace
@@ -69,20 +67,9 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 	return copiedAnnotations
 }
 
-func setMetadataAnnotationValue(pod *corev1.Pod, annotations map[string]string) {
-	metadataAnnotations := make(map[string]string)
+func setPodMetadataJsonAnnotation(pod *corev1.Pod, annotations map[string]string) {
+	marshaledAnnotations, err := json.Marshal(annotations)
 
-	for key, value := range annotations {
-		// Annotations added to the json must not have metadata.dynatrace.com/ prefix
-		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
-			split := strings.Split(key, dynakube.MetadataPrefix)
-			metadataAnnotations[split[1]] = value
-		} else {
-			metadataAnnotations[key] = value
-		}
-	}
-
-	marshaledAnnotations, err := json.Marshal(metadataAnnotations)
 	if err != nil {
 		log.Error(err, "failed to marshal annotations to map", "annotations", annotations)
 	}
@@ -106,4 +93,19 @@ func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) bool {
 
 func getEmptyTargetEnrichmentKey(metadataType, key string) string {
 	return dynakube.EnrichmentNamespaceKey + strings.ToLower(metadataType) + "." + key
+}
+
+func removeMetadataPrefix(annotations map[string]string) map[string]string {
+	annotationsWithoutPrefix := make(map[string]string)
+
+	for key, value := range annotations {
+		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
+			split := strings.Split(key, dynakube.MetadataPrefix)
+			annotationsWithoutPrefix[split[1]] = value
+		} else {
+			annotationsWithoutPrefix[key] = value
+		}
+	}
+
+	return annotationsWithoutPrefix
 }
