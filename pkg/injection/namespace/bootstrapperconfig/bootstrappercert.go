@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// generate gets the necessary info the create the init secret data
+// generate gets the necessary info they create the init secret data
 func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
