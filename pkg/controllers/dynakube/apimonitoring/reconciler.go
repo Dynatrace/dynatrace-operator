@@ -11,11 +11,11 @@ import (
 )
 
 type Reconciler struct {
-	dtc          dtclient.Client
-	dk           *dynakube.DynaKube
-	clusterLabel string
+	dtc dtclient.Client
 
 	monitoredEntitiesReconciler controllers.Reconciler
+	dk                          *dynakube.DynaKube
+	clusterLabel                string
 }
 
 type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler
