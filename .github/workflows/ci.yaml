@@ -91,7 +91,7 @@ jobs:
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
-          version: v3.17.3 #
+          version: v3.17.3
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -109,7 +109,7 @@ jobs:
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
-          version: v3.17.3 #
+          version: v3.17.3
       - name: Run Linting
         id: helm-linting
         run: |
@@ -175,7 +175,7 @@ jobs:
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
-          version: v3.17.3 #
+          version: v3.17.3
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       - name: Check deepcopy files are up-to-date
         id: deepcopy
