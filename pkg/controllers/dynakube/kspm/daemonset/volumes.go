@@ -1,10 +1,14 @@
 package daemonset
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -12,15 +16,13 @@ const (
 	tokenMountPath            = "/var/lib/dynatrace/secrets/tokens/kspm/node-configuration-collector"
 	tokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
 
-	nodeRootVolumeName = "node-root"
-	nodeRootMountPath  = "/node_root"
+	nodeRootMountPath = "/node_root"
 )
 
 func getVolumes(dk dynakube.DynaKube) []corev1.Volume {
-	volumes := []corev1.Volume{
-		getNodeRootVolume(),
-		getTokenVolume(dk),
-	}
+	var volumes []corev1.Volume
+	volumes = append(volumes, getNodeVolumes(dk.KSPM().GetUniqueMappedHostPaths())...)
+	volumes = append(volumes, getTokenVolume(dk))
 
 	if dk.ActiveGate().HasCaCert() {
 		volumes = append(volumes, getCertVolume(dk))
@@ -30,10 +32,9 @@ func getVolumes(dk dynakube.DynaKube) []corev1.Volume {
 }
 
 func getMounts(dk dynakube.DynaKube) []corev1.VolumeMount {
-	mounts := []corev1.VolumeMount{
-		getNodeRootVolumeMount(),
-		getTokenVolumeMount(),
-	}
+	var mounts []corev1.VolumeMount
+	mounts = append(mounts, getNodeVolumeMounts(dk.KSPM().GetUniqueMappedHostPaths())...)
+	mounts = append(mounts, getTokenVolumeMount())
 
 	if dk.ActiveGate().HasCaCert() {
 		mounts = append(mounts, getCertMount())
@@ -61,21 +62,36 @@ func getTokenVolume(dk dynakube.DynaKube) corev1.Volume {
 	}
 }
 
-func getNodeRootVolumeMount() corev1.VolumeMount {
-	return corev1.VolumeMount{
-		Name:      nodeRootVolumeName,
-		MountPath: nodeRootMountPath,
-		ReadOnly:  true,
+func getNodeVolumeMounts(mappedHostPaths []string) []corev1.VolumeMount {
+	volumeMounts := make([]corev1.VolumeMount, 0)
+	for i, path := range mappedHostPaths {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      getVolumeName(i + 1),
+			MountPath: filepath.Join(nodeRootMountPath, path),
+			ReadOnly:  true,
+		})
 	}
+
+	return volumeMounts
 }
 
-func getNodeRootVolume() corev1.Volume {
-	return corev1.Volume{
-		Name: nodeRootVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/",
+func getNodeVolumes(mappedHostPaths []string) []corev1.Volume {
+	volumes := make([]corev1.Volume, 0)
+	for i, path := range mappedHostPaths {
+		volumes = append(volumes, corev1.Volume{
+			Name: getVolumeName(i + 1),
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: path,
+					Type: ptr.To(corev1.HostPathDirectory),
+				},
 			},
-		},
+		})
 	}
+
+	return volumes
+}
+
+func getVolumeName(i int) string {
+	return fmt.Sprintf("node-path-%d", i)
 }
