@@ -16,6 +16,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
@@ -453,6 +454,12 @@ func createInjectionReconcilerBuilder(reconciler *injectionmock.Reconciler) inje
 
 func createKSPMReconcilerBuilder(reconciler controllers.Reconciler) kspm.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
+		return reconciler
+	}
+}
+
+func createApiMonitoringReconcilerBuilder(reconciler controllers.Reconciler) apimonitoring.ReconcilerBuilder {
+	return func(_ dtclient.Client, _ *dynakube.DynaKube, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }
