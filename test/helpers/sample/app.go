@@ -11,6 +11,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -21,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -44,6 +46,7 @@ type App struct {
 
 	installedNamespace bool
 	isDeployment       bool
+	withSCC            bool
 }
 
 type Option func(*App)
@@ -57,6 +60,7 @@ func NewApp(t *testing.T, owner metav1.Object, options ...Option) *App {
 		owner:     owner,
 		base:      base,
 		namespace: *namespace.New(base.Namespace),
+		withSCC:   true,
 	}
 	for _, opt := range options {
 		opt(app)
@@ -118,6 +122,12 @@ func WithSecurityContext(securityContext corev1.PodSecurityContext) Option {
 	}
 }
 
+func WithoutSCC() Option {
+	return func(app *App) {
+		app.withSCC = false
+	}
+}
+
 func (app *App) Name() string {
 	return app.base.Name
 }
@@ -142,13 +152,20 @@ func (app *App) Install() features.Func {
 		if !app.installedNamespace {
 			ctx = app.InstallNamespace()(ctx, t, c)
 		}
-		ctx = app.installSCC(ctx, t, c)
+
+		if app.withSCC {
+			ctx = app.installSCC(ctx, t, c)
+		}
 
 		object := app.build()
-
 		require.NoError(t, resource.Create(ctx, object))
+
 		if dep, ok := object.(*appsv1.Deployment); ok {
-			require.NoError(t, deployment.WaitUntilReady(resource, dep))
+			err := deployment.WaitUntilReady(resource, dep)
+			if err != nil {
+				printEventList(t, ctx, resource, app.Namespace())
+			}
+			require.NoError(t, err)
 		} else if p, ok := object.(*corev1.Pod); ok {
 			require.NoError(t, wait.For(conditions.New(resource).PodReady(p), wait.WithTimeout(5*time.Minute)))
 		}
@@ -268,4 +285,13 @@ func deletePods(t *testing.T, ctx context.Context, pods corev1.PodList, resource
 		require.NoError(t, wait.For(
 			conditions.New(resource).ResourceDeleted(&podItem)), wait.WithTimeout(1*time.Minute))
 	}
+}
+
+func printEventList(t *testing.T, ctx context.Context, resource *resources.Resources, namespace string) {
+	optFunc := func(options *metav1.ListOptions) {
+		options.Limit = int64(300)
+		options.FieldSelector = fmt.Sprint(fields.OneTermEqualSelector("type", corev1.EventTypeWarning))
+	}
+	events := event.List(t, ctx, resource, namespace, optFunc)
+	t.Log("events", events)
 }

@@ -36,7 +36,11 @@ func NoCSI(t *testing.T) features.Feature {
 
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, dk)
 
-	sampleApp := sample.NewApp(t, &dk, sample.AsDeployment())
+	sampleApp := sample.NewApp(t, &dk,
+		sample.AsDeployment(),
+		sample.WithSecurityContext(corev1.PodSecurityContext{}),
+		sample.WithoutSCC(),
+	)
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check injection of sample app", checkInjection(sampleApp))
 
