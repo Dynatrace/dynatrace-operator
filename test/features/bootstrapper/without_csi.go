@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/volumes"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -36,7 +37,11 @@ func NoCSI(t *testing.T) features.Feature {
 
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, dk)
 
-	sampleApp := sample.NewApp(t, &dk, sample.AsDeployment())
+	sampleApp := sample.NewApp(t, &dk,
+		sample.AsDeployment(),
+		sample.WithSecurityContext(corev1.PodSecurityContext{}),
+		sample.WithoutClusterRole(),
+	)
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check injection of sample app", checkInjection(sampleApp))
 
@@ -56,6 +61,23 @@ func NoCSI(t *testing.T) features.Feature {
 	)
 	builder.Assess("install sample app with random users set", randomUserSample.Install())
 	builder.Assess("check injection of pods with random user", checkInjection(randomUserSample))
+
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+	if isOpenshift {
+		randomUserSampleFail := sample.NewApp(t, &dk,
+			sample.WithName("random-user-fail"),
+			sample.AsDeployment(),
+			sample.WithSecurityContext(corev1.PodSecurityContext{
+				RunAsUser:  ptr.To[int64](1234),
+				RunAsGroup: ptr.To[int64](1234),
+			}),
+			sample.WithoutClusterRole(),
+		)
+		builder.Assess("try to install sample app with random users set", randomUserSampleFail.InstallFail())
+
+		builder.Teardown(randomUserSampleFail.UninstallFail())
+	}
 
 	builder.Teardown(sampleApp.Uninstall())
 	builder.Teardown(podSample.Uninstall())

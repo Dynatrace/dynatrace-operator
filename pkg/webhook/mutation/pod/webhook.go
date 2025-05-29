@@ -23,13 +23,13 @@ const (
 	ocDebugAnnotationsResource  = "debug.openshift.io/source-resource"
 )
 
-func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string) error {
+func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, isOpenShift bool) error {
 	podName := os.Getenv(env.PodName)
 	if podName == "" {
 		log.Info("no Pod name set for webhook container")
 	}
 
-	if err := registerInjectEndpoint(ctx, mgr, ns, podName); err != nil {
+	if err := registerInjectEndpoint(ctx, mgr, ns, podName, isOpenShift); err != nil {
 		return err
 	}
 
