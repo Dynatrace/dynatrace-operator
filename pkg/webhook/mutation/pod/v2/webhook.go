@@ -18,10 +18,11 @@ import (
 )
 
 type Injector struct {
-	recorder   events.EventRecorder
-	kubeClient client.Client
-	apiReader  client.Reader
-	metaClient client.Client
+	recorder    events.EventRecorder
+	kubeClient  client.Client
+	apiReader   client.Reader
+	metaClient  client.Client
+	isOpenShift bool
 }
 
 func IsEnabled(mutationRequest *dtwebhook.MutationRequest) bool {
@@ -40,12 +41,13 @@ func IsEnabled(mutationRequest *dtwebhook.MutationRequest) bool {
 
 var _ dtwebhook.PodInjector = &Injector{}
 
-func NewInjector(kubeClient client.Client, apiReader client.Reader, metaClient client.Client, recorder events.EventRecorder) *Injector {
+func NewInjector(kubeClient client.Client, apiReader client.Reader, metaClient client.Client, recorder events.EventRecorder, isOpenShift bool) *Injector {
 	return &Injector{
-		recorder:   recorder,
-		kubeClient: kubeClient,
-		apiReader:  apiReader,
-		metaClient: metaClient,
+		recorder:    recorder,
+		kubeClient:  kubeClient,
+		apiReader:   apiReader,
+		metaClient:  metaClient,
+		isOpenShift: isOpenShift,
 	}
 }
 
@@ -94,7 +96,7 @@ func (wh *Injector) isInjected(mutationRequest *dtwebhook.MutationRequest) bool 
 }
 
 func (wh *Injector) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
-	mutationRequest.InstallContainer = createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube, wh.isOpenShift)
 
 	err := addContainerAttributes(mutationRequest)
 	if err != nil {

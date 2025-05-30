@@ -24,6 +24,8 @@ import (
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -62,6 +64,8 @@ func New() *cobra.Command {
 
 func run() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		const openshiftSecurityGVR = "security.openshift.io/v1"
+
 		installconfig.ReadModules()
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
@@ -72,6 +76,23 @@ func run() func(*cobra.Command, []string) error {
 		kubeConfig, err := config.GetConfig()
 		if err != nil {
 			return err
+		}
+
+		isOpenShift := false
+
+		client, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
+		if err != nil {
+			logd.Get().WithName("platform").Info("detected platform", "platform", "unknown")
+		} else {
+			_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
+
+			if !k8serrors.IsNotFound(err) {
+				logd.Get().WithName("platform").Info("detected platform", "platform", "openshift")
+
+				isOpenShift = true
+			} else {
+				logd.Get().WithName("platform").Info("detected platform", "platform", "kubernetes")
+			}
 		}
 
 		webhookManager, err := createManager(kubeConfig, namespace, certificateDirectory, certificateFileName, certificateKeyFileName)
@@ -91,7 +112,7 @@ func run() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = podmutator.AddWebhookToManager(signalHandler, webhookManager, namespace)
+		err = podmutator.AddWebhookToManager(signalHandler, webhookManager, namespace, isOpenShift)
 		if err != nil {
 			return err
 		}

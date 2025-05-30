@@ -13,7 +13,7 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.Container {
 	args := []arg.Arg{
 		{
 			Name:  configure.ConfigFolderFlag,
@@ -33,7 +33,7 @@ func createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Cont
 		Name:            dtwebhook.InstallContainerName,
 		Image:           dk.OneAgent().GetCustomCodeModulesImage(),
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		SecurityContext: securityContextForInitContainer(pod, dk),
+		SecurityContext: securityContextForInitContainer(pod, dk, isOpenShift),
 		Resources:       initContainerResources(dk),
 		Args:            arg.ConvertArgsToStrings(args),
 	}
@@ -62,7 +62,7 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{}
 }
 
-func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.SecurityContext {
+func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   ptr.To(true),
 		AllowPrivilegeEscalation: ptr.To(false),
@@ -72,8 +72,11 @@ func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube) *cor
 				"ALL",
 			},
 		},
-		RunAsUser:  ptr.To(oacommon.DefaultUser),
 		RunAsGroup: ptr.To(oacommon.DefaultGroup),
+	}
+
+	if !isOpenShift {
+		initSecurityCtx.RunAsUser = ptr.To(oacommon.DefaultUser)
 	}
 
 	addSeccompProfile(&initSecurityCtx, dk)
