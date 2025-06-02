@@ -149,7 +149,7 @@ func TestHandle(t *testing.T) {
 
 		source := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceSecretName(request.DynaKube.Name),
+				Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
 				Namespace: request.DynaKube.Namespace,
 			},
 			Data: map[string][]byte{"data": []byte("beep")},
