@@ -9,7 +9,7 @@ const (
 	AgentInitSecretConfigField         = "config"
 
 	BootstrapperInitSecretName      = "dynatrace-bootstrapper-config"
-	BootstrapperInitCertsSecretName = "dynatrace-bootstrapper-certs
+	BootstrapperInitCertsSecretName = "dynatrace-bootstrapper-certs"
 
 	LdPreloadFilename = "ld.so.preload"
 	LibAgentProcPath  = "/agent/lib64/liboneagentproc.so"

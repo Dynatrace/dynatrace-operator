@@ -15,11 +15,16 @@ import (
 )
 
 const (
-	sourceSecretTemplate = "%s-bootstrapper-config"
+	sourceSecretTemplate      = "%s-bootstrapper-config"
+	sourceSecretCertsTemplate = "%s-bootstrapper-certs"
 )
 
-func GetSourceSecretName(dkName string) string {
+func GetSourceConfigSecretName(dkName string) string {
 	return fmt.Sprintf(sourceSecretTemplate, dkName)
+}
+
+func GetSourceCertsSecretName(dkName string) string {
+	return fmt.Sprintf(sourceSecretCertsTemplate, dkName)
 }
 
 // Replicate will only create the secret once, doesn't meant for keeping the secret up to date
@@ -33,7 +38,7 @@ func Replicate(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryO
 }
 
 func getSecretFromSource(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) (*corev1.Secret, error) {
-	source, err := query.Get(ctx, types.NamespacedName{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace})
+	source, err := query.Get(ctx, types.NamespacedName{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace})
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +46,10 @@ func getSecretFromSource(ctx context.Context, dk dynakube.DynaKube, query k8ssec
 	return k8ssecret.BuildForNamespace(consts.BootstrapperInitSecretName, targetNs, source.Data, k8ssecret.SetLabels(source.Labels))
 }
 
-func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
+func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, secretName string, data map[string][]byte) error {
 	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
 
-	secret, err := k8ssecret.BuildForNamespace(GetSourceSecretName(dk.Name), dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.BuildForNamespace(secretName, dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
 
