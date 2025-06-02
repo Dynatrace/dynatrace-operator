@@ -22,7 +22,7 @@ type Kspm struct {
 // +kubebuilder:object:generate=true
 
 type Spec struct {
-	// MappedHostPaths contains host paths are mounted to the container. Default value: `/`
+	// MappedHostPaths define the host paths that are mounted to the container.
 	MappedHostPaths []string `json:"mappedHostPaths,omitempty"`
 }
 
