@@ -3,6 +3,7 @@ package bootstrapperconfig
 import (
 	"context"
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
@@ -139,6 +140,30 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > -1 {
 		initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio))
 		data[curl.InputFileName] = []byte(initialConnectRetryMs)
+	}
+
+	return data, err
+}
+
+// generate gets the necessary info they create the init secret data
+func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	data := map[string][]byte{}
+
+	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
+	if err != nil {
+		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+
+		return nil, errors.WithStack(err)
+	}
+
+	if len(agCerts) != 0 {
+		data[ca.AgCertsInputFile] = agCerts
+	}
+
+	trustedCAs, err := dk.TrustedCAs(ctx, s.apiReader)
+
+	if len(trustedCAs) != 0 {
+		data[ca.TrustedCertsInputFile] = trustedCAs
 	}
 
 	return data, err
