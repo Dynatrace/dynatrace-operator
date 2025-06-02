@@ -50,6 +50,7 @@ rules:
       - secrets
     resourceNames:
       - dynatrace-bootstrapper-config
+      - dynatrace-bootstrapper-certs
       - dynatrace-dynakube-config
       - dynatrace-metadata-enrichment-endpoint
     verbs:

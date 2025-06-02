@@ -3,10 +3,10 @@ package bootstrapperconfig
 import (
 	"context"
 	"encoding/json"
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/curl"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper/download"
@@ -114,6 +114,8 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		data[endpoint.InputFileName] = []byte(endpointProperties)
 	}
 
+	// TODO: it's unclear should I read it similar func (s *SecretGenerator) prepareFieldsForEndpoints
+	// or reuse existing once...
 	downloadConfigJSON := download.Config{
 		URL:      "",
 		APIToken: "",
@@ -145,7 +147,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	return data, err
 }
 
-// generate gets the necessary info they create the init secret data
+// generateCerts gets the necessary info they create the init certs secret data
 func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
