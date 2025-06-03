@@ -507,7 +507,7 @@ func TestTempVolume(t *testing.T) {
 		expectedPvcSpec  corev1.PersistentVolumeClaimSpec
 	}{
 		{
-			name:             "EmptyDir and no PVC when PersistentVolumeClaim = nil, TelemetryIngest enabled, UseEphemeralVolume = true",
+			name:             "EmptyDir and no PVC when VolumeClaimTemplate = nil, TelemetryIngest enabled, UseEphemeralVolume = true",
 			pvc:              nil,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     true,
@@ -515,7 +515,7 @@ func TestTempVolume(t *testing.T) {
 			pvcExpected:      false,
 		},
 		{
-			name:             "default PVC and no EmptyDir when PersistentVolumeClaim = nil, TelemetryIngest enabled, UseEphemeralVolume = false",
+			name:             "default PVC and no EmptyDir when VolumeClaimTemplate = nil, TelemetryIngest enabled, UseEphemeralVolume = false",
 			pvc:              nil,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     false,
@@ -524,7 +524,7 @@ func TestTempVolume(t *testing.T) {
 			expectedPvcSpec:  defaultPVCSpec(),
 		},
 		{
-			name:             "EmptyDir and no PVC when PersistentVolumeClaim = nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
+			name:             "EmptyDir and no PVC when VolumeClaimTemplate = nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
 			pvc:              nil,
 			telemetryIngest:  nil,
 			useEphemeral:     true,
@@ -532,7 +532,7 @@ func TestTempVolume(t *testing.T) {
 			pvcExpected:      false,
 		},
 		{
-			name:             "EmptyDir and no PVC when PersistentVolumeClaim = nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
+			name:             "EmptyDir and no PVC when VolumeClaimTemplate = nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
 			pvc:              nil,
 			telemetryIngest:  nil,
 			useEphemeral:     false,
@@ -540,7 +540,7 @@ func TestTempVolume(t *testing.T) {
 			pvcExpected:      false,
 		},
 		{
-			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest enabled, UseEphemeralVolume = false",
+			name:             "custom PVC and no EmptyDir when VolumeClaimTemplate != nil, TelemetryIngest enabled, UseEphemeralVolume = false",
 			pvc:              &myPVCSpec,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     false,
@@ -549,7 +549,7 @@ func TestTempVolume(t *testing.T) {
 			expectedPvcSpec:  myPVCSpec,
 		},
 		{
-			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest enabled, UseEphemeralVolume = true",
+			name:             "custom PVC and no EmptyDir when VolumeClaimTemplate != nil, TelemetryIngest enabled, UseEphemeralVolume = true",
 			pvc:              &myPVCSpec,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     true,
@@ -558,7 +558,7 @@ func TestTempVolume(t *testing.T) {
 			expectedPvcSpec:  myPVCSpec,
 		},
 		{
-			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
+			name:             "custom PVC and no EmptyDir when VolumeClaimTemplate != nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
 			pvc:              &myPVCSpec,
 			telemetryIngest:  nil,
 			useEphemeral:     false,
@@ -567,7 +567,7 @@ func TestTempVolume(t *testing.T) {
 			expectedPvcSpec:  myPVCSpec,
 		},
 		{
-			name:             "custom PVC and no EmptyDir when PersistentVolumeClaim != nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
+			name:             "custom PVC and no EmptyDir when VolumeClaimTemplate != nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
 			pvc:              &myPVCSpec,
 			telemetryIngest:  nil,
 			useEphemeral:     true,
@@ -581,7 +581,7 @@ func TestTempVolume(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			dk := getTestDynakube()
 
-			dk.Spec.ActiveGate.PersistentVolumeClaim = test.pvc
+			dk.Spec.ActiveGate.VolumeClaimTemplate = test.pvc
 			dk.Spec.TelemetryIngest = test.telemetryIngest
 			dk.Spec.ActiveGate.UseEphemeralVolume = test.useEphemeral
 
