@@ -46,6 +46,8 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
+	// TODO: only metadata-enrichment => only dynatrace-bootstrapper-config,
+	//  and only the endpoint.propertiespart, rest is not needed
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
@@ -133,11 +135,27 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		data[endpoint.InputFileName] = []byte(endpointProperties)
 	}
 
-	// TODO: it's unclear should I read it similar func (s *SecretGenerator) prepareFieldsForEndpoints
-	// or reuse existing once...
+	var tokens corev1.Secret
+	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
+		return nil, errors.WithMessage(err, "failed to query tokens")
+	}
+
+	var proxy string
+	if dk.NeedsOneAgentProxy() {
+		proxy, err = dk.Proxy(ctx, s.apiReader)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
 	downloadConfigJSON := download.Config{
-		URL:      "",
-		ApiToken: "",
+		URL:           dk.Spec.APIURL,
+		ApiToken:      string(tokens.Data[dtclient.ApiToken]),
+		Proxy:         proxy,
+		NoProxy:       dk.FF().GetNoProxy(),
+		NetworkZone:   dk.Spec.NetworkZone,
+		HostGroup:     dk.OneAgent().GetHostGroup(),
+		SkipCertCheck: dk.Spec.SkipCertCheck,
 	}
 
 	downloadConfigBytes, err := json.Marshal(downloadConfigJSON)
