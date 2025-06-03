@@ -112,7 +112,7 @@ jobs:
           IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-fips
         shell: bash
         run: |
-          hack/build/ci/create-fips-image-index.sh "${IMAGE}"
+          hack/build/ci/create-image-index.sh "${IMAGE}"
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
