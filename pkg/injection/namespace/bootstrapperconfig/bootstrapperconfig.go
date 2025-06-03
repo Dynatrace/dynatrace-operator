@@ -133,11 +133,27 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		data[endpoint.InputFileName] = []byte(endpointProperties)
 	}
 
-	// TODO: it's unclear should I read it similar func (s *SecretGenerator) prepareFieldsForEndpoints
-	// or reuse existing once...
+	var tokens corev1.Secret
+	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
+		return nil, errors.WithMessage(err, "failed to query tokens")
+	}
+
+	var proxy string
+	if dk.NeedsOneAgentProxy() {
+		proxy, err = dk.Proxy(ctx, s.apiReader)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
 	downloadConfigJSON := download.Config{
-		URL:      "",
-		APIToken: "",
+		URL:           dk.Spec.APIURL,
+		APIToken:      string(tokens.Data[dtclient.ApiToken]),
+		Proxy:         proxy,
+		NoProxy:       dk.FF().GetNoProxy(),
+		NetworkZone:   dk.Spec.NetworkZone,
+		HostGroup:     dk.OneAgent().GetHostGroup(),
+		SkipCertCheck: dk.Spec.SkipCertCheck,
 	}
 
 	downloadConfigBytes, err := json.Marshal(downloadConfigJSON)
@@ -172,7 +188,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
