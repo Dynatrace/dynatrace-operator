@@ -16,13 +16,13 @@ func GetJobsForOwner(ctx context.Context, t *testing.T, resource *resources.Reso
 	jobs := GetJobsForNamespace(ctx, t, resource, namespace)
 
 	var targetJobs batchv1.JobList
-	for _, ajob := range jobs.Items {
-		if len(ajob.ObjectMeta.OwnerReferences) < 1 {
+	for _, jobItem := range jobs.Items {
+		if len(jobItem.ObjectMeta.OwnerReferences) < 1 {
 			continue
 		}
 
-		if ajob.ObjectMeta.OwnerReferences[0].Name == ownerName {
-			targetJobs.Items = append(targetJobs.Items, ajob)
+		if jobItem.ObjectMeta.OwnerReferences[0].Name == ownerName {
+			targetJobs.Items = append(targetJobs.Items, jobItem)
 		}
 	}
 
