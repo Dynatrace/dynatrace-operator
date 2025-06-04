@@ -96,8 +96,8 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testApiUrl,
 					ActiveGate: activegate.Spec{
-						UseEphemeralVolume:    false,
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
+						UseEphemeralVolume:  false,
+						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},
 					},
 				},
 			})
@@ -123,8 +123,8 @@ func TestActiveGatePVCSettings(t *testing.T) {
 					APIURL:     testApiUrl,
 					Extensions: &dynakube.ExtensionsSpec{},
 					ActiveGate: activegate.Spec{
-						UseEphemeralVolume:    true,
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
+						UseEphemeralVolume:  true,
+						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},
 					},
 				},
 			})
