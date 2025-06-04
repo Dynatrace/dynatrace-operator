@@ -59,7 +59,7 @@ func extensionControllerPVCStorageDevice(_ context.Context, _ *Validator, dk *dy
 	}
 
 	if extensionControllerMutuallyExclusivePVCSettings(dk) {
-		log.Info("requested dynakube specifies mutually exclusive PersistentVolumeClaim settings for ExtensionExecutionController.", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ExtensionExecutionController.", "name", dk.Name, "namespace", dk.Namespace)
 
 		return errorExtensionExecutionControllerInvalidPVCConfiguration
 	}

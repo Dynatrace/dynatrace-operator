@@ -156,16 +156,7 @@
 |`tolerations`|Tolerations to include with the OneAgent DaemonSet. For details, see Taints and Tolerations (<https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>).|-|array|
 |`version`|Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
-### .spec.oneAgent.applicationMonitoring
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`codeModulesImage`|Use a custom OneAgent CodeModule image to download binaries.|-|string|
-|`initResources`|Define resources requests and limits for the initContainer. For details, see Managing resources for containers<br/>(<https://kubernetes.io/docs/concepts/configuration/manage-resources-containers>).|-|object|
-|`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
-|`version`|Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.|-|string|
-
-### .spec.activeGate.persistentVolumeClaim
+### .spec.activeGate.volumeClaimTemplate
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
@@ -177,6 +168,15 @@
 |`volumeAttributesClassName`|volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.<br/>If specified, the CSI driver will create or update the volume with the attributes defined<br/>in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,<br/>it can be changed after the claim is created.|-|string|
 |`volumeMode`|volumeMode defines what type of volume is required by the claim.<br/>Value of Filesystem is implied when not included in claim spec.|-|string|
 |`volumeName`|volumeName is the binding reference to the PersistentVolume backing this claim.|-|string|
+
+### .spec.oneAgent.applicationMonitoring
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`codeModulesImage`|Use a custom OneAgent CodeModule image to download binaries.|-|string|
+|`initResources`|Define resources requests and limits for the initContainer. For details, see Managing resources for containers<br/>(<https://kubernetes.io/docs/concepts/configuration/manage-resources-containers>).|-|object|
+|`namespaceSelector`|Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.<br/>For more information, see Configure monitoring for namespaces and pods (<https://www.dynatrace.|-|object|
+|`version`|Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.|-|string|
 
 ### .spec.templates.logMonitoring.imageRef
 
@@ -219,7 +219,7 @@
 |`resources`|Define resources' requests and limits for single NodeConfigurationCollector pod|-|object|
 |`tolerations`|Set tolerations for the NodeConfigurationCollector pods|-|array|
 
-### .spec.activeGate.persistentVolumeClaim.dataSourceRef
+### .spec.activeGate.volumeClaimTemplate.dataSourceRef
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
