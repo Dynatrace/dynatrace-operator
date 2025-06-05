@@ -75,7 +75,7 @@ type Spec struct {
 
 	// Defines storage device
 	// +kubebuilder:validation:Optional
-	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
+	VolumeClaimTemplate *corev1.PersistentVolumeClaimSpec `json:"volumeClaimTemplate,omitempty"`
 
 	// Configures the terminationGracePeriodSeconds parameter of the ActiveGate pod. Kubernetes defaults and rules apply.
 	// +kubebuild:validation:Optional

@@ -308,6 +308,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec active
 	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TlsSecretName)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
+	assert.Equal(t, oldSpec.PersistentVolumeClaim, newSpec.VolumeClaimTemplate)
 
 	if oldSpec.CapabilityProperties.CustomProperties != nil || newSpec.CapabilityProperties.CustomProperties != nil { // necessary so we don't explode with nil pointer when not set
 		require.NotNil(t, oldSpec.CapabilityProperties.CustomProperties)
@@ -564,8 +565,9 @@ func getNewActiveGateSpec() activegatelatest.Spec {
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
-		TlsSecretName:     "activegate-tls-secret-name",
-		PriorityClassName: "activegate-priority-class-name",
+		VolumeClaimTemplate: getPersistentVolumeClaimSpec(),
+		TlsSecretName:       "activegate-tls-secret-name",
+		PriorityClassName:   "activegate-priority-class-name",
 		Capabilities: []activegatelatest.CapabilityDisplayName{
 			activegatelatest.DynatraceApiCapability.DisplayName,
 			activegatelatest.KubeMonCapability.DisplayName,

@@ -66,6 +66,49 @@ func TestReconcileActiveGate(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "failed to reconcile ActiveGate: BOOM", err.Error())
 	})
+	t.Run(`reconcile disabled automatic kubernetes api monitoring`, func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.AGAutomaticK8sApiMonitoringKey: "false",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testApiUrl,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubeSystemUUID:        testUID,
+				KubernetesClusterMEID: testMEID,
+			},
+		}
+
+		fakeClient := fake.NewClientWithIndex(dk)
+		mockActiveGateReconciler := controllermock.NewReconciler(t)
+		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
+
+		mockApiMonitoringReconciler := controllermock.NewReconciler(t)
+		mockApiMonitoringReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil).Maybe()
+
+		controller := &Controller{
+			client:                         fakeClient,
+			apiReader:                      fakeClient,
+			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			apiMonitoringReconcilerBuilder: createApiMonitoringReconcilerBuilder(mockApiMonitoringReconciler),
+		}
+
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{})
+		err := controller.reconcileActiveGate(ctx, dk, mockClient, nil)
+		require.NoError(t, err)
+
+		mockApiMonitoringReconciler.AssertNotCalled(t, "Reconcile", mock.Anything)
+	})
 	t.Run(`reconcile automatic kubernetes api monitoring`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -95,26 +138,19 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
+		mockApiMonitoringReconciler := controllermock.NewReconciler(t)
+		mockApiMonitoringReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 		controller := &Controller{
 			client:                         fakeClient,
 			apiReader:                      fakeClient,
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder: apimonitoring.NewReconciler, // TODO: actually mock it
+			apiMonitoringReconcilerBuilder: createApiMonitoringReconcilerBuilder(mockApiMonitoringReconciler),
 		}
 
 		err := controller.reconcileActiveGate(ctx, dk, mockClient, nil)
 		require.NoError(t, err)
-		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
-			mock.AnythingOfType("context.backgroundCtx"),
-			testName,
-			testUID,
-			mock.AnythingOfType("string"))
 
-		mockClient.AssertCalled(t, "GetSettingsForMonitoredEntity",
-			mock.AnythingOfType("context.backgroundCtx"),
-			&dtclient.MonitoredEntity{EntityId: dk.Status.KubernetesClusterMEID, DisplayName: "", LastSeenTms: 0},
-			mock.AnythingOfType("string"))
-
+		mockApiMonitoringReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)
 	})
 	t.Run(`reconcile automatic kubernetes api monitoring with custom cluster name`, func(t *testing.T) {
@@ -157,7 +193,7 @@ func TestReconcileActiveGate(t *testing.T) {
 			client:                         fakeClient,
 			apiReader:                      fakeClient,
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder: apimonitoring.NewReconciler, // TODO: actually mock it
+			apiMonitoringReconcilerBuilder: apimonitoring.NewReconciler,
 		}
 
 		err := controller.reconcileActiveGate(ctx, dk, mockClient, nil)

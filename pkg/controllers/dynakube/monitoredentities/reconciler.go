@@ -10,10 +10,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 )
 
-type ReconcilerBuilder func(
-	dtClient dynatrace.Client,
-	dk *dynakube.DynaKube,
-) controllers.Reconciler
+type Reconciler struct {
+	dk           *dynakube.DynaKube
+	dtClient     dynatrace.Client
+	timeProvider *timeprovider.Provider
+}
+
+type ReconcilerBuilder func(dtClient dynatrace.Client, dk *dynakube.DynaKube) controllers.Reconciler
 
 func NewReconciler( //nolint
 	dtClient dynatrace.Client,
@@ -24,12 +27,6 @@ func NewReconciler( //nolint
 		dtClient:     dtClient,
 		timeProvider: timeprovider.New(),
 	}
-}
-
-type Reconciler struct {
-	dk           *dynakube.DynaKube
-	dtClient     dynatrace.Client
-	timeProvider *timeprovider.Provider
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {

@@ -7,7 +7,7 @@ require (
 	github.com/container-storage-interface/spec v1.11.0
 	github.com/docker/cli v28.1.1+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/google/go-containerregistry v0.20.5
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.18.0
@@ -40,7 +40,7 @@ require (
 	k8s.io/kubelet v0.33.1
 	k8s.io/mount-utils v0.33.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	sigs.k8s.io/controller-runtime v0.20.4
+	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/e2e-framework v0.3.0
 	sigs.k8s.io/yaml v1.4.0
 )

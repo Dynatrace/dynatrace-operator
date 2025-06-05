@@ -370,8 +370,9 @@ func getOldActiveGateSpec() activegate.Spec {
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
-		TlsSecretName:     "activegate-tls-secret-name",
-		PriorityClassName: "activegate-priority-class-name",
+		PersistentVolumeClaim: getPersistentVolumeClaimSpec(),
+		TlsSecretName:         "activegate-tls-secret-name",
+		PriorityClassName:     "activegate-priority-class-name",
 		Capabilities: []activegate.CapabilityDisplayName{
 			activegate.DynatraceApiCapability.DisplayName,
 			activegate.KubeMonCapability.DisplayName,

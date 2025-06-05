@@ -70,12 +70,12 @@ func memoryLimitSet(resources corev1.ResourceRequirements) bool {
 }
 
 func activeGateMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
-	return dk.Spec.ActiveGate.UseEphemeralVolume && dk.Spec.ActiveGate.PersistentVolumeClaim != nil
+	return dk.Spec.ActiveGate.UseEphemeralVolume && dk.Spec.ActiveGate.VolumeClaimTemplate != nil
 }
 
 func mutuallyExclusiveActiveGatePVsettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if activeGateMutuallyExclusivePVCSettings(dk) {
-		log.Info("requested dynakube specifies mutually exclusive PersistentVolumeClaim settings for ActiveGate.", "name", dk.Name, "namespace", dk.Namespace)
+		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ActiveGate.", "name", dk.Name, "namespace", dk.Namespace)
 
 		return errorActiveGateInvalidPVCConfiguration
 	}
