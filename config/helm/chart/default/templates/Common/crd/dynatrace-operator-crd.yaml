@@ -11277,171 +11277,6 @@ spec:
                       type: string
                     description: Node selector to control the selection of nodes
                     type: object
-                  persistentVolumeClaim:
-                    description: Defines storage device
-                    properties:
-                      accessModes:
-                        description: |-
-                          accessModes contains the desired access modes the volume should have.
-                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
-                        items:
-                          type: string
-                        type: array
-                        x-kubernetes-list-type: atomic
-                      dataSource:
-                        description: |-
-                          dataSource field can be used to specify either:
-                          * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
-                          * An existing PVC (PersistentVolumeClaim)
-                          If the provisioner or an external controller can support the specified data source,
-                          it will create a new volume based on the contents of the specified data source.
-                        properties:
-                          apiGroup:
-                            description: |-
-                              APIGroup is the group for the resource being referenced.
-                              If APIGroup is not specified, the specified Kind must be in the core API group.
-                              For any other third-party types, APIGroup is required.
-                            type: string
-                          kind:
-                            description: Kind is the type of resource being referenced
-                            type: string
-                          name:
-                            description: Name is the name of resource being referenced
-                            type: string
-                        required:
-                        - kind
-                        - name
-                        type: object
-                        x-kubernetes-map-type: atomic
-                      dataSourceRef:
-                        description: |-
-                          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
-                          volume is desired. This may be any object from a non-empty API group (non
-                          core object) or a PersistentVolumeClaim object.
-                        properties:
-                          apiGroup:
-                            description: |-
-                              APIGroup is the group for the resource being referenced.
-                              If APIGroup is not specified, the specified Kind must be in the core API group.
-                              For any other third-party types, APIGroup is required.
-                            type: string
-                          kind:
-                            description: Kind is the type of resource being referenced
-                            type: string
-                          name:
-                            description: Name is the name of resource being referenced
-                            type: string
-                          namespace:
-                            description: |-
-                              Namespace is the namespace of resource being referenced
-                              Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
-                            type: string
-                        required:
-                        - kind
-                        - name
-                        type: object
-                      resources:
-                        description: |-
-                          resources represents the minimum resources the volume should have.
-                          If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
-                          that are lower than previous value but must still be higher than capacity recorded in the
-                          status field of the claim.
-                          More info: https://kubernetes.
-                        properties:
-                          limits:
-                            additionalProperties:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            description: |-
-                              Limits describes the maximum amount of compute resources allowed.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                            type: object
-                          requests:
-                            additionalProperties:
-                              anyOf:
-                              - type: integer
-                              - type: string
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            description: |-
-                              Requests describes the minimum amount of compute resources required.
-                              If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-                              otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                            type: object
-                        type: object
-                      selector:
-                        description: selector is a label query over volumes to consider
-                          for binding.
-                        properties:
-                          matchExpressions:
-                            description: matchExpressions is a list of label selector
-                              requirements. The requirements are ANDed.
-                            items:
-                              description: |-
-                                A label selector requirement is a selector that contains values, a key, and an operator that
-                                relates the key and values.
-                              properties:
-                                key:
-                                  description: key is the label key that the selector
-                                    applies to.
-                                  type: string
-                                operator:
-                                  description: |-
-                                    operator represents a key's relationship to a set of values.
-                                    Valid operators are In, NotIn, Exists and DoesNotExist.
-                                  type: string
-                                values:
-                                  description: |-
-                                    values is an array of string values. If the operator is In or NotIn,
-                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                    the values array must be empty. This array is replaced during a strategic
-                                    merge patch.
-                                  items:
-                                    type: string
-                                  type: array
-                                  x-kubernetes-list-type: atomic
-                              required:
-                              - key
-                              - operator
-                              type: object
-                            type: array
-                            x-kubernetes-list-type: atomic
-                          matchLabels:
-                            additionalProperties:
-                              type: string
-                            description: |-
-                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                              map is equivalent to an element of matchExpressions, whose key field is "key", the
-                              operator is "In", and the values array contains only "value". The requirements are ANDed.
-                            type: object
-                        type: object
-                        x-kubernetes-map-type: atomic
-                      storageClassName:
-                        description: |-
-                          storageClassName is the name of the StorageClass required by the claim.
-                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1
-                        type: string
-                      volumeAttributesClassName:
-                        description: |-
-                          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
-                          If specified, the CSI driver will create or update the volume with the attributes defined
-                          in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-                          it can be changed after the claim is created.
-                        type: string
-                      volumeMode:
-                        description: |-
-                          volumeMode defines what type of volume is required by the claim.
-                          Value of Filesystem is implied when not included in claim spec.
-                        type: string
-                      volumeName:
-                        description: volumeName is the binding reference to the PersistentVolume
-                          backing this claim.
-                        type: string
-                    type: object
                   priorityClassName:
                     description: |-
                       If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
@@ -11683,6 +11518,171 @@ spec:
                   useEphemeralVolume:
                     description: UseEphemeralVolume
                     type: boolean
+                  volumeClaimTemplate:
+                    description: Defines storage device
+                    properties:
+                      accessModes:
+                        description: |-
+                          accessModes contains the desired access modes the volume should have.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      dataSource:
+                        description: |-
+                          dataSource field can be used to specify either:
+                          * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+                          * An existing PVC (PersistentVolumeClaim)
+                          If the provisioner or an external controller can support the specified data source,
+                          it will create a new volume based on the contents of the specified data source.
+                        properties:
+                          apiGroup:
+                            description: |-
+                              APIGroup is the group for the resource being referenced.
+                              If APIGroup is not specified, the specified Kind must be in the core API group.
+                              For any other third-party types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      dataSourceRef:
+                        description: |-
+                          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+                          volume is desired. This may be any object from a non-empty API group (non
+                          core object) or a PersistentVolumeClaim object.
+                        properties:
+                          apiGroup:
+                            description: |-
+                              APIGroup is the group for the resource being referenced.
+                              If APIGroup is not specified, the specified Kind must be in the core API group.
+                              For any other third-party types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                          namespace:
+                            description: |-
+                              Namespace is the namespace of resource being referenced
+                              Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: |-
+                          resources represents the minimum resources the volume should have.
+                          If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                          that are lower than previous value but must still be higher than capacity recorded in the
+                          status field of the claim.
+                          More info: https://kubernetes.
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: |-
+                              Limits describes the maximum amount of compute resources allowed.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: |-
+                              Requests describes the minimum amount of compute resources required.
+                              If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                              otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                            type: object
+                        type: object
+                      selector:
+                        description: selector is a label query over volumes to consider
+                          for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: |-
+                                A label selector requirement is a selector that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: |-
+                                    operator represents a key's relationship to a set of values.
+                                    Valid operators are In, NotIn, Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: |-
+                                    values is an array of string values. If the operator is In or NotIn,
+                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                    the values array must be empty. This array is replaced during a strategic
+                                    merge patch.
+                                  items:
+                                    type: string
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                            x-kubernetes-list-type: atomic
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: |-
+                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                              map is equivalent to an element of matchExpressions, whose key field is "key", the
+                              operator is "In", and the values array contains only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      storageClassName:
+                        description: |-
+                          storageClassName is the name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1
+                        type: string
+                      volumeAttributesClassName:
+                        description: |-
+                          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+                          If specified, the CSI driver will create or update the volume with the attributes defined
+                          in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+                          it can be changed after the claim is created.
+                        type: string
+                      volumeMode:
+                        description: |-
+                          volumeMode defines what type of volume is required by the claim.
+                          Value of Filesystem is implied when not included in claim spec.
+                        type: string
+                      volumeName:
+                        description: volumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
                 type: object
               apiUrl:
                 description: |-

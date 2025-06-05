@@ -23,6 +23,8 @@ runs:
     - name: Set up Helm
       uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
       with:
+        # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
+        version: v3.17.3
         token: ${{ inputs.github-token }}
     - name: Generate helm-package
       shell: bash

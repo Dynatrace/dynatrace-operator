@@ -39,8 +39,6 @@ func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer.Ports = append(baseContainer.Ports, mod.getPorts()...)
 	baseContainer.Env = mod.getEnvs()
 
-	sts.Spec.ServiceName = capability.BuildServiceName(mod.dk.Name)
-
 	return nil
 }
 

@@ -180,6 +180,7 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakubelatest.DynaKube) { //nolint:d
 	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
+	dst.Spec.ActiveGate.VolumeClaimTemplate = src.Spec.ActiveGate.PersistentVolumeClaim
 
 	dst.Spec.ActiveGate.CapabilityProperties.CustomProperties = src.Spec.ActiveGate.CapabilityProperties.CustomProperties
 	dst.Spec.ActiveGate.CapabilityProperties.NodeSelector = src.Spec.ActiveGate.CapabilityProperties.NodeSelector
