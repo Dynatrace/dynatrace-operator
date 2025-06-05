@@ -3,6 +3,7 @@ package endpoint
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
@@ -89,7 +90,9 @@ func (r *Reconciler) getDtEndpoint() (string, error) {
 			return "", err
 		}
 
-		return fmt.Sprintf("https://%s-activegate.dynatrace.svc/e/%s/api/v2/otlp", r.dk.Name, tenantUUID), nil
+		serviceFqdn := capability.BuildServiceName(r.dk.Name) + "." + r.dk.Namespace + ".svc"
+
+		return fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFqdn, tenantUUID), nil
 	}
 
 	return r.dk.ApiUrl() + "/v2/otlp", nil
