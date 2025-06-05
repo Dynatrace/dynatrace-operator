@@ -156,7 +156,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string"))
 
 		require.NoError(t, err)
-		assert.Equal(t, defaultUpdateInterval, result.RequeueAfter)
+		assert.Equal(t, changesUpdateInterval, result.RequeueAfter)
 
 		var activeGateStatefulSet appsv1.StatefulSet
 
