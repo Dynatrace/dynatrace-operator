@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,11 +27,11 @@ func TestNewDefaultReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
 
-func createDefaultReconciler(t *testing.T) *Reconciler {
+func createDefaultReconciler(t *testing.T) Reconciler {
 	return createReconciler(t, newDynaKube(), []dtclient.MonitoredEntity{}, nil, dtclient.GetSettingsResponse{TotalCount: 0}, "", "")
 }
 
-func createReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEntities []dtclient.MonitoredEntity, monitoredEntity *dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func createReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEntities []dtclient.MonitoredEntity, monitoredEntity *dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -52,14 +53,18 @@ func createReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEntities []d
 		call.Maybe()
 	}
 
-	r := NewReconciler(mockClient, dk, testName)
-	require.NotNil(t, r)
-	require.NotNil(t, r.dtc)
+	passMonitoredEntities := createPassingReconciler(t)
+	r := Reconciler{
+		dtc:                         mockClient,
+		dk:                          dk,
+		monitoredEntitiesReconciler: passMonitoredEntities,
+		clusterLabel:                testName,
+	}
 
 	return r
 }
 
-func createReadOnlyReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEntities []dtclient.MonitoredEntity, monitoredEntity *dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse) *Reconciler {
+func createReadOnlyReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEntities []dtclient.MonitoredEntity, monitoredEntity *dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse) Reconciler {
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -83,14 +88,18 @@ func createReadOnlyReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEnti
 		call.Maybe()
 	}
 
-	r := NewReconciler(mockClient, dk, testName)
-	require.NotNil(t, r)
-	require.NotNil(t, r.dtc)
+	passMonitoredEntities := createPassingReconciler(t)
+	r := Reconciler{
+		dtc:                         mockClient,
+		dk:                          dk,
+		monitoredEntitiesReconciler: passMonitoredEntities,
+		clusterLabel:                testName,
+	}
 
 	return r
 }
 
-func createReconcilerWithError(t *testing.T, dk *dynakube.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler { //nolint:revive
+func createReconcilerWithError(t *testing.T, dk *dynakube.DynaKube, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) Reconciler { //nolint:revive
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)
@@ -110,9 +119,13 @@ func createReconcilerWithError(t *testing.T, dk *dynakube.DynaKube, monitoredEnt
 		call.Maybe()
 	}
 
-	r := NewReconciler(mockClient, dk, testName)
-	require.NotNil(t, r)
-	require.NotNil(t, r.dtc)
+	passMonitoredEntities := createPassingReconciler(t)
+	r := Reconciler{
+		dtc:                         mockClient,
+		dk:                          dk,
+		monitoredEntitiesReconciler: passMonitoredEntities,
+		clusterLabel:                testName,
+	}
 
 	return r
 }
@@ -334,4 +347,11 @@ func newDynaKube() *dynakube.DynaKube {
 			KubernetesClusterMEID: "test-MEID",
 		},
 	}
+}
+
+func createPassingReconciler(t *testing.T) *controllermock.Reconciler {
+	passMock := controllermock.NewReconciler(t)
+	passMock.On("Reconcile", mock.Anything).Return(nil).Maybe()
+
+	return passMock
 }

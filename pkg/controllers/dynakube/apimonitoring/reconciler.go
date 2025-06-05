@@ -5,25 +5,27 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
 	"github.com/pkg/errors"
 )
 
 type Reconciler struct {
-	dtc                         dtclient.Client
+	dtc dtclient.Client
+
+	monitoredEntitiesReconciler controllers.Reconciler
 	dk                          *dynakube.DynaKube
-	monitoredEntitiesReconciler monitoredentities.ReconcilerBuilder
 	clusterLabel                string
 }
 
-type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) *Reconciler
+type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler
 
-func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) *Reconciler {
+func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler {
 	return &Reconciler{
 		dtc:                         dtc,
 		dk:                          dk,
 		clusterLabel:                clusterLabel,
-		monitoredEntitiesReconciler: monitoredentities.NewReconciler,
+		monitoredEntitiesReconciler: monitoredentities.NewReconciler(dtc, dk),
 	}
 }
 
@@ -47,7 +49,7 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
-	err := r.monitoredEntitiesReconciler(r.dtc, r.dk).Reconcile(ctx)
+	err := r.monitoredEntitiesReconciler.Reconcile(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -83,7 +85,7 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 	if r.dk.Status.KubernetesClusterMEID == "" {
 		// the CreateOrUpdateKubernetesSetting call will create the ME(monitored-entity) if no scope was given (scope == entity-id), this happens on the "first run"
 		// so we have to run the entity reconciler AGAIN to set it in the status.
-		err := r.monitoredEntitiesReconciler(r.dtc, r.dk).Reconcile(ctx)
+		err := r.monitoredEntitiesReconciler.Reconcile(ctx)
 		if err != nil {
 			return "", err
 		}
