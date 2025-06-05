@@ -31,7 +31,7 @@ require (
 	golang.org/x/sys v0.33.0
 	google.golang.org/grpc v1.72.2
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.26.0
+	istio.io/api v1.26.1
 	istio.io/client-go v1.26.0
 	k8s.io/api v0.33.1
 	k8s.io/apiextensions-apiserver v0.33.1
@@ -40,7 +40,7 @@ require (
 	k8s.io/kubelet v0.33.1
 	k8s.io/mount-utils v0.33.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	sigs.k8s.io/controller-runtime v0.20.4
+	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/e2e-framework v0.3.0
 	sigs.k8s.io/yaml v1.4.0
 )
