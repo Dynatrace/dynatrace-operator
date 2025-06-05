@@ -149,8 +149,8 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		expectedMetadataJson := map[string]string{
 			"dt.test-annotation": "test-annotation-value3",
 			"dt.test-label":      "test-label-value",
-			getEmptyTargetEnrichmentKey(string(dynakube.EnrichmentAnnotationRule), "test4"): "test-annotation-value4",
-			getEmptyTargetEnrichmentKey(string(dynakube.EnrichmentLabelRule), "test2"):      "test-label-value2",
+			dynakube.GetEmptyTargetEnrichmentKey(string(dynakube.EnrichmentAnnotationRule), "test4"): "test-annotation-value4",
+			dynakube.GetEmptyTargetEnrichmentKey(string(dynakube.EnrichmentLabelRule), "test2"):      "test-label-value2",
 		}
 		require.Equal(t, expectedMetadataJson, actualMetadataJson)
 	})

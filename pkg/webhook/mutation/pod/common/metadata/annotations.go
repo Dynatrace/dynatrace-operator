@@ -59,7 +59,7 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 					copiedAnnotations[rule.ToAnnotationKey()] = valueFromNamespace
 				}
 			} else {
-				copiedAnnotations[getEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
+				copiedAnnotations[dynakube.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
 			}
 		}
 	}
@@ -89,10 +89,6 @@ func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) bool {
 	}
 
 	return false
-}
-
-func getEmptyTargetEnrichmentKey(metadataType, key string) string {
-	return dynakube.EnrichmentNamespaceKey + strings.ToLower(metadataType) + "." + key
 }
 
 func removeMetadataPrefix(annotations map[string]string) map[string]string {
