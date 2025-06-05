@@ -69,7 +69,8 @@ tests:
                     internal.dynatrace.com/app: webhook
                     internal.dynatrace.com/component: webhook
             volumes:
-              - emptyDir: {}
+              - emptyDir:
+                  sizeLimit: 10Mi
                 name: certs-dir
             affinity:
               nodeAffinity:
@@ -159,9 +160,11 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -265,7 +268,8 @@ tests:
           path: spec.template.spec
           value:
             volumes:
-              - emptyDir: {}
+              - emptyDir:
+                  sizeLimit: 10Mi
                 name: certs-dir
             affinity:
               nodeAffinity:
@@ -355,9 +359,11 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -425,7 +431,8 @@ tests:
           path: spec.template.spec
           value:
             volumes:
-              - emptyDir: {}
+              - emptyDir:
+                  sizeLimit: 10Mi
                 name: certs-dir
             affinity:
               nodeAffinity:
@@ -516,9 +523,11 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/

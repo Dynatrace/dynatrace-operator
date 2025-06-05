@@ -67,7 +67,8 @@ spec:
               {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 14 }}
       {{- end }}
       volumes:
-      - emptyDir: {}
+      - emptyDir:
+          sizeLimit: {{ .Values.webhook.volumes.certsDir.sizeLimit }}
         name: certs-dir
       {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}
       containers:
