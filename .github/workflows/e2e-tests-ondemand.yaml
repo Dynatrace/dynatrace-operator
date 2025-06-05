@@ -24,8 +24,6 @@ jobs:
       max-parallel: 4
       matrix:
         include:
-          - version: 1-26
-            platform: k8s
           - version: 1-27
             platform: k8s
           - version: 1-28
@@ -36,10 +34,8 @@ jobs:
             platform: k8s
           - version: 1-31
             platform: k8s
-          - version: 4-10
-            platform: ocp
-          - version: 4-11
-            platform: ocp
+          - version: 1-32
+            platform: k8s
           - version: 4-12
             platform: ocp
           - version: 4-13
@@ -51,6 +47,8 @@ jobs:
           - version: 4-16
             platform: ocp
           - version: 4-17
+            platform: ocp
+          - version: 4-18
             platform: ocp
     environment: E2E
     runs-on:
