@@ -40,7 +40,7 @@ So the basic workflow is:
 
 ## What is actually happening
 
-**DISCLAIMER: This is only a quick and simple explanation more detailed description [here](https://olm.operatorframework.io/docs/tasks/creating-a-catalog/)**
+**DISCLAIMER: This is only a quick and simple explanation more detailed description check the [olm-docs](https://olm.operatorframework.io/docs/tasks/creating-a-catalog/)**
 
 First lets understand each part we are creating.
 
