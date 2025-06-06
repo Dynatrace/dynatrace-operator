@@ -1,6 +1,6 @@
 ## Trigger all automatic generated docs creation
 .PHONY:
-doc: doc/api-ref doc/gen-gomarkdoc
+doc: doc/api-ref
 
 ## Generate API docs for custom resources
 doc/api-ref: manifests prerequisites/python
@@ -11,6 +11,3 @@ doc/api-ref: manifests prerequisites/python
 doc/permissions: manifests prerequisites/python
 	source local/.venv/bin/activate && python3 ./hack/doc/role-permissions2md.py ./config/deploy/openshift/openshift-csi.yaml > permissions.md
 
-## Run scripts that generate markdown documentation using gomarkdoc (./hack/doc)
-doc/gen-gomarkdoc: prerequisites/gomarkdoc prerequisites/markdownlint
-	./hack/doc/gen_e2e_features.sh

@@ -11,11 +11,9 @@ golang_tools_version=v0.33.0
 # renovate depName=github.com/vektra/mockery
 mockery_version=v2.53.4
 # renovate depName=github.com/igorshubovych/markdownlint-cli
-markdownlint_cli_version=v0.44.0
+markdownlint_cli_version=v0.45.0
 # renovate depName=github.com/helm-unittest/helm-unittest
 helmunittest_version=v0.8.2
-# renovate depName=github.com/princjef/gomarkdoc
-gomarkdoc_version=v1.1.0
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 cyclonedx_gomod_version=v1.9.0
 
@@ -31,7 +29,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 ## Install all prerequisites
-prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint prerequisites/gomarkdoc
+prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint
 
 ## Setup go development dependencies
 prerequisites/setup-go-dev-dependencies: prerequisites/kustomize prerequisites/controller-gen prerequisites/go-linting prerequisites/mockery
@@ -90,10 +88,6 @@ prerequisites/mockery:
 prerequisites/setup-pre-commit:
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
-
-## Install 'gomarkdoc' if it is missing
-prerequisites/gomarkdoc:
-	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@$(gomarkdoc_version)
 
 ## Install python dependencies
 prerequisites/python:
