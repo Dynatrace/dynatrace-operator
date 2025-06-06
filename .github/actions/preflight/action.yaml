@@ -19,6 +19,10 @@ inputs:
   pyxis-api-token:
     description: The pyxis api token
     required: true
+  should-submit:
+    description: Whether to submit the results to Red Hat
+    required: false
+    default: 'false'
 
 runs:
   using: "composite"
@@ -32,7 +36,7 @@ runs:
       PREFLIGHT_VERSION: 1.13.1
       IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
     run: |
-      hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_URI}}" "${{ inputs.report-name }}"
+      hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_URI}}" "${{ inputs.report-name }}" "${{ inputs.should-submit }}"
   - name: Upload report
     uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
     with:
