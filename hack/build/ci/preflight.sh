@@ -26,7 +26,7 @@ check_image() {
 
 submit_report() {
   ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_URI}" \
-    --pyxis-api-token="${RHCC_APITOKEN}" --certification-project-id="${RHCC_PROJECT_ID}" \
+    --pyxis-api-token="${RHCC_APITOKEN}" --certification-component-id="${RHCC_PROJECT_ID}" \
     --docker-config="${HOME}/.docker/config.json" \
     --submit
 }
