@@ -15,7 +15,13 @@ const (
 
 func Mutate(request *dtwebhook.MutationRequest) bool {
 	installPath := maputils.GetField(request.Pod.Annotations, oacommon.AnnotationInstallPath, oacommon.DefaultInstallPath)
-	mutateInitContainer(request, installPath)
+
+	err := mutateInitContainer(request, installPath)
+	if err != nil {
+		log.Error(err, "failed to mutate the bootstrapping init-container")
+
+		return false
+	}
 
 	return mutateUserContainers(request.BaseRequest, installPath)
 }

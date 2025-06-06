@@ -77,6 +77,23 @@ func TestMutate(t *testing.T) {
 		updated := Mutate(request)
 		require.False(t, updated)
 	})
+
+	t.Run("no tenantUUID + cloudnative => no update", func(t *testing.T) {
+		request := createTestMutationRequestWithoutInjectedContainers()
+		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
+
+		updated := Mutate(request)
+		require.False(t, updated)
+	})
+
+	t.Run("tenantUUID + cloudnative => update", func(t *testing.T) {
+		request := createTestMutationRequestWithoutInjectedContainers()
+		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
+		request.DynaKube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "example"
+
+		updated := Mutate(request)
+		require.True(t, updated)
+	})
 }
 
 func TestReinvoke(t *testing.T) {

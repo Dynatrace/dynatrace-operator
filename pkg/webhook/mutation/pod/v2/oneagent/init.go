@@ -12,16 +12,26 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath string) {
-	addInitArgs(*mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath)
+func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath string) error {
 	addInitVolumeMounts(mutationRequest.InstallContainer)
+
+	return addInitArgs(*mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath)
 }
 
-func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) {
+func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) error {
 	args := []arg.Arg{
 		{Name: cmd.SourceFolderFlag, Value: consts.AgentCodeModuleSource},
 		{Name: cmd.TargetFolderFlag, Value: binInitMountPath},
 		{Name: configure.InstallPathFlag, Value: installPath},
+	}
+
+	if dk.OneAgent().IsCloudNativeFullstackMode() {
+		tenantUUID, err := dk.TenantUUID()
+		if err != nil {
+			return err
+		}
+
+		args = append(args, arg.Arg{Name: configure.IsFullstackFlag}, arg.Arg{Name: configure.TenantFlag, Value: tenantUUID})
 	}
 
 	if technology := getTechnology(pod, dk); technology != "" {
@@ -33,6 +43,8 @@ func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.Dy
 	}
 
 	initContainer.Args = append(initContainer.Args, arg.ConvertArgsToStrings(args)...)
+
+	return nil
 }
 
 func getTechnology(pod corev1.Pod, dk dynakube.DynaKube) string {
