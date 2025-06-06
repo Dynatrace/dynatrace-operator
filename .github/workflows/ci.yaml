@@ -260,6 +260,7 @@ jobs:
 
   run-preflight:
     name: Run preflight on quay.io without submitting results when merging to main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: Release
     needs: [build-push, prepare]
     runs-on: ubuntu-latest
