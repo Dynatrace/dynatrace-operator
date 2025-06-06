@@ -46,5 +46,9 @@ func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podat
 		metadataAnnotations[split[1]] = value
 	}
 
+	if attributes.UserDefined == nil {
+		attributes.UserDefined = map[string]string{}
+	}
+
 	maps.Copy(attributes.UserDefined, metadataAnnotations)
 }
