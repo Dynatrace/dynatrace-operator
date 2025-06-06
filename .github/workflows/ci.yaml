@@ -220,7 +220,7 @@ jobs:
         with:
           config: .markdownlint.json
           # renovate depName=github.com/igorshubovych/markdownlint-cli
-          version: v0.44.0
+          version: v0.45.0
 
   prepare:
     name: Prepare properties
@@ -237,7 +237,7 @@ jobs:
       version: ${{ steps.prep.outputs.docker_image_tag }}
 
   build-push:
-    needs: [detect-changes, prepare, tests, linting, generated-files]
+    needs: [detect-changes, prepare]
     if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
     name: Build images
     runs-on: ubuntu-latest
