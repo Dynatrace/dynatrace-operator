@@ -271,17 +271,8 @@ jobs:
       - name: Run preflight
         uses: ./.github/actions/preflight
         with:
-          version: "latest" # TODO change to real image
-          registry: "docker.io"
-          repository: "library/alpine"
+          version: ${{ needs.prepare.outputs.version }}
+          registry: ${{ env.DOCKER_REGISTRY }}
+          repository: ${{ env.DOCKER_REPOSITORY }}
           report-name: "preflight.json"
           should-submit: "false"
-
-      # - name: Run preflight
-      #   uses: ./.github/actions/preflight
-      #   with:
-      #     version: ${{ needs.prepare.outputs.version }}
-      #     registry: ${{ env.DOCKER_REGISTRY }}
-      #     repository: ${{ env.DOCKER_REPOSITORY }}
-      #     report-name: "preflight.json"
-      #     should-submit: "false"
