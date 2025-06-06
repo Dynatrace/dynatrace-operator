@@ -221,6 +221,7 @@ jobs:
           report-name: "preflight.json"
           redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
           pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
+          should-submit: "true"
 
   release:
     name: Create release
