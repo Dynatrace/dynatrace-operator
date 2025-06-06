@@ -5,6 +5,7 @@ set -x
 readonly PREFLIGHT_VERSION="${1}"
 readonly IMAGE_URI="${2}"
 readonly PREFLIGHT_REPORT_NAME="${3}"
+readonly SHOULD_SUBMIT="${4:-false}"
 
 readonly PREFLIGHT_EXECUTABLE="preflight-linux-amd64"
 readonly PREFLIGHT_LOG="preflight.log"
@@ -34,7 +35,7 @@ submit_report() {
 download_preflight
 check_image
 readonly passed=$?
-if [[ ${passed} -eq 0 ]]; then
+if [[ ${passed} -eq 0 ]] && [[ "${SHOULD_SUBMIT}" == "true" ]]; then
   submit_report
 fi
 
