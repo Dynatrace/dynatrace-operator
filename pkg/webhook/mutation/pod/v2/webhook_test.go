@@ -124,6 +124,13 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
+	certsSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.BootstrapperInitCertsSecretName,
+			Namespace: testNamespaceName,
+		},
+	}
+
 	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
 		injector := createTestInjectorBase()
 		clt := fake.NewClient()
@@ -149,7 +156,7 @@ func TestHandle(t *testing.T) {
 
 		source := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceSecretName(request.DynaKube.Name),
+				Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
 				Namespace: request.DynaKube.Namespace,
 			},
 			Data: map[string][]byte{"data": []byte("beep")},
@@ -176,7 +183,7 @@ func TestHandle(t *testing.T) {
 
 	t.Run("no codeModulesImage => no injection + only annotation", func(t *testing.T) {
 		injector := createTestInjectorBase()
-		injector.apiReader = fake.NewClient(&initSecret)
+		injector.apiReader = fake.NewClient(&initSecret, &certsSecret)
 
 		request := createTestMutationRequest(&dynakube.DynaKube{})
 
@@ -194,7 +201,7 @@ func TestHandle(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		injector := createTestInjectorBase()
-		injector.apiReader = fake.NewClient(&initSecret)
+		injector.apiReader = fake.NewClient(&initSecret, &certsSecret)
 
 		request := createTestMutationRequest(getTestDynakube())
 

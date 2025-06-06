@@ -35,7 +35,7 @@ func TestReplicate(t *testing.T) {
 	}
 
 	t.Run("create", func(t *testing.T) {
-		source := clientSecret(GetSourceSecretName(dk.Name), dk.Namespace, data)
+		source := clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, data)
 		source.Labels = map[string]string{
 			"key": "value",
 		}
@@ -56,7 +56,7 @@ func TestReplicate(t *testing.T) {
 	})
 
 	t.Run("already exists => no update + no error", func(t *testing.T) {
-		source := clientSecret(GetSourceSecretName(dk.Name), dk.Namespace, data)
+		source := clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, data)
 		alreadyPresent := clientSecret(consts.BootstrapperInitSecretName, ns.Name, nil)
 		clt := fake.NewClientWithIndex(
 			dk,

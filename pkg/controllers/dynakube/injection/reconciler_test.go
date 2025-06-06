@@ -490,7 +490,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	})
 
 	t.Run("default 2 == no node-image-pull + no csi enabled => only init-secret", func(t *testing.T) {
@@ -513,7 +513,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	})
 
 	t.Run("node-image-pull + csi enabled => both init-secret and bootstrapper-secret", func(t *testing.T) {
@@ -542,7 +542,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			assertSecretFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	})
 
 	t.Run("node-image-pull + csi not enabled => only bootstrapper-secret", func(t *testing.T) {
@@ -573,7 +573,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			assertSecretFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	})
 }
 
@@ -601,7 +601,7 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 			clientSecret(consts.AgentInitSecretName, namespaces[1].Name, nil),
 			clientSecret(consts.BootstrapperInitSecretName, namespaces[0].Name, nil),
 			clientSecret(consts.BootstrapperInitSecretName, namespaces[1].Name, nil),
-			clientSecret(bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace, nil),
+			clientSecret(bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace, nil),
 			dk,
 			namespaces[0], namespaces[1],
 		)
@@ -614,7 +614,7 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 
 		assert.Empty(t, dk.Conditions())
 	})
