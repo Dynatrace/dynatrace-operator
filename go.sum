@@ -1,5 +1,3 @@
-github.com/Dynatrace/dynatrace-bootstrapper v1.0.4 h1:JBChk+YUXwZiunzygPZsyZx+YluRV69uOJw74Zpi3is=
-github.com/Dynatrace/dynatrace-bootstrapper v1.0.4/go.mod h1:LHHsJDxADbZ/41Sf+VVrRuhMhQeua4/y5f8N9My5Hk0=
 github.com/Dynatrace/dynatrace-bootstrapper v1.1.0 h1:DG27W+ZMzudq0X7JoRNBATQJFVQRBhK0fBqBDSDBdM8=
 github.com/Dynatrace/dynatrace-bootstrapper v1.1.0/go.mod h1:QKuOf8VjMDVZqNW5HJNtcFnRhaZupq3GcimQipBWkL8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
@@ -202,8 +200,8 @@ go.opentelemetry.io/collector/config/configtelemetry v0.126.0 h1:B/i5GTVcWFcptyU
 go.opentelemetry.io/collector/config/configtelemetry v0.126.0/go.mod h1:WXmlNatI0vwjv7whh/qF1Xy+UufCZDk7VLtYqML7QmA=
 go.opentelemetry.io/collector/config/configtls v1.32.0 h1:RCuGc9zYfFa90kEj5SY2P2ibUApkexhORkRCPN6dI/Y=
 go.opentelemetry.io/collector/config/configtls v1.32.0/go.mod h1:3bIvaE8ZDhptdwbDCnieC8k/apRXHolTL/x+F0zqBm8=
-go.opentelemetry.io/collector/confmap v1.32.0 h1:Xv/ZcncpQdACwvQvd8CFJgdO/jpBWcOoh9mSnEl0hpc=
-go.opentelemetry.io/collector/confmap v1.32.0/go.mod h1:fJC2ZOmFz2nClyhyGRYB92Fl8SMppsnt/7y3AHPlDRY=
+go.opentelemetry.io/collector/confmap v1.33.0 h1:dCLSrONMssTWhnbELZZpJoWMn+P+DVJc8r10JJCeS/4=
+go.opentelemetry.io/collector/confmap v1.33.0/go.mod h1:fq5ccP4lzF3IVK/Cs0kWsiH0dynejXkMc8gaNwvkvtk=
 go.opentelemetry.io/collector/confmap/xconfmap v0.126.0 h1:rfVQP2DkW/5zETjcJL67Hq7O1fLOCnihJ6HygBBqTMY=
 go.opentelemetry.io/collector/confmap/xconfmap v0.126.0/go.mod h1:Q6XzD9nt9zdm4Nb+mYc/h8oj846Thp2UxGTLrmUzubc=
 go.opentelemetry.io/collector/connector v0.126.0 h1:BAnutSHsG3sOKuP7TnokDpkFGB4qb4gEDO37oB/Uc6Y=
@@ -234,8 +232,8 @@ go.opentelemetry.io/collector/extension/extensiontest v0.126.0 h1:BZueZvfbJmlmx6
 go.opentelemetry.io/collector/extension/extensiontest v0.126.0/go.mod h1:9Vg70EOtd28TMdHjRECGu2jdEXnFhSCyvh+/oUGnTfA=
 go.opentelemetry.io/collector/extension/xextension v0.126.0 h1:DnqpEtLNK8Ui6ibv6mikoJFTsO2px0oykBDl6Jo0sPg=
 go.opentelemetry.io/collector/extension/xextension v0.126.0/go.mod h1:pcNxReFDd7+LG3YHP3oWNEM86kctqUac6kj9772usY4=
-go.opentelemetry.io/collector/featuregate v1.32.0 h1:ArSnZF3hxXC09aO7v2Ff9XSCA8oI/hkWSv+lYnpSCac=
-go.opentelemetry.io/collector/featuregate v1.32.0/go.mod h1:Y/KsHbvREENKvvN9RlpiWk/IGBK+CATBYzIIpU7nccc=
+go.opentelemetry.io/collector/featuregate v1.33.0 h1:ronhxafsUE7H3Cem4U2PXrvDZhxA9Gixx4Wik7X32X8=
+go.opentelemetry.io/collector/featuregate v1.33.0/go.mod h1:Y/KsHbvREENKvvN9RlpiWk/IGBK+CATBYzIIpU7nccc=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.126.0 h1:s8HAKgb08jXupUYeSvjsqu3C4lnp3wOBDpT9Q5zd+hU=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.126.0/go.mod h1:smAljh9LhWHejXVkbMxaDRaZrRIimiA6TXtNNkfKI5s=
 go.opentelemetry.io/collector/internal/telemetry v0.126.0 h1:sSts1qwubFcmi5GMg9zwi3UPmOh7vxsj+y7j962+whQ=
