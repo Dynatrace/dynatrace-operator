@@ -261,7 +261,7 @@ jobs:
   run-preflight:
     name: Run preflight on quay.io without submitting results when merging to main
     environment: Release
-    needs: [ build-push]
+    needs: [build-push, prepare]
     runs-on: ubuntu-latest
     env:
       SCAN_REGISTRY: "quay.io"
