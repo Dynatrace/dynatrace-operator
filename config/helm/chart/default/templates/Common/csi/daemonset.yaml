@@ -176,6 +176,7 @@ spec:
             value: "{{ .Values.csidriver.cleanupPeriod}}"
           {{- end }}
           {{ include "dynatrace-operator.modules-json-env" . | nindent 10 }}
+          {{ include "dynatrace-operator.job-json-env" . | nindent 10 }}
         {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         {{- if not .Values.debug }}
         livenessProbe:

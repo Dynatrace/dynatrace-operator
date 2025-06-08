@@ -5,10 +5,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/ptr"
 )
 
 const (
@@ -49,19 +49,8 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 				MountPath: inst.props.PathResolver.RootDir,
 			},
 		},
-		SecurityContext: &corev1.SecurityContext{ // TODO: Use the SecurityContext from the `provisioner` container
-			RunAsUser:                ptr.To(int64(0)),
-			RunAsNonRoot:             ptr.To(false),
-			Privileged:               ptr.To(true),
-			AllowPrivilegeEscalation: ptr.To(true),
-			ReadOnlyRootFilesystem:   ptr.To(true),
-			SELinuxOptions: &corev1.SELinuxOptions{
-				Level: "s0",
-			},
-			SeccompProfile: &corev1.SeccompProfile{
-				Type: corev1.SeccompProfileTypeRuntimeDefault,
-			},
-		},
+		SecurityContext: &inst.props.CSIJob.SecurityContext,
+		Resources:       inst.props.CSIJob.Resources,
 	}
 
 	hostVolume := corev1.Volume{
@@ -75,16 +64,16 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 
 	container.Args = inst.buildArgs(name, targetDir)
 
-	annotations := map[string]string{
+	annotations := maputils.MergeMap(inst.props.CSIJob.Annotations, map[string]string{
 		webhook.AnnotationDynatraceInject: "false",
-	}
+	})
 
 	return jobutil.Build(inst.props.Owner, name, container,
 		jobutil.SetPodAnnotations(annotations),
 		jobutil.SetNodeName(inst.nodeName),
 		jobutil.SetPullSecret(inst.props.PullSecrets...),
 		jobutil.SetTolerations(tolerations),
-		jobutil.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), map[string]string{}),
+		jobutil.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), inst.props.CSIJob.Labels),
 		jobutil.SetVolumes([]corev1.Volume{hostVolume}),
 		jobutil.SetOnFailureRestartPolicy(),
 		jobutil.SetAutomountServiceAccountToken(false),

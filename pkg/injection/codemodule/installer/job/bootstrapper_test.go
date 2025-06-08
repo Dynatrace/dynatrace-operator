@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -88,6 +89,7 @@ func TestBuildJob(t *testing.T) {
 			ImageUri:     imageURI,
 			PullSecrets:  pullSecrets,
 			PathResolver: metadata.PathResolver{RootDir: "root"},
+			CSIJob:       csijob.GetSettings(),
 		}
 		inst := &Installer{
 			nodeName: nodeName,

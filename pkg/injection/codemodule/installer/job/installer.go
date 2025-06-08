@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
 	"github.com/pkg/errors"
@@ -20,6 +21,7 @@ import (
 )
 
 type Properties struct {
+	CSIJob       csijob.Settings
 	Owner        client.Object
 	ApiReader    client.Reader
 	Client       client.Client

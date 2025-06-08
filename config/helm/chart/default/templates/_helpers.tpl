@@ -84,3 +84,15 @@ startupProbe:
       "kspm": {{ .Values.rbac.kspm.create }}
     }
 {{- end -}}
+
+{{- define "dynatrace-operator.job-json-env" -}}
+- name: job.json
+  value: |
+    {
+      "securityContext": {{ toJson .Values.csidriver.job.securityContext }},
+      "resources": {{ toJson .Values.csidriver.job.resources }},
+      "tolerations": {{ toJson .Values.csidriver.tolerations }},
+      "annotations": {{ toJson .Values.csidriver.annotations }},
+      "labels": {{ toJson .Values.csidriver.labels }}
+    }
+{{- end -}}
