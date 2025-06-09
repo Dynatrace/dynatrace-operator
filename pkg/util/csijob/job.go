@@ -43,18 +43,6 @@ var (
 				corev1.ResourceMemory: resource.MustParse("100Mi"),
 			},
 		},
-		Tolerations: []corev1.Toleration{
-			{
-				Effect:   corev1.TaintEffectNoSchedule,
-				Key:      "node-role.kubernetes.io/master",
-				Operator: corev1.TolerationOpExists,
-			},
-			{
-				Effect:   corev1.TaintEffectNoSchedule,
-				Key:      "node-role.kubernetes.io/control-plane",
-				Operator: corev1.TolerationOpExists,
-			},
-		},
 	}
 
 	log = logd.Get().WithName("csi-job")
@@ -62,10 +50,7 @@ var (
 
 type Settings struct {
 	SecurityContext corev1.SecurityContext      `json:"securityContext"`
-	Annotations     map[string]string           `json:"annotations"`
-	Labels          map[string]string           `json:"labels"`
 	Resources       corev1.ResourceRequirements `json:"resources"`
-	Tolerations     []corev1.Toleration         `json:"tolerations"`
 }
 
 func GetSettings() Settings {

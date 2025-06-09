@@ -37,6 +37,20 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		return nil, err
 	}
 
+	envAnnotations, err := env.GetAnnotations()
+	if err != nil {
+		log.Info("failed to get annotations from env")
+
+		return nil, err
+	}
+
+	envLabels, err := env.GetLabels()
+	if err != nil {
+		log.Info("failed to get labels from env")
+
+		return nil, err
+	}
+
 	appLabels := labels.NewAppLabels(labels.CodeModuleComponentLabel, inst.props.Owner.GetName(), "", "")
 
 	container := corev1.Container{
@@ -64,7 +78,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 
 	container.Args = inst.buildArgs(name, targetDir)
 
-	annotations := maputils.MergeMap(inst.props.CSIJob.Annotations, map[string]string{
+	annotations := maputils.MergeMap(envAnnotations, map[string]string{
 		webhook.AnnotationDynatraceInject: "false",
 	})
 
@@ -73,7 +87,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		jobutil.SetNodeName(inst.nodeName),
 		jobutil.SetPullSecret(inst.props.PullSecrets...),
 		jobutil.SetTolerations(tolerations),
-		jobutil.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), inst.props.CSIJob.Labels),
+		jobutil.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), envLabels),
 		jobutil.SetVolumes([]corev1.Volume{hostVolume}),
 		jobutil.SetOnFailureRestartPolicy(),
 		jobutil.SetAutomountServiceAccountToken(false),

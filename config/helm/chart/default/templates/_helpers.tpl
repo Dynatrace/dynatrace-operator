@@ -89,10 +89,7 @@ startupProbe:
 - name: job.json
   value: |
     {
-      "securityContext": {{ toJson .Values.csidriver.job.securityContext }},
-      "resources": {{ toJson .Values.csidriver.job.resources }},
-      "tolerations": {{ toJson .Values.csidriver.tolerations }},
-      "annotations": {{ toJson .Values.csidriver.annotations }},
-      "labels": {{ toJson .Values.csidriver.labels }}
+      "securityContext": {{ .Values.csidriver.job.securityContext | toJson}},
+      "resources": {{ .Values.csidriver.job.resources | toJson}},
     }
 {{- end -}}

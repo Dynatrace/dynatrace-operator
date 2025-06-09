@@ -83,7 +83,6 @@ func TestGet(t *testing.T) {
 		{
             "securityContext": {"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s0"},"seccompProfile":{"type":"RuntimeDefault"}},
             "resources": {"requests":{"cpu":"300m","memory":"100Mi"}},
-            "tolerations": [{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Exists"},{"effect":"NoSchedule","key":"node-role.kubernetes.io/control-plane","operator":"Exists"}],
 		}`
 
 		t.Setenv(SettingsJsonEnv, jsonValue)
