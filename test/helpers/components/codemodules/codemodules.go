@@ -5,7 +5,9 @@ package codemodules
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
@@ -15,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -35,13 +38,22 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) featur
 			Name:      csi.DaemonSetName,
 			Namespace: testDynakube.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
-			// /data/codemodules/1.273.0.20230719-145632/agent/conf/ruxitagentproc.conf
 			dir := filepath.Join("/data", "codemodules", dk.OneAgent().GetCodeModulesVersion(), "agent", "conf", RuxitAgentProcFile)
-			readFileCommand := shell.ReadFile(dir)
-			result, err := pod.Exec(ctx, resources, podItem, "provisioner", readFileCommand...)
+			err := wait.PollUntilContextTimeout(ctx, 2*time.Second, 1*time.Minute, false, func(ctx context.Context) (bool, error) {
+				result, err := pod.Exec(ctx, resources, podItem, "provisioner", shell.ReadFile(dir)...)
+				if err != nil {
+					if strings.Contains(result.StdErr.String(), "No such file or directory") {
+						return false, nil
+					}
+
+					return false, err
+				}
+				assert.NotContains(t, result.StdOut.String(), "tenant")
+				assert.NotContains(t, result.StdOut.String(), "tenantToken")
+
+				return true, nil
+			})
 			require.NoError(t, err)
-			assert.NotContains(t, result.StdOut.String(), "tenant")
-			assert.NotContains(t, result.StdOut.String(), "tenantToken")
 		})
 
 		require.NoError(t, err)
