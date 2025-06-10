@@ -110,8 +110,8 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 	return false, inst.query().WithOwner(inst.props.Owner).Create(ctx, job)
 }
 
-func (installer *Installer) isAlreadyPresent(targetDir string) bool {
-	_, err := installer.fs.Stat(targetDir)
+func (inst *Installer) isAlreadyPresent(targetDir string) bool {
+	_, err := inst.fs.Stat(targetDir)
 
 	return !os.IsNotExist(err)
 }

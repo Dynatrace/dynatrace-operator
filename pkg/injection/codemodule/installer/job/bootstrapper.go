@@ -83,11 +83,13 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 	})
 
 	return jobutil.Build(inst.props.Owner, name, container,
+		jobutil.SetAnnotations(envAnnotations),
 		jobutil.SetPodAnnotations(annotations),
 		jobutil.SetNodeName(inst.nodeName),
 		jobutil.SetPullSecret(inst.props.PullSecrets...),
 		jobutil.SetTolerations(tolerations),
 		jobutil.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), envLabels),
+		jobutil.AddLabels(envLabels),
 		jobutil.SetVolumes([]corev1.Volume{hostVolume}),
 		jobutil.SetOnFailureRestartPolicy(),
 		jobutil.SetAutomountServiceAccountToken(false),
