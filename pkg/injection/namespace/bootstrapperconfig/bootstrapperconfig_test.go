@@ -63,7 +63,7 @@ func TestNewSecretGenerator(t *testing.T) {
 }
 
 func TestGenerateForDynakube(t *testing.T) {
-	t.Run("succcessfully generate secret for dynakube", func(t *testing.T) {
+	t.Run("succcessfully generate config secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -107,7 +107,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -202,7 +202,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -291,7 +291,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -323,7 +323,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
 		require.Error(t, err)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionFalse, c.Status)
 	})
@@ -340,7 +340,7 @@ func TestCleanup(t *testing.T) {
 		},
 		Status: dynakube.DynaKubeStatus{
 			Conditions: []metav1.Condition{
-				{Type: ConditionType},
+				{Type: ConfigConditionType},
 				{Type: "other"},
 			},
 		},
@@ -394,7 +394,7 @@ func TestCleanup(t *testing.T) {
 	err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &deleted)
 	require.Error(t, err)
 	assert.True(t, errors.IsNotFound(err))
-	require.Nil(t, meta.FindStatusCondition(*dk.Conditions(), ConditionType))
+	require.Nil(t, meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType))
 }
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
