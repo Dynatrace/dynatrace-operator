@@ -46,19 +46,19 @@ func getSecretFromSource(ctx context.Context, dk dynakube.DynaKube, query k8ssec
 	return k8ssecret.BuildForNamespace(consts.BootstrapperInitSecretName, targetNs, source.Data, k8ssecret.SetLabels(source.Labels))
 }
 
-func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, secretName string, data map[string][]byte) error {
+func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, secretName, conditionType string, data map[string][]byte) error {
 	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+		conditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	_, err = k8ssecret.Query(s.client, s.apiReader, log).WithOwner(dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeApiError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
