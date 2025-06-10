@@ -24,6 +24,8 @@ const (
 	SuppressErrorsFlag = cmd.SuppressErrorsFlag
 	TechnologiesFlag   = "technologies"
 	FlavorFlag         = "flavor"
+
+	MetadataEnrichmentFlag = "metadata-enrichment"
 )
 
 var (
@@ -32,6 +34,8 @@ var (
 	areErrorsSuppressed bool
 	technologies        []string
 	flavor              string
+
+	needsMetadataEnrichment bool
 
 	log = logd.Get().WithName("bootstrap")
 )
@@ -68,14 +72,16 @@ func AddFlags(cmd *cobra.Command) {
 
 	cmd.PersistentFlags().StringVar(&flavor, FlavorFlag, arch.Flavor, "flavor of the code modules image.")
 
+	cmd.PersistentFlags().BoolVar(&needsMetadataEnrichment, MetadataEnrichmentFlag, false, "(Optional) Should the enrichment with metadata be performed.")
+
+	cmd.PersistentFlags().Lookup(MetadataEnrichmentFlag).NoOptDefVal = "true"
+
 	configure.AddFlags(cmd)
 }
 
 func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 	return func(cmd *cobra.Command, _ []string) error {
 		unix.Umask(0000)
-
-		signalHandler := ctrl.SetupSignalHandler()
 
 		if targetVersion != "" {
 			inputDir, _ := cmd.Flags().GetString(configure.InputFolderFlag)
@@ -94,6 +100,8 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 
 			client := download.New()
 
+			signalHandler := ctrl.SetupSignalHandler()
+
 			err := client.Do(signalHandler, fs, inputDir, targetFolder, props)
 			if err != nil {
 				if areErrorsSuppressed {
@@ -102,13 +110,13 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 					return nil
 				}
 
-				log.Error(err, "error during download")
+				log.Info("error during download")
 
 				return err
 			}
 		}
 
-		err := configure.Execute(log.Logger, fs, targetFolder)
+		err := runConfigure(fs)
 		if err != nil {
 			if areErrorsSuppressed {
 				log.Error(err, "error during configuration, the error was suppressed")
@@ -116,11 +124,31 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 				return nil
 			}
 
-			log.Error(err, "error during configuration")
-
 			return err
 		}
 
 		return nil
 	}
+}
+
+func runConfigure(fs afero.Afero) error {
+	if targetFolder != "" {
+		err := configure.SetupOneAgent(log.Logger, fs, targetFolder)
+		if err != nil {
+			log.Info("error during oneagent configuration")
+
+			return err
+		}
+	}
+
+	if needsMetadataEnrichment {
+		err := configure.EnrichWithMetadata(log.Logger, fs)
+		if err != nil {
+			log.Info("error during metadata enrichment")
+
+			return err
+		}
+	}
+
+	return nil
 }

@@ -28,6 +28,7 @@ func (wh *Injector) addPodAttributes(request *dtwebhook.MutationRequest) error {
 			DTClusterEntity: request.DynaKube.Status.KubernetesClusterMEID,
 			ClusterName:     request.DynaKube.Status.KubernetesClusterName,
 		},
+		UserDefined: map[string]string{},
 	}
 
 	envs := []corev1.EnvVar{

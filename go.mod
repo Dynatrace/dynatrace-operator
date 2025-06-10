@@ -3,9 +3,9 @@ module github.com/Dynatrace/dynatrace-operator
 go 1.24.2
 
 require (
-	github.com/Dynatrace/dynatrace-bootstrapper v1.0.4
+	github.com/Dynatrace/dynatrace-bootstrapper v1.1.0
 	github.com/container-storage-interface/spec v1.11.0
-	github.com/docker/cli v28.1.1+incompatible
+	github.com/docker/cli v28.2.2+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-containerregistry v0.20.5
@@ -19,8 +19,8 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v1.32.0
-	go.opentelemetry.io/collector/config/configtls v1.32.0
-	go.opentelemetry.io/collector/confmap v1.32.0
+	go.opentelemetry.io/collector/config/configtls v1.33.0
+	go.opentelemetry.io/collector/confmap v1.33.0
 	go.opentelemetry.io/collector/pipeline v0.126.0
 	go.opentelemetry.io/collector/service v0.126.0
 	go.uber.org/zap v1.27.0
@@ -71,7 +71,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-tpm v0.9.4 // indirect
+	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
@@ -105,7 +105,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.126.0 // indirect
 	go.opentelemetry.io/collector/component/componenttest v0.126.0 // indirect
-	go.opentelemetry.io/collector/config/configopaque v1.32.0 // indirect
+	go.opentelemetry.io/collector/config/configopaque v1.33.0 // indirect
 	go.opentelemetry.io/collector/config/configtelemetry v0.126.0 // indirect
 	go.opentelemetry.io/collector/connector v0.126.0 // indirect
 	go.opentelemetry.io/collector/connector/connectortest v0.126.0 // indirect
@@ -120,7 +120,7 @@ require (
 	go.opentelemetry.io/collector/extension v1.32.0 // indirect
 	go.opentelemetry.io/collector/extension/extensioncapabilities v0.126.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.126.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.32.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.33.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.126.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.126.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.32.0 // indirect
