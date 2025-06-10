@@ -2,10 +2,8 @@ package metadata
 
 import (
 	"maps"
-	"strings"
 
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/metadata"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,9 +21,7 @@ func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attrib
 		WorkloadKind: workloadInfo.Kind,
 		WorkloadName: workloadInfo.Name,
 	}
-
 	addMetadataToInitArgs(request, attributes)
-
 	metacommon.SetInjectedAnnotation(request.Pod)
 	metacommon.SetWorkloadAnnotations(request.Pod, workloadInfo)
 
@@ -33,22 +29,16 @@ func Mutate(metaClient client.Client, request *dtwebhook.MutationRequest, attrib
 }
 
 func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
-	metacommon.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+	copiedMetadataAnnotations := metacommon.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+	if copiedMetadataAnnotations == nil {
+		log.Info("copied metadata annotations from namespace is nil, not copying map to attributes UserDefined")
 
-	metadataAnnotations := map[string]string{}
-
-	for key, value := range request.Pod.Annotations {
-		if !strings.HasPrefix(key, dynakube.MetadataPrefix) {
-			continue
-		}
-
-		split := strings.Split(key, dynakube.MetadataPrefix)
-		metadataAnnotations[split[1]] = value
+		return
 	}
 
 	if attributes.UserDefined == nil {
-		attributes.UserDefined = map[string]string{}
+		attributes.UserDefined = make(map[string]string)
 	}
 
-	maps.Copy(attributes.UserDefined, metadataAnnotations)
+	maps.Copy(attributes.UserDefined, copiedMetadataAnnotations)
 }

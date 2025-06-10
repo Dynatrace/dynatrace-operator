@@ -72,7 +72,7 @@ func TestAddPodAttributes(t *testing.T) {
 		}
 
 		assert.Len(t, attr.UserDefined, metaAnnotationCount)
-		require.Len(t, request.Pod.Annotations, 3+metaAnnotationCount)
+		require.Len(t, request.Pod.Annotations, 4+metaAnnotationCount)
 		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[metacommon.AnnotationWorkloadKind])
 		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[metacommon.AnnotationWorkloadName])
 		assert.Equal(t, "true", request.Pod.Annotations[metacommon.AnnotationInjected])

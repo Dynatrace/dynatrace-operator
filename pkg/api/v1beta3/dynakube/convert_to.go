@@ -207,10 +207,9 @@ func (src *DynaKube) toStatus(dst *dynakubelatest.DynaKube) {
 	for _, rule := range src.Status.MetadataEnrichment.Rules {
 		dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
 			dynakubelatest.EnrichmentRule{
-				Type:    dynakubelatest.EnrichmentRuleType(rule.Type),
-				Source:  rule.Source,
-				Target:  rule.Target,
-				Enabled: rule.Enabled,
+				Type:   dynakubelatest.EnrichmentRuleType(rule.Type),
+				Source: rule.Source,
+				Target: rule.Target,
 			})
 	}
 
