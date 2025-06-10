@@ -206,14 +206,11 @@ csidriver:
     builtIn: false
   job:
     securityContext:
-      allowPrivilegeEscalation: false
-      privileged: false
+      runAsUser: 0
+      privileged: true # Needed for mountPropagation
+      allowPrivilegeEscalation: true # Needed for privileged
       readOnlyRootFilesystem: true
       runAsNonRoot: false
-      runAsUser: 0
-      capabilities:
-        drop:
-          - ALL
       seLinuxOptions:
         level: s0
       seccompProfile:

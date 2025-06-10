@@ -260,7 +260,7 @@ tests:
                   - name: job.json
                     value: |
                       {
-                        "securityContext": {"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s0"},"seccompProfile":{"type":"RuntimeDefault"}},
+                        "securityContext": {"allowPrivilegeEscalation":true,"privileged":true,"readOnlyRootFilesystem":true,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s0"},"seccompProfile":{"type":"RuntimeDefault"}},
                         "resources": {"requests":{"cpu":"300m","memory":"100Mi"}}
                       }
                 image: image-name
