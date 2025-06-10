@@ -30,27 +30,6 @@ func (inst *Installer) buildJobName() string {
 }
 
 func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
-	tolerations, err := env.GetTolerations()
-	if err != nil {
-		log.Info("failed to get tolerations from env")
-
-		return nil, err
-	}
-
-	envAnnotations, err := env.GetAnnotations()
-	if err != nil {
-		log.Info("failed to get annotations from env")
-
-		return nil, err
-	}
-
-	envLabels, err := env.GetLabels()
-	if err != nil {
-		log.Info("failed to get labels from env")
-
-		return nil, err
-	}
-
 	appLabels := labels.NewAppLabels(labels.CodeModuleComponentLabel, inst.props.Owner.GetName(), "", "")
 
 	container := corev1.Container{
@@ -63,8 +42,8 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 				MountPath: inst.props.PathResolver.RootDir,
 			},
 		},
-		SecurityContext: &inst.props.CSIJob.SecurityContext,
-		Resources:       inst.props.CSIJob.Resources,
+		SecurityContext: &inst.props.CSIJob.Job.SecurityContext,
+		Resources:       inst.props.CSIJob.Job.Resources,
 	}
 
 	hostVolume := corev1.Volume{
@@ -78,18 +57,18 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 
 	container.Args = inst.buildArgs(name, targetDir)
 
-	annotations := maputils.MergeMap(envAnnotations, map[string]string{
+	annotations := maputils.MergeMap(inst.props.CSIJob.Annotations, map[string]string{
 		webhook.AnnotationDynatraceInject: "false",
 	})
 
 	return jobutil.Build(inst.props.Owner, name, container,
-		jobutil.SetAnnotations(envAnnotations),
+		jobutil.SetAnnotations(inst.props.CSIJob.Annotations),
 		jobutil.SetPodAnnotations(annotations),
 		jobutil.SetNodeName(inst.nodeName),
 		jobutil.SetPullSecret(inst.props.PullSecrets...),
-		jobutil.SetTolerations(tolerations),
-		jobutil.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), envLabels),
-		jobutil.AddLabels(envLabels),
+		jobutil.SetTolerations(inst.props.CSIJob.Tolerations),
+		jobutil.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), inst.props.CSIJob.Labels),
+		jobutil.AddLabels(inst.props.CSIJob.Labels),
 		jobutil.SetVolumes([]corev1.Volume{hostVolume}),
 		jobutil.SetOnFailureRestartPolicy(),
 		jobutil.SetAutomountServiceAccountToken(false),

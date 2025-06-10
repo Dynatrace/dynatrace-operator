@@ -85,11 +85,16 @@ startupProbe:
     }
 {{- end -}}
 
-{{- define "dynatrace-operator.job-json-env" -}}
-- name: job.json
+{{- define "dynatrace-operator.helm-json-env" -}}
+- name: helm.json
   value: |
     {
-      "securityContext": {{ .Values.csidriver.job.securityContext | toJson }},
-      "resources": {{ .Values.csidriver.job.resources | toJson }}
+      "tolerations": {{ .Values.csidriver.tolerations | toJson }},
+      "annotations": {{ .Values.csidriver.annotations | toJson }},
+      "labels": {{ .Values.csidriver.labels | toJson }},
+      "job": {
+        "securityContext": {{ .Values.csidriver.job.securityContext | toJson }},
+        "resources": {{ .Values.csidriver.job.resources | toJson }}
+      }
     }
 {{- end -}}

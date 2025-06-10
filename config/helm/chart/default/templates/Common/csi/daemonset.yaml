@@ -167,12 +167,6 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: spec.nodeName
-          - name: TOLERATIONS
-            value: '{{ .Values.csidriver.tolerations | toJson }}'
-          - name: ANNOTATIONS
-            value: '{{ .Values.csidriver.annotations | toJson }}'
-          - name: LABELS
-            value: '{{ .Values.csidriver.labels | toJson }}'
           - name: CSI_DATA_DIR
             value: {{ include "dynatrace-operator.CSIDataDir" . }}
           {{- if .Values.csidriver.cleanupPeriod }}
@@ -180,7 +174,7 @@ spec:
             value: "{{ .Values.csidriver.cleanupPeriod}}"
           {{- end }}
           {{ include "dynatrace-operator.modules-json-env" . | nindent 10 }}
-          {{ include "dynatrace-operator.job-json-env" . | nindent 10 }}
+          {{ include "dynatrace-operator.helm-json-env" . | nindent 10 }}
         {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         {{- if not .Values.debug }}
         livenessProbe:

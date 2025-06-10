@@ -34,37 +34,64 @@ func TestGet(t *testing.T) {
 	t.Run("correct env -> set correctly", func(t *testing.T) {
 		jsonValue := `
 		{
-            "securityContext": {"allowPrivilegeEscalation":true,"capabilities":{"drop":["ALL","DAC_OVERRIDE"]},"privileged":true,"readOnlyRootFilesystem":false,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s1"},"seccompProfile":{"type":"RuntimeDefault"}},
-            "resources": {"requests":{"cpu":"300m","memory":"100Mi"},"limits":{"cpu":"500m","memory":"500Mi"}}
+			"tolerations": [{"effect":"NoSchedule","key":"test-key1","operator":"Exists"},{"effect":"NoSchedule","key":"test-key2","operator":"Exists"}],
+			"annotations": {"test-annotation1":"test-value1","test-annotation2":"test-value2"},
+			"labels": {"test-label1":"test-value1","test-label2":"test-value2"},
+			"job": {
+			  "securityContext": {"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL","DAC_OVERRIDE"]},"privileged":false,"readOnlyRootFilesystem":false,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s1"},"seccompProfile":{"type":"RuntimeDefault"}},
+              "resources": {"requests":{"cpu":"100m","memory":"200Mi"},"limits":{"cpu":"500m","memory":"500Mi"}}
+			}
 		}`
 		expected := Settings{
-			SecurityContext: corev1.SecurityContext{
-				AllowPrivilegeEscalation: ptr.To(true),
-				Privileged:               ptr.To(true),
-				ReadOnlyRootFilesystem:   ptr.To(false),
-				RunAsNonRoot:             ptr.To(false),
-				RunAsUser:                ptr.To(int64(0)),
-				SELinuxOptions: &corev1.SELinuxOptions{
-					Level: "s1",
+			Tolerations: []corev1.Toleration{
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Key:      "test-key1",
+					Operator: corev1.TolerationOpExists,
 				},
-				SeccompProfile: &corev1.SeccompProfile{
-					Type: corev1.SeccompProfileTypeRuntimeDefault,
-				},
-				Capabilities: &corev1.Capabilities{
-					Drop: []corev1.Capability{
-						"ALL",
-						"DAC_OVERRIDE",
-					},
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Key:      "test-key2",
+					Operator: corev1.TolerationOpExists,
 				},
 			},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.MustParse("300m"),
-					corev1.ResourceMemory: resource.MustParse("100Mi"),
+			Annotations: map[string]string{
+				"test-annotation1": "test-value1",
+				"test-annotation2": "test-value2",
+			},
+			Labels: map[string]string{
+				"test-label1": "test-value1",
+				"test-label2": "test-value2",
+			},
+			Job: JobSettings{
+				SecurityContext: corev1.SecurityContext{
+					AllowPrivilegeEscalation: ptr.To(false),
+					Privileged:               ptr.To(false),
+					ReadOnlyRootFilesystem:   ptr.To(false),
+					RunAsNonRoot:             ptr.To(false),
+					RunAsUser:                ptr.To(int64(0)),
+					SELinuxOptions: &corev1.SELinuxOptions{
+						Level: "s1",
+					},
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{
+							"ALL",
+							"DAC_OVERRIDE",
+						},
+					},
 				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceCPU:    resource.MustParse("500m"),
-					corev1.ResourceMemory: resource.MustParse("500Mi"),
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("200Mi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("500m"),
+						corev1.ResourceMemory: resource.MustParse("500Mi"),
+					},
 				},
 			},
 		}
@@ -81,8 +108,10 @@ func TestGet(t *testing.T) {
 	t.Run("run only once", func(t *testing.T) {
 		jsonValue := `
 		{
-            "securityContext": {"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s0"},"seccompProfile":{"type":"RuntimeDefault"}},
-            "resources": {"requests":{"cpu":"300m","memory":"100Mi"}},
+			"job": {
+              "securityContext": {"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s0"},"seccompProfile":{"type":"RuntimeDefault"}},
+              "resources": {"requests":{"cpu":"300m","memory":"100Mi"}},
+			}
 		}`
 
 		t.Setenv(SettingsJsonEnv, jsonValue)

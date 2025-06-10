@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	SettingsJsonEnv = "job.json"
+	SettingsJsonEnv = "helm.json"
 )
 
 var (
@@ -21,26 +21,37 @@ var (
 	settings Settings
 
 	fallbackSettings = Settings{
-		SecurityContext: corev1.SecurityContext{
-			AllowPrivilegeEscalation: ptr.To(false),
-			Privileged:               ptr.To(false),
-			ReadOnlyRootFilesystem:   ptr.To(true),
-			RunAsNonRoot:             ptr.To(false),
-			RunAsUser:                ptr.To(int64(0)),
-			SELinuxOptions: &corev1.SELinuxOptions{
-				Level: "s0",
+		Tolerations: []corev1.Toleration{
+			{
+				Effect:   corev1.TaintEffectNoSchedule,
+				Key:      "node-role.kubernetes.io/master",
+				Operator: corev1.TolerationOpExists,
 			},
-			SeccompProfile: &corev1.SeccompProfile{
-				Type: corev1.SeccompProfileTypeRuntimeDefault,
-			},
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{"ALL"},
+			{
+				Effect:   corev1.TaintEffectNoSchedule,
+				Key:      "node-role.kubernetes.io/control-plane",
+				Operator: corev1.TolerationOpExists,
 			},
 		},
-		Resources: corev1.ResourceRequirements{
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("300m"),
-				corev1.ResourceMemory: resource.MustParse("100Mi"),
+		Job: JobSettings{
+			SecurityContext: corev1.SecurityContext{
+				AllowPrivilegeEscalation: ptr.To(true),
+				Privileged:               ptr.To(true),
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				RunAsNonRoot:             ptr.To(false),
+				RunAsUser:                ptr.To(int64(0)),
+				SELinuxOptions: &corev1.SELinuxOptions{
+					Level: "s0",
+				},
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("300m"),
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				},
 			},
 		},
 	}
@@ -48,9 +59,15 @@ var (
 	log = logd.Get().WithName("csi-job")
 )
 
-type Settings struct {
+type JobSettings struct {
 	SecurityContext corev1.SecurityContext      `json:"securityContext"`
 	Resources       corev1.ResourceRequirements `json:"resources"`
+}
+type Settings struct {
+	Annotations map[string]string   `json:"annotations"`
+	Labels      map[string]string   `json:"labels"`
+	Tolerations []corev1.Toleration `json:"tolerations"`
+	Job         JobSettings         `json:"job"`
 }
 
 func GetSettings() Settings {

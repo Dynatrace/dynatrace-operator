@@ -1,11 +1,9 @@
 package env
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -82,108 +80,5 @@ func TestDefaultNamespace(t *testing.T) {
 	t.Run("Get dynatrace", func(t *testing.T) {
 		got := DefaultNamespace()
 		assert.Equal(t, "dynatrace", got)
-	})
-}
-
-func TestGetToleration(t *testing.T) {
-	t.Run("Get tolerations from env var", func(t *testing.T) {
-		expected := []corev1.Toleration{
-			{
-				Key:      "key1",
-				Operator: corev1.TolerationOpEqual,
-				Value:    "value1",
-				Effect:   corev1.TaintEffectNoSchedule,
-			},
-			{
-				Key:      "key2",
-				Operator: corev1.TolerationOpEqual,
-				Value:    "value1",
-				Effect:   corev1.TaintEffectNoSchedule,
-			},
-		}
-
-		raw, err := json.Marshal(expected)
-		require.NoError(t, err)
-
-		t.Setenv(Tolerations, string(raw))
-
-		actual, err := GetTolerations()
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-	t.Run("Error in case of malformed", func(t *testing.T) {
-		t.Setenv(Tolerations, "{!@@@#}")
-
-		_, err := GetTolerations()
-		require.Error(t, err)
-	})
-
-	t.Run("no error in case of empty", func(t *testing.T) {
-		t.Setenv(Tolerations, "")
-
-		_, err := GetTolerations()
-		require.NoError(t, err)
-	})
-}
-
-func TestGetAnnotations(t *testing.T) {
-	t.Run("Get annotations from env var", func(t *testing.T) {
-		expected := map[string]string{
-			"a": "b",
-			"c": "d",
-		}
-
-		raw, err := json.Marshal(expected)
-		require.NoError(t, err)
-
-		t.Setenv(Annotations, string(raw))
-
-		actual, err := GetAnnotations()
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-	t.Run("Error in case of malformed", func(t *testing.T) {
-		t.Setenv(Annotations, "{!@@@#}")
-
-		_, err := GetAnnotations()
-		require.Error(t, err)
-	})
-
-	t.Run("no error in case of empty", func(t *testing.T) {
-		t.Setenv(Annotations, "")
-
-		_, err := GetAnnotations()
-		require.NoError(t, err)
-	})
-}
-
-func TestGetLabels(t *testing.T) {
-	t.Run("Get labels from env var", func(t *testing.T) {
-		expected := map[string]string{
-			"a": "b",
-			"c": "d",
-		}
-
-		raw, err := json.Marshal(expected)
-		require.NoError(t, err)
-
-		t.Setenv(Labels, string(raw))
-
-		actual, err := GetLabels()
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual)
-	})
-	t.Run("Error in case of malformed", func(t *testing.T) {
-		t.Setenv(Labels, "{!@@@#}")
-
-		_, err := GetLabels()
-		require.Error(t, err)
-	})
-
-	t.Run("no error in case of empty", func(t *testing.T) {
-		t.Setenv(Labels, "")
-
-		_, err := GetLabels()
-		require.NoError(t, err)
 	})
 }
