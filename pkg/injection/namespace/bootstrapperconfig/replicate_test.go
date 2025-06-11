@@ -34,8 +34,13 @@ func TestReplicate(t *testing.T) {
 		"data": []byte("beep"),
 	}
 
+	certs := map[string][]byte{
+		"certs": []byte("very secure"),
+	}
+
 	t.Run("create", func(t *testing.T) {
 		source := clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, data)
+		sourceCerts := clientSecret(GetSourceCertsSecretName(dk.Name), dk.Namespace, certs)
 		source.Labels = map[string]string{
 			"key": "value",
 		}
@@ -43,6 +48,7 @@ func TestReplicate(t *testing.T) {
 			dk,
 			ns,
 			source,
+			sourceCerts,
 		)
 
 		err := Replicate(ctx, *dk, secret.Query(clt, clt, log), ns.Name)
@@ -53,16 +59,25 @@ func TestReplicate(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
 		assert.Equal(t, source.Labels, replicated.Labels)
+
+		var replicatedCerts corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: ns.Name}, &replicatedCerts)
+		require.NoError(t, err)
+		assert.Equal(t, sourceCerts.Data, replicatedCerts.Data)
 	})
 
 	t.Run("already exists => no update + no error", func(t *testing.T) {
 		source := clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, data)
-		alreadyPresent := clientSecret(consts.BootstrapperInitSecretName, ns.Name, nil)
+		sourceCerts := clientSecret(GetSourceCertsSecretName(dk.Name), dk.Namespace, certs)
+		alreadyPresentConfig := clientSecret(consts.BootstrapperInitSecretName, ns.Name, nil)
+		alreadyPresentCerts := clientSecret(consts.BootstrapperInitCertsSecretName, ns.Name, nil)
 		clt := fake.NewClientWithIndex(
 			dk,
 			ns,
 			source,
-			alreadyPresent,
+			sourceCerts,
+			alreadyPresentConfig,
+			alreadyPresentCerts,
 		)
 
 		err := Replicate(ctx, *dk, secret.Query(clt, clt, log), ns.Name)
@@ -72,5 +87,10 @@ func TestReplicate(t *testing.T) {
 		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &replicated)
 		require.NoError(t, err)
 		assert.NotEqual(t, source.Data, replicated.Data)
+
+		var replicatedCerts corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: ns.Name}, &replicatedCerts)
+		require.NoError(t, err)
+		assert.NotEqual(t, sourceCerts.Data, replicatedCerts.Data)
 	})
 }
