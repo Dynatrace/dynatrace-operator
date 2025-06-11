@@ -90,9 +90,9 @@ func (r *Reconciler) getDtEndpoint() (string, error) {
 			return "", err
 		}
 
-		serviceFqdn := capability.BuildServiceName(r.dk.Name) + "." + r.dk.Namespace + ".svc"
+		serviceFQDN := capability.BuildServiceName(r.dk.Name) + "." + r.dk.Namespace + ".svc"
 
-		return fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFqdn, tenantUUID), nil
+		return fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFQDN, tenantUUID), nil
 	}
 
 	return r.dk.ApiUrl() + "/v2/otlp", nil
