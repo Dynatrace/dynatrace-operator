@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -76,21 +77,21 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 type EnrichmentRuleType string
 
 const (
-	EnrichmentLabelRule      EnrichmentRuleType = "LABEL"
-	EnrichmentAnnotationRule EnrichmentRuleType = "ANNOTATION"
+	EnrichmentLabelRule          EnrichmentRuleType = "LABEL"
+	EnrichmentAnnotationRule     EnrichmentRuleType = "ANNOTATION"
+	MetadataAnnotation           string             = "metadata.dynatrace.com"
+	MetadataPrefix               string             = MetadataAnnotation + "/"
+	enrichmentNamespaceKeyPrefix string             = "k8s.namespace."
 )
-
-const MetadataPrefix string = "metadata.dynatrace.com/"
 
 type MetadataEnrichmentStatus struct {
 	Rules []EnrichmentRule `json:"rules,omitempty"`
 }
 
 type EnrichmentRule struct {
-	Type    EnrichmentRuleType `json:"type,omitempty"`
-	Source  string             `json:"source,omitempty"`
-	Target  string             `json:"target,omitempty"`
-	Enabled bool               `json:"enabled,omitempty"`
+	Type   EnrichmentRuleType `json:"type,omitempty"`
+	Source string             `json:"source,omitempty"`
+	Target string             `json:"target,omitempty"`
 }
 
 func (rule EnrichmentRule) ToAnnotationKey() string {
@@ -120,4 +121,8 @@ func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) erro
 	}
 
 	return errors.WithStack(err)
+}
+
+func GetEmptyTargetEnrichmentKey(metadataType, key string) string {
+	return enrichmentNamespaceKeyPrefix + strings.ToLower(metadataType) + "." + key
 }
