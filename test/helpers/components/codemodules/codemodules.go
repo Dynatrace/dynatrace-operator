@@ -39,7 +39,8 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) featur
 			Namespace: testDynakube.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			dir := filepath.Join("/data", "codemodules", dk.OneAgent().GetCodeModulesVersion(), "agent", "conf", RuxitAgentProcFile)
-			err := wait.PollUntilContextTimeout(ctx, 2*time.Second, 1*time.Minute, false, func(ctx context.Context) (bool, error) {
+interval, immediate, := 2*time.Second, 1*time.Minute
+err := wait.PollUntilContextTimeout(ctx, interval, immediate, false, func(ctx context.Context) (bool, error) {
 				result, err := pod.Exec(ctx, resources, podItem, "provisioner", shell.ReadFile(dir)...)
 				if err != nil {
 					if strings.Contains(result.StdErr.String(), "No such file or directory") {
