@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -42,7 +42,7 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) featur
 		}).ForEachPod(func(podItem corev1.Pod) {
 			// /data/codemodules/1.318.0.20250609-191530/agent/conf/ruxitagentproc.conf
 			dir := filepath.Join("/data", "codemodules", dk.OneAgent().GetCodeModulesVersion(), "agent", "conf", RuxitAgentProcFile)
-			err := wait.PollUntilContextTimeout(ctx, interval, timeout, false, func(ctx context.Context) (bool, error) {
+			err := wait.For(func(ctx context.Context) (done bool, err error) {
 				result, err := pod.Exec(ctx, resources, podItem, "provisioner", shell.ReadFile(dir)...)
 				if err != nil {
 					if strings.Contains(result.StdErr.String(), "No such file or directory") {
@@ -55,7 +55,7 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) featur
 				assert.NotContains(t, result.StdOut.String(), "tenantToken")
 
 				return true, nil
-			})
+			}, wait.WithTimeout(timeout), wait.WithInterval(interval))
 			require.NoError(t, err)
 		})
 
