@@ -257,3 +257,23 @@ jobs:
           labels: ${{ needs.prepare.outputs.labels }}
           tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}
           annotation: "version=${{ needs.prepare.outputs.version }}"
+
+  run-preflight:
+    name: Run preflight on quay.io without submitting results when merging to main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: Release
+    needs: [build-push, prepare]
+    runs-on: ubuntu-latest
+    env:
+      SCAN_REGISTRY: "quay.io"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Run preflight
+        uses: ./.github/actions/preflight
+        with:
+          version: ${{ needs.prepare.outputs.version }}
+          registry: ${{ env.DOCKER_REGISTRY }}
+          repository: ${{ env.DOCKER_REPOSITORY }}
+          report-name: "preflight.json"
+          should-submit: "false"
