@@ -38,7 +38,7 @@ func (dtc *dynatraceClient) GetActiveGateConnectionInfo(ctx context.Context) (Ac
 
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
-		return ActiveGateConnectionInfo{}, dtc.handleErrorResponseFromAPI(data, response.StatusCode)
+		return ActiveGateConnectionInfo{}, dtc.handleErrorResponseFromAPI(data, response.StatusCode, response.Header)
 	}
 
 	tenantInfo, err := dtc.readResponseForActiveGateTenantInfo(data)

@@ -5,8 +5,11 @@ import (
 	"crypto/md5" //nolint:gosec
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
+	"math"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
@@ -99,7 +102,7 @@ func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]by
 
 	if response.StatusCode != http.StatusOK &&
 		response.StatusCode != http.StatusCreated {
-		return responseData, dtc.handleErrorResponseFromAPI(responseData, response.StatusCode)
+		return responseData, dtc.handleErrorResponseFromAPI(responseData, response.StatusCode, response.Header)
 	}
 
 	return responseData, nil
@@ -146,10 +149,39 @@ func (dtc *dynatraceClient) makeRequestForBinary(ctx context.Context, url string
 	return hex.EncodeToString(hash.Sum(nil)), err
 }
 
-func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int) error {
+func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int, headers http.Header) error {
 	se := serverErrorResponse{}
+
+	contentType := "unknown"
+	proxy := ""
+
+	if headers != nil {
+		for _, field := range []string{"X-Forwarded-For", "Forwarded", "Via"} {
+			if value := headers.Get(field); value != "" {
+				proxy = value
+
+				break
+			}
+		}
+
+		if value := headers.Get("Content-Type"); value != "" {
+			contentType = value
+		}
+	}
+
 	if err := json.Unmarshal(response, &se); err != nil {
-		return errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode)
+		var sb strings.Builder
+
+		sb.WriteString(fmt.Sprintf("Server returned status code %d", statusCode))
+
+		if proxy != "" {
+			sb.WriteString(fmt.Sprintf(" (via proxy %s)", proxy))
+		}
+
+		responseLen := int(math.Min(1000, float64(len(response))))
+		sb.WriteString(fmt.Sprintf("; can't unmarshal response (content-type: %s): %s", contentType, response[:responseLen]))
+
+		return errors.New(sb.String())
 	}
 
 	return se.ErrorMessage

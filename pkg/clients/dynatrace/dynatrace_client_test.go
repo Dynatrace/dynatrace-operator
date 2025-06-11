@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -88,6 +89,39 @@ func TestGetResponseOrServerError(t *testing.T) {
 		body, err := dc.getServerResponseData(resp)
 		require.NoError(t, err)
 		assert.NotNil(t, body, "response body available")
+	})
+
+	t.Run("non-JSON response exceeding character limit", func(t *testing.T) {
+		response := []byte(strings.Repeat("really long response", 300))
+		code := http.StatusForbidden
+
+		err := dc.handleErrorResponseFromAPI(response, code, http.Header{})
+		require.Error(t, err)
+
+		maxLen := 1000
+
+		var shortenedResponse []byte
+
+		if len(response) >= maxLen {
+			shortenedResponse = response[:maxLen]
+		} else {
+			shortenedResponse = response
+		}
+
+		assert.EqualError(t, err, fmt.Sprintf("Server returned status code %d; can't unmarshal response (content-type: unknown): %s", code, shortenedResponse))
+	})
+
+	t.Run("HTML response with proxy header set", func(t *testing.T) {
+		response := []byte("<!doctype html><html>hi</html>")
+		code := http.StatusForbidden
+
+		contentType := "text/html"
+		proxy := "proxy.dynatrace.org"
+		headers := http.Header{"X-Forwarded-For": []string{proxy}, "Content-Type": []string{contentType}}
+		err := dc.handleErrorResponseFromAPI(response, code, headers)
+		require.Error(t, err)
+
+		assert.EqualError(t, err, fmt.Sprintf("Server returned status code %d (via proxy %s); can't unmarshal response (content-type: %s): %s", code, proxy, contentType, response))
 	})
 }
 
