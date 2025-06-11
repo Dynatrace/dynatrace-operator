@@ -29,21 +29,32 @@ func GetSourceCertsSecretName(dkName string) string {
 
 // Replicate will only create the secret once, doesn't mean for keeping the secret up to date
 func Replicate(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) error {
-	secret, err := getSecretFromSource(ctx, dk, query, targetNs)
+	secret, err := getSecretFromSource(ctx, dk, query, GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, targetNs)
 	if err != nil {
 		return err
 	}
 
-	return client.IgnoreAlreadyExists(query.Create(ctx, secret))
+	err = client.IgnoreAlreadyExists(query.Create(ctx, secret))
+
+	if err != nil {
+		return err
+	}
+
+	certs, err := getSecretFromSource(ctx, dk, query, GetSourceCertsSecretName(dk.Name), consts.BootstrapperInitCertsSecretName, targetNs)
+	if err != nil {
+		return err
+	}
+
+	return client.IgnoreAlreadyExists(query.Create(ctx, certs))
 }
 
-func getSecretFromSource(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) (*corev1.Secret, error) {
-	source, err := query.Get(ctx, types.NamespacedName{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace})
+func getSecretFromSource(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, sourceSecretName, targetSecretName string, targetNs string) (*corev1.Secret, error) { //nolint:revive
+	source, err := query.Get(ctx, types.NamespacedName{Name: sourceSecretName, Namespace: dk.Namespace})
 	if err != nil {
 		return nil, err
 	}
 
-	return k8ssecret.BuildForNamespace(consts.BootstrapperInitSecretName, targetNs, source.Data, k8ssecret.SetLabels(source.Labels))
+	return k8ssecret.BuildForNamespace(targetSecretName, targetNs, source.Data, k8ssecret.SetLabels(source.Labels))
 }
 
 func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, secretName, conditionType string, data map[string][]byte) error {

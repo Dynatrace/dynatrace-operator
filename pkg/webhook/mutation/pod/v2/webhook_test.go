@@ -161,7 +161,14 @@ func TestHandle(t *testing.T) {
 			},
 			Data: map[string][]byte{"data": []byte("beep")},
 		}
-		clt := fake.NewClient(&source)
+		sourceCerts := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapperconfig.GetSourceCertsSecretName(request.DynaKube.Name),
+				Namespace: request.DynaKube.Namespace,
+			},
+			Data: map[string][]byte{"certs": []byte("very secure")},
+		}
+		clt := fake.NewClient(&source, &sourceCerts)
 		injector.kubeClient = clt
 		injector.apiReader = clt
 
@@ -172,6 +179,11 @@ func TestHandle(t *testing.T) {
 		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
+
+		var replicatedCerts corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		require.NoError(t, err)
+		assert.Equal(t, sourceCerts.Data, replicatedCerts.Data)
 
 		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
 		require.True(t, ok)

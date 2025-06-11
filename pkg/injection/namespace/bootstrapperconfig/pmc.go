@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -18,7 +19,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	if !conditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
 		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
 
-		source, err := getSecretFromSource(ctx, *dk, k8ssecret.Query(s.client, s.apiReader, log), dk.Namespace)
+		source, err := getSecretFromSource(ctx, *dk, k8ssecret.Query(s.client, s.apiReader, log), GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, dk.Namespace)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			conditions.SetKubeApiError(dk.Conditions(), ConfigConditionType, err)
 
