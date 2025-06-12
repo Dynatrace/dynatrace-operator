@@ -49,7 +49,7 @@ tests:
       csidriver.cleanupPeriod: "5m"
     asserts:
     - equal:
-        path: spec.template.spec.containers[1].env[4] #provisioner
+        path: spec.template.spec.containers[1].env[3] #provisioner
         value:
           name: CLEANUP_PERIOD
           value: "5m"
@@ -237,8 +237,6 @@ tests:
                       fieldRef:
                         apiVersion: v1
                         fieldPath: spec.nodeName
-                  - name: TOLERATIONS
-                    value: '[{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Exists"},{"effect":"NoSchedule","key":"node-role.kubernetes.io/control-plane","operator":"Exists"}]'
                   - name: CSI_DATA_DIR
                     value: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
                   - name: modules.json
@@ -252,6 +250,17 @@ tests:
                         "edgeConnect": true,
                         "supportability": true,
                         "kspm": true
+                      }
+                  - name: helm.json
+                    value: |
+                      {
+                        "tolerations": [{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Exists"},{"effect":"NoSchedule","key":"node-role.kubernetes.io/control-plane","operator":"Exists"}],
+                        "annotations": {},
+                        "labels": {},
+                        "job": {
+                          "securityContext": {"allowPrivilegeEscalation":true,"privileged":true,"readOnlyRootFilesystem":true,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s0"},"seccompProfile":{"type":"RuntimeDefault"}},
+                          "resources": {"requests":{"cpu":"300m","memory":"100Mi"}}
+                        }
                       }
                 image: image-name
                 imagePullPolicy: Always
