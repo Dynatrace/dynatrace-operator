@@ -83,7 +83,7 @@ func run() func(*cobra.Command, []string) error {
 
 		client, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
 		if err != nil {
-			logd.Get().WithName("platform").Info("detected platform", "platform", "unknown")
+			logd.Get().WithName("platform").Error(err, "failed to detect platform, due to discovery client issues")
 		} else {
 			_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
 
