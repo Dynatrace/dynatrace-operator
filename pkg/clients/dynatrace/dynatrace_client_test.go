@@ -115,6 +115,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 
 	t.Run("non-JSON response exceeding custom character limit", func(t *testing.T) {
 		response := []byte(strings.Repeat("really long response", 300))
+
 		t.Setenv("DT_CLIENT_API_ERROR_LOG_LEN", "6")
 
 		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, http.Header{})
