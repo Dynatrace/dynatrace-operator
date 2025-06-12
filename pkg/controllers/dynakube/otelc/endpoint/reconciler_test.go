@@ -95,7 +95,7 @@ func TestEndpoint(t *testing.T) {
 			name:             "in-cluster ActiveGate",
 			apiUrl:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
 			inClusterAg:      true,
-			expectedEndpoint: fmt.Sprintf("https://test-dk-activegate.dynatrace.svc/e/%s/api/v2/otlp", testTenantUUID),
+			expectedEndpoint: fmt.Sprintf("https://test-dk-activegate.test-namespace.svc/e/%s/api/v2/otlp", testTenantUUID),
 		},
 		{
 			name:             "public ActiveGate",
@@ -144,7 +144,8 @@ func TestEndpoint(t *testing.T) {
 func createDynaKube(telemetryIngestEnabled bool) dynakube.DynaKube {
 	dk := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-dk",
+			Name:      "test-dk",
+			Namespace: "test-namespace",
 		},
 		Spec: dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
