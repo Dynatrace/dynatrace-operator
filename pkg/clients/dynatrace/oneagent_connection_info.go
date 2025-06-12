@@ -46,7 +46,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo(ctx context.Context) (OneA
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
-		return OneAgentConnectionInfo{}, dtc.handleErrorResponseFromAPI(responseData, resp.StatusCode)
+		return OneAgentConnectionInfo{}, dtc.handleErrorResponseFromAPI(responseData, resp.StatusCode, resp.Header)
 	}
 
 	connectionInfo, err := dtc.readResponseForOneAgentConnectionInfo(responseData)
