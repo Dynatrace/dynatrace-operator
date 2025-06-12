@@ -18,9 +18,11 @@ import (
 
 const DeploymentAvailableTimeout = 5 * time.Minute
 
+const DeploymentReplicaFailureTimeout = 2 * time.Minute
+
 func WaitFor(name string, namespace string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		resources := envConfig.Client().Resources()
+		clientResources := envConfig.Client().Resources()
 		deployment := &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -28,10 +30,14 @@ func WaitFor(name string, namespace string) env.Func {
 			},
 		}
 
-		return ctx, WaitUntilReady(resources, deployment)
+		return ctx, WaitUntilReady(clientResources, deployment)
 	}
 }
 
 func WaitUntilReady(resource *resources.Resources, deployment *appsv1.Deployment) error {
 	return wait.For(conditions.New(resource).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, corev1.ConditionTrue), wait.WithTimeout(DeploymentAvailableTimeout))
+}
+
+func WaitUntilFailedCreate(resource *resources.Resources, deployment *appsv1.Deployment) error {
+	return wait.For(conditions.New(resource).DeploymentConditionMatch(deployment, appsv1.DeploymentReplicaFailure, corev1.ConditionTrue), wait.WithTimeout(DeploymentReplicaFailureTimeout))
 }
