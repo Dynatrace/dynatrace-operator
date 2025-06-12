@@ -180,7 +180,7 @@ func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCo
 			sb.WriteString(fmt.Sprintf(" (via proxy %s)", proxy))
 		}
 
-		responseLen := min(GetMaxResponseLen(), len(response))
+		responseLen := min(getMaxResponseLen(), len(response))
 		sb.WriteString(fmt.Sprintf("; can't unmarshal response (content-type: %s): %s", contentType, response[:responseLen]))
 
 		return errors.New(sb.String())
@@ -189,13 +189,13 @@ func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCo
 	return se.ErrorMessage
 }
 
-func GetMaxResponseLen() int {
-	envVar, set := os.LookupEnv("DT_CLIENT_API_ERROR_LOG_LEN")
-	if set {
+func getMaxResponseLen() int {
+	if envVar, exists := os.LookupEnv("DT_CLIENT_API_ERROR_LOG_LEN"); exists {
 		maxResponseLen, err := strconv.Atoi(envVar)
-		if err == nil {
+		if err == nil && maxResponseLen > 0 {
 			return maxResponseLen
 		}
 	}
+
 	return defaultMaxResponseLen
 }

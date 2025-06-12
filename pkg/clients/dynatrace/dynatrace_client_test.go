@@ -108,7 +108,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, http.Header{})
 		require.Error(t, err)
 
-		shortenedResponse := response[:GetMaxResponseLen()]
+		shortenedResponse := response[:getMaxResponseLen()]
 
 		assert.EqualError(t, err, fmt.Sprintf("Server returned status code 403; can't unmarshal response (content-type: unknown): %s", shortenedResponse))
 	})
