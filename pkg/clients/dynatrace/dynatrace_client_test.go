@@ -98,13 +98,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 		err := dc.handleErrorResponseFromAPI(response, code, http.Header{})
 		require.Error(t, err)
 
-		var shortenedResponse []byte
-
-		if len(response) >= MaxResponseLen {
-			shortenedResponse = response[:MaxResponseLen]
-		} else {
-			shortenedResponse = response
-		}
+		shortenedResponse := response[:MaxResponseLen]
 
 		assert.EqualError(t, err, fmt.Sprintf("Server returned status code %d; can't unmarshal response (content-type: unknown): %s", code, shortenedResponse))
 	})
