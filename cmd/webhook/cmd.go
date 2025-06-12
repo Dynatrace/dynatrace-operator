@@ -37,6 +37,8 @@ const (
 	FlagCertificateDirectory   = "certs-dir"
 	FlagCertificateFileName    = "cert"
 	FlagCertificateKeyFileName = "cert-key"
+
+	openshiftSecurityGVR = "security.openshift.io/v1"
 )
 
 var (
@@ -65,8 +67,6 @@ func New() *cobra.Command {
 
 func run() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		const openshiftSecurityGVR = "security.openshift.io/v1"
-
 		installconfig.ReadModules()
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
