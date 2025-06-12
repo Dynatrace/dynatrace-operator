@@ -98,12 +98,10 @@ func TestGetResponseOrServerError(t *testing.T) {
 		err := dc.handleErrorResponseFromAPI(response, code, http.Header{})
 		require.Error(t, err)
 
-		maxLen := 1000
-
 		var shortenedResponse []byte
 
-		if len(response) >= maxLen {
-			shortenedResponse = response[:maxLen]
+		if len(response) >= MaxResponseLen {
+			shortenedResponse = response[:MaxResponseLen]
 		} else {
 			shortenedResponse = response
 		}

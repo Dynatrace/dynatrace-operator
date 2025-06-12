@@ -41,6 +41,7 @@ const (
 	dynatraceApiToken tokenType = iota
 	dynatracePaaSToken
 	installerUrlToken // in this case we don't care about the token
+	MaxResponseLen    = 1000
 )
 
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
@@ -178,7 +179,7 @@ func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCo
 			sb.WriteString(fmt.Sprintf(" (via proxy %s)", proxy))
 		}
 
-		responseLen := int(math.Min(1000, float64(len(response))))
+		responseLen := int(math.Min(MaxResponseLen, float64(len(response))))
 		sb.WriteString(fmt.Sprintf("; can't unmarshal response (content-type: %s): %s", contentType, response[:responseLen]))
 
 		return errors.New(sb.String())
