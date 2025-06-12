@@ -84,3 +84,17 @@ startupProbe:
       "kspm": {{ .Values.rbac.kspm.create }}
     }
 {{- end -}}
+
+{{- define "dynatrace-operator.helm-json-env" -}}
+- name: helm.json
+  value: |
+    {
+      "tolerations": {{ .Values.csidriver.tolerations | toJson }},
+      "annotations": {{ .Values.csidriver.annotations | toJson }},
+      "labels": {{ .Values.csidriver.labels | toJson }},
+      "job": {
+        "securityContext": {{ .Values.csidriver.job.securityContext | toJson }},
+        "resources": {{ .Values.csidriver.job.resources | toJson }}
+      }
+    }
+{{- end -}}

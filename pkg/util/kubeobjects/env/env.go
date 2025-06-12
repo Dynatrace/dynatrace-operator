@@ -1,14 +1,12 @@
 package env
 
 import (
-	"encoding/json"
 	"os"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	Tolerations  = "TOLERATIONS"
 	NodeName     = "KUBE_NODE_NAME"
 	CSIDataDir   = "CSI_DATA_DIR"
 	PodNamespace = "POD_NAMESPACE"
@@ -67,17 +65,4 @@ func GetNodeName() string {
 
 func GetCSIDataDir() string {
 	return os.Getenv(CSIDataDir)
-}
-
-func GetTolerations() ([]corev1.Toleration, error) {
-	var tolerations []corev1.Toleration
-
-	raw := os.Getenv(Tolerations)
-	if raw == "" {
-		return tolerations, nil
-	}
-
-	err := json.Unmarshal([]byte(os.Getenv(Tolerations)), &tolerations)
-
-	return tolerations, err
 }

@@ -72,6 +72,12 @@ func SetAutomountServiceAccountToken(isEnabled bool) builder.Option[*batchv1.Job
 	}
 }
 
+func SetAnnotations(annotations map[string]string) builder.Option[*batchv1.Job] {
+	return func(s *batchv1.Job) {
+		s.ObjectMeta.Annotations = annotations
+	}
+}
+
 func SetPodAnnotations(annotations map[string]string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
 		s.Spec.Template.ObjectMeta.Annotations = annotations
@@ -94,6 +100,12 @@ func SetTTLSecondsAfterFinished(ttl int32) builder.Option[*batchv1.Job] {
 func SetActiveDeadlineSeconds(deadline int64) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
 		s.Spec.ActiveDeadlineSeconds = ptr.To(deadline)
+	}
+}
+
+func AddLabels(labels map[string]string) builder.Option[*batchv1.Job] {
+	return func(s *batchv1.Job) {
+		s.ObjectMeta.Labels = maputils.MergeMap(labels, s.ObjectMeta.Labels)
 	}
 }
 
