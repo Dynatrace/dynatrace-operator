@@ -9,6 +9,8 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -40,8 +42,8 @@ type tokenType int
 const (
 	dynatraceApiToken tokenType = iota
 	dynatracePaaSToken
-	installerUrlToken // in this case we don't care about the token
-	MaxResponseLen    = 1000
+	installerUrlToken     // in this case we don't care about the token
+	defaultMaxResponseLen = 1000
 )
 
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
@@ -179,11 +181,22 @@ func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCo
 			sb.WriteString(fmt.Sprintf(" (via proxy %s)", proxy))
 		}
 
-		responseLen := int(math.Min(MaxResponseLen, float64(len(response))))
+		responseLen := int(math.Min(float64(GetMaxResponseLen()), float64(len(response))))
 		sb.WriteString(fmt.Sprintf("; can't unmarshal response (content-type: %s): %s", contentType, response[:responseLen]))
 
 		return errors.New(sb.String())
 	}
 
 	return se.ErrorMessage
+}
+
+func GetMaxResponseLen() int {
+	envVar, set := os.LookupEnv("DT_CLIENT_API_ERROR_LOG_LEN")
+	if set {
+		maxResponseLen, err := strconv.Atoi(envVar)
+		if err == nil {
+			return maxResponseLen
+		}
+	}
+	return defaultMaxResponseLen
 }

@@ -102,15 +102,25 @@ func TestGetResponseOrServerError(t *testing.T) {
 		assert.EqualError(t, err, "dynatrace server error 401: Unauthorized request")
 	})
 
-	t.Run("non-JSON response exceeding character limit", func(t *testing.T) {
+	t.Run("non-JSON response exceeding default character limit", func(t *testing.T) {
 		response := []byte(strings.Repeat("really long response", 300))
 
 		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, http.Header{})
 		require.Error(t, err)
 
-		shortenedResponse := response[:MaxResponseLen]
+		shortenedResponse := response[:GetMaxResponseLen()]
 
 		assert.EqualError(t, err, fmt.Sprintf("Server returned status code 403; can't unmarshal response (content-type: unknown): %s", shortenedResponse))
+	})
+
+	t.Run("non-JSON response exceeding custom character limit", func(t *testing.T) {
+		response := []byte(strings.Repeat("really long response", 300))
+		t.Setenv("DT_CLIENT_API_ERROR_LOG_LEN", "6")
+
+		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, http.Header{})
+		require.Error(t, err)
+
+		assert.EqualError(t, err, "Server returned status code 403; can't unmarshal response (content-type: unknown): really")
 	})
 
 	t.Run("HTML response with proxy header set", func(t *testing.T) {
