@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -181,7 +180,7 @@ func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCo
 			sb.WriteString(fmt.Sprintf(" (via proxy %s)", proxy))
 		}
 
-		responseLen := int(math.Min(float64(GetMaxResponseLen()), float64(len(response))))
+		responseLen := min(GetMaxResponseLen(), len(response))
 		sb.WriteString(fmt.Sprintf("; can't unmarshal response (content-type: %s): %s", contentType, response[:responseLen]))
 
 		return errors.New(sb.String())
