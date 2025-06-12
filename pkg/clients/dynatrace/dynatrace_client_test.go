@@ -91,6 +91,19 @@ func TestGetResponseOrServerError(t *testing.T) {
 		assert.NotNil(t, body, "response body available")
 	})
 
+	t.Run("valid JSON response", func(t *testing.T) {
+		code := http.StatusUnauthorized
+		message := "Unauthorized request"
+		response := []byte(fmt.Sprintf(`{"error": {"code": %d, "message": "%s"}}`, code, message))
+
+		contentType := "application/json"
+		headers := http.Header{"Content-Type": []string{contentType}}
+		err := dc.handleErrorResponseFromAPI(response, code, headers)
+		require.Error(t, err)
+
+		assert.EqualError(t, err, fmt.Sprintf("dynatrace server error %d: %s", code, message))
+	})
+
 	t.Run("non-JSON response exceeding character limit", func(t *testing.T) {
 		response := []byte(strings.Repeat("really long response", 300))
 		code := http.StatusForbidden
