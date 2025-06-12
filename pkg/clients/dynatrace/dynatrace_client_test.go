@@ -92,41 +92,39 @@ func TestGetResponseOrServerError(t *testing.T) {
 	})
 
 	t.Run("valid JSON response", func(t *testing.T) {
-		code := http.StatusUnauthorized
-		message := "Unauthorized request"
-		response := []byte(fmt.Sprintf(`{"error": {"code": %d, "message": "%s"}}`, code, message))
+		response := []byte(`{"error": {"code": 401, "message": "Unauthorized request"}}`)
 
 		contentType := "application/json"
 		headers := http.Header{"Content-Type": []string{contentType}}
-		err := dc.handleErrorResponseFromAPI(response, code, headers)
+		err := dc.handleErrorResponseFromAPI(response, http.StatusUnauthorized, headers)
 		require.Error(t, err)
 
-		assert.EqualError(t, err, fmt.Sprintf("dynatrace server error %d: %s", code, message))
+		assert.EqualError(t, err, "dynatrace server error 401: Unauthorized request")
 	})
 
 	t.Run("non-JSON response exceeding character limit", func(t *testing.T) {
 		response := []byte(strings.Repeat("really long response", 300))
-		code := http.StatusForbidden
 
-		err := dc.handleErrorResponseFromAPI(response, code, http.Header{})
+		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, http.Header{})
 		require.Error(t, err)
 
 		shortenedResponse := response[:MaxResponseLen]
 
-		assert.EqualError(t, err, fmt.Sprintf("Server returned status code %d; can't unmarshal response (content-type: unknown): %s", code, shortenedResponse))
+		assert.EqualError(t, err, fmt.Sprintf("Server returned status code 403; can't unmarshal response (content-type: unknown): %s", shortenedResponse))
 	})
 
 	t.Run("HTML response with proxy header set", func(t *testing.T) {
 		response := []byte("<!doctype html><html>hi</html>")
-		code := http.StatusForbidden
 
-		contentType := "text/html"
-		proxy := "proxy.dynatrace.org"
-		headers := http.Header{"X-Forwarded-For": []string{proxy}, "Content-Type": []string{contentType}}
-		err := dc.handleErrorResponseFromAPI(response, code, headers)
+		headers := http.Header{
+			"Content-Type":    []string{"text/html"},
+			"X-Forwarded-For": []string{"proxy.dynatrace.org"},
+		}
+		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, headers)
 		require.Error(t, err)
 
-		assert.EqualError(t, err, fmt.Sprintf("Server returned status code %d (via proxy %s); can't unmarshal response (content-type: %s): %s", code, proxy, contentType, response))
+		assert.EqualError(t, err,
+			"Server returned status code 403 (via proxy proxy.dynatrace.org); can't unmarshal response (content-type: text/html): <!doctype html><html>hi</html>")
 	})
 }
 
