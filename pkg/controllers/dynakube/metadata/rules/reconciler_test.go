@@ -106,7 +106,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.StatusUpdatedReason, dk.Status.Conditions[0].Reason)
 	})
 
-		t.Run("set rules correctly, even if only node image pull is set", func(t *testing.T) {
+	t.Run("set rules correctly, even if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
