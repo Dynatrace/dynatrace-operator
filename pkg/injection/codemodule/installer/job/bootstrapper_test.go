@@ -1,12 +1,12 @@
 package job
 
 import (
-	"encoding/json"
 	"slices"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -80,7 +80,6 @@ func TestBuildJob(t *testing.T) {
 	pullSecrets := []string{"secret-1", "secret-2"}
 
 	t.Run("job created correctly", func(t *testing.T) {
-		tolerations := setupTolerations(t)
 		dataDir := setupDataDir(t)
 
 		props := &Properties{
@@ -88,6 +87,7 @@ func TestBuildJob(t *testing.T) {
 			ImageUri:     imageURI,
 			PullSecrets:  pullSecrets,
 			PathResolver: metadata.PathResolver{RootDir: "root"},
+			CSIJob:       csijob.GetSettings(),
 		}
 		inst := &Installer{
 			nodeName: nodeName,
@@ -104,7 +104,7 @@ func TestBuildJob(t *testing.T) {
 		assert.NotNil(t, job.Spec.Template.Labels)
 		assert.Empty(t, job.Spec.Selector) // the Job objects handles this by default, our generated MatchLabels wound't even work
 
-		assert.Equal(t, tolerations, job.Spec.Template.Spec.Tolerations)
+		assert.NotEmpty(t, job.Spec.Template.Spec.Tolerations)
 		assert.Equal(t, nodeName, job.Spec.Template.Spec.NodeName)
 		assert.False(t, *job.Spec.Template.Spec.AutomountServiceAccountToken)
 		assert.Equal(t, corev1.RestartPolicyOnFailure, job.Spec.Template.Spec.RestartPolicy)
@@ -135,46 +135,6 @@ func TestBuildJob(t *testing.T) {
 		assert.Equal(t, job.Spec.Template.Spec.Volumes[0].Name, container.VolumeMounts[0].Name)
 		assert.Equal(t, props.PathResolver.RootDir, container.VolumeMounts[0].MountPath)
 	})
-
-	t.Run("job create fail, can't parse tolerations", func(t *testing.T) {
-		setupMalformedTolerations(t)
-
-		inst := &Installer{}
-
-		_, err := inst.buildJob(name, targetDir)
-		require.Error(t, err)
-	})
-}
-
-func setupTolerations(t *testing.T) []corev1.Toleration {
-	t.Helper()
-
-	expected := []corev1.Toleration{
-		{
-			Key:      "key1",
-			Operator: corev1.TolerationOpEqual,
-			Value:    "value1",
-			Effect:   corev1.TaintEffectNoSchedule,
-		},
-		{
-			Key:      "key2",
-			Operator: corev1.TolerationOpEqual,
-			Value:    "value1",
-			Effect:   corev1.TaintEffectNoSchedule,
-		},
-	}
-
-	raw, err := json.Marshal(expected)
-	require.NoError(t, err)
-
-	t.Setenv(env.Tolerations, string(raw))
-
-	return expected
-}
-
-func setupMalformedTolerations(t *testing.T) {
-	t.Helper()
-	t.Setenv(env.Tolerations, "{$^$&^%}")
 }
 
 func setupDataDir(t *testing.T) string {

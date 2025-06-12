@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
 )
 
 const notReadyRequeueDuration = 30 * time.Second
@@ -103,6 +104,7 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		ApiReader:    provisioner.apiReader,
 		Client:       provisioner.kubeClient,
 		PathResolver: provisioner.path,
+		CSIJob:       csijob.GetSettings(),
 	}
 
 	return provisioner.jobInstallerBuilder(ctx, provisioner.fs, props)
