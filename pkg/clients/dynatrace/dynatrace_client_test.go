@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -88,6 +89,53 @@ func TestGetResponseOrServerError(t *testing.T) {
 		body, err := dc.getServerResponseData(resp)
 		require.NoError(t, err)
 		assert.NotNil(t, body, "response body available")
+	})
+
+	t.Run("valid JSON response", func(t *testing.T) {
+		response := []byte(`{"error": {"code": 401, "message": "Unauthorized request"}}`)
+
+		contentType := "application/json"
+		headers := http.Header{"Content-Type": []string{contentType}}
+		err := dc.handleErrorResponseFromAPI(response, http.StatusUnauthorized, headers)
+		require.Error(t, err)
+
+		assert.EqualError(t, err, "dynatrace server error 401: Unauthorized request")
+	})
+
+	t.Run("non-JSON response exceeding default character limit", func(t *testing.T) {
+		response := []byte(strings.Repeat("really long response", 300))
+
+		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, http.Header{})
+		require.Error(t, err)
+
+		shortenedResponse := response[:getMaxResponseLen()]
+
+		assert.EqualError(t, err, fmt.Sprintf("Server returned status code 403; can't unmarshal response (content-type: unknown): %s", shortenedResponse))
+	})
+
+	t.Run("non-JSON response exceeding custom character limit", func(t *testing.T) {
+		response := []byte(strings.Repeat("really long response", 300))
+
+		t.Setenv("DT_CLIENT_API_ERROR_LOG_LEN", "6")
+
+		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, http.Header{})
+		require.Error(t, err)
+
+		assert.EqualError(t, err, "Server returned status code 403; can't unmarshal response (content-type: unknown): really")
+	})
+
+	t.Run("HTML response with proxy header set", func(t *testing.T) {
+		response := []byte("<!doctype html><html>hi</html>")
+
+		headers := http.Header{
+			"Content-Type":    []string{"text/html"},
+			"X-Forwarded-For": []string{"proxy.dynatrace.org"},
+		}
+		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, headers)
+		require.Error(t, err)
+
+		assert.EqualError(t, err,
+			"Server returned status code 403 (via proxy proxy.dynatrace.org); can't unmarshal response (content-type: text/html): <!doctype html><html>hi</html>")
 	})
 }
 
