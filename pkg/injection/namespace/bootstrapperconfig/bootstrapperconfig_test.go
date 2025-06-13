@@ -63,7 +63,7 @@ func TestNewSecretGenerator(t *testing.T) {
 }
 
 func TestGenerateForDynakube(t *testing.T) {
-	t.Run("succcessfully generate secret for dynakube", func(t *testing.T) {
+	t.Run("succcessfully generate config secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -101,13 +101,13 @@ func TestGenerateForDynakube(t *testing.T) {
 		assert.NotEmpty(t, secret.Data)
 
 		var sourceSecret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
 		require.NoError(t, err)
 
-		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
+		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -170,17 +170,10 @@ func TestGenerateForDynakube(t *testing.T) {
 		var secret corev1.Secret
 		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
 		require.NoError(t, err)
-
 		require.NotEmpty(t, secret)
-
 		assert.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
+
 		_, ok := secret.Data[pmc.InputFileName]
-		require.True(t, ok)
-
-		_, ok = secret.Data[ca.TrustedCertsInputFile]
-		require.True(t, ok)
-
-		_, ok = secret.Data[ca.AgCertsInputFile]
 		require.True(t, ok)
 
 		_, ok = secret.Data[curl.InputFileName]
@@ -189,14 +182,27 @@ func TestGenerateForDynakube(t *testing.T) {
 		_, ok = secret.Data[endpoint.InputFileName]
 		require.True(t, ok)
 
+		// check certs secret
+		var secretCerts corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: testNamespace}, &secretCerts)
+		require.NoError(t, err)
+		require.NotEmpty(t, secretCerts)
+		assert.Equal(t, consts.BootstrapperInitCertsSecretName, secretCerts.Name)
+
+		_, ok = secretCerts.Data[ca.TrustedCertsInputFile]
+		require.True(t, ok)
+
+		_, ok = secretCerts.Data[ca.AgCertsInputFile]
+		require.True(t, ok)
+
 		var sourceSecret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
 		require.NoError(t, err)
 
-		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
+		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -241,7 +247,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				ca.TrustedCertsInputFile: []byte(oldTrustedCa),
 				ca.AgCertsInputFile:      []byte(oldCertValue),
 			}),
-			clientSecret(GetSourceSecretName(dk.Name), dk.Namespace, map[string][]byte{
+			clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, map[string][]byte{
 				pmc.InputFileName:        nil,
 				ca.TrustedCertsInputFile: []byte(oldTrustedCa),
 				ca.AgCertsInputFile:      []byte(oldCertValue),
@@ -279,13 +285,13 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.True(t, ok)
 
 		var sourceSecret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
 		require.NoError(t, err)
 
-		require.Equal(t, GetSourceSecretName(dk.Name), sourceSecret.Name)
+		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -317,7 +323,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
 		require.Error(t, err)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionFalse, c.Status)
 	})
@@ -334,7 +340,7 @@ func TestCleanup(t *testing.T) {
 		},
 		Status: dynakube.DynaKubeStatus{
 			Conditions: []metav1.Condition{
-				{Type: ConditionType},
+				{Type: ConfigConditionType},
 				{Type: "other"},
 			},
 		},
@@ -352,7 +358,7 @@ func TestCleanup(t *testing.T) {
 		}),
 		clientSecret(consts.BootstrapperInitSecretName, testNamespace, nil),
 		clientSecret(consts.BootstrapperInitSecretName, testNamespace2, nil),
-		clientSecret(GetSourceSecretName(dk.Name), dk.Namespace, nil),
+		clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, nil),
 	)
 	namespaces := []corev1.Namespace{
 		{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}},
@@ -385,10 +391,10 @@ func TestCleanup(t *testing.T) {
 	require.Error(t, err)
 	assert.True(t, errors.IsNotFound(err))
 
-	err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceSecretName(dk.Name), Namespace: dk.Namespace}, &deleted)
+	err = clt.Get(context.Background(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &deleted)
 	require.Error(t, err)
 	assert.True(t, errors.IsNotFound(err))
-	require.Nil(t, meta.FindStatusCondition(*dk.Conditions(), ConditionType))
+	require.Nil(t, meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType))
 }
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
