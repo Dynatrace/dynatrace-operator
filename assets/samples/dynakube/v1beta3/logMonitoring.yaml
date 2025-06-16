@@ -176,7 +176,7 @@ spec:
       #
       # nodeSelector: {}
 
-      # Optional: Set the DNS policy for Log monitoring pods pods.
+      # Optional: Set the DNS policy for Log monitoring pods.
       #
       # dnsPolicy: "Default"
 
