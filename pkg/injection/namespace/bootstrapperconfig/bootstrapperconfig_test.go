@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -44,7 +45,7 @@ const (
 
 	testNamespaceDynatrace = "dynatrace"
 
-	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
+	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
 
 	oldCertValue = "old-cert-value"
 	oldTrustedCa = "old-trusted-ca"
@@ -70,7 +71,10 @@ func TestGenerateForDynakube(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
+				APIURL: testApiUrl,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
 			},
 		}
 
@@ -78,7 +82,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.APIToken:  []byte(testAPIToken),
+				dtclient.ApiToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
@@ -111,7 +115,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
-	t.Run("succcessfully generate secret with fields for dynakube", func(t *testing.T) {
+	t.Run("successfully generate secret with fields for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -121,16 +125,19 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:     testAPIURL,
+				APIURL:     testApiUrl,
 				TrustedCAs: "test-trusted-ca",
 				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: ptr.To(true),
+				},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
-					TLSSecretName: "test-tls-secret-name",
+					TlsSecretName: "test-tls-secret-name",
 				},
 			},
 		}
@@ -139,10 +146,10 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.APIToken:  []byte(testAPIToken),
+				dtclient.ApiToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
-			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
+			clientSecret(dk.ActiveGate().TlsSecretName, testNamespaceDynatrace, map[string][]byte{
 				dynakube.TLSCertKey: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
@@ -217,9 +224,12 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
+				APIURL: testApiUrl,
 				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: ptr.To(true),
+				},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -233,10 +243,10 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.APIToken:  []byte(testAPIToken),
+				dtclient.ApiToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
-			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
+			clientSecret(dk.ActiveGate().TlsSecretName, testNamespaceDynatrace, map[string][]byte{
 				dynakube.TLSCertKey: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
@@ -302,7 +312,10 @@ func TestGenerateForDynakube(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
+				APIURL: testApiUrl,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
 			},
 		}
 
@@ -310,7 +323,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.APIToken:  []byte(testAPIToken),
+				dtclient.ApiToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 		)
@@ -336,7 +349,7 @@ func TestCleanup(t *testing.T) {
 			Namespace: testNamespaceDynatrace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testAPIURL,
+			APIURL: testApiUrl,
 		},
 		Status: dynakube.DynaKubeStatus{
 			Conditions: []metav1.Condition{
@@ -350,7 +363,7 @@ func TestCleanup(t *testing.T) {
 		dk,
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			dtclient.APIToken:  []byte(testAPIToken),
+			dtclient.ApiToken:  []byte(testAPIToken),
 			dtclient.PaasToken: []byte(testPaasToken),
 		}),
 		clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{

@@ -46,16 +46,9 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
-	// TODO: only metadata-enrichment => only dynatrace-bootstrapper-config,
-	//  and only the endpoint.propertiespart, rest is not needed
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
-	}
-
-	err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
-	if err != nil {
-		return err
 	}
 
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, s.apiReader, dk.Name)
@@ -65,10 +58,17 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		return errors.WithStack(err)
 	}
 
-	err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, nsList, dk, data)
+	if len(data) != 0 {
+		err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
+		if err != nil {
+			return err
+		}
 
-	if err != nil {
-		return errors.WithStack(err)
+		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, nsList, dk, data)
+
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
 
 	certs, err := s.generateCerts(ctx, dk)
@@ -177,62 +177,41 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
-	endpointProperties, err := s.prepareEndpoints(ctx, dk)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if len(endpointProperties) != 0 {
-		data[endpoint.InputFileName] = []byte(endpointProperties)
-	}
-
-	var tokens corev1.Secret
-	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		return nil, errors.WithMessage(err, "failed to query tokens")
-	}
-
-	var proxy string
-	if dk.NeedsOneAgentProxy() {
-		proxy, err = dk.Proxy(ctx, s.apiReader)
+	if dk.OneAgent().IsAppInjectionNeeded() {
+		downloadConfigBytes, err := s.prepareDownloadConfig(ctx, dk)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
+
+		data[download.InputFileName] = downloadConfigBytes
+
+		pmcSecret, err := s.preparePMC(ctx, dk)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if len(pmcSecret) != 0 {
+			data[pmc.InputFileName] = pmcSecret
+		}
+
+		if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > -1 {
+			initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio))
+			data[curl.InputFileName] = []byte(initialConnectRetryMs)
+		}
 	}
 
-	downloadConfigJSON := download.Config{
-		URL:           dk.Spec.APIURL,
-		ApiToken:      string(tokens.Data[dtclient.ApiToken]),
-		Proxy:         proxy,
-		NoProxy:       dk.FF().GetNoProxy(),
-		NetworkZone:   dk.Spec.NetworkZone,
-		HostGroup:     dk.OneAgent().GetHostGroup(),
-		SkipCertCheck: dk.Spec.SkipCertCheck,
+	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichmentEnabled() {
+		endpointProperties, err := s.prepareEndpoints(ctx, dk)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if len(endpointProperties) != 0 {
+			data[endpoint.InputFileName] = []byte(endpointProperties)
+		}
 	}
 
-	downloadConfigBytes, err := json.Marshal(downloadConfigJSON)
-	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConfigConditionType, err)
-
-		return nil, errors.WithStack(err)
-	}
-
-	data[download.InputFileName] = downloadConfigBytes
-
-	pmcSecret, err := s.preparePMC(ctx, dk)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if len(pmcSecret) != 0 {
-		data[pmc.InputFileName] = pmcSecret
-	}
-
-	if dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio) > -1 {
-		initialConnectRetryMs := strconv.Itoa(dk.FF().GetAgentInitialConnectRetry(dk.Spec.EnableIstio))
-		data[curl.InputFileName] = []byte(initialConnectRetryMs)
-	}
-
-	return data, err
+	return data, nil
 }
 
 // generateCerts gets the necessary info they create the init certs secret data
@@ -257,4 +236,33 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 	}
 
 	return data, err
+}
+
+func (s *SecretGenerator) prepareDownloadConfig(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
+	var tokens corev1.Secret
+	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
+		conditions.SetKubeApiError(dk.Conditions(), ConfigConditionType, err)
+
+		return nil, errors.WithMessage(err, "failed to query tokens")
+	}
+
+	downloadConfigJSON := download.Config{
+		URL:           dk.Spec.APIURL,
+		ApiToken:      string(tokens.Data[dtclient.ApiToken]),
+		NoProxy:       dk.FF().GetNoProxy(),
+		NetworkZone:   dk.Spec.NetworkZone,
+		HostGroup:     dk.OneAgent().GetHostGroup(),
+		SkipCertCheck: dk.Spec.SkipCertCheck,
+	}
+
+	if dk.NeedsOneAgentProxy() {
+		proxy, err := dk.Proxy(ctx, s.apiReader)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		downloadConfigJSON.Proxy = proxy
+	}
+
+	return json.Marshal(downloadConfigJSON)
 }
