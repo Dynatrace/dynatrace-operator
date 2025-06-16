@@ -162,10 +162,6 @@ spec:
         repository: public.ecr.aws/dynatrace/dynatrace-logmodule
         tag: <tag>
 
-      # Optional: Define the update strategy for the Log monitoring daemonSet
-      #
-      # updateStrategy: {}
-
       # Optional: Add custom labels to Log monitoring pods
       #
       # labels:
@@ -180,13 +176,17 @@ spec:
       #
       # nodeSelector: {}
 
-      # Optional: Define the nodeAffinity for the Log monitoring DaemonSet
+      # Optional: Set the DNS policy for Log monitoring pods pods.
       #
-      # nodeAffinity: {}
+      # dnsPolicy: "Default"
 
       # Optional: Assign a priority class to the Log monitoring pods.
       #
       # priorityClassName: priority-class
+
+      # Optional: The SecComp Profile that will be configured in order to run in secure computing mode.
+      #
+      # secCompProfile: ""
 
       # Optional: Tolerations to include with the Log monitoring DaemonSet.
       #
@@ -205,7 +205,3 @@ spec:
       # Optional: Set additional arguments to Log monitoring
       #
       # args: []
-
-      # Optional: Set additional environment variables for the Log monitoring pods.
-      #
-      # env: []
