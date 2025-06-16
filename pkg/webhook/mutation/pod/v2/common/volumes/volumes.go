@@ -79,7 +79,7 @@ func AddInputVolume(pod *corev1.Pod) {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: consts.BootstrapperInitSecretName,
 								},
-								Optional: ptr.To(true),
+								Optional: ptr.To(false),
 							},
 						},
 						{
