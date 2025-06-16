@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/oss/go/microsoft/golang:1.24.3-fips-bookworm@sha256:01bd44083e88ed3837a1ec26fa0ac284b72fad7667dcf04566127b0c327d4454 AS operator-build
+FROM mcr.microsoft.com/oss/go/microsoft/golang:1.24.4-fips-bookworm@sha256:f2be68324d233e84a8ca1c247983e2f0428e66e19778fae789a0f7e3b8fff1a3 AS operator-build
 
 ENV GOEXPERIMENT=systemcrypto
 
