@@ -521,6 +521,9 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		dk.Annotations = map[string]string{
 			exp.OANodeImagePullKey: "true",
 		}
+		dk.Spec.OneAgent = oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+		}
 
 		clt := fake.NewClientWithIndex(
 			tokenSecret,
@@ -551,6 +554,9 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		dk := dkBase.DeepCopy()
 		dk.Annotations = map[string]string{
 			exp.OANodeImagePullKey: "true",
+		}
+		dk.Spec.OneAgent = oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		}
 
 		clt := fake.NewClientWithIndex(

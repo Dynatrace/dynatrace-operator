@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -71,6 +72,9 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
 			},
 		}
 
@@ -111,7 +115,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
-	t.Run("succcessfully generate secret with fields for dynakube", func(t *testing.T) {
+	t.Run("successfully generate secret with fields for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -125,6 +129,9 @@ func TestGenerateForDynakube(t *testing.T) {
 				TrustedCAs: "test-trusted-ca",
 				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: ptr.To(true),
+				},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -221,6 +228,9 @@ func TestGenerateForDynakube(t *testing.T) {
 				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: ptr.To(true),
 				},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
@@ -303,6 +313,9 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testApiUrl,
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
 			},
 		}
 
