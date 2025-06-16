@@ -55,12 +55,14 @@ func NewInjector(kubeClient client.Client, apiReader client.Reader, metaClient c
 func (wh *Injector) Handle(_ context.Context, mutationRequest *dtwebhook.MutationRequest) error {
 	wh.recorder.Setup(mutationRequest)
 
-	if !wh.isInputSecretPresent(mutationRequest, consts.BootstrapperInitSecretName) {
+	if !wh.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitSecretName) {
 		return nil
 	}
 
-	if !wh.isInputSecretPresent(mutationRequest, consts.BootstrapperInitCertsSecretName) {
-		return nil
+	if mutationRequest.DynaKube.IsAGCertificateNeeded() {
+		if !wh.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceCertsSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitCertsSecretName) {
+			return nil
+		}
 	}
 
 	if !isCustomImageSet(mutationRequest) {
@@ -156,11 +158,11 @@ func isCustomImageSet(mutationRequest *dtwebhook.MutationRequest) bool {
 	return true
 }
 
-func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, secretName string) bool {
-	err := wh.replicateSecret(mutationRequest, secretName)
+func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
+	err := wh.replicateSecret(mutationRequest, sourceSecretName, targetSecretName)
 
 	if k8serrors.IsNotFound(err) {
-		log.Info(fmt.Sprintf("unable to copy source of %s as it is not available, injection not possible", secretName), "pod", mutationRequest.PodName())
+		log.Info(fmt.Sprintf("unable to copy source of %s as it is not available, injection not possible", sourceSecretName), "pod", mutationRequest.PodName())
 
 		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
 
@@ -168,7 +170,7 @@ func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequ
 	}
 
 	if err != nil {
-		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", secretName))
+		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
 
 		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
 
@@ -178,16 +180,16 @@ func (wh *Injector) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequ
 	return true
 }
 
-func (wh *Injector) replicateSecret(mutationRequest *dtwebhook.MutationRequest, secretName string) error {
+func (wh *Injector) replicateSecret(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) error {
 	var initSecret corev1.Secret
 
-	secretObjectKey := client.ObjectKey{Name: secretName, Namespace: mutationRequest.Namespace.Name}
+	secretObjectKey := client.ObjectKey{Name: targetSecretName, Namespace: mutationRequest.Namespace.Name}
 	err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
 
 	if k8serrors.IsNotFound(err) {
-		log.Info(secretName+" is not available, trying to replicate", "pod", mutationRequest.PodName())
+		log.Info(targetSecretName+" is not available, trying to replicate", "pod", mutationRequest.PodName())
 
-		return bootstrapperconfig.Replicate(mutationRequest.Context, mutationRequest.DynaKube, secret.Query(wh.kubeClient, wh.apiReader, log), mutationRequest.Namespace.Name)
+		return bootstrapperconfig.Replicate(mutationRequest.Context, mutationRequest.DynaKube, secret.Query(wh.kubeClient, wh.apiReader, log), sourceSecretName, targetSecretName, mutationRequest.Namespace.Name)
 	}
 
 	return nil
