@@ -1,6 +1,7 @@
 package cleanup
 
 import (
+	"os"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -25,7 +26,15 @@ func (c *Cleaner) isMountPoint(file string) (bool, error) {
 		}
 	}
 
-	return c.mounter.IsMountPoint(file)
+	isMountPoint, err := c.mounter.IsMountPoint(file)
+	if os.IsNotExist(err) {
+		// this is a different not exist err from the previous,
+		// if the file is a symlink, then what the symlink is pointing to can also not exist
+		// and IsMountPoint follows symlink without question
+		return false, nil
+	}
+
+	return isMountPoint, err
 }
 
 func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
@@ -38,9 +47,18 @@ func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 		}
 
 		for _, hostDir := range possibleHostDirs {
+			_, err := c.fs.Stat(hostDir)
+			if os.IsNotExist(err) {
+				log.Debug("host dir path doesn't exist, moving to the next one", "path", hostDir)
+				continue
+			} else if err != nil {
+				log.Debug("failed to determine stat of host dir path, moving to the next one", "path", hostDir, "err", err)
+				continue
+			}
+
 			isMountPoint, err := c.isMountPoint(hostDir)
 			if err == nil && !isMountPoint && !relevantHostDirs[hostDir] {
-				err := c.fs.RemoveAll(hostDir)
+				err = c.fs.RemoveAll(hostDir)
 				if err == nil {
 					log.Info("removed old host mount directory", "path", hostDir)
 				}
