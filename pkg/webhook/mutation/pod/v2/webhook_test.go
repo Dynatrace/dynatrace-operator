@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -18,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -150,9 +152,9 @@ func TestHandle(t *testing.T) {
 		assert.Equal(t, NoBootstrapperConfigReason, reason)
 	})
 
-	t.Run("no init secret + source => replicate + inject", func(t *testing.T) {
+	t.Run("no init secret and no certs + source (both) => replicate (both) + inject", func(t *testing.T) {
 		injector := createTestInjectorBase()
-		request := createTestMutationRequest(getTestDynakube())
+		request := createTestMutationRequest(getTestDynakubeWithAGCerts())
 
 		source := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -184,6 +186,51 @@ func TestHandle(t *testing.T) {
 		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
 		require.NoError(t, err)
 		assert.Equal(t, sourceCerts.Data, replicatedCerts.Data)
+
+		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		require.True(t, ok)
+		assert.Equal(t, "true", isInjected)
+
+		_, ok = request.Pod.Annotations[oacommon.AnnotationReason]
+		require.False(t, ok)
+	})
+
+	t.Run("no init and no certs, but don't replicate certs because we don't need it (AG is not enabled)", func(t *testing.T) {
+		injector := createTestInjectorBase()
+		request := createTestMutationRequest(getTestDynakube())
+
+		source := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
+				Namespace: request.DynaKube.Namespace,
+			},
+			Data: map[string][]byte{"data": []byte("beep")},
+		}
+
+		sourceCerts := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapperconfig.GetSourceCertsSecretName(request.DynaKube.Name),
+				Namespace: request.DynaKube.Namespace,
+			},
+			Data: map[string][]byte{"certs": []byte("very secure")},
+		}
+		clt := fake.NewClient(&source, &sourceCerts)
+		injector.kubeClient = clt
+		injector.apiReader = clt
+
+		err := injector.Handle(ctx, request)
+		require.NoError(t, err)
+
+		var replicated corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
+		require.NoError(t, err)
+		assert.Equal(t, source.Data, replicated.Data)
+
+		var replicatedCerts corev1.Secret
+		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		require.Error(t, err)
+		require.True(t, k8sErrors.IsNotFound(err))
+		assert.Empty(t, replicatedCerts.Data)
 
 		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
 		require.True(t, ok)
@@ -266,6 +313,18 @@ func getTestDynakube() *dynakube.DynaKube {
 			KubernetesClusterName: "meidname",
 		},
 	}
+}
+
+func getTestDynakubeWithAGCerts() *dynakube.DynaKube {
+	dk := getTestDynakube()
+	dk.Spec.ActiveGate = activegate.Spec{
+		Capabilities: []activegate.CapabilityDisplayName{
+			activegate.DynatraceApiCapability.DisplayName,
+		},
+		TlsSecretName: "ag-certs",
+	}
+
+	return dk
 }
 
 var testResourceRequirements = corev1.ResourceRequirements{

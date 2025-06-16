@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -28,24 +27,13 @@ func GetSourceCertsSecretName(dkName string) string {
 }
 
 // Replicate will only create the secret once, doesn't mean for keeping the secret up to date
-func Replicate(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, targetNs string) error {
-	secret, err := getSecretFromSource(ctx, dk, query, GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, targetNs)
+func Replicate(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, sourceSecretName, targetSecretName string, targetNs string) error { //nolint:revive
+	secret, err := getSecretFromSource(ctx, dk, query, sourceSecretName, targetSecretName, targetNs)
 	if err != nil {
 		return err
 	}
 
-	err = client.IgnoreAlreadyExists(query.Create(ctx, secret))
-
-	if err != nil {
-		return err
-	}
-
-	certs, err := getSecretFromSource(ctx, dk, query, GetSourceCertsSecretName(dk.Name), consts.BootstrapperInitCertsSecretName, targetNs)
-	if err != nil {
-		return err
-	}
-
-	return client.IgnoreAlreadyExists(query.Create(ctx, certs))
+	return client.IgnoreAlreadyExists(query.Create(ctx, secret))
 }
 
 func getSecretFromSource(ctx context.Context, dk dynakube.DynaKube, query k8ssecret.QueryObject, sourceSecretName, targetSecretName string, targetNs string) (*corev1.Secret, error) { //nolint:revive
