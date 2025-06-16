@@ -76,8 +76,6 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		return errors.WithStack(err)
 	}
 
-	// If there are no certs, we don't need to create the certs secret
-	// TODO: not clear for now should we replicate old logic with empty data inside secrets object
 	if len(certs) != 0 {
 		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs)
 		if err != nil {
