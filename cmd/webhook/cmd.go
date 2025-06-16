@@ -25,6 +25,8 @@ import (
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -35,6 +37,8 @@ const (
 	FlagCertificateDirectory   = "certs-dir"
 	FlagCertificateFileName    = "cert"
 	FlagCertificateKeyFileName = "cert-key"
+
+	openshiftSecurityGVR = "security.openshift.io/v1"
 )
 
 var (
@@ -75,6 +79,23 @@ func run() func(*cobra.Command, []string) error {
 			return err
 		}
 
+		isOpenShift := false
+
+		client, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
+		if err != nil {
+			logd.Get().WithName("platform").Error(err, "failed to detect platform, due to discovery client issues")
+		} else {
+			_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
+
+			if !k8serrors.IsNotFound(err) {
+				logd.Get().WithName("platform").Info("detected platform", "platform", "openshift")
+
+				isOpenShift = true
+			} else {
+				logd.Get().WithName("platform").Info("detected platform", "platform", "kubernetes")
+			}
+		}
+
 		webhookManager, err := createManager(kubeConfig, namespace, certificateDirectory, certificateFileName, certificateKeyFileName)
 		if err != nil {
 			return err
@@ -92,7 +113,7 @@ func run() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = podmutator.AddWebhookToManager(signalHandler, webhookManager, namespace)
+		err = podmutator.AddWebhookToManager(signalHandler, webhookManager, namespace, isOpenShift)
 		if err != nil {
 			return err
 		}

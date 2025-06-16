@@ -11,6 +11,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -23,6 +24,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -49,6 +51,7 @@ type App struct {
 
 	installedNamespace bool
 	isDeployment       bool
+	withoutClusterRole bool
 }
 
 type Option func(*App)
@@ -148,23 +151,64 @@ func (app *App) InstallNamespace() features.Func {
 	return namespace.Create(app.namespace)
 }
 
+func WithoutClusterRole() Option {
+	return func(app *App) {
+		app.withoutClusterRole = true
+	}
+}
+
 func (app *App) Install() features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		resource := c.Client().Resources()
 		if !app.installedNamespace {
 			ctx = app.InstallNamespace()(ctx, t, c)
 		}
-		ctx = app.installClusterRole(ctx, t, c)
+
+		if !app.withoutClusterRole {
+			ctx = app.installClusterRole(ctx, t, c)
+		}
 
 		require.NoError(t, resource.Create(ctx, app.scBase))
 
 		object := app.build()
-
 		require.NoError(t, resource.Create(ctx, object))
+
 		if dep, ok := object.(*appsv1.Deployment); ok {
-			require.NoError(t, deployment.WaitUntilReady(resource, dep))
+			err := deployment.WaitUntilReady(resource, dep)
+			if err != nil {
+				printEventList(t, ctx, resource, app.Namespace())
+			}
+			require.NoError(t, err)
 		} else if p, ok := object.(*corev1.Pod); ok {
 			require.NoError(t, wait.For(conditions.New(resource).PodReady(p), wait.WithTimeout(5*time.Minute)))
+		}
+
+		return ctx
+	}
+}
+
+func (app *App) InstallFail() features.Func {
+	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		resource := c.Client().Resources()
+		if !app.installedNamespace {
+			ctx = app.InstallNamespace()(ctx, t, c)
+		}
+
+		if !app.withoutClusterRole {
+			ctx = app.installClusterRole(ctx, t, c)
+		}
+
+		require.NoError(t, resource.Create(ctx, app.scBase))
+
+		object := app.build()
+		require.NoError(t, resource.Create(ctx, object))
+
+		if dep, ok := object.(*appsv1.Deployment); ok {
+			err := deployment.WaitUntilFailedCreate(resource, dep)
+			if err != nil {
+				printEventList(t, ctx, resource, app.Namespace())
+			}
+			require.NoError(t, err)
 		}
 
 		return ctx
@@ -210,6 +254,22 @@ func (app *App) Uninstall() features.Func {
 		if dep, ok := object.(*appsv1.Deployment); ok {
 			ctx = pod.WaitForPodsDeletionWithOwner(dep.Name, dep.Namespace)(ctx, t, c)
 		}
+
+		return namespace.Delete(app.Namespace())(ctx, t, c)
+	}
+}
+
+func (app *App) UninstallFail() features.Func {
+	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		defer func() {
+			app.installedNamespace = false
+			ctx = app.uninstallClusterRole(ctx, t, c)
+		}()
+		resource := c.Client().Resources()
+		object := app.build()
+
+		require.NoError(t, resource.Delete(ctx, object))
+		require.NoError(t, wait.For(conditions.New(resource).ResourceDeleted(object), wait.WithTimeout(2*time.Minute)))
 
 		return namespace.Delete(app.Namespace())(ctx, t, c)
 	}
@@ -303,4 +363,13 @@ func deletePods(t *testing.T, ctx context.Context, pods corev1.PodList, resource
 		require.NoError(t, wait.For(
 			conditions.New(resource).ResourceDeleted(&podItem)), wait.WithTimeout(1*time.Minute))
 	}
+}
+
+func printEventList(t *testing.T, ctx context.Context, resource *resources.Resources, namespace string) {
+	optFunc := func(options *metav1.ListOptions) {
+		options.Limit = int64(300)
+		options.FieldSelector = fmt.Sprint(fields.OneTermEqualSelector("type", corev1.EventTypeWarning))
+	}
+	events := event.List(t, ctx, resource, namespace, optFunc)
+	t.Log("events", events)
 }

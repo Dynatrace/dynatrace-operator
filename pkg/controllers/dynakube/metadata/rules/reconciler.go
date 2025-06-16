@@ -29,7 +29,7 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Recon
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.MetadataEnrichmentEnabled() {
+	if !r.dk.MetadataEnrichmentEnabled() && !r.dk.FF().IsNodeImagePull() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil
 		}

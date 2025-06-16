@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
+func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, webhookPodName string, isOpenShift bool) error {
 	eventRecorder := events.NewRecorder(mgr.GetEventRecorderFor("dynatrace-webhook"))
 	kubeConfig := mgr.GetConfig()
 	kubeClient := mgr.GetClient()
@@ -60,7 +60,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 
 	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
 		v1:               podv1.NewInjector(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
-		v2:               podv2.NewInjector(kubeClient, apiReader, metaClient, eventRecorder),
+		v2:               podv2.NewInjector(kubeClient, apiReader, metaClient, eventRecorder, isOpenShift),
 		apiReader:        apiReader,
 		webhookNamespace: webhookNamespace,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),

@@ -83,7 +83,7 @@ func (dtc *dynatraceClient) createAuthTokenRequest(ctx context.Context, dynakube
 func (dtc *dynatraceClient) handleAuthTokenResponse(response *http.Response) (*ActiveGateAuthTokenInfo, error) {
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
-		return nil, dtc.handleErrorResponseFromAPI(data, response.StatusCode)
+		return nil, dtc.handleErrorResponseFromAPI(data, response.StatusCode, response.Header)
 	}
 
 	authTokenInfo, err := dtc.readResponseForActiveGateAuthToken(data)

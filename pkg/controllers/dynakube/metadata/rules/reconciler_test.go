@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -91,6 +92,28 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set rules correctly", func(t *testing.T) {
 		dk := createDynaKube()
+		expectedResponse := createRulesResponse()
+
+		dtc := dtclientmock.NewClient(t)
+		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		reconciler := NewReconciler(dtc, &dk)
+
+		err := reconciler.Reconcile(ctx)
+
+		require.NoError(t, err)
+		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
+		require.Len(t, dk.Status.Conditions, 1)
+		assert.Equal(t, conditions.StatusUpdatedReason, dk.Status.Conditions[0].Reason)
+	})
+
+	t.Run("set rules correctly, even if only node image pull is set", func(t *testing.T) {
+		dk := createDynaKube()
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+
+		dk.Annotations = map[string]string{
+			exp.OANodeImagePullKey: "true",
+		}
+
 		expectedResponse := createRulesResponse()
 
 		dtc := dtclientmock.NewClient(t)

@@ -87,7 +87,7 @@ func (dtc *dynatraceClient) handleLatestImageResponse(response *http.Response) (
 
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
-		return nil, dtc.handleErrorResponseFromAPI(data, response.StatusCode)
+		return nil, dtc.handleErrorResponseFromAPI(data, response.StatusCode, response.Header)
 	}
 
 	latestImageInfo, err := dtc.readResponseForLatestImage(data)

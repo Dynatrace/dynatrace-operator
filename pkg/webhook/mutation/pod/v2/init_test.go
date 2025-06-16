@@ -23,7 +23,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = nil
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = nil
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		require.NotNil(t, initContainer)
 		assert.Equal(t, dtwebhook.InstallContainerName, initContainer.Name)
@@ -57,7 +57,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = testUser
 		pod.Spec.Containers[0].SecurityContext.RunAsGroup = testUser
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -77,7 +77,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = testUser
 		pod.Spec.SecurityContext.RunAsGroup = testUser
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -95,7 +95,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod.Spec.SecurityContext.RunAsUser = ptr.To(oacommon.RootUserGroup)
 		pod.Spec.SecurityContext.RunAsGroup = ptr.To(oacommon.RootUserGroup)
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		assert.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
@@ -112,7 +112,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, initContainer.SecurityContext.SeccompProfile.Type)
 	})
@@ -123,7 +123,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		assert.NotContains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
@@ -134,7 +134,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"}
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		assert.NotContains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
@@ -145,7 +145,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
@@ -156,7 +156,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
-		initContainer := createInitContainerBase(pod, *dk)
+		initContainer := createInitContainerBase(pod, *dk, false)
 
 		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 
@@ -165,7 +165,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod = getTestPod()
 		pod.Annotations = map[string]string{dtwebhook.AnnotationFailurePolicy: "asd"}
 
-		initContainer = createInitContainerBase(pod, *dk)
+		initContainer = createInitContainerBase(pod, *dk, false)
 
 		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
