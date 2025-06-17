@@ -85,7 +85,7 @@ jobs:
   build-images:
     name: Build images
     needs: [detect-changes, prepare]
-    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
     strategy:
       matrix:
         platform: [linux/arm64, linux/amd64]
@@ -118,7 +118,7 @@ jobs:
   index:
     name: Create image-index
     needs: [detect-changes, prepare, build-images]
-    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
