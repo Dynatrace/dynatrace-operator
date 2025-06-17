@@ -50,7 +50,7 @@ type DynaKubeStatus struct { //nolint:revive
 	// KubernetesClusterMEID contains the ID of the monitored entity that points to the Kubernetes cluster
 	KubernetesClusterMEID string `json:"kubernetesClusterMEID,omitempty"`
 
-	// KubernetesClusterName contains the display name (also known as label) of the monitored entity that points to the Kubernetes cluster
+	// KubernetesClusterName contains the display name (also know as label) of the monitored entity that points to the Kubernetes cluster
 	KubernetesClusterName string `json:"kubernetesClusterName,omitempty"`
 
 	// Conditions includes status about the current state of the instance
