@@ -28,12 +28,21 @@ jobs:
       helm_changed: ${{ steps.helm.outputs.any_changed }}
       prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed }}
       ci_changed: ${{ steps.ci.outputs.any_changed }}
+      run_anyway: ${{ steps.set-run-anyway.outputs.run_anyway }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 2
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Set run anyway outputs
+        id: set-run-anyway
+        run: |
+          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == refs/heads/release-* ]]; then
+            echo "run_anyway=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_anyway=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Detect CI file changes
         uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
         id: ci
@@ -81,7 +90,7 @@ jobs:
 
   helm-test:
     needs: detect-changes
-    if: needs.detect-changes.outputs.helm_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.helm_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
     name: Run helm unit tests
     runs-on: ubuntu-latest
     steps:
@@ -99,7 +108,7 @@ jobs:
 
   helm-lint:
     needs: detect-changes
-    if: needs.detect-changes.outputs.helm_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.helm_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
     name: Run helm linting
     runs-on: ubuntu-latest
     steps:
@@ -117,7 +126,7 @@ jobs:
 
   tests:
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
     name: Run unit tests
     runs-on: ubuntu-latest
     steps:
@@ -139,7 +148,7 @@ jobs:
 
   linting:
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
     name: Run linting
     runs-on: ubuntu-latest
     steps:
@@ -163,7 +172,7 @@ jobs:
   generated-files:
     name: Check generated files
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.prerequisites_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -196,7 +205,7 @@ jobs:
 
   security:
     needs: detect-changes
-    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
     name: Code security scanning alerts
     runs-on: ubuntu-latest
     steps:
@@ -238,7 +247,7 @@ jobs:
 
   build-push:
     needs: [detect-changes, prepare]
-    if: needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
+    if: needs.detect-changes.outputs.run_anyway == 'true' || needs.detect-changes.outputs.go_changed == 'true' || needs.detect-changes.outputs.docker_changed == 'true' || needs.detect-changes.outputs.ci_changed == 'true'
     name: Build images
     runs-on: ubuntu-latest
     steps:
