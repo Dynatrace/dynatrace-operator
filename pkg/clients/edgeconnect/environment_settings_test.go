@@ -11,11 +11,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var testObjectId = "test-objectId"
+var testObjectID = "test-objectId"
 
 var testEnvironmentSetting = EnvironmentSetting{
-	ObjectId: &testObjectId,
-	SchemaId: KubernetesConnectionSchemaID,
+	ObjectID: &testObjectID,
+	SchemaID: KubernetesConnectionSchemaID,
 	Scope:    KubernetesConnectionScope,
 	Value: EnvironmentSettingValue{
 		Name:      "test-name",
@@ -85,17 +85,17 @@ func TestUpdateConnectionSetting(t *testing.T) {
 func TestDeleteConnectionSetting(t *testing.T) {
 	t.Run("Server response OK", func(t *testing.T) {
 		client := mockEdgeConnectClient(mockServerHandler(http.StatusOK))
-		err := client.DeleteConnectionSetting(testObjectId)
+		err := client.DeleteConnectionSetting(testObjectID)
 		require.NoError(t, err)
 	})
 	t.Run("Server response NOK", func(t *testing.T) {
 		client := mockEdgeConnectClient(mockServerHandler(http.StatusBadRequest))
-		err := client.DeleteConnectionSetting(testObjectId)
+		err := client.DeleteConnectionSetting(testObjectID)
 		require.Error(t, err)
 	})
 	t.Run("Server response unexpected", func(t *testing.T) {
 		client := mockEdgeConnectClient(mockUnexpectedServerHandler())
-		err := client.DeleteConnectionSetting(testObjectId)
+		err := client.DeleteConnectionSetting(testObjectID)
 		require.Error(t, err)
 	})
 }
@@ -126,7 +126,7 @@ func mockServerHandler(status int) http.HandlerFunc {
 		case "/platform/classic/environment-api/v2/settings/objects":
 			writeEnvironmentSettingsResponse(writer, status)
 		default:
-			writeSettingsApiResponse(writer, status)
+			writeSettingsAPIResponse(writer, status)
 		}
 	}
 }
@@ -159,13 +159,13 @@ func writeEnvironmentSettingsResponse(w http.ResponseWriter, status int) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(result)
 	} else {
-		writeSettingsApiResponse(w, status)
+		writeSettingsAPIResponse(w, status)
 	}
 }
 
-func writeSettingsApiResponse(w http.ResponseWriter, status int) {
-	errorResponse := SettingsApiResponse{
-		Error: SettingsApiError{
+func writeSettingsAPIResponse(w http.ResponseWriter, status int) {
+	errorResponse := SettingsAPIResponse{
+		Error: SettingsAPIError{
 			Message: "test-message",
 			ConstraintViolations: []ConstraintViolations{
 				{

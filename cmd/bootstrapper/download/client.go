@@ -32,7 +32,7 @@ func WithDTClient(builder dtclient.NewFunc) Option {
 
 func New(options ...Option) *Client {
 	cl := &Client{
-		newInstaller: url.NewUrlInstaller,
+		newInstaller: url.NewURLInstaller,
 		newDTClient:  dtclient.NewClient,
 	}
 
@@ -81,8 +81,8 @@ func (cl *Client) createDTClientFromFs(fs afero.Afero, inputDir string) (dtclien
 
 	client, err := cl.newDTClient(
 		config.URL,
-		config.ApiToken,
-		config.ApiToken,
+		config.APIToken,
+		config.APIToken,
 		options...,
 	)
 	if err != nil {

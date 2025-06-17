@@ -44,7 +44,7 @@ func (dst *EdgeConnect) fromSpec(src *edgeconnect.EdgeConnect) {
 
 	dst.Spec.ImageRef.Tag = src.Spec.ImageRef.Tag
 	dst.Spec.ImageRef.Repository = src.Spec.ImageRef.Repository
-	dst.Spec.ApiServer = src.Spec.ApiServer
+	dst.Spec.ApiServer = src.Spec.APIServer
 	dst.Spec.HostRestrictions = strings.Join(src.Spec.HostRestrictions, ",")
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.CaCertsRef = src.Spec.CaCertsRef

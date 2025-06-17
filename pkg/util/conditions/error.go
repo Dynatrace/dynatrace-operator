@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	KubeApiErrorReason      = "KubeApiError"
-	DynatraceApiErrorReason = "DynatraceApiError"
+	KubeAPIErrorReason      = "KubeApiError"
+	DynatraceAPIErrorReason = "DynatraceApiError"
 )
 
-func SetKubeApiError(conditions *[]metav1.Condition, conditionType string, err error) {
+func SetKubeAPIError(conditions *[]metav1.Condition, conditionType string, err error) {
 	if err == nil {
 		return
 	}
@@ -21,13 +21,13 @@ func SetKubeApiError(conditions *[]metav1.Condition, conditionType string, err e
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
-		Reason:  KubeApiErrorReason,
+		Reason:  KubeAPIErrorReason,
 		Message: "A problem occurred when using the Kubernetes API: " + err.Error(),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetDynatraceApiError(conditions *[]metav1.Condition, conditionType string, err error) {
+func SetDynatraceAPIError(conditions *[]metav1.Condition, conditionType string, err error) {
 	if err == nil {
 		return
 	}
@@ -35,13 +35,13 @@ func SetDynatraceApiError(conditions *[]metav1.Condition, conditionType string, 
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
-		Reason:  DynatraceApiErrorReason,
+		Reason:  DynatraceAPIErrorReason,
 		Message: "A problem occurred when using the Dynatrace API: " + err.Error(),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func IsKubeApiError(err error) bool {
+func IsKubeAPIError(err error) bool {
 	status, ok := err.(k8serrors.APIStatus)
 
 	return ok || errors.As(err, &status)

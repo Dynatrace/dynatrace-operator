@@ -38,7 +38,7 @@ func (dst *DynaKube) fromBase(src *dynakubelatest.DynaKube) {
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
 
 	dst.Spec.Proxy = src.Spec.Proxy
-	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
+	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
@@ -146,7 +146,7 @@ func fromOpenTelemetryCollectorTemplate(src dynakubelatest.OpenTelemetryCollecto
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
-	dst.TlsRefName = src.TlsRefName
+	dst.TLSRefName = src.TLSRefName
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints
@@ -161,7 +161,7 @@ func fromExtensionControllerTemplate(src dynakubelatest.ExtensionExecutionContro
 	dst.Labels = src.Labels
 	dst.Annotations = src.Annotations
 	dst.ImageRef = src.ImageRef
-	dst.TlsRefName = src.TlsRefName
+	dst.TLSRefName = src.TLSRefName
 	dst.CustomConfig = src.CustomConfig
 	dst.CustomExtensionCertificates = src.CustomExtensionCertificates
 	dst.Resources = src.Resources
@@ -174,7 +174,7 @@ func fromExtensionControllerTemplate(src dynakubelatest.ExtensionExecutionContro
 
 func (dst *DynaKube) fromActiveGateSpec(src *dynakubelatest.DynaKube) { //nolint:dupl
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
-	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
+	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TLSSecretName
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
 	dst.Spec.ActiveGate.PersistentVolumeClaim = src.Spec.ActiveGate.VolumeClaimTemplate
@@ -215,8 +215,8 @@ func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
 
 	dst.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
-	dst.Status.DynatraceApi = DynatraceApiStatus{
-		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+	dst.Status.DynatraceAPI = DynatraceAPIStatus{
+		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID

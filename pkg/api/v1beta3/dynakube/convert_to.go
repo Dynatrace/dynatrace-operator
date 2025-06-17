@@ -38,7 +38,7 @@ func (src *DynaKube) toBase(dst *dynakubelatest.DynaKube) {
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
 
 	dst.Spec.Proxy = src.Spec.Proxy
-	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
+	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceApiRequestThreshold
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
@@ -147,7 +147,7 @@ func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubela
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
-	dst.TlsRefName = src.TlsRefName
+	dst.TLSRefName = src.TlsRefName
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints
@@ -162,7 +162,7 @@ func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) dynakub
 	dst.Labels = src.Labels
 	dst.Annotations = src.Annotations
 	dst.ImageRef = src.ImageRef
-	dst.TlsRefName = src.TlsRefName
+	dst.TLSRefName = src.TlsRefName
 	dst.CustomConfig = src.CustomConfig
 	dst.CustomExtensionCertificates = src.CustomExtensionCertificates
 	dst.Resources = src.Resources
@@ -175,7 +175,7 @@ func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) dynakub
 
 func (src *DynaKube) toActiveGateSpec(dst *dynakubelatest.DynaKube) { //nolint:dupl
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
-	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
+	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TlsSecretName
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
 
@@ -215,7 +215,7 @@ func (src *DynaKube) toStatus(dst *dynakubelatest.DynaKube) {
 
 	dst.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
-	dst.Status.DynatraceApi = dynakubelatest.DynatraceApiStatus{
+	dst.Status.DynatraceAPI = dynakubelatest.DynatraceAPIStatus{
 		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
 	}
 	dst.Status.Phase = src.Status.Phase

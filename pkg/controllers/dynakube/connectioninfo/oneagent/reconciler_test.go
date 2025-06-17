@@ -104,7 +104,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 
@@ -119,7 +119,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 

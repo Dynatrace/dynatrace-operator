@@ -28,7 +28,7 @@ const (
 	DataIngestTokenConditionType string = "DataIngestToken"
 )
 
-// Possible reasons for ApiToken and PaaSToken conditions.
+// Possible reasons for APIToken and PaaSToken conditions.
 const (
 	// ReasonTokenReady is set when a token has passed verifications.
 	ReasonTokenReady string = "TokenReady"
@@ -44,7 +44,7 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace,shortName={dk,dks}
-// +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
+// +kubebuilder:printcolumn:name="APIURL",type=string,JSONPath=`.spec.apiUrl`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"

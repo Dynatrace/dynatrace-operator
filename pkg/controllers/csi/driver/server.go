@@ -274,7 +274,7 @@ func (srv *Server) NodeUnstageVolume(context.Context, *csi.NodeUnstageVolumeRequ
 }
 
 func (srv *Server) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-	return &csi.NodeGetInfoResponse{NodeId: srv.opts.NodeId}, nil
+	return &csi.NodeGetInfoResponse{NodeId: srv.opts.NodeID}, nil
 }
 
 func (srv *Server) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {

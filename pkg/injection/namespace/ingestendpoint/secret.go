@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"
+	MetricsURLSecretField   = "DT_METRICS_INGEST_URL"
 	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
 	configFile              = "endpoint.properties"
 )
@@ -131,7 +131,7 @@ func (g *SecretGenerator) prepare(ctx context.Context, dk *dynakube.DynaKube) (m
 	endpointPropertiesBuilder := strings.Builder{}
 
 	if dk.MetadataEnrichmentEnabled() { // TODO: why check here and not at the very beginning?
-		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsUrlSecretField, fields[MetricsUrlSecretField])); err != nil {
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsURLSecretField, fields[MetricsURLSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
@@ -162,32 +162,32 @@ func (g *SecretGenerator) PrepareFields(ctx context.Context, dk *dynakube.DynaKu
 			log.Info("data ingest token not found in secret", "dk", dk.Name)
 		}
 
-		if ingestUrl, err := IngestUrlFor(dk); err != nil {
+		if ingestURL, err := IngestURLFor(dk); err != nil {
 			return nil, err
 		} else {
-			fields[MetricsUrlSecretField] = ingestUrl
+			fields[MetricsURLSecretField] = ingestURL
 		}
 	}
 
 	return fields, nil
 }
 
-func IngestUrlFor(dk *dynakube.DynaKube) (string, error) {
+func IngestURLFor(dk *dynakube.DynaKube) (string, error) {
 	switch {
 	case dk.ActiveGate().IsMetricsIngestEnabled():
-		return MetricsIngestUrlForClusterActiveGate(dk)
+		return MetricsIngestURLForClusterActiveGate(dk)
 	case len(dk.Spec.APIURL) > 0:
-		return MetricsIngestUrlForDynatraceActiveGate(dk)
+		return MetricsIngestURLForDynatraceActiveGate(dk)
 	default:
 		return "", errors.New("failed to create metadata-enrichment endpoint, DynaKube.spec.apiUrl is empty")
 	}
 }
 
-func MetricsIngestUrlForDynatraceActiveGate(dk *dynakube.DynaKube) (string, error) {
+func MetricsIngestURLForDynatraceActiveGate(dk *dynakube.DynaKube) (string, error) {
 	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
 }
 
-func MetricsIngestUrlForClusterActiveGate(dk *dynakube.DynaKube) (string, error) {
+func MetricsIngestURLForClusterActiveGate(dk *dynakube.DynaKube) (string, error) {
 	tenant, err := dk.TenantUUID()
 	if err != nil {
 		return "", err

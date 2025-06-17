@@ -27,7 +27,7 @@ func TestIsAlreadyPresent(t *testing.T) {
 			fs: afero.NewMemMapFs(),
 			props: &Properties{
 				PathResolver: pathResolver,
-				ImageUri:     testImageURL,
+				ImageURI:     testImageURL,
 			},
 		}
 		isDownloaded := installer.isAlreadyPresent(pathResolver.AgentSharedBinaryDirForAgent(testVersion))
@@ -67,7 +67,7 @@ func TestIsReady(t *testing.T) {
 	t.Run("nothing present -> create job", func(t *testing.T) {
 		cl := fake.NewClient()
 		props := &Properties{
-			ApiReader: cl,
+			APIReader: cl,
 			Client:    cl,
 			Owner:     &owner,
 		}
@@ -90,7 +90,7 @@ func TestIsReady(t *testing.T) {
 	t.Run("job present, target not present -> return not ready, no error", func(t *testing.T) {
 		cl := fake.NewClient()
 		props := &Properties{
-			ApiReader: setupInCompleteJob(t, name, owner.Namespace),
+			APIReader: setupInCompleteJob(t, name, owner.Namespace),
 			Client:    cl,
 			Owner:     &owner,
 		}
@@ -113,7 +113,7 @@ func TestIsReady(t *testing.T) {
 	t.Run("job present, target present -> return ready, cleanup job", func(t *testing.T) {
 		cl := setupCompleteJob(t, name, owner.Namespace)
 		props := &Properties{
-			ApiReader: cl,
+			APIReader: cl,
 			Client:    cl,
 			Owner:     &owner,
 		}

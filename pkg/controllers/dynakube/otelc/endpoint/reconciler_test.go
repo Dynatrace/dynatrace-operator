@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	testApiToken       = "apiTokenValue"
+	testAPIToken       = "apiTokenValue"
 	testTenantUUID     = "abc12345"
 	testKubeSystemUUID = "12345"
 )
@@ -38,7 +38,7 @@ func TestConfigMapCreation(t *testing.T) {
 		dk := createDynaKube(true)
 
 		testConfigMap, err := configmap.Build(&dk, dk.Name, map[string]string{
-			dtclient.ApiToken: testApiToken,
+			dtclient.APIToken: testAPIToken,
 		})
 		require.NoError(t, err)
 
@@ -46,11 +46,11 @@ func TestConfigMapCreation(t *testing.T) {
 
 		r := NewReconciler(clt, clt, &dk)
 
-		err = r.ensureOtlpApiEndpointConfigMap(ctx)
+		err = r.ensureOtlpAPIEndpointConfigMap(ctx)
 		require.NoError(t, err)
 
 		var apiEndpointConfigMap corev1.ConfigMap
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpApiEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
 		require.NoError(t, err)
 		assert.NotEmpty(t, apiEndpointConfigMap)
 		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType))
@@ -59,12 +59,12 @@ func TestConfigMapCreation(t *testing.T) {
 
 	t.Run("removes secret if exists but we don't need it", func(t *testing.T) {
 		dk := createDynaKube(false)
-		conditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.OtlpApiEndpointConfigMapName)
+		conditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.OtlpAPIEndpointConfigMapName)
 
 		objs := []client.Object{
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.OtlpApiEndpointConfigMapName,
+					Name:      consts.OtlpAPIEndpointConfigMapName,
 					Namespace: dk.Namespace,
 				},
 			},
@@ -77,7 +77,7 @@ func TestConfigMapCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var apiEndpointConfigmap corev1.ConfigMap
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpApiEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
 
 		require.Error(t, err)
 		assert.Empty(t, apiEndpointConfigmap)
@@ -87,25 +87,25 @@ func TestConfigMapCreation(t *testing.T) {
 func TestEndpoint(t *testing.T) {
 	tests := []struct {
 		name             string
-		apiUrl           string
+		apiURL           string
 		expectedEndpoint string
 		inClusterAg      bool
 	}{
 		{
 			name:             "in-cluster ActiveGate",
-			apiUrl:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
+			apiURL:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
 			inClusterAg:      true,
 			expectedEndpoint: fmt.Sprintf("https://test-dk-activegate.test-namespace.svc/e/%s/api/v2/otlp", testTenantUUID),
 		},
 		{
 			name:             "public ActiveGate",
-			apiUrl:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
+			apiURL:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
 			inClusterAg:      false,
 			expectedEndpoint: fmt.Sprintf("https://%s.dev.dynatracelabs.com/api/v2/otlp", testTenantUUID),
 		},
 		{
 			name:             "managed ActiveGate",
-			apiUrl:           "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api",
+			apiURL:           "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api",
 			inClusterAg:      false,
 			expectedEndpoint: "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api/v2/otlp",
 		},
@@ -114,7 +114,7 @@ func TestEndpoint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dk := createDynaKube(true)
-			dk.Spec.APIURL = tt.apiUrl
+			dk.Spec.APIURL = tt.apiURL
 
 			if tt.inClusterAg {
 				dk.Spec.ActiveGate = activegate.Spec{
@@ -125,7 +125,7 @@ func TestEndpoint(t *testing.T) {
 			objs := []client.Object{
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      consts.OtlpApiEndpointConfigMapName,
+						Name:      consts.OtlpAPIEndpointConfigMapName,
 						Namespace: dk.Namespace,
 					},
 				},

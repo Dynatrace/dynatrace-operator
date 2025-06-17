@@ -422,7 +422,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 
 func TestServiceCreation(t *testing.T) {
 	dynatraceClient := dtclientmock.NewClient(t)
-	dynatraceClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
+	dynatraceClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil)
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -437,20 +437,20 @@ func TestServiceCreation(t *testing.T) {
 	t.Run("service exposes all ports for every capabilities", func(t *testing.T) {
 		expectedCapabilityPorts := map[activegate.CapabilityDisplayName][]string{
 			activegate.RoutingCapability.DisplayName: {
-				consts.HttpServicePortName,
-				consts.HttpsServicePortName,
+				consts.HTTPServicePortName,
+				consts.HTTPSServicePortName,
 			},
 			activegate.MetricsIngestCapability.DisplayName: {
-				consts.HttpServicePortName,
-				consts.HttpsServicePortName,
+				consts.HTTPServicePortName,
+				consts.HTTPSServicePortName,
 			},
-			activegate.DynatraceApiCapability.DisplayName: {
-				consts.HttpServicePortName,
-				consts.HttpsServicePortName,
+			activegate.DynatraceAPICapability.DisplayName: {
+				consts.HTTPServicePortName,
+				consts.HTTPSServicePortName,
 			},
 			activegate.KubeMonCapability.DisplayName: {
-				consts.HttpServicePortName,
-				consts.HttpsServicePortName,
+				consts.HTTPServicePortName,
+				consts.HTTPSServicePortName,
 			},
 		}
 
@@ -593,7 +593,7 @@ func createIstioReconcilerMock(t *testing.T) istio.Reconciler {
 func createMockDtClient(t *testing.T, authTokenRouteRequired bool) *dtclientmock.Client {
 	dtc := dtclientmock.NewClient(t)
 	if authTokenRouteRequired {
-		dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
+		dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil)
 	}
 
 	return dtc

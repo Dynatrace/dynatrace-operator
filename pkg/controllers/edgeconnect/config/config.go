@@ -6,7 +6,7 @@ type EdgeConnect struct {
 	Name string `yaml:"name"`
 
 	// Your environment base URL.
-	ApiEndpointHost string `yaml:"api_endpoint_host"`
+	APIEndpointHost string `yaml:"api_endpoint_host"`
 
 	// OAuth related section.
 	OAuth OAuth `yaml:"oauth"`

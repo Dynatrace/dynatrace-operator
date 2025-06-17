@@ -64,7 +64,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:        testApiUrl,
+				APIURL:        testAPIURL,
 				LogMonitoring: &logmonitoring.Spec{},
 			},
 		}
@@ -79,7 +79,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Create reconciles proxy secret`, func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeActiveGateTokenCreate})
-		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
+		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil)
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
 		dk := &dynakube.DynaKube{
@@ -88,7 +88,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				Proxy: &value.Source{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
@@ -119,7 +119,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run("reconciles phase change correctly", func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite, dtclient.TokenScopeActiveGateTokenCreate})
 
-		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
+		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil)
 		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
 		dk := &dynakube.DynaKube{
@@ -127,11 +127,11 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					exp.AGAutomaticK8sApiMonitoringKey: "true",
+					exp.AGAutomaticK8sAPIMonitoringKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
@@ -177,7 +177,7 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:        testApiUrl,
+				APIURL:        testAPIURL,
 				LogMonitoring: &logmonitoring.Spec{},
 			}}
 		controller := createFakeClientAndReconciler(t, mockClient, dk, "", testAPIToken)
@@ -195,7 +195,7 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.NotNil(t, secret)
-		assert.Equal(t, testAPIToken, string(secret.Data[dtclient.ApiToken]))
+		assert.Equal(t, testAPIToken, string(secret.Data[dtclient.APIToken]))
 	})
 }
 func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
@@ -205,7 +205,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 		dtclient.TokenScopeActiveGateTokenCreate,
 	})
 
-	mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenId: "test", Token: "dt.some.valuegoeshere"}, nil)
+	mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil)
 	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
 
 	dk := &dynakube.DynaKube{
@@ -214,7 +214,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.MetricsIngestCapability.DisplayName,
@@ -291,7 +291,7 @@ func TestAPIError(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:   testApiUrl,
+			APIURL:   testAPIURL,
 			OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{HostInjectSpec: oneagent.HostInjectSpec{}}},
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
@@ -367,10 +367,10 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 	mockClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything, mock.Anything).
 		Return(testVersion, nil).Maybe()
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
-		Return([]dtclient.MonitoredEntity{{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil).Maybe()
-	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}, mock.AnythingOfType("string")).
+		Return([]dtclient.MonitoredEntity{{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil).Maybe()
+	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}, mock.AnythingOfType("string")).
 		Return(dtclient.GetSettingsResponse{}, nil).Maybe()
-	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "", LastSeenTms: 0}, mock.AnythingOfType("string")).
+	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "", LastSeenTms: 0}, mock.AnythingOfType("string")).
 		Return(dtclient.GetSettingsResponse{}, nil).Maybe()
 	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, mock.AnythingOfType("string")).
 		Return(testObjectID, nil).Maybe()
@@ -392,7 +392,7 @@ func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.T
 
 func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, dk *dynakube.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
-		dtclient.ApiToken: []byte(apiToken),
+		dtclient.APIToken: []byte(apiToken),
 	}
 	if paasToken != "" {
 		data[dtclient.PaasToken] = []byte(paasToken)

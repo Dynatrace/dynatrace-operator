@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testTlsSecretName = "test-tls-secret"
+const testTLSSecretName = "test-tls-secret"
 
 func setCertUsage(dk *dynakube.DynaKube, isUsed bool) {
 	if isUsed {
-		dk.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dk.Spec.ActiveGate.TLSSecretName = testTLSSecretName
 	} else {
-		dk.Spec.ActiveGate.TlsSecretName = ""
+		dk.Spec.ActiveGate.TLSSecretName = ""
 	}
 }
 

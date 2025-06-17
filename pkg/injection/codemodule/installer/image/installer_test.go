@@ -82,10 +82,10 @@ func TestNewImageInstaller(t *testing.T) {
 
 	props := &Properties{
 		PathResolver: metadata.PathResolver{RootDir: "/tmp"},
-		ImageUri:     testImageURL,
+		ImageURI:     testImageURL,
 		Dynakube:     dk,
 		ImageDigest:  testImageDigest,
-		ApiReader:    fakeClient,
+		APIReader:    fakeClient,
 	}
 	in, err := NewImageInstaller(ctx, testFS, props)
 	require.NoError(t, err)
@@ -136,7 +136,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				extractor: nil,
 				props: &Properties{
 					PathResolver: metadata.PathResolver{RootDir: "/tmp"},
-					ImageUri:     testImageURL,
+					ImageURI:     testImageURL,
 					Dynakube: &dynakube.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "test",

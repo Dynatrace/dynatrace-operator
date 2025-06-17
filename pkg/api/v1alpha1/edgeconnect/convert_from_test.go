@@ -85,7 +85,7 @@ func getCurrentSpec() edgeconnect.EdgeConnectSpec {
 			Repository: "h",
 			Tag:        "i",
 		},
-		ApiServer: "j",
+		APIServer: "j",
 		HostRestrictions: []string{
 			"k",
 			"l",
@@ -190,7 +190,7 @@ func fromAreSpecsEqual(t *testing.T, src *edgeconnect.EdgeConnectSpec, dst *Edge
 
 	assert.True(t, reflect.DeepEqual(src.ImageRef.Tag, dst.ImageRef.Tag), "ImageRef.Tag")
 
-	assert.True(t, reflect.DeepEqual(src.ApiServer, dst.ApiServer), "ApiServer")
+	assert.True(t, reflect.DeepEqual(src.APIServer, dst.ApiServer), "ApiServer")
 
 	if len(src.HostRestrictions) == 0 {
 		assert.Empty(t, dst.HostRestrictions, "HostRestrictions")

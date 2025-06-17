@@ -76,7 +76,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakube.DynaKube) {
 func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
-	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
+	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TlsSecretName
 	dst.Spec.ActiveGate.Group = src.Spec.ActiveGate.Group
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
 	dst.Spec.ActiveGate.Tolerations = src.Spec.ActiveGate.Tolerations
@@ -143,22 +143,22 @@ func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 }
 
 func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) error {
-	if src.Annotations[exp.ApiRequestThresholdKey] != "" {
-		duration, err := strconv.ParseInt(src.Annotations[exp.ApiRequestThresholdKey], 10, 32)
+	if src.Annotations[exp.APIRequestThresholdKey] != "" {
+		duration, err := strconv.ParseInt(src.Annotations[exp.APIRequestThresholdKey], 10, 32)
 		if err != nil {
 			return err
 		}
 
 		if duration >= 0 {
 			if math.MaxUint16 < duration {
-				dst.Spec.DynatraceApiRequestThreshold = ptr.To(uint16(math.MaxUint16))
+				dst.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(math.MaxUint16))
 			} else {
 				// linting disabled, handled in if
-				dst.Spec.DynatraceApiRequestThreshold = ptr.To(uint16(duration)) //nolint:gosec
+				dst.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(duration)) //nolint:gosec
 			}
 		}
 
-		delete(dst.Annotations, exp.ApiRequestThresholdKey)
+		delete(dst.Annotations, exp.APIRequestThresholdKey)
 	}
 
 	return nil
@@ -171,7 +171,7 @@ func (src *DynaKube) toStatus(dst *dynakube.DynaKube) {
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.DynatraceApi = dynakube.DynatraceApiStatus{
+	dst.Status.DynatraceAPI = dynakube.DynatraceAPIStatus{
 		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
 	}
 

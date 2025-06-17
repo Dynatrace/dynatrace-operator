@@ -8,8 +8,8 @@ const (
 
 	AGUpdatesKey                              = FFPrefix + "activegate-updates"
 	AGAppArmorKey                             = FFPrefix + "activegate-apparmor"
-	AGAutomaticK8sApiMonitoringKey            = FFPrefix + "automatic-kubernetes-api-monitoring"
-	AGAutomaticK8sApiMonitoringClusterNameKey = FFPrefix + "automatic-kubernetes-api-monitoring-cluster-name"
+	AGAutomaticK8sAPIMonitoringKey            = FFPrefix + "automatic-kubernetes-api-monitoring"
+	AGAutomaticK8sAPIMonitoringClusterNameKey = FFPrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AGK8sAppEnabledKey                        = FFPrefix + "k8s-app-enabled"
 	AGAutomaticTLSCertificateKey              = FFPrefix + "automatic-tls-certificate"
 )
@@ -24,15 +24,15 @@ func (ff *FeatureFlags) IsActiveGateAutomaticTLSCertificate() bool {
 	return ff.getBoolWithDefault(AGAutomaticTLSCertificateKey, true)
 }
 
-// IsAutomaticK8sApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
+// IsAutomaticK8sAPIMonitoring is a feature flag to enable automatic kubernetes api monitoring,
 // which ensures that settings for this kubernetes cluster exist in Dynatrace.
-func (ff *FeatureFlags) IsAutomaticK8sApiMonitoring() bool {
-	return ff.getBoolWithDefault(AGAutomaticK8sApiMonitoringKey, true)
+func (ff *FeatureFlags) IsAutomaticK8sAPIMonitoring() bool {
+	return ff.getBoolWithDefault(AGAutomaticK8sAPIMonitoringKey, true)
 }
 
-// GetAutomaticK8sApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring.
-func (ff *FeatureFlags) GetAutomaticK8sApiMonitoringClusterName() string {
-	return ff.getRaw(AGAutomaticK8sApiMonitoringClusterNameKey)
+// GetAutomaticK8sAPIMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring.
+func (ff *FeatureFlags) GetAutomaticK8sAPIMonitoringClusterName() string {
+	return ff.getRaw(AGAutomaticK8sAPIMonitoringClusterNameKey)
 }
 
 // IsK8sAppEnabled is a feature flag to enable automatically enable current Kubernetes cluster for the Kubernetes app.

@@ -24,7 +24,7 @@ func TestIsOutdated(t *testing.T) {
 		tp := timeprovider.New()
 		dk := &dynakube.DynaKube{}
 
-		SetDynatraceApiError(dk.Conditions(), testingConditionType, errors.New("boom"))
+		SetDynatraceAPIError(dk.Conditions(), testingConditionType, errors.New("boom"))
 
 		assert.True(t, IsOutdated(tp, dk, testingConditionType))
 	})

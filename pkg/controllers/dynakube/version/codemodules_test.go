@@ -118,7 +118,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		require.Error(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), cmConditionType)
-		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
@@ -198,7 +198,7 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), cmConditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }

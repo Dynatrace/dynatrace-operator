@@ -28,7 +28,7 @@ const (
 	metricsBindAddress = ":8080"
 )
 
-var nodeId, endpoint string
+var nodeID, endpoint string
 
 func New() *cobra.Command {
 	cmd := &cobra.Command{
@@ -43,7 +43,7 @@ func New() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&nodeId, "node-id", "", "node id")
+	cmd.PersistentFlags().StringVar(&nodeID, "node-id", "", "node id")
 	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
 }
 
@@ -109,7 +109,7 @@ func createManager(config *rest.Config, namespace string) (manager.Manager, erro
 
 func createCsiOptions() dtcsi.CSIOptions {
 	return dtcsi.CSIOptions{
-		NodeId:   nodeId,
+		NodeID:   nodeID,
 		Endpoint: endpoint,
 		RootDir:  dtcsi.DataPath,
 	}

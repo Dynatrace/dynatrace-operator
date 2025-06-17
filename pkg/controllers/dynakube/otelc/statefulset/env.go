@@ -21,7 +21,7 @@ const (
 
 	// env variables
 	envShards             = "SHARDS"
-	envShardId            = "SHARD_ID"
+	envShardID            = "SHARD_ID"
 	envPodNamePrefix      = "POD_NAME_PREFIX"
 	envPodName            = "POD_NAME"
 	envMyPodIP            = "MY_POD_IP"
@@ -30,7 +30,7 @@ const (
 	envEECDStoken         = "EEC_DS_TOKEN"
 	envTrustedCAs         = "TRUSTED_CAS"
 	envK8sClusterName     = "K8S_CLUSTER_NAME"
-	envK8sClusterUid      = "K8S_CLUSTER_UID"
+	envK8sClusterUID      = "K8S_CLUSTER_UID"
 	envDTentityK8sCluster = "DT_ENTITY_KUBERNETES_CLUSTER"
 	envDTendpoint         = "DT_ENDPOINT"
 	// certDirEnv is the environment variable that identifies which directory
@@ -39,8 +39,8 @@ const (
 	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
 	envCertDir          = "SSL_CERT_DIR"
 	envEECcontrollerTLS = "EXTENSIONS_CONTROLLER_TLS"
-	envHttpProxy        = "HTTP_PROXY"
-	envHttpsProxy       = "HTTPS_PROXY"
+	envHTTPProxy        = "HTTP_PROXY"
+	envHTTPSProxy       = "HTTPS_PROXY"
 	envNoProxy          = "NO_PROXY"
 
 	// Volume names and paths
@@ -58,7 +58,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 			},
 		},
 		},
-		{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
+		{Name: envShardID, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
 			},
@@ -67,13 +67,13 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort},
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
 		{Name: envK8sClusterName, Value: dk.Name},
-		{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID},
+		{Name: envK8sClusterUID, Value: dk.Status.KubeSystemUUID},
 		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
 	}
 
 	if dk.HasProxy() {
-		envs = append(envs, getDynakubeProxyEnvValue(envHttpsProxy, dk.Spec.Proxy))
-		envs = append(envs, getDynakubeProxyEnvValue(envHttpProxy, dk.Spec.Proxy))
+		envs = append(envs, getDynakubeProxyEnvValue(envHTTPSProxy, dk.Spec.Proxy))
+		envs = append(envs, getDynakubeProxyEnvValue(envHTTPProxy, dk.Spec.Proxy))
 		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getDynakubeNoProxyEnvValue(dk)})
 	}
 
@@ -95,7 +95,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs,
 			corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpApiEndpointConfigMapName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpAPIEndpointConfigMapName},
 					Key:                  envDTendpoint,
 				},
 			}},

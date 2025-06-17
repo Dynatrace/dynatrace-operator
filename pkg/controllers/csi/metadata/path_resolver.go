@@ -116,23 +116,23 @@ func (pr PathResolver) AgentRunDir(dynakubeName string) string {
 }
 
 // Deprecated kept for future migration/cleanup
-func (pr PathResolver) AgentRunDirForVolume(dynakubeName string, volumeId string) string {
-	return filepath.Join(pr.AgentRunDir(dynakubeName), volumeId)
+func (pr PathResolver) AgentRunDirForVolume(dynakubeName string, volumeID string) string {
+	return filepath.Join(pr.AgentRunDir(dynakubeName), volumeID)
 }
 
 // Deprecated kept for future migration/cleanup
-func (pr PathResolver) OverlayMappedDir(dynakubeName string, volumeId string) string {
-	return filepath.Join(pr.AgentRunDirForVolume(dynakubeName, volumeId), dtcsi.OverlayMappedDirPath)
+func (pr PathResolver) OverlayMappedDir(dynakubeName string, volumeID string) string {
+	return filepath.Join(pr.AgentRunDirForVolume(dynakubeName, volumeID), dtcsi.OverlayMappedDirPath)
 }
 
 // Deprecated kept for future migration/cleanup
-func (pr PathResolver) OverlayVarDir(dynakubeName string, volumeId string) string {
-	return filepath.Join(pr.AgentRunDirForVolume(dynakubeName, volumeId), dtcsi.OverlayVarDirPath)
+func (pr PathResolver) OverlayVarDir(dynakubeName string, volumeID string) string {
+	return filepath.Join(pr.AgentRunDirForVolume(dynakubeName, volumeID), dtcsi.OverlayVarDirPath)
 }
 
 // Deprecated kept for future migration/cleanup
-func (pr PathResolver) OverlayWorkDir(dynakubeName string, volumeId string) string {
-	return filepath.Join(pr.AgentRunDirForVolume(dynakubeName, volumeId), dtcsi.OverlayWorkDirPath)
+func (pr PathResolver) OverlayWorkDir(dynakubeName string, volumeID string) string {
+	return filepath.Join(pr.AgentRunDirForVolume(dynakubeName, volumeID), dtcsi.OverlayWorkDirPath)
 }
 
 // Deprecated kept for future migration/cleanup

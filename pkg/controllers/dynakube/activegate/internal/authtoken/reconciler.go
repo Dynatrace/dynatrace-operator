@@ -75,7 +75,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 			return r.ensureAuthTokenSecret(ctx)
 		}
 
-		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -109,7 +109,7 @@ func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
 func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]byte, error) {
 	authTokenInfo, err := r.dtc.GetActiveGateAuthToken(ctx, r.dk.Name)
 	if err != nil {
-		conditions.SetDynatraceApiError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		conditions.SetDynatraceAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
@@ -126,14 +126,14 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 		secretName,
 		secretData)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
 
 	err = r.secretQuery().WithOwner(r.dk).Create(ctx, secret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.Errorf("failed to create secret '%s': %v", secretName, err)
 	}
@@ -145,7 +145,7 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
 	if err := r.secretQuery().Delete(ctx, secret); err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return err
 	}

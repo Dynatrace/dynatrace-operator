@@ -55,8 +55,8 @@ func TestProxy(t *testing.T) {
 
 		transport := dtc.httpClient.Transport.(*http.Transport)
 
-		checkProxyForUrl(t, *transport, proxyRawURL, "http://working.url", false)
-		checkProxyForUrl(t, *transport, proxyRawURL, "https://working.url", false)
+		checkProxyForURL(t, *transport, proxyRawURL, "http://working.url", false)
+		checkProxyForURL(t, *transport, proxyRawURL, "https://working.url", false)
 	})
 	t.Run("set NO_PROXY", func(t *testing.T) {
 		dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
@@ -70,14 +70,14 @@ func TestProxy(t *testing.T) {
 
 		transport := dtc.httpClient.Transport.(*http.Transport)
 
-		checkProxyForUrl(t, *transport, proxyRawURL, "http://working.url", true)
-		checkProxyForUrl(t, *transport, proxyRawURL, "https://working.url", true)
+		checkProxyForURL(t, *transport, proxyRawURL, "http://working.url", true)
+		checkProxyForURL(t, *transport, proxyRawURL, "https://working.url", true)
 
-		checkProxyForUrl(t, *transport, proxyRawURL, "http://url.working", true)
-		checkProxyForUrl(t, *transport, proxyRawURL, "https://url.working", true)
+		checkProxyForURL(t, *transport, proxyRawURL, "http://url.working", true)
+		checkProxyForURL(t, *transport, proxyRawURL, "https://url.working", true)
 
-		checkProxyForUrl(t, *transport, proxyRawURL, "http://proxied.url", false)
-		checkProxyForUrl(t, *transport, proxyRawURL, "https://proxied.url", false)
+		checkProxyForURL(t, *transport, proxyRawURL, "http://proxied.url", false)
+		checkProxyForURL(t, *transport, proxyRawURL, "https://proxied.url", false)
 	})
 	t.Run("set incorrect proxy", func(t *testing.T) {
 		dynatraceServer, _ := createTestDynatraceServer(t, http.NotFoundHandler(), "")
@@ -105,7 +105,7 @@ func TestCerts(t *testing.T) {
 	assert.NotNil(t, transport.TLSClientConfig.RootCAs)
 }
 
-func checkProxyForUrl(t *testing.T, transport http.Transport, proxyRawURL, targetRawURL string, noProxy bool) {
+func checkProxyForURL(t *testing.T, transport http.Transport, proxyRawURL, targetRawURL string, noProxy bool) {
 	targetURL, err := url.Parse(targetRawURL)
 	require.NoError(t, err)
 

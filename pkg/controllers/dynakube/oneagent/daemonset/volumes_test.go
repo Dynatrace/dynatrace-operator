@@ -68,7 +68,7 @@ func TestPrepareVolumes(t *testing.T) {
 		volumes := prepareVolumes(dk)
 
 		assert.Contains(t, volumes, getRootVolume())
-		assert.Contains(t, volumes, buildHttpProxyVolume(dk))
+		assert.Contains(t, volumes, buildHTTPProxyVolume(dk))
 	})
 	t.Run(`has tls volume`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -78,7 +78,7 @@ func TestPrepareVolumes(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
-					TlsSecretName: "testing",
+					TLSSecretName: "testing",
 				},
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{},
@@ -130,7 +130,7 @@ func TestPrepareVolumes(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
-					TlsSecretName: "testing",
+					TLSSecretName: "testing",
 				},
 			},
 		}
@@ -198,7 +198,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
-					TlsSecretName: "testing",
+					TLSSecretName: "testing",
 				},
 			},
 		}
@@ -257,7 +257,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
-					TlsSecretName: "testing",
+					TLSSecretName: "testing",
 				},
 			},
 		}
@@ -297,8 +297,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		volumes := prepareVolumes(dk)
 		mounts := prepareVolumeMounts(dk)
 
-		assert.NotContains(t, volumes, buildHttpProxyVolume(dk))
-		assert.NotContains(t, mounts, getHttpProxyMount())
+		assert.NotContains(t, volumes, buildHTTPProxyVolume(dk))
+		assert.NotContains(t, mounts, getHTTPProxyMount())
 	})
 }
 

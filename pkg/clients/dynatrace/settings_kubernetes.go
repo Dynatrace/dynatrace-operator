@@ -16,8 +16,8 @@ import (
 type postKubernetesSettings struct {
 	*MonitoringSettings
 	Label            string `json:"label"`
-	ClusterId        string `json:"clusterId"`
-	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
+	ClusterID        string `json:"clusterId"`
+	ClusterIDEnabled bool   `json:"clusterIdEnabled"`
 	Enabled          bool   `json:"enabled"`
 }
 
@@ -31,7 +31,7 @@ type MonitoringSettings struct {
 
 type postKubernetesSettingsBody struct {
 	Value         any    `json:"value"`
-	SchemaId      string `json:"schemaId"`
+	SchemaID      string `json:"schemaId"`
 	SchemaVersion string `json:"schemaVersion"`
 	Scope         string `json:"scope,omitempty"`
 }
@@ -44,8 +44,8 @@ type kubernetesAppOptionsSettings struct {
 }
 
 const (
-	KubernetesSettingsSchemaId                  = "builtin:cloud.kubernetes"
-	AppTransitionSchemaId                       = "builtin:app-transition.kubernetes"
+	KubernetesSettingsSchemaID                  = "builtin:cloud.kubernetes"
+	AppTransitionSchemaID                       = "builtin:app-transition.kubernetes"
 	schemaVersionV1                             = "1.0.27"
 	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
 	appTransitionSchemaVersion                  = "1.0.1"
@@ -57,7 +57,7 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(ctx context.C
 		return "", err
 	}
 
-	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
+	req, err := createBaseRequest(ctx, dtc.getSettingsURL(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
 	if err != nil {
 		return "", err
 	}
@@ -79,33 +79,33 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(ctx context.C
 		return "", handleErrorArrayResponseFromAPI(resData, res.StatusCode)
 	}
 
-	var resDataJson []postSettingsResponse
+	var resDataJSON []postSettingsResponse
 
-	err = json.Unmarshal(resData, &resDataJson)
+	err = json.Unmarshal(resData, &resDataJSON)
 	if err != nil {
 		return "", err
 	}
 
-	if len(resDataJson) != 1 {
+	if len(resDataJSON) != 1 {
 		return "", errors.Errorf("response is not containing exactly one entry %s", resData)
 	}
 
-	return resDataJson[0].ObjectId, nil
+	return resDataJSON[0].ObjectID, nil
 }
 func createPostKubernetesSettings(clusterLabel, kubeSystemUUID string) postKubernetesSettings {
 	settings := postKubernetesSettings{
 		Enabled:          true,
 		Label:            clusterLabel,
-		ClusterIdEnabled: true,
-		ClusterId:        kubeSystemUUID,
+		ClusterIDEnabled: true,
+		ClusterID:        kubeSystemUUID,
 	}
 
 	return settings
 }
 
-func createBaseKubernetesSettings(postK8sSettings any, schemaId string, schemaVersion string, scope string) postKubernetesSettingsBody {
+func createBaseKubernetesSettings(postK8sSettings any, schemaID string, schemaVersion string, scope string) postKubernetesSettingsBody {
 	base := postKubernetesSettingsBody{
-		SchemaId:      schemaId,
+		SchemaID:      schemaID,
 		SchemaVersion: schemaVersion,
 		Value:         postK8sSettings,
 	}
@@ -127,7 +127,7 @@ func createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) 
 	}
 	postK8sSettings.MonitoringSettings = &ms
 
-	settings := createBaseKubernetesSettings(postK8sSettings, KubernetesSettingsSchemaId, schemaVersionV1, scope)
+	settings := createBaseKubernetesSettings(postK8sSettings, KubernetesSettingsSchemaID, schemaVersionV1, scope)
 
 	return []postKubernetesSettingsBody{settings}
 }
@@ -135,7 +135,7 @@ func createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) 
 func createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) []postKubernetesSettingsBody {
 	settings := createBaseKubernetesSettings(
 		createPostKubernetesSettings(clusterLabel, kubeSystemUUID),
-		KubernetesSettingsSchemaId,
+		KubernetesSettingsSchemaID,
 		hierarchicalMonitoringSettingsSchemaVersion,
 		scope)
 	settings.SchemaVersion = hierarchicalMonitoringSettingsSchemaVersion
@@ -150,7 +150,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(ctx context.Context,
 
 	body := createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
 
-	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(ctx, body)
+	objectID, err := dtc.performCreateOrUpdateKubernetesSetting(ctx, body)
 	if err != nil {
 		if strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
 			body = createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
@@ -161,7 +161,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(ctx context.Context,
 		}
 	}
 
-	return objectId, nil
+	return objectID, nil
 }
 
 func (dtc *dynatraceClient) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
@@ -169,12 +169,12 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesAppSetting(ctx context.Conte
 		kubernetesAppOptionsSettings{
 			EnableKubernetesApp: true,
 		},
-	}, AppTransitionSchemaId, appTransitionSchemaVersion, scope)
+	}, AppTransitionSchemaID, appTransitionSchemaVersion, scope)
 
-	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(ctx, []postKubernetesSettingsBody{settings})
+	objectID, err := dtc.performCreateOrUpdateKubernetesSetting(ctx, []postKubernetesSettingsBody{settings})
 	if err != nil {
 		return "", err
 	}
 
-	return objectId, nil
+	return objectID, nil
 }

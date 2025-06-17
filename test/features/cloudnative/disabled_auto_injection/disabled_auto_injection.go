@@ -26,7 +26,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithAnnotations(map[string]string{
 			exp.InjectionAutomaticKey: "false",
 		}),
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 	)
 

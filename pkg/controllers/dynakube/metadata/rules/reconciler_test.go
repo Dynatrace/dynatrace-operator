@@ -139,7 +139,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
 		require.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, conditions.DynatraceApiErrorReason, dk.Status.Conditions[0].Reason)
+		assert.Equal(t, conditions.DynatraceAPIErrorReason, dk.Status.Conditions[0].Reason)
 	})
 }
 

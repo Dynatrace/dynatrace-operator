@@ -72,11 +72,11 @@ func TestReconcileActiveGate(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					exp.AGAutomaticK8sApiMonitoringKey: "false",
+					exp.AGAutomaticK8sAPIMonitoringKey: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
@@ -93,21 +93,21 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
-		mockApiMonitoringReconciler := controllermock.NewReconciler(t)
-		mockApiMonitoringReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil).Maybe()
+		mockAPIMonitoringReconciler := controllermock.NewReconciler(t)
+		mockAPIMonitoringReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil).Maybe()
 
 		controller := &Controller{
 			client:                         fakeClient,
 			apiReader:                      fakeClient,
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder: createApiMonitoringReconcilerBuilder(mockApiMonitoringReconciler),
+			apiMonitoringReconcilerBuilder: createAPIMonitoringReconcilerBuilder(mockAPIMonitoringReconciler),
 		}
 
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{})
 		err := controller.reconcileActiveGate(ctx, dk, mockClient, nil)
 		require.NoError(t, err)
 
-		mockApiMonitoringReconciler.AssertNotCalled(t, "Reconcile", mock.Anything)
+		mockAPIMonitoringReconciler.AssertNotCalled(t, "Reconcile", mock.Anything)
 	})
 	t.Run(`reconcile automatic kubernetes api monitoring`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -115,11 +115,11 @@ func TestReconcileActiveGate(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					exp.AGAutomaticK8sApiMonitoringKey: "true",
+					exp.AGAutomaticK8sAPIMonitoringKey: "true",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
@@ -138,19 +138,19 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 
-		mockApiMonitoringReconciler := controllermock.NewReconciler(t)
-		mockApiMonitoringReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
+		mockAPIMonitoringReconciler := controllermock.NewReconciler(t)
+		mockAPIMonitoringReconciler.On("Reconcile", mock.Anything, mock.Anything).Return(nil)
 		controller := &Controller{
 			client:                         fakeClient,
 			apiReader:                      fakeClient,
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder: createApiMonitoringReconcilerBuilder(mockApiMonitoringReconciler),
+			apiMonitoringReconcilerBuilder: createAPIMonitoringReconcilerBuilder(mockAPIMonitoringReconciler),
 		}
 
 		err := controller.reconcileActiveGate(ctx, dk, mockClient, nil)
 		require.NoError(t, err)
 
-		mockApiMonitoringReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockAPIMonitoringReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)
 	})
 	t.Run(`reconcile automatic kubernetes api monitoring with custom cluster name`, func(t *testing.T) {
@@ -161,12 +161,12 @@ func TestReconcileActiveGate(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					exp.AGAutomaticK8sApiMonitoringKey:            "true",
-					exp.AGAutomaticK8sApiMonitoringClusterNameKey: clusterLabel,
+					exp.AGAutomaticK8sAPIMonitoringKey:            "true",
+					exp.AGAutomaticK8sAPIMonitoringClusterNameKey: clusterLabel,
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,

@@ -9,9 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 )
 
-type enrichmentJson struct {
+type enrichmentJSON struct {
 	ContainerName   string `json:"k8s.container.name"`
-	PodUid          string `json:"k8s.pod.uid"`
+	PodUID          string `json:"k8s.pod.uid"`
 	PodName         string `json:"k8s.pod.name"`
 	NodeName        string `json:"k8s.node.name"`
 	NamespaceName   string `json:"k8s.namespace.name"`
@@ -30,15 +30,15 @@ type enrichmentJson struct {
 }
 
 var (
-	enrichmentJsonPathTemplate  = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentInitJsonFilenameTemplate)
+	enrichmentJSONPathTemplate  = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentInitJSONFilenameTemplate)
 	enrichmentPropsPathTemplate = filepath.Join(consts.EnrichmentInitPath, consts.EnrichmentInitPropertiesFilenameTemplate)
 )
 
 func (runner *Runner) createEnrichmentFiles() error {
 	for _, container := range runner.env.Containers {
-		data := enrichmentJson{
+		data := enrichmentJSON{
 			ContainerName: container.Name,
-			PodUid:        runner.env.K8PodUID,
+			PodUID:        runner.env.K8PodUID,
 			PodName:       runner.env.K8PodName,
 			NodeName:      runner.env.K8NodeName,
 			NamespaceName: runner.env.K8Namespace,
@@ -74,7 +74,7 @@ func (runner *Runner) createEnrichmentFiles() error {
 			return err
 		}
 
-		err = runner.createConfigFile(fmt.Sprintf(enrichmentJsonPathTemplate, container.Name), string(jsonContent), true)
+		err = runner.createConfigFile(fmt.Sprintf(enrichmentJSONPathTemplate, container.Name), string(jsonContent), true)
 		if err != nil {
 			return err
 		}

@@ -42,7 +42,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	_, err := k8ssecret.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to check existence of extension secret")
-		conditions.SetKubeApiError(r.dk.Conditions(), secretConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
 
 		return err
 	}
@@ -75,7 +75,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		_, err = k8ssecret.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newSecret)
 		if err != nil {
 			log.Info("failed to create/update extension secret")
-			conditions.SetKubeApiError(r.dk.Conditions(), secretConditionType, err)
+			conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
 
 			return err
 		}

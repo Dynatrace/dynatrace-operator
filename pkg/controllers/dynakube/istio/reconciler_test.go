@@ -412,7 +412,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 
 		// advance time to be outside api threshold
 		rec2 := r.(*reconciler)
-		time := rec2.timeProvider.Now().Add(dk.ApiRequestThreshold() * 2)
+		time := rec2.timeProvider.Now().Add(dk.APIRequestThreshold() * 2)
 		rec2.timeProvider.Set(time)
 		err = rec2.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
@@ -494,7 +494,7 @@ func createTestDynaKube() *dynakube.DynaKube {
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
-			DynatraceApiRequestThreshold: ptr.To(uint16(15)),
+			DynatraceAPIRequestThreshold: ptr.To(uint16(15)),
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{

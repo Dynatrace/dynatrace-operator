@@ -15,15 +15,15 @@ func CreateService(dk *dynakube.DynaKube) *corev1.Service {
 
 	ports = append(ports,
 		corev1.ServicePort{
-			Name:       consts.HttpsServicePortName,
+			Name:       consts.HTTPSServicePortName,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       consts.HttpsServicePort,
-			TargetPort: intstr.FromString(consts.HttpsServicePortName),
+			Port:       consts.HTTPSServicePort,
+			TargetPort: intstr.FromString(consts.HTTPSServicePortName),
 		}, corev1.ServicePort{
-			Name:       consts.HttpServicePortName,
+			Name:       consts.HTTPServicePortName,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       consts.HttpServicePort,
-			TargetPort: intstr.FromString(consts.HttpServicePortName),
+			Port:       consts.HTTPServicePort,
+			TargetPort: intstr.FromString(consts.HTTPServicePortName),
 		})
 
 	coreLabels := labels.NewCoreLabels(dk.Name, labels.ActiveGateComponentLabel)

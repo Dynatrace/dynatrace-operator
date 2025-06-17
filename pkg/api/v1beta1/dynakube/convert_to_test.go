@@ -110,7 +110,7 @@ func TestConvertTo(t *testing.T) {
 
 func getMovedFeatureFlagList() []string {
 	return []string{
-		exp.ApiRequestThresholdKey,
+		exp.APIRequestThresholdKey,
 		exp.OASecCompProfileKey,
 		exp.InjectionMetadataEnrichmentKey,
 	}
@@ -137,11 +137,11 @@ func getOldDynakubeBase() DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				exp.ApiRequestThresholdKey:         "42",
+				exp.APIRequestThresholdKey:         "42",
 				exp.OASecCompProfileKey:            "seccomp",
 				exp.InjectionMetadataEnrichmentKey: "false",
 				exp.AGIgnoreProxyKey:               "true",
-				exp.AGAutomaticK8sApiMonitoringKey: "true",
+				exp.AGAutomaticK8sAPIMonitoringKey: "true",
 				exp.CSIMaxFailedMountAttemptsKey:   "9",
 			},
 			Labels: map[string]string{

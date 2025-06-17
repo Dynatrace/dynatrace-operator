@@ -20,11 +20,11 @@ import (
 
 const (
 	testRegistry              = "testing.dev.dynatracelabs.com"
-	testApiUrl                = "https://" + testRegistry + "/api"
-	testOtherApiUrl           = "https://" + testRegistry + "/otherapi"
+	testAPIURL                = "https://" + testRegistry + "/api"
+	testOtherAPIURL           = "https://" + testRegistry + "/otherapi"
 	testDynatraceSecret       = testDynakube
 	testOtherDynatraceSecret  = "otherDynatraceSecret"
-	testApiToken              = "apiTokenValue"
+	testAPIToken              = "apiTokenValue"
 	testPaasToken             = "passTokenValue"
 	testSecretName            = "customSecret"
 	testCustomPullSecretToken = "secretTokenValue"
@@ -106,7 +106,7 @@ func TestDynatraceSecret(t *testing.T) {
 			Build()
 
 		dk := testNewDynakubeBuilder(testNamespace, testDynakube).build()
-		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dk)
+		_, err := checkIfDynatraceAPISecretHasAPIToken(context.Background(), getNullLogger(t), clt, dk)
 		require.Errorf(t, err, "Dynatrace secret found")
 	})
 
@@ -117,11 +117,11 @@ func TestDynatraceSecret(t *testing.T) {
 			WithObjects(
 				dk,
 				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testApiToken).dataAppend("paasToken", testPaasToken).build(),
+				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testAPIToken).dataAppend("paasToken", testPaasToken).build(),
 			).
 			Build()
 
-		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dk)
+		_, err := checkIfDynatraceAPISecretHasAPIToken(context.Background(), getNullLogger(t), clt, dk)
 		require.NoErrorf(t, err, "Dynatrace secret does not have required tokens")
 	})
 	t.Run("Dynatrace secret - apiToken is missing", func(t *testing.T) {
@@ -135,7 +135,7 @@ func TestDynatraceSecret(t *testing.T) {
 			).
 			Build()
 
-		_, err := checkIfDynatraceApiSecretHasApiToken(context.Background(), getNullLogger(t), clt, dk)
+		_, err := checkIfDynatraceAPISecretHasAPIToken(context.Background(), getNullLogger(t), clt, dk)
 		require.Errorf(t, err, "Dynatrace secret does not have apiToken")
 	})
 }
@@ -243,8 +243,8 @@ func testNewDynakubeBuilder(namespace string, dynakubeName string) *testDynaKube
 	}
 }
 
-func (builder *testDynaKubeBuilder) withApiUrl(apiUrl string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.APIURL = apiUrl
+func (builder *testDynaKubeBuilder) withAPIURL(apiURL string) *testDynaKubeBuilder {
+	builder.dynakube.Spec.APIURL = apiURL
 
 	return builder
 }

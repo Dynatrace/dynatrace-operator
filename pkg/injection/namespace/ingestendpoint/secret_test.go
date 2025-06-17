@@ -21,13 +21,13 @@ import (
 
 const (
 	testPaasToken              = "test-paas-token"
-	testApiToken               = "test-api-token"
+	testAPIToken               = "test-api-token"
 	testDataIngestToken        = "test-data-ingest-token"
 	testUpdatedDataIngestToken = "updated-test-data-ingest-token"
 
 	testTenant        = "tenant"
-	testApiUrl        = "https://tenant.test/api"
-	testUpdatedApiUrl = "https://tenant.updated-test/api"
+	testAPIURL        = "https://tenant.test/api"
+	testUpdatedAPIURL = "https://tenant.updated-test/api"
 
 	testMetadataEnrichmentSecretWithMetrics = `DT_METRICS_INGEST_URL=https://tenant.test/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
@@ -35,14 +35,14 @@ DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 	testUpdatedTokenMetadataEnrichmentSecretWithMetrics = `DT_METRICS_INGEST_URL=https://tenant.test/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=updated-test-data-ingest-token
 `
-	testUpdatedApiUrlMetadataEnrichmentSecretWithMetrics = `DT_METRICS_INGEST_URL=https://tenant.updated-test/api/v2/metrics/ingest
+	testUpdatedAPIURLMetadataEnrichmentSecretWithMetrics = `DT_METRICS_INGEST_URL=https://tenant.updated-test/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
 
 	testMetadataEnrichmentSecretLocalAGWithMetrics = `DT_METRICS_INGEST_URL=http://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
-	testUpdatedApiUrlMetadataEnrichmentSecretLocalAgWithMetrics = `DT_METRICS_INGEST_URL=http://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
+	testUpdatedAPIURLMetadataEnrichmentSecretLocalAgWithMetrics = `DT_METRICS_INGEST_URL=http://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
 
@@ -123,7 +123,7 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 			err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
 			require.NoError(t, err)
 
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testUpdatedApiUrlMetadataEnrichmentSecretWithMetrics)
+			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testUpdatedAPIURLMetadataEnrichmentSecretWithMetrics)
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName})
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: consts.EnrichmentEndpointSecretName})
 		}
@@ -183,8 +183,8 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 
 			testGenerateEndpointsSecret(t, newInstance, fakeClient)
 
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testUpdatedApiUrlMetadataEnrichmentSecretWithMetrics)
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName}, testUpdatedApiUrlMetadataEnrichmentSecretWithMetrics)
+			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testUpdatedAPIURLMetadataEnrichmentSecretWithMetrics)
+			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName}, testUpdatedAPIURLMetadataEnrichmentSecretWithMetrics)
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: consts.EnrichmentEndpointSecretName})
 		}
 	})
@@ -211,8 +211,8 @@ func TestGenerateMetadataEnrichmentSecret_ForDynakube(t *testing.T) {
 
 			testGenerateEndpointsSecret(t, newInstance, fakeClient)
 
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testUpdatedApiUrlMetadataEnrichmentSecretLocalAgWithMetrics)
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName}, testUpdatedApiUrlMetadataEnrichmentSecretLocalAgWithMetrics)
+			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: consts.EnrichmentEndpointSecretName}, testUpdatedAPIURLMetadataEnrichmentSecretLocalAgWithMetrics)
+			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: consts.EnrichmentEndpointSecretName}, testUpdatedAPIURLMetadataEnrichmentSecretLocalAgWithMetrics)
 
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: consts.EnrichmentEndpointSecretName})
 		}
@@ -286,7 +286,7 @@ func updateTestSecret(t *testing.T, fakeClient client.Client) {
 			Namespace: testNamespaceDynatrace,
 		},
 		Data: map[string][]byte{
-			"apiToken":        []byte(testApiToken),
+			"apiToken":        []byte(testAPIToken),
 			"paasToken":       []byte(testPaasToken),
 			"dataIngestToken": []byte(testUpdatedDataIngestToken),
 		},
@@ -303,7 +303,7 @@ func updatedTestDynakube() *dynakube.DynaKube {
 			Namespace: testNamespaceDynatrace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:             testUpdatedApiUrl,
+			APIURL:             testUpdatedAPIURL,
 			MetadataEnrichment: dynakube.MetadataEnrichment{Enabled: ptr.To(true)},
 		},
 	}
@@ -319,7 +319,7 @@ func updatedTestDynakubeWithMetricsIngestCapability(capabilities []activegate.Ca
 			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},
-			APIURL:             testUpdatedApiUrl,
+			APIURL:             testUpdatedAPIURL,
 			MetadataEnrichment: dynakube.MetadataEnrichment{Enabled: ptr.To(true)},
 		},
 	}
@@ -330,7 +330,7 @@ func updateTestDynakube(t *testing.T, fakeClient client.Client) {
 	err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: testDynakubeName, Namespace: testNamespaceDynatrace}, &dk)
 	require.NoError(t, err)
 
-	dk.Spec.APIURL = testUpdatedApiUrl
+	dk.Spec.APIURL = testUpdatedAPIURL
 
 	err = fakeClient.Update(context.TODO(), &dk)
 	require.NoError(t, err)
@@ -343,7 +343,7 @@ func buildTestDynakube() *dynakube.DynaKube {
 			Namespace: testNamespaceDynatrace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:             testApiUrl,
+			APIURL:             testAPIURL,
 			MetadataEnrichment: dynakube.MetadataEnrichment{Enabled: ptr.To(true)},
 		},
 	}
@@ -359,7 +359,7 @@ func buildTestDynakubeWithMetricsIngestCapability(capabilities []activegate.Capa
 			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled: ptr.To(true),
 			},
@@ -398,7 +398,7 @@ func buildTestClientBeforeGenerate(dk *dynakube.DynaKube) client.Client {
 				Namespace: testNamespaceDynatrace,
 			},
 			Data: map[string][]byte{
-				"apiToken":        []byte(testApiToken),
+				"apiToken":        []byte(testAPIToken),
 				"paasToken":       []byte(testPaasToken),
 				"dataIngestToken": []byte(testDataIngestToken),
 			},
@@ -452,7 +452,7 @@ func buildTestClientAfterGenerate(dk *dynakube.DynaKube) client.Client {
 				Namespace: testNamespaceDynatrace,
 			},
 			Data: map[string][]byte{
-				"apiToken":        []byte(testApiToken),
+				"apiToken":        []byte(testAPIToken),
 				"paasToken":       []byte(testPaasToken),
 				"dataIngestToken": []byte(testDataIngestToken),
 			},

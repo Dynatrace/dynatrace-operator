@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (installer Installer) downloadOneAgentFromUrl(ctx context.Context, tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentFromURL(ctx context.Context, tmpFile afero.File) error {
 	switch {
-	case installer.props.Url != "":
-		if err := installer.downloadOneAgentViaInstallerUrl(ctx, tmpFile); err != nil {
+	case installer.props.URL != "":
+		if err := installer.downloadOneAgentViaInstallerURL(ctx, tmpFile); err != nil {
 			return errors.WithStack(err)
 		}
 	case installer.props.TargetVersion == VersionLatest:
@@ -73,8 +73,8 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 	return nil
 }
 
-func (installer Installer) downloadOneAgentViaInstallerUrl(ctx context.Context, tmpFile afero.File) error {
-	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.Url)
+func (installer Installer) downloadOneAgentViaInstallerURL(ctx context.Context, tmpFile afero.File) error {
+	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.URL)
 
-	return installer.dtc.GetAgentViaInstallerUrl(ctx, installer.props.Url, tmpFile)
+	return installer.dtc.GetAgentViaInstallerURL(ctx, installer.props.URL, tmpFile)
 }

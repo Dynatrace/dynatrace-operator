@@ -39,7 +39,7 @@ type DynaKubeStatus struct { //nolint:revive
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
 	// Observed state of Dynatrace API
-	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
+	DynatraceAPI DynatraceAPIStatus `json:"dynatraceApi,omitempty"`
 
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
@@ -50,14 +50,14 @@ type DynaKubeStatus struct { //nolint:revive
 	// KubernetesClusterMEID contains the ID of the monitored entity that points to the Kubernetes cluster
 	KubernetesClusterMEID string `json:"kubernetesClusterMEID,omitempty"`
 
-	// KubernetesClusterName contains the display name (also know as label) of the monitored entity that points to the Kubernetes cluster
+	// KubernetesClusterName contains the display name (also known as label) of the monitored entity that points to the Kubernetes cluster
 	KubernetesClusterName string `json:"kubernetesClusterName,omitempty"`
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type DynatraceApiStatus struct {
+type DynatraceAPIStatus struct {
 	// Time of the last token request
 	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
 }

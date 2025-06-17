@@ -36,7 +36,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorDuplicateOneAgentArgument = "%s has been provided multiple times. Only --set-host-property and --set-host-tag arguments may be provided multiple times."
 
-	errorHostIdSourceArgumentInCloudNative = "Setting --set-host-id-source in CloudNativFullstack mode is not allowed."
+	errorHostIDSourceArgumentInCloudNative = "Setting --set-host-id-source in CloudNativFullstack mode is not allowed."
 
 	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
 )
@@ -105,7 +105,7 @@ func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dyn
 }
 
 func hasLogMonitoringSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
-	return dk1.LogMonitoring().IsStandalone() && dk1.ApiUrl() == dk2.ApiUrl() &&
+	return dk1.LogMonitoring().IsStandalone() && dk1.APIURL() == dk2.APIURL() &&
 		(dk2.OneAgent().IsDaemonsetRequired() || dk2.LogMonitoring().IsStandalone()) &&
 		hasConflictingMatchLabels(dk1.OneAgent().GetNodeSelector(dk1.LogMonitoring().GetNodeSelector()),
 			dk2.OneAgent().GetNodeSelector(dk2.LogMonitoring().GetNodeSelector()))
@@ -113,7 +113,7 @@ func hasLogMonitoringSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
 
 func hasOneAgentSelectorConflict(dk1, dk2 *dynakube.DynaKube) bool {
 	return dk1.OneAgent().IsDaemonsetRequired() &&
-		(dk2.OneAgent().IsDaemonsetRequired() || dk2.LogMonitoring().IsStandalone() && dk1.ApiUrl() == dk2.ApiUrl()) &&
+		(dk2.OneAgent().IsDaemonsetRequired() || dk2.LogMonitoring().IsStandalone() && dk1.APIURL() == dk2.APIURL()) &&
 		hasConflictingMatchLabels(dk1.OneAgent().GetNodeSelector(dk1.LogMonitoring().GetNodeSelector()),
 			dk2.OneAgent().GetNodeSelector(dk2.LogMonitoring().GetNodeSelector()))
 }
@@ -169,7 +169,7 @@ func hasOneAgentVolumeStorageEnabled(dk *dynakube.DynaKube) (isEnabled bool, isS
 }
 
 func unsupportedOneAgentImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if env.FindEnvVar(dk.OneAgent().GetEnvironment(), oneagentInstallerScriptUrlEnvVarName) != nil ||
+	if env.FindEnvVar(dk.OneAgent().GetEnvironment(), oneagentInstallerScriptURLEnvVarName) != nil ||
 		env.FindEnvVar(dk.OneAgent().GetEnvironment(), oneagentInstallerTokenEnvVarName) != nil {
 		return warningOneAgentInstallerEnvVars
 	}
@@ -232,7 +232,7 @@ func duplicateOneAgentArguments(_ context.Context, _ *Validator, dk *dynakube.Dy
 	return ""
 }
 
-func forbiddenHostIdSourceArgument(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	args := dk.OneAgent().GetArgumentsMap()
 	if args == nil {
 		return ""
@@ -240,7 +240,7 @@ func forbiddenHostIdSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 
 	for key := range args {
 		if dk.OneAgent().IsCloudNativeFullstackMode() && key == "--set-host-id-source" {
-			return errorHostIdSourceArgumentInCloudNative
+			return errorHostIDSourceArgumentInCloudNative
 		}
 	}
 

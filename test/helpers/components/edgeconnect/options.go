@@ -36,9 +36,9 @@ func WithName(name string) Option {
 	}
 }
 
-func WithApiServer(apiURL string) Option {
+func WithAPIServer(apiURL string) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
-		ec.Spec.ApiServer = apiURL
+		ec.Spec.APIServer = apiURL
 	}
 }
 

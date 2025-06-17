@@ -30,17 +30,17 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUid       string `yaml:"tenantUid"`
-	ApiUrl          string `yaml:"apiUrl"`
-	ApiToken        string `yaml:"apiToken"`
+	TenantUID       string `yaml:"tenantUid"`
+	APIURL          string `yaml:"apiUrl"`
+	APIToken        string `yaml:"apiToken"`
 	DataIngestToken string `yaml:"dataIngestToken"`
 }
 
 type EdgeConnectSecret struct {
-	TenantUid         string `yaml:"tenantUid"`
+	TenantUID         string `yaml:"tenantUid"`
 	Name              string `yaml:"name"`
-	ApiServer         string `yaml:"apiServer"`
-	OauthClientId     string `yaml:"oAuthClientId"`
+	APIServer         string `yaml:"apiServer"`
+	OauthClientID     string `yaml:"oAuthClientId"`
 	OauthClientSecret string `yaml:"oAuthClientSecret"`
 	Resource          string `yaml:"resource"`
 }
@@ -114,7 +114,7 @@ func CreateTenantSecret(secretConfig Secret, name, namespace string) features.Fu
 				Namespace: namespace,
 			},
 			Data: map[string][]byte{
-				"apiToken": []byte(secretConfig.ApiToken),
+				"apiToken": []byte(secretConfig.APIToken),
 			},
 		}
 
@@ -164,7 +164,7 @@ func CreateClientSecret(secretConfig *EdgeConnectSecret, name, namespace string)
 				Namespace: namespace,
 			},
 			Data: map[string][]byte{
-				"oauth-client-id":     []byte(secretConfig.OauthClientId),
+				"oauth-client-id":     []byte(secretConfig.OauthClientID),
 				"oauth-client-secret": []byte(secretConfig.OauthClientSecret),
 			},
 		}

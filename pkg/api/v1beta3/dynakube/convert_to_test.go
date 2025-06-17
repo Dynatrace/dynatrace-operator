@@ -249,7 +249,7 @@ func getOldDynakubeBase() DynaKube {
 			Namespace: "namespace",
 			Annotations: map[string]string{
 				exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
-				exp.AGAutomaticK8sApiMonitoringKey: "true",
+				exp.AGAutomaticK8sAPIMonitoringKey: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",

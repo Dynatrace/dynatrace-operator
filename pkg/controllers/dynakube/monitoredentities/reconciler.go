@@ -54,7 +54,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	newestEntity := findLatestEntity(monitoredEntities)
-	r.dk.Status.KubernetesClusterMEID = newestEntity.EntityId
+	r.dk.Status.KubernetesClusterMEID = newestEntity.EntityID
 	r.dk.Status.KubernetesClusterName = newestEntity.DisplayName
 	conditions.SetStatusUpdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is up to date")
 

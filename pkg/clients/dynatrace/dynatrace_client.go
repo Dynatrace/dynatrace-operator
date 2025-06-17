@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const ApiTokenHeader = "Api-Token "
+const APITokenHeader = "Api-Token "
 
 // client implements the Client interface.
 type dynatraceClient struct {
@@ -39,9 +39,9 @@ type dynatraceClient struct {
 type tokenType int
 
 const (
-	dynatraceApiToken tokenType = iota
+	dynatraceAPIToken tokenType = iota
 	dynatracePaaSToken
-	installerUrlToken     // in this case we don't care about the token
+	installerURLToken     // in this case we don't care about the token
 	defaultMaxResponseLen = 1000
 )
 
@@ -57,19 +57,19 @@ func (dtc *dynatraceClient) makeRequest(ctx context.Context, url string, tokenTy
 	var authHeader string
 
 	switch tokenType {
-	case dynatraceApiToken:
+	case dynatraceAPIToken:
 		if dtc.apiToken == "" {
 			return nil, errors.Errorf("not able to set token since api token is empty for request: %s", url)
 		}
 
-		authHeader = ApiTokenHeader + dtc.apiToken
+		authHeader = APITokenHeader + dtc.apiToken
 	case dynatracePaaSToken:
 		if dtc.paasToken == "" {
 			return nil, errors.Errorf("not able to set token since paas token is empty for request: %s", url)
 		}
 
-		authHeader = ApiTokenHeader + dtc.paasToken
-	case installerUrlToken:
+		authHeader = APITokenHeader + dtc.paasToken
+	case installerURLToken:
 		return dtc.httpClient.Do(req)
 	default:
 		return nil, errors.Errorf("unknown token type (%d), unable to determine token to set in headers", tokenType)
@@ -87,7 +87,7 @@ func createBaseRequest(ctx context.Context, url, method, apiToken string, body i
 	}
 
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", ApiTokenHeader+apiToken)
+	req.Header.Add("Authorization", APITokenHeader+apiToken)
 
 	if method == http.MethodPost {
 		req.Header.Add("Content-Type", "application/json")

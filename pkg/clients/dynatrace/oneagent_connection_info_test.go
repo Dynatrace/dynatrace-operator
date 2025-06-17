@@ -16,13 +16,13 @@ const (
 
 func Test_GetOneAgentConnectionInfo(t *testing.T) {
 	ctx := context.Background()
-	oneAgentJsonResponse := &oneAgentConnectionInfoJsonResponse{
+	oneAgentJSONResponse := &oneAgentConnectionInfoJSONResponse{
 		TenantUUID:                      testTenantUUID,
 		TenantToken:                     testTenantToken,
 		CommunicationEndpoints:          []string{testCommunicationEndpoint},
 		FormattedCommunicationEndpoints: testCommunicationEndpoint,
 	}
-	oneAgentJsonResponseWithDups := &oneAgentConnectionInfoJsonResponse{
+	oneAgentJSONResponseWithDups := &oneAgentConnectionInfoJSONResponse{
 		TenantUUID:                      testTenantUUID,
 		TenantToken:                     testTenantToken,
 		CommunicationEndpoints:          []string{testCommunicationEndpoint, testCommunicationEndpoint},
@@ -45,7 +45,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 	}
 
 	t.Run("no network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJSONResponse), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
@@ -56,7 +56,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 	})
 
 	t.Run("with duplicates", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponseWithDups), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJSONResponseWithDups), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
@@ -66,7 +66,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
 	})
 	t.Run("with network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "nz")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJSONResponse), "nz")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
@@ -76,13 +76,13 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
 	})
 	t.Run("no communication hosts", func(t *testing.T) {
-		oneAgentJsonResponse.FormattedCommunicationEndpoints = ""
-		oneAgentJsonResponse.CommunicationEndpoints = []string{}
+		oneAgentJSONResponse.FormattedCommunicationEndpoints = ""
+		oneAgentJSONResponse.CommunicationEndpoints = []string{}
 
 		expectedOneAgentConnectionInfo.CommunicationHosts = []CommunicationHost{}
 		expectedOneAgentConnectionInfo.Endpoints = ""
 
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJSONResponse), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
@@ -92,7 +92,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
 	})
 	t.Run("with non-existent network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJSONResponse), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo(ctx)
@@ -102,7 +102,7 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
 	})
 	t.Run("handle malformed json", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(oneAgentConnectionInfoEndpoint), "")
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJSON(oneAgentConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
 		connectionInfo, err := faultyDynatraceClient.GetOneAgentConnectionInfo(ctx)

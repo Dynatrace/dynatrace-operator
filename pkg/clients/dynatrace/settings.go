@@ -18,7 +18,7 @@ type monitoredEntitiesResponse struct {
 }
 
 type MonitoredEntity struct {
-	EntityId    string `json:"entityId"`
+	EntityID    string `json:"entityId"`
 	DisplayName string `json:"displayName"`
 	LastSeenTms int64  `json:"lastSeenTms"`
 }
@@ -33,7 +33,7 @@ type GetLogMonSettingsResponse struct {
 }
 
 type postSettingsResponse struct {
-	ObjectId string `json:"objectId"`
+	ObjectID string `json:"objectId"`
 }
 
 const (
@@ -58,7 +58,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Co
 		return nil, errors.New("no kube-system namespace UUID given")
 	}
 
-	req, err := createBaseRequest(ctx, dtc.getEntitiesUrl(), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(ctx, dtc.getEntitiesURL(), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -79,29 +79,29 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Co
 		return nil, err
 	}
 
-	var resDataJson monitoredEntitiesResponse
+	var resDataJSON monitoredEntitiesResponse
 
-	err = dtc.unmarshalToJson(res, &resDataJson)
+	err = dtc.unmarshalToJSON(res, &resDataJSON)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error parsing response body")
 	}
 
-	return resDataJson.Entities, nil
+	return resDataJSON.Entities, nil
 }
 
-func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *MonitoredEntity, schemaId string) (GetSettingsResponse, error) {
+func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *MonitoredEntity, schemaID string) (GetSettingsResponse, error) {
 	if monitoredEntity == nil {
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}
 
-	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(ctx, dtc.getSettingsURL(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetSettingsResponse{}, err
 	}
 
 	q := req.URL.Query()
-	q.Add(schemaIDsQueryParam, schemaId)
-	q.Add(scopesQueryParam, monitoredEntity.EntityId)
+	q.Add(schemaIDsQueryParam, schemaID)
+	q.Add(scopesQueryParam, monitoredEntity.EntityID)
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
@@ -113,14 +113,14 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, m
 		return GetSettingsResponse{}, err
 	}
 
-	var resDataJson GetSettingsResponse
+	var resDataJSON GetSettingsResponse
 
-	err = dtc.unmarshalToJson(res, &resDataJson)
+	err = dtc.unmarshalToJSON(res, &resDataJSON)
 	if err != nil {
 		return GetSettingsResponse{}, errors.WithMessage(err, "error parsing response body")
 	}
 
-	return resDataJson, nil
+	return resDataJSON, nil
 }
 
 func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (GetLogMonSettingsResponse, error) {
@@ -128,13 +128,13 @@ func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitor
 		return GetLogMonSettingsResponse{TotalCount: 0}, nil
 	}
 
-	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(ctx, dtc.getSettingsURL(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetLogMonSettingsResponse{}, err
 	}
 
 	q := req.URL.Query()
-	q.Add(schemaIDsQueryParam, logMonitoringSettingsSchemaId)
+	q.Add(schemaIDsQueryParam, logMonitoringSettingsSchemaID)
 	q.Add(scopesQueryParam, monitoredEntity)
 	req.URL.RawQuery = q.Encode()
 
@@ -147,23 +147,23 @@ func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitor
 		return GetLogMonSettingsResponse{}, err
 	}
 
-	var resDataJson GetLogMonSettingsResponse
+	var resDataJSON GetLogMonSettingsResponse
 
-	err = dtc.unmarshalToJson(res, &resDataJson)
+	err = dtc.unmarshalToJSON(res, &resDataJSON)
 	if err != nil {
 		return GetLogMonSettingsResponse{}, errors.WithMessage(err, "error parsing response body")
 	}
 
-	return resDataJson, nil
+	return resDataJSON, nil
 }
 
-func (dtc *dynatraceClient) unmarshalToJson(res *http.Response, resDataJson any) error {
+func (dtc *dynatraceClient) unmarshalToJSON(res *http.Response, resDataJSON any) error {
 	resData, err := dtc.getServerResponseData(res)
 	if err != nil {
 		return errors.WithMessage(err, "error reading response body")
 	}
 
-	err = json.Unmarshal(resData, resDataJson)
+	err = json.Unmarshal(resData, resDataJSON)
 	if err != nil {
 		return errors.WithMessage(err, "error parsing response body")
 	}

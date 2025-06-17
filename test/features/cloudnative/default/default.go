@@ -53,7 +53,7 @@ func Feature(t *testing.T, istioEnabled bool, withCSI bool) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []dynakube.Option{
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
+		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 	}
 	if istioEnabled {

@@ -31,17 +31,17 @@ const (
 	serviceAccountName = "dynatrace-extensions-controller"
 
 	// Env variable names
-	envTenantId                     = "TenantId"
-	envServerUrl                    = "ServerUrl"
+	envTenantID                     = "TenantId"
+	envServerURL                    = "ServerUrl"
 	envEecTokenPath                 = "EecTokenPath"
 	envEecIngestPort                = "EecIngestPort"
 	envExtensionsModuleExecPathName = "ExtensionsModuleExecPath"
 	envDsInstallDirName             = "DsInstallDir"
-	envK8sClusterId                 = "K8sClusterUID"
+	envK8sClusterID                 = "K8sClusterUID"
 	envActiveGateTrustedCertName    = "ActiveGateTrustedCert"
-	envK8sExtServiceUrl             = "K8sExtServiceUrl"
-	envHttpsCertPathPem             = "DsHttpsCertPathPem"
-	envHttpsPrivKeyPathPem          = "DsHttpsPrivKeyPathPem"
+	envK8sExtServiceURL             = "K8sExtServiceUrl"
+	envHTTPSCertPathPem             = "DsHttpsCertPathPem"
+	envHTTPSPrivKeyPathPem          = "DsHttpsPrivKeyPathPem"
 	envDSTokenPath                  = "DSTokenPath"
 	envRuntimeConfigMountPath       = "RuntimeConfigMountPath"
 	envCustomCertificateMountPath   = "ExtensionCustomCertificateMountPath"
@@ -49,8 +49,8 @@ const (
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
-	envEecHttpsCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
-	envEecHttpsPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
+	envEecHTTPSCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
+	envEecHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
 	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
 	customCertificateMountPath         = "/var/lib/dynatrace/remotepluginmodule/secrets/extensions"
@@ -68,12 +68,12 @@ const (
 	httpsCertVolumeName                = "https-certs"
 	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
 	runtimeConfigurationFilename       = "runtimeConfiguration"
-	serviceUrlScheme                   = "https://"
+	serviceURLScheme                   = "https://"
 
 	// misc
 	logVolumeName = "log"
 
-	userGroupId int64 = 1001
+	userGroupID int64 = 1001
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -106,13 +106,13 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	)
 
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
 	if err := hasher.AddAnnotation(desiredSts); err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err
 	}
@@ -120,7 +120,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.ExtensionsExecutionControllerStatefulsetName() + " statefulset")
-		conditions.SetKubeApiError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err
 	}
@@ -214,8 +214,8 @@ func buildSecurityContext() *corev1.SecurityContext {
 			},
 		},
 		Privileged:               ptr.To(false),
-		RunAsUser:                ptr.To(userGroupId),
-		RunAsGroup:               ptr.To(userGroupId),
+		RunAsUser:                ptr.To(userGroupID),
+		RunAsGroup:               ptr.To(userGroupID),
 		RunAsNonRoot:             ptr.To(true),
 		ReadOnlyRootFilesystem:   ptr.To(true),
 		AllowPrivilegeEscalation: ptr.To(false),
@@ -233,7 +233,7 @@ func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
 	}
 
 	if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
-		podSecurityContext.FSGroup = ptr.To(userGroupId)
+		podSecurityContext.FSGroup = ptr.To(userGroupID)
 	}
 
 	return podSecurityContext
@@ -241,17 +241,17 @@ func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
-		{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
-		{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
+		{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
+		{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecConsts.TokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
-		{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID},
-		{Name: envK8sExtServiceUrl, Value: serviceUrlScheme + dk.ExtensionsServiceNameFQDN()},
+		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},
+		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.ExtensionsServiceNameFQDN()},
 		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
-		{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem},
-		{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem},
+		{Name: envHTTPSCertPathPem, Value: envEecHTTPSCertPathPem},
+		{Name: envHTTPSPrivKeyPathPem, Value: envEecHTTPSPrivKeyPathPem},
 	}
 
 	if dk.ActiveGate().HasCaCert() {

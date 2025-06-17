@@ -76,7 +76,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 	)
 
 	appDynakube := *dynakubeComponents.New(
@@ -84,7 +84,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: *codeModulesAppInjectSpec(t)}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
-		dynakubeComponents.WithApiUrl(secretConfigs[1].ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfigs[1].APIURL),
 	)
 
 	labels := cloudNativeDynakube.OneAgent().GetNamespaceSelector().MatchLabels
@@ -141,7 +141,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 
 	cloudNativeDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy"),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithIstioIntegration(),
@@ -191,7 +191,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	return builder.Feature()
 }
 
-func getAgTlsSecret(secret *corev1.Secret) features.Func {
+func getAgTLSSecret(secret *corev1.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		err := envConfig.Client().Resources().Get(ctx, secret.Name, secret.Namespace, secret)
 		require.NoError(t, err)
@@ -210,7 +210,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 
 	cloudNativeDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy-and-ag-cert"),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(agSecretName),
@@ -275,7 +275,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 
 	cloudNativeDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy"),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithIstioIntegration(),
@@ -309,16 +309,16 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
 
-	agTlsSecret := corev1.Secret{
+	agTLSSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
 			Namespace: cloudNativeDynakube.Namespace,
 		},
 	}
-	builder.Assess("read AG TLS secret", getAgTlsSecret(&agTlsSecret))
+	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
-	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, nil)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, nil)
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[dynakube.TLSCertKey] }, nil)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[dynakube.TLSCertKey] }, nil)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -337,7 +337,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 
 	cloudNativeDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy-custom-ca-ag-cert"),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithCustomCAs(configMapName),
 		dynakubeComponents.WithActiveGate(),
@@ -413,7 +413,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 
 	cloudNativeDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy-custom-ca-ag-cert"),
-		dynakubeComponents.WithApiUrl(secretConfigs[0].ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithCustomCAs(configMapName),
 		dynakubeComponents.WithActiveGate(),
@@ -456,16 +456,16 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 
 	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 
-	agTlsSecret := corev1.Secret{
+	agTLSSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
 			Namespace: cloudNativeDynakube.Namespace,
 		},
 	}
-	builder.Assess("read AG TLS secret", getAgTlsSecret(&agTlsSecret))
+	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
-	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTlsSecret.Data[dynakube.TLSCertKey] }, trustedCa)
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[dynakube.TLSCertKey] }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[dynakube.TLSCertKey] }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall

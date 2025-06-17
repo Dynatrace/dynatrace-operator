@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
 	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
-	networkProblems "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_problems"
+	networkProblems "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/networkproblems"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
@@ -55,8 +55,8 @@ func TestIstio(t *testing.T) {
 		codemodules.WithProxy(t, proxy.ProxySpec),
 		codemodules.WithProxyAndAGCert(t, proxy.ProxySpec),
 		codemodules.WithProxyAndAutomaticAGCert(t, proxy.ProxySpec),
-		codemodules.WithProxyCAAndAGCert(t, proxy.HttpsProxySpec),
-		codemodules.WithProxyCAAndAutomaticAGCert(t, proxy.HttpsProxySpec),
+		codemodules.WithProxyCAAndAGCert(t, proxy.HTTPSProxySpec),
+		codemodules.WithProxyCAAndAutomaticAGCert(t, proxy.HTTPSProxySpec),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)

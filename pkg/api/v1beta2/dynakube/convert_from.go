@@ -35,7 +35,7 @@ func (dst *DynaKube) fromBase(src *dynakube.DynaKube) {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
-	dst.Spec.DynatraceApiRequestThreshold = int(src.GetDynatraceApiRequestThreshold())
+	dst.Spec.DynatraceApiRequestThreshold = int(src.GetDynatraceAPIRequestThreshold())
 }
 
 func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
@@ -61,7 +61,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
-	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
+	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TLSSecretName
 	dst.Spec.ActiveGate.Group = src.Spec.ActiveGate.Group
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
 	dst.Spec.ActiveGate.Tolerations = src.Spec.ActiveGate.Tolerations
@@ -94,7 +94,7 @@ func (dst *DynaKube) fromStatus(src *dynakube.DynaKube) {
 	}
 
 	dst.Status.DynatraceApi = DynatraceApiStatus{
-		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 
 	dst.Status.Conditions = src.Status.Conditions

@@ -147,7 +147,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
 	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
-	assert.Equal(t, uint16(oldDk.Spec.DynatraceApiRequestThreshold), *newDk.Spec.DynatraceApiRequestThreshold) //nolint:gosec
+	assert.Equal(t, uint16(oldDk.Spec.DynatraceApiRequestThreshold), *newDk.Spec.DynatraceAPIRequestThreshold) //nolint:gosec
 	assert.Equal(t, oldDk.Spec.NetworkZone, newDk.Spec.NetworkZone)
 
 	if newDk.OneAgent().IsAppInjectionNeeded() {
@@ -213,7 +213,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activeg
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, len(oldSpec.Capabilities), len(newSpec.Capabilities))
-	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TlsSecretName)
+	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TLSSecretName)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 	assert.Equal(t, oldSpec.Group, newSpec.Group)
 	assert.Equal(t, oldSpec.Replicas, *newSpec.Replicas)
@@ -229,7 +229,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activeg
 func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakube.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
-	assert.Equal(t, oldStatus.DynatraceApi.LastTokenScopeRequest, newStatus.DynatraceApi.LastTokenScopeRequest)
+	assert.Equal(t, oldStatus.DynatraceApi.LastTokenScopeRequest, newStatus.DynatraceAPI.LastTokenScopeRequest)
 	assert.Equal(t, oldStatus.KubeSystemUUID, newStatus.KubeSystemUUID)
 	assert.Equal(t, oldStatus.Phase, newStatus.Phase)
 	assert.Equal(t, oldStatus.UpdatedTimestamp, newStatus.UpdatedTimestamp)
@@ -275,7 +275,7 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			Namespace: "namespace",
 			Annotations: map[string]string{
 				exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
-				exp.AGAutomaticK8sApiMonitoringKey: "true",
+				exp.AGAutomaticK8sAPIMonitoringKey: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
@@ -293,7 +293,7 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceApiRequestThreshold: ptr.To(uint16(42)),
+			DynatraceAPIRequestThreshold: ptr.To(uint16(42)),
 			MetadataEnrichment: dynakube.MetadataEnrichment{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
@@ -379,10 +379,10 @@ func getNewActiveGateSpec() activegate.Spec {
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
-		TlsSecretName:     "activegate-tls-secret-name",
+		TLSSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
 		Capabilities: []activegate.CapabilityDisplayName{
-			activegate.DynatraceApiCapability.DisplayName,
+			activegate.DynatraceAPICapability.DisplayName,
 			activegate.KubeMonCapability.DisplayName,
 			activegate.MetricsIngestCapability.DisplayName,
 		},
@@ -488,7 +488,7 @@ func getNewStatus() dynakube.DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		DynatraceApi: dynakube.DynatraceApiStatus{
+		DynatraceAPI: dynakube.DynatraceAPIStatus{
 			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{

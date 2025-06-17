@@ -8,11 +8,11 @@ import (
 )
 
 func TestSSLVolumeEnabled(t *testing.T) {
-	t.Run("true - TlsSecretName", func(t *testing.T) {
+	t.Run("true - TLSSecretName", func(t *testing.T) {
 		dk := getBaseDynakube()
 		disableAutomaticAGCertificate(&dk)
 		enableKubeMonCapability(&dk)
-		dk.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dk.Spec.ActiveGate.TLSSecretName = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dk)
 
@@ -23,7 +23,7 @@ func TestSSLVolumeEnabled(t *testing.T) {
 		dk := getBaseDynakube()
 		disableAutomaticAGCertificate(&dk)
 		enableKubeMonCapability(&dk)
-		dk.Spec.TrustedCAs = testTlsSecretName
+		dk.Spec.TrustedCAs = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dk)
 
@@ -40,10 +40,10 @@ func TestSSLVolumeEnabled(t *testing.T) {
 		assert.False(t, mod.Enabled())
 	})
 
-	t.Run("true - TlsSecretName, AG cert enabled", func(t *testing.T) {
+	t.Run("true - TLSSecretName, AG cert enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
 		enableKubeMonCapability(&dk)
-		dk.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dk.Spec.ActiveGate.TLSSecretName = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dk)
 
@@ -53,7 +53,7 @@ func TestSSLVolumeEnabled(t *testing.T) {
 	t.Run("true - TrustedCAs, AG cert enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
 		enableKubeMonCapability(&dk)
-		dk.Spec.TrustedCAs = testTlsSecretName
+		dk.Spec.TrustedCAs = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dk)
 
@@ -74,7 +74,7 @@ func TestSSLVolumeModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dl := getBaseDynakube()
 		enableKubeMonCapability(&dl)
-		dl.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dl.Spec.ActiveGate.TLSSecretName = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dl)
 		builder := createBuilderForTesting()

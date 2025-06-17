@@ -432,11 +432,11 @@ func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(context.Context, s
 }
 
 // GetAgentViaInstallerUrl provides a mock function with given fields: ctx, url, writer
-func (_m *Client) GetAgentViaInstallerUrl(ctx context.Context, url string, writer io.Writer) error {
+func (_m *Client) GetAgentViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
 	ret := _m.Called(ctx, url, writer)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAgentViaInstallerUrl")
+		panic("no return value specified for GetAgentViaInstallerURL")
 	}
 
 	var r0 error
@@ -449,7 +449,7 @@ func (_m *Client) GetAgentViaInstallerUrl(ctx context.Context, url string, write
 	return r0
 }
 
-// Client_GetAgentViaInstallerUrl_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAgentViaInstallerUrl'
+// Client_GetAgentViaInstallerUrl_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAgentViaInstallerURL'
 type Client_GetAgentViaInstallerUrl_Call struct {
 	*mock.Call
 }
@@ -459,7 +459,7 @@ type Client_GetAgentViaInstallerUrl_Call struct {
 //   - url string
 //   - writer io.Writer
 func (_e *Client_Expecter) GetAgentViaInstallerUrl(ctx interface{}, url interface{}, writer interface{}) *Client_GetAgentViaInstallerUrl_Call {
-	return &Client_GetAgentViaInstallerUrl_Call{Call: _e.mock.On("GetAgentViaInstallerUrl", ctx, url, writer)}
+	return &Client_GetAgentViaInstallerUrl_Call{Call: _e.mock.On("GetAgentViaInstallerURL", ctx, url, writer)}
 }
 
 func (_c *Client_GetAgentViaInstallerUrl_Call) Run(run func(ctx context.Context, url string, writer io.Writer)) *Client_GetAgentViaInstallerUrl_Call {

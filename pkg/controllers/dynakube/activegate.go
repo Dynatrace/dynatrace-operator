@@ -17,16 +17,16 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynak
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")
 	}
 
-	controller.setupAutomaticApiMonitoring(ctx, dtc, dk)
+	controller.setupAutomaticAPIMonitoring(ctx, dtc, dk)
 
 	return nil
 }
 
-func (controller *Controller) setupAutomaticApiMonitoring(ctx context.Context, dtc dynatrace.Client, dk *dynakube.DynaKube) {
+func (controller *Controller) setupAutomaticAPIMonitoring(ctx context.Context, dtc dynatrace.Client, dk *dynakube.DynaKube) {
 	if dk.Status.KubeSystemUUID != "" &&
-		dk.FF().IsAutomaticK8sApiMonitoring() &&
+		dk.FF().IsAutomaticK8sAPIMonitoring() &&
 		dk.ActiveGate().IsKubernetesMonitoringEnabled() {
-		clusterLabel := dk.FF().GetAutomaticK8sApiMonitoringClusterName()
+		clusterLabel := dk.FF().GetAutomaticK8sAPIMonitoringClusterName()
 		if clusterLabel == "" {
 			clusterLabel = dk.Name
 		}

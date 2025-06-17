@@ -32,7 +32,7 @@ const (
 	// if not set.
 	AnnotationFlavor = "oneagent.dynatrace.com/flavor"
 
-	// AnnotationInstallerUrl can be set on a Pod to configure the installer url for downloading the agent
+	// AnnotationInstallerURL can be set on a Pod to configure the installer url for downloading the agent
 	// defaults to the PaaS installer download url of your tenant
-	AnnotationInstallerUrl = "oneagent.dynatrace.com/installer-url"
+	AnnotationInstallerURL = "oneagent.dynatrace.com/installer-url"
 )
