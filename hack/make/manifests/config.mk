@@ -1,4 +1,4 @@
-CRD_OPTIONS ?= "crd:crdVersions=v1,maxDescLen=350,ignoreUnexportedFields=true"
+CRD_OPTIONS ?= "crd:crdVersions=v1,maxDescLen=25,ignoreUnexportedFields=true"
 
 OLM ?= false
 
