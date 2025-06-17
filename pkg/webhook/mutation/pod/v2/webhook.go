@@ -59,7 +59,7 @@ func (wh *Injector) Handle(_ context.Context, mutationRequest *dtwebhook.Mutatio
 		return nil
 	}
 
-	if mutationRequest.DynaKube.IsAGCertificateNeeded() {
+	if mutationRequest.DynaKube.IsAGCertificateNeeded() || mutationRequest.DynaKube.Spec.TrustedCAs != "" {
 		if !wh.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceCertsSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitCertsSecretName) {
 			return nil
 		}
