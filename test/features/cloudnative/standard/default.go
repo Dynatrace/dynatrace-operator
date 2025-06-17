@@ -1,6 +1,6 @@
 //go:build e2e
 
-package _default
+package standard
 
 import (
 	"fmt"

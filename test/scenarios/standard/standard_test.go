@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
 	classicToCloud "github.com/Dynatrace/dynatrace-operator/test/features/classic/switchmodes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
-	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
 	disabledAutoInjection "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/disabled_auto_injection"
+	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/standard"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switchmodes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/publicregistry"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/supportarchive"
@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 
 func TestStandard(t *testing.T) {
 	feats := []features.Feature{
-		cloudnativeDefault.Feature(t, false, true),
+		cloudnativeStandard.Feature(t, false, true),
 		applicationmonitoring.ReadOnlyCSIVolume(t),
 		codemodules.InstallFromImage(t),
 		publicregistry.Feature(t),
