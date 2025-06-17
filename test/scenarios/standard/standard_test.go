@@ -49,6 +49,7 @@ func TestStandard(t *testing.T) {
 		codemodules.InstallFromImage(t),
 		publicregistry.Feature(t),
 		disabledAutoInjection.Feature(t),
+		disabledAutoInjection.FeatureEnabledPod(t),
 		supportArchive.Feature(t),
 		classicToCloud.Feature(t),
 		cloudToClassic.Feature(t),
