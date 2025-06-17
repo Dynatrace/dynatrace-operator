@@ -1,6 +1,6 @@
 //go:build e2e
 
-package disabled_auto_injection
+package noinjection
 
 import (
 	"context"
