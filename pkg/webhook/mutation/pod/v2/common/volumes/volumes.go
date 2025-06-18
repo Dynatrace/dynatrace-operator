@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -71,8 +72,25 @@ func AddInputVolume(pod *corev1.Pod) {
 		corev1.Volume{
 			Name: InputVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: consts.BootstrapperInitSecretName,
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: consts.BootstrapperInitSecretName,
+								},
+								Optional: ptr.To(false),
+							},
+						},
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: consts.BootstrapperInitCertsSecretName,
+								},
+								Optional: ptr.To(true),
+							},
+						},
+					},
 				},
 			},
 		},

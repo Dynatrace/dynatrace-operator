@@ -35,7 +35,7 @@ func TestReplicate(t *testing.T) {
 	}
 
 	t.Run("create", func(t *testing.T) {
-		source := clientSecret(GetSourceSecretName(dk.Name), dk.Namespace, data)
+		source := clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, data)
 		source.Labels = map[string]string{
 			"key": "value",
 		}
@@ -45,7 +45,7 @@ func TestReplicate(t *testing.T) {
 			source,
 		)
 
-		err := Replicate(ctx, *dk, secret.Query(clt, clt, log), ns.Name)
+		err := Replicate(ctx, *dk, secret.Query(clt, clt, log), GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, ns.Name)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
@@ -56,16 +56,16 @@ func TestReplicate(t *testing.T) {
 	})
 
 	t.Run("already exists => no update + no error", func(t *testing.T) {
-		source := clientSecret(GetSourceSecretName(dk.Name), dk.Namespace, data)
-		alreadyPresent := clientSecret(consts.BootstrapperInitSecretName, ns.Name, nil)
+		source := clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, data)
+		alreadyPresentConfig := clientSecret(consts.BootstrapperInitSecretName, ns.Name, nil)
 		clt := fake.NewClientWithIndex(
 			dk,
 			ns,
 			source,
-			alreadyPresent,
+			alreadyPresentConfig,
 		)
 
-		err := Replicate(ctx, *dk, secret.Query(clt, clt, log), ns.Name)
+		err := Replicate(ctx, *dk, secret.Query(clt, clt, log), GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, ns.Name)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret

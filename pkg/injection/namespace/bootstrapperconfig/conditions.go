@@ -1,5 +1,6 @@
 package bootstrapperconfig
 
 const (
-	ConditionType = "BootstrapperConfig"
+	ConfigConditionType = "BootstrapperConfig"
+	CertsConditionType  = "BootstrapperCertsConfig"
 )
