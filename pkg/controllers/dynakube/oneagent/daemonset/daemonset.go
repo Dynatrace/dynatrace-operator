@@ -46,8 +46,8 @@ const (
 
 	podName = "dynatrace-oneagent"
 
-	inframonHostIdSource = "k8s-node-name"
-	classicHostIdSource  = "auto"
+	inframonHostIDSource = "k8s-node-name"
+	classicHostIDSource  = "auto"
 
 	probeMaxInitialDelay         = int32(90)
 	probeDefaultSuccessThreshold = int32(1)
@@ -74,34 +74,34 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(dk *dynakube.DynaKube, clusterId string) Builder {
+func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string) Builder {
 	return &hostMonitoring{
 		builder{
 			dk:             dk,
 			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
-			clusterID:      clusterId,
+			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterId string) Builder {
+func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
 	return &hostMonitoring{
 		builder{
 			dk:             dk,
 			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			clusterID:      clusterId,
+			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
 		},
 	}
 }
 
-func NewClassicFullStack(dk *dynakube.DynaKube, clusterId string) Builder {
+func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
 	return &classicFullStack{
 		builder{
 			dk:             dk,
 			hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
-			clusterID:      clusterId,
+			clusterID:      clusterID,
 			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
 		},
 	}

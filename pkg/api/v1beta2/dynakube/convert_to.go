@@ -35,7 +35,7 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	}
 
 	src.convertMaxMountAttempts(dst)
-	src.convertDynatraceApiRequestThreshold(dst)
+	src.convertDynatraceAPIRequestThreshold(dst)
 
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
@@ -47,13 +47,13 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 }
 
-func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) {
-	if src.Spec.DynatraceApiRequestThreshold >= 0 {
-		if math.MaxUint16 < src.Spec.DynatraceApiRequestThreshold {
-			dst.Spec.DynatraceApiRequestThreshold = ptr.To(uint16(math.MaxUint16))
+func (src *DynaKube) convertDynatraceAPIRequestThreshold(dst *dynakube.DynaKube) {
+	if src.Spec.DynatraceAPIRequestThreshold >= 0 {
+		if math.MaxUint16 < src.Spec.DynatraceAPIRequestThreshold {
+			dst.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(math.MaxUint16))
 		} else {
 			// linting disabled, handled in if
-			dst.Spec.DynatraceApiRequestThreshold = ptr.To(uint16(src.Spec.DynatraceApiRequestThreshold)) //nolint:gosec
+			dst.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(src.Spec.DynatraceAPIRequestThreshold)) //nolint:gosec
 		}
 	}
 }
@@ -87,7 +87,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakube.DynaKube) {
 func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
-	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
+	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TLSSecretName
 	dst.Spec.ActiveGate.Group = src.Spec.ActiveGate.Group
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
 	dst.Spec.ActiveGate.Tolerations = src.Spec.ActiveGate.Tolerations
@@ -119,8 +119,8 @@ func (src *DynaKube) toStatus(dst *dynakube.DynaKube) {
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.DynatraceApi = dynakube.DynatraceApiStatus{
-		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+	dst.Status.DynatraceAPI = dynakube.DynatraceAPIStatus{
+		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 
 	dst.Status.Conditions = src.Status.Conditions

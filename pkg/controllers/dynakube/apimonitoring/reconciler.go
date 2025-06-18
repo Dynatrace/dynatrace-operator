@@ -30,7 +30,7 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel stri
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	objectID, err := r.createObjectIdIfNotExists(ctx)
+	objectID, err := r.createObjectIDIfNotExists(ctx)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, error) {
+func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, error) {
 	if r.dk.Status.KubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
@@ -58,12 +58,12 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 
 	if r.dk.Status.KubernetesClusterMEID != "" {
 		monitoredEntity = &dtclient.MonitoredEntity{
-			EntityId: r.dk.Status.KubernetesClusterMEID,
+			EntityID: r.dk.Status.KubernetesClusterMEID,
 		}
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.KubernetesSettingsSchemaId)
+	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.KubernetesSettingsSchemaID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -96,13 +96,13 @@ func (r *Reconciler) createObjectIdIfNotExists(ctx context.Context) (string, err
 
 func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEntity *dtclient.MonitoredEntity) (string, error) {
 	if r.dk.FF().IsK8sAppEnabled() {
-		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.AppTransitionSchemaId)
+		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.AppTransitionSchemaID)
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")
 		}
 
 		if appSettings.TotalCount == 0 {
-			meID := monitoredEntity.EntityId
+			meID := monitoredEntity.EntityID
 			if meID != "" {
 				transitionSchemaObjectID, err := r.dtc.CreateOrUpdateKubernetesAppSetting(ctx, meID)
 				if err != nil {

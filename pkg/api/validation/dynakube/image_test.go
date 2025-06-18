@@ -13,7 +13,7 @@ import (
 )
 
 func TestImageFieldHasTenantImage(t *testing.T) {
-	testTenantUrl := "https://beepboop.dev.dynatracelabs.com"
+	testTenantURL := "https://beepboop.dev.dynatracelabs.com"
 
 	t.Run("image fields are a malformed ref", func(t *testing.T) {
 		expectedMessage := strings.Join([]string{
@@ -26,7 +26,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 				Name: "dynakube",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testTenantUrl + "/api",
+				APIURL: testTenantURL + "/api",
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
 						Image: "BOOM",
@@ -42,21 +42,21 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 	})
 
 	t.Run("valid image fields", func(t *testing.T) {
-		testRegistryUrl := "my.images.com"
+		testRegistryURL := "my.images.com"
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testTenantUrl + "/api",
+				APIURL: testTenantURL + "/api",
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{
-						Image: testRegistryUrl + "/linux/oneagent:latest",
+						Image: testRegistryURL + "/linux/oneagent:latest",
 					},
 				},
 				ActiveGate: activegate.Spec{
 					CapabilityProperties: activegate.CapabilityProperties{
-						Image: testRegistryUrl + "/linux/activegate:latest",
+						Image: testRegistryURL + "/linux/activegate:latest",
 					},
 				},
 			},
@@ -64,16 +64,16 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 	})
 
 	t.Run("valid image fields - only OA", func(t *testing.T) {
-		testRegistryUrl := "my.images.com"
+		testRegistryURL := "my.images.com"
 		assertAllowed(t, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testTenantUrl + "/api",
+				APIURL: testTenantURL + "/api",
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{
-						Image: testRegistryUrl + "/linux/oneagent:latest",
+						Image: testRegistryURL + "/linux/oneagent:latest",
 					},
 				},
 			},
@@ -86,7 +86,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 				Name: "dynakube",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testTenantUrl + "/api",
+				APIURL: testTenantURL + "/api",
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{
 						Image: "127.0.0.1:5000/test:tag",

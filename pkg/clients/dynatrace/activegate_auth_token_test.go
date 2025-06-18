@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	activeGateAuthTokenUrl = "/v2/activeGateTokens"
+	activeGateAuthTokenURL = "/v2/activeGateTokens"
 	dynakubeName           = "dynakube"
 )
 
 var activeGateAuthTokenResponse = &ActiveGateAuthTokenInfo{
-	TokenId: "test",
+	TokenID: "test",
 	Token:   "dt.some.valuegoeshere",
 }
 
@@ -22,7 +22,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("GetActiveGateAuthToken works", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateAuthTokenUrl, activeGateAuthTokenResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateAuthTokenURL, activeGateAuthTokenResponse), "")
 		defer dynatraceServer.Close()
 
 		agAuthTokenInfo, err := dynatraceClient.GetActiveGateAuthToken(ctx, dynakubeName)
@@ -32,7 +32,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		assert.Equal(t, activeGateAuthTokenResponse, agAuthTokenInfo)
 	})
 	t.Run("GetActiveGateAuthToken handle malformed json", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(activeGateAuthTokenUrl), "")
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJSON(activeGateAuthTokenURL), "")
 		defer faultyDynatraceServer.Close()
 
 		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(ctx, dynakubeName)
@@ -42,7 +42,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 	})
 	t.Run("GetActiveGateAuthToken handle internal server error", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(activeGateAuthTokenUrl), "")
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(activeGateAuthTokenURL), "")
 		defer faultyDynatraceServer.Close()
 
 		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(ctx, dynakubeName)

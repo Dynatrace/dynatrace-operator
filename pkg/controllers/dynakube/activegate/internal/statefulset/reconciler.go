@@ -62,14 +62,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 	desiredSts, err := r.buildDesiredStatefulSet(ctx)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return err
 	}
 
 	updated, err := statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return err
 	} else if updated {

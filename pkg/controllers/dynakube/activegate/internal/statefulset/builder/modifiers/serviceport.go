@@ -35,7 +35,7 @@ func (mod ServicePortModifier) Enabled() bool {
 
 func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := container.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
-	baseContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
+	baseContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HTTPSServicePortName)
 	baseContainer.Ports = append(baseContainer.Ports, mod.getPorts()...)
 	baseContainer.Env = mod.getEnvs()
 
@@ -45,12 +45,12 @@ func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{
 		{
-			Name:          consts.HttpsServicePortName,
-			ContainerPort: consts.HttpsContainerPort,
+			Name:          consts.HTTPSServicePortName,
+			ContainerPort: consts.HTTPSContainerPort,
 		},
 		{
-			Name:          consts.HttpServicePortName,
-			ContainerPort: consts.HttpContainerPort,
+			Name:          consts.HTTPServicePortName,
+			ContainerPort: consts.HTTPContainerPort,
 		},
 	}
 
@@ -61,7 +61,7 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 	prioritymap.Append(mod.envMap,
 		[]corev1.EnvVar{
 			{
-				Name:  consts.EnvDtDnsEntryPoint,
+				Name:  consts.EnvDtDNSEntryPoint,
 				Value: capability.BuildDNSEntryPoint(mod.dk),
 			},
 		},

@@ -11,7 +11,7 @@ const (
 )
 
 func extensionsWithoutK8SMonitoring(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if dk.IsExtensionsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sApiMonitoring()) {
+	if dk.IsExtensionsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sAPIMonitoring()) {
 		return warningExtensionsWithoutK8SMonitoring
 	}
 

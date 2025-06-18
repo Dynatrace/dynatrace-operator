@@ -121,9 +121,9 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 		assert.Equal(t, ecName, res.Name)
 
 		edgeConnectTenantConfig.Secret.Name = ecName
-		edgeConnectTenantConfig.Secret.ApiServer = clientSecret.ApiServer
-		edgeConnectTenantConfig.Secret.TenantUid = clientSecret.TenantUid
-		edgeConnectTenantConfig.Secret.OauthClientId = res.OauthClientId
+		edgeConnectTenantConfig.Secret.APIServer = clientSecret.APIServer
+		edgeConnectTenantConfig.Secret.TenantUID = clientSecret.TenantUID
+		edgeConnectTenantConfig.Secret.OauthClientID = res.OauthClientID
 		edgeConnectTenantConfig.Secret.OauthClientSecret = res.OauthClientSecret
 		edgeConnectTenantConfig.Secret.Resource = res.OauthClientResource
 		edgeConnectTenantConfig.ID = res.ID
@@ -134,9 +134,9 @@ func CreateTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, ed
 
 func BuildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeconnectClient.Client, error) {
 	clt, err := edgeconnectClient.NewClient(
-		secret.OauthClientId,
+		secret.OauthClientID,
 		secret.OauthClientSecret,
-		edgeconnectClient.WithBaseURL("https://"+secret.ApiServer),
+		edgeconnectClient.WithBaseURL("https://"+secret.APIServer),
 		edgeconnectClient.WithTokenURL("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		edgeconnectClient.WithOauthScopes([]string{
 			"app-engine:edge-connects:read",

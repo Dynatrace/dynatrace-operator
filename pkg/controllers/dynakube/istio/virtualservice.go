@@ -10,15 +10,15 @@ import (
 )
 
 const (
-	protocolHttp  = "http"
-	protocolHttps = "https"
+	protocolHTTP  = "http"
+	protocolHTTPS = "https"
 )
 
 func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1beta1.VirtualService {
 	var nonIPhosts []dtclient.CommunicationHost
 
 	for _, commHost := range commHosts {
-		if !isIp(commHost.Host) {
+		if !isIP(commHost.Host) {
 			nonIPhosts = append(nonIPhosts, commHost)
 		}
 	}
@@ -45,10 +45,10 @@ func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.Virtu
 		hosts[i] = commHost.Host
 
 		switch commHost.Protocol {
-		case protocolHttps:
+		case protocolHTTPS:
 			tlses = append(tlses, buildVirtualServiceTLSRoute(commHost.Host, commHost.Port))
-		case protocolHttp:
-			routes = append(routes, buildVirtualServiceHttpRoute(commHost.Host, commHost.Port))
+		case protocolHTTP:
+			routes = append(routes, buildVirtualServiceHTTPRoute(commHost.Host, commHost.Port))
 		}
 	}
 
@@ -59,7 +59,7 @@ func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.Virtu
 	}
 }
 
-func buildVirtualServiceHttpRoute(host string, port uint32) *istio.HTTPRoute {
+func buildVirtualServiceHTTPRoute(host string, port uint32) *istio.HTTPRoute {
 	return &istio.HTTPRoute{
 		Match: []*istio.HTTPMatchRequest{{
 			Port: port,
@@ -92,6 +92,6 @@ func buildVirtualServiceTLSRoute(host string, port uint32) *istio.TLSRoute {
 	}
 }
 
-func isIp(host string) bool {
+func isIP(host string) bool {
 	return net.ParseIP(host) != nil
 }

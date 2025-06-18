@@ -122,9 +122,9 @@ func (_c *Client_CreateEdgeConnect_Call) RunAndReturn(run func(*edgeconnect.Requ
 	return _c
 }
 
-// DeleteConnectionSetting provides a mock function with given fields: objectId
-func (_m *Client) DeleteConnectionSetting(objectId string) error {
-	ret := _m.Called(objectId)
+// DeleteConnectionSetting provides a mock function with given fields: objectID
+func (_m *Client) DeleteConnectionSetting(objectID string) error {
+	ret := _m.Called(objectID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteConnectionSetting")
@@ -132,7 +132,7 @@ func (_m *Client) DeleteConnectionSetting(objectId string) error {
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(objectId)
+		r0 = rf(objectID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -146,12 +146,12 @@ type Client_DeleteConnectionSetting_Call struct {
 }
 
 // DeleteConnectionSetting is a helper method to define mock.On call
-//   - objectId string
-func (_e *Client_Expecter) DeleteConnectionSetting(objectId interface{}) *Client_DeleteConnectionSetting_Call {
-	return &Client_DeleteConnectionSetting_Call{Call: _e.mock.On("DeleteConnectionSetting", objectId)}
+//   - objectID string
+func (_e *Client_Expecter) DeleteConnectionSetting(objectID interface{}) *Client_DeleteConnectionSetting_Call {
+	return &Client_DeleteConnectionSetting_Call{Call: _e.mock.On("DeleteConnectionSetting", objectID)}
 }
 
-func (_c *Client_DeleteConnectionSetting_Call) Run(run func(objectId string)) *Client_DeleteConnectionSetting_Call {
+func (_c *Client_DeleteConnectionSetting_Call) Run(run func(objectID string)) *Client_DeleteConnectionSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -168,9 +168,9 @@ func (_c *Client_DeleteConnectionSetting_Call) RunAndReturn(run func(string) err
 	return _c
 }
 
-// DeleteEdgeConnect provides a mock function with given fields: edgeConnectId
-func (_m *Client) DeleteEdgeConnect(edgeConnectId string) error {
-	ret := _m.Called(edgeConnectId)
+// DeleteEdgeConnect provides a mock function with given fields: edgeConnectID
+func (_m *Client) DeleteEdgeConnect(edgeConnectID string) error {
+	ret := _m.Called(edgeConnectID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteEdgeConnect")
@@ -178,7 +178,7 @@ func (_m *Client) DeleteEdgeConnect(edgeConnectId string) error {
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string) error); ok {
-		r0 = rf(edgeConnectId)
+		r0 = rf(edgeConnectID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -192,12 +192,12 @@ type Client_DeleteEdgeConnect_Call struct {
 }
 
 // DeleteEdgeConnect is a helper method to define mock.On call
-//   - edgeConnectId string
-func (_e *Client_Expecter) DeleteEdgeConnect(edgeConnectId interface{}) *Client_DeleteEdgeConnect_Call {
-	return &Client_DeleteEdgeConnect_Call{Call: _e.mock.On("DeleteEdgeConnect", edgeConnectId)}
+//   - edgeConnectID string
+func (_e *Client_Expecter) DeleteEdgeConnect(edgeConnectID interface{}) *Client_DeleteEdgeConnect_Call {
+	return &Client_DeleteEdgeConnect_Call{Call: _e.mock.On("DeleteEdgeConnect", edgeConnectID)}
 }
 
-func (_c *Client_DeleteEdgeConnect_Call) Run(run func(edgeConnectId string)) *Client_DeleteEdgeConnect_Call {
+func (_c *Client_DeleteEdgeConnect_Call) Run(run func(edgeConnectID string)) *Client_DeleteEdgeConnect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -271,9 +271,9 @@ func (_c *Client_GetConnectionSettings_Call) RunAndReturn(run func() ([]edgeconn
 	return _c
 }
 
-// GetEdgeConnect provides a mock function with given fields: edgeConnectId
-func (_m *Client) GetEdgeConnect(edgeConnectId string) (edgeconnect.GetResponse, error) {
-	ret := _m.Called(edgeConnectId)
+// GetEdgeConnect provides a mock function with given fields: edgeConnectID
+func (_m *Client) GetEdgeConnect(edgeConnectID string) (edgeconnect.GetResponse, error) {
+	ret := _m.Called(edgeConnectID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetEdgeConnect")
@@ -282,16 +282,16 @@ func (_m *Client) GetEdgeConnect(edgeConnectId string) (edgeconnect.GetResponse,
 	var r0 edgeconnect.GetResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(string) (edgeconnect.GetResponse, error)); ok {
-		return rf(edgeConnectId)
+		return rf(edgeConnectID)
 	}
 	if rf, ok := ret.Get(0).(func(string) edgeconnect.GetResponse); ok {
-		r0 = rf(edgeConnectId)
+		r0 = rf(edgeConnectID)
 	} else {
 		r0 = ret.Get(0).(edgeconnect.GetResponse)
 	}
 
 	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(edgeConnectId)
+		r1 = rf(edgeConnectID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -305,12 +305,12 @@ type Client_GetEdgeConnect_Call struct {
 }
 
 // GetEdgeConnect is a helper method to define mock.On call
-//   - edgeConnectId string
-func (_e *Client_Expecter) GetEdgeConnect(edgeConnectId interface{}) *Client_GetEdgeConnect_Call {
-	return &Client_GetEdgeConnect_Call{Call: _e.mock.On("GetEdgeConnect", edgeConnectId)}
+//   - edgeConnectID string
+func (_e *Client_Expecter) GetEdgeConnect(edgeConnectID interface{}) *Client_GetEdgeConnect_Call {
+	return &Client_GetEdgeConnect_Call{Call: _e.mock.On("GetEdgeConnect", edgeConnectID)}
 }
 
-func (_c *Client_GetEdgeConnect_Call) Run(run func(edgeConnectId string)) *Client_GetEdgeConnect_Call {
+func (_c *Client_GetEdgeConnect_Call) Run(run func(edgeConnectID string)) *Client_GetEdgeConnect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
@@ -429,9 +429,9 @@ func (_c *Client_UpdateConnectionSetting_Call) RunAndReturn(run func(edgeconnect
 	return _c
 }
 
-// UpdateEdgeConnect provides a mock function with given fields: edgeConnectId, request
-func (_m *Client) UpdateEdgeConnect(edgeConnectId string, request *edgeconnect.Request) error {
-	ret := _m.Called(edgeConnectId, request)
+// UpdateEdgeConnect provides a mock function with given fields: edgeConnectID, request
+func (_m *Client) UpdateEdgeConnect(edgeConnectID string, request *edgeconnect.Request) error {
+	ret := _m.Called(edgeConnectID, request)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateEdgeConnect")
@@ -439,7 +439,7 @@ func (_m *Client) UpdateEdgeConnect(edgeConnectId string, request *edgeconnect.R
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, *edgeconnect.Request) error); ok {
-		r0 = rf(edgeConnectId, request)
+		r0 = rf(edgeConnectID, request)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -453,13 +453,13 @@ type Client_UpdateEdgeConnect_Call struct {
 }
 
 // UpdateEdgeConnect is a helper method to define mock.On call
-//   - edgeConnectId string
+//   - edgeConnectID string
 //   - request *edgeconnect.Request
-func (_e *Client_Expecter) UpdateEdgeConnect(edgeConnectId interface{}, request interface{}) *Client_UpdateEdgeConnect_Call {
-	return &Client_UpdateEdgeConnect_Call{Call: _e.mock.On("UpdateEdgeConnect", edgeConnectId, request)}
+func (_e *Client_Expecter) UpdateEdgeConnect(edgeConnectID interface{}, request interface{}) *Client_UpdateEdgeConnect_Call {
+	return &Client_UpdateEdgeConnect_Call{Call: _e.mock.On("UpdateEdgeConnect", edgeConnectID, request)}
 }
 
-func (_c *Client_UpdateEdgeConnect_Call) Run(run func(edgeConnectId string, request *edgeconnect.Request)) *Client_UpdateEdgeConnect_Call {
+func (_c *Client_UpdateEdgeConnect_Call) Run(run func(edgeConnectID string, request *edgeconnect.Request)) *Client_UpdateEdgeConnect_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(*edgeconnect.Request))
 	})

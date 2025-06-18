@@ -216,7 +216,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/rest/health",
-					Port:   intstr.IntOrString{IntVal: consts.HttpsContainerPort},
+					Port:   intstr.IntOrString{IntVal: consts.HTTPSContainerPort},
 					Scheme: "HTTPS",
 				},
 			},
@@ -239,8 +239,8 @@ func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	prioritymap.Append(statefulSetBuilder.envMap, []corev1.EnvVar{
 		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
-		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
-		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
+		{Name: consts.EnvDtIDSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
+		{Name: consts.EnvDtIDSeedClusterID, Value: string(statefulSetBuilder.kubeUID)},
 		{Name: deploymentmetadata.EnvDtDeploymentMetadata, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -250,7 +250,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 				Optional: ptr.To(false),
 			},
 		}},
-		{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)},
+		{Name: consts.EnvDtHTTPPort, Value: strconv.Itoa(consts.HTTPContainerPort)},
 	})
 
 	if statefulSetBuilder.capability.Properties().Group != "" {

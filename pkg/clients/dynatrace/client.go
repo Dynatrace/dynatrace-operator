@@ -17,7 +17,7 @@ import (
 
 const (
 	PaasToken       = "paasToken"
-	ApiToken        = "apiToken"
+	APIToken        = "apiToken"
 	DataIngestToken = "dataIngestToken"
 )
 
@@ -40,7 +40,7 @@ type Client interface {
 	GetAgent(ctx context.Context, os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error
 
 	// GetAgentViaInstallerUrl downloads the agent from the user specified URL and writes it to the given io.Writer
-	GetAgentViaInstallerUrl(ctx context.Context, url string, writer io.Writer) error
+	GetAgentViaInstallerURL(ctx context.Context, url string, writer io.Writer) error
 
 	// GetAgentVersions on success returns an array of versions that can be used with GetAgent to
 	// download a specific agent version
@@ -74,7 +74,7 @@ type Client interface {
 
 	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects,
 	// or an api error otherwise
-	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *MonitoredEntity, schemaId string) (GetSettingsResponse, error)
+	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *MonitoredEntity, schemaID string) (GetSettingsResponse, error)
 
 	// GetSettingsForLogModule returns the settings response with the number of settings objects,
 	// or an api error otherwise

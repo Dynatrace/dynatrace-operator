@@ -42,7 +42,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	if dk.NeedsOneAgentProxy() {
-		volumeMounts = append(volumeMounts, getHttpProxyMount())
+		volumeMounts = append(volumeMounts, getHTTPProxyMount())
 	}
 
 	return volumeMounts
@@ -103,7 +103,7 @@ func getStorageVolumeMount(dk *dynakube.DynaKube) corev1.VolumeMount {
 	}
 }
 
-func getHttpProxyMount() corev1.VolumeMount {
+func getHTTPProxyMount() corev1.VolumeMount {
 	return proxy.BuildVolumeMount()
 }
 
@@ -133,7 +133,7 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	}
 
 	if dk.NeedsOneAgentProxy() {
-		volumes = append(volumes, buildHttpProxyVolume(dk))
+		volumes = append(volumes, buildHTTPProxyVolume(dk))
 	}
 
 	return volumes
@@ -202,7 +202,7 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 	}
 }
 
-func buildHttpProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
+func buildHTTPProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: proxy.SecretVolumeName,
 		VolumeSource: corev1.VolumeSource{

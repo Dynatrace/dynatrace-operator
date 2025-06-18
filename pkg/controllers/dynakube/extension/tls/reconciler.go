@@ -67,7 +67,7 @@ func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	}
 
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -129,7 +129,7 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	err = query.Create(ctx, secret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}

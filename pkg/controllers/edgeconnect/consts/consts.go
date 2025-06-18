@@ -19,7 +19,7 @@ const (
 	KeyEdgeConnectOauthClientID     = "oauth-client-id"
 	KeyEdgeConnectOauthClientSecret = "oauth-client-secret"
 	KeyEdgeConnectOauthResource     = "oauth-client-resource"
-	KeyEdgeConnectId                = "id"
+	KeyEdgeConnectID                = "id"
 
 	AnnotationEdgeConnectContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + EdgeConnectContainerName
 

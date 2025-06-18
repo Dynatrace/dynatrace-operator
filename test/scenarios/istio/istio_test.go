@@ -7,8 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
-	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
-	networkProblems "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_problems"
+	networkProblems "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/networkproblems"
+	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/standard"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
@@ -51,12 +51,12 @@ func TestIstio(t *testing.T) {
 	feats := []features.Feature{
 		networkProblems.ResilienceFeature(t), // TODO: Fix so order do not matter, because its the first feature here for a reason => we don’t want to have any downloaded codemodules in the filesystem of the CSI-driver, and we can't clean the filesystem between features as the operator is not reinstalled and therefore the csi-driver is running, and you would have to mess with the database because removing it just bricks things.
 		activegate.Feature(t, proxy.ProxySpec),
-		cloudnativeDefault.Feature(t, true, true),
+		cloudnativeStandard.Feature(t, true, true),
 		codemodules.WithProxy(t, proxy.ProxySpec),
 		codemodules.WithProxyAndAGCert(t, proxy.ProxySpec),
 		codemodules.WithProxyAndAutomaticAGCert(t, proxy.ProxySpec),
-		codemodules.WithProxyCAAndAGCert(t, proxy.HttpsProxySpec),
-		codemodules.WithProxyCAAndAutomaticAGCert(t, proxy.HttpsProxySpec),
+		codemodules.WithProxyCAAndAGCert(t, proxy.HTTPSProxySpec),
+		codemodules.WithProxyCAAndAutomaticAGCert(t, proxy.HTTPSProxySpec),
 	}
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)

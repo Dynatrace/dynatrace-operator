@@ -131,7 +131,7 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
@@ -142,7 +142,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 	t.Run("Set according to version field", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
 						Version: testVersion,
@@ -167,7 +167,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 	t.Run("Set according to default", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
@@ -192,7 +192,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		previousVersion := "999.999.999.999-999"
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
@@ -226,7 +226,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		previousVersion := "1.2.3.4444-555"
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{},
 				},
@@ -258,7 +258,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 	t.Run("Verification fails due to malformed ImageID", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},

@@ -78,7 +78,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk), createPMCSecret(t, dk))
 		installer := createSuccessfulInstaller(t)
-		prov.urlInstallerBuilder = mockUrlInstallerBuilder(t, installer)
+		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, installer)
 		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
 		createPMCSourceFile(t, prov, dk)
 
@@ -232,13 +232,13 @@ func createDynaKubeWithImage(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
 	dk := createDynaKubeBase(t)
-	imageId := "test-image"
+	imageID := "test-image"
 	dk.Spec.OneAgent = oneagent.Spec{
 		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: imageId},
+			AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: imageID},
 		},
 	}
-	dk.Status.CodeModules.ImageID = imageId
+	dk.Status.CodeModules.ImageID = imageID
 
 	return dk
 }
@@ -247,13 +247,13 @@ func createDynaKubeWithJobFF(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
 	dk := createDynaKubeBase(t)
-	imageId := "test-image"
+	imageID := "test-image"
 	dk.Spec.OneAgent = oneagent.Spec{
 		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: imageId},
+			AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: imageID},
 		},
 	}
-	dk.Status.CodeModules.ImageID = imageId
+	dk.Status.CodeModules.ImageID = imageID
 	dk.Annotations = map[string]string{
 		exp.OANodeImagePullKey: "true",
 	}
@@ -321,7 +321,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 	return m
 }
 
-func mockUrlInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) urlInstallerBuilder {
+func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) urlInstallerBuilder {
 	t.Helper()
 
 	return func(f afero.Fs, _ dtclient.Client, _ *url.Properties) installer.Installer {
@@ -354,7 +354,7 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{
-			dtclient.ApiToken: []byte("this is a token"),
+			dtclient.APIToken: []byte("this is a token"),
 		},
 	}
 }
@@ -398,10 +398,10 @@ func getPMC(t *testing.T) []byte {
 		},
 	}
 
-	pmcJson, err := json.Marshal(pmc)
+	pmcJSON, err := json.Marshal(pmc)
 	require.NoError(t, err)
 
-	return pmcJson
+	return pmcJSON
 }
 
 func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {

@@ -29,7 +29,7 @@ func TestEnvironmentVariables(t *testing.T) {
 				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
-		assert.Equal(t, corev1.EnvVar{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
+		assert.Equal(t, corev1.EnvVar{Name: envShardID, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
 			},
@@ -37,7 +37,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
 		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
 		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
@@ -57,7 +57,7 @@ func TestEnvironmentVariables(t *testing.T) {
 	})
 	t.Run("environment variables with custom EEC TLS certificate", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "test-tls-ca"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "test-tls-ca"
 
 		statefulSet := getStatefulset(t, dk)
 
@@ -78,7 +78,7 @@ func TestEnvironmentVariables(t *testing.T) {
 				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
-		assert.Equal(t, corev1.EnvVar{Name: envShardId, ValueFrom: &corev1.EnvVarSource{
+		assert.Equal(t, corev1.EnvVar{Name: envShardID, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
 				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
 			},
@@ -86,12 +86,12 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
 		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUid, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
 		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
 
 		assert.Equal(t, corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpApiEndpointConfigMapName},
+				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpAPIEndpointConfigMapName},
 				Key:                  envDTendpoint,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
@@ -154,8 +154,8 @@ func TestProxyEnvsNoProxy(t *testing.T) {
 
 			statefulSet := getWorkload(t, dk)
 
-			assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsProxy})
-			assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpProxy})
+			assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSProxy})
+			assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPProxy})
 			assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envNoProxy})
 		})
 	}
@@ -228,7 +228,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			statefulSet := getWorkload(t, dk)
 
 			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-				Name: envHttpsProxy,
+				Name: envHTTPSProxy,
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{Name: tt.proxy.ValueFrom},
@@ -237,7 +237,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 				},
 			})
 			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-				Name: envHttpProxy,
+				Name: envHTTPProxy,
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{Name: tt.proxy.ValueFrom},
@@ -317,11 +317,11 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			statefulSet := getWorkload(t, dk)
 
 			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-				Name:  envHttpsProxy,
+				Name:  envHTTPSProxy,
 				Value: tt.proxy.Value,
 			})
 			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-				Name:  envHttpProxy,
+				Name:  envHTTPProxy,
 				Value: tt.proxy.Value,
 			})
 

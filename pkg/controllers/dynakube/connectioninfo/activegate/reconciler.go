@@ -85,7 +85,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 			log.Info(dynakube.GetCacheValidMessage(
 				"activegate connection info update",
 				condition.LastTransitionTime,
-				r.dk.ApiRequestThreshold()))
+				r.dk.APIRequestThreshold()))
 
 			return nil
 		}
@@ -95,7 +95,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
+		conditions.SetDynatraceAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return errors.WithMessage(err, "failed to get ActiveGate connection info")
 	}
@@ -137,7 +137,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	_, err = query.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
-		conditions.SetKubeApiError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return err
 	}

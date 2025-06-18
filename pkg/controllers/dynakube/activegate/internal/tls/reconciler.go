@@ -46,7 +46,7 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.ActiveGate().IsEnabled() && r.dk.ActiveGate().IsAutomaticTlsSecretEnabled() && r.dk.ActiveGate().TlsSecretName == "" {
+	if r.dk.ActiveGate().IsEnabled() && r.dk.ActiveGate().IsAutomaticTLSSecretEnabled() && r.dk.ActiveGate().TLSSecretName == "" {
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
 
@@ -71,7 +71,7 @@ func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	}
 
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -146,7 +146,7 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	err = query.Create(ctx, secret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}

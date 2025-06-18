@@ -36,7 +36,7 @@ func GetCurlPodLogStream(ctx context.Context, t *testing.T, resources *resources
 
 type Option func(curlPod *corev1.Pod)
 
-func NewPod(podName, namespaceName, targetUrl string, options ...Option) *corev1.Pod {
+func NewPod(podName, namespaceName, targetURL string, options ...Option) *corev1.Pod {
 	curlPod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podName,
@@ -54,7 +54,7 @@ func NewPod(podName, namespaceName, targetUrl string, options ...Option) *corev1
 						"curl",
 					},
 					Args: []string{
-						targetUrl,
+						targetURL,
 						"--insecure",
 						"--verbose",
 					},

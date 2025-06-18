@@ -114,7 +114,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=15
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	DynatraceApiRequestThreshold int `json:"dynatraceApiRequestThreshold,omitempty"`
+	DynatraceAPIRequestThreshold int `json:"dynatraceApiRequestThreshold,omitempty"`
 
 	// Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
 	// Set to `true` if you want to skip certification validation checks.

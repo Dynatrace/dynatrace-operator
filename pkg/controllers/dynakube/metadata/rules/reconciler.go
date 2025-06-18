@@ -61,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]dynakube.EnrichmentRule, error) {
 	rulesResponse, err := r.dtc.GetRulesSettings(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
-		conditions.SetDynatraceApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetDynatraceAPIError(r.dk.Conditions(), conditionType, err)
 
 		return nil, errors.Join(err, errors.New("error trying to check if rules exist"))
 	}

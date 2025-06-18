@@ -110,7 +110,7 @@ func TestConvertTo(t *testing.T) {
 
 func getMovedFeatureFlagList() []string {
 	return []string{
-		exp.ApiRequestThresholdKey,
+		exp.APIRequestThresholdKey,
 		exp.OASecCompProfileKey,
 		exp.InjectionMetadataEnrichmentKey,
 	}
@@ -137,11 +137,11 @@ func getOldDynakubeBase() DynaKube {
 			Name:      "name",
 			Namespace: "namespace",
 			Annotations: map[string]string{
-				exp.ApiRequestThresholdKey:         "42",
+				exp.APIRequestThresholdKey:         "42",
 				exp.OASecCompProfileKey:            "seccomp",
 				exp.InjectionMetadataEnrichmentKey: "false",
 				exp.AGIgnoreProxyKey:               "true",
-				exp.AGAutomaticK8sApiMonitoringKey: "true",
+				exp.AGAutomaticK8sAPIMonitoringKey: "true",
 				exp.CSIMaxFailedMountAttemptsKey:   "9",
 			},
 			Labels: map[string]string{
@@ -239,10 +239,10 @@ func getOldActiveGateSpec() ActiveGateSpec {
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
-		TlsSecretName:     "activegate-tls-secret-name",
+		TLSSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
 		Capabilities: []CapabilityDisplayName{
-			DynatraceApiCapability.DisplayName,
+			DynatraceAPICapability.DisplayName,
 			KubeMonCapability.DisplayName,
 			MetricsIngestCapability.DisplayName,
 		},
@@ -348,7 +348,7 @@ func getOldStatus() DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		DynatraceApi: DynatraceApiStatus{
+		DynatraceAPI: DynatraceAPIStatus{
 			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{

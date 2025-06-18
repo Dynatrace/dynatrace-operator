@@ -33,7 +33,7 @@ func TestActiveGateUpdater(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceApiCapability.DisplayName},
+					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName},
 					CapabilityProperties: activegate.CapabilityProperties{
 						Image: testImage.String(),
 					},
@@ -60,7 +60,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 	t.Run("Set according to defaults, unset previous status", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
 					CapabilityProperties: activegate.CapabilityProperties{},
 				},

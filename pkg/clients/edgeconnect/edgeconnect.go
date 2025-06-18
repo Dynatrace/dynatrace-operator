@@ -20,7 +20,7 @@ type ModificationInfo struct {
 
 type Instance struct {
 	Version    string `json:"version,omitempty"`
-	InstanceId string `json:"instanceId,omitempty"`
+	InstanceID string `json:"instanceId,omitempty"`
 }
 
 type GetResponse struct {
@@ -28,7 +28,7 @@ type GetResponse struct {
 	Metadata                   Metadata         `json:"metadata"`
 	ID                         string           `json:"id,omitempty"`
 	Name                       string           `json:"name"`
-	OauthClientId              string           `json:"oauthClientId"`
+	OauthClientID              string           `json:"oauthClientId"`
 	HostPatterns               []string         `json:"hostPatterns"`
 	ManagedByDynatraceOperator bool             `json:"managedByDynatraceOperator,omitempty"`
 }
@@ -43,7 +43,7 @@ type CreateResponse struct {
 	Metadata                   Metadata                  `json:"metadata"`
 	ID                         string                    `json:"id,omitempty"`
 	Name                       string                    `json:"name"`
-	OauthClientId              string                    `json:"oauthClientId"`
+	OauthClientID              string                    `json:"oauthClientId"`
 	OauthClientSecret          string                    `json:"oauthClientSecret"`
 	OauthClientResource        string                    `json:"oauthClientResource"`
 	HostPatterns               []string                  `json:"hostPatterns"`
@@ -53,18 +53,18 @@ type CreateResponse struct {
 
 type Request struct {
 	Name                       string                    `json:"name"`
-	OauthClientId              string                    `json:"oauthClientId,omitempty"`
+	OauthClientID              string                    `json:"oauthClientId,omitempty"`
 	HostPatterns               []string                  `json:"hostPatterns"`
 	HostMappings               []edgeconnect.HostMapping `json:"hostMappings"`
 	ManagedByDynatraceOperator bool                      `json:"managedByDynatraceOperator,omitempty"`
 }
 
-func NewRequest(name string, hostPatterns []string, hostMappings []edgeconnect.HostMapping, oauthClientId string) *Request {
+func NewRequest(name string, hostPatterns []string, hostMappings []edgeconnect.HostMapping, oauthClientID string) *Request {
 	return &Request{
 		Name:                       name,
 		HostPatterns:               hostPatterns,
 		HostMappings:               hostMappings,
-		OauthClientId:              oauthClientId,
+		OauthClientID:              oauthClientID,
 		ManagedByDynatraceOperator: true,
 	}
 }

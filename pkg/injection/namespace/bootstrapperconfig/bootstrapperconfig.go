@@ -56,7 +56,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, s.apiReader, dk.Name)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -72,7 +72,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 	err = k8ssecret.Query(s.client, s.apiReader, log).CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return err
 	}
@@ -114,7 +114,7 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
@@ -125,7 +125,7 @@ func (s *SecretGenerator) generate(ctx context.Context, dk *dynakube.DynaKube) (
 
 	trustedCAs, err := dk.TrustedCAs(ctx, s.apiReader)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}

@@ -43,7 +43,7 @@ const (
 	curlPodNameDynatraceInboundTraffic  = "dynatrace-inbound-traffic"
 	curlPodNameDynatraceOutboundTraffic = "dynatrace-outbound-traffic"
 
-	internetUrl = "https://www.dynatrace.com"
+	internetURL = "https://www.dynatrace.com"
 )
 
 var (
@@ -57,7 +57,7 @@ var (
 	ProxySpec = &value.Source{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
 	}
-	HttpsProxySpec = &value.Source{
+	HTTPSProxySpec = &value.Source{
 		Value: "https://squid.proxy.svc.cluster.local:3128",
 	}
 )
@@ -114,15 +114,15 @@ func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *value
 
 func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
 	if testDynakube.HasProxy() {
-		isNetworkTrafficCutOff(builder, "ingress", curlPodNameDynatraceInboundTraffic, proxyNamespaceName, getWebhookServiceUrl(testDynakube))
-		isNetworkTrafficCutOff(builder, "egress", curlPodNameDynatraceOutboundTraffic, testDynakube.Namespace, internetUrl)
+		isNetworkTrafficCutOff(builder, "ingress", curlPodNameDynatraceInboundTraffic, proxyNamespaceName, getWebhookServiceURL(testDynakube))
+		isNetworkTrafficCutOff(builder, "egress", curlPodNameDynatraceOutboundTraffic, testDynakube.Namespace, internetURL)
 	}
 }
 
-func isNetworkTrafficCutOff(builder *features.FeatureBuilder, directionName, podName, podNamespaceName, targetUrl string) {
-	builder.Assess(directionName+" - query namespace", curl.InstallCutOffCurlPod(podName, podNamespaceName, targetUrl))
+func isNetworkTrafficCutOff(builder *features.FeatureBuilder, directionName, podName, podNamespaceName, targetURL string) {
+	builder.Assess(directionName+" - query namespace", curl.InstallCutOffCurlPod(podName, podNamespaceName, targetURL))
 	builder.Assess(directionName+" - namespace is cutoff", curl.WaitForCutOffCurlPod(podName, podNamespaceName))
-	builder.Teardown(curl.DeleteCutOffCurlPod(podName, podNamespaceName, targetUrl))
+	builder.Teardown(curl.DeleteCutOffCurlPod(podName, podNamespaceName, targetURL))
 }
 
 func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *value.Source) features.Func {
@@ -146,7 +146,7 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *val
 	}
 }
 
-func getWebhookServiceUrl(dk dynakube.DynaKube) string {
+func getWebhookServiceURL(dk dynakube.DynaKube) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dk.Namespace)
 }
 

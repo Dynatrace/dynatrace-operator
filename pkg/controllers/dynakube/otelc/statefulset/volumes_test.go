@@ -30,7 +30,7 @@ func TestVolumes(t *testing.T) {
 	})
 	t.Run("volumes and volume mounts with custom EEC TLS certificate", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "test-tls-name"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "test-tls-name"
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMount := corev1.VolumeMount{
@@ -107,20 +107,20 @@ func TestVolumes(t *testing.T) {
 	t.Run("volumes and volume mounts with telemetry service custom TLS certificate", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{
-			TlsRefName: testTelemetryIngestSecret,
+			TLSRefName: testTelemetryIngestSecret,
 		}
 
-		tlsSecret := getTLSSecret(dk.TelemetryIngest().Spec.TlsRefName, dk.Namespace, "crt", "key")
+		tlsSecret := getTLSSecret(dk.TelemetryIngest().Spec.TLSRefName, dk.Namespace, "crt", "key")
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 
 		statefulSet := getStatefulset(t, dk, &tlsSecret, &dataIngestToken, &configMap)
 
 		expectedVolume := corev1.Volume{
-			Name: customTlsCertVolumeName,
+			Name: customTLSCertVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.TelemetryIngest().Spec.TlsRefName,
+					SecretName: dk.TelemetryIngest().Spec.TLSRefName,
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.TLSCrtDataName,
@@ -138,8 +138,8 @@ func TestVolumes(t *testing.T) {
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 
 		expectedVolumeMount := corev1.VolumeMount{
-			Name:      customTlsCertVolumeName,
-			MountPath: otelcconsts.CustomTlsCertMountPath,
+			Name:      customTLSCertVolumeName,
+			MountPath: otelcconsts.CustomTLSCertMountPath,
 			ReadOnly:  true,
 		}
 
@@ -189,9 +189,9 @@ func TestVolumesWithTelemetryIngestAndInClusterActiveGate(t *testing.T) {
 	t.Run("volumes without trusted CAs", func(t *testing.T) {
 		dk := getTestDynakubeWithTelemetryIngest()
 		dk.Spec.ActiveGate = activegate.Spec{
-			TlsSecretName: "test-ag-cert",
+			TLSSecretName: "test-ag-cert",
 			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 			},
 		}
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
@@ -205,9 +205,9 @@ func TestVolumesWithTelemetryIngestAndInClusterActiveGate(t *testing.T) {
 	t.Run("volume mounts without trusted CAs", func(t *testing.T) {
 		dk := getTestDynakubeWithTelemetryIngest()
 		dk.Spec.ActiveGate = activegate.Spec{
-			TlsSecretName: "test-ag-cert",
+			TLSSecretName: "test-ag-cert",
 			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 			},
 		}
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
@@ -222,9 +222,9 @@ func TestVolumesWithTelemetryIngestAndInClusterActiveGate(t *testing.T) {
 	t.Run("volumes with trusted CAs", func(t *testing.T) {
 		dk := getTestDynakubeWithTelemetryIngest()
 		dk.Spec.ActiveGate = activegate.Spec{
-			TlsSecretName: "test-ag-cert",
+			TLSSecretName: "test-ag-cert",
 			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 			},
 		}
 		dk.Spec.TrustedCAs = "test-trusted-cas"
@@ -239,9 +239,9 @@ func TestVolumesWithTelemetryIngestAndInClusterActiveGate(t *testing.T) {
 	t.Run("volume mounts with trusted CAs", func(t *testing.T) {
 		dk := getTestDynakubeWithTelemetryIngest()
 		dk.Spec.ActiveGate = activegate.Spec{
-			TlsSecretName: "test-ag-cert",
+			TLSSecretName: "test-ag-cert",
 			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 			},
 		}
 		dk.Spec.TrustedCAs = "test-trusted-cas"
@@ -259,9 +259,9 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 	t.Run("volumes without trusted CAs", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensionsAndTelemetryIngest()
 		dk.Spec.ActiveGate = activegate.Spec{
-			TlsSecretName: "test-ag-cert",
+			TLSSecretName: "test-ag-cert",
 			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 			},
 		}
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
@@ -275,9 +275,9 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 	t.Run("volume mounts without trusted CAs", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensionsAndTelemetryIngest()
 		dk.Spec.ActiveGate = activegate.Spec{
-			TlsSecretName: "test-ag-cert",
+			TLSSecretName: "test-ag-cert",
 			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 			},
 		}
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
@@ -292,9 +292,9 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 	t.Run("volumes with trusted CAs", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensionsAndTelemetryIngest()
 		dk.Spec.ActiveGate = activegate.Spec{
-			TlsSecretName: "test-ag-cert",
+			TLSSecretName: "test-ag-cert",
 			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 			},
 		}
 		dk.Spec.TrustedCAs = "test-trusted-cas"
@@ -309,9 +309,9 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 	t.Run("volume mounts with trusted CAs", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensionsAndTelemetryIngest()
 		dk.Spec.ActiveGate = activegate.Spec{
-			TlsSecretName: "test-ag-cert",
+			TLSSecretName: "test-ag-cert",
 			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 			},
 		}
 		dk.Spec.TrustedCAs = "test-trusted-cas"

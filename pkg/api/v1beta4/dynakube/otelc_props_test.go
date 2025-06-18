@@ -26,9 +26,9 @@ func TestIsAGCertificateNeeded(t *testing.T) {
 		dk := &DynaKube{
 			Spec: DynaKubeSpec{
 				ActiveGate: activegate.Spec{
-					TlsSecretName: "test-ag-cert",
+					TLSSecretName: "test-ag-cert",
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.DynatraceApiCapability.DisplayName,
+						activegate.DynatraceAPICapability.DisplayName,
 					},
 				},
 			},
@@ -39,9 +39,9 @@ func TestIsAGCertificateNeeded(t *testing.T) {
 		dk := &DynaKube{
 			Spec: DynaKubeSpec{
 				ActiveGate: activegate.Spec{
-					TlsSecretName: "test-ag-cert",
+					TLSSecretName: "test-ag-cert",
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.DynatraceApiCapability.DisplayName,
+						activegate.DynatraceAPICapability.DisplayName,
 					},
 				},
 				TrustedCAs: "test",
@@ -70,9 +70,9 @@ func TestIsCACertificateNeeded(t *testing.T) {
 		dk := &DynaKube{
 			Spec: DynaKubeSpec{
 				ActiveGate: activegate.Spec{
-					TlsSecretName: "test-ag-cert",
+					TLSSecretName: "test-ag-cert",
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.DynatraceApiCapability.DisplayName,
+						activegate.DynatraceAPICapability.DisplayName,
 					},
 				},
 			},
@@ -83,9 +83,9 @@ func TestIsCACertificateNeeded(t *testing.T) {
 		dk := &DynaKube{
 			Spec: DynaKubeSpec{
 				ActiveGate: activegate.Spec{
-					TlsSecretName: "test-ag-cert",
+					TLSSecretName: "test-ag-cert",
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.DynatraceApiCapability.DisplayName,
+						activegate.DynatraceAPICapability.DisplayName,
 					},
 				},
 				TrustedCAs: "test",

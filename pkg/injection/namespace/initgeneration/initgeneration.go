@@ -165,8 +165,8 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dk *d
 	}
 
 	return &startup.SecretConfig{
-		ApiUrl:              dk.Spec.APIURL,
-		ApiToken:            getAPIToken(tokens),
+		APIURL:              dk.Spec.APIURL,
+		APIToken:            getAPIToken(tokens),
 		PaasToken:           getPaasToken(tokens),
 		TenantUUID:          dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID,
 		Proxy:               proxy,
@@ -189,11 +189,11 @@ func getPaasToken(tokens corev1.Secret) string {
 		return string(tokens.Data[dtclient.PaasToken])
 	}
 
-	return string(tokens.Data[dtclient.ApiToken])
+	return string(tokens.Data[dtclient.APIToken])
 }
 
 func getAPIToken(tokens corev1.Secret) string {
-	return string(tokens.Data[dtclient.ApiToken])
+	return string(tokens.Data[dtclient.APIToken])
 }
 
 // getHostMonitoringNodes creates a mapping between all the nodes and the tenantUID for the host-monitoring dynakube on that node.

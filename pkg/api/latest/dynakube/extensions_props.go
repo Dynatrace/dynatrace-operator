@@ -9,7 +9,7 @@ func (dk *DynaKube) IsExtensionsEnabled() bool {
 }
 
 func (dk *DynaKube) ExtensionsTLSRefName() string {
-	return dk.Spec.Templates.ExtensionExecutionController.TlsRefName
+	return dk.Spec.Templates.ExtensionExecutionController.TLSRefName
 }
 
 func (dk *DynaKube) ExtensionsNeedsSelfSignedTLS() bool {

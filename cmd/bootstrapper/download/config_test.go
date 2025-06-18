@@ -109,7 +109,7 @@ func testConfig(t *testing.T) Config {
 
 	return Config{
 		URL:           "url",
-		ApiToken:      "token",
+		APIToken:      "token",
 		SkipCertCheck: true,
 		Proxy:         "proxy",
 		NoProxy:       "no-proxy",

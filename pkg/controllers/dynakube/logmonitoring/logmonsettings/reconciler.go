@@ -79,7 +79,7 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 		matchers = r.dk.LogMonitoring().IngestRuleMatchers
 	}
 
-	objectId, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
+	objectID, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
 
 	if err != nil {
 		setLogMonitoringSettingError(r.dk.Conditions(), ConditionType, err.Error())
@@ -87,7 +87,7 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 		return err
 	}
 
-	log.Info("logmonitoring setting created", "settings", objectId)
+	log.Info("logmonitoring setting created", "settings", objectID)
 
 	return nil
 }

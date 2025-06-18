@@ -243,7 +243,7 @@ func WithSystemCAs(useSystemCAs bool) Option {
 	}
 }
 
-func WithApiToken(apiToken string) Option {
+func WithAPIToken(apiToken string) Option {
 	return func(c *Config) error {
 		c.apiToken = apiToken
 

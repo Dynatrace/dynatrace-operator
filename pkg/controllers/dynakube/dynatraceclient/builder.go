@@ -88,7 +88,7 @@ func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	apiToken := dynatraceClientBuilder.getTokens().ApiToken().Value
+	apiToken := dynatraceClientBuilder.getTokens().APIToken().Value
 	paasToken := dynatraceClientBuilder.getTokens().PaasToken().Value
 
 	if paasToken == "" {
@@ -123,8 +123,8 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 	if !dynatraceClientBuilder.dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",
-			dkStatus.DynatraceApi.LastTokenScopeRequest,
-			dynatraceClientBuilder.dk.ApiRequestThreshold()))
+			dkStatus.DynatraceAPI.LastTokenScopeRequest,
+			dynatraceClientBuilder.dk.APIRequestThreshold()))
 
 		return lastErrorFromCondition(dkStatus)
 	}
@@ -136,7 +136,7 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 
 	log.Info("token verified")
 
-	dkStatus.DynatraceApi.LastTokenScopeRequest = metav1.Now()
+	dkStatus.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
 
 	return nil
 }

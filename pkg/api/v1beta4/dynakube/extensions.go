@@ -27,7 +27,7 @@ type ExtensionExecutionControllerSpec struct {
 	ImageRef image.Ref `json:"imageRef,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TlsRefName string `json:"tlsRefName,omitempty"`
+	TLSRefName string `json:"tlsRefName,omitempty"`
 
 	// Defines name of ConfigMap containing custom configuration file
 	// +kubebuilder:validation:Optional
@@ -72,7 +72,7 @@ type OpenTelemetryCollectorSpec struct {
 	ImageRef image.Ref `json:"imageRef,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	TlsRefName string `json:"tlsRefName,omitempty"`
+	TLSRefName string `json:"tlsRefName,omitempty"`
 
 	// Define resources' requests and limits for single OtelCollector pod
 	// +kubebuilder:validation:Optional

@@ -75,7 +75,7 @@ func TestAddCertVolumeMounts(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						"routing",
 					},
-					TlsSecretName: "test",
+					TLSSecretName: "test",
 				},
 			},
 		}

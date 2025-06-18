@@ -24,7 +24,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 	builder := features.New("app-monitoring-without-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	appOnlyDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
 

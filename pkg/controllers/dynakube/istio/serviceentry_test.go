@@ -37,9 +37,9 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Hosts:    []string{testHost},
 				Location: istio.ServiceEntry_MESH_EXTERNAL,
 				Ports: []*istio.ServicePort{{
-					Name:     protocolHttps + "-" + strconv.Itoa(testPort),
+					Name:     protocolHTTPS + "-" + strconv.Itoa(testPort),
 					Number:   testPort,
-					Protocol: strings.ToUpper(protocolHttps),
+					Protocol: strings.ToUpper(protocolHTTPS),
 				}},
 				Resolution: istio.ServiceEntry_DNS,
 			},
@@ -47,7 +47,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		commHosts1 := []dtclient.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
-			Protocol: protocolHttps,
+			Protocol: protocolHTTPS,
 		}}
 		result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.Equal(t, expected, result)
@@ -55,7 +55,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		commHosts2 := []dtclient.CommunicationHost{{
 			Host:     testHost1,
 			Port:     testPort1,
-			Protocol: protocolHttps,
+			Protocol: protocolHTTPS,
 		}}
 		result = buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts2)
 		assert.NotEqual(t, expected, result)
@@ -71,9 +71,9 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Hosts:    []string{testHost, testHost1},
 				Location: istio.ServiceEntry_MESH_EXTERNAL,
 				Ports: []*istio.ServicePort{{
-					Name:     protocolHttps + "-" + strconv.Itoa(testPort),
+					Name:     protocolHTTPS + "-" + strconv.Itoa(testPort),
 					Number:   testPort,
-					Protocol: strings.ToUpper(protocolHttps),
+					Protocol: strings.ToUpper(protocolHTTPS),
 				}},
 				Resolution: istio.ServiceEntry_DNS,
 			},
@@ -81,18 +81,18 @@ func TestServiceEntryGeneration(t *testing.T) {
 		commHosts1 := []dtclient.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
-			Protocol: protocolHttps,
+			Protocol: protocolHTTPS,
 		},
 			{
 				Host:     testHost1,
 				Port:     testPort,
-				Protocol: protocolHttps,
+				Protocol: protocolHTTPS,
 			}}
 		result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.Equal(t, expected, result)
 	})
 	t.Run(`generate with Ip`, func(t *testing.T) {
-		const testIp = "42.42.42.42"
+		const testIP = "42.42.42.42"
 		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -101,36 +101,36 @@ func TestServiceEntryGeneration(t *testing.T) {
 			},
 			Spec: istio.ServiceEntry{
 				Hosts:     []string{ignoredSubdomain},
-				Addresses: []string{testIp + subnetMask},
+				Addresses: []string{testIP + subnetMask},
 				Location:  istio.ServiceEntry_MESH_EXTERNAL,
 				Ports: []*istio.ServicePort{{
-					Name:     protocolTcp + "-" + strconv.Itoa(testPort),
+					Name:     protocolTCP + "-" + strconv.Itoa(testPort),
 					Number:   testPort,
-					Protocol: protocolTcp,
+					Protocol: protocolTCP,
 				}},
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
 		commHosts1 := []dtclient.CommunicationHost{{
-			Host:     testIp,
+			Host:     testIP,
 			Port:     testPort,
-			Protocol: protocolHttps,
+			Protocol: protocolHTTPS,
 		}}
 		result := buildServiceEntryIPs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.Equal(t, expected, result)
 
 		commHosts2 := []dtclient.CommunicationHost{{
-			Host:     testIp,
+			Host:     testIP,
 			Port:     testPort1,
-			Protocol: protocolHttps,
+			Protocol: protocolHTTPS,
 		}}
 		result = buildServiceEntryIPs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts2)
 		assert.NotEqual(t, expected, result)
 	})
 	t.Run(`generate with two different Ips and same ports`, func(t *testing.T) {
 		const (
-			testIp  = "42.42.42.42"
-			testIp1 = "42.42.42.43"
+			testIP  = "42.42.42.42"
+			testIP1 = "42.42.42.43"
 		)
 
 		expected := &istiov1beta1.ServiceEntry{
@@ -141,25 +141,25 @@ func TestServiceEntryGeneration(t *testing.T) {
 			},
 			Spec: istio.ServiceEntry{
 				Hosts:     []string{ignoredSubdomain},
-				Addresses: []string{testIp + subnetMask, testIp1 + subnetMask},
+				Addresses: []string{testIP + subnetMask, testIP1 + subnetMask},
 				Location:  istio.ServiceEntry_MESH_EXTERNAL,
 				Ports: []*istio.ServicePort{{
-					Name:     protocolTcp + "-" + strconv.Itoa(testPort),
+					Name:     protocolTCP + "-" + strconv.Itoa(testPort),
 					Number:   testPort,
-					Protocol: protocolTcp,
+					Protocol: protocolTCP,
 				}},
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
 		commHosts1 := []dtclient.CommunicationHost{{
-			Host:     testIp,
+			Host:     testIP,
 			Port:     testPort,
-			Protocol: protocolHttps,
+			Protocol: protocolHTTPS,
 		},
 			{
-				Host:     testIp1,
+				Host:     testIP1,
 				Port:     testPort,
-				Protocol: protocolHttps,
+				Protocol: protocolHTTPS,
 			}}
 		result := buildServiceEntryIPs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.Equal(t, expected, result)
@@ -171,7 +171,7 @@ func TestBuildServiceEntryForHostname(t *testing.T) {
 	commHosts1 := []dtclient.CommunicationHost{{
 		Host:     testHost1,
 		Port:     testPort1,
-		Protocol: protocolHttp,
+		Protocol: protocolHTTP,
 	}}
 	result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 	assert.Equal(t, expected, result)
@@ -179,14 +179,14 @@ func TestBuildServiceEntryForHostname(t *testing.T) {
 	commHosts2 := []dtclient.CommunicationHost{{
 		Host:     testHost2,
 		Port:     testPort2,
-		Protocol: protocolHttp,
+		Protocol: protocolHTTP,
 	}}
 	result = buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts2)
 	assert.NotEqual(t, expected, result)
 }
 
 func TestBuildServiceEntryIp(t *testing.T) {
-	expected := buildExpectedServiceEntryForIp(t)
+	expected := buildExpectedServiceEntryForIP(t)
 	commHosts1 := []dtclient.CommunicationHost{{
 		Host: testIP1,
 		Port: testPort1,
@@ -212,9 +212,9 @@ func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1beta1.ServiceEnt
 		Spec: istio.ServiceEntry{
 			Hosts: []string{testHost1},
 			Ports: []*istio.ServicePort{{
-				Name:     protocolHttp + "-" + testPort1String,
+				Name:     protocolHTTP + "-" + testPort1String,
 				Number:   testPort1,
-				Protocol: strings.ToUpper(protocolHttp),
+				Protocol: strings.ToUpper(protocolHTTP),
 			}},
 			Location:   istio.ServiceEntry_MESH_EXTERNAL,
 			Resolution: istio.ServiceEntry_DNS,
@@ -222,7 +222,7 @@ func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1beta1.ServiceEnt
 	}
 }
 
-func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1beta1.ServiceEntry {
+func buildExpectedServiceEntryForIP(_ *testing.T) *istiov1beta1.ServiceEntry {
 	return &istiov1beta1.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -233,9 +233,9 @@ func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1beta1.ServiceEntry {
 			Hosts:     []string{ignoredSubdomain},
 			Addresses: []string{"42.42.42.42" + subnetMask},
 			Ports: []*istio.ServicePort{{
-				Name:     protocolTcp + "-" + testPort1String,
+				Name:     protocolTCP + "-" + testPort1String,
 				Number:   testPort1,
-				Protocol: protocolTcp,
+				Protocol: protocolTCP,
 			}},
 			Location:   istio.ServiceEntry_MESH_EXTERNAL,
 			Resolution: istio.ServiceEntry_NONE,
