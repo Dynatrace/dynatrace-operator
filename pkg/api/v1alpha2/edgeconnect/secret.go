@@ -30,12 +30,12 @@ func (ec *EdgeConnect) GetOAuthClientFromSecret(ctx context.Context, kubeReader 
 		return oAuth, errors.WithMessage(err, fmt.Sprintf("failed to get clientSecret from %s secret", secretName))
 	}
 
-	oauthClientId, hasKey := clientSecret.Data[consts.KeyEdgeConnectOauthClientID]
+	oauthClientID, hasKey := clientSecret.Data[consts.KeyEdgeConnectOauthClientID]
 	if !hasKey {
 		return oAuth, errors.Errorf("missing token %s in client secret %s", consts.KeyEdgeConnectOauthClientID, secretName)
 	}
 
-	oAuth.ClientID = string(oauthClientId)
+	oAuth.ClientID = string(oauthClientID)
 
 	oauthClientSecret, hasKey := clientSecret.Data[consts.KeyEdgeConnectOauthClientSecret]
 	if !hasKey {

@@ -35,16 +35,16 @@ func TestCreateClient(t *testing.T) {
 
 func basicTestSecretConfigForClient() *SecretConfig {
 	return &SecretConfig{
-		ApiUrl:    testApiUrl,
-		ApiToken:  testApiToken,
+		APIURL:    testAPIURL,
+		APIToken:  testAPIToken,
 		PaasToken: testPaasToken,
 	}
 }
 
 func complexTestSecretConfigForClient() *SecretConfig {
 	return &SecretConfig{
-		ApiUrl:      testApiUrl,
-		ApiToken:    testApiToken,
+		APIURL:      testAPIURL,
+		APIToken:    testAPIToken,
 		PaasToken:   testPaasToken,
 		Proxy:       testProxy,
 		NoProxy:     testNoProxy,

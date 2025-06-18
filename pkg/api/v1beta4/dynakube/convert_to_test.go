@@ -238,7 +238,7 @@ func TestConvertTo(t *testing.T) {
 		require.NotNil(t, to.Spec.TelemetryIngest)
 		assert.Equal(t, from.Spec.TelemetryIngest.Protocols, to.Spec.TelemetryIngest.Protocols)
 		assert.Equal(t, from.Spec.TelemetryIngest.ServiceName, to.Spec.TelemetryIngest.ServiceName)
-		assert.Equal(t, from.Spec.TelemetryIngest.TlsRefName, to.Spec.TelemetryIngest.TlsRefName)
+		assert.Equal(t, from.Spec.TelemetryIngest.TLSRefName, to.Spec.TelemetryIngest.TLSRefName)
 	})
 }
 
@@ -264,7 +264,7 @@ func getOldDynakubeBase() DynaKube {
 			Namespace: "namespace",
 			Annotations: map[string]string{
 				exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
-				exp.AGAutomaticK8sApiMonitoringKey: "true",
+				exp.AGAutomaticK8sAPIMonitoringKey: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
@@ -283,13 +283,13 @@ func getOldDynakubeBase() DynaKube {
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceApiRequestThreshold: ptr.To(uint16(42)),
+			DynatraceAPIRequestThreshold: ptr.To(uint16(42)),
 			MetadataEnrichment: MetadataEnrichment{
 				Enabled: ptr.To(false),
 			},
 			TelemetryIngest: &telemetryingest.Spec{
 				ServiceName: "telemetry-ingest-service-name",
-				TlsRefName:  "telemetry-ingest-tls-secret-name",
+				TLSRefName:  "telemetry-ingest-tls-secret-name",
 				Protocols:   []string{"protocol1", "protocol2"},
 			},
 		},
@@ -371,10 +371,10 @@ func getOldActiveGateSpec() activegate.Spec {
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
 		PersistentVolumeClaim: getPersistentVolumeClaimSpec(),
-		TlsSecretName:         "activegate-tls-secret-name",
+		TLSSecretName:         "activegate-tls-secret-name",
 		PriorityClassName:     "activegate-priority-class-name",
 		Capabilities: []activegate.CapabilityDisplayName{
-			activegate.DynatraceApiCapability.DisplayName,
+			activegate.DynatraceAPICapability.DisplayName,
 			activegate.KubeMonCapability.DisplayName,
 			activegate.MetricsIngestCapability.DisplayName,
 		},
@@ -456,7 +456,7 @@ func getOldOpenTelemetryTemplateSpec() OpenTelemetryCollectorSpec {
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
-		TlsRefName: "tls-ref-name",
+		TLSRefName: "tls-ref-name",
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
@@ -493,7 +493,7 @@ func getOldExtensionExecutionControllerSpec() ExtensionExecutionControllerSpec {
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
-		TlsRefName: "tls-ref-name",
+		TLSRefName: "tls-ref-name",
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
@@ -706,7 +706,7 @@ func getOldStatus() DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		DynatraceApi: DynatraceApiStatus{
+		DynatraceAPI: DynatraceAPIStatus{
 			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{

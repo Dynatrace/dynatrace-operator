@@ -584,7 +584,7 @@ func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
 			runner.fs,
 			filepath.Join(
 				consts.EnrichmentInitPath,
-				fmt.Sprintf(consts.EnrichmentInitJsonFilenameTemplate, container.Name)))
+				fmt.Sprintf(consts.EnrichmentInitJSONFilenameTemplate, container.Name)))
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
@@ -618,7 +618,7 @@ func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
 			runner.fs,
 			filepath.Join(
 				consts.EnrichmentMountPath,
-				fmt.Sprintf(consts.EnrichmentInitJsonFilenameTemplate, container.Name)))
+				fmt.Sprintf(consts.EnrichmentInitJSONFilenameTemplate, container.Name)))
 		assertIfFileNotExists(t,
 			runner.fs,
 			filepath.Join(

@@ -49,7 +49,7 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
 	}
 
@@ -75,7 +75,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	optionsTelemetryIngestEnabled := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true, "zipkin"),
 		componentDynakube.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
@@ -83,7 +83,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(optionsTelemetryIngestEnabled...)
 
-	agSecret, err := createAgTlsSecret(testDynakube.Namespace)
+	agSecret, err := createAgTLSSecret(testDynakube.Namespace)
 	require.NoError(t, err, "failed to create ag-tls secret")
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
 
@@ -96,7 +96,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakube))
 
 	optionsTelemetryIngestDisabled := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(false),
 		componentDynakube.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
@@ -124,7 +124,7 @@ func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
 		componentDynakube.WithTelemetryIngestEndpointTLS(consts.TelemetryIngestTLSSecretName),
 	}
@@ -157,7 +157,7 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	optionsZipkin := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true, "zipkin"),
 	}
 
@@ -173,11 +173,11 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	var zipkinConfigResourceVersion string
 	builder.Assess("otel collector configuration timestamp", getOtelCollectorConfigResourceVersion(&testDynakubeZipkin, &zipkinConfigResourceVersion))
 
-	var zipkinPodStartTs time.Time
-	builder.Assess("otel collector pod creation timestamp", getOtelCollectorPodTimestamp(&testDynakubeZipkin, &zipkinPodStartTs))
+	var zipkinPodStartTS time.Time
+	builder.Assess("otel collector pod creation timestamp", getOtelCollectorPodTimestamp(&testDynakubeZipkin, &zipkinPodStartTS))
 
 	optionsJaeger := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true, "jaeger"),
 	}
 
@@ -196,10 +196,10 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 		return ctx
 	})
 
-	var jaegerPodStartTs time.Time
-	builder.Assess("otel collector pod creation timestamp", getOtelCollectorPodTimestamp(&testDynakubeJaeger, &jaegerPodStartTs))
+	var jaegerPodStartTS time.Time
+	builder.Assess("otel collector pod creation timestamp", getOtelCollectorPodTimestamp(&testDynakubeJaeger, &jaegerPodStartTS))
 	builder.Assess("otel collector pod restarted", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-		assert.Greater(t, jaegerPodStartTs, zipkinPodStartTs)
+		assert.Greater(t, jaegerPodStartTS, zipkinPodStartTS)
 
 		return ctx
 	})
@@ -381,7 +381,7 @@ func getOtelCollectorEndpointConfigMap(dk *dynakube.DynaKube, ctx context.Contex
 	resources := envConfig.Client().Resources()
 
 	var otelCollectorEndpointConfigMap corev1.ConfigMap
-	err := resources.WithNamespace(dk.Namespace).Get(ctx, otelcconsts.OtlpApiEndpointConfigMapName, dk.Namespace, &otelCollectorEndpointConfigMap)
+	err := resources.WithNamespace(dk.Namespace).Get(ctx, otelcconsts.OtlpAPIEndpointConfigMapName, dk.Namespace, &otelCollectorEndpointConfigMap)
 
 	if err != nil {
 		return nil, err
@@ -407,7 +407,7 @@ func waitForShutdown(name string, namespace string) features.Func {
 	}
 }
 
-func createAgTlsSecret(namespace string) (corev1.Secret, error) {
+func createAgTLSSecret(namespace string) (corev1.Secret, error) {
 	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificate))
 	if err != nil {
 		return corev1.Secret{}, err

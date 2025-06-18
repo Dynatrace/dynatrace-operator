@@ -34,7 +34,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 		dynakubeComponents.WithName("app-codemodules"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: bootstrapperImage}}),
 		dynakubeComponents.WithAnnotations(map[string]string{exp.OANodeImagePullKey: "true"}),
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 	)
 
 	sampleNamespace := *namespace.New("codemodules-sample-node-image-pull")

@@ -22,7 +22,7 @@ type Properties struct {
 	Type          string
 	Flavor        string
 	TargetVersion string
-	Url           string // if this is set all settings before it will be ignored
+	URL           string // if this is set all settings before it will be ignored
 
 	PathResolver metadata.PathResolver
 	Technologies []string
@@ -44,9 +44,9 @@ type Installer struct {
 
 type NewFunc func(afero.Fs, dtclient.Client, *Properties) installer.Installer
 
-var _ NewFunc = NewUrlInstaller
+var _ NewFunc = NewURLInstaller
 
-func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) installer.Installer {
+func NewURLInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) installer.Installer {
 	return &Installer{
 		fs:        fs,
 		dtc:       dtc,
@@ -116,7 +116,7 @@ func (installer Installer) installAgent(ctx context.Context, targetDir string) e
 		}
 	}()
 
-	if err := installer.downloadOneAgentFromUrl(ctx, tmpFile); err != nil {
+	if err := installer.downloadOneAgentFromURL(ctx, tmpFile); err != nil {
 		return err
 	}
 

@@ -23,7 +23,7 @@ type ContainerInfo struct {
 
 type environment struct {
 	FailurePolicy string `json:"failurePolicy"`
-	InstallerUrl  string `json:"installerUrl"`
+	InstallerURL  string `json:"installerUrl"`
 
 	InstallerFlavor string `json:"installerFlavor"`
 	InstallVersion  string `json:"installVersion"`
@@ -122,7 +122,7 @@ func (env *environment) getMetadataEnrichmentFieldSetters() []func() error {
 }
 
 func (env *environment) setOptionalFields() {
-	env.addInstallerUrl()
+	env.addInstallerURL()
 	env.addInstallerFlavor()
 	env.addInstallVersion()
 	env.addClusterName()
@@ -277,13 +277,13 @@ func (env *environment) addWorkloadName() error {
 }
 
 func (env *environment) addWorkloadAnnotations() error {
-	workloadAnnotationsJson, err := checkEnvVar(consts.EnrichmentWorkloadAnnotationsEnv)
+	workloadAnnotationsJSON, err := checkEnvVar(consts.EnrichmentWorkloadAnnotationsEnv)
 	if err != nil {
 		return err
 	}
 
 	workloadAnnotations := map[string]string{}
-	err = json.Unmarshal([]byte(workloadAnnotationsJson), &workloadAnnotations)
+	err = json.Unmarshal([]byte(workloadAnnotationsJSON), &workloadAnnotations)
 
 	if err != nil {
 		return err
@@ -304,9 +304,9 @@ func (env *environment) addEntityID() {
 	env.K8ClusterEntityID = entityID
 }
 
-func (env *environment) addInstallerUrl() {
-	url, _ := checkEnvVar(consts.AgentInstallerUrlEnv)
-	env.InstallerUrl = url
+func (env *environment) addInstallerURL() {
+	url, _ := checkEnvVar(consts.AgentInstallerURLEnv)
+	env.InstallerURL = url
 }
 
 func (env *environment) addInstallVersion() {

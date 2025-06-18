@@ -16,7 +16,7 @@ var (
 		activegate.KubeMonCapability.DisplayName:       activegate.KubeMonCapability.ArgumentName,
 		activegate.RoutingCapability.DisplayName:       activegate.RoutingCapability.ArgumentName,
 		activegate.MetricsIngestCapability.DisplayName: activegate.MetricsIngestCapability.ArgumentName,
-		activegate.DynatraceApiCapability.DisplayName:  activegate.DynatraceApiCapability.ArgumentName,
+		activegate.DynatraceAPICapability.DisplayName:  activegate.DynatraceAPICapability.ArgumentName,
 		activegate.DebuggingCapability.DisplayName:     activegate.DebuggingCapability.ArgumentName,
 	}
 )
@@ -139,11 +139,11 @@ func BuildHostEntries(dk dynakube.DynaKube) string {
 }
 
 func buildServiceHostName(host string) string {
-	return fmt.Sprintf("%s:%d", host, consts.HttpsServicePort)
+	return fmt.Sprintf("%s:%d", host, consts.HTTPSServicePort)
 }
 
 func buildServiceDomainName(dynakubeName string, namespaceName string) string {
-	return fmt.Sprintf("%s.%s:%d", BuildServiceName(dynakubeName), namespaceName, consts.HttpsServicePort)
+	return fmt.Sprintf("%s.%s:%d", BuildServiceName(dynakubeName), namespaceName, consts.HTTPSServicePort)
 }
 
 func buildDNSEntry(host string) string {

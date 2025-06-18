@@ -183,7 +183,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(ctx context.Context, prevRevi
 }
 
 func (dtc *dynatraceClient) createProcessModuleConfigRequest(ctx context.Context, prevRevision uint) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, dtc.getProcessModuleConfigURL(), nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
@@ -197,7 +197,7 @@ func (dtc *dynatraceClient) createProcessModuleConfigRequest(ctx context.Context
 
 	req.URL.RawQuery = query.Encode()
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", ApiTokenHeader+dtc.paasToken)
+	req.Header.Add("Authorization", APITokenHeader+dtc.paasToken)
 
 	return req, nil
 }

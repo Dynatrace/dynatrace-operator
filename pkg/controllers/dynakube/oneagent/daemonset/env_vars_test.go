@@ -26,7 +26,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		}
 		envVars, _ := dsBuilder.environmentVariables()
 
-		assert.Contains(t, envVars, corev1.EnvVar{Name: dtClusterId, ValueFrom: nil})
+		assert.Contains(t, envVars, corev1.EnvVar{Name: dtClusterID, ValueFrom: nil})
 		assert.True(t, k8senv.IsIn(envVars, dtNodeName))
 	})
 	t.Run("returns all when everything is turned on", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestEnvironmentVariables(t *testing.T) {
 	t.Run("when injected envvars are provided then they will not be overridden", func(t *testing.T) {
 		potentiallyOverriddenEnvVars := []corev1.EnvVar{
 			{Name: dtNodeName, Value: testValue},
-			{Name: dtClusterId, Value: testValue},
+			{Name: dtClusterID, Value: testValue},
 			{Name: deploymentmetadata.EnvDtDeploymentMetadata, Value: testValue},
 			{Name: deploymentmetadata.EnvDtOperatorVersion, Value: testValue},
 			{Name: connectioninfo.EnvDtTenant, Value: testValue},
@@ -76,7 +76,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		envVars, _ := builder.environmentVariables()
 
 		assertEnvVarNameAndValue(t, envVars, dtNodeName, testValue)
-		assertEnvVarNameAndValue(t, envVars, dtClusterId, testValue)
+		assertEnvVarNameAndValue(t, envVars, dtClusterID, testValue)
 		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDtDeploymentMetadata, testValue)
 		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDtOperatorVersion, testValue)
 		assertEnvVarNameAndValue(t, envVars, connectioninfo.EnvDtTenant, testValue)
@@ -121,8 +121,8 @@ func TestAddClusterIDEnv(t *testing.T) {
 }
 
 func assertClusterIDEnv(t *testing.T, envs []corev1.EnvVar, clusterID string) {
-	env := k8senv.FindEnvVar(envs, dtClusterId)
-	assert.Equal(t, dtClusterId, env.Name)
+	env := k8senv.FindEnvVar(envs, dtClusterID)
+	assert.Equal(t, dtClusterID, env.Name)
 	assert.Equal(t, clusterID, env.Value)
 }
 

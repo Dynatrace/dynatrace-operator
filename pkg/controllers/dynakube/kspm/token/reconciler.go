@@ -67,7 +67,7 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 		err = query.Create(ctx, secretConfig)
 		if err != nil {
 			log.Info("could not create secret for kspm token", "name", secretConfig.Name)
-			conditions.SetKubeApiError(dk.Conditions(), kspmConditionType, err)
+			conditions.SetKubeAPIError(dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
@@ -75,7 +75,7 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 		dk.KSPM().TokenSecretHash = tokenHash
 		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
 	} else if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), kspmConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), kspmConditionType, err)
 
 		return err
 	}

@@ -41,9 +41,9 @@ func (b *builder) arguments() ([]string, error) {
 	appendImmutableImageArgs(argMap)
 
 	if b.dk.OneAgent().IsClassicFullStackMode() {
-		argMap.Append(argumentPrefix+"set-host-id-source", classicHostIdSource)
+		argMap.Append(argumentPrefix+"set-host-id-source", classicHostIDSource)
 	} else if b.dk.OneAgent().IsHostMonitoringMode() || b.dk.OneAgent().IsCloudNativeFullstackMode() {
-		argMap.Append(argumentPrefix+"set-host-id-source", inframonHostIdSource)
+		argMap.Append(argumentPrefix+"set-host-id-source", inframonHostIDSource)
 	}
 
 	b.appendHostInjectArgs(argMap)

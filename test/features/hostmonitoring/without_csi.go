@@ -19,7 +19,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []dynakube.Option{
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
+		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
 	}
 	testDynakube := *dynakube.New(options...)

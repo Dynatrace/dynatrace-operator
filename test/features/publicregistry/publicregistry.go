@@ -32,7 +32,7 @@ func Feature(t *testing.T) features.Feature {
 	oaSpec.CodeModulesImage = registry.GetLatestCodeModulesImageURI(t)
 
 	options := []dynakube.Option{
-		dynakube.WithApiUrl(secretConfig.ApiUrl),
+		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(oaSpec),
 		dynakube.WithActiveGate(),
 		dynakube.WithCustomActiveGateImage(registry.GetLatestActiveGateImageURI(t)),

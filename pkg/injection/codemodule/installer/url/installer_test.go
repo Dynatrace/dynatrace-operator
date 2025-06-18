@@ -21,7 +21,7 @@ import (
 
 const (
 	testVersion = "test"
-	testUrl     = "test.url"
+	testURL     = "test.url"
 
 	testDir          = "test"
 	testErrorMessage = "BOOM"
@@ -186,7 +186,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := dtclientmock.NewClient(t)
 		dtc.
-			On("GetAgentViaInstallerUrl", mock.AnythingOfType("context.backgroundCtx"), testUrl, mock.AnythingOfType("*mem.File")).
+			On("GetAgentViaInstallerURL", mock.AnythingOfType("context.backgroundCtx"), testURL, mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
 				writer, _ := args.Get(2).(io.Writer)
 
@@ -203,7 +203,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			dtc:       dtc,
 			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
 			props: &Properties{
-				Url: testUrl,
+				URL: testURL,
 			},
 		}
 

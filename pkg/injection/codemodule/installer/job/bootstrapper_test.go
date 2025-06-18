@@ -24,7 +24,7 @@ func TestBuildJobName(t *testing.T) {
 		for i := range nodeNames {
 			for j := range uris {
 				props := &Properties{
-					ImageUri: uris[j],
+					ImageURI: uris[j],
 				}
 				inst := &Installer{
 					nodeName: nodeNames[i],
@@ -84,7 +84,7 @@ func TestBuildJob(t *testing.T) {
 
 		props := &Properties{
 			Owner:        &owner,
-			ImageUri:     imageURI,
+			ImageURI:     imageURI,
 			PullSecrets:  pullSecrets,
 			PathResolver: metadata.PathResolver{RootDir: "root"},
 			CSIJob:       csijob.GetSettings(),

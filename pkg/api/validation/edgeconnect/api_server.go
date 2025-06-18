@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	errorInvalidApiServer = `The EdgeConnect's specification has an invalid apiServer value set.
+	errorInvalidAPIServer = `The EdgeConnect's specification has an invalid apiServer value set.
 	Make sure you correctly specify the apiServer in your custom resource.
 	`
 )
@@ -21,14 +21,14 @@ var (
 	}
 )
 
-func isInvalidApiServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
+func isInvalidAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
 	for _, suffix := range allowedSuffix {
-		if strings.HasSuffix(ec.Spec.ApiServer, suffix) {
+		if strings.HasSuffix(ec.Spec.APIServer, suffix) {
 			hostnameWithDomains := strings.FieldsFunc(suffix,
 				func(r rune) bool { return r == '.' },
 			)
 
-			hostnameWithTenant := strings.FieldsFunc(ec.Spec.ApiServer,
+			hostnameWithTenant := strings.FieldsFunc(ec.Spec.APIServer,
 				func(r rune) bool { return r == '.' },
 			)
 
@@ -36,11 +36,11 @@ func isInvalidApiServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeCon
 				return ""
 			}
 
-			log.Info("apiServer is not a valid hostname", "apiServer", ec.Spec.ApiServer)
+			log.Info("apiServer is not a valid hostname", "apiServer", ec.Spec.APIServer)
 
 			break
 		}
 	}
 
-	return errorInvalidApiServer
+	return errorInvalidAPIServer
 }

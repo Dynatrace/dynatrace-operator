@@ -50,7 +50,7 @@ var (
 )
 
 type oauthCredentialsType struct {
-	clientId     string
+	clientID     string
 	clientSecret string
 }
 
@@ -124,7 +124,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 
 	_log.Info("reconciling EdgeConnect deletion", "name", ec.Name, "namespace", ec.Namespace)
 
-	edgeConnectIdFromSecret, err := controller.getEdgeConnectIdFromClientSecret(ctx, ec)
+	edgeConnectIDFromSecret, err := controller.getEdgeConnectIDFromClientSecret(ctx, ec)
 	if err != nil {
 		return err
 	}
@@ -159,10 +159,10 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		_log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user")
 
 		return nil
-	case edgeConnectIdFromSecret == "":
+	case edgeConnectIDFromSecret == "":
 		_log.Info("EdgeConnect client secret is missing")
 	default:
-		if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
+		if tenantEdgeConnect.ID != edgeConnectIDFromSecret {
 			_log.Info("EdgeConnect client secret contains invalid Id")
 		}
 	}
@@ -186,7 +186,7 @@ func (controller *Controller) deleteConnectionSetting(edgeConnectClient edgeconn
 	}
 
 	if (envSetting != edgeconnectClient.EnvironmentSetting{}) {
-		err = edgeConnectClient.DeleteConnectionSetting(*envSetting.ObjectId)
+		err = edgeConnectClient.DeleteConnectionSetting(*envSetting.ObjectID)
 		if err != nil {
 			return err
 		}
@@ -322,7 +322,7 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, ec *edgecon
 
 	registryClient, err := controller.registryClientBuilder(
 		registry.WithContext(ctx),
-		registry.WithApiReader(controller.apiReader),
+		registry.WithAPIReader(controller.apiReader),
 		registry.WithTransport(transport),
 		registry.WithKeyChainSecret(&keyChainSecret),
 	)
@@ -410,7 +410,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		return err
 	}
 
-	edgeConnectIdFromSecret, err := controller.getEdgeConnectIdFromClientSecret(ctx, ec)
+	edgeConnectIDFromSecret, err := controller.getEdgeConnectIDFromClientSecret(ctx, ec)
 	if err != nil {
 		return err
 	}
@@ -422,7 +422,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 	}
 
 	if tenantEdgeConnect.ID != "" {
-		if edgeConnectIdFromSecret == "" {
+		if edgeConnectIDFromSecret == "" {
 			_log.Info("EdgeConnect has to be recreated due to missing secret")
 
 			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
@@ -430,7 +430,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 			}
 
 			tenantEdgeConnect.ID = ""
-		} else if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
+		} else if tenantEdgeConnect.ID != edgeConnectIDFromSecret {
 			_log.Info("EdgeConnect has to be recreated due to invalid Id")
 
 			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
@@ -478,7 +478,7 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgec
 		return oauthCredentialsType{}, errors.WithStack(err)
 	}
 
-	oauthClientId, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectOauthClientID)
+	oauthClientID, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectOauthClientID)
 	if err != nil {
 		return oauthCredentialsType{}, errors.WithStack(err)
 	}
@@ -488,15 +488,15 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgec
 		return oauthCredentialsType{}, errors.WithStack(err)
 	}
 
-	return oauthCredentialsType{clientId: oauthClientId, clientSecret: oauthClientSecret}, nil
+	return oauthCredentialsType{clientID: oauthClientID, clientSecret: oauthClientSecret}, nil
 }
 
 func newEdgeConnectClient() func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnectClient.Client, error) {
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnectClient.Client, error) {
 		edgeConnectClient, err := edgeconnectClient.NewClient(
-			oauthCredentials.clientId,
+			oauthCredentials.clientID,
 			oauthCredentials.clientSecret,
-			edgeconnectClient.WithBaseURL("https://"+ec.Spec.ApiServer),
+			edgeconnectClient.WithBaseURL("https://"+ec.Spec.APIServer),
 			edgeconnectClient.WithTokenURL(ec.Spec.OAuth.Endpoint),
 			edgeconnectClient.WithOauthScopes([]string{
 				"app-engine:edge-connects:read",
@@ -543,7 +543,7 @@ func getEdgeConnectByName(edgeConnectClient edgeconnectClient.Client, name strin
 	return edgeconnectClient.GetResponse{}, nil
 }
 
-func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Context, ec *edgeconnect.EdgeConnect) (string, error) {
+func (controller *Controller) getEdgeConnectIDFromClientSecret(ctx context.Context, ec *edgeconnect.EdgeConnect) (string, error) {
 	clientSecretName := ec.ClientSecretName()
 
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name, "clientSecretName", clientSecretName)
@@ -563,7 +563,7 @@ func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Conte
 		}
 	}
 
-	id, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectId)
+	id, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectID)
 	if err != nil {
 		log.Debug("unable to extract EdgeConnect tokens")
 
@@ -588,10 +588,10 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 	_log.Debug("createResponse", "id", createResponse.ID)
 
 	ecOAuthSecret, err := k8ssecret.Build(ec, ec.ClientSecretName(), map[string][]byte{
-		consts.KeyEdgeConnectOauthClientID:     []byte(createResponse.OauthClientId),
+		consts.KeyEdgeConnectOauthClientID:     []byte(createResponse.OauthClientID),
 		consts.KeyEdgeConnectOauthClientSecret: []byte(createResponse.OauthClientSecret),
 		consts.KeyEdgeConnectOauthResource:     []byte(createResponse.OauthClientResource),
-		consts.KeyEdgeConnectId:                []byte(createResponse.ID)})
+		consts.KeyEdgeConnectID:                []byte(createResponse.ID)})
 
 	if err != nil {
 		_log.Debug("unable to create EdgeConnect secret")
@@ -625,14 +625,14 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 		return err
 	}
 
-	id, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectId)
+	id, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectID)
 	if err != nil {
 		_log.Debug("EdgeConnect ID token not found")
 
 		return err
 	}
 
-	oauthClientId, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectOauthClientID)
+	oauthClientID, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectOauthClientID)
 	if err != nil {
 		_log.Debug("EdgeConnect OAuth client token not found")
 
@@ -654,7 +654,7 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Debug("updating EdgeConnect", "name", ec.Name)
 
-	err = edgeConnectClient.UpdateEdgeConnect(id, edgeconnectClient.NewRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), oauthClientId))
+	err = edgeConnectClient.UpdateEdgeConnect(id, edgeconnectClient.NewRequest(ec.Name, ec.HostPatterns(), ec.HostMappings(), oauthClientID))
 	if err != nil {
 		_log.Debug("updating EdgeConnect failed")
 
@@ -734,7 +734,7 @@ func (controller *Controller) createOrUpdateConnectionSetting(edgeConnectClient 
 
 		err = edgeConnectClient.CreateConnectionSetting(
 			edgeconnectClient.EnvironmentSetting{
-				SchemaId: edgeconnectClient.KubernetesConnectionSchemaID,
+				SchemaID: edgeconnectClient.KubernetesConnectionSchemaID,
 				Scope:    edgeconnectClient.KubernetesConnectionScope,
 				Value: edgeconnectClient.EnvironmentSettingValue{
 					Name:      ec.Name,
@@ -817,7 +817,7 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 	_, err = query.CreateOrUpdate(ctx, secretConfig)
 	if err != nil {
 		log.Info("could not create or update secret for ec.yaml", "name", secretConfig.Name)
-		conditions.SetKubeApiError(ec.Conditions(), consts.SecretConfigConditionType, err)
+		conditions.SetKubeAPIError(ec.Conditions(), consts.SecretConfigConditionType, err)
 
 		return "", "", err
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ModulesJsonEnv = "modules.json"
+	ModulesJSONEnv = "modules.json"
 
 	validationErrorTemplate = "%s has been disabled during Operator install. The necessary resources for %s to work are not present on the cluster. Redeploy the Operator via Helm with all the necessary resources enabled."
 )
@@ -65,21 +65,21 @@ func ReadModules() {
 
 func ReadModulesToLogger(log logd.Logger) {
 	once.Do(func() {
-		modulesJson := os.Getenv(ModulesJsonEnv)
-		if modulesJson == "" {
-			log.Info("envvar not set, using default", "envvar", ModulesJsonEnv)
+		modulesJSON := os.Getenv(ModulesJSONEnv)
+		if modulesJSON == "" {
+			log.Info("envvar not set, using default", "envvar", ModulesJSONEnv)
 
 			modules = fallbackModules
 		}
 
-		err := json.Unmarshal([]byte(modulesJson), &modules)
+		err := json.Unmarshal([]byte(modulesJSON), &modules)
 		if err != nil {
-			log.Info("problem unmarshalling envvar content, using default", "envvar", ModulesJsonEnv, "err", err)
+			log.Info("problem unmarshalling envvar content, using default", "envvar", ModulesJSONEnv, "err", err)
 
 			modules = fallbackModules
 		}
 
-		log.Info("envvar content read and set", "envvar", ModulesJsonEnv, "value", modulesJson)
+		log.Info("envvar content read and set", "envvar", ModulesJSONEnv, "value", modulesJSON)
 	})
 }
 

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	SettingsJsonEnv = "helm.json"
+	SettingsJSONEnv = "helm.json"
 )
 
 var (
@@ -78,24 +78,24 @@ func GetSettings() Settings {
 
 func ReadSettings() {
 	once.Do(func() {
-		settingsJson := os.Getenv(SettingsJsonEnv)
-		if settingsJson == "" {
-			log.Info("envvar not set, using default", "envvar", SettingsJsonEnv)
+		settingsJSON := os.Getenv(SettingsJSONEnv)
+		if settingsJSON == "" {
+			log.Info("envvar not set, using default", "envvar", SettingsJSONEnv)
 
 			settings = fallbackSettings
 
 			return
 		}
 
-		err := json.Unmarshal([]byte(settingsJson), &settings)
+		err := json.Unmarshal([]byte(settingsJSON), &settings)
 		if err != nil {
-			log.Info("problem unmarshalling envvar content, using default", "envvar", SettingsJsonEnv, "err", err)
+			log.Info("problem unmarshalling envvar content, using default", "envvar", SettingsJSONEnv, "err", err)
 
 			settings = fallbackSettings
 
 			return
 		}
 
-		log.Info("envvar content read and set", "envvar", SettingsJsonEnv, "value", settingsJson)
+		log.Info("envvar content read and set", "envvar", SettingsJSONEnv, "value", settingsJSON)
 	})
 }

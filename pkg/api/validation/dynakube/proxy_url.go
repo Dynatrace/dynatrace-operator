@@ -10,33 +10,33 @@ import (
 )
 
 const (
-	errorInvalidProxyUrl      = `The DynaKube's specification has an invalid Proxy URL value set. Make sure you correctly specify the URL in your custom resource or in the provided secret.`
+	errorInvalidProxyURL      = `The DynaKube's specification has an invalid Proxy URL value set. Make sure you correctly specify the URL in your custom resource or in the provided secret.`
 	errorInvalidEvalCharacter = `The DynaKube's specification has an invalid Proxy password value set. Make sure you don't use forbidden characters: space, apostrophe, backtick, comma, ampersand, equals sign, plus sign, percent sign, backslash.`
 
 	errorMissingProxySecret = `Error occurred while reading PROXY secret indicated in the Dynakube specification`
 )
 
-func invalidActiveGateProxyUrl(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func invalidActiveGateProxyURL(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	if dk.Spec.Proxy != nil {
-		proxyUrl, err := dk.Proxy(ctx, dv.apiReader)
+		proxyURL, err := dk.Proxy(ctx, dv.apiReader)
 		if err != nil {
 			return errors.Wrap(err, errorMissingProxySecret).Error()
 		}
 
-		return validateProxyUrl(proxyUrl, errorInvalidProxyUrl, errorInvalidEvalCharacter)
+		return validateProxyURL(proxyURL, errorInvalidProxyURL, errorInvalidEvalCharacter)
 	}
 
 	return ""
 }
 
-// proxyUrl is valid if
+// proxyURL is valid if
 // 1) encoded
 // 2) password does not contain '` characters.
-func validateProxyUrl(proxyUrl string, parseErrorMessage string, evalErrorMessage string) string {
-	if parsedUrl, err := url.Parse(proxyUrl); err != nil {
+func validateProxyURL(proxyURL string, parseErrorMessage string, evalErrorMessage string) string {
+	if parsedURL, err := url.Parse(proxyURL); err != nil {
 		return parseErrorMessage
 	} else {
-		password, _ := parsedUrl.User.Password()
+		password, _ := parsedURL.User.Password()
 		if !isStringValidForAG(password) {
 			return evalErrorMessage
 		}

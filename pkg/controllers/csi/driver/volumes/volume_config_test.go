@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	testVolumeId     = "a-volume-id"
+	testVolumeID     = "a-volume-id"
 	testTargetPath   = "a-target-path"
 	testPodUID       = "a-pod-uid"
 	testNs           = "a-namespace"
@@ -26,7 +26,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 	})
 	t.Run("No target path", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
-			VolumeId: testVolumeId,
+			VolumeId: testVolumeID,
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
@@ -36,7 +36,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 	})
 	t.Run("No volume capability", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
-			VolumeId:   testVolumeId,
+			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -53,7 +53,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Block: &csi.VolumeCapability_BlockVolume{},
 				},
 			},
-			VolumeId:   testVolumeId,
+			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -66,7 +66,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 	t.Run("Access type is not of type mount access", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{},
-			VolumeId:         testVolumeId,
+			VolumeId:         testVolumeID,
 			TargetPath:       testTargetPath,
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -83,7 +83,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:   testVolumeId,
+			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -100,7 +100,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:      testVolumeId,
+			VolumeId:      testVolumeID,
 			TargetPath:    testTargetPath,
 			VolumeContext: map[string]string{},
 		}
@@ -118,7 +118,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:   testVolumeId,
+			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
 				PodNameContextKey: testPodUID,
@@ -139,7 +139,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:   testVolumeId,
+			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
 				PodNameContextKey:      testPodUID,
@@ -162,7 +162,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:   testVolumeId,
+			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
 				PodNameContextKey:           testPodUID,
@@ -188,7 +188,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:   testVolumeId,
+			VolumeId:   testVolumeID,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
 				PodNameContextKey:               testPodUID,

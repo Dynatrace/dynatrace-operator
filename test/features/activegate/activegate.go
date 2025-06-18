@@ -60,7 +60,7 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithActiveGate(),
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithProxy(proxySpec))
 
 	builder := features.New("activegate")
@@ -89,16 +89,16 @@ func assessActiveGate(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
 	}
 	builder.Assess("ActiveGate containers have mount points", checkMountPoints(dk))
 
-	assessActiveGateHttpsEndpoint(builder, dk)
-	assessActiveGateHttpEndpoint(builder, dk)
+	assessActiveGateHTTPSEndpoint(builder, dk)
+	assessActiveGateHTTPEndpoint(builder, dk)
 }
 
-func assessActiveGateHttpsEndpoint(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	curlActiveGateHttps(builder, *dk)
+func assessActiveGateHTTPSEndpoint(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
+	curlActiveGateHTTPS(builder, *dk)
 }
 
-func assessActiveGateHttpEndpoint(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	curlActiveGateHttp(builder, *dk)
+func assessActiveGateHTTPEndpoint(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
+	curlActiveGateHTTP(builder, *dk)
 }
 
 func checkIfAgHasContainers(dk *dynakube.DynaKube) features.Func {
@@ -216,8 +216,8 @@ func assertExpectedModulesAreActive(t *testing.T, log string) {
 	}
 }
 
-func assertProxyUsed(t *testing.T, log, proxyUrl string) {
-	expectedLog := fmt.Sprintf("[HttpClientServiceImpl] Setup proxy server at: %s", proxyUrl)
+func assertProxyUsed(t *testing.T, log, proxyURL string) {
+	expectedLog := fmt.Sprintf("[HttpClientServiceImpl] Setup proxy server at: %s", proxyURL)
 	assert.Contains(t, log, expectedLog, "ActiveGate doesn't use proxy")
 }
 

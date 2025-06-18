@@ -28,7 +28,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: nil,
 					},
@@ -41,7 +41,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{},
 					},
@@ -55,7 +55,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{
 							string(otelcgen.ZipkinProtocol),
@@ -73,7 +73,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{
 							string(otelcgen.ZipkinProtocol),
@@ -92,7 +92,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{
 							string(otelcgen.ZipkinProtocol),
@@ -110,7 +110,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{
 							string(otelcgen.ZipkinProtocol),
@@ -129,7 +129,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:          testApiUrl,
+					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			})
@@ -140,7 +140,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 				},
 			})
 	})
@@ -151,7 +151,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "a123456789012345678901234567890123456789012345678901234567890123",
 					},
@@ -165,7 +165,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "0123",
 					},
@@ -180,14 +180,14 @@ func TestConflictingServiceNames(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:          testApiUrl,
+					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			},
 			&dynakube.DynaKube{
 				ObjectMeta: otherDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:          testApiUrl,
+					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			})
@@ -199,7 +199,7 @@ func TestConflictingServiceNames(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: testServiceName,
 					},
@@ -208,7 +208,7 @@ func TestConflictingServiceNames(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: otherDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: testServiceName,
 					},
@@ -222,7 +222,7 @@ func TestConflictingServiceNames(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: testOtherName + "-telemetry-ingest",
 					},
@@ -231,7 +231,7 @@ func TestConflictingServiceNames(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: otherDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:          testApiUrl,
+					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			})
@@ -243,14 +243,14 @@ func TestConflictingServiceNames(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:          testApiUrl,
+					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			},
 			&dynakube.DynaKube{
 				ObjectMeta: otherDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: testName + "-telemetry-ingest",
 					},
@@ -266,7 +266,7 @@ func TestForbiddenSuffix(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "test" + "-" + agconsts.MultiActiveGateName,
 					},
@@ -279,7 +279,7 @@ func TestForbiddenSuffix(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "test" + consts.ExtensionsControllerSuffix,
 					},
@@ -292,7 +292,7 @@ func TestForbiddenSuffix(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "test" + telemetryingest.ServiceNameSuffix,
 					},
@@ -305,7 +305,7 @@ func TestForbiddenSuffix(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "test-webhook",
 					},

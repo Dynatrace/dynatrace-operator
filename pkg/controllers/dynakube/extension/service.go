@@ -51,7 +51,7 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update extension service")
-		conditions.SetKubeApiError(r.dk.Conditions(), serviceConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}

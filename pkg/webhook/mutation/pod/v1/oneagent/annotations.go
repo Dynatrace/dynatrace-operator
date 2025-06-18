@@ -22,7 +22,7 @@ func getInstallerInfo(pod *corev1.Pod, dk dynakube.DynaKube) installerInfo {
 		flavor:       maputils.GetField(pod.Annotations, AnnotationFlavor, ""),
 		technologies: url.QueryEscape(maputils.GetField(pod.Annotations, oacommon.AnnotationTechnologies, "all")),
 		installPath:  maputils.GetField(pod.Annotations, oacommon.AnnotationInstallPath, oacommon.DefaultInstallPath),
-		installerURL: maputils.GetField(pod.Annotations, AnnotationInstallerUrl, ""),
+		installerURL: maputils.GetField(pod.Annotations, AnnotationInstallerURL, ""),
 		version:      dk.OneAgent().GetCodeModulesVersion(),
 	}
 }

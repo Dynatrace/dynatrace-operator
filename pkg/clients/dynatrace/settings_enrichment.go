@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	MetadataEnrichmentSettingsSchemaId = "builtin:kubernetes.generic.metadata.enrichment"
+	MetadataEnrichmentSettingsSchemaID = "builtin:kubernetes.generic.metadata.enrichment"
 	scopeQueryParam                    = "scope"
 	globalScope                        = "environment"
 )
@@ -42,13 +42,13 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 		scope = globalScope
 	}
 
-	req, err := createBaseRequest(ctx, dtc.getEffectiveSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(ctx, dtc.getEffectiveSettingsURL(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetRulesSettingsResponse{}, err
 	}
 
 	q := req.URL.Query()
-	q.Add(schemaIDsQueryParam, MetadataEnrichmentSettingsSchemaId)
+	q.Add(schemaIDsQueryParam, MetadataEnrichmentSettingsSchemaID)
 	q.Add(scopeQueryParam, scope)
 	req.URL.RawQuery = q.Encode()
 
@@ -61,11 +61,11 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 		return GetRulesSettingsResponse{}, err
 	}
 
-	var resDataJson GetRulesSettingsResponse
+	var resDataJSON GetRulesSettingsResponse
 
-	err = dtc.unmarshalToJson(res, &resDataJson)
+	err = dtc.unmarshalToJSON(res, &resDataJSON)
 	if err != nil {
-		if strings.Contains(err.Error(), "404") && strings.Contains(err.Error(), MetadataEnrichmentSettingsSchemaId) {
+		if strings.Contains(err.Error(), "404") && strings.Contains(err.Error(), MetadataEnrichmentSettingsSchemaID) {
 			log.Info("enrichment settings schema not available on cluster, skipping getting the enrichment rules")
 
 			return GetRulesSettingsResponse{}, nil
@@ -74,5 +74,5 @@ func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID
 		return GetRulesSettingsResponse{}, errors.WithMessage(err, "error parsing response body")
 	}
 
-	return resDataJson, nil
+	return resDataJSON, nil
 }

@@ -46,7 +46,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 	builder := features.New("metadata-enrichment")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),

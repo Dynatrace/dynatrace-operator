@@ -47,7 +47,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
-	ApiServer string `json:"apiServer"`
+	APIServer string `json:"apiServer"`
 
 	// Pull secret for your private registry
 	CustomPullSecret string `json:"customPullSecret,omitempty"`

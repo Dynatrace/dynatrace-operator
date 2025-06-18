@@ -2,28 +2,28 @@ package edgeconnect
 
 // EdgeConnect API
 
-func (c *client) getEdgeConnectApiUrl() string {
+func (c *client) getEdgeConnectAPIURL() string {
 	return c.baseURL + "/platform/app-engine/edge-connect/v1"
 }
 
-func (c *client) getEdgeConnectsUrl() string {
-	return c.getEdgeConnectApiUrl() + "/edge-connects"
+func (c *client) getEdgeConnectsURL() string {
+	return c.getEdgeConnectAPIURL() + "/edge-connects"
 }
 
-func (c *client) getEdgeConnectUrl(id string) string {
-	return c.getEdgeConnectsUrl() + "/" + id
+func (c *client) getEdgeConnectURL(id string) string {
+	return c.getEdgeConnectsURL() + "/" + id
 }
 
 // Environment API
 
-func (c *client) getEnvironmentApiUrl() string {
+func (c *client) getEnvironmentAPIURL() string {
 	return c.baseURL + "/platform/classic/environment-api/v2"
 }
 
-func (c *client) getSettingsObjectsUrl() string {
-	return c.getEnvironmentApiUrl() + "/settings/objects"
+func (c *client) getSettingsObjectsURL() string {
+	return c.getEnvironmentAPIURL() + "/settings/objects"
 }
 
-func (c *client) getSettingsObjectsIdUrl(objectId string) string {
-	return c.getSettingsObjectsUrl() + "/" + objectId
+func (c *client) getSettingsObjectsIDURL(objectID string) string {
+	return c.getSettingsObjectsURL() + "/" + objectID
 }

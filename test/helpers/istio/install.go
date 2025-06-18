@@ -67,8 +67,8 @@ func AssertIstiodDeployment() func(ctx context.Context, envConfig *envconf.Confi
 func AssessIstio(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube, sampleApp sample.App) {
 	builder.Assess("sample apps have working istio init container", checkSampleAppIstioInitContainers(sampleApp, testDynakube))
 	builder.Assess("operator pods have working istio init container", checkOperatorIstioInitContainers(testDynakube))
-	builder.Assess("istio virtual service for ApiUrl created", checkVirtualServiceForApiUrl(testDynakube))
-	builder.Assess("istio service entry for ApiUrl created", checkServiceEntryForApiUrl(testDynakube))
+	builder.Assess("istio virtual service for APIURL created", checkVirtualServiceForAPIURL(testDynakube))
+	builder.Assess("istio service entry for APIURL created", checkServiceEntryForAPIURL(testDynakube))
 }
 
 func checkSampleAppIstioInitContainers(sampleApp sample.App, testDynakube dynakube.DynaKube) features.Func {
@@ -134,9 +134,9 @@ func determineIstioInitContainerName(t *testing.T) string {
 	return istioInitName
 }
 
-func checkVirtualServiceForApiUrl(dk dynakube.DynaKube) features.Func { //nolint:dupl
+func checkVirtualServiceForAPIURL(dk dynakube.DynaKube) features.Func { //nolint:dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		apiHost := apiUrlCommunicationHost(t, dk)
+		apiHost := apiURLCommunicationHost(t, dk)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OperatorComponent)
 
 		virtualService, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().VirtualServices(dk.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
@@ -152,9 +152,9 @@ func checkVirtualServiceForApiUrl(dk dynakube.DynaKube) features.Func { //nolint
 	}
 }
 
-func checkServiceEntryForApiUrl(dk dynakube.DynaKube) features.Func { //nolint:dupl
+func checkServiceEntryForAPIURL(dk dynakube.DynaKube) features.Func { //nolint:dupl
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		apiHost := apiUrlCommunicationHost(t, dk)
+		apiHost := apiURLCommunicationHost(t, dk)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OperatorComponent)
 
 		serviceEntry, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().ServiceEntries(dk.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
@@ -177,8 +177,8 @@ func istioClient(t *testing.T, restConfig *rest.Config) *istioclientset.Clientse
 	return client
 }
 
-func apiUrlCommunicationHost(t *testing.T, dk dynakube.DynaKube) dtclient.CommunicationHost {
-	apiHost, err := dtclient.ParseEndpoint(dk.ApiUrl())
+func apiURLCommunicationHost(t *testing.T, dk dynakube.DynaKube) dtclient.CommunicationHost {
+	apiHost, err := dtclient.ParseEndpoint(dk.APIURL())
 	require.NoError(t, err)
 
 	return apiHost

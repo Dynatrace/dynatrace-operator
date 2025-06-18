@@ -31,14 +31,14 @@ type logMonSettingsItem struct {
 }
 
 type posLogMonSettingsBody struct {
-	SchemaId      string              `json:"schemaId"`
+	SchemaID      string              `json:"schemaId"`
 	SchemaVersion string              `json:"schemaVersion"`
 	Scope         string              `json:"scope,omitempty"`
 	Value         logMonSettingsValue `json:"value"`
 }
 
 const (
-	logMonitoringSettingsSchemaId = "builtin:logmonitoring.log-storage-settings"
+	logMonitoringSettingsSchemaID = "builtin:logmonitoring.log-storage-settings"
 	schemaVersion                 = "1.0.16"
 )
 
@@ -48,7 +48,7 @@ func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body
 		return "", err
 	}
 
-	req, err := createBaseRequest(ctx, dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
+	req, err := createBaseRequest(ctx, dtc.getSettingsURL(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
 	if err != nil {
 		return "", err
 	}
@@ -70,21 +70,21 @@ func (dtc *dynatraceClient) performCreateLogMonSetting(ctx context.Context, body
 		return "", handleErrorArrayResponseFromAPI(resData, res.StatusCode)
 	}
 
-	var resDataJson []postSettingsResponse
+	var resDataJSON []postSettingsResponse
 
-	err = json.Unmarshal(resData, &resDataJson)
+	err = json.Unmarshal(resData, &resDataJSON)
 	if err != nil {
 		return "", err
 	}
 
-	if len(resDataJson) != 1 {
+	if len(resDataJSON) != 1 {
 		return "", errors.Errorf("response is not containing exactly one entry %s", resData)
 	}
 
-	return resDataJson[0].ObjectId, nil
+	return resDataJSON[0].ObjectID, nil
 }
 
-func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string, scope string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) posLogMonSettingsBody {
+func createBaseLogMonSettings(clusterName, schemaID string, schemaVersion string, scope string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) posLogMonSettingsBody {
 	matchers := []IngestRuleMatchers{}
 
 	for _, ingestRuleMatcher := range ingestRuleMatchers {
@@ -97,7 +97,7 @@ func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string
 	}
 
 	base := posLogMonSettingsBody{
-		SchemaId:      schemaId,
+		SchemaID:      schemaID,
 		SchemaVersion: schemaVersion,
 		Value: logMonSettingsValue{
 			SendToStorage:   true,
@@ -115,12 +115,12 @@ func createBaseLogMonSettings(clusterName, schemaId string, schemaVersion string
 }
 
 func (dtc *dynatraceClient) CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
-	settings := createBaseLogMonSettings(clusterName, logMonitoringSettingsSchemaId, schemaVersion, scope, matchers)
+	settings := createBaseLogMonSettings(clusterName, logMonitoringSettingsSchemaID, schemaVersion, scope, matchers)
 
-	objectId, err := dtc.performCreateLogMonSetting(ctx, []posLogMonSettingsBody{settings})
+	objectID, err := dtc.performCreateLogMonSetting(ctx, []posLogMonSettingsBody{settings})
 	if err != nil {
 		return "", err
 	}
 
-	return objectId, nil
+	return objectID, nil
 }

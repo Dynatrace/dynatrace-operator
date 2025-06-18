@@ -63,9 +63,9 @@ func (c *Cleaner) collectRelevantHostDirs(dks []dynakube.DynaKube) map[string]bo
 
 		c.safeAddRelevantPath(hostDir, hostDirs)
 
-		tenantUUID, err := metadata.TenantUUIDFromApiUrl(dk.ApiUrl())
+		tenantUUID, err := metadata.TenantUUIDFromAPIURL(dk.APIURL())
 		if err != nil {
-			log.Error(err, "malformed ApiUrl for dynakube during host mount directory cleanup", "dk", dk.Name, "apiUrl", dk.ApiUrl())
+			log.Error(err, "malformed APIURL for dynakube during host mount directory cleanup", "dk", dk.Name, "apiUrl", dk.APIURL())
 
 			continue
 		}

@@ -1,12 +1,12 @@
 package consts
 
 const (
-	OtlpApiEndpointConfigMapName = "dynatrace-otlp-api-endpoint"
+	OtlpAPIEndpointConfigMapName = "dynatrace-otlp-api-endpoint"
 
 	ConfigFieldName                   = "telemetry.yaml"
 	TelemetryCollectorConfigmapSuffix = "-telemetry-collector-config"
 
-	CustomTlsCertMountPath = "/tls/custom/telemetry"
+	CustomTLSCertMountPath = "/tls/custom/telemetry"
 
 	TrustedCAsFile           = "rootca.pem"
 	TrustedCAVolumeMountPath = "/tls/custom/cacerts"

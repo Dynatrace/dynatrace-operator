@@ -95,7 +95,7 @@ func TestReconcile(t *testing.T) {
 func TestSecretHashAnnotation(t *testing.T) {
 	t.Run("annotation is set with self-signed tls secret", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
@@ -103,7 +103,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 	})
 	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-secret"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-secret"
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
@@ -413,7 +413,7 @@ func getTokens(name string, namespace string) corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			dtclient.ApiToken:        []byte("test"),
+			dtclient.APIToken:        []byte("test"),
 			dtclient.DataIngestToken: []byte("test"),
 		},
 	}

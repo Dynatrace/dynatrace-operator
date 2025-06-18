@@ -34,7 +34,7 @@ const (
 func TestReconcile(t *testing.T) {
 	t.Run("self-signed tls secret is not generated", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-value"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-value"
 		fakeClient := fake.NewClient()
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk)
@@ -53,7 +53,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("self-signed tls secret is generated", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
 		fakeClient := fake.NewClient()
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk)
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("do not renew self-signed tls secret if it exists", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
 		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extensions-controller-tls")
 
 		fakeClient := fake.NewClient()
@@ -98,7 +98,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("self-signed tls secret is deleted", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-value"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-value"
 		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extensions-controller-tls")
 
 		fakeClient := fake.NewClient()
@@ -145,14 +145,14 @@ func TestReconcile(t *testing.T) {
 func TestGetTLSSecretName(t *testing.T) {
 	t.Run("self-signed tls secret", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
 
 		secretName := dk.ExtensionsTLSSecretName()
 		assert.Equal(t, dk.ExtensionsSelfSignedTLSSecretName(), secretName)
 	})
 	t.Run("tlsRefName secret", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-value"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-value"
 
 		secretName := dk.ExtensionsTLSSecretName()
 		assert.Equal(t, "dummy-value", secretName)

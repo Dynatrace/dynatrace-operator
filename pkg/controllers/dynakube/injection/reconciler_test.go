@@ -58,7 +58,7 @@ const (
 
 	testNamespaceDynatrace = "dynatrace"
 
-	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
+	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
 )
 
 func TestReconciler(t *testing.T) {
@@ -88,7 +88,7 @@ func TestReconciler(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -114,7 +114,7 @@ func TestReconciler(t *testing.T) {
 			clientNotInjectedNamespace(testNamespace, testDynakube),
 			clientNotInjectedNamespace(testNamespace2, testDynakube2),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.ApiToken:  []byte(testAPIToken),
+				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			dk,
@@ -157,7 +157,7 @@ func TestReconciler(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:      testApiUrl,
+				APIURL:      testAPIURL,
 				EnableIstio: true,
 			},
 		}
@@ -172,7 +172,7 @@ func TestReconciler(t *testing.T) {
 			clientSecret(consts.AgentInitSecretName, testNamespace, nil),
 			clientSecret(consts.AgentInitSecretName, testNamespace2, nil),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.ApiToken:  []byte(testAPIToken),
+				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			dk,
@@ -225,7 +225,7 @@ func TestReconciler(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -352,7 +352,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		var config startup.SecretConfig
 		err = json.Unmarshal(secret.Data["config"], &config)
 		require.NoError(t, err)
-		assert.Equal(t, testAPIToken, config.ApiToken)
+		assert.Equal(t, testAPIToken, config.APIToken)
 		assert.Equal(t, testPaasToken, config.PaasToken)
 
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
@@ -378,7 +378,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		var config startup.SecretConfig
 		err = json.Unmarshal(secret.Data["config"], &config)
 		require.NoError(t, err)
-		assert.Equal(t, testAPIToken, config.ApiToken)
+		assert.Equal(t, testAPIToken, config.APIToken)
 		assert.Equal(t, testPaasToken, config.PaasToken)
 
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
@@ -464,7 +464,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 	}
 
 	tokenSecret := clientSecret(dkBase.Name, dkBase.Namespace, map[string][]byte{
-		dtclient.ApiToken:  []byte("testAPIToken"),
+		dtclient.APIToken:  []byte("testAPIToken"),
 		dtclient.PaasToken: []byte("testPaasToken"),
 	})
 
@@ -637,7 +637,7 @@ func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace 
 				Namespace: dynakubeNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:      testApiUrl,
+				APIURL:      testAPIURL,
 				OneAgent:    oneAgentSpec,
 				EnableIstio: true,
 			},
@@ -666,7 +666,7 @@ func clientOneAgentInjection() client.Client {
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientInjectedNamespace(testNamespace2, testDynakube2),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			dtclient.ApiToken:  []byte(testAPIToken),
+			dtclient.APIToken:  []byte(testAPIToken),
 			dtclient.PaasToken: []byte(testPaasToken),
 		}),
 	)
@@ -676,7 +676,7 @@ func clientBootstrapperConfigInjection() client.Client {
 	return fake.NewClientWithIndex(
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			dtclient.ApiToken:  []byte(testAPIToken),
+			dtclient.APIToken:  []byte(testAPIToken),
 			dtclient.PaasToken: []byte(testPaasToken),
 		}),
 		clientSecret("test-dynakube-oneagent-tenant-secret", testNamespaceDynatrace, map[string][]byte{
@@ -690,7 +690,7 @@ func clientEnrichmentInjection() client.Client {
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientInjectedNamespace(testNamespace2, testDynakube2),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			dtclient.ApiToken:        []byte(testAPIToken),
+			dtclient.APIToken:        []byte(testAPIToken),
 			dtclient.PaasToken:       []byte(testPaasToken),
 			dtclient.DataIngestToken: []byte(testDataIngestToken),
 		}),

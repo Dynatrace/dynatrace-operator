@@ -12,7 +12,7 @@ import (
 )
 
 type Tokens struct {
-	ApiToken  string
+	APIToken  string
 	PaasToken string
 }
 

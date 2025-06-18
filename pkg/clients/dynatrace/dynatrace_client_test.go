@@ -17,21 +17,21 @@ import (
 )
 
 var (
-	flavorUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+	flavorURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
 		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro+"a", arch.Arch)
-	flavourUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null}]}}`
+	flavourURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null}]}}`
 
-	archUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+	archURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
 		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, arch.Arch+"a")
-	archUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
+	archURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
 
-	flavorArchUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+	flavorArchURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
 		OsUnix, InstallerTypePaaS, arch.FlavorMultidistro+"a", arch.Arch+"a")
-	flavourArchUriResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null},{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
+	flavourArchURIResponse = `{"error":{"code":400,"message":"Constraints violated.","constraintViolations":[{"path":"flavor","message":"'defaulta' must be any of [default, multidistro, musl]","parameterLocation":"QUERY","location":null},{"path":"arch","message":"'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]","parameterLocation":"QUERY","location":null}]}}`
 
-	oaLatestMetainfoUri = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+	oaLatestMetainfoURI = fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
 		"aix", InstallerTypePaaS, arch.FlavorMultidistro, arch.Arch)
-	oaLatestMetainfoUriResponse = `{"error":{"code":404,"message":"non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>"}}`
+	oaLatestMetainfoURIResponse = `{"error":{"code":404,"message":"non supported architecture <OS_ARCHITECTURE_X86> on OS <OS_TYPE_AIX>"}}`
 )
 
 func TestMakeRequest(t *testing.T) {
@@ -51,7 +51,7 @@ func TestMakeRequest(t *testing.T) {
 	require.NotNil(t, dc)
 	t.Run("happy path", func(t *testing.T) {
 		url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-		resp, err := dc.makeRequest(ctx, url, dynatraceApiToken)
+		resp, err := dc.makeRequest(ctx, url, dynatraceAPIToken)
 		require.NoError(t, err)
 		assert.NotNil(t, resp)
 
@@ -59,7 +59,7 @@ func TestMakeRequest(t *testing.T) {
 	})
 
 	t.Run("sad path", func(t *testing.T) {
-		resp, err := dc.makeRequest(ctx, "%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken)
+		resp, err := dc.makeRequest(ctx, "%s/v1/deployment/installer/agent/connectioninfo", dynatraceAPIToken)
 		require.Error(t, err, "unsupported protocol scheme")
 		assert.Nil(t, resp)
 	})
@@ -82,7 +82,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 	require.NotNil(t, dc)
 	t.Run("happy path", func(t *testing.T) {
 		reqURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-		resp, err := dc.makeRequest(ctx, reqURL, dynatraceApiToken)
+		resp, err := dc.makeRequest(ctx, reqURL, dynatraceAPIToken)
 		require.NoError(t, err)
 		assert.NotNil(t, resp)
 
@@ -268,13 +268,13 @@ func testServerErrors(t *testing.T) {
 			LatestAgentVersion string `json:"latestAgentVersion"`
 		}{}
 
-		err := dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorUri, dynatracePaaSToken, &response)
+		err := dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorURI, dynatracePaaSToken, &response)
 		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'defaulta' must be any of [default, multidistro, musl]", err.Error())
 
-		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+archUri, dynatracePaaSToken, &response)
+		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+archURI, dynatracePaaSToken, &response)
 		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
 
-		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorArchUri, dynatracePaaSToken, &response)
+		err = dtc.makeRequestAndUnmarshal(context.Background(), dtc.url+flavorArchURI, dynatracePaaSToken, &response)
 		assert.Equal(t, "dynatrace server error 400: Constraints violated.\n\t- flavor: 'defaulta' must be any of [default, multidistro, musl]\n\t- arch: 'x86a' must be any of [all, arm, ppc, ppcle, s390, sparc, x86, zos]", err.Error())
 	})
 }
@@ -300,14 +300,14 @@ func dynatraceServerErrorsHandler() http.HandlerFunc {
 
 func handleInvalidRequest(request *http.Request, writer http.ResponseWriter) {
 	switch request.URL.RequestURI() {
-	case flavorUri:
-		writeServerErrorResponse(writer, http.StatusBadRequest, flavourUriResponse)
-	case archUri:
-		writeServerErrorResponse(writer, http.StatusBadRequest, archUriResponse)
-	case flavorArchUri:
-		writeServerErrorResponse(writer, http.StatusBadRequest, flavourArchUriResponse)
-	case oaLatestMetainfoUri:
-		writeServerErrorResponse(writer, http.StatusNotFound, oaLatestMetainfoUriResponse)
+	case flavorURI:
+		writeServerErrorResponse(writer, http.StatusBadRequest, flavourURIResponse)
+	case archURI:
+		writeServerErrorResponse(writer, http.StatusBadRequest, archURIResponse)
+	case flavorArchURI:
+		writeServerErrorResponse(writer, http.StatusBadRequest, flavourArchURIResponse)
+	case oaLatestMetainfoURI:
+		writeServerErrorResponse(writer, http.StatusNotFound, oaLatestMetainfoURIResponse)
 	default:
 		writeServerErrorResponse(writer, http.StatusNotFound, `{"error":{"code":404,"message":"HTTP 404 Not Found"}}`)
 	}

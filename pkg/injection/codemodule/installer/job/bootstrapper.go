@@ -24,7 +24,7 @@ const (
 )
 
 func (inst *Installer) buildJobName() string {
-	hashPostfix, _ := hasher.GenerateHash(inst.props.ImageUri + inst.nodeName)
+	hashPostfix, _ := hasher.GenerateHash(inst.props.ImageURI + inst.nodeName)
 
 	return namePrefix + hashPostfix
 }
@@ -34,7 +34,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 
 	container := corev1.Container{
 		Name:            "codemodule-download",
-		Image:           inst.props.ImageUri,
+		Image:           inst.props.ImageURI,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		VolumeMounts: []corev1.VolumeMount{
 			{

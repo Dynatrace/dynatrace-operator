@@ -35,10 +35,10 @@ func createReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEntities []d
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
-	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityId: "test-MEID"},
+	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityID: "test-MEID"},
 		mock.AnythingOfType("string")).
 		Return(getSettingsResponse, nil)
-	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityId: "KUBERNETES_CLUSTER-119C75CCDA94799F"},
+	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityID: "KUBERNETES_CLUSTER-119C75CCDA94799F"},
 		mock.AnythingOfType("string")).
 		Return(getSettingsResponse, nil)
 	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), monitoredEntity,
@@ -68,10 +68,10 @@ func createReadOnlyReconciler(t *testing.T, dk *dynakube.DynaKube, monitoredEnti
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
-	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityId: "test-MEID"},
+	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityID: "test-MEID"},
 		mock.AnythingOfType("string")).
 		Return(getSettingsResponse, nil)
-	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityId: "KUBERNETES_CLUSTER-119C75CCDA94799F"},
+	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), &dtclient.MonitoredEntity{EntityID: "KUBERNETES_CLUSTER-119C75CCDA94799F"},
 		mock.AnythingOfType("string")).
 		Return(getSettingsResponse, nil)
 	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), monitoredEntity,
@@ -132,8 +132,8 @@ func createReconcilerWithError(t *testing.T, dk *dynakube.DynaKube, monitoredEnt
 
 func createMonitoredEntities() []dtclient.MonitoredEntity {
 	return []dtclient.MonitoredEntity{
-		{EntityId: "KUBERNETES_CLUSTER-119C75CCDA94799F", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085},
-		{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 2", LastSeenTms: 1639034988126},
+		{EntityID: "KUBERNETES_CLUSTER-119C75CCDA94799F", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085},
+		{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 2", LastSeenTms: 1639034988126},
 	}
 }
 
@@ -157,7 +157,7 @@ func TestReconcile(t *testing.T) {
 		r := createReconciler(t, dk, []dtclient.MonitoredEntity{}, nil, dtclient.GetSettingsResponse{}, testObjectID, "")
 
 		// act
-		actual, err := r.createObjectIdIfNotExists(ctx)
+		actual, err := r.createObjectIDIfNotExists(ctx)
 
 		// assert
 		require.NoError(t, err)
@@ -170,7 +170,7 @@ func TestReconcile(t *testing.T) {
 		r := createReconciler(t, dk, entities, &entities[0], dtclient.GetSettingsResponse{}, testObjectID, "")
 
 		// act
-		actual, err := r.createObjectIdIfNotExists(ctx)
+		actual, err := r.createObjectIDIfNotExists(ctx)
 
 		// assert
 		require.NoError(t, err)
@@ -183,7 +183,7 @@ func TestReconcile(t *testing.T) {
 		r := createReadOnlyReconciler(t, dk, entities, &entities[0], dtclient.GetSettingsResponse{TotalCount: 1})
 
 		// act
-		actual, err := r.createObjectIdIfNotExists(ctx)
+		actual, err := r.createObjectIDIfNotExists(ctx)
 
 		// assert
 		require.NoError(t, err)
@@ -197,11 +197,11 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run("don't create setting when no kube-system uuid is given", func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, dk, []dtclient.MonitoredEntity{{EntityId: "test-MEID"}}, &dtclient.MonitoredEntity{EntityId: "test-MEID"}, dtclient.GetSettingsResponse{}, testObjectID, "")
+		r := createReconciler(t, dk, []dtclient.MonitoredEntity{{EntityID: "test-MEID"}}, &dtclient.MonitoredEntity{EntityID: "test-MEID"}, dtclient.GetSettingsResponse{}, testObjectID, "")
 		dk.Status.KubeSystemUUID = ""
 
 		// act
-		actual, err := r.createObjectIdIfNotExists(ctx)
+		actual, err := r.createObjectIDIfNotExists(ctx)
 
 		// assert
 		require.Error(t, err)
@@ -213,7 +213,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, dk, errors.New("could not get monitored entities"), nil, nil, nil)
 
 		// act
-		actual, err := r.createObjectIdIfNotExists(ctx)
+		actual, err := r.createObjectIDIfNotExists(ctx)
 
 		// assert
 		require.Error(t, err)
@@ -225,7 +225,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, dk, nil, errors.New("could not get settings for monitored entities"), nil, nil)
 
 		// act
-		actual, err := r.createObjectIdIfNotExists(ctx)
+		actual, err := r.createObjectIDIfNotExists(ctx)
 
 		// assert
 		require.Error(t, err)
@@ -237,7 +237,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, dk, nil, nil, errors.New("could not create monitored entity"), nil)
 
 		// act
-		actual, err := r.createObjectIdIfNotExists(ctx)
+		actual, err := r.createObjectIDIfNotExists(ctx)
 
 		// assert
 		require.Error(t, err)
@@ -250,7 +250,7 @@ func TestReconcileErrors(t *testing.T) {
 		dk.Status.KubeSystemUUID = "test-uid"
 
 		// act
-		_, err := r.createObjectIdIfNotExists(ctx)
+		_, err := r.createObjectIDIfNotExists(ctx)
 
 		// assert
 		require.NoError(t, err)
@@ -299,7 +299,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		// arrange
 		r := createReconcilerWithError(t, dk, nil, nil, nil, errors.New("could not get monitored entities"))
 		meID := "KUBERNETES_CLUSTER-0E30FE4BF2007587"
-		entity := dtclient.MonitoredEntity{EntityId: meID, DisplayName: "operator test entity newest", LastSeenTms: 1639483869085}
+		entity := dtclient.MonitoredEntity{EntityID: meID, DisplayName: "operator test entity newest", LastSeenTms: 1639483869085}
 
 		// act
 		_, err := r.handleKubernetesAppEnabled(ctx, &entity)
@@ -312,7 +312,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		// arrange
 		meID := "KUBERNETES_CLUSTER-0E30FE4BF2007587"
 		entities := []dtclient.MonitoredEntity{
-			{EntityId: meID, DisplayName: "operator test entity newest", LastSeenTms: 1639483869085},
+			{EntityID: meID, DisplayName: "operator test entity newest", LastSeenTms: 1639483869085},
 		}
 		r := createReconciler(t, dk, entities, &entities[0], dtclient.GetSettingsResponse{}, "", meID)
 		// act

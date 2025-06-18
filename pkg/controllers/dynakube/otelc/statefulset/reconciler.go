@@ -113,13 +113,13 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	)
 
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	if err := hasher.AddAnnotation(sts); err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -127,7 +127,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.OtelCollectorStatefulsetName() + " statefulset")
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -153,8 +153,8 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
 	}
 
-	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TlsRefName != "" {
-		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.TelemetryIngest().Spec.TlsRefName)
+	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TLSRefName != "" {
+		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.TelemetryIngest().Spec.TLSRefName)
 		if err != nil {
 			return nil, err
 		}

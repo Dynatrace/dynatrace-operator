@@ -20,7 +20,7 @@ func (image LatestImageInfo) String() string {
 }
 
 func (dtc *dynatraceClient) GetLatestOneAgentImage(ctx context.Context) (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestOneAgentImageUrl())
+	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestOneAgentImageURL())
 	if err != nil {
 		log.Info("failed to process latest image response")
 
@@ -31,7 +31,7 @@ func (dtc *dynatraceClient) GetLatestOneAgentImage(ctx context.Context) (*Latest
 }
 
 func (dtc *dynatraceClient) GetLatestCodeModulesImage(ctx context.Context) (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestCodeModulesImageUrl())
+	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestCodeModulesImageURL())
 	if err != nil {
 		log.Info("failed to process latest image response")
 
@@ -42,7 +42,7 @@ func (dtc *dynatraceClient) GetLatestCodeModulesImage(ctx context.Context) (*Lat
 }
 
 func (dtc *dynatraceClient) GetLatestActiveGateImage(ctx context.Context) (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestActiveGateImageUrl())
+	latestImageInfo, err := dtc.processLatestImageRequest(ctx, dtc.getLatestActiveGateImageURL())
 	if err != nil {
 		log.Info("failed to process latest image response")
 
