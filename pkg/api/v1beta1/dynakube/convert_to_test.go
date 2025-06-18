@@ -239,7 +239,7 @@ func getOldActiveGateSpec() ActiveGateSpec {
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
-		TlsSecretName:     "activegate-tls-secret-name",
+		TLSSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
 		Capabilities: []CapabilityDisplayName{
 			DynatraceApiCapability.DisplayName,

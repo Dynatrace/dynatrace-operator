@@ -88,7 +88,7 @@ type Spec struct {
 	// server.p12: certificate+key pair in pkcs12 format
 	// password: passphrase to read server.p12
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLSSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	TLSSecretName string `json:"tlsSecretName,omitempty"`
 
 	// Sets DNS Policy for the ActiveGate pods

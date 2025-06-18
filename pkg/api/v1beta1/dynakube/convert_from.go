@@ -67,7 +67,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
-	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TLSSecretName
+	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TLSSecretName
 	dst.Spec.ActiveGate.Group = src.Spec.ActiveGate.Group
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
 	dst.Spec.ActiveGate.Tolerations = src.Spec.ActiveGate.Tolerations

@@ -305,7 +305,7 @@ func compareApplicationMonitoringSpec(t *testing.T, oldSpec oneagent.Application
 
 func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec activegatelatest.Spec) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
-	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TLSSecretName)
+	assert.Equal(t, oldSpec.TLSSecretName, newSpec.TLSSecretName)
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 

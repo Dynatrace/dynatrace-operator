@@ -221,7 +221,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activeg
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, len(oldSpec.Capabilities), len(newSpec.Capabilities))
-	assert.Equal(t, oldSpec.TlsSecretName, newSpec.TLSSecretName)
+	assert.Equal(t, oldSpec.TLSSecretName, newSpec.TLSSecretName)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 	assert.Equal(t, oldSpec.Group, newSpec.Group)
 	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
