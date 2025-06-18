@@ -39,7 +39,7 @@ func NoCSI(t *testing.T) features.Feature {
 
 	sampleApp := sample.NewApp(t, &dk,
 		sample.AsDeployment(),
-		sample.WithSecurityContext(corev1.PodSecurityContext{}),
+		sample.WithPodSecurityContext(corev1.PodSecurityContext{}),
 		sample.WithoutClusterRole(),
 	)
 	builder.Assess("install sample app", sampleApp.Install())
@@ -54,10 +54,21 @@ func NoCSI(t *testing.T) features.Feature {
 	randomUserSample := sample.NewApp(t, &dk,
 		sample.WithName("random-user"),
 		sample.AsDeployment(),
-		sample.WithSecurityContext(corev1.PodSecurityContext{
+		sample.WithPodSecurityContext(corev1.PodSecurityContext{
 			RunAsUser:  ptr.To[int64](1234),
 			RunAsGroup: ptr.To[int64](1234),
 		}),
+		sample.WithContainerSecurityContext(
+			corev1.SecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+				AllowPrivilegeEscalation: ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
+			}),
 	)
 	builder.Assess("install sample app with random users set", randomUserSample.Install())
 	builder.Assess("check injection of pods with random user", checkInjection(randomUserSample))
@@ -68,9 +79,19 @@ func NoCSI(t *testing.T) features.Feature {
 		randomUserSampleFail := sample.NewApp(t, &dk,
 			sample.WithName("random-user-fail"),
 			sample.AsDeployment(),
-			sample.WithSecurityContext(corev1.PodSecurityContext{
+			sample.WithPodSecurityContext(corev1.PodSecurityContext{
 				RunAsUser:  ptr.To[int64](1234),
 				RunAsGroup: ptr.To[int64](1234),
+			}),
+			sample.WithContainerSecurityContext(corev1.SecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+				AllowPrivilegeEscalation: ptr.To(false),
+				RunAsNonRoot:             ptr.To(true),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
 			}),
 			sample.WithoutClusterRole(),
 		)

@@ -127,9 +127,15 @@ func WithEnvs(envs []corev1.EnvVar) Option {
 	}
 }
 
-func WithSecurityContext(securityContext corev1.PodSecurityContext) Option {
+func WithPodSecurityContext(securityContext corev1.PodSecurityContext) Option {
 	return func(app *App) {
 		app.base.Spec.SecurityContext = &securityContext
+	}
+}
+
+func WithContainerSecurityContext(securityContext corev1.SecurityContext) Option {
+	return func(app *App) {
+		app.base.Spec.Containers[0].SecurityContext = &securityContext
 	}
 }
 

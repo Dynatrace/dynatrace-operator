@@ -51,7 +51,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 	randomUserSample := sample.NewApp(t, &appOnlyDynakube,
 		sample.WithName("random-user"),
 		sample.AsDeployment(),
-		sample.WithSecurityContext(corev1.PodSecurityContext{
+		sample.WithPodSecurityContext(corev1.PodSecurityContext{
 			RunAsUser:  ptr.To[int64](1234),
 			RunAsGroup: ptr.To[int64](1234),
 		}),
