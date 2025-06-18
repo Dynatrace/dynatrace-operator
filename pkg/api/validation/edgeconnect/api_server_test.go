@@ -21,7 +21,7 @@ func TestApiServer(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: edgeconnect.EdgeConnectSpec{
-					ApiServer: "tenantid" + suffix,
+					APIServer: "tenantid" + suffix,
 					OAuth: edgeconnect.OAuthSpec{
 						ClientSecret: "secret",
 						Endpoint:     "endpoint",
@@ -34,9 +34,9 @@ func TestApiServer(t *testing.T) {
 	})
 
 	t.Run(`invalid apiServer (missing tenant)`, func(t *testing.T) {
-		assertDenied(t, []string{errorInvalidApiServer}, &edgeconnect.EdgeConnect{
+		assertDenied(t, []string{errorInvalidAPIServer}, &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: allowedSuffix[0],
+				APIServer: allowedSuffix[0],
 				OAuth: edgeconnect.OAuthSpec{
 					ClientSecret: "secret",
 					Endpoint:     "endpoint",
@@ -47,9 +47,9 @@ func TestApiServer(t *testing.T) {
 	})
 
 	t.Run(`invalid apiServer (wrong suffix)`, func(t *testing.T) {
-		assertDenied(t, []string{errorInvalidApiServer}, &edgeconnect.EdgeConnect{
+		assertDenied(t, []string{errorInvalidAPIServer}, &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "doma.in",
+				APIServer: "doma.in",
 				OAuth: edgeconnect.OAuthSpec{
 					ClientSecret: "secret",
 					Endpoint:     "endpoint",

@@ -28,7 +28,7 @@ import (
 const (
 	testNamespace      = "test-namespace"
 	testDockerRegistry = "ENVIRONMENTID.live.dynatrace.com"
-	testApiUrl         = "https://" + testDockerRegistry + "/api"
+	testAPIURL         = "https://" + testDockerRegistry + "/api"
 
 	latestActiveGateVersion = "1.2.3.4-56"
 )
@@ -39,7 +39,7 @@ func TestReconcile(t *testing.T) {
 	dynakubeTemplate := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
@@ -66,7 +66,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.DynatraceApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
 	})
 
 	t.Run("all image versions were updated", func(t *testing.T) {

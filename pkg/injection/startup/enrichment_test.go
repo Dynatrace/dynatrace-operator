@@ -41,13 +41,13 @@ func TestCreateEnrichmentFiles(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, container := range runner.env.Containers {
-			expectedJson := fmt.Sprintf("{\"dt.entity.kubernetes_cluster\":\"K8EntityID\",\"dt.kubernetes.cluster.id\":\"K8ClusterID\",\"dt.kubernetes.workload.kind\":\"WorkloadKind\",\"dt.kubernetes.workload.name\":\"WorkloadName\",\"k8s.cluster.name\":\"K8ClusterName\",\"k8s.cluster.uid\":\"K8ClusterID\",\"k8s.container.name\":\"%s\",\"k8s.namespace.name\":\"K8Namespace\",\"k8s.node.name\":\"K8NodeName\",\"k8s.pod.name\":\"K8PodName\",\"k8s.pod.uid\":\"K8PodUID\",\"k8s.workload.kind\":\"WorkloadKind\",\"k8s.workload.name\":\"WorkloadName\"}", container.Name)
+			expectedJSON := fmt.Sprintf("{\"dt.entity.kubernetes_cluster\":\"K8EntityID\",\"dt.kubernetes.cluster.id\":\"K8ClusterID\",\"dt.kubernetes.workload.kind\":\"WorkloadKind\",\"dt.kubernetes.workload.name\":\"WorkloadName\",\"k8s.cluster.name\":\"K8ClusterName\",\"k8s.cluster.uid\":\"K8ClusterID\",\"k8s.container.name\":\"%s\",\"k8s.namespace.name\":\"K8Namespace\",\"k8s.node.name\":\"K8NodeName\",\"k8s.pod.name\":\"K8PodName\",\"k8s.pod.uid\":\"K8PodUID\",\"k8s.workload.kind\":\"WorkloadKind\",\"k8s.workload.name\":\"WorkloadName\"}", container.Name)
 
-			jsonFile, err := fs.Open(fmt.Sprintf(enrichmentJsonPathTemplate, container.Name))
+			jsonFile, err := fs.Open(fmt.Sprintf(enrichmentJSONPathTemplate, container.Name))
 			require.NoError(t, err)
 			content, err := io.ReadAll(jsonFile)
 			require.NoError(t, err)
-			assert.JSONEq(t, expectedJson, string(content))
+			assert.JSONEq(t, expectedJSON, string(content))
 
 			expectedProps := map[string]string{}
 			err = json.Unmarshal(content, &expectedProps)
@@ -90,7 +90,7 @@ func TestCreateEnrichmentFiles(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, container := range runner.env.Containers {
-			jsonFile, err := fs.Open(fmt.Sprintf(enrichmentJsonPathTemplate, container.Name))
+			jsonFile, err := fs.Open(fmt.Sprintf(enrichmentJSONPathTemplate, container.Name))
 			require.NoError(t, err)
 			content, err := io.ReadAll(jsonFile)
 			require.NoError(t, err)
@@ -139,13 +139,13 @@ func TestCreateEnrichmentFiles(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, container := range runner.env.Containers {
-			expectedJson := fmt.Sprintf("{\"dt.entity.kubernetes_cluster\":\"K8EntityID\",\"dt.kubernetes.cluster.id\":\"K8ClusterID\",\"dt.kubernetes.workload.kind\":\"WorkloadKind\",\"dt.kubernetes.workload.name\":\"WorkloadName\",\"k8s.cluster.name\":\"K8ClusterName\",\"k8s.cluster.uid\":\"K8ClusterID\",\"k8s.container.name\":\"%s\",\"k8s.namespace.name\":\"K8Namespace\",\"k8s.node.name\":\"K8NodeName\",\"k8s.pod.name\":\"K8PodName\",\"k8s.pod.uid\":\"K8PodUID\",\"k8s.workload.kind\":\"WorkloadKind\",\"k8s.workload.name\":\"WorkloadName\",\"key1\":\"value1\",\"key2\":\"value2\"}", container.Name)
+			expectedJSON := fmt.Sprintf("{\"dt.entity.kubernetes_cluster\":\"K8EntityID\",\"dt.kubernetes.cluster.id\":\"K8ClusterID\",\"dt.kubernetes.workload.kind\":\"WorkloadKind\",\"dt.kubernetes.workload.name\":\"WorkloadName\",\"k8s.cluster.name\":\"K8ClusterName\",\"k8s.cluster.uid\":\"K8ClusterID\",\"k8s.container.name\":\"%s\",\"k8s.namespace.name\":\"K8Namespace\",\"k8s.node.name\":\"K8NodeName\",\"k8s.pod.name\":\"K8PodName\",\"k8s.pod.uid\":\"K8PodUID\",\"k8s.workload.kind\":\"WorkloadKind\",\"k8s.workload.name\":\"WorkloadName\",\"key1\":\"value1\",\"key2\":\"value2\"}", container.Name)
 
-			jsonFile, err := fs.Open(fmt.Sprintf(enrichmentJsonPathTemplate, container.Name))
+			jsonFile, err := fs.Open(fmt.Sprintf(enrichmentJSONPathTemplate, container.Name))
 			require.NoError(t, err)
 			content, err := io.ReadAll(jsonFile)
 			require.NoError(t, err)
-			assert.JSONEq(t, expectedJson, string(content))
+			assert.JSONEq(t, expectedJSON, string(content))
 
 			expectedProps := map[string]string{}
 			err = json.Unmarshal(content, &expectedProps)

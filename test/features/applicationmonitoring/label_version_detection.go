@@ -103,7 +103,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	defaultDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("dynakube-components-default"),
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
@@ -111,7 +111,7 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 	labelVersionDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("dynakube-components-labels"),
 		dynakubeComponents.WithAnnotations(map[string]string{exp.InjectionLabelVersionDetectionKey: "true"}),
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)

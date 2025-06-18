@@ -119,13 +119,13 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 
 func setImageIDToCustomImage(
 	target *status.VersionStatus,
-	imageUri string,
+	imageURI string,
 ) {
 	log.Info("updating image version info",
-		"image", imageUri,
+		"image", imageURI,
 		"oldImageID", target.ImageID)
 
-	target.ImageID = imageUri
+	target.ImageID = imageURI
 	target.Version = string(status.CustomImageVersionSource)
 
 	log.Info("updated image version info",
@@ -136,13 +136,13 @@ func setImageFromImageInfo(
 	target *status.VersionStatus,
 	imageInfo dtclient.LatestImageInfo,
 ) {
-	imageUri := imageInfo.String()
+	imageURI := imageInfo.String()
 	log.Info("updating image version info",
 		"image", imageInfo.String(),
 		"oldImageID", target.ImageID)
 
 	target.Version = imageInfo.Tag
-	target.ImageID = imageUri
+	target.ImageID = imageURI
 
 	log.Info("updated image version info",
 		"newImageID", target.ImageID)
@@ -150,16 +150,16 @@ func setImageFromImageInfo(
 
 func updateVersionStatusForTenantRegistry(
 	target *status.VersionStatus,
-	imageUri string,
+	imageURI string,
 	latestVersion string,
 ) error {
-	ref, err := name.ParseReference(imageUri)
+	ref, err := name.ParseReference(imageURI)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
 
 	log.Info("updating image version info for tenant registry image",
-		"image", imageUri,
+		"image", imageURI,
 		"oldImageID", target.ImageID,
 		"oldVersion", target.Version)
 

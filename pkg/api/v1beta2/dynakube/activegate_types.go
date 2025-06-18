@@ -37,7 +37,7 @@ var (
 		ArgumentName: "metrics_ingest",
 	}
 
-	DynatraceApiCapability = ActiveGateCapability{
+	DynatraceAPICapability = ActiveGateCapability{
 		DisplayName:  "dynatrace-api",
 		ShortName:    "dynatrace-api",
 		ArgumentName: "restInterface",
@@ -48,7 +48,7 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 	RoutingCapability.DisplayName:       {},
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
-	DynatraceApiCapability.DisplayName:  {},
+	DynatraceAPICapability.DisplayName:  {},
 }
 
 type ActiveGateSpec struct {
@@ -63,7 +63,7 @@ type ActiveGateSpec struct {
 	// `password`: passphrase to read server.p12
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	TlsSecretName string `json:"tlsSecretName,omitempty"`
+	TLSSecretName string `json:"tlsSecretName,omitempty"`
 
 	// Sets DNS Policy for the ActiveGate pods
 	// +kubebuilder:validation:Optional

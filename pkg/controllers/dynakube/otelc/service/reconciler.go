@@ -19,16 +19,16 @@ const (
 	zipkinPort                  = 9411
 	otlpGrpcPortName            = "otlp-grpc"
 	otlpGrpcPort                = 4317
-	otlpHttpPortName            = "otlp-http"
-	otlpHttpPort                = 4318
+	otlpHTTPPortName            = "otlp-http"
+	otlpHTTPPort                = 4318
 	jaegerGrpcPortName          = "jaeger-grpc"
 	jaegerGrpcPort              = 14250
 	jaegerThriftBinaryPortName  = "jaeger-thrift-binary"
 	jaegerThriftBinaryPort      = 6832
 	jaegerThriftCompactPortName = "jaeger-thrift-compact"
 	jaegerThriftCompactPort     = 6831
-	jaegerThriftHttpPortName    = "jaeger-thrift-http"
-	jaegerThriftHttpPort        = 14268
+	jaegerThriftHTTPPortName    = "jaeger-thrift-http"
+	jaegerThriftHTTPPort        = 14268
 	statsdPortName              = "statsd"
 	statsdPort                  = 8125
 )
@@ -109,7 +109,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update telemetry service")
-		conditions.SetKubeApiError(r.dk.Conditions(), serviceConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
@@ -158,10 +158,10 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 					TargetPort: intstr.FromInt32(otlpGrpcPort),
 				},
 				corev1.ServicePort{
-					Name:       otlpHttpPortName,
-					Port:       otlpHttpPort,
+					Name:       otlpHTTPPortName,
+					Port:       otlpHTTPPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(otlpHttpPort),
+					TargetPort: intstr.FromInt32(otlpHTTPPort),
 				})
 		case otelcgen.JaegerProtocol:
 			svcPorts = append(svcPorts,
@@ -184,10 +184,10 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 					TargetPort: intstr.FromInt32(jaegerThriftCompactPort),
 				},
 				corev1.ServicePort{
-					Name:       jaegerThriftHttpPortName,
-					Port:       jaegerThriftHttpPort,
+					Name:       jaegerThriftHTTPPortName,
+					Port:       jaegerThriftHTTPPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(jaegerThriftHttpPort),
+					TargetPort: intstr.FromInt32(jaegerThriftHTTPPort),
 				})
 		case otelcgen.StatsdProtocol:
 			svcPorts = append(svcPorts,

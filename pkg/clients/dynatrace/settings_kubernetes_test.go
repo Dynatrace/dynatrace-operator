@@ -177,14 +177,14 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		assert.Equal(t, hierarchicalMonitoringSettingsSchemaVersion, actual[0].SchemaVersion)
 		assert.IsType(t, postKubernetesSettings{}, actual[0].Value)
 		assert.True(t, actual[0].Value.(postKubernetesSettings).Enabled)
-		bodyJson, err := json.Marshal(actual[0])
+		bodyJSON, err := json.Marshal(actual[0])
 		require.NoError(t, err)
-		assert.NotContains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
-		assert.NotContains(t, string(bodyJson), "openMetricsPipelineEnabled")
-		assert.NotContains(t, string(bodyJson), "eventProcessingActive")
-		assert.NotContains(t, string(bodyJson), "eventProcessingV2Active")
-		assert.NotContains(t, string(bodyJson), "filterEvents")
-		assert.Contains(t, string(bodyJson), "clusterIdEnabled")
+		assert.NotContains(t, string(bodyJSON), "cloudApplicationPipelineEnabled")
+		assert.NotContains(t, string(bodyJSON), "openMetricsPipelineEnabled")
+		assert.NotContains(t, string(bodyJSON), "eventProcessingActive")
+		assert.NotContains(t, string(bodyJSON), "eventProcessingV2Active")
+		assert.NotContains(t, string(bodyJSON), "filterEvents")
+		assert.Contains(t, string(bodyJSON), "clusterIdEnabled")
 	})
 
 	t.Run(`get k8s settings request body`, func(t *testing.T) {
@@ -206,15 +206,15 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		assert.Equal(t, schemaVersionV1, actual[0].SchemaVersion)
 		assert.IsType(t, postKubernetesSettings{}, actual[0].Value)
 		assert.True(t, actual[0].Value.(postKubernetesSettings).Enabled)
-		bodyJson, err := json.Marshal(actual[0])
+		bodyJSON, err := json.Marshal(actual[0])
 		require.NoError(t, err)
-		assert.Contains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
-		assert.Contains(t, string(bodyJson), "openMetricsPipelineEnabled")
-		assert.Contains(t, string(bodyJson), "eventProcessingActive")
-		assert.Contains(t, string(bodyJson), "eventProcessingV2Active")
-		assert.Contains(t, string(bodyJson), "filterEvents")
+		assert.Contains(t, string(bodyJSON), "cloudApplicationPipelineEnabled")
+		assert.Contains(t, string(bodyJSON), "openMetricsPipelineEnabled")
+		assert.Contains(t, string(bodyJSON), "eventProcessingActive")
+		assert.Contains(t, string(bodyJSON), "eventProcessingV2Active")
+		assert.Contains(t, string(bodyJSON), "filterEvents")
 
-		assert.Contains(t, string(bodyJson), "clusterIdEnabled")
+		assert.Contains(t, string(bodyJSON), "clusterIdEnabled")
 	})
 }
 
@@ -322,7 +322,7 @@ func mockHandleEntitiesRequest(request *http.Request, writer http.ResponseWriter
 	}
 }
 
-func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter, totalCount int, objectId string) {
+func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter, totalCount int, objectID string) {
 	switch request.Method {
 	case http.MethodGet:
 		if request.Form.Get("scopes") == "" {
@@ -331,12 +331,12 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 			return
 		}
 
-		if request.Form.Get("schemaIds") == KubernetesSettingsSchemaId {
+		if request.Form.Get("schemaIds") == KubernetesSettingsSchemaID {
 			mockGetKubernetesSettingsAPI(writer, totalCount)
 		}
 
 	case http.MethodPost:
-		mockPostKubernetesSettingAPI(request, writer, objectId)
+		mockPostKubernetesSettingAPI(request, writer, objectID)
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}
@@ -351,7 +351,7 @@ func mockHandleEffectiveSettingsRequest(request *http.Request, writer http.Respo
 			return
 		}
 
-		if request.Form.Get("schemaIds") == MetadataEnrichmentSettingsSchemaId {
+		if request.Form.Get("schemaIds") == MetadataEnrichmentSettingsSchemaID {
 			mockGetRulesSettingsAPI(writer, totalCount)
 		}
 	default:
@@ -369,7 +369,7 @@ func mockGetKubernetesSettingsAPI(writer http.ResponseWriter, totalCount int) {
 	writer.Write(settingsGetResponse)
 }
 
-func mockPostKubernetesSettingAPI(request *http.Request, writer http.ResponseWriter, objectId string) {
+func mockPostKubernetesSettingAPI(request *http.Request, writer http.ResponseWriter, objectID string) {
 	if request.Body == nil {
 		writer.WriteHeader(http.StatusBadRequest)
 
@@ -390,7 +390,7 @@ func mockPostKubernetesSettingAPI(request *http.Request, writer http.ResponseWri
 
 	var settingsPostResponse []postSettingsResponse
 	settingsPostResponse = append(settingsPostResponse, postSettingsResponse{
-		ObjectId: objectId,
+		ObjectID: objectID,
 	})
 
 	settingsPostResponseBytes, err := json.Marshal(settingsPostResponse)

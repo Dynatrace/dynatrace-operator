@@ -12,7 +12,7 @@ const (
 	NoProxyKey        = FFPrefix + "no-proxy"
 
 	// Deprecated: Dedicated field since v1beta2.
-	ApiRequestThresholdKey = FFPrefix + "dynatrace-api-request-threshold"
+	APIRequestThresholdKey = FFPrefix + "dynatrace-api-request-threshold"
 
 	silentPhrase = "silent"
 	failPhrase   = "fail"
@@ -29,8 +29,8 @@ func NewFlags(annotations map[string]string) *FeatureFlags {
 }
 
 // Deprecated: Dedicated field since v1beta2.
-func (ff *FeatureFlags) GetApiRequestThreshold() time.Duration {
-	interval := ff.getIntWithDefault(ApiRequestThresholdKey, DefaultMinRequestThresholdMinutes)
+func (ff *FeatureFlags) GetAPIRequestThreshold() time.Duration {
+	interval := ff.getIntWithDefault(APIRequestThresholdKey, DefaultMinRequestThresholdMinutes)
 	if interval < 0 {
 		interval = DefaultMinRequestThresholdMinutes
 	}

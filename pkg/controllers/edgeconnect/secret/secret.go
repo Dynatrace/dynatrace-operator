@@ -13,7 +13,7 @@ import (
 func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
 	cfg := config.EdgeConnect{
 		Name:            ec.ObjectMeta.Name,
-		ApiEndpointHost: ec.Spec.ApiServer,
+		APIEndpointHost: ec.Spec.APIServer,
 		OAuth: config.OAuth{
 			Endpoint: ec.Spec.OAuth.Endpoint,
 			Resource: ec.Spec.OAuth.Resource,
@@ -50,7 +50,7 @@ func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiRead
 	cfg.RootCertificatePaths = append(cfg.RootCertificatePaths, consts.EdgeConnectServiceAccountCAPath)
 
 	if ec.IsK8SAutomationEnabled() {
-		cfg.Secrets = append(cfg.Secrets, createKubernetesApiSecret(token))
+		cfg.Secrets = append(cfg.Secrets, createKubernetesAPISecret(token))
 	}
 
 	if ec.Spec.Proxy != nil {
@@ -88,7 +88,7 @@ func safeEdgeConnectCfg(cfg config.EdgeConnect) string {
 	return string(safe)
 }
 
-func createKubernetesApiSecret(token string) config.Secret {
+func createKubernetesAPISecret(token string) config.Secret {
 	return config.Secret{
 		Name:            "K8S_SERVICE_ACCOUNT_TOKEN",
 		Token:           token,

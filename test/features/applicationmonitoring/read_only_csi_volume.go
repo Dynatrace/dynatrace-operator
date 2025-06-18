@@ -33,7 +33,7 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithAnnotations(readOnlyInjection),
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
 	sampleDeployment := sample.NewApp(t, &testDynakube, sample.AsDeployment())

@@ -19,7 +19,7 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
-				APIURL:        testApiUrl,
+				APIURL:        testAPIURL,
 				LogMonitoring: &logmonitoring.Spec{},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -36,7 +36,7 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
-				APIURL:        testApiUrl,
+				APIURL:        testAPIURL,
 				LogMonitoring: &logmonitoring.Spec{},
 			},
 		}
@@ -46,11 +46,11 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.AGAutomaticK8sApiMonitoringKey: "false",
+					exp.AGAutomaticK8sAPIMonitoringKey: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:        testApiUrl,
+				APIURL:        testAPIURL,
 				LogMonitoring: &logmonitoring.Spec{},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -73,11 +73,11 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 		assertAllowedWithWarnings(t, 1, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.AGAutomaticK8sApiMonitoringKey: "false",
+					exp.AGAutomaticK8sAPIMonitoringKey: "false",
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:        testApiUrl,
+				APIURL:        testAPIURL,
 				LogMonitoring: &logmonitoring.Spec{},
 				Templates: dynakube.TemplatesSpec{
 					LogMonitoring: &logmonitoring.TemplateSpec{
@@ -94,26 +94,26 @@ func TestLogMonitoringWithoutK8SMonitoring(t *testing.T) {
 
 func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 	t.Run("no warning if logMonitoring template section is empty", func(t *testing.T) {
-		dk := createStandaloneLogMonitoringDynakube(testName, testApiUrl, "")
+		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dk.Spec.Templates.LogMonitoring = nil
 		assertAllowedWithWarnings(t, 1, dk)
 	})
 	t.Run("warning if logMonitoring template section is not empty", func(t *testing.T) {
-		dk := createStandaloneLogMonitoringDynakube(testName, testApiUrl, "something")
+		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "something")
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		assertAllowedWithWarnings(t, 2, dk)
 	})
 }
 
-func createStandaloneLogMonitoringDynakube(name, apiUrl, nodeSelector string) *dynakube.DynaKube {
+func createStandaloneLogMonitoringDynakube(name, apiURL, nodeSelector string) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:        apiUrl,
+			APIURL:        apiURL,
 			LogMonitoring: &logmonitoring.Spec{},
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
@@ -148,7 +148,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:        testApiUrl,
+					APIURL:        testAPIURL,
 					LogMonitoring: &logmonitoring.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -173,7 +173,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:        testApiUrl,
+					APIURL:        testAPIURL,
 					LogMonitoring: &logmonitoring.Spec{},
 				},
 			})
@@ -185,7 +185,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:        testApiUrl,
+					APIURL:        testAPIURL,
 					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						LogMonitoring: &logmonitoring.TemplateSpec{
@@ -204,7 +204,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:        testApiUrl,
+					APIURL:        testAPIURL,
 					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						LogMonitoring: &logmonitoring.TemplateSpec{

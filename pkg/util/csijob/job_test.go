@@ -12,7 +12,7 @@ import (
 
 func TestGet(t *testing.T) {
 	t.Run("empty env -> use fallback", func(t *testing.T) {
-		t.Setenv(SettingsJsonEnv, "")
+		t.Setenv(SettingsJSONEnv, "")
 
 		m := GetSettings()
 		assert.Equal(t, fallbackSettings, m)
@@ -22,7 +22,7 @@ func TestGet(t *testing.T) {
 	})
 
 	t.Run("messy env -> use fallback", func(t *testing.T) {
-		t.Setenv(SettingsJsonEnv, "this is not json :(")
+		t.Setenv(SettingsJSONEnv, "this is not json :(")
 
 		m := GetSettings()
 		assert.Equal(t, fallbackSettings, m)
@@ -96,7 +96,7 @@ func TestGet(t *testing.T) {
 			},
 		}
 
-		t.Setenv(SettingsJsonEnv, jsonValue)
+		t.Setenv(SettingsJSONEnv, jsonValue)
 
 		m := GetSettings()
 		assert.Equal(t, expected, m)
@@ -114,12 +114,12 @@ func TestGet(t *testing.T) {
 			}
 		}`
 
-		t.Setenv(SettingsJsonEnv, jsonValue)
+		t.Setenv(SettingsJSONEnv, jsonValue)
 
 		m := GetSettings()
 		assert.Equal(t, fallbackSettings, m)
 
-		t.Setenv(SettingsJsonEnv, "boom")
+		t.Setenv(SettingsJSONEnv, "boom")
 
 		m = GetSettings()
 		assert.Equal(t, fallbackSettings, m)

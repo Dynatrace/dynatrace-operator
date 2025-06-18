@@ -15,8 +15,8 @@ const (
 )
 
 type EnvironmentSetting struct {
-	ObjectId *string                 `json:"objectId"`
-	SchemaId string                  `json:"schemaId"`
+	ObjectID *string                 `json:"objectId"`
+	SchemaID string                  `json:"schemaId"`
 	Scope    string                  `json:"scope"`
 	Value    EnvironmentSettingValue `json:"value"`
 }
@@ -35,9 +35,9 @@ type EnvironmentSettingsResponse struct {
 }
 
 func (c *client) GetConnectionSettings() ([]EnvironmentSetting, error) {
-	settingsObjectsUrl := c.getSettingsObjectsUrl()
+	settingsObjectsURL := c.getSettingsObjectsURL()
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsUrl, nil)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, settingsObjectsURL, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
@@ -55,19 +55,19 @@ func (c *client) GetConnectionSettings() ([]EnvironmentSetting, error) {
 		return nil, errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
-	responseData, err := c.getSettingsApiResponseData(response)
+	responseData, err := c.getSettingsAPIResponseData(response)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error getting server response data")
 	}
 
-	var resDataJson EnvironmentSettingsResponse
+	var resDataJSON EnvironmentSettingsResponse
 
-	err = json.Unmarshal(responseData, &resDataJson)
+	err = json.Unmarshal(responseData, &resDataJSON)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error parsing response body")
 	}
 
-	return resDataJson.Items, nil
+	return resDataJSON.Items, nil
 }
 
 func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
@@ -76,7 +76,7 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 		return errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodPost, c.getSettingsObjectsUrl(), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodPost, c.getSettingsObjectsURL(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return errors.WithMessage(err, "error initializing http request")
 	}
@@ -91,7 +91,7 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 		return errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
-	_, err = c.getSettingsApiResponseData(response)
+	_, err = c.getSettingsAPIResponseData(response)
 
 	if err != nil {
 		return errors.WithMessage(err, "error reading response data")
@@ -106,7 +106,7 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 		return errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodPut, c.getSettingsObjectsIdUrl(*es.ObjectId), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodPut, c.getSettingsObjectsIDURL(*es.ObjectID), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return errors.WithMessage(err, "error initializing http request")
 	}
@@ -120,7 +120,7 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 
 	defer utils.CloseBodyAfterRequest(response)
 
-	_, err = c.getSettingsApiResponseData(response)
+	_, err = c.getSettingsAPIResponseData(response)
 
 	if err != nil {
 		return errors.WithMessage(err, "error reading response data")
@@ -129,8 +129,8 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 	return nil
 }
 
-func (c *client) DeleteConnectionSetting(objectId string) error {
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodDelete, c.getSettingsObjectsIdUrl(objectId), nil)
+func (c *client) DeleteConnectionSetting(objectID string) error {
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodDelete, c.getSettingsObjectsIDURL(objectID), nil)
 	if err != nil {
 		return errors.WithMessage(err, "error initializing http request")
 	}
@@ -143,7 +143,7 @@ func (c *client) DeleteConnectionSetting(objectId string) error {
 		return errors.WithMessage(err, "error making post request to dynatrace api")
 	}
 
-	_, err = c.getSettingsApiResponseData(response)
+	_, err = c.getSettingsAPIResponseData(response)
 
 	if err != nil {
 		return errors.WithMessage(err, "error reading response data")

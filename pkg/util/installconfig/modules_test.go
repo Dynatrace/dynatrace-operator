@@ -9,7 +9,7 @@ import (
 
 func TestGet(t *testing.T) {
 	t.Run("empty env -> use fallback", func(t *testing.T) {
-		t.Setenv(ModulesJsonEnv, "")
+		t.Setenv(ModulesJSONEnv, "")
 
 		m := GetModules()
 		assert.Equal(t, fallbackModules, m)
@@ -18,7 +18,7 @@ func TestGet(t *testing.T) {
 	})
 
 	t.Run("messy env -> use fallback", func(t *testing.T) {
-		t.Setenv(ModulesJsonEnv, "this is not json :(")
+		t.Setenv(ModulesJSONEnv, "this is not json :(")
 
 		m := GetModules()
 		assert.Equal(t, fallbackModules, m)
@@ -49,7 +49,7 @@ func TestGet(t *testing.T) {
 			KSPM:           true,
 		}
 
-		t.Setenv(ModulesJsonEnv, jsonValue)
+		t.Setenv(ModulesJSONEnv, jsonValue)
 
 		m := GetModules()
 		assert.Equal(t, expected, m)
@@ -80,13 +80,13 @@ func TestGet(t *testing.T) {
 			KSPM:           true,
 		}
 
-		t.Setenv(ModulesJsonEnv, jsonValue)
+		t.Setenv(ModulesJSONEnv, jsonValue)
 
 		m := GetModules()
 
 		assert.Equal(t, expected, m)
 
-		t.Setenv(ModulesJsonEnv, "boom")
+		t.Setenv(ModulesJSONEnv, "boom")
 
 		m = GetModules()
 

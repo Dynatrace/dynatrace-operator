@@ -120,7 +120,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), secretConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
 		assert.Contains(t, condition.Message, "A problem occurred when using the Kubernetes API")
 	})
 

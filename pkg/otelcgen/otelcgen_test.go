@@ -15,7 +15,7 @@ func TestNewConfigFull(t *testing.T) {
 		Protocols{OtlpProtocol, JaegerProtocol, StatsdProtocol, ZipkinProtocol},
 		WithCA("/run/opensignals/cacerts/certs"),
 		WithSystemCAs(true),
-		WithApiToken("test-token"),
+		WithAPIToken("test-token"),
 		WithTLS("/run/opensignals/tls/tls.crt", "/run/opensignals/tls/tls.key"),
 		WithReceivers(),
 		WithExportersEndpoint("exporters-test-endpoint"),

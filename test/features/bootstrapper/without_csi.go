@@ -27,7 +27,7 @@ func NoCSI(t *testing.T) features.Feature {
 	builder := features.New("node-image-pull-with-no-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	dk := *dynakubeComponents.New(
-		dynakubeComponents.WithApiUrl(secretConfig.ApiUrl),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: bootstrapperImage}}),
 		dynakubeComponents.WithAnnotations(map[string]string{
 			exp.OANodeImagePullKey:             "true",

@@ -53,9 +53,9 @@ func WithAnnotations(annotations map[string]string) Option {
 	}
 }
 
-func WithApiUrl(apiUrl string) Option {
+func WithAPIURL(apiURL string) Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.APIURL = apiUrl
+		dk.Spec.APIURL = apiURL
 	}
 }
 
@@ -64,7 +64,7 @@ func WithActiveGate() Option {
 		dk.Spec.ActiveGate = activegate.Spec{
 			Capabilities: []activegate.CapabilityDisplayName{
 				activegate.KubeMonCapability.DisplayName,
-				activegate.DynatraceApiCapability.DisplayName,
+				activegate.DynatraceAPICapability.DisplayName,
 				activegate.RoutingCapability.DisplayName,
 				activegate.MetricsIngestCapability.DisplayName,
 				activegate.DebuggingCapability.DisplayName,
@@ -90,7 +90,7 @@ func WithMetadataEnrichment() Option {
 
 func WithActiveGateTLSSecret(tlsSecretName string) Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.ActiveGate.TlsSecretName = tlsSecretName
+		dk.Spec.ActiveGate.TLSSecretName = tlsSecretName
 	}
 }
 
@@ -233,6 +233,6 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 		if dk.Spec.TelemetryIngest == nil {
 			dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 		}
-		dk.Spec.TelemetryIngest.TlsRefName = secretName
+		dk.Spec.TelemetryIngest.TLSRefName = secretName
 	}
 }

@@ -44,21 +44,21 @@ func defaultAuths(server string) Auths {
 func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
 	dockerServer := httptest.NewTLSServer(testDockerServerHandler(http.MethodGet, handleUrls))
 
-	parsedServerUrl, err := url.Parse(dockerServer.URL)
+	parsedServerURL, err := url.Parse(dockerServer.URL)
 	if err != nil {
 		dockerServer.Close()
 
 		return nil, nil, "", err
 	}
 
-	secret, err := createSecret(defaultAuths(parsedServerUrl.Host))
+	secret, err := createSecret(defaultAuths(parsedServerURL.Host))
 	if err != nil {
 		dockerServer.Close()
 
 		return nil, nil, "", err
 	}
 
-	return dockerServer, secret, parsedServerUrl.Host, nil
+	return dockerServer, secret, parsedServerURL.Host, nil
 }
 
 func createSecret(auths Auths) (*corev1.Secret, error) {
@@ -68,13 +68,13 @@ func createSecret(auths Auths) (*corev1.Secret, error) {
 	}
 
 	return testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).
-		dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).
+		dataAppend(dtpullsecret.DockerConfigJSON, string(authsBytes)).
 		build(), nil
 }
 
-func dynakubeBuilder(dockerUrl string) *testDynaKubeBuilder {
+func dynakubeBuilder(dockerURL string) *testDynaKubeBuilder {
 	return testNewDynakubeBuilder(testNamespace, testDynakube).
-		withApiUrl(dockerUrl + "/api")
+		withAPIURL(dockerURL + "/api")
 }
 
 func TestImagePullable(t *testing.T) {
@@ -296,7 +296,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
 		dk := *testNewDynakubeBuilder(testNamespace, testDynakube).
-			withApiUrl(dockerServer.URL + "/api").
+			withAPIURL(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
 		logOutput := runWithTestLogger(func(log logd.Logger) {
@@ -316,7 +316,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 
 	t.Run("OneAgent code modules image with unset image", func(t *testing.T) {
 		dk := *testNewDynakubeBuilder(testNamespace, testDynakube).
-			withApiUrl(dockerServer.URL + "/api").
+			withAPIURL(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("").
 			build()
 
@@ -335,8 +335,8 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 
 func testDockerServerHandler(method string, serverUrls []string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		for _, serverUrl := range serverUrls {
-			if request.Method == method && request.URL.Path == serverUrl {
+		for _, serverURL := range serverUrls {
+			if request.Method == method && request.URL.Path == serverURL {
 				writer.WriteHeader(http.StatusOK)
 
 				return
@@ -349,7 +349,7 @@ func testDockerServerHandler(method string, serverUrls []string) http.HandlerFun
 
 func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("valid pull secret", func(t *testing.T) {
-		pullSecret := testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build()
+		pullSecret := testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJSON, pullSecretFieldValue).build()
 		secret, err := getPullSecretToken(pullSecret)
 		require.NoErrorf(t, err, "unexpected error")
 		assert.Equal(t, pullSecretFieldValue, secret, "invalid contents of pull secret")
@@ -364,7 +364,7 @@ func TestImagePullablePullSecret(t *testing.T) {
 }
 
 func getPullSecretToken(pullSecret *corev1.Secret) (string, error) {
-	secretBytes, hasPullSecret := pullSecret.Data[dtpullsecret.DockerConfigJson]
+	secretBytes, hasPullSecret := pullSecret.Data[dtpullsecret.DockerConfigJSON]
 	if !hasPullSecret {
 		return "", errors.Errorf("token .dockerconfigjson does not exist in secret '%s'", pullSecret.Name)
 	}

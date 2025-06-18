@@ -30,7 +30,7 @@ const (
 
 var (
 	testAgAuthTokenResponse = &dtclient.ActiveGateAuthTokenInfo{
-		TokenId: "test",
+		TokenID: "test",
 		Token:   "dt.some.valuegoeshere",
 	}
 )

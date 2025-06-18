@@ -99,18 +99,18 @@ func (dk *DynaKube) TenantUUID() (string, error) {
 	return "", errors.New("tenant UUID not available")
 }
 
-func (dk *DynaKube) GetDynatraceApiRequestThreshold() uint16 {
-	if dk.Spec.DynatraceApiRequestThreshold == nil {
+func (dk *DynaKube) GetDynatraceAPIRequestThreshold() uint16 {
+	if dk.Spec.DynatraceAPIRequestThreshold == nil {
 		return DefaultMinRequestThresholdMinutes
 	}
 
-	return *dk.Spec.DynatraceApiRequestThreshold
+	return *dk.Spec.DynatraceAPIRequestThreshold
 }
 
 func (dk *DynaKube) ApiRequestThreshold() time.Duration {
-	return time.Duration(dk.GetDynatraceApiRequestThreshold()) * time.Minute
+	return time.Duration(dk.GetDynatraceAPIRequestThreshold()) * time.Minute
 }
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.ApiRequestThreshold())
+	return timeProvider.IsOutdated(&dk.Status.DynatraceAPI.LastTokenScopeRequest, dk.ApiRequestThreshold())
 }

@@ -11,7 +11,7 @@ func getDynaKubeWithCerts(t *testing.T) dynakube.DynaKube {
 	t.Helper()
 
 	dk := dynakube.DynaKube{}
-	dk.ActiveGate().Spec.TlsSecretName = "test"
+	dk.ActiveGate().Spec.TLSSecretName = "test"
 	dk.ActiveGate().Capabilities = []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}
 
 	return dk

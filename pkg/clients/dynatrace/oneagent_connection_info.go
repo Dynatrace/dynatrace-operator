@@ -23,7 +23,7 @@ type OneAgentConnectionInfo struct {
 	CommunicationHosts []CommunicationHost
 }
 
-type oneAgentConnectionInfoJsonResponse struct {
+type oneAgentConnectionInfoJSONResponse struct {
 	TenantUUID                      string   `json:"tenantUUID"`
 	TenantToken                     string   `json:"tenantToken"`
 	FormattedCommunicationEndpoints string   `json:"formattedCommunicationEndpoints"`
@@ -31,7 +31,7 @@ type oneAgentConnectionInfoJsonResponse struct {
 }
 
 func (dtc *dynatraceClient) GetOneAgentConnectionInfo(ctx context.Context) (OneAgentConnectionInfo, error) {
-	resp, err := dtc.makeRequest(ctx, dtc.getOneAgentConnectionInfoUrl(), dynatracePaaSToken)
+	resp, err := dtc.makeRequest(ctx, dtc.getOneAgentConnectionInfoURL(), dynatracePaaSToken)
 	if err != nil {
 		return OneAgentConnectionInfo{}, err
 	}
@@ -58,7 +58,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo(ctx context.Context) (OneA
 }
 
 func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byte) (OneAgentConnectionInfo, error) {
-	resp := oneAgentConnectionInfoJsonResponse{}
+	resp := oneAgentConnectionInfoJSONResponse{}
 
 	err := json.Unmarshal(response, &resp)
 	if err != nil {

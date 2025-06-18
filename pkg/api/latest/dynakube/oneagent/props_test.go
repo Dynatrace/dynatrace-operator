@@ -67,22 +67,22 @@ func TestDefaultOneAgentImage(t *testing.T) {
 	})
 
 	t.Run("OneAgentImage adds raw postfix", func(t *testing.T) {
-		hostUrl, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false, false)
+		hostURL, _ := url.Parse(testAPIURL)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5"))
 	})
 
 	t.Run("OneAgentImage doesn't add 'raw' postfix if present", func(t *testing.T) {
-		hostUrl, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false, false)
+		hostURL, _ := url.Parse(testAPIURL)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5-raw"))
 	})
 
 	t.Run("OneAgentImage with custom version truncates build date", func(t *testing.T) {
 		version := "1.239.14.20220325-164521"
 		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
-		hostUrl, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostUrl.Host, false, false, false)
+		hostURL, _ := url.Parse(testAPIURL)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
 		assert.Equal(t, expectedImage, oneAgent.GetDefaultImage(version))
 	})
 }

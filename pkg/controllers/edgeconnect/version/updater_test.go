@@ -157,7 +157,7 @@ func TestReconcileRequired(t *testing.T) {
 func createBasicEdgeConnect() *edgeconnect.EdgeConnect {
 	return &edgeconnect.EdgeConnect{
 		Spec: edgeconnect.EdgeConnectSpec{
-			ApiServer: "superfancy.dev.apps.dynatracelabs.com",
+			APIServer: "superfancy.dev.apps.dynatracelabs.com",
 		},
 		Status: edgeconnect.EdgeConnectStatus{},
 	}

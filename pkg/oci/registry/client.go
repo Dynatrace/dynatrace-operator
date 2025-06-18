@@ -57,7 +57,7 @@ func WithContext(ctx context.Context) func(*Client) {
 	}
 }
 
-func WithApiReader(apiReader client.Reader) func(*Client) {
+func WithAPIReader(apiReader client.Reader) func(*Client) {
 	return func(c *Client) {
 		c.apiReader = apiReader
 	}
@@ -177,14 +177,14 @@ func BuildImageIDWithTagAndDigest(taggedRef name.Tag, digest digest.Digest) stri
 }
 
 func addProxy(transport *http.Transport, proxy string, noProxy string) (*http.Transport, error) {
-	proxyUrl, err := url.Parse(proxy)
+	proxyURL, err := url.Parse(proxy)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	proxyConfig := httpproxy.Config{
-		HTTPProxy:  proxyUrl.String(),
-		HTTPSProxy: proxyUrl.String(),
+		HTTPProxy:  proxyURL.String(),
+		HTTPSProxy: proxyURL.String(),
 		NoProxy:    noProxy,
 	}
 	transport.Proxy = proxyWrapper(proxyConfig)

@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	testApiUrl    = "test.com"
-	testApiToken  = "testy"
+	testAPIURL    = "test.com"
+	testAPIToken  = "testy"
 	testPaasToken = "testz"
 
 	testProxy           = "proxy"
@@ -25,7 +25,7 @@ const (
 	testTrustedCA       = "secret"
 
 	testNodeName  = "node1"
-	testTlsCert   = "tls"
+	testTLSCert   = "tls"
 	testHostGroup = "group"
 
 	testTenantUUID = "test"
@@ -35,8 +35,8 @@ const (
 
 func getTestSecretConfig() *SecretConfig {
 	return &SecretConfig{
-		ApiUrl:          testApiUrl,
-		ApiToken:        testApiToken,
+		APIURL:          testAPIURL,
+		APIToken:        testAPIToken,
 		PaasToken:       testPaasToken,
 		Proxy:           testProxy,
 		NoProxy:         testNoProxy,
@@ -61,8 +61,8 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, config)
 
-	assert.Equal(t, testApiUrl, config.ApiUrl)
-	assert.Equal(t, testApiToken, config.ApiToken)
+	assert.Equal(t, testAPIURL, config.APIURL)
+	assert.Equal(t, testAPIToken, config.APIToken)
 	assert.Equal(t, testPaasToken, config.PaasToken)
 	assert.Equal(t, testTenantUUID, config.TenantUUID)
 	assert.Equal(t, testProxy, config.Proxy)
@@ -92,10 +92,10 @@ func prepTestFs(t *testing.T) afero.Fs {
 	require.NoError(t, err)
 	require.NotNil(t, file)
 
-	rawJson, err := json.Marshal(getTestSecretConfig())
+	rawJSON, err := json.Marshal(getTestSecretConfig())
 	require.NoError(t, err)
 
-	_, err = file.Write(rawJson)
+	_, err = file.Write(rawJSON)
 	require.NoError(t, err)
 
 	err = file.Close()

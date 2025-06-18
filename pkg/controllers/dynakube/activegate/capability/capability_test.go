@@ -16,7 +16,7 @@ import (
 const (
 	testNamespace                      = "test-namespace"
 	testName                           = "test-name"
-	testApiUrl                         = "https://demo.dev.dynatracelabs.com/api"
+	testAPIURL                         = "https://demo.dev.dynatracelabs.com/api"
 	expectedShortName                  = "activegate"
 	expectedArgName                    = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface"
 	expectedArgNameWithDebugging       = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,debugging"
@@ -29,7 +29,7 @@ var capabilities = []activegate.CapabilityDisplayName{
 	activegate.RoutingCapability.DisplayName,
 	activegate.KubeMonCapability.DisplayName,
 	activegate.MetricsIngestCapability.DisplayName,
-	activegate.DynatraceApiCapability.DisplayName,
+	activegate.DynatraceAPICapability.DisplayName,
 }
 
 func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableTelemetryIngest bool) *dynakube.DynaKube {
@@ -48,7 +48,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 			Namespace: testNamespace, Name: testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 			ActiveGate: activegate.Spec{
 				Capabilities: capabilities,
 			},

@@ -83,10 +83,10 @@ func TestGetApiRequestThreshold(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				ApiRequestThresholdKey: c.in,
+				APIRequestThresholdKey: c.in,
 			}}
 
-			out := ff.GetApiRequestThreshold()
+			out := ff.GetAPIRequestThreshold()
 
 			assert.Equal(t, c.out, out)
 		})

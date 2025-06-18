@@ -12,7 +12,7 @@ type OneAgent struct {
 	*CodeModulesStatus
 
 	name       string
-	apiUrlHost string
+	apiURLHost string
 
 	featureOneAgentPrivileged        bool
 	featureBootstrapperInjection     bool

@@ -32,15 +32,15 @@ var (
 		isOneAgentModuleDisabled,
 		isOneAgentVersionValid,
 		duplicateOneAgentArguments,
-		forbiddenHostIdSourceArgument,
-		NoApiUrl,
-		IsInvalidApiUrl,
+		forbiddenHostIDSourceArgument,
+		NoAPIURL,
+		IsInvalidAPIURL,
 		IsThirdGenAPIUrl,
 		disabledCSIForReadonlyCSIVolume,
 		invalidActiveGateCapabilities,
 		duplicateActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
-		invalidActiveGateProxyUrl,
+		invalidActiveGateProxyURL,
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,
 		conflictingNamespaceSelector,
@@ -72,14 +72,14 @@ var (
 		conflictingHostGroupSettings,
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
-		conflictingApiUrlForExtensions,
+		conflictingAPIURLForExtensions,
 		logMonitoringWithoutK8SMonitoring,
 		kspmWithoutK8SMonitoring,
 		noMappedHostPaths,
 		extensionsWithoutK8SMonitoring,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
-		IsMutatedApiUrl,
+		IsMutatedAPIURL,
 	}
 )
 

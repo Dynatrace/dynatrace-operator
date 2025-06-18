@@ -55,7 +55,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.RoutingCapability.DisplayName,
 					},
-					TlsSecretName: "test",
+					TLSSecretName: "test",
 				},
 			},
 		}

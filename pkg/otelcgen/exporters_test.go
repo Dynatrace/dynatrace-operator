@@ -15,7 +15,7 @@ func TestNewConfigWithExporters(t *testing.T) {
 		RegisteredProtocols,
 		WithExportersEndpoint("test"),
 		WithCA("/run/opensignals/cacerts/certs"),
-		WithApiToken("test-token"),
+		WithAPIToken("test-token"),
 		WithExporters(),
 	)
 	require.NoError(t, err)

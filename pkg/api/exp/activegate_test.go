@@ -111,10 +111,10 @@ func TestIsAutomaticK8sApiMonitoring(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				AGAutomaticK8sApiMonitoringKey: c.in,
+				AGAutomaticK8sAPIMonitoringKey: c.in,
 			}}
 
-			out := ff.IsAutomaticK8sApiMonitoring()
+			out := ff.IsAutomaticK8sAPIMonitoring()
 
 			assert.Equal(t, c.out, out)
 		})
@@ -144,10 +144,10 @@ func TestGetAutomaticK8sApiMonitoringClusterName(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				AGAutomaticK8sApiMonitoringClusterNameKey: c.in,
+				AGAutomaticK8sAPIMonitoringClusterNameKey: c.in,
 			}}
 
-			out := ff.GetAutomaticK8sApiMonitoringClusterName()
+			out := ff.GetAutomaticK8sAPIMonitoringClusterName()
 
 			assert.Equal(t, c.out, out)
 		})

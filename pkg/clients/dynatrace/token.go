@@ -36,13 +36,13 @@ func (dtc *dynatraceClient) GetTokenScopes(ctx context.Context, token string) (T
 		return nil, errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getTokensLookupURL(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", ApiTokenHeader+token)
+	req.Header.Add("Authorization", APITokenHeader+token)
 
 	resp, err := dtc.httpClient.Do(req)
 	if err != nil {

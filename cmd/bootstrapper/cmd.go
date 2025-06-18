@@ -93,7 +93,7 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 				Arch:          arch.Arch,
 				Technologies:  technologies,
 				TargetVersion: targetVersion,
-				Url:           "",
+				URL:           "",
 				SkipMetadata:  false,
 				PathResolver:  metadata.PathResolver{RootDir: consts.AgentBinDirMount},
 			}

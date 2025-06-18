@@ -64,7 +64,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
 
 	changed, err := query.CreateOrUpdate(ctx, newConfigMap)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	} else if changed {
@@ -99,10 +99,10 @@ func (r *Reconciler) prepareConfigMap() (*corev1.ConfigMap, error) {
 }
 
 func (r *Reconciler) getData() (map[string]string, error) {
-	myPodIp := "${env:MY_POD_IP}"
+	myPodIP := "${env:MY_POD_IP}"
 
 	options := []otelcgen.Option{
-		otelcgen.WithApiToken("${env:" + otelcconsts.EnvDataIngestToken + "}"),
+		otelcgen.WithAPIToken("${env:" + otelcconsts.EnvDataIngestToken + "}"),
 		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
 	}
 
@@ -113,8 +113,8 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		options = append(options, otelcgen.WithSystemCAs(true))
 	}
 
-	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TlsRefName != "" {
-		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTlsCertMountPath, consts.TLSKeyDataName)))
+	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TLSRefName != "" {
+		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)))
 	}
 
 	options = append(options,
@@ -125,7 +125,7 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithServices(),
 	)
 
-	config, err := otelcgen.NewConfig(myPodIp, r.dk.TelemetryIngest().GetProtocols(), options...)
+	config, err := otelcgen.NewConfig(myPodIP, r.dk.TelemetryIngest().GetProtocols(), options...)
 	if err != nil {
 		return nil, err
 	}

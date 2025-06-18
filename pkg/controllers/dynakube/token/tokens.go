@@ -11,8 +11,8 @@ import (
 
 type Tokens map[string]*Token
 
-func (tokens Tokens) ApiToken() *Token {
-	return tokens.getToken(dtclient.ApiToken)
+func (tokens Tokens) APIToken() *Token {
+	return tokens.getToken(dtclient.APIToken)
 }
 
 func (tokens Tokens) PaasToken() *Token {
@@ -37,7 +37,7 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 
 	for _, token := range tokens {
 		switch token.Type {
-		case dtclient.ApiToken:
+		case dtclient.APIToken:
 			token.addFeatures(getFeaturesForAPIToken(hasPaasToken))
 		case dtclient.PaasToken:
 			token.addFeatures(getFeaturesForPaaSToken())

@@ -129,7 +129,7 @@ func getOldDynakubeBase() DynaKube {
 			Namespace: "namespace",
 			Annotations: map[string]string{
 				exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
-				exp.AGAutomaticK8sApiMonitoringKey: "true",
+				exp.AGAutomaticK8sAPIMonitoringKey: "true",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
@@ -148,7 +148,7 @@ func getOldDynakubeBase() DynaKube {
 			},
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
-			DynatraceApiRequestThreshold: 42,
+			DynatraceAPIRequestThreshold: 42,
 			MetadataEnrichment: MetadataEnrichment{
 				Enabled: false,
 			},
@@ -231,10 +231,10 @@ func getOldActiveGateSpec() ActiveGateSpec {
 		Annotations: map[string]string{
 			"activegate-annotation-key": "activegate-annotation-value",
 		},
-		TlsSecretName:     "activegate-tls-secret-name",
+		TLSSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
 		Capabilities: []CapabilityDisplayName{
-			DynatraceApiCapability.DisplayName,
+			DynatraceAPICapability.DisplayName,
 			KubeMonCapability.DisplayName,
 			MetricsIngestCapability.DisplayName,
 		},
@@ -340,7 +340,7 @@ func getOldStatus() DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		DynatraceApi: DynatraceApiStatus{
+		DynatraceAPI: DynatraceAPIStatus{
 			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{

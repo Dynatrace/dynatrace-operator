@@ -15,7 +15,7 @@ import (
 
 const (
 	dtNodeName  = "DT_K8S_NODE_NAME"
-	dtClusterId = "DT_K8S_CLUSTER_ID"
+	dtClusterID = "DT_K8S_CLUSTER_ID"
 
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
@@ -63,7 +63,7 @@ func addNodeNameEnv(envVarMap *prioritymap.Map) {
 }
 
 func (b *builder) addClusterIDEnv(envVarMap *prioritymap.Map) {
-	addDefaultValue(envVarMap, dtClusterId, b.clusterID)
+	addDefaultValue(envVarMap, dtClusterID, b.clusterID)
 }
 
 func (b *builder) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {

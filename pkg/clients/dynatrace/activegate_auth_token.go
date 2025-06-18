@@ -17,7 +17,7 @@ const (
 )
 
 type ActiveGateAuthTokenInfo struct {
-	TokenId string `json:"id"`
+	TokenID string `json:"id"`
 	Token   string `json:"token"`
 }
 
@@ -68,7 +68,7 @@ func (dtc *dynatraceClient) createAuthTokenRequest(ctx context.Context, dynakube
 
 	request, err := createBaseRequest(
 		ctx,
-		dtc.getActiveGateAuthTokenUrl(),
+		dtc.getActiveGateAuthTokenURL(),
 		http.MethodPost,
 		dtc.apiToken,
 		bytes.NewReader(bodyData),

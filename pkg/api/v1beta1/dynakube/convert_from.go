@@ -67,7 +67,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
 func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
-	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
+	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TLSSecretName
 	dst.Spec.ActiveGate.Group = src.Spec.ActiveGate.Group
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
 	dst.Spec.ActiveGate.Tolerations = src.Spec.ActiveGate.Tolerations
@@ -93,7 +93,7 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 
 func (dst *DynaKube) fromMovedFields(src *dynakube.DynaKube) error {
 	dst.Annotations[exp.InjectionMetadataEnrichmentKey] = strconv.FormatBool(src.MetadataEnrichmentEnabled())
-	dst.Annotations[exp.ApiRequestThresholdKey] = strconv.FormatInt(int64(src.GetDynatraceApiRequestThreshold()), 10)
+	dst.Annotations[exp.APIRequestThresholdKey] = strconv.FormatInt(int64(src.GetDynatraceAPIRequestThreshold()), 10)
 	dst.Annotations[exp.OASecCompProfileKey] = src.OneAgent().GetSecCompProfile()
 
 	if selector := src.OneAgent().GetNamespaceSelector(); selector != nil {
@@ -112,11 +112,11 @@ func (dst *DynaKube) fromStatus(src *dynakube.DynaKube) {
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.DynatraceApi = DynatraceApiStatus{
-		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+	dst.Status.DynatraceAPI = DynatraceAPIStatus{
+		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 
-	dst.Status.LastTokenProbeTimestamp = &src.Status.DynatraceApi.LastTokenScopeRequest
+	dst.Status.LastTokenProbeTimestamp = &src.Status.DynatraceAPI.LastTokenScopeRequest
 	dst.Status.Conditions = src.Status.Conditions
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp

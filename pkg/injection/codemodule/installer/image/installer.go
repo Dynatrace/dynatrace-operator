@@ -21,8 +21,8 @@ import (
 )
 
 type Properties struct {
-	ImageUri     string
-	ApiReader    client.Reader
+	ImageURI     string
+	APIReader    client.Reader
 	Dynakube     *dynakube.DynaKube
 	PathResolver metadata.PathResolver
 	ImageDigest  string
@@ -31,12 +31,12 @@ type Properties struct {
 func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (installer.Installer, error) {
 	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
 
-	transport, err := registry.PrepareTransportForDynaKube(ctx, props.ApiReader, defaultTransport, props.Dynakube)
+	transport, err := registry.PrepareTransportForDynaKube(ctx, props.APIReader, defaultTransport, props.Dynakube)
 	if err != nil {
 		return nil, err
 	}
 
-	keychain, err := dockerkeychain.NewDockerKeychains(ctx, props.ApiReader, props.Dynakube.Namespace, props.Dynakube.PullSecretNames())
+	keychain, err := dockerkeychain.NewDockerKeychains(ctx, props.APIReader, props.Dynakube.Namespace, props.Dynakube.PullSecretNames())
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 	log.Info("installing agent from image")
 
 	if installer.isAlreadyPresent(targetDir) {
-		log.Info("agent already installed", "image", installer.props.ImageUri, "target dir", targetDir)
+		log.Info("agent already installed", "image", installer.props.ImageURI, "target dir", targetDir)
 
 		return true, nil
 	}
@@ -74,7 +74,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 		return false, errors.WithStack(err)
 	}
 
-	log.Info("installing agent", "image", installer.props.ImageUri, "target dir", targetDir)
+	log.Info("installing agent", "image", installer.props.ImageURI, "target dir", targetDir)
 
 	if err := installer.installAgentFromImage(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
@@ -105,7 +105,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 		return errors.WithStack(err)
 	}
 
-	image := installer.props.ImageUri
+	image := installer.props.ImageURI
 	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
 
 	err = installer.extractAgentBinariesFromImage(
@@ -113,7 +113,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 			imageCacheDir: imageCacheDir,
 			targetDir:     targetDir,
 		},
-		installer.props.ImageUri,
+		installer.props.ImageURI,
 	)
 	if err != nil {
 		log.Info("failed to extract agent binaries from image via proxy", "image", image, "imageCacheDir", imageCacheDir, "err", err)

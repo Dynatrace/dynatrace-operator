@@ -20,7 +20,7 @@ const (
 )
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
-	name, apiUrlHost string,
+	name, apiURLHost string,
 	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
@@ -28,7 +28,7 @@ func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatu
 		CodeModulesStatus: codeModulesStatus,
 
 		name:       name,
-		apiUrlHost: apiUrlHost,
+		apiURLHost: apiURLHost,
 
 		featureOneAgentPrivileged:        featureOneAgentPrivileged,
 		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
@@ -202,7 +202,7 @@ func (oa *OneAgent) GetCustomImage() string {
 
 // GetDefaultImage provides the image reference for the OneAgent from tenant registry.
 func (oa *OneAgent) GetDefaultImage(version string) string {
-	if oa.apiUrlHost == "" {
+	if oa.apiURLHost == "" {
 		return ""
 	}
 
@@ -213,7 +213,7 @@ func (oa *OneAgent) GetDefaultImage(version string) string {
 		tag += "-" + api.RawTag
 	}
 
-	return oa.apiUrlHost + DefaultOneAgentImageRegistrySubPath + ":" + tag
+	return oa.apiURLHost + DefaultOneAgentImageRegistrySubPath + ":" + tag
 }
 
 func (oa *OneAgent) GetHostGroup() string {

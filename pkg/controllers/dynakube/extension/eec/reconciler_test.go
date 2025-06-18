@@ -181,7 +181,7 @@ func TestStatefulsetBase(t *testing.T) {
 func TestSecretHashAnnotation(t *testing.T) {
 	t.Run("annotation is set with self-signed tls secret", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = ""
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
@@ -189,7 +189,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 	})
 	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "dummy-secret"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-secret"
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
@@ -267,29 +267,29 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Equal(t, corev1.EnvVar{Name: envTenantId, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
-		assert.Equal(t, corev1.EnvVar{Name: envServerUrl, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
+		assert.Equal(t, corev1.EnvVar{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
+		assert.Equal(t, corev1.EnvVar{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecConsts.TokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterId, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceUrl, Value: "https://" + dk.Name + eecConsts.ExtensionsControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceURL, Value: "https://" + dk.Name + eecConsts.ExtensionsControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
 		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: envEecHTTPSCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: envEecHTTPSPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
 	})
 
 	t.Run("environment variables with custom EEC tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "custom-tls"
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsCertPathPem, Value: envEecHttpsCertPathPem})
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHttpsPrivKeyPathPem, Value: envEecHttpsPrivKeyPathPem})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: envEecHTTPSCertPathPem})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: envEecHTTPSPrivKeyPathPem})
 	})
 
 	t.Run("environment variables with custom EEC config", func(t *testing.T) {
@@ -430,7 +430,7 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts when set custom EEC tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "custom-tls"
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMount := corev1.VolumeMount{
@@ -1209,7 +1209,7 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("Custom EEC tls certificate is mounted to EEC", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.TlsRefName = "custom-tls"
+		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "custom-tls"
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolume := corev1.Volume{
@@ -1271,7 +1271,7 @@ func TestActiveGateVolumes(t *testing.T) {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				DefaultMode: &defaultMode,
-				SecretName:  testDynakubeName + activegate.TlsSecretSuffix,
+				SecretName:  testDynakubeName + activegate.TLSSecretSuffix,
 				Items: []corev1.KeyToPath{
 					{
 						Key:  activeGateTrustedCertSecretKeyPath,
@@ -1284,7 +1284,7 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes with custom ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.ActiveGate.TlsSecretName = tlsSecretName
+		dk.Spec.ActiveGate.TLSSecretName = tlsSecretName
 		statefulSet := getStatefulset(t, dk)
 
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
