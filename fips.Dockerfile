@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/oss/go/microsoft/golang:1.24.3-fips-bookworm@sha256:01bd44083e88ed3837a1ec26fa0ac284b72fad7667dcf04566127b0c327d4454 AS operator-build
+FROM mcr.microsoft.com/oss/go/microsoft/golang:1.24.4-fips-bookworm@sha256:f2be68324d233e84a8ca1c247983e2f0428e66e19778fae789a0f7e3b8fff1a3 AS operator-build
 
 ENV GOEXPERIMENT=systemcrypto
 
@@ -24,8 +24,8 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM registry.access.redhat.com/ubi9-micro:9.6-1747318857@sha256:955512628a9104d74f7b3b0a91db27a6bbecdd6a1975ce0f1b2658d3cd060b98 AS base
-FROM registry.access.redhat.com/ubi9:9.6-1747219013@sha256:304b50df1ea4db9706d8a30f4bbf26f582936ebc80c7e075c72ff2af99292a54 AS dependency
+FROM registry.access.redhat.com/ubi9-micro:9.6-1749632992@sha256:9d241cec87d22681d8e4ffe76d98d960b48d967c108cd627a139df670b793186 AS base
+FROM registry.access.redhat.com/ubi9:9.6-1749542372@sha256:861e833044a903f689ecfa404424494a7e387ab39cf7949c54843285d13a9774 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
