@@ -84,11 +84,9 @@ webhook:
   requests:
     cpu: 300m
     memory: 128Mi
-    ephemeral-storage: 10Mi # size of the certs dir
   limits:
     cpu: 300m
     memory: 128Mi
-    ephemeral-storage: 10Mi # size of the certs dir
   highAvailability: true
   validatingWebhook:
     timeoutSeconds: 10
