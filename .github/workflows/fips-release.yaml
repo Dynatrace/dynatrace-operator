@@ -7,6 +7,9 @@ on:
 
 jobs:
   prepare:
+    permissions:
+      contents: read
+      id-token: write
     name: Prepare properties
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +27,8 @@ jobs:
     name: Build images
     needs: [prepare]
     environment: Release
+    permissions:
+      id-token: write
     strategy:
       matrix:
         platform: [linux/arm64, linux/amd64]
@@ -77,6 +82,8 @@ jobs:
     name: Create image-index
     needs: [prepare, build-images]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     environment: Release
     strategy:
       matrix:
