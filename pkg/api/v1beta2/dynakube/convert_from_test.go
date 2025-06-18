@@ -147,7 +147,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
 	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
-	assert.Equal(t, uint16(oldDk.Spec.DynatraceApiRequestThreshold), *newDk.Spec.DynatraceAPIRequestThreshold) //nolint:gosec
+	assert.Equal(t, uint16(oldDk.Spec.DynatraceAPIRequestThreshold), *newDk.Spec.DynatraceAPIRequestThreshold) //nolint:gosec
 	assert.Equal(t, oldDk.Spec.NetworkZone, newDk.Spec.NetworkZone)
 
 	if newDk.OneAgent().IsAppInjectionNeeded() {
@@ -229,7 +229,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec ActiveGateSpec, newSpec activeg
 func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakube.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
-	assert.Equal(t, oldStatus.DynatraceApi.LastTokenScopeRequest, newStatus.DynatraceAPI.LastTokenScopeRequest)
+	assert.Equal(t, oldStatus.DynatraceAPI.LastTokenScopeRequest, newStatus.DynatraceAPI.LastTokenScopeRequest)
 	assert.Equal(t, oldStatus.KubeSystemUUID, newStatus.KubeSystemUUID)
 	assert.Equal(t, oldStatus.Phase, newStatus.Phase)
 	assert.Equal(t, oldStatus.UpdatedTimestamp, newStatus.UpdatedTimestamp)

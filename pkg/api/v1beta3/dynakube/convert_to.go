@@ -38,7 +38,7 @@ func (src *DynaKube) toBase(dst *dynakubelatest.DynaKube) {
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
 
 	dst.Spec.Proxy = src.Spec.Proxy
-	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceApiRequestThreshold
+	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
@@ -216,7 +216,7 @@ func (src *DynaKube) toStatus(dst *dynakubelatest.DynaKube) {
 	dst.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 	dst.Status.DynatraceAPI = dynakubelatest.DynatraceAPIStatus{
-		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID

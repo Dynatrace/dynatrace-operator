@@ -112,7 +112,7 @@ func (dst *DynaKube) fromStatus(src *dynakube.DynaKube) {
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.DynatraceApi = DynatraceApiStatus{
+	dst.Status.DynatraceAPI = DynatraceAPIStatus{
 		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 

@@ -250,7 +250,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
 		assert.Equal(t, oldDk.Spec.Proxy.ValueFrom, newDk.Spec.Proxy.ValueFrom)
 	}
 
-	assert.Equal(t, oldDk.Spec.DynatraceApiRequestThreshold, newDk.Spec.DynatraceAPIRequestThreshold)
+	assert.Equal(t, oldDk.Spec.DynatraceAPIRequestThreshold, newDk.Spec.DynatraceAPIRequestThreshold)
 	assert.Equal(t, oldDk.Spec.APIURL, newDk.Spec.APIURL)
 	assert.Equal(t, oldDk.Spec.Tokens, newDk.Spec.Tokens)
 	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
@@ -336,7 +336,7 @@ func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec active
 func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubelatest.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
-	assert.Equal(t, oldStatus.DynatraceApi.LastTokenScopeRequest, newStatus.DynatraceAPI.LastTokenScopeRequest)
+	assert.Equal(t, oldStatus.DynatraceAPI.LastTokenScopeRequest, newStatus.DynatraceAPI.LastTokenScopeRequest)
 	assert.Equal(t, oldStatus.KubeSystemUUID, newStatus.KubeSystemUUID)
 	assert.Equal(t, oldStatus.Phase, newStatus.Phase)
 	assert.Equal(t, oldStatus.UpdatedTimestamp, newStatus.UpdatedTimestamp)

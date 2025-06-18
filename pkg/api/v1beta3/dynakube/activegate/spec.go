@@ -38,7 +38,7 @@ var (
 		ArgumentName: "metrics_ingest",
 	}
 
-	DynatraceApiCapability = Capability{
+	DynatraceAPICapability = Capability{
 		DisplayName:  "dynatrace-api",
 		ShortName:    "dynatrace-api",
 		ArgumentName: "restInterface",
@@ -54,7 +54,7 @@ var CapabilityDisplayNames = map[CapabilityDisplayName]struct{}{
 	RoutingCapability.DisplayName:       {},
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
-	DynatraceApiCapability.DisplayName:  {},
+	DynatraceAPICapability.DisplayName:  {},
 	DebuggingCapability.DisplayName:     {},
 }
 

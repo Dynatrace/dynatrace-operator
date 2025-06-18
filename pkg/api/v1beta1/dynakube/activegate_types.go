@@ -37,7 +37,7 @@ var (
 		ArgumentName: "metrics_ingest",
 	}
 
-	DynatraceApiCapability = ActiveGateCapability{
+	DynatraceAPICapability = ActiveGateCapability{
 		DisplayName:  "dynatrace-api",
 		ShortName:    "dynatrace-api",
 		ArgumentName: "restInterface",
@@ -48,7 +48,7 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 	RoutingCapability.DisplayName:       {},
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
-	DynatraceApiCapability.DisplayName:  {},
+	DynatraceAPICapability.DisplayName:  {},
 }
 
 type ActiveGateSpec struct {

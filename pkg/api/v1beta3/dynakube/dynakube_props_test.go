@@ -46,7 +46,7 @@ func TestTokens(t *testing.T) {
 func TestIsTokenScopeVerificationAllowed(t *testing.T) {
 	dk := DynaKube{
 		Status: DynaKubeStatus{
-			DynatraceApi: DynatraceApiStatus{
+			DynatraceAPI: DynatraceAPIStatus{
 				LastTokenScopeRequest: metav1.Time{},
 			},
 		},
@@ -107,10 +107,10 @@ func TestIsTokenScopeVerificationAllowed(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			dk.Spec.DynatraceApiRequestThreshold = test.threshold
+			dk.Spec.DynatraceAPIRequestThreshold = test.threshold
 
 			lastRequestTime := timeProvider.Now().Add(time.Duration(test.lastRequestTimeDeltaMinutes) * time.Minute)
-			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime
+			dk.Status.DynatraceAPI.LastTokenScopeRequest.Time = lastRequestTime
 
 			assert.Equal(t, test.updateExpected, dk.IsTokenScopeVerificationAllowed(timeProvider))
 		})

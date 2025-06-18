@@ -42,6 +42,7 @@ type DynaKubeStatus struct { //nolint:revive
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
 	// Observed state of Dynatrace API
+	// TODO: Rename printer column to match Go variable name (currently kept as-is to ensure backwards compatibility)
 	// +kubebuilder:printcolumn:name="dynatraceApi",type=string,JSONPath=`.spec.dynatraceApi`
 	DynatraceAPI DynatraceAPIStatus `json:"dynatraceApi,omitempty"`
 

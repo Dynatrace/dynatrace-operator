@@ -113,7 +113,7 @@ func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 
 	src.convertMaxMountAttempts(dst)
 
-	src.convertDynatraceApiRequestThreshold(dst)
+	src.convertDynatraceAPIRequestThreshold(dst)
 
 	if src.Annotations[exp.OASecCompProfileKey] != "" {
 		secCompProfile := src.Annotations[exp.OASecCompProfileKey]
@@ -142,7 +142,7 @@ func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 	return nil
 }
 
-func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) error {
+func (src *DynaKube) convertDynatraceAPIRequestThreshold(dst *dynakube.DynaKube) error {
 	if src.Annotations[exp.APIRequestThresholdKey] != "" {
 		duration, err := strconv.ParseInt(src.Annotations[exp.APIRequestThresholdKey], 10, 32)
 		if err != nil {
@@ -172,7 +172,7 @@ func (src *DynaKube) toStatus(dst *dynakube.DynaKube) {
 	}
 
 	dst.Status.DynatraceAPI = dynakube.DynatraceAPIStatus{
-		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 
 	dst.Status.Conditions = src.Status.Conditions

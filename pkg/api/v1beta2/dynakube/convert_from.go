@@ -35,7 +35,7 @@ func (dst *DynaKube) fromBase(src *dynakube.DynaKube) {
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
-	dst.Spec.DynatraceApiRequestThreshold = int(src.GetDynatraceAPIRequestThreshold())
+	dst.Spec.DynatraceAPIRequestThreshold = int(src.GetDynatraceAPIRequestThreshold())
 }
 
 func (dst *DynaKube) fromOneAgentSpec(src *dynakube.DynaKube) {
@@ -93,7 +93,7 @@ func (dst *DynaKube) fromStatus(src *dynakube.DynaKube) {
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.DynatraceApi = DynatraceApiStatus{
+	dst.Status.DynatraceAPI = DynatraceAPIStatus{
 		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 

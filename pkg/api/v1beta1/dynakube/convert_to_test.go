@@ -242,7 +242,7 @@ func getOldActiveGateSpec() ActiveGateSpec {
 		TLSSecretName:     "activegate-tls-secret-name",
 		PriorityClassName: "activegate-priority-class-name",
 		Capabilities: []CapabilityDisplayName{
-			DynatraceApiCapability.DisplayName,
+			DynatraceAPICapability.DisplayName,
 			KubeMonCapability.DisplayName,
 			MetricsIngestCapability.DisplayName,
 		},
@@ -348,7 +348,7 @@ func getOldStatus() DynaKubeStatus {
 				LastProbeTimestamp: &testTime,
 			},
 		},
-		DynatraceApi: DynatraceApiStatus{
+		DynatraceAPI: DynatraceAPIStatus{
 			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{

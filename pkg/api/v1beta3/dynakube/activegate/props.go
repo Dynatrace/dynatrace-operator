@@ -86,7 +86,7 @@ func (ag *Spec) IsRoutingEnabled() bool {
 }
 
 func (ag *Spec) IsApiEnabled() bool {
-	return ag.IsMode(DynatraceApiCapability.DisplayName)
+	return ag.IsMode(DynatraceAPICapability.DisplayName)
 }
 
 func (ag *Spec) IsMetricsIngestEnabled() bool {

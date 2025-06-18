@@ -35,7 +35,7 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	}
 
 	src.convertMaxMountAttempts(dst)
-	src.convertDynatraceApiRequestThreshold(dst)
+	src.convertDynatraceAPIRequestThreshold(dst)
 
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
@@ -47,13 +47,13 @@ func (src *DynaKube) toBase(dst *dynakube.DynaKube) {
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 }
 
-func (src *DynaKube) convertDynatraceApiRequestThreshold(dst *dynakube.DynaKube) {
-	if src.Spec.DynatraceApiRequestThreshold >= 0 {
-		if math.MaxUint16 < src.Spec.DynatraceApiRequestThreshold {
+func (src *DynaKube) convertDynatraceAPIRequestThreshold(dst *dynakube.DynaKube) {
+	if src.Spec.DynatraceAPIRequestThreshold >= 0 {
+		if math.MaxUint16 < src.Spec.DynatraceAPIRequestThreshold {
 			dst.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(math.MaxUint16))
 		} else {
 			// linting disabled, handled in if
-			dst.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(src.Spec.DynatraceApiRequestThreshold)) //nolint:gosec
+			dst.Spec.DynatraceAPIRequestThreshold = ptr.To(uint16(src.Spec.DynatraceAPIRequestThreshold)) //nolint:gosec
 		}
 	}
 }
@@ -120,7 +120,7 @@ func (src *DynaKube) toStatus(dst *dynakube.DynaKube) {
 	}
 
 	dst.Status.DynatraceAPI = dynakube.DynatraceAPIStatus{
-		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 
 	dst.Status.Conditions = src.Status.Conditions
