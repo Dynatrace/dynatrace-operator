@@ -18,7 +18,7 @@ import (
 
 const DeploymentAvailableTimeout = 5 * time.Minute
 
-const DeploymentReplicaFailureTimeout = 2 * time.Minute
+const DeploymentReplicaFailureTimeout = 5 * time.Minute
 
 func WaitFor(name string, namespace string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
