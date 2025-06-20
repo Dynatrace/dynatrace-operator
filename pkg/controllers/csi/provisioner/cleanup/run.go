@@ -121,7 +121,7 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 	if os.IsNotExist(err) {
 		return fsState, nil
 	} else if err != nil {
-		log.Info("failed to list the contents of the root directory of the csi-provisioner", "rootDir", c.path.RootDir)
+		log.Info("failed to list the contents of the dynakube directory of the csi-provisioner", "dynakubes folder", c.path.DynaKubesBaseDir())
 
 		return fsState, err
 	}
