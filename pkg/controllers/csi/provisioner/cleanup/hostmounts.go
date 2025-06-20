@@ -50,9 +50,11 @@ func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 			_, err := c.fs.Stat(hostDir)
 			if os.IsNotExist(err) {
 				log.Debug("host dir path doesn't exist, moving to the next one", "path", hostDir)
+
 				continue
 			} else if err != nil {
 				log.Debug("failed to determine stat of host dir path, moving to the next one", "path", hostDir, "err", err)
+
 				continue
 			}
 
