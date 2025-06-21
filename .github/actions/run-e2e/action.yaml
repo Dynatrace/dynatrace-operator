@@ -57,7 +57,7 @@ runs:
         ref: ${{ inputs.target-branch || 'main' }}
         path: target
     - name: Set up kubectl
-      uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
+      uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
     - name: Set up go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
