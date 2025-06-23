@@ -177,6 +177,7 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
+	// TODO: Add small check if not node-image-pull during [DAQ-7415] Unify webhook pod injection
 	if dk.OneAgent().IsAppInjectionNeeded() {
 		downloadConfigBytes, err := s.prepareDownloadConfig(ctx, dk)
 		if err != nil {
