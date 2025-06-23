@@ -10,5 +10,3 @@ kubectl get flcenvironments --namespace "$FLC_NAMESPACE"
 
 echo "Patching environment '$FLC_ENVIRONMENT' to 'not-deployed'"
 kubectl patch --namespace "$FLC_NAMESPACE" --type merge --patch '{"spec": {"desiredState": "environment-not-deployed"}}' flcenvironment "$FLC_ENVIRONMENT"
-
-kubectl wait --namespace "$FLC_NAMESPACE" --timeout="$DEFAULT_TIMEOUT" --for jsonpath='{.status.currentState}'=environment-not-deployed flcenvironment "$FLC_ENVIRONMENT"
