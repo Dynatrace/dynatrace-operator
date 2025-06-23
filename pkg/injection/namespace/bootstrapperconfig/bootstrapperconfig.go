@@ -53,7 +53,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, s.apiReader, dk.Name)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConfigConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -112,7 +112,7 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 
 	err = k8ssecret.Query(s.client, s.apiReader, log).CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -220,7 +220,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), CertsConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
@@ -241,14 +241,14 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 func (s *SecretGenerator) prepareDownloadConfig(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
 	var tokens corev1.Secret
 	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConfigConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
 	downloadConfigJSON := download.Config{
 		URL:           dk.Spec.APIURL,
-		ApiToken:      string(tokens.Data[dtclient.ApiToken]),
+		APIToken:      string(tokens.Data[dtclient.APIToken]),
 		NoProxy:       dk.FF().GetNoProxy(),
 		NetworkZone:   dk.Spec.NetworkZone,
 		HostGroup:     dk.OneAgent().GetHostGroup(),

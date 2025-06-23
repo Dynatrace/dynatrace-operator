@@ -21,7 +21,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 		source, err := getSecretFromSource(ctx, *dk, k8ssecret.Query(s.client, s.apiReader, log), GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, dk.Namespace)
 		if err != nil && !k8serrors.IsNotFound(err) {
-			conditions.SetKubeApiError(dk.Conditions(), ConfigConditionType, err)
+			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 			return nil, err
 		} else if err == nil && source.Data[pmc.InputFileName] != nil {
@@ -35,7 +35,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 	pmc, err := s.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
-		conditions.SetDynatraceApiError(dk.Conditions(), ConfigConditionType, err)
+		conditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 		Namespace: dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeApiError(dk.Conditions(), ConfigConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 		proxy, err := dk.Proxy(ctx, s.apiReader)
 		if err != nil {
-			conditions.SetKubeApiError(dk.Conditions(), ConfigConditionType, err)
+			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 			return nil, err
 		}

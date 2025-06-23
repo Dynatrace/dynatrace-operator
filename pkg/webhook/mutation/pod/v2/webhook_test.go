@@ -319,9 +319,9 @@ func getTestDynakubeWithAGCerts() *dynakube.DynaKube {
 	dk := getTestDynakube()
 	dk.Spec.ActiveGate = activegate.Spec{
 		Capabilities: []activegate.CapabilityDisplayName{
-			activegate.DynatraceApiCapability.DisplayName,
+			activegate.DynatraceAPICapability.DisplayName,
 		},
-		TlsSecretName: "ag-certs",
+		TLSSecretName: "ag-certs",
 	}
 
 	return dk
