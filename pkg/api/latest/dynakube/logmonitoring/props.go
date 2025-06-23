@@ -26,7 +26,7 @@ func (lm *LogMonitoring) IsStandalone() bool {
 
 func (lm *LogMonitoring) GetNodeSelector() map[string]string {
 	if lm.IsStandalone() && lm.TemplateSpec != nil {
-		return lm.TemplateSpec.NodeSelector
+		return lm.NodeSelector
 	}
 
 	return nil

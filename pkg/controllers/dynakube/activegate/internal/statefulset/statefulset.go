@@ -71,7 +71,7 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	statefulSetBuilder.addPersistentVolumeClaim(&sts)
 
 	if statefulSetBuilder.dynakube.FF().IsActiveGateAppArmor() {
-		sts.Spec.Template.ObjectMeta.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
+		sts.Spec.Template.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
 	}
 
 	return sts
@@ -102,9 +102,9 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 	appLabels := statefulSetBuilder.buildAppLabels()
-	sts.ObjectMeta.Labels = appLabels.BuildLabels()
+	sts.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
-	sts.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
+	sts.Spec.Template.Labels = maputils.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
 }
 
 func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
@@ -114,8 +114,8 @@ func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
-	sts.ObjectMeta.Annotations = maputils.MergeMap(sts.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
-	sts.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(sts.Spec.Template.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+	sts.Annotations = maputils.MergeMap(sts.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+	sts.Spec.Template.Annotations = maputils.MergeMap(sts.Spec.Template.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
 }
 
 func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {

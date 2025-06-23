@@ -117,7 +117,7 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 		return errors.New("can't update service entry based on nil object")
 	}
 
-	newVirtualService.ObjectMeta.ResourceVersion = oldVirtualService.ObjectMeta.ResourceVersion
+	newVirtualService.ResourceVersion = oldVirtualService.ResourceVersion
 	_, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Update(ctx, newVirtualService, metav1.UpdateOptions{})
 
 	if err != nil {
@@ -208,7 +208,7 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 		return errors.New("can't update service entry based on nil object")
 	}
 
-	newServiceEntry.ObjectMeta.ResourceVersion = oldServiceEntry.ObjectMeta.ResourceVersion
+	newServiceEntry.ResourceVersion = oldServiceEntry.ResourceVersion
 	_, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
 
 	if err != nil {

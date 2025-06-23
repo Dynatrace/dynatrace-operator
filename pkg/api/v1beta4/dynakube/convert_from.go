@@ -179,16 +179,16 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakubelatest.DynaKube) { //nolint
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
 	dst.Spec.ActiveGate.PersistentVolumeClaim = src.Spec.ActiveGate.VolumeClaimTemplate
 
-	dst.Spec.ActiveGate.CapabilityProperties.CustomProperties = src.Spec.ActiveGate.CapabilityProperties.CustomProperties
-	dst.Spec.ActiveGate.CapabilityProperties.NodeSelector = src.Spec.ActiveGate.CapabilityProperties.NodeSelector
-	dst.Spec.ActiveGate.CapabilityProperties.Labels = src.Spec.ActiveGate.CapabilityProperties.Labels
-	dst.Spec.ActiveGate.CapabilityProperties.Replicas = src.Spec.ActiveGate.CapabilityProperties.Replicas
-	dst.Spec.ActiveGate.CapabilityProperties.Image = src.Spec.ActiveGate.CapabilityProperties.Image
-	dst.Spec.ActiveGate.CapabilityProperties.Group = src.Spec.ActiveGate.CapabilityProperties.Group
-	dst.Spec.ActiveGate.CapabilityProperties.Resources = src.Spec.ActiveGate.CapabilityProperties.Resources
-	dst.Spec.ActiveGate.CapabilityProperties.Tolerations = src.Spec.ActiveGate.CapabilityProperties.Tolerations
-	dst.Spec.ActiveGate.CapabilityProperties.Env = src.Spec.ActiveGate.CapabilityProperties.Env
-	dst.Spec.ActiveGate.CapabilityProperties.TopologySpreadConstraints = src.Spec.ActiveGate.CapabilityProperties.TopologySpreadConstraints
+	dst.Spec.ActiveGate.CustomProperties = src.Spec.ActiveGate.CustomProperties
+	dst.Spec.ActiveGate.NodeSelector = src.Spec.ActiveGate.NodeSelector
+	dst.Spec.ActiveGate.Labels = src.Spec.ActiveGate.Labels
+	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
+	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
+	dst.Spec.ActiveGate.Group = src.Spec.ActiveGate.Group
+	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
+	dst.Spec.ActiveGate.Tolerations = src.Spec.ActiveGate.Tolerations
+	dst.Spec.ActiveGate.Env = src.Spec.ActiveGate.Env
+	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 
 	dst.Spec.ActiveGate.Capabilities = make([]activegate.CapabilityDisplayName, 0)
 	for _, capability := range src.Spec.ActiveGate.Capabilities {

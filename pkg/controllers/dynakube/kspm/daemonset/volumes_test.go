@@ -215,7 +215,7 @@ func TestGetVolumes(t *testing.T) {
 			require.NotEmpty(t, volume.VolumeSource)
 
 			if volume.Name == certVolumeName {
-				assert.NotEmpty(t, volume.VolumeSource.Secret.SecretName)
+				assert.NotEmpty(t, volume.Secret.SecretName)
 			}
 		}
 	})
@@ -233,7 +233,7 @@ func TestGetVolumes(t *testing.T) {
 			require.NotEmpty(t, volume.VolumeSource)
 
 			if volume.Name == certVolumeName {
-				assert.NotEmpty(t, volume.VolumeSource.Secret.SecretName)
+				assert.NotEmpty(t, volume.Secret.SecretName)
 			}
 		}
 	})

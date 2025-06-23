@@ -28,7 +28,7 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 	})
 	t.Run("error if extensions are enabled with activegate with k8s-monitoring but automatic Kuberenetes API monitoring is disabled", func(t *testing.T) {
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		dk.ObjectMeta.Annotations = map[string]string{
+		dk.Annotations = map[string]string{
 			exp.AGAutomaticK8sAPIMonitoringKey: "false",
 		}
 		dk.Spec.ActiveGate = activegate.Spec{
@@ -40,7 +40,7 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 	})
 	t.Run("error if extensions are enabled but automatic Kuberenetes API monitoring is disabled and without activgate k8s-monitoring", func(t *testing.T) {
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		dk.ObjectMeta.Annotations = map[string]string{
+		dk.Annotations = map[string]string{
 			exp.AGAutomaticK8sAPIMonitoringKey: "false",
 		}
 		assertAllowedWithWarnings(t, 2, dk)

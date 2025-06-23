@@ -96,7 +96,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 	})
 	t.Run("has default(tenant-registry) node affinity", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.ActiveGate.VersionStatus.Source = status.TenantRegistryVersionSource
+		dk.Status.ActiveGate.Source = status.TenantRegistryVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts, _ := builder.CreateStatefulSet(nil)
@@ -121,7 +121,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 	})
 	t.Run("has none tenant-registry node affinity", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.ActiveGate.VersionStatus.Source = status.CustomImageVersionSource
+		dk.Status.ActiveGate.Source = status.CustomImageVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts, _ := builder.CreateStatefulSet(nil)
@@ -191,8 +191,8 @@ func TestAddLabels(t *testing.T) {
 
 		builder.addLabels(&sts)
 
-		require.NotEmpty(t, sts.ObjectMeta.Labels)
-		assert.Equal(t, expectedLabels, sts.ObjectMeta.Labels)
+		require.NotEmpty(t, sts.Labels)
+		assert.Equal(t, expectedLabels, sts.Labels)
 		assert.Equal(t, expectedSelectorLabels, *sts.Spec.Selector)
 		assert.Equal(t, expectedLabels, sts.Spec.Template.Labels)
 	})

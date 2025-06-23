@@ -102,7 +102,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 
 	if r.portsAreOutdated(installed, desired) || r.labelsAreOutdated(installed, desired) {
 		desired.Spec.ClusterIP = installed.Spec.ClusterIP
-		desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
+		desired.ResourceVersion = installed.ResourceVersion
 
 		err = r.client.Update(ctx, desired)
 		if err != nil {

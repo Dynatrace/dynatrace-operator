@@ -310,22 +310,22 @@ func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec active
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.PersistentVolumeClaim, newSpec.VolumeClaimTemplate)
 
-	if oldSpec.CapabilityProperties.CustomProperties != nil || newSpec.CapabilityProperties.CustomProperties != nil { // necessary so we don't explode with nil pointer when not set
-		require.NotNil(t, oldSpec.CapabilityProperties.CustomProperties)
-		require.NotNil(t, newSpec.CapabilityProperties.CustomProperties)
-		assert.Equal(t, oldSpec.CapabilityProperties.CustomProperties.Value, newSpec.CapabilityProperties.CustomProperties.Value)
-		assert.Equal(t, oldSpec.CapabilityProperties.CustomProperties.ValueFrom, newSpec.CapabilityProperties.CustomProperties.ValueFrom)
+	if oldSpec.CustomProperties != nil || newSpec.CustomProperties != nil { // necessary so we don't explode with nil pointer when not set
+		require.NotNil(t, oldSpec.CustomProperties)
+		require.NotNil(t, newSpec.CustomProperties)
+		assert.Equal(t, oldSpec.CustomProperties.Value, newSpec.CustomProperties.Value)
+		assert.Equal(t, oldSpec.CustomProperties.ValueFrom, newSpec.CustomProperties.ValueFrom)
 	}
 
-	assert.Equal(t, oldSpec.CapabilityProperties.NodeSelector, newSpec.CapabilityProperties.NodeSelector)
-	assert.Equal(t, oldSpec.CapabilityProperties.Labels, newSpec.CapabilityProperties.Labels)
-	assert.Equal(t, *oldSpec.CapabilityProperties.Replicas, *newSpec.CapabilityProperties.Replicas)
-	assert.Equal(t, oldSpec.CapabilityProperties.Image, newSpec.CapabilityProperties.Image)
-	assert.Equal(t, oldSpec.CapabilityProperties.Group, newSpec.CapabilityProperties.Group)
-	assert.Equal(t, oldSpec.CapabilityProperties.Resources, newSpec.CapabilityProperties.Resources)
-	assert.Equal(t, oldSpec.CapabilityProperties.Tolerations, newSpec.CapabilityProperties.Tolerations)
-	assert.Equal(t, oldSpec.CapabilityProperties.Env, newSpec.CapabilityProperties.Env)
-	assert.Equal(t, oldSpec.CapabilityProperties.TopologySpreadConstraints, newSpec.CapabilityProperties.TopologySpreadConstraints)
+	assert.Equal(t, oldSpec.NodeSelector, newSpec.NodeSelector)
+	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
+	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
+	assert.Equal(t, oldSpec.Image, newSpec.Image)
+	assert.Equal(t, oldSpec.Group, newSpec.Group)
+	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
+	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
+	assert.Equal(t, oldSpec.Env, newSpec.Env)
+	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 
 	assert.Len(t, newSpec.Capabilities, len(oldSpec.Capabilities))
 
