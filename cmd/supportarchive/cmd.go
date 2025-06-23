@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/remotecommand"
@@ -67,10 +68,12 @@ func New() *cobra.Command {
 				return nil
 			}
 
-			return fmt.Errorf("%s %s %s",
-				"The only option to retrieve the support archive is by using '--stdout=true'.",
-				"Please provide this parameter and make sure that you pipe the command output to a file.",
-				"Otherwise, your terminal will be flooded with binary data")
+			sb := strings.Builder{}
+			sb.WriteString("The only option to retrieve the support archive is by using '--stdout=true'. ")
+			sb.WriteString("Please provide this parameter and make sure that you pipe the command output to a file. ")
+			sb.WriteString("Otherwise, your terminal will be flooded with binary data.")
+
+			return errors.New(sb.String())
 		},
 	}
 	addFlags(cmd)
