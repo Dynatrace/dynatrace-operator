@@ -393,9 +393,9 @@ func TestHasSpecChanged(t *testing.T) {
 			name:     "image set but no change",
 			expected: false,
 			mod: func(oldDynakube *dynakube.DynaKube, newDynakube *dynakube.DynaKube) {
-				imageId := "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-				oldDynakube.Status.OneAgent.ImageID = imageId
-				newDynakube.Status.OneAgent.ImageID = imageId
+				imageID := "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+				oldDynakube.Status.OneAgent.ImageID = imageID
+				newDynakube.Status.OneAgent.ImageID = imageID
 			},
 		},
 
@@ -784,6 +784,6 @@ func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 
 func createTokens() token.Tokens {
 	return token.Tokens{
-		dtclient.ApiToken: &token.Token{Value: "sdfsdf"},
+		dtclient.APIToken: &token.Token{Value: "sdfsdf"},
 	}
 }

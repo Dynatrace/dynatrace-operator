@@ -20,7 +20,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -45,7 +45,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
+					APIURL:     testAPIURL,
 					Extensions: &dynakube.ExtensionsSpec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -69,7 +69,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
+					APIURL:     testAPIURL,
 					Extensions: &dynakube.ExtensionsSpec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -93,7 +93,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
+					APIURL:     testAPIURL,
 					Extensions: &dynakube.ExtensionsSpec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -111,7 +111,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
+					APIURL:     testAPIURL,
 					Extensions: &dynakube.ExtensionsSpec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -136,7 +136,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
+					APIURL:     testAPIURL,
 					Extensions: &dynakube.ExtensionsSpec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -161,7 +161,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
+					APIURL:     testAPIURL,
 					Extensions: &dynakube.ExtensionsSpec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -204,7 +204,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 	dk1 := &dynakube.DynaKube{
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:     testApiUrl,
+			APIURL:     testAPIURL,
 			Extensions: &dynakube.ExtensionsSpec{},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
@@ -241,7 +241,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:     testApiUrl,
+				APIURL:     testAPIURL,
 				Extensions: &dynakube.ExtensionsSpec{},
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
@@ -255,7 +255,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, warnings, 1)
 
-		expected := fmt.Sprintf(warningConflictingApiUrlForExtensions, dk2.Name)
+		expected := fmt.Sprintf(warningConflictingAPIURLForExtensions, dk2.Name)
 		assert.Equal(t, expected, warnings[0])
 	})
 
@@ -266,7 +266,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:     testApiUrl,
+				APIURL:     testAPIURL,
 				Extensions: nil,
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{

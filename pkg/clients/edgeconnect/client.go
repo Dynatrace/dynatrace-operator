@@ -115,19 +115,19 @@ type serverErrorResponse struct {
 // That's why we need Settings API specific structs
 
 // Settings API response
-type SettingsApiResponse struct {
-	Error SettingsApiError `json:"error"`
+type SettingsAPIResponse struct {
+	Error SettingsAPIError `json:"error"`
 	Code  int              `json:"code"`
 }
 
 // Settings API error field
-type SettingsApiError struct {
+type SettingsAPIError struct {
 	Message              string                 `json:"message,omitempty"`
 	ConstraintViolations []ConstraintViolations `json:"constraintViolations"`
 	Code                 int                    `json:"code,omitempty"`
 }
 
-func (e SettingsApiError) Error() string {
+func (e SettingsAPIError) Error() string {
 	if len(e.Message) == 0 && e.Code == 0 {
 		return "unknown server error"
 	}
@@ -144,8 +144,8 @@ func (c *client) handleErrorResponseFromAPI(response []byte, statusCode int) err
 	return se.ErrorMessage
 }
 
-func (c *client) handleErrorResponseFromSettingsApi(response []byte, statusCode int) error {
-	se := SettingsApiResponse{}
+func (c *client) handleErrorResponseFromSettingsAPI(response []byte, statusCode int) error {
+	se := SettingsAPIResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
 		return errors.WithStack(errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode))
 	}
@@ -167,7 +167,7 @@ func (c *client) getServerResponseData(response *http.Response) ([]byte, error) 
 	return responseData, nil
 }
 
-func (c *client) getSettingsApiResponseData(response *http.Response) ([]byte, error) {
+func (c *client) getSettingsAPIResponseData(response *http.Response) ([]byte, error) {
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error reading response")
@@ -176,17 +176,17 @@ func (c *client) getSettingsApiResponseData(response *http.Response) ([]byte, er
 	if response.StatusCode != http.StatusOK &&
 		response.StatusCode != http.StatusCreated &&
 		response.StatusCode != http.StatusNoContent {
-		return responseData, c.handleErrorResponseFromSettingsApi(responseData, response.StatusCode)
+		return responseData, c.handleErrorResponseFromSettingsAPI(responseData, response.StatusCode)
 	}
 
 	return responseData, nil
 }
 
 // GetEdgeConnect returns edge connect if it exists
-func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
-	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
+func (c *client) GetEdgeConnect(edgeConnectID string) (GetResponse, error) {
+	edgeConnectURL := c.getEdgeConnectURL(edgeConnectID)
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, edgeConnectUrl, nil)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, edgeConnectURL, nil)
 	if err != nil {
 		return GetResponse{}, err
 	}
@@ -214,8 +214,8 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 }
 
 // UpdateEdgeConnect updates existing edge connect hostPatterns and oauthClientId
-func (c *client) UpdateEdgeConnect(edgeConnectId string, request *Request) error {
-	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
+func (c *client) UpdateEdgeConnect(edgeConnectID string, request *Request) error {
+	edgeConnectURL := c.getEdgeConnectURL(edgeConnectID)
 
 	payloadBuf := new(bytes.Buffer)
 
@@ -224,7 +224,7 @@ func (c *client) UpdateEdgeConnect(edgeConnectId string, request *Request) error
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodPut, edgeConnectUrl, payloadBuf)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodPut, edgeConnectURL, payloadBuf)
 	if err != nil {
 		return err
 	}
@@ -253,10 +253,10 @@ func (c *client) UpdateEdgeConnect(edgeConnectId string, request *Request) error
 }
 
 // DeleteEdgeConnect deletes edge connect using DELETE method for give edgeConnectId
-func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
-	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
+func (c *client) DeleteEdgeConnect(edgeConnectID string) error {
+	edgeConnectURL := c.getEdgeConnectURL(edgeConnectID)
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodDelete, edgeConnectUrl, nil)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodDelete, edgeConnectURL, nil)
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 
 // CreateEdgeConnect creates new edge connect
 func (c *client) CreateEdgeConnect(request *Request) (CreateResponse, error) {
-	edgeConnectsUrl := c.getEdgeConnectsUrl()
+	edgeConnectsURL := c.getEdgeConnectsURL()
 
 	payloadBuf := new(bytes.Buffer)
 
@@ -293,7 +293,7 @@ func (c *client) CreateEdgeConnect(request *Request) (CreateResponse, error) {
 		return CreateResponse{}, err
 	}
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodPost, edgeConnectsUrl, payloadBuf)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodPost, edgeConnectsURL, payloadBuf)
 	if err != nil {
 		return CreateResponse{}, err
 	}
@@ -325,9 +325,9 @@ func (c *client) CreateEdgeConnect(request *Request) (CreateResponse, error) {
 
 // GetEdgeConnects returns list of edge connects
 func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
-	edgeConnectsUrl := c.getEdgeConnectsUrl()
+	edgeConnectsURL := c.getEdgeConnectsURL()
 
-	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, edgeConnectsUrl, nil)
+	req, err := http.NewRequestWithContext(c.ctx, http.MethodGet, edgeConnectsURL, nil)
 	if err != nil {
 		return ListResponse{}, err
 	}

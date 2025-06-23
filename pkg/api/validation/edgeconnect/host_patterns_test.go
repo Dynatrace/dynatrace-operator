@@ -15,7 +15,7 @@ func TestHostPatternsRequired(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "tenantid-test.dev.apps.dynatracelabs.com",
+				APIServer: "tenantid-test.dev.apps.dynatracelabs.com",
 				OAuth: edgeconnect.OAuthSpec{
 					ClientSecret: "secret",
 					Endpoint:     "endpoint",
@@ -29,7 +29,7 @@ func TestHostPatternsRequired(t *testing.T) {
 	t.Run(`hostPatters is required - error when provisioner true`, func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "tenantid-test.dev.apps.dynatracelabs.com",
+				APIServer: "tenantid-test.dev.apps.dynatracelabs.com",
 				OAuth: edgeconnect.OAuthSpec{
 					ClientSecret: "secret",
 					Endpoint:     "endpoint",

@@ -13,7 +13,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -28,7 +28,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 							AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -47,7 +47,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 							AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -65,7 +65,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 							AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -98,7 +98,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 							AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -120,7 +120,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -154,7 +154,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 						Namespace: testNamespace,
 					},
 					Spec: dynakube.DynaKubeSpec{
-						APIURL: testApiUrl,
+						APIURL: testAPIURL,
 						OneAgent: oneagent.Spec{
 							ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 								AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -178,7 +178,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 							AppInjectionSpec: oneagent.AppInjectionSpec{

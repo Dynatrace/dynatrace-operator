@@ -23,27 +23,27 @@ const (
 	proxyNamespaceName = "proxy"
 )
 
-func curlActiveGateHttps(builder *features.FeatureBuilder, dk dynakube.DynaKube) {
+func curlActiveGateHTTPS(builder *features.FeatureBuilder, dk dynakube.DynaKube) {
 	podname := "curl-activegate-https"
-	serviceUrl := getActiveGateHttpsServiceUrl(dk)
-	builder.Assess("creating https curl pod for activeGate", installActiveGateCurlPod(podname, serviceUrl, dk))
+	serviceURL := getActiveGateHTTPSServiceURL(dk)
+	builder.Assess("creating https curl pod for activeGate", installActiveGateCurlPod(podname, serviceURL, dk))
 	builder.Assess("waiting for https curl pod for activeGate", waitForActiveGateCurlPod(podname, dk))
 	builder.Assess("checking https curl pod for activeGate", checkActiveGateCurlResult(podname, dk))
-	builder.Teardown(removeActiveGateCurlPod(podname, serviceUrl, dk))
+	builder.Teardown(removeActiveGateCurlPod(podname, serviceURL, dk))
 }
 
-func curlActiveGateHttp(builder *features.FeatureBuilder, dk dynakube.DynaKube) {
+func curlActiveGateHTTP(builder *features.FeatureBuilder, dk dynakube.DynaKube) {
 	podname := "curl-activegate-http"
-	serviceUrl := getActiveGateHttpServiceUrl(dk)
-	builder.Assess("creating http curl pod for activeGate", installActiveGateCurlPod(podname, serviceUrl, dk))
+	serviceURL := getActiveGateHTTPServiceURL(dk)
+	builder.Assess("creating http curl pod for activeGate", installActiveGateCurlPod(podname, serviceURL, dk))
 	builder.Assess("waiting for http curl pod for activeGate", waitForActiveGateCurlPod(podname, dk))
 	builder.Assess("checking http curl pod for activeGate", checkActiveGateCurlResult(podname, dk))
-	builder.Teardown(removeActiveGateCurlPod(podname, serviceUrl, dk))
+	builder.Teardown(removeActiveGateCurlPod(podname, serviceURL, dk))
 }
 
-func installActiveGateCurlPod(podName, serviceUrl string, dk dynakube.DynaKube) features.Func {
+func installActiveGateCurlPod(podName, serviceURL string, dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
+		curlTarget := fmt.Sprintf("%s/%s", serviceURL, activeGateEndpoint)
 
 		curlPod := curl.NewPod(podName, curlNamespace(dk), curlTarget, curl.WithProxy(dk))
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
@@ -52,9 +52,9 @@ func installActiveGateCurlPod(podName, serviceUrl string, dk dynakube.DynaKube) 
 	}
 }
 
-func removeActiveGateCurlPod(podName, serviceUrl string, dk dynakube.DynaKube) features.Func {
+func removeActiveGateCurlPod(podName, serviceURL string, dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
+		curlTarget := fmt.Sprintf("%s/%s", serviceURL, activeGateEndpoint)
 
 		curlPod := curl.NewPod(podName, curlNamespace(dk), curlTarget, curl.WithProxy(dk))
 		err := envConfig.Client().Resources().Delete(ctx, curlPod)
@@ -89,13 +89,13 @@ func curlNamespace(dk dynakube.DynaKube) string {
 	return dk.Namespace
 }
 
-func getActiveGateHttpsServiceUrl(dk dynakube.DynaKube) string {
+func getActiveGateHTTPSServiceURL(dk dynakube.DynaKube) string {
 	serviceName := capability.BuildServiceName(dk.Name)
 
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dk.Namespace)
 }
 
-func getActiveGateHttpServiceUrl(dk dynakube.DynaKube) string {
+func getActiveGateHTTPServiceURL(dk dynakube.DynaKube) string {
 	serviceName := capability.BuildServiceName(dk.Name)
 
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local", serviceName, dk.Namespace)

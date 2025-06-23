@@ -10,7 +10,7 @@ func addInstallerInitEnvs(initContainer *corev1.Container, installer installerIn
 		corev1.EnvVar{Name: consts.AgentInstallerFlavorEnv, Value: installer.flavor},
 		corev1.EnvVar{Name: consts.AgentInstallerTechEnv, Value: installer.technologies},
 		corev1.EnvVar{Name: consts.AgentInstallPathEnv, Value: installer.installPath},
-		corev1.EnvVar{Name: consts.AgentInstallerUrlEnv, Value: installer.installerURL},
+		corev1.EnvVar{Name: consts.AgentInstallerURLEnv, Value: installer.installerURL},
 		corev1.EnvVar{Name: consts.AgentInstallerVersionEnv, Value: installer.version},
 		corev1.EnvVar{Name: consts.AgentInjectedEnv, Value: "true"},
 	)

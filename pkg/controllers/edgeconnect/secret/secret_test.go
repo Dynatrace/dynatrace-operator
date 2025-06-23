@@ -18,14 +18,14 @@ import (
 const (
 	testName                       = "test-name-edgeconnect"
 	testNamespace                  = "test-namespace"
-	testOauthClientId              = "client-id"
+	testOauthClientID              = "client-id"
 	testOauthClientSecret          = "client-secret"
 	testOauthClientResource        = "client-resource"
 	testToken                      = "dummy-token"
-	testCreatedOauthClientId       = "created-client-id"
+	testCreatedOauthClientID       = "created-client-id"
 	testCreatedOauthClientSecret   = "created-client-secret"
 	testCreatedOauthClientResource = "created-client-resource"
-	testCreatedId                  = "id"
+	testCreatedID                  = "id"
 	testProxyAuthRef               = "proxy-auth-ref"
 )
 
@@ -37,7 +37,7 @@ func Test_prepareEdgeConnectConfigFile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -72,7 +72,7 @@ root_certificate_paths:
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -124,7 +124,7 @@ proxy:
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -163,7 +163,7 @@ secrets:
 	t.Run("safeEdgeConnectCfg", func(t *testing.T) {
 		cfg := config.EdgeConnect{
 			Name:            "test",
-			ApiEndpointHost: "test",
+			APIEndpointHost: "test",
 			OAuth: config.OAuth{
 				ClientSecret: "super secret",
 			},
@@ -182,8 +182,8 @@ oauth:
 
 func createClientSecret(name string, namespace string) *corev1.Secret {
 	return newSecret(name, namespace, map[string]string{
-		consts.KeyEdgeConnectId:                testCreatedId,
-		consts.KeyEdgeConnectOauthClientID:     testCreatedOauthClientId,
+		consts.KeyEdgeConnectID:                testCreatedID,
+		consts.KeyEdgeConnectOauthClientID:     testCreatedOauthClientID,
 		consts.KeyEdgeConnectOauthClientSecret: testCreatedOauthClientSecret,
 		consts.KeyEdgeConnectOauthResource:     testCreatedOauthClientResource,
 	})

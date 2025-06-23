@@ -22,7 +22,7 @@ const (
 
 	tenantKey       = "Tenant"
 	tenantTokenKey  = "TenantToken"
-	hostIdSourceKey = "HostIdSource"
+	hostIDSourceKey = "HostIdSource"
 	serverKey       = "Server"
 )
 
@@ -73,7 +73,7 @@ func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 
 	changed, err := query.CreateOrUpdate(ctx, newSecret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), LmcConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 
 		return err
 	} else if changed {
@@ -113,7 +113,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), LmcConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		serverKey:       fmt.Sprintf("{%s}", r.dk.OneAgent().GetEndpoints()),
 		tenantKey:       tenantUUID,
 		tenantTokenKey:  tenantToken,
-		hostIdSourceKey: "k8s-node-name",
+		hostIDSourceKey: "k8s-node-name",
 	}
 
 	var content strings.Builder

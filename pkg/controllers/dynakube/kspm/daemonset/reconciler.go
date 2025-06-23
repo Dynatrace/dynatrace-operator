@@ -62,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	updated, err := daemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}

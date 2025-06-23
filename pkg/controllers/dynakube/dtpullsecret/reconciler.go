@@ -133,7 +133,7 @@ func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[st
 
 	err = r.client.Create(ctx, pullSecret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), PullSecretConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
 
 		return nil, errors.WithMessagef(err, "failed to create secret %s", extendWithPullSecretSuffix(r.dk.Name))
 	}
@@ -148,7 +148,7 @@ func (r *Reconciler) updatePullSecret(ctx context.Context, pullSecret *corev1.Se
 
 	pullSecret.Data = desiredPullSecretData
 	if err := r.client.Update(ctx, pullSecret); err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), PullSecretConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
 
 		return errors.WithMessagef(err, "failed to update secret %s", pullSecret.Name)
 	}

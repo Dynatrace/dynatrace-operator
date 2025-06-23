@@ -9,23 +9,23 @@ const (
 	MultiActiveGateName     = "activegate"
 	ActiveGateContainerName = "activegate"
 	ProxySecretSuffix       = "internal-proxy"
-	HttpsServicePortName    = "https"
-	HttpsServicePort        = 443
-	HttpsContainerPort      = 9999
-	HttpServicePortName     = "http"
-	HttpServicePort         = 80
-	HttpContainerPort       = 9998
+	HTTPSServicePortName    = "https"
+	HTTPSServicePort        = 443
+	HTTPSContainerPort      = 9999
+	HTTPServicePortName     = "http"
+	HTTPServicePort         = 80
+	HTTPContainerPort       = 9998
 
 	AuthTokenSecretVolumeName = "ag-authtoken-secret"
 	AuthTokenMountPoint       = connectioninfo.TokenBasePath + "/auth-token"
 
 	EnvDtCapabilities    = "DT_CAPABILITIES"
-	EnvDtIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
-	EnvDtIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
+	EnvDtIDSeedNamespace = "DT_ID_SEED_NAMESPACE"
+	EnvDtIDSeedClusterID = "DT_ID_SEED_K8S_CLUSTER_ID"
 	EnvDtNetworkZone     = "DT_NETWORK_ZONE"
 	EnvDtGroup           = "DT_GROUP"
-	EnvDtDnsEntryPoint   = "DT_DNS_ENTRY_POINT"
-	EnvDtHttpPort        = "DT_HTTP_PORT"
+	EnvDtDNSEntryPoint   = "DT_DNS_ENTRY_POINT"
+	EnvDtHTTPPort        = "DT_HTTP_PORT"
 
 	AnnotationActiveGateConfigurationHash = api.InternalFlagPrefix + "activegate-configuration-hash"
 	AnnotationActiveGateTenantTokenHash   = api.InternalFlagPrefix + "activegate-tenant-token-hash"

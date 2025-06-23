@@ -45,7 +45,7 @@ func (src *EdgeConnect) toSpec(dst *edgeconnect.EdgeConnect) {
 
 	dst.Spec.ImageRef.Tag = src.Spec.ImageRef.Tag
 	dst.Spec.ImageRef.Repository = src.Spec.ImageRef.Repository
-	dst.Spec.ApiServer = src.Spec.ApiServer
+	dst.Spec.APIServer = src.Spec.ApiServer
 
 	// Note: strings.Split returns [""] if we apply it to empty "" string
 	if src.Spec.HostRestrictions != "" {

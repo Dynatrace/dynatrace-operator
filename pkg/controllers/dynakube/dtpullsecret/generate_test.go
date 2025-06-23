@@ -17,8 +17,8 @@ import (
 
 const (
 	testTenant     = "test-tenant"
-	testApiUrlHost = "test-api-url"
-	testApiUrl     = "https://" + testApiUrlHost + "/e/" + testTenant + "/api"
+	testAPIURLHost = "test-api-url"
+	testAPIURL     = "https://" + testAPIURLHost + "/e/" + testTenant + "/api"
 )
 
 func TestGetImageRegistryFromAPIURL(t *testing.T) {
@@ -37,7 +37,7 @@ func TestGetImageRegistryFromAPIURL(t *testing.T) {
 func TestReconciler_GenerateData(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
@@ -65,7 +65,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	auth := fmt.Sprintf("%s:%s", testTenant, testPaasToken)
 	expected := dockerConfig{
 		Auths: map[string]dockerAuthentication{
-			testApiUrlHost: {
+			testAPIURLHost: {
 				Username: testTenant,
 				Password: testPaasToken,
 				Auth:     b64.StdEncoding.EncodeToString([]byte(auth)),
@@ -74,7 +74,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	}
 
 	var actual dockerConfig
-	err = json.Unmarshal(data[DockerConfigJson], &actual)
+	err = json.Unmarshal(data[DockerConfigJSON], &actual)
 
 	require.NoError(t, err)
 	assert.NotNil(t, actual)

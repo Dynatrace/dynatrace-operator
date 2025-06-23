@@ -101,7 +101,7 @@ func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 func (r *Reconciler) createOrUpdateSecret(ctx context.Context, secret *corev1.Secret) error {
 	_, err := k8ssecret.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ConditionType, err)
 
 		return errors.Errorf("failed to create or update secret '%s': %v", secret.Name, err)
 	}
@@ -113,7 +113,7 @@ func (r *Reconciler) createOrUpdateSecret(ctx context.Context, secret *corev1.Se
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
 	if err := k8ssecret.Query(r.client, r.apiReader, log).Delete(ctx, secret); err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ConditionType, err)
 
 		return err
 	}
@@ -124,7 +124,7 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) er
 func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) {
 	pmc, err := r.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
-		conditions.SetDynatraceApiError(r.dk.Conditions(), ConditionType, err)
+		conditions.SetDynatraceAPIError(r.dk.Conditions(), ConditionType, err)
 
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ConditionType, err)
 
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	if r.dk.NeedsOneAgentProxy() {
 		proxy, err := r.dk.Proxy(ctx, r.apiReader)
 		if err != nil {
-			conditions.SetKubeApiError(r.dk.Conditions(), ConditionType, err)
+			conditions.SetKubeAPIError(r.dk.Conditions(), ConditionType, err)
 
 			return nil, err
 		}
@@ -178,7 +178,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	k8ssecret.SetType(corev1.SecretTypeOpaque)
 
 	if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ConditionType, err)
 
 		return nil, err
 	}

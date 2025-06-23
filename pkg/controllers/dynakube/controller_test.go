@@ -70,7 +70,7 @@ const (
 	testName      = "test-name"
 	testNamespace = "test-namespace"
 
-	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
+	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
 )
 
 func TestGetDynakubeOrCleanup(t *testing.T) {
@@ -122,7 +122,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedDynakube.Name, dk.Name)
 		assert.Equal(t, expectedDynakube.Namespace, dk.Namespace)
-		assert.Equal(t, expectedDynakube.ApiUrl(), dk.ApiUrl())
+		assert.Equal(t, expectedDynakube.APIURL(), dk.APIURL())
 	})
 }
 func TestMinimalRequest(t *testing.T) {
@@ -248,7 +248,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 				Namespace: dk.Namespace,
 			},
 			Data: map[string][]byte{
-				dtclient.ApiToken: []byte("this is a token"),
+				dtclient.APIToken: []byte("this is a token"),
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
@@ -281,7 +281,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 				Namespace: dk.Namespace,
 			},
 			Data: map[string][]byte{
-				dtclient.ApiToken: []byte("this is a token"),
+				dtclient.APIToken: []byte("this is a token"),
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
@@ -458,7 +458,7 @@ func createKSPMReconcilerBuilder(reconciler controllers.Reconciler) kspm.Reconci
 	}
 }
 
-func createApiMonitoringReconcilerBuilder(reconciler controllers.Reconciler) apimonitoring.ReconcilerBuilder {
+func createAPIMonitoringReconcilerBuilder(reconciler controllers.Reconciler) apimonitoring.ReconcilerBuilder {
 	return func(_ dtclient.Client, _ *dynakube.DynaKube, _ string) controllers.Reconciler {
 		return reconciler
 	}
@@ -550,7 +550,7 @@ func TestTokenConditions(t *testing.T) {
 
 		require.Error(t, err)
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, "secrets \"\" not found")
-		assert.Empty(t, dk.Status.DynatraceApi.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
+		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
 	t.Run("token condition is set if token are valid", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -565,7 +565,7 @@ func TestTokenConditions(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.ApiToken: []byte(testAPIToken),
+				dtclient.APIToken: []byte(testAPIToken),
 			},
 		})
 		mockClient := dtclientmock.NewClient(t)
@@ -592,7 +592,7 @@ func TestTokenConditions(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.ApiToken:        []byte(testAPIToken),
+				dtclient.APIToken:        []byte(testAPIToken),
 				dtclient.DataIngestToken: []byte(testAPIToken),
 			},
 		})
@@ -616,7 +616,7 @@ func TestSetupIstio(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:      testApiUrl,
+			APIURL:      testAPIURL,
 			EnableIstio: true,
 		},
 	}

@@ -530,8 +530,10 @@ tests:
       csidriver.enabled: true
       csidriver.csiInit.resources.requests.cpu: 123m
       csidriver.csiInit.resources.requests.memory: 456Mi
+      csidriver.csiInit.resources.requests.ephemeral-storage: 42Mi
       csidriver.csiInit.resources.limits.cpu: 789m
       csidriver.csiInit.resources.limits.memory: 122Mi
+      csidriver.csiInit.resources.limits.ephemeral-storage: 84Mi
     asserts:
       - equal:
           path: spec.template.spec.initContainers[0].name
@@ -543,16 +545,27 @@ tests:
           path: spec.template.spec.initContainers[0].resources.requests.memory
           value: 456Mi
       - equal:
+          path: spec.template.spec.initContainers[0].resources.requests.ephemeral-storage
+          value: 42Mi
+      - equal:
           path: spec.template.spec.initContainers[0].resources.limits.cpu
           value: 789m
       - equal:
           path: spec.template.spec.initContainers[0].resources.limits.memory
           value: 122Mi
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.limits.ephemeral-storage
+          value: 84Mi
+
   - it: should take resource limits from values file for provisioner
     set:
       csidriver.enabled: true
       csidriver.provisioner.resources.requests.cpu: 600m
       csidriver.provisioner.resources.requests.memory: 200Mi
+      csidriver.provisioner.resources.requests.ephemeral-storage: 42Mi
+      csidriver.provisioner.resources.limits.cpu: 600m
+      csidriver.provisioner.resources.limits.memory: 200Mi
+      csidriver.provisioner.resources.limits.ephemeral-storage: 84Mi
     asserts:
       - equal:
           path: spec.template.spec.containers[1].name
@@ -563,13 +576,27 @@ tests:
       - equal:
           path: spec.template.spec.containers[1].resources.requests.memory
           value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[1].resources.requests.ephemeral-storage
+          value: 42Mi
+      - equal:
+          path: spec.template.spec.containers[1].resources.limits.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[1].resources.limits.memory
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[1].resources.limits.ephemeral-storage
+          value: 84Mi
   - it: should take resource limits from values file for server
     set:
       csidriver.enabled: true
       csidriver.server.resources.requests.cpu: 600m
       csidriver.server.resources.requests.memory: 200Mi
-      csidriver.server.resources.limits.cpu: 900m
-      csidriver.server.resources.limits.memory: 300Mi
+      csidriver.server.resources.requests.ephemeral-storage: 42Mi
+      csidriver.server.resources.limits.cpu: 600m
+      csidriver.server.resources.limits.memory: 200Mi
+      csidriver.server.resources.limits.ephemeral-storage: 84Mi
     asserts:
       - equal:
           path: spec.template.spec.containers[0].name
@@ -581,11 +608,17 @@ tests:
           path: spec.template.spec.containers[0].resources.requests.memory
           value: 200Mi
       - equal:
+          path: spec.template.spec.containers[0].resources.requests.ephemeral-storage
+          value: 42Mi
+      - equal:
           path: spec.template.spec.containers[0].resources.limits.cpu
-          value: 900m
+          value: 600m
       - equal:
           path: spec.template.spec.containers[0].resources.limits.memory
-          value: 300Mi
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.ephemeral-storage
+          value: 84Mi
   - it: should take resource limits from values file for registrar
     set:
       csidriver.enabled: true
@@ -614,8 +647,10 @@ tests:
       csidriver.enabled: true
       csidriver.livenessprobe.resources.requests.cpu: 600m
       csidriver.livenessprobe.resources.requests.memory: 200Mi
-      csidriver.livenessprobe.resources.limits.cpu: 900m
-      csidriver.livenessprobe.resources.limits.memory: 300Mi
+      csidriver.livenessprobe.resources.requests.ephemeral-storage: 42Mi
+      csidriver.livenessprobe.resources.limits.cpu: 600m
+      csidriver.livenessprobe.resources.limits.memory: 200Mi
+      csidriver.livenessprobe.resources.limits.ephemeral-storage: 84Mi
     asserts:
       - equal:
           path: spec.template.spec.containers[3].name
@@ -627,11 +662,17 @@ tests:
           path: spec.template.spec.containers[3].resources.requests.memory
           value: 200Mi
       - equal:
+          path: spec.template.spec.containers[3].resources.requests.ephemeral-storage
+          value: 42Mi
+      - equal:
           path: spec.template.spec.containers[3].resources.limits.cpu
-          value: 900m
+          value: 600m
       - equal:
           path: spec.template.spec.containers[3].resources.limits.memory
-          value: 300Mi
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[3].resources.limits.ephemeral-storage
+          value: 84Mi
   - it: should take kubelet path from values file
     set:
       csidriver.enabled: true

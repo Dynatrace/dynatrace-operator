@@ -69,7 +69,7 @@ func createOptions(namespace string) ctrl.Options {
 			BindAddress: metricsBindAddress,
 		},
 		LeaderElection:             true,
-		LeaderElectionID:           leaderElectionId,
+		LeaderElectionID:           leaderElectionID,
 		LeaderElectionResourceLock: leaderElectionResourceLock,
 		LeaderElectionNamespace:    namespace,
 		HealthProbeBindAddress:     healthProbeBindAddress,

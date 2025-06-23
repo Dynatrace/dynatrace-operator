@@ -107,9 +107,9 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			continue
 		}
 
-		tenantUUID, err := TenantUUIDFromApiUrl(dk.ApiUrl())
+		tenantUUID, err := TenantUUIDFromAPIURL(dk.APIURL())
 		if err != nil {
-			log.Error(err, "malformed ApiUrl for dynakube, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.ApiUrl())
+			log.Error(err, "malformed APIURL for dynakube, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.APIURL())
 
 			continue
 		}
@@ -118,7 +118,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 
 		oldExists, err := checker.fs.DirExists(oldPath)
 		if err != nil {
-			log.Error(err, "failed to check deprecated host dir existence, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.ApiUrl())
+			log.Error(err, "failed to check deprecated host dir existence, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.APIURL())
 
 			continue
 		}

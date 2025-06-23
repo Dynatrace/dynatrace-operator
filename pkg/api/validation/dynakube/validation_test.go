@@ -22,7 +22,7 @@ import (
 const (
 	testName      = "test-name"
 	testNamespace = "test-namespace"
-	testApiUrl    = "https://f.q.d.n/api"
+	testAPIURL    = "https://f.q.d.n/api"
 )
 
 var defaultDynakubeObjectMeta = metav1.ObjectMeta{
@@ -57,7 +57,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 		assertAllowedWithWarnings(t, 1, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 						HostInjectSpec: oneagent.HostInjectSpec{
@@ -84,7 +84,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 							HostInjectSpec: oneagent.HostInjectSpec{
@@ -106,7 +106,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 		setupDisabledCSIEnv(t)
 		assertDenied(t,
 			[]string{
-				errorNoApiUrl,
+				errorNoAPIURL,
 				errorConflictingNamespaceSelector,
 				fmt.Sprintf(errorDuplicateActiveGateCapability, activegate.KubeMonCapability.DisplayName),
 				fmt.Sprintf(errorInvalidActiveGateCapability, "me dumb"),
@@ -142,7 +142,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 							AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -160,7 +160,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						HostMonitoring: &oneagent.HostInjectSpec{},
 					},

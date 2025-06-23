@@ -38,7 +38,7 @@ func (dk *DynaKube) Proxy(ctx context.Context, kubeReader client.Reader) (string
 	if dk.Spec.Proxy.Value != "" {
 		return dk.Spec.Proxy.Value, nil
 	} else if dk.Spec.Proxy.ValueFrom != "" {
-		return dk.proxyUrlFromUserSecret(ctx, kubeReader)
+		return dk.proxyURLFromUserSecret(ctx, kubeReader)
 	}
 
 	return "", nil
@@ -60,7 +60,7 @@ func (dk *DynaKube) NeedsOneAgentProxy() bool {
 	return !dk.FF().OneAgentIgnoresProxy() && dk.HasProxy() //nolint:staticcheck
 }
 
-func (dk *DynaKube) proxyUrlFromUserSecret(ctx context.Context, kubeReader client.Reader) (string, error) {
+func (dk *DynaKube) proxyURLFromUserSecret(ctx context.Context, kubeReader client.Reader) (string, error) {
 	secretName := dk.Spec.Proxy.ValueFrom
 
 	var proxySecret corev1.Secret

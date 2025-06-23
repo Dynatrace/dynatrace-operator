@@ -19,7 +19,7 @@ const (
 	testComponentFeature = "test-component-feature"
 	testNamespace        = "test-namespace"
 	testName             = "test-name"
-	testApiUrl           = "https://demo.dev.dynatracelabs.com/api"
+	testAPIURL           = "https://demo.dev.dynatracelabs.com/api"
 )
 
 func createTestDynaKube() *dynakube.DynaKube {
@@ -28,23 +28,23 @@ func createTestDynaKube() *dynakube.DynaKube {
 			Namespace: testNamespace, Name: testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 		},
 	}
 }
 
 func TestCreateService(t *testing.T) {
-	agHttpsPort := corev1.ServicePort{
-		Name:       consts.HttpsServicePortName,
+	agHTTPSPort := corev1.ServicePort{
+		Name:       consts.HTTPSServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       consts.HttpsServicePort,
-		TargetPort: intstr.FromString(consts.HttpsServicePortName),
+		Port:       consts.HTTPSServicePort,
+		TargetPort: intstr.FromString(consts.HTTPSServicePortName),
 	}
-	agHttpPort := corev1.ServicePort{
-		Name:       consts.HttpServicePortName,
+	agHTTPPort := corev1.ServicePort{
+		Name:       consts.HTTPServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       consts.HttpServicePort,
-		TargetPort: intstr.FromString(consts.HttpServicePortName),
+		Port:       consts.HTTPServicePort,
+		TargetPort: intstr.FromString(consts.HTTPServicePortName),
 	}
 
 	t.Run("check service name, labels and selector", func(t *testing.T) {
@@ -80,8 +80,8 @@ func TestCreateService(t *testing.T) {
 		service := CreateService(dk)
 		ports := service.Spec.Ports
 
-		assert.Contains(t, ports, agHttpsPort)
-		assert.Contains(t, ports, agHttpPort)
+		assert.Contains(t, ports, agHTTPSPort)
+		assert.Contains(t, ports, agHTTPPort)
 	})
 	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
 		dk := createTestDynaKube()
@@ -90,7 +90,7 @@ func TestCreateService(t *testing.T) {
 		service := CreateService(dk)
 		ports := service.Spec.Ports
 
-		assert.Contains(t, ports, agHttpsPort)
-		assert.Contains(t, ports, agHttpPort)
+		assert.Contains(t, ports, agHTTPSPort)
+		assert.Contains(t, ports, agHTTPPort)
 	})
 }

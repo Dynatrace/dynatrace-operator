@@ -25,6 +25,6 @@ func TestServicePortModify(t *testing.T) {
 		container := sts.Spec.Template.Spec.Containers[0]
 		isSubset(t, expectedPorts, container.Ports)
 		isSubset(t, expectedEnv, container.Env)
-		assert.Equal(t, consts.HttpsServicePortName, container.ReadinessProbe.HTTPGet.Port.StrVal)
+		assert.Equal(t, consts.HTTPSServicePortName, container.ReadinessProbe.HTTPGet.Port.StrVal)
 	})
 }

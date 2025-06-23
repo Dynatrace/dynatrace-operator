@@ -56,8 +56,8 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 		return provisioner.getJobInstaller(ctx, dk), nil
 	case dk.OneAgent().GetCustomCodeModulesImage() != "":
 		props := &image.Properties{
-			ImageUri:     dk.OneAgent().GetCodeModulesImage(),
-			ApiReader:    provisioner.apiReader,
+			ImageURI:     dk.OneAgent().GetCodeModulesImage(),
+			APIReader:    provisioner.apiReader,
 			Dynakube:     &dk,
 			PathResolver: provisioner.path,
 		}
@@ -92,16 +92,16 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 }
 
 func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk dynakube.DynaKube) installer.Installer {
-	imageUri := dk.OneAgent().GetCustomCodeModulesImage()
-	if imageUri == "" {
-		imageUri = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
+	imageURI := dk.OneAgent().GetCustomCodeModulesImage()
+	if imageURI == "" {
+		imageURI = "public.ecr.aws/dynatrace/dynatrace-codemodules:" + dk.OneAgent().GetCodeModulesVersion()
 	}
 
 	props := &job.Properties{
-		ImageUri:     imageUri,
+		ImageURI:     imageURI,
 		Owner:        &dk,
 		PullSecrets:  dk.PullSecretNames(),
-		ApiReader:    provisioner.apiReader,
+		APIReader:    provisioner.apiReader,
 		Client:       provisioner.kubeClient,
 		PathResolver: provisioner.path,
 		CSIJob:       csijob.GetSettings(),

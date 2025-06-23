@@ -26,7 +26,7 @@ const (
 	testPodName             = "test-pod"
 	testNamespaceName       = "test-namespace"
 	testDynakubeName        = "test-dynakube"
-	testApiUrl              = "http://test-endpoint/api"
+	testAPIURL              = "http://test-endpoint/api"
 	testWorkloadInfoName    = "test-name"
 	testWorkloadInfoKind    = "test-kind"
 	testLabelKeyMatching    = "inject"
@@ -339,7 +339,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			Namespace: testNamespaceName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 			},

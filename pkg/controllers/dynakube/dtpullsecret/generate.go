@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	DockerConfigJson = ".dockerconfigjson"
+	DockerConfigJSON = ".dockerconfigjson"
 )
 
 type dockerAuthentication struct {
@@ -46,8 +46,8 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	switch {
 	case r.tokens.PaasToken().Value != "":
 		registryToken = r.tokens.PaasToken().Value
-	case r.tokens.ApiToken().Value != "":
-		registryToken = r.tokens.ApiToken().Value
+	case r.tokens.APIToken().Value != "":
+		registryToken = r.tokens.APIToken().Value
 	default:
 		return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
 	}
@@ -81,10 +81,10 @@ func getImageRegistryFromAPIURL(apiURL string) (string, error) {
 }
 
 func pullSecretDataFromDockerConfig(dockerConf *dockerConfig) (map[string][]byte, error) {
-	dockerConfJson, err := json.Marshal(dockerConf)
+	dockerConfJSON, err := json.Marshal(dockerConf)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return map[string][]byte{DockerConfigJson: dockerConfJson}, nil
+	return map[string][]byte{DockerConfigJSON: dockerConfJSON}, nil
 }

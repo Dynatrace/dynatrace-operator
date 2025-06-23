@@ -173,8 +173,8 @@ func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 	if r.dk.FF().IsNodeImagePull() {
 		err = bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
-			if conditions.IsKubeApiError(err) {
-				conditions.SetKubeApiError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
+			if conditions.IsKubeAPIError(err) {
+				conditions.SetKubeAPIError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
 			}
 
 			return err
@@ -184,8 +184,8 @@ func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 	if !r.dk.FF().IsNodeImagePull() || r.dk.OneAgent().IsCSIAvailable() {
 		err = initgeneration.NewInitGenerator(r.client, r.apiReader, r.dk.Namespace).GenerateForDynakube(ctx, r.dk)
 		if err != nil {
-			if conditions.IsKubeApiError(err) {
-				conditions.SetKubeApiError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
+			if conditions.IsKubeAPIError(err) {
+				conditions.SetKubeAPIError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
 			}
 
 			return err
@@ -241,8 +241,8 @@ func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
 
 	err = endpointSecretGenerator.GenerateForDynakube(ctx, r.dk)
 	if err != nil {
-		if conditions.IsKubeApiError(err) {
-			conditions.SetKubeApiError(r.dk.Conditions(), metaDataEnrichmentConditionType, err)
+		if conditions.IsKubeAPIError(err) {
+			conditions.SetKubeAPIError(r.dk.Conditions(), metaDataEnrichmentConditionType, err)
 		}
 
 		return err

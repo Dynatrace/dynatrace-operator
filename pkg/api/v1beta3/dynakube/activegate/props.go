@@ -86,7 +86,7 @@ func (ag *Spec) IsRoutingEnabled() bool {
 }
 
 func (ag *Spec) IsApiEnabled() bool {
-	return ag.IsMode(DynatraceApiCapability.DisplayName)
+	return ag.IsMode(DynatraceAPICapability.DisplayName)
 }
 
 func (ag *Spec) IsMetricsIngestEnabled() bool {
@@ -98,7 +98,7 @@ func (ag *Spec) IsAutomaticTlsSecretEnabled() bool {
 }
 
 func (ag *Spec) HasCaCert() bool {
-	return ag.IsEnabled() && (ag.TlsSecretName != "" || ag.IsAutomaticTlsSecretEnabled())
+	return ag.IsEnabled() && (ag.TLSSecretName != "" || ag.IsAutomaticTlsSecretEnabled())
 }
 
 // GetTenantSecretName returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
@@ -113,8 +113,8 @@ func (ag *Spec) GetAuthTokenSecretName() string {
 
 // GetTLSSecretName returns the name of the AG TLS secret.
 func (ag *Spec) GetTLSSecretName() string {
-	if ag.TlsSecretName != "" {
-		return ag.TlsSecretName
+	if ag.TLSSecretName != "" {
+		return ag.TLSSecretName
 	}
 
 	if ag.IsAutomaticTlsSecretEnabled() {

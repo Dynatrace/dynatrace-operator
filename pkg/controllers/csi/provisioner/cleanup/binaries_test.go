@@ -255,16 +255,16 @@ func mockMountPoints(t *testing.T, cleaner *Cleaner, mountPoints ...mount.MountP
 	cleaner.mounter = mount.NewFakeMounter(mountPoints)
 }
 
-func createAppMonDk(t *testing.T, name, apiUrl string) dynakube.DynaKube {
+func createAppMonDk(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	t.Helper()
 
-	dk := createBaseDk(t, name, apiUrl)
+	dk := createBaseDk(t, name, apiURL)
 	dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 
 	return dk
 }
 
-func createBaseDk(t *testing.T, name, apiUrl string) dynakube.DynaKube {
+func createBaseDk(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	t.Helper()
 
 	return dynakube.DynaKube{
@@ -272,7 +272,7 @@ func createBaseDk(t *testing.T, name, apiUrl string) dynakube.DynaKube {
 			Name: name,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: apiUrl,
+			APIURL: apiURL,
 		},
 	}
 }

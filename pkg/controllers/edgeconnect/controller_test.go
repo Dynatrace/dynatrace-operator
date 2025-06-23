@@ -35,14 +35,14 @@ import (
 const (
 	testName                       = "test-name-edgeconnect"
 	testNamespace                  = "test-namespace"
-	testOauthClientId              = "client-id"
+	testOauthClientID              = "client-id"
 	testOauthClientSecret          = "client-secret"
 	testOauthClientResource        = "client-resource"
-	testCreatedOauthClientId       = "created-client-id"
+	testCreatedOauthClientID       = "created-client-id"
 	testCreatedOauthClientSecret   = "created-client-secret"
 	testCreatedOauthClientResource = "created-client-resource"
-	testCreatedId                  = "id"
-	testRecreatedInvalidId         = "id-somehow-different"
+	testCreatedID                  = "id"
+	testRecreatedInvalidID         = "id-somehow-different"
 	testCAConfigMapName            = "test-ca-name"
 	testK8sAutomationHostPattern   = "test-name-edgeconnect.test-namespace.1-2-3-4.kubernetes-automation"
 
@@ -61,11 +61,11 @@ var (
 			To:   edgeconnect.KubernetesDefaultDNS,
 		},
 	}
-	testObjectId = "my:default"
+	testObjectID = "my:default"
 
 	testEnvironmentSetting = edgeconnectClient.EnvironmentSetting{
-		ObjectId: &testObjectId,
-		SchemaId: edgeconnectClient.KubernetesConnectionSchemaID,
+		ObjectID: &testObjectID,
+		SchemaID: edgeconnectClient.KubernetesConnectionSchemaID,
 		Scope:    edgeconnectClient.KubernetesConnectionScope,
 		Value: edgeconnectClient.EnvironmentSettingValue{
 			Name:      testName,
@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -112,7 +112,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -198,7 +198,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -230,7 +230,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -266,7 +266,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -297,7 +297,7 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
 					Endpoint:     "https://test.com/sso/oauth2/token",
 					Resource:     "urn:dtenvironment:test12345",
@@ -360,7 +360,7 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 
 		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
 		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientId, edgeConnectOauthClientID)
+		assert.Equal(t, testCreatedOauthClientID, edgeConnectOauthClientID)
 
 		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
 		require.NoError(t, err)
@@ -370,9 +370,9 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientResource, edgeConnectOauthResource)
 
-		edgeConnectId, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectId, log)
+		edgeConnectID, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
 		require.NoError(t, err)
-		assert.Equal(t, testCreatedId, edgeConnectId)
+		assert.Equal(t, testCreatedID, edgeConnectID)
 
 		var edgeConnectDeployment appsv1.Deployment
 		err = controller.apiReader.Get(
@@ -404,7 +404,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
 			ec,
-			mockNewEdgeConnectClientRecreate(edgeConnectClient, testCreatedId),
+			mockNewEdgeConnectClientRecreate(edgeConnectClient, testCreatedID),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
 		)
@@ -422,7 +422,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 
 		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
 		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientId, edgeConnectOauthClientID)
+		assert.Equal(t, testCreatedOauthClientID, edgeConnectOauthClientID)
 
 		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
 		require.NoError(t, err)
@@ -432,9 +432,9 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientResource, edgeConnectOauthResource)
 
-		edgeConnectId, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectId, log)
+		edgeConnectID, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
 		require.NoError(t, err)
-		assert.Equal(t, testCreatedId, edgeConnectId)
+		assert.Equal(t, testCreatedID, edgeConnectID)
 
 		var edgeConnectDeployment appsv1.Deployment
 		err = controller.apiReader.Get(
@@ -449,7 +449,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
-		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testCreatedId)
+		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testCreatedID)
 		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", edgeconnectClient.NewRequest(testName, testHostPatterns, testHostMappings, ""))
 	})
 
@@ -463,7 +463,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
 			ec,
-			mockNewEdgeConnectClientRecreate(edgeConnectClient, testRecreatedInvalidId),
+			mockNewEdgeConnectClientRecreate(edgeConnectClient, testRecreatedInvalidID),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
 			createClientSecret(ec.ClientSecretName(), ec.Namespace),
 			createKubeSystemNamespace(),
@@ -482,7 +482,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 
 		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
 		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientId, edgeConnectOauthClientID)
+		assert.Equal(t, testCreatedOauthClientID, edgeConnectOauthClientID)
 
 		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
 		require.NoError(t, err)
@@ -492,9 +492,9 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientResource, edgeConnectOauthResource)
 
-		edgeConnectId, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectId, log)
+		edgeConnectID, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
 		require.NoError(t, err)
-		assert.Equal(t, testCreatedId, edgeConnectId)
+		assert.Equal(t, testCreatedID, edgeConnectID)
 
 		var edgeConnectDeployment appsv1.Deployment
 		err = controller.apiReader.Get(
@@ -509,7 +509,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 		assert.Equal(t, "edge-connect", edgeConnectDeployment.Spec.Template.Spec.Containers[0].Name)
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
-		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testRecreatedInvalidId)
+		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testRecreatedInvalidID)
 		edgeConnectClient.AssertCalled(t, "CreateEdgeConnect", edgeconnectClient.NewRequest(testName, testHostPatterns, testHostMappings, ""))
 	})
 }
@@ -542,7 +542,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, k8serrors.IsNotFound(err))
 
-		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testCreatedId)
+		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testCreatedID)
 	})
 
 	t.Run("delete EdgeConnect - missing client secret", func(t *testing.T) {
@@ -571,7 +571,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, k8serrors.IsNotFound(err))
 
-		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testCreatedId)
+		edgeConnectClient.AssertCalled(t, "DeleteEdgeConnect", testCreatedID)
 	})
 
 	t.Run("delete EdgeConnect - missing EdgeConnect on the tenant", func(t *testing.T) {
@@ -598,7 +598,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, k8serrors.IsNotFound(err))
 
-		edgeConnectClient.AssertNotCalled(t, "DeleteEdgeConnect", testCreatedId)
+		edgeConnectClient.AssertNotCalled(t, "DeleteEdgeConnect", testCreatedID)
 	})
 }
 
@@ -625,8 +625,8 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 		assert.NotNil(t, result)
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
-		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedId)
-		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, edgeconnectClient.NewRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientId))
+		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedID)
+		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedID, edgeconnectClient.NewRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientID))
 	})
 }
 
@@ -664,7 +664,7 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 
 		edgeConnectOauthClientID, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientID, log)
 		require.NoError(t, err)
-		assert.Equal(t, testCreatedOauthClientId, edgeConnectOauthClientID)
+		assert.Equal(t, testCreatedOauthClientID, edgeConnectOauthClientID)
 
 		edgeConnectOauthClientSecret, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectOauthClientSecret, log)
 		require.NoError(t, err)
@@ -674,9 +674,9 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testCreatedOauthClientResource, edgeConnectOauthResource)
 
-		edgeConnectId, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectId, log)
+		edgeConnectID, err := k8ssecret.GetDataFromSecretName(ctx, controller.apiReader, types.NamespacedName{Name: ec.ClientSecretName(), Namespace: ec.Namespace}, consts.KeyEdgeConnectID, log)
 		require.NoError(t, err)
-		assert.Equal(t, testCreatedId, edgeConnectId)
+		assert.Equal(t, testCreatedID, edgeConnectID)
 
 		var edgeConnectDeployment appsv1.Deployment
 		err = controller.apiReader.Get(
@@ -721,14 +721,14 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 		assert.NotNil(t, result)
 
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnects", testName)
-		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedId)
-		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedId, edgeconnectClient.NewRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientId))
+		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", testCreatedID)
+		edgeConnectClient.AssertCalled(t, "UpdateEdgeConnect", testCreatedID, edgeconnectClient.NewRequest(testName, testHostPatterns2, testHostMappings, testCreatedOauthClientID))
 	})
 }
 
 func createOauthSecret(name string, namespace string) *corev1.Secret {
 	return newSecret(name, namespace, map[string]string{
-		consts.KeyEdgeConnectOauthClientID:     testOauthClientId,
+		consts.KeyEdgeConnectOauthClientID:     testOauthClientID,
 		consts.KeyEdgeConnectOauthClientSecret: testOauthClientSecret,
 		consts.KeyEdgeConnectOauthResource:     testOauthClientResource,
 	})
@@ -736,8 +736,8 @@ func createOauthSecret(name string, namespace string) *corev1.Secret {
 
 func createClientSecret(name string, namespace string) *corev1.Secret {
 	return newSecret(name, namespace, map[string]string{
-		consts.KeyEdgeConnectId:                testCreatedId,
-		consts.KeyEdgeConnectOauthClientID:     testCreatedOauthClientId,
+		consts.KeyEdgeConnectID:                testCreatedID,
+		consts.KeyEdgeConnectOauthClientID:     testCreatedOauthClientID,
 		consts.KeyEdgeConnectOauthClientSecret: testCreatedOauthClientSecret,
 		consts.KeyEdgeConnectOauthResource:     testCreatedOauthClientResource,
 	})
@@ -848,10 +848,10 @@ func mockNewEdgeConnectClientCreate(edgeConnectClient *edgeconnectmock.Client, h
 		// CreateEdgeConnect creates edge connect
 		edgeConnectClient.On("CreateEdgeConnect", edgeconnectClient.NewRequest(testName, hostPatterns, testHostMappings, "")).Return(
 			edgeconnectClient.CreateResponse{
-				ID:                  testCreatedId,
+				ID:                  testCreatedID,
 				Name:                testName,
 				HostPatterns:        hostPatterns,
-				OauthClientId:       testCreatedOauthClientId,
+				OauthClientID:       testCreatedOauthClientID,
 				OauthClientSecret:   testCreatedOauthClientSecret,
 				OauthClientResource: testCreatedOauthClientResource,
 			},
@@ -871,7 +871,7 @@ func mockNewEdgeConnectClientRecreate(edgeConnectClient *edgeconnectmock.Client,
 						ID:                         id,
 						Name:                       testName,
 						HostPatterns:               testHostPatterns,
-						OauthClientId:              testOauthClientId,
+						OauthClientID:              testOauthClientID,
 						ManagedByDynatraceOperator: true,
 					},
 				},
@@ -884,10 +884,10 @@ func mockNewEdgeConnectClientRecreate(edgeConnectClient *edgeconnectmock.Client,
 		// CreateEdgeConnect creates edge connect
 		edgeConnectClient.On("CreateEdgeConnect", edgeconnectClient.NewRequest(testName, testHostPatterns, testHostMappings, "")).Return(
 			edgeconnectClient.CreateResponse{
-				ID:                  testCreatedId,
+				ID:                  testCreatedID,
 				Name:                testName,
 				HostPatterns:        testHostPatterns,
-				OauthClientId:       testCreatedOauthClientId,
+				OauthClientID:       testCreatedOauthClientID,
 				OauthClientSecret:   testCreatedOauthClientSecret,
 				OauthClientResource: testCreatedOauthClientResource,
 			},
@@ -904,10 +904,10 @@ func mockNewEdgeConnectClientDelete(edgeConnectClient *edgeconnectmock.Client) f
 			edgeconnectClient.ListResponse{
 				EdgeConnects: []edgeconnectClient.GetResponse{
 					{
-						ID:                         testCreatedId,
+						ID:                         testCreatedID,
 						Name:                       testName,
 						HostPatterns:               testHostPatterns,
-						OauthClientId:              testOauthClientId,
+						OauthClientID:              testOauthClientID,
 						ManagedByDynatraceOperator: true,
 					},
 				},
@@ -915,7 +915,7 @@ func mockNewEdgeConnectClientDelete(edgeConnectClient *edgeconnectmock.Client) f
 			},
 			nil,
 		)
-		edgeConnectClient.On("DeleteEdgeConnect", testCreatedId).Return(nil)
+		edgeConnectClient.On("DeleteEdgeConnect", testCreatedID).Return(nil)
 
 		return edgeConnectClient, nil
 	}
@@ -929,7 +929,7 @@ func mockNewEdgeConnectClientDeleteNotFoundOnTenant(edgeConnectClient *edgeconne
 			},
 			nil,
 		)
-		edgeConnectClient.On("DeleteEdgeConnect", testCreatedId).Return(nil).Maybe()
+		edgeConnectClient.On("DeleteEdgeConnect", testCreatedID).Return(nil).Maybe()
 
 		return edgeConnectClient, nil
 	}
@@ -941,10 +941,10 @@ func mockNewEdgeConnectClientUpdate(edgeConnectClient *edgeconnectmock.Client, f
 			edgeconnectClient.ListResponse{
 				EdgeConnects: []edgeconnectClient.GetResponse{
 					{
-						ID:                         testCreatedId,
+						ID:                         testCreatedID,
 						Name:                       testName,
 						HostPatterns:               fromHostPatterns,
-						OauthClientId:              testOauthClientId,
+						OauthClientID:              testOauthClientID,
 						ManagedByDynatraceOperator: true,
 					},
 				},
@@ -953,18 +953,18 @@ func mockNewEdgeConnectClientUpdate(edgeConnectClient *edgeconnectmock.Client, f
 			nil,
 		)
 
-		edgeConnectClient.On("GetEdgeConnect", testCreatedId).Return(
+		edgeConnectClient.On("GetEdgeConnect", testCreatedID).Return(
 			edgeconnectClient.GetResponse{
-				ID:            testCreatedId,
+				ID:            testCreatedID,
 				Name:          testName,
 				HostPatterns:  fromHostPatterns,
-				OauthClientId: testOauthClientId,
+				OauthClientID: testOauthClientID,
 			},
 			nil,
 		)
 
 		// CreateEdgeConnect creates edge connect
-		edgeConnectClient.On("UpdateEdgeConnect", testCreatedId, edgeconnectClient.NewRequest(testName, toHostPatterns, testHostMappings, testCreatedOauthClientId)).Return(nil)
+		edgeConnectClient.On("UpdateEdgeConnect", testCreatedID, edgeconnectClient.NewRequest(testName, toHostPatterns, testHostMappings, testCreatedOauthClientID)).Return(nil)
 
 		edgeConnectClient.On("GetConnectionSettings").Return([]edgeconnectClient.EnvironmentSetting{testEnvironmentSetting}, nil)
 		edgeConnectClient.On("UpdateConnectionSetting", mock.Anything).Return(nil)
@@ -982,7 +982,7 @@ func createEdgeConnectProvisionerCR(finalizers []string, deletionTimestamp *meta
 			DeletionTimestamp: deletionTimestamp,
 		},
 		Spec: edgeconnect.EdgeConnectSpec{
-			ApiServer: "abc12345.dynatrace.com",
+			APIServer: "abc12345.dynatrace.com",
 			OAuth: edgeconnect.OAuthSpec{
 				ClientSecret: testName + "client",
 				Provisioner:  true,

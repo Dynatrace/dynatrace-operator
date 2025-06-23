@@ -53,7 +53,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		commHosts := []dtclient.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
-			Protocol: protocolHttps,
+			Protocol: protocolHTTPS,
 		}}
 		result := buildVirtualService(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts)
 
@@ -83,7 +83,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		commHosts := []dtclient.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
-			Protocol: protocolHttp,
+			Protocol: protocolHTTP,
 		}}
 		result := buildVirtualService(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts)
 
@@ -93,19 +93,19 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		commHosts := []dtclient.CommunicationHost{{
 			Host:     "42.42.42.42",
 			Port:     testPort,
-			Protocol: protocolHttp,
+			Protocol: protocolHTTP,
 		}}
 		assert.Nil(t, buildVirtualService(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts))
 	})
 }
 
 func TestBuildVirtualServiceHttpRoute(t *testing.T) {
-	expected := buildExpectedVirtualServiceHttpRoute(t)
-	result := buildVirtualServiceHttpRoute(testHost1, testPort1)
+	expected := buildExpectedVirtualServiceHTTPRoute(t)
+	result := buildVirtualServiceHTTPRoute(testHost1, testPort1)
 
 	assert.True(t, reflect.DeepEqual(expected, result))
 
-	result = buildVirtualServiceHttpRoute(testHost2, testPort2)
+	result = buildVirtualServiceHTTPRoute(testHost2, testPort2)
 
 	assert.False(t, reflect.DeepEqual(expected, result))
 }
@@ -123,36 +123,36 @@ func TestVirtualServiceTLSRoute(t *testing.T) {
 
 func TestBuildVirtualServiceSpec(t *testing.T) {
 	t.Run(`is http route correctly set if protocol is "http"`, func(t *testing.T) {
-		expected := buildExpectedVirtualServiceSpecHttp(t)
+		expected := buildExpectedVirtualServiceSpecHTTP(t)
 		result := buildVirtualServiceSpec([]dtclient.CommunicationHost{
-			{Host: testHost1, Port: testPort1, Protocol: protocolHttp},
+			{Host: testHost1, Port: testPort1, Protocol: protocolHTTP},
 		})
 
 		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
 		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
-			{Host: testHost2, Port: testPort2, Protocol: protocolHttp},
+			{Host: testHost2, Port: testPort2, Protocol: protocolHTTP},
 		})
 
 		assert.False(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 	})
 	t.Run(`is TLS route correctly set if protocol is "https"`, func(t *testing.T) {
-		expected := buildExpectedVirtualServiceSpecTls(t)
+		expected := buildExpectedVirtualServiceSpecTLS(t)
 		result := buildVirtualServiceSpec([]dtclient.CommunicationHost{
-			{Host: testHost1, Port: testPort1, Protocol: protocolHttps},
+			{Host: testHost1, Port: testPort1, Protocol: protocolHTTPS},
 		})
 
 		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
 		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
-			{Host: testHost2, Port: testPort2, Protocol: protocolHttps},
+			{Host: testHost2, Port: testPort2, Protocol: protocolHTTPS},
 		})
 
 		assert.False(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 	})
 }
 
-func buildExpectedVirtualServiceHttpRoute(_ *testing.T) *istio.HTTPRoute {
+func buildExpectedVirtualServiceHTTPRoute(_ *testing.T) *istio.HTTPRoute {
 	return &istio.HTTPRoute{
 		Match: []*istio.HTTPMatchRequest{{
 			Port: testPort1,
@@ -185,14 +185,14 @@ func buildExpectedVirtualServiceTLSRoute(_ *testing.T) *istio.TLSRoute {
 	}
 }
 
-func buildExpectedVirtualServiceSpecHttp(t *testing.T) istio.VirtualService {
+func buildExpectedVirtualServiceSpecHTTP(t *testing.T) istio.VirtualService {
 	return istio.VirtualService{
 		Hosts: []string{testHost1},
-		Http:  []*istio.HTTPRoute{buildExpectedVirtualServiceHttpRoute(t)},
+		Http:  []*istio.HTTPRoute{buildExpectedVirtualServiceHTTPRoute(t)},
 	}
 }
 
-func buildExpectedVirtualServiceSpecTls(t *testing.T) istio.VirtualService {
+func buildExpectedVirtualServiceSpecTLS(t *testing.T) istio.VirtualService {
 	return istio.VirtualService{
 		Hosts: []string{testHost1},
 		Tls:   []*istio.TLSRoute{buildExpectedVirtualServiceTLSRoute(t)},

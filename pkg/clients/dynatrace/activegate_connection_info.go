@@ -18,7 +18,7 @@ type ActiveGateConnectionInfo struct {
 	ConnectionInfo
 }
 
-type activeGateConnectionInfoJsonResponse struct {
+type activeGateConnectionInfoJSONResponse struct {
 	TenantUUID             string `json:"tenantUUID"`
 	TenantToken            string `json:"tenantToken"`
 	CommunicationEndpoints string `json:"communicationEndpoints"`
@@ -27,7 +27,7 @@ type activeGateConnectionInfoJsonResponse struct {
 func (dtc *dynatraceClient) GetActiveGateConnectionInfo(ctx context.Context) (ActiveGateConnectionInfo, error) {
 	response, err := dtc.makeRequest(
 		ctx,
-		dtc.getActiveGateConnectionInfoUrl(),
+		dtc.getActiveGateConnectionInfoURL(),
 		dynatracePaaSToken,
 	)
 	defer utils.CloseBodyAfterRequest(response)
@@ -54,7 +54,7 @@ func (dtc *dynatraceClient) GetActiveGateConnectionInfo(ctx context.Context) (Ac
 }
 
 func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte) (ActiveGateConnectionInfo, error) {
-	resp := activeGateConnectionInfoJsonResponse{}
+	resp := activeGateConnectionInfoJSONResponse{}
 
 	err := json.Unmarshal(response, &resp)
 	if err != nil {

@@ -28,8 +28,8 @@ const (
 	proxyPassword          = "secretValue"
 	proxyPort              = "1020"
 	proxyHost              = "proxyserver.net"
-	proxyHttpScheme        = "http"
-	proxyHttpsScheme       = "https"
+	proxyHTTPScheme        = "http"
+	proxyHTTPSScheme       = "https"
 	proxyDifferentUsername = "differentUsername"
 )
 
@@ -158,7 +158,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	testClient := fake.NewFakeClient()
 
 	t.Run(`reconcile proxy Value - no scheme, no username`, func(t *testing.T) {
-		var proxyValue = buildProxyUrl("", "", "", proxyHost, proxyPort)
+		var proxyValue = buildProxyURL("", "", "", proxyHost, proxyPort)
 
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
@@ -171,10 +171,10 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Empty(t, proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy Value - no scheme, with username`, func(t *testing.T) {
-		var proxyValue = buildProxyUrl("", proxyUsername, proxyPassword, proxyHost, proxyPort)
+		var proxyValue = buildProxyURL("", proxyUsername, proxyPassword, proxyHost, proxyPort)
 
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
@@ -187,10 +187,10 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy Value - http scheme, no username`, func(t *testing.T) {
-		var proxyValue = buildProxyUrl(proxyHttpScheme, "", "", proxyHost, proxyPort)
+		var proxyValue = buildProxyURL(proxyHTTPScheme, "", "", proxyHost, proxyPort)
 
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
@@ -203,10 +203,10 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Empty(t, proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy Value - https scheme, no username`, func(t *testing.T) {
-		var proxyValue = buildProxyUrl(proxyHttpsScheme, "", "", proxyHost, proxyPort)
+		var proxyValue = buildProxyURL(proxyHTTPSScheme, "", "", proxyHost, proxyPort)
 
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
@@ -219,10 +219,10 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Empty(t, proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpsScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPSScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy Value - http scheme`, func(t *testing.T) {
-		var proxyValue = buildProxyUrl(proxyHttpScheme, proxyUsername, proxyPassword, proxyHost, proxyPort)
+		var proxyValue = buildProxyURL(proxyHTTPScheme, proxyUsername, proxyPassword, proxyHost, proxyPort)
 
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
@@ -235,10 +235,10 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy Value - https scheme`, func(t *testing.T) {
-		var proxyValue = buildProxyUrl("https", proxyUsername, proxyPassword, proxyHost, proxyPort)
+		var proxyValue = buildProxyURL("https", proxyUsername, proxyPassword, proxyHost, proxyPort)
 
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: proxyValue}))
 		err := r.Reconcile(context.Background())
@@ -251,7 +251,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpsScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPSScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile empty proxy Value`, func(t *testing.T) {
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{Value: ""}))
@@ -270,9 +270,9 @@ func TestReconcileProxyValue(t *testing.T) {
 }
 
 func TestReconcileProxyValueFrom(t *testing.T) {
-	var proxyUrl = buildProxyUrl(proxyHttpScheme, proxyUsername, proxyPassword, proxyHost, proxyPort)
+	var proxyURL = buildProxyURL(proxyHTTPScheme, proxyUsername, proxyPassword, proxyHost, proxyPort)
 
-	var testClient = fake.NewClientBuilder().WithObjects(createProxySecret(proxyUrl)).Build()
+	var testClient = fake.NewClientBuilder().WithObjects(createProxySecret(proxyURL)).Build()
 
 	t.Run(`reconcile proxy ValueFrom`, func(t *testing.T) {
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{ValueFrom: customProxySecret}))
@@ -286,7 +286,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`Change of Proxy ValueFrom to Value`, func(t *testing.T) {
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{ValueFrom: customProxySecret}))
@@ -301,10 +301,10 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPScheme), proxySecret.Data[schemeField])
 
 		r.(*Reconciler).dk.Spec.Proxy.ValueFrom = ""
-		r.(*Reconciler).dk.Spec.Proxy.Value = buildProxyUrl(proxyHttpScheme, proxyDifferentUsername, proxyPassword, proxyHost, proxyPort)
+		r.(*Reconciler).dk.Spec.Proxy.Value = buildProxyURL(proxyHTTPScheme, proxyDifferentUsername, proxyPassword, proxyHost, proxyPort)
 		err = r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -315,7 +315,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[portField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[hostField])
 		assert.Equal(t, []byte(proxyDifferentUsername), proxySecret.Data[usernameField])
-		assert.Equal(t, []byte(proxyHttpScheme), proxySecret.Data[schemeField])
+		assert.Equal(t, []byte(proxyHTTPScheme), proxySecret.Data[schemeField])
 	})
 	t.Run(`reconcile proxy ValueFrom with non existing secret`, func(t *testing.T) {
 		r := newTestReconcilerWithCustomDynaKube(testClient, createDynaKubeWithProxy(&value.Source{ValueFrom: "secret"}))
@@ -325,17 +325,17 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 	})
 }
 
-func createProxySecret(proxyUrl string) *corev1.Secret {
+func createProxySecret(proxyURL string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      customProxySecret,
 			Namespace: testNamespace,
 		},
-		Data: map[string][]byte{dynakube.ProxyKey: []byte(proxyUrl)},
+		Data: map[string][]byte{dynakube.ProxyKey: []byte(proxyURL)},
 	}
 }
 
-func buildProxyUrl(scheme string, username string, password string, host string, port string) string {
+func buildProxyURL(scheme string, username string, password string, host string, port string) string {
 	url := ""
 	if scheme != "" {
 		url = scheme + "://"

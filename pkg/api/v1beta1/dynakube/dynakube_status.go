@@ -31,7 +31,7 @@ type DynaKubeStatus struct { //nolint:revive
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
 	// Observed state of Dynatrace API
-	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
+	DynatraceAPI DynatraceAPIStatus `json:"dynatraceApi,omitempty"`
 
 	// LastTokenProbeTimestamp tracks when the last request for the API token validity was sent
 	// +kubebuilder:deprecatedversion:warning="Use DynatraceApiStatus.LastTokenScopeRequest instead"
@@ -47,7 +47,7 @@ type DynaKubeStatus struct { //nolint:revive
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type DynatraceApiStatus struct {
+type DynatraceAPIStatus struct {
 	// Time of the last token request
 	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
 }

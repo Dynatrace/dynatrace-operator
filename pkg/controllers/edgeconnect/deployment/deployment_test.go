@@ -27,7 +27,7 @@ func TestNew(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "abc12345.dynatrace.com",
+				APIServer: "abc12345.dynatrace.com",
 			},
 			Status: edgeconnect.EdgeConnectStatus{
 				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
@@ -47,7 +47,7 @@ func Test_buildAppLabels(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: edgeconnect.EdgeConnectSpec{
-			ApiServer: "abc12345.dynatrace.com",
+			APIServer: "abc12345.dynatrace.com",
 			OAuth: edgeconnect.OAuthSpec{
 				ClientSecret: "secret-name",
 				Endpoint:     "https://test.com/sso/oauth2/token",
@@ -201,7 +201,7 @@ func Test_prepareResourceRequirements(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: edgeconnect.EdgeConnectSpec{
-			ApiServer: "abc12345.dynatrace.com",
+			APIServer: "abc12345.dynatrace.com",
 			OAuth: edgeconnect.OAuthSpec{
 				ClientSecret: "secret-name",
 				Endpoint:     "https://test.com/sso/oauth2/token",

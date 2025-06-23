@@ -11,7 +11,7 @@ import (
 const (
 	errorExtensionExecutionControllerImageNotSpecified       = `DynaKube's specification enables the Prometheus feature, make sure you correctly specify the ExtensionExecutionController image.`
 	errorExtensionExecutionControllerInvalidPVCConfiguration = `DynaKube specifies a PVC for the extension controller while ephemeral volume is also enabled. These settings are mutually exclusive, please choose only one.`
-	warningConflictingApiUrlForExtensions                    = `You are already using a Dynakube ('%s') that enables extensions. Having multiple Dynakubes with same '.spec.apiUrl' and '.spec.extensions' enabled can have severe side-effects on “sum” and “count” metrics and cause double-billing.`
+	warningConflictingAPIURLForExtensions                    = `You are already using a Dynakube ('%s') that enables extensions. Having multiple Dynakubes with same '.spec.apiUrl' and '.spec.extensions' enabled can have severe side-effects on “sum” and “count” metrics and cause double-billing.`
 )
 
 func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -28,7 +28,7 @@ func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 	return ""
 }
 
-func conflictingApiUrlForExtensions(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func conflictingAPIURLForExtensions(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
 	if !dk.IsExtensionsEnabled() {
 		return ""
 	}
@@ -45,8 +45,8 @@ func conflictingApiUrlForExtensions(ctx context.Context, dv *Validator, dk *dyna
 			continue
 		}
 
-		if item.IsExtensionsEnabled() && (dk.ApiUrl() == item.ApiUrl()) {
-			return fmt.Sprintf(warningConflictingApiUrlForExtensions, item.Name)
+		if item.IsExtensionsEnabled() && (dk.APIURL() == item.APIURL()) {
+			return fmt.Sprintf(warningConflictingAPIURLForExtensions, item.Name)
 		}
 	}
 

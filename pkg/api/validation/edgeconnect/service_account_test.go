@@ -22,7 +22,7 @@ func TestServiceAccountName(t *testing.T) {
 	t.Run("not set", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
-				ApiServer: "tenant.apps.dynatrace.com",
+				APIServer: "tenant.apps.dynatrace.com",
 			},
 		}
 		assertAllowed(t, ec)

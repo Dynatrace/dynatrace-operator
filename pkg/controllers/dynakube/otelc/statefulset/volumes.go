@@ -15,7 +15,7 @@ const (
 	caCertsVolumeName = "cacerts"
 	agCertVolumeName  = "agcert"
 
-	customTlsCertVolumeName            = "telemetry-ingest-custom-tls"
+	customTLSCertVolumeName            = "telemetry-ingest-custom-tls"
 	extensionsControllerTLSVolumeName  = "extensions-controller-tls"
 	telemetryCollectorConfigVolumeName = "telemetry-collector-config"
 	telemetryCollectorConfigPath       = "/config"
@@ -96,12 +96,12 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			})
 		}
 
-		if dk.TelemetryIngest().Spec.TlsRefName != "" {
+		if dk.TelemetryIngest().Spec.TLSRefName != "" {
 			volumes = append(volumes, corev1.Volume{
-				Name: customTlsCertVolumeName,
+				Name: customTLSCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.TelemetryIngest().Spec.TlsRefName,
+						SecretName: dk.TelemetryIngest().Spec.TLSRefName,
 						Items: []corev1.KeyToPath{
 							{
 								Key:  consts.TLSCrtDataName,
@@ -168,10 +168,10 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			})
 		}
 
-		if dk.TelemetryIngest().Spec.TlsRefName != "" {
+		if dk.TelemetryIngest().Spec.TLSRefName != "" {
 			vm = append(vm, corev1.VolumeMount{
-				Name:      customTlsCertVolumeName,
-				MountPath: otelcconsts.CustomTlsCertMountPath,
+				Name:      customTLSCertVolumeName,
+				MountPath: otelcconsts.CustomTLSCertMountPath,
 				ReadOnly:  true,
 			})
 		}

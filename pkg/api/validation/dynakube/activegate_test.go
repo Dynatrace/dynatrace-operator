@@ -17,7 +17,7 @@ func TestDuplicateActiveGateCapabilities(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
@@ -36,7 +36,7 @@ func TestInvalidActiveGateCapabilities(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							"invalid-capability",
@@ -53,7 +53,7 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
@@ -70,7 +70,7 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
@@ -94,7 +94,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						UseEphemeralVolume:  false,
 						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},
@@ -107,7 +107,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						UseEphemeralVolume: true,
 					},
@@ -120,7 +120,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
+					APIURL:     testAPIURL,
 					Extensions: &dynakube.ExtensionsSpec{},
 					ActiveGate: activegate.Spec{
 						UseEphemeralVolume:  true,

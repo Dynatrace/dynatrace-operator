@@ -431,12 +431,12 @@ func (_c *Client_GetAgentVersions_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
-// GetAgentViaInstallerUrl provides a mock function with given fields: ctx, url, writer
-func (_m *Client) GetAgentViaInstallerUrl(ctx context.Context, url string, writer io.Writer) error {
+// GetAgentViaInstallerURL provides a mock function with given fields: ctx, url, writer
+func (_m *Client) GetAgentViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
 	ret := _m.Called(ctx, url, writer)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAgentViaInstallerUrl")
+		panic("no return value specified for GetAgentViaInstallerURL")
 	}
 
 	var r0 error
@@ -449,32 +449,32 @@ func (_m *Client) GetAgentViaInstallerUrl(ctx context.Context, url string, write
 	return r0
 }
 
-// Client_GetAgentViaInstallerUrl_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAgentViaInstallerUrl'
-type Client_GetAgentViaInstallerUrl_Call struct {
+// Client_GetAgentViaInstallerURL_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAgentViaInstallerURL'
+type Client_GetAgentViaInstallerURL_Call struct {
 	*mock.Call
 }
 
-// GetAgentViaInstallerUrl is a helper method to define mock.On call
+// GetAgentViaInstallerURL is a helper method to define mock.On call
 //   - ctx context.Context
 //   - url string
 //   - writer io.Writer
-func (_e *Client_Expecter) GetAgentViaInstallerUrl(ctx interface{}, url interface{}, writer interface{}) *Client_GetAgentViaInstallerUrl_Call {
-	return &Client_GetAgentViaInstallerUrl_Call{Call: _e.mock.On("GetAgentViaInstallerUrl", ctx, url, writer)}
+func (_e *Client_Expecter) GetAgentViaInstallerURL(ctx interface{}, url interface{}, writer interface{}) *Client_GetAgentViaInstallerURL_Call {
+	return &Client_GetAgentViaInstallerURL_Call{Call: _e.mock.On("GetAgentViaInstallerURL", ctx, url, writer)}
 }
 
-func (_c *Client_GetAgentViaInstallerUrl_Call) Run(run func(ctx context.Context, url string, writer io.Writer)) *Client_GetAgentViaInstallerUrl_Call {
+func (_c *Client_GetAgentViaInstallerURL_Call) Run(run func(ctx context.Context, url string, writer io.Writer)) *Client_GetAgentViaInstallerURL_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(io.Writer))
 	})
 	return _c
 }
 
-func (_c *Client_GetAgentViaInstallerUrl_Call) Return(_a0 error) *Client_GetAgentViaInstallerUrl_Call {
+func (_c *Client_GetAgentViaInstallerURL_Call) Return(_a0 error) *Client_GetAgentViaInstallerURL_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Client_GetAgentViaInstallerUrl_Call) RunAndReturn(run func(context.Context, string, io.Writer) error) *Client_GetAgentViaInstallerUrl_Call {
+func (_c *Client_GetAgentViaInstallerURL_Call) RunAndReturn(run func(context.Context, string, io.Writer) error) *Client_GetAgentViaInstallerURL_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1165,9 +1165,9 @@ func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
-// GetSettingsForMonitoredEntity provides a mock function with given fields: ctx, monitoredEntity, schemaId
-func (_m *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *dynatrace.MonitoredEntity, schemaId string) (dynatrace.GetSettingsResponse, error) {
-	ret := _m.Called(ctx, monitoredEntity, schemaId)
+// GetSettingsForMonitoredEntity provides a mock function with given fields: ctx, monitoredEntity, schemaID
+func (_m *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *dynatrace.MonitoredEntity, schemaID string) (dynatrace.GetSettingsResponse, error) {
+	ret := _m.Called(ctx, monitoredEntity, schemaID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSettingsForMonitoredEntity")
@@ -1176,16 +1176,16 @@ func (_m *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEn
 	var r0 dynatrace.GetSettingsResponse
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *dynatrace.MonitoredEntity, string) (dynatrace.GetSettingsResponse, error)); ok {
-		return rf(ctx, monitoredEntity, schemaId)
+		return rf(ctx, monitoredEntity, schemaID)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, *dynatrace.MonitoredEntity, string) dynatrace.GetSettingsResponse); ok {
-		r0 = rf(ctx, monitoredEntity, schemaId)
+		r0 = rf(ctx, monitoredEntity, schemaID)
 	} else {
 		r0 = ret.Get(0).(dynatrace.GetSettingsResponse)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, *dynatrace.MonitoredEntity, string) error); ok {
-		r1 = rf(ctx, monitoredEntity, schemaId)
+		r1 = rf(ctx, monitoredEntity, schemaID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1201,12 +1201,12 @@ type Client_GetSettingsForMonitoredEntity_Call struct {
 // GetSettingsForMonitoredEntity is a helper method to define mock.On call
 //   - ctx context.Context
 //   - monitoredEntity *dynatrace.MonitoredEntity
-//   - schemaId string
-func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx interface{}, monitoredEntity interface{}, schemaId interface{}) *Client_GetSettingsForMonitoredEntity_Call {
-	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, monitoredEntity, schemaId)}
+//   - schemaID string
+func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx interface{}, monitoredEntity interface{}, schemaID interface{}) *Client_GetSettingsForMonitoredEntity_Call {
+	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, monitoredEntity, schemaID)}
 }
 
-func (_c *Client_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context.Context, monitoredEntity *dynatrace.MonitoredEntity, schemaId string)) *Client_GetSettingsForMonitoredEntity_Call {
+func (_c *Client_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context.Context, monitoredEntity *dynatrace.MonitoredEntity, schemaID string)) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*dynatrace.MonitoredEntity), args[2].(string))
 	})

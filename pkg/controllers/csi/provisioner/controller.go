@@ -77,7 +77,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		fs:                     fs,
 		path:                   path,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
-		urlInstallerBuilder:    url.NewUrlInstaller,
+		urlInstallerBuilder:    url.NewURLInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
 		jobInstallerBuilder:    job.NewInstaller,
 		cleaner:                cleanup.New(afero.Afero{Fs: fs}, mgr.GetAPIReader(), path, mount.New("")),

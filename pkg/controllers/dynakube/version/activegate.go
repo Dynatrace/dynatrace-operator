@@ -82,7 +82,7 @@ func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
 func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
 	imageInfo, err := updater.dtClient.GetLatestActiveGateImage(ctx)
 	if err != nil {
-		conditions.SetDynatraceApiError(updater.dk.Conditions(), activeGateVersionConditionType, err)
+		conditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
 	}
 
 	return imageInfo, err
@@ -96,7 +96,7 @@ func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	latestVersion, err := updater.dtClient.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
-		conditions.SetDynatraceApiError(updater.dk.Conditions(), activeGateVersionConditionType, err)
+		conditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
 
 		return err
 	}

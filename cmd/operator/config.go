@@ -8,7 +8,7 @@ const (
 	metricsBindAddress     = ":8080"
 	healthProbeBindAddress = ":10080"
 
-	leaderElectionId                  = "dynatrace-operator-lock"
+	leaderElectionID                  = "dynatrace-operator-lock"
 	leaderElectionResourceLock        = "leases"
 	leaderElectionEnvVarRenewDeadline = "LEADER_ELECTION_RENEW_DEADLINE"
 	leaderElectionEnvVarRetryPeriod   = "LEADER_ELECTION_RETRY_PERIOD"
