@@ -1,0 +1,23 @@
+name: Upload
+description: uploads
+inputs:
+  image:
+    description: image
+    required: true
+  sbom:
+    description: sbom
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: image
+      shell: bash
+      run: |
+        echo ${{ inputs.sbom }} ${{ inputs.image }}
+    - name: image env
+      shell: bash
+      run: |
+        echo "${SBOM}" "${IMAGE}"
+      env:
+        SBOM: ${{ inputs.sbom }}
+        IMAGE: ${{ inputs.image }}
