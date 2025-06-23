@@ -39,7 +39,7 @@ func addWorkloadEnrichmentVolume(pod *corev1.Pod) {
 
 func setupVolumeMountsForUserContainer(container *corev1.Container) {
 	addWorkloadEnrichmentVolumeMount(container, consts.EnrichmentPropertiesFilename, fmt.Sprintf(consts.EnrichmentInitPropertiesFilenameTemplate, container.Name))
-	addWorkloadEnrichmentVolumeMount(container, consts.EnrichmentJsonFilename, fmt.Sprintf(consts.EnrichmentInitJsonFilenameTemplate, container.Name))
+	addWorkloadEnrichmentVolumeMount(container, consts.EnrichmentJSONFilename, fmt.Sprintf(consts.EnrichmentInitJSONFilenameTemplate, container.Name))
 	addEnrichmentEndpointVolumeMount(container)
 }
 

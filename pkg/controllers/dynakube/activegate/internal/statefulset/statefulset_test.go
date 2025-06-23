@@ -373,16 +373,16 @@ func TestBuildCommonEnvs(t *testing.T) {
 		require.NotNil(t, capEnv)
 		assert.Equal(t, multiCapability.ArgName(), capEnv.Value)
 
-		namespaceEnv := env.FindEnvVar(envs, consts.EnvDtIdSeedNamespace)
+		namespaceEnv := env.FindEnvVar(envs, consts.EnvDtIDSeedNamespace)
 		require.NotNil(t, namespaceEnv)
 		assert.Equal(t, dk.Namespace, namespaceEnv.Value)
 
-		idEnv := env.FindEnvVar(envs, consts.EnvDtIdSeedClusterId)
+		idEnv := env.FindEnvVar(envs, consts.EnvDtIDSeedClusterID)
 		require.NotNil(t, idEnv)
 		assert.Equal(t, testKubeUID, idEnv.Value)
 
-		dtHttpPortEnv := env.FindEnvVar(envs, consts.EnvDtHttpPort)
-		require.NotNil(t, dtHttpPortEnv)
+		dtHTTPPortEnv := env.FindEnvVar(envs, consts.EnvDtHTTPPort)
+		require.NotNil(t, dtHTTPPortEnv)
 
 		metadataEnv := env.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
@@ -452,9 +452,9 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		dtHttpPortEnv := env.FindEnvVar(envs, consts.EnvDtHttpPort)
-		require.NotNil(t, dtHttpPortEnv)
-		assert.Equal(t, strconv.Itoa(consts.HttpContainerPort), dtHttpPortEnv.Value)
+		dtHTTPPortEnv := env.FindEnvVar(envs, consts.EnvDtHTTPPort)
+		require.NotNil(t, dtHTTPPortEnv)
+		assert.Equal(t, strconv.Itoa(consts.HTTPContainerPort), dtHTTPPortEnv.Value)
 	})
 
 	t.Run("adds group env", func(t *testing.T) {

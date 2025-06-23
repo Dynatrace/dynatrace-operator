@@ -38,7 +38,7 @@ func Feature(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []componentDynakube.Option{
-		componentDynakube.WithApiUrl(secretConfig.ApiUrl),
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 		componentDynakube.WithLogMonitoring(),
 		componentDynakube.WithLogMonitoringImageRefSpec(consts.LogMonitoringImageRepo, consts.LogMonitoringImageTag),

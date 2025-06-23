@@ -518,7 +518,7 @@ func getTestComplexDynakube() *dynakube.DynaKube {
 	dk.Spec.NetworkZone = "test-network-zone"
 	dk.Spec.ActiveGate = activegate.Spec{
 		Capabilities:  []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
-		TlsSecretName: "super-secret",
+		TLSSecretName: "super-secret",
 	}
 	dk.Annotations = map[string]string{
 		exp.OAInitialConnectRetryKey:          "5",

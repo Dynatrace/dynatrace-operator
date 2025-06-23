@@ -23,8 +23,8 @@ func (builder *dtclientBuilder) createClient() (dtclient.Client, error) {
 	builder.setOptions()
 
 	client, err := dtclient.NewClient(
-		builder.config.ApiUrl,
-		builder.config.ApiToken,
+		builder.config.APIURL,
+		builder.config.APIToken,
 		builder.config.PaasToken,
 		builder.options...,
 	)

@@ -172,7 +172,7 @@ func edgeConnectCreateServerHandler(errorBadRequest bool) http.HandlerFunc {
 					ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
 					Name:          "InternalServices",
 					HostPatterns:  []string{"*.internal.org"},
-					OauthClientId: "dt0s02.example",
+					OauthClientID: "dt0s02.example",
 					ModificationInfo: ModificationInfo{
 						LastModifiedBy:   "72ece475-e4d5-4774-afed-65d04e8c9f24",
 						LastModifiedTime: nil,
@@ -221,7 +221,7 @@ func edgeConnectGetServerHandler() http.HandlerFunc {
 				ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
 				Name:          "InternalServices",
 				HostPatterns:  []string{"*.internal.org"},
-				OauthClientId: "dt0s02.example",
+				OauthClientID: "dt0s02.example",
 				ModificationInfo: ModificationInfo{
 					LastModifiedBy:   "72ece475-e4d5-4774-afed-65d04e8c9f24",
 					LastModifiedTime: nil,

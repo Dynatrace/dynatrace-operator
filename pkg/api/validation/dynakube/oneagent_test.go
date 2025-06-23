@@ -17,7 +17,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: nil,
 					HostMonitoring:   nil,
@@ -28,7 +28,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{},
 					HostMonitoring:   nil,
@@ -39,7 +39,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: nil,
 					HostMonitoring:   &oneagent.HostInjectSpec{},
@@ -53,7 +53,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ClassicFullStack: &oneagent.HostInjectSpec{},
 						HostMonitoring:   &oneagent.HostInjectSpec{},
@@ -66,7 +66,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 						HostMonitoring:        &oneagent.HostInjectSpec{},
@@ -103,7 +103,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						HostMonitoring: &oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
@@ -119,7 +119,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						HostMonitoring: &oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
@@ -138,7 +138,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 							HostInjectSpec: oneagent.HostInjectSpec{
@@ -153,7 +153,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						HostMonitoring: &oneagent.HostInjectSpec{
 							NodeSelector: map[string]string{
@@ -277,7 +277,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -296,7 +296,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 		assertDenied(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -321,7 +321,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -346,7 +346,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -368,7 +368,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{},
@@ -388,7 +388,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{},
@@ -414,7 +414,7 @@ func createDynakube(oaEnvVar ...string) *dynakube.DynaKube {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 					HostInjectSpec: oneagent.HostInjectSpec{
@@ -491,7 +491,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ClassicFullStack: &oneagent.HostInjectSpec{
 							Args: []string{"--set-host-group=arg"},
@@ -506,7 +506,7 @@ func TestOneAgentHostGroup(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						HostMonitoring: &oneagent.HostInjectSpec{
 							Args: []string{"--set-host-group=arg"},
@@ -522,7 +522,7 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 	return &dynakube.DynaKube{
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 					HostInjectSpec: oneagent.HostInjectSpec{
@@ -539,7 +539,7 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 	dk := dynakube.DynaKube{
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
 				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
@@ -590,7 +590,7 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						HostMonitoring: &oneagent.HostInjectSpec{
 							Image: "test/image/test-image:some-tag",
@@ -605,7 +605,7 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						HostMonitoring: &oneagent.HostInjectSpec{},
 					},
@@ -616,7 +616,7 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{
 						Image: "test/image/test-image:some-tag",
@@ -630,7 +630,7 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
 						Image: "test/image/test-image:some-tag",
@@ -643,7 +643,7 @@ func TestPublicImageSetWithReadOnlyMode(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
 						Image: "test/image/test-image:some-tag",
@@ -751,7 +751,7 @@ func TestOneAgentArguments(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 							HostInjectSpec: oneagent.HostInjectSpec{
@@ -786,7 +786,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 							HostInjectSpec: oneagent.HostInjectSpec{
@@ -799,7 +799,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 					},
 				},
 			},
-			expectedError: errorHostIdSourceArgumentInCloudNative,
+			expectedError: errorHostIDSourceArgumentInCloudNative,
 		},
 		{
 			testName: "no host id source argument in cloud native full stack",
@@ -809,7 +809,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 							HostInjectSpec: oneagent.HostInjectSpec{
@@ -831,7 +831,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						HostMonitoring: &oneagent.HostInjectSpec{
 							Args: []string{

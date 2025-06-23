@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DefaultHttpPort = uint32(80)
+	DefaultHTTPPort = uint32(80)
 )
 
 func GetEndpointsAsCommunicationHosts(dk *dynakube.DynaKube) []dtclient.CommunicationHost {
@@ -51,7 +51,7 @@ func parseEndpointToCommunicationHost(endpointString string) (dtclient.Communica
 		return dtclient.CommunicationHost{}, err
 	}
 
-	port, err := getPortOrDefault(parsedEndpoint, DefaultHttpPort)
+	port, err := getPortOrDefault(parsedEndpoint, DefaultHTTPPort)
 	if err != nil {
 		return dtclient.CommunicationHost{}, err
 	}

@@ -29,7 +29,7 @@ func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
 		return nil, err
 	}
 
-	err = reader.verifyApiTokenExists(tokens)
+	err = reader.verifyAPITokenExists(tokens)
 	if err != nil {
 		return nil, err
 	}
@@ -59,10 +59,10 @@ func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
 	return result, nil
 }
 
-func (reader Reader) verifyApiTokenExists(tokens Tokens) error {
-	apiToken, hasApiToken := tokens[dtclient.ApiToken]
+func (reader Reader) verifyAPITokenExists(tokens Tokens) error {
+	apiToken, hasAPIToken := tokens[dtclient.APIToken]
 
-	if !hasApiToken || len(apiToken.Value) == 0 {
+	if !hasAPIToken || len(apiToken.Value) == 0 {
 		return errors.New(fmt.Sprintf("the API token is missing from the token secret '%s:%s'", reader.dk.Namespace, reader.dk.Tokens()))
 	}
 

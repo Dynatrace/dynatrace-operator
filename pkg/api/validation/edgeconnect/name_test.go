@@ -47,7 +47,7 @@ func TestNameTooLong(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: edgeconnect.EdgeConnectSpec{
-					ApiServer: "id." + allowedSuffix[0],
+					APIServer: "id." + allowedSuffix[0],
 				},
 			}
 			if test.allow {

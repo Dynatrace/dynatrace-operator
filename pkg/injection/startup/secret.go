@@ -14,8 +14,8 @@ import (
 type SecretConfig struct {
 	MonitoringNodes map[string]string `json:"monitoringNodes"`
 	// For the client
-	ApiUrl      string `json:"apiUrl"`
-	ApiToken    string `json:"apiToken"`
+	APIURL      string `json:"apiUrl"`
+	APIToken    string `json:"apiToken"`
 	PaasToken   string `json:"paasToken"`
 	Proxy       string `json:"proxy"`
 	NoProxy     string `json:"noProxy"`
@@ -38,8 +38,8 @@ type SecretConfig struct {
 
 func (secret SecretConfig) logContent() {
 	const asterisks = "***"
-	if secret.ApiToken != "" {
-		secret.ApiToken = asterisks
+	if secret.APIToken != "" {
+		secret.APIToken = asterisks
 	}
 
 	if secret.PaasToken != "" {
@@ -60,14 +60,14 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	}
 	defer file.Close()
 
-	rawJson, err := io.ReadAll(file)
+	rawJSON, err := io.ReadAll(file)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	var config SecretConfig
 
-	err = json.Unmarshal(rawJson, &config)
+	err = json.Unmarshal(rawJSON, &config)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -37,7 +37,7 @@ const (
 )
 
 type CSIOptions struct {
-	NodeId   string
+	NodeID   string
 	Endpoint string
 	RootDir  string
 }

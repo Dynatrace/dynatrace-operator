@@ -34,7 +34,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 				dtclient.TokenScopeSettingsWrite},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.ActiveGate().IsKubernetesMonitoringEnabled() &&
-					dk.FF().IsAutomaticK8sApiMonitoring()
+					dk.FF().IsAutomaticK8sAPIMonitoring()
 			},
 		},
 		{

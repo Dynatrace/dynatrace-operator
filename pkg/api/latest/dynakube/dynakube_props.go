@@ -29,23 +29,23 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations)
 }
 
-// ApiUrl is a getter for dk.Spec.APIURL.
-func (dk *DynaKube) ApiUrl() string {
+// APIURL is a getter for dk.Spec.APIURL.
+func (dk *DynaKube) APIURL() string {
 	return dk.Spec.APIURL
 }
 
 func (dk *DynaKube) Conditions() *[]metav1.Condition { return &dk.Status.Conditions }
 
-// ApiUrlHost returns the host of dk.Spec.APIURL
+// APIURLHost returns the host of dk.Spec.APIURL
 // E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
 // If the URL cannot be parsed, it returns an empty string.
-func (dk *DynaKube) ApiUrlHost() string {
-	parsedUrl, err := url.Parse(dk.ApiUrl())
+func (dk *DynaKube) APIURLHost() string {
+	parsedURL, err := url.Parse(dk.APIURL())
 	if err != nil {
 		return ""
 	}
 
-	return parsedUrl.Host
+	return parsedURL.Host
 }
 
 // PullSecretName returns the name of the pull secret to be used for immutable images.
@@ -99,18 +99,18 @@ func (dk *DynaKube) TenantUUID() (string, error) {
 	return "", errors.New("tenant UUID not available")
 }
 
-func (dk *DynaKube) GetDynatraceApiRequestThreshold() uint16 {
-	if dk.Spec.DynatraceApiRequestThreshold == nil {
+func (dk *DynaKube) GetDynatraceAPIRequestThreshold() uint16 {
+	if dk.Spec.DynatraceAPIRequestThreshold == nil {
 		return DefaultMinRequestThresholdMinutes
 	}
 
-	return *dk.Spec.DynatraceApiRequestThreshold
+	return *dk.Spec.DynatraceAPIRequestThreshold
 }
 
-func (dk *DynaKube) ApiRequestThreshold() time.Duration {
-	return time.Duration(dk.GetDynatraceApiRequestThreshold()) * time.Minute
+func (dk *DynaKube) APIRequestThreshold() time.Duration {
+	return time.Duration(dk.GetDynatraceAPIRequestThreshold()) * time.Minute
 }
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.ApiRequestThreshold())
+	return timeProvider.IsOutdated(&dk.Status.DynatraceAPI.LastTokenScopeRequest, dk.APIRequestThreshold())
 }

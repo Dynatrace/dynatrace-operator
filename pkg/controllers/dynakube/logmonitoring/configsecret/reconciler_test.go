@@ -111,7 +111,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
 		condition := meta.FindStatusCondition(*dk.Conditions(), LmcConditionType)
-		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
@@ -131,7 +131,7 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 		serverKey + "=" + fmt.Sprintf("{%s}", dk.Status.OneAgent.ConnectionInfoStatus.Endpoints),
 		tenantKey + "=" + tenantUUID,
 		tenantTokenKey + "=" + tokenValue,
-		hostIdSourceKey + "=k8s-node-name",
+		hostIDSourceKey + "=k8s-node-name",
 	}
 
 	split := strings.Split(strings.Trim(string(deploymentConfig), "\n"), "\n")

@@ -58,7 +58,7 @@ const (
 
 	testNamespaceDynatrace = "dynatrace"
 
-	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
+	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
 )
 
 func TestReconciler(t *testing.T) {
@@ -88,7 +88,7 @@ func TestReconciler(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -114,7 +114,7 @@ func TestReconciler(t *testing.T) {
 			clientNotInjectedNamespace(testNamespace, testDynakube),
 			clientNotInjectedNamespace(testNamespace2, testDynakube2),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.ApiToken:  []byte(testAPIToken),
+				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			dk,
@@ -157,7 +157,7 @@ func TestReconciler(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:      testApiUrl,
+				APIURL:      testAPIURL,
 				EnableIstio: true,
 			},
 		}
@@ -172,7 +172,7 @@ func TestReconciler(t *testing.T) {
 			clientSecret(consts.AgentInitSecretName, testNamespace, nil),
 			clientSecret(consts.AgentInitSecretName, testNamespace2, nil),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.ApiToken:  []byte(testAPIToken),
+				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			dk,
@@ -225,7 +225,7 @@ func TestReconciler(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{
@@ -352,7 +352,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		var config startup.SecretConfig
 		err = json.Unmarshal(secret.Data["config"], &config)
 		require.NoError(t, err)
-		assert.Equal(t, testAPIToken, config.ApiToken)
+		assert.Equal(t, testAPIToken, config.APIToken)
 		assert.Equal(t, testPaasToken, config.PaasToken)
 
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
@@ -378,7 +378,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		var config startup.SecretConfig
 		err = json.Unmarshal(secret.Data["config"], &config)
 		require.NoError(t, err)
-		assert.Equal(t, testAPIToken, config.ApiToken)
+		assert.Equal(t, testAPIToken, config.APIToken)
 		assert.Equal(t, testPaasToken, config.PaasToken)
 
 		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
@@ -464,7 +464,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 	}
 
 	tokenSecret := clientSecret(dkBase.Name, dkBase.Namespace, map[string][]byte{
-		dtclient.ApiToken:  []byte("testAPIToken"),
+		dtclient.APIToken:  []byte("testAPIToken"),
 		dtclient.PaasToken: []byte("testPaasToken"),
 	})
 
@@ -490,7 +490,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	})
 
 	t.Run("default 2 == no node-image-pull + no csi enabled => only init-secret", func(t *testing.T) {
@@ -513,13 +513,16 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	})
 
 	t.Run("node-image-pull + csi enabled => both init-secret and bootstrapper-secret", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
 		dk.Annotations = map[string]string{
 			exp.OANodeImagePullKey: "true",
+		}
+		dk.Spec.OneAgent = oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		}
 
 		clt := fake.NewClientWithIndex(
@@ -542,7 +545,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			assertSecretFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	})
 
 	t.Run("node-image-pull + csi not enabled => only bootstrapper-secret", func(t *testing.T) {
@@ -551,6 +554,9 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		dk := dkBase.DeepCopy()
 		dk.Annotations = map[string]string{
 			exp.OANodeImagePullKey: "true",
+		}
+		dk.Spec.OneAgent = oneagent.Spec{
+			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		}
 
 		clt := fake.NewClientWithIndex(
@@ -573,7 +579,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			assertSecretFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	})
 }
 
@@ -601,7 +607,7 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 			clientSecret(consts.AgentInitSecretName, namespaces[1].Name, nil),
 			clientSecret(consts.BootstrapperInitSecretName, namespaces[0].Name, nil),
 			clientSecret(consts.BootstrapperInitSecretName, namespaces[1].Name, nil),
-			clientSecret(bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace, nil),
+			clientSecret(bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace, nil),
 			dk,
 			namespaces[0], namespaces[1],
 		)
@@ -614,7 +620,7 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
-		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceSecretName(dk.Name), dk.Namespace)
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 
 		assert.Empty(t, dk.Conditions())
 	})
@@ -637,7 +643,7 @@ func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace 
 				Namespace: dynakubeNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL:      testApiUrl,
+				APIURL:      testAPIURL,
 				OneAgent:    oneAgentSpec,
 				EnableIstio: true,
 			},
@@ -666,7 +672,7 @@ func clientOneAgentInjection() client.Client {
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientInjectedNamespace(testNamespace2, testDynakube2),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			dtclient.ApiToken:  []byte(testAPIToken),
+			dtclient.APIToken:  []byte(testAPIToken),
 			dtclient.PaasToken: []byte(testPaasToken),
 		}),
 	)
@@ -676,7 +682,7 @@ func clientBootstrapperConfigInjection() client.Client {
 	return fake.NewClientWithIndex(
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			dtclient.ApiToken:  []byte(testAPIToken),
+			dtclient.APIToken:  []byte(testAPIToken),
 			dtclient.PaasToken: []byte(testPaasToken),
 		}),
 		clientSecret("test-dynakube-oneagent-tenant-secret", testNamespaceDynatrace, map[string][]byte{
@@ -690,7 +696,7 @@ func clientEnrichmentInjection() client.Client {
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientInjectedNamespace(testNamespace2, testDynakube2),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			dtclient.ApiToken:        []byte(testAPIToken),
+			dtclient.APIToken:        []byte(testAPIToken),
 			dtclient.PaasToken:       []byte(testPaasToken),
 			dtclient.DataIngestToken: []byte(testDataIngestToken),
 		}),

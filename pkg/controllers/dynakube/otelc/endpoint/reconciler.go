@@ -37,20 +37,20 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.dk.TelemetryIngest().IsEnabled() {
-		return r.ensureOtlpApiEndpointConfigMap(ctx)
+		return r.ensureOtlpAPIEndpointConfigMap(ctx)
 	}
 
-	return r.removeOtlpApiEndpointConfigMap(ctx)
+	return r.removeOtlpAPIEndpointConfigMap(ctx)
 }
 
-func (r *Reconciler) ensureOtlpApiEndpointConfigMap(ctx context.Context) error {
+func (r *Reconciler) ensureOtlpAPIEndpointConfigMap(ctx context.Context) error {
 	query := k8sconfigmap.Query(r.client, r.apiReader, log)
-	_, err := query.Get(ctx, types.NamespacedName{Name: consts.OtlpApiEndpointConfigMapName, Namespace: r.dk.Namespace})
+	_, err := query.Get(ctx, types.NamespacedName{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: r.dk.Namespace})
 
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new config map for telemetry api endpoint")
 
-		configMap, err := r.generateOtlpApiEndpointConfigMap(consts.OtlpApiEndpointConfigMapName)
+		configMap, err := r.generateOtlpAPIEndpointConfigMap(consts.OtlpAPIEndpointConfigMapName)
 
 		if err != nil {
 			conditions.SetConfigMapGenFailed(r.dk.Conditions(), configMapConditionType, err)
@@ -68,14 +68,14 @@ func (r *Reconciler) ensureOtlpApiEndpointConfigMap(ctx context.Context) error {
 		err = query.Create(ctx, configMap)
 		if err != nil {
 			log.Info("could not create secret for telemetry api credentials", "name", configMap.Name)
-			conditions.SetKubeApiError(r.dk.Conditions(), configMapConditionType, err)
+			conditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)
 
 			return err
 		}
 
-		conditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), configMapConditionType, consts.OtlpApiEndpointConfigMapName)
+		conditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), configMapConditionType, consts.OtlpAPIEndpointConfigMapName)
 	} else if err != nil {
-		conditions.SetKubeApiError(r.dk.Conditions(), configMapConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)
 
 		return err
 	}
@@ -95,10 +95,10 @@ func (r *Reconciler) getDtEndpoint() (string, error) {
 		return fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFQDN, tenantUUID), nil
 	}
 
-	return r.dk.ApiUrl() + "/v2/otlp", nil
+	return r.dk.APIURL() + "/v2/otlp", nil
 }
 
-func (r *Reconciler) generateOtlpApiEndpointConfigMap(name string) (secret *corev1.ConfigMap, err error) {
+func (r *Reconciler) generateOtlpAPIEndpointConfigMap(name string) (secret *corev1.ConfigMap, err error) {
 	data := make(map[string]string)
 
 	dtEndpoint, err := r.getDtEndpoint()
@@ -121,16 +121,16 @@ func (r *Reconciler) generateOtlpApiEndpointConfigMap(name string) (secret *core
 	return configMap, nil
 }
 
-func (r *Reconciler) removeOtlpApiEndpointConfigMap(ctx context.Context) error {
+func (r *Reconciler) removeOtlpAPIEndpointConfigMap(ctx context.Context) error {
 	if meta.FindStatusCondition(*r.dk.Conditions(), configMapConditionType) == nil {
 		return nil // no condition == nothing is there to clean up
 	}
 
 	query := k8sconfigmap.Query(r.client, r.apiReader, log)
-	err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: consts.OtlpApiEndpointConfigMapName, Namespace: r.dk.Namespace}})
+	err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: r.dk.Namespace}})
 
 	if err != nil {
-		log.Error(err, "could not delete apiEndpoint config map", "name", consts.OtlpApiEndpointConfigMapName)
+		log.Error(err, "could not delete apiEndpoint config map", "name", consts.OtlpAPIEndpointConfigMapName)
 	}
 
 	meta.RemoveStatusCondition(r.dk.Conditions(), configMapConditionType)

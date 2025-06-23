@@ -41,7 +41,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
-			dtclient.ApiToken: &token.Token{Value: testValue},
+			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -63,7 +63,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := errorClient{}
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
-			dtclient.ApiToken: &token.Token{Value: testValue},
+			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -81,7 +81,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := errorClient{}
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
-			dtclient.ApiToken: &token.Token{Value: testValue},
+			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -92,7 +92,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		fakeErrorClient := errorClient{}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeErrorClient, fakeClient, dk, token.Tokens{
-			dtclient.ApiToken: &token.Token{Value: testValue},
+			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -118,7 +118,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
-			dtclient.ApiToken: &token.Token{Value: testValue},
+			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -142,7 +142,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
-			dtclient.ApiToken: &token.Token{Value: testValue},
+			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -181,7 +181,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
-			dtclient.ApiToken: &token.Token{Value: testValue},
+			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -216,7 +216,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
-			dtclient.ApiToken: &token.Token{Value: testValue},
+			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -251,7 +251,7 @@ func createTestDynakube() *dynakube.DynaKube {
 			Name:      testName,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:   testApiUrl,
+			APIURL:   testAPIURL,
 			OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
 		},
 	})

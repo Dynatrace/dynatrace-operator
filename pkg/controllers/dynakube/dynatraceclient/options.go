@@ -56,12 +56,12 @@ func (opts *options) appendProxySettings(apiReader client.Reader, dk *dynakube.D
 func (opts *options) createProxyOption(apiReader client.Reader, dk *dynakube.DynaKube) (dtclient.Option, error) {
 	var proxyOption dtclient.Option
 
-	proxyUrl, err := dk.Proxy(opts.ctx, apiReader)
+	proxyURL, err := dk.Proxy(opts.ctx, apiReader)
 	if err != nil {
 		return proxyOption, err
 	}
 
-	proxyOption = dtclient.Proxy(proxyUrl, dk.FF().GetNoProxy())
+	proxyOption = dtclient.Proxy(proxyURL, dk.FF().GetNoProxy())
 
 	return proxyOption, nil
 }

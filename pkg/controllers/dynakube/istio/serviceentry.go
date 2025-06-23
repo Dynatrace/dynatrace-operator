@@ -13,7 +13,7 @@ import (
 const (
 	ignoredSubdomain = "ignored.subdomain"
 	subnetMask       = "/32"
-	protocolTcp      = "TCP"
+	protocolTCP      = "TCP"
 )
 
 func BuildNameForIPServiceEntry(ownerName, component string) string {
@@ -68,9 +68,9 @@ func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []dtclient.Communica
 
 		if !portSet[commHost.Port] {
 			ports = append(ports, &istio.ServicePort{
-				Name:     protocolTcp + "-" + portStr,
+				Name:     protocolTCP + "-" + portStr,
 				Number:   commHost.Port,
-				Protocol: protocolTcp,
+				Protocol: protocolTCP,
 			})
 			portSet[commHost.Port] = true
 		}

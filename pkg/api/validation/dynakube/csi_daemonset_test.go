@@ -18,7 +18,7 @@ func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: *objectMeta,
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
@@ -32,7 +32,7 @@ func TestDisabledCSIForReadonlyCSIVolume(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: *objectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ClassicFullStack: &oneagent.HostInjectSpec{},
 					},

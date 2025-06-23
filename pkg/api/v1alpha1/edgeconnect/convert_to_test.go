@@ -193,7 +193,7 @@ func toAreSpecsEqual(t *testing.T, src *EdgeConnectSpec, dst *edgeconnect.EdgeCo
 
 	assert.True(t, reflect.DeepEqual(src.ImageRef.Tag, dst.ImageRef.Tag), "ImageRef.Tag")
 
-	assert.True(t, reflect.DeepEqual(src.ApiServer, dst.ApiServer), "ApiServer")
+	assert.True(t, reflect.DeepEqual(src.ApiServer, dst.APIServer), "ApiServer")
 
 	assert.True(t, reflect.DeepEqual(strings.Split(src.HostRestrictions, ","), dst.HostRestrictions), "HostRestrictions")
 

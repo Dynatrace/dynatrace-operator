@@ -23,9 +23,9 @@ import (
 type Properties struct {
 	CSIJob       csijob.Settings
 	Owner        client.Object
-	ApiReader    client.Reader
+	APIReader    client.Reader
 	Client       client.Client
-	ImageUri     string
+	ImageURI     string
 	PathResolver metadata.PathResolver
 	PullSecrets  []string
 }
@@ -45,7 +45,7 @@ type Installer struct {
 }
 
 func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
-	log.Info("installing agent via Job", "image", inst.props.ImageUri, "target dir", targetDir)
+	log.Info("installing agent via Job", "image", inst.props.ImageURI, "target dir", targetDir)
 
 	err := inst.fs.MkdirAll(inst.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
@@ -78,7 +78,7 @@ func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool
 
 func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (bool, error) {
 	if inst.isAlreadyPresent(targetDir) {
-		log.Info("agent already installed", "image", inst.props.ImageUri, "target dir", targetDir)
+		log.Info("agent already installed", "image", inst.props.ImageURI, "target dir", targetDir)
 
 		_ = inst.fs.RemoveAll(inst.props.PathResolver.AgentJobWorkDirForJob(jobName))
 
@@ -117,5 +117,5 @@ func (inst *Installer) isAlreadyPresent(targetDir string) bool {
 }
 
 func (inst *Installer) query() jobutil.QueryObject {
-	return jobutil.Query(inst.props.Client, inst.props.ApiReader, log)
+	return jobutil.Query(inst.props.Client, inst.props.APIReader, log)
 }

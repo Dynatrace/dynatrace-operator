@@ -97,7 +97,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
-		assert.Equal(t, conditions.KubeApiErrorReason, condition.Reason)
+		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }

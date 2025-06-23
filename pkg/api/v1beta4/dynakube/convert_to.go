@@ -40,7 +40,7 @@ func (src *DynaKube) toBase(dst *dynakubelatest.DynaKube) {
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
 
 	dst.Spec.Proxy = src.Spec.Proxy
-	dst.Spec.DynatraceApiRequestThreshold = src.Spec.DynatraceApiRequestThreshold
+	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold
 	dst.Spec.APIURL = src.Spec.APIURL
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
@@ -149,7 +149,7 @@ func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubela
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
-	dst.TlsRefName = src.TlsRefName
+	dst.TLSRefName = src.TLSRefName
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints
@@ -164,7 +164,7 @@ func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) dynakub
 	dst.Labels = src.Labels
 	dst.Annotations = src.Annotations
 	dst.ImageRef = src.ImageRef
-	dst.TlsRefName = src.TlsRefName
+	dst.TLSRefName = src.TLSRefName
 	dst.CustomConfig = src.CustomConfig
 	dst.CustomExtensionCertificates = src.CustomExtensionCertificates
 	dst.Resources = src.Resources
@@ -177,7 +177,7 @@ func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) dynakub
 
 func (src *DynaKube) toActiveGateSpec(dst *dynakubelatest.DynaKube) { //nolint:dupl
 	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
-	dst.Spec.ActiveGate.TlsSecretName = src.Spec.ActiveGate.TlsSecretName
+	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TLSSecretName
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
 	dst.Spec.ActiveGate.VolumeClaimTemplate = src.Spec.ActiveGate.PersistentVolumeClaim
@@ -218,8 +218,8 @@ func (src *DynaKube) toStatus(dst *dynakubelatest.DynaKube) {
 
 	dst.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
-	dst.Status.DynatraceApi = dynakubelatest.DynatraceApiStatus{
-		LastTokenScopeRequest: src.Status.DynatraceApi.LastTokenScopeRequest,
+	dst.Status.DynatraceAPI = dynakubelatest.DynatraceAPIStatus{
+		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
@@ -301,7 +301,7 @@ func (src *DynaKube) toTelemetryIngestSpec(dst *dynakubelatest.DynaKube) {
 		dst.Spec.TelemetryIngest = &telemetryingestlatest.Spec{}
 		dst.Spec.TelemetryIngest.Protocols = src.Spec.TelemetryIngest.Protocols
 		dst.Spec.TelemetryIngest.ServiceName = src.Spec.TelemetryIngest.ServiceName
-		dst.Spec.TelemetryIngest.TlsRefName = src.Spec.TelemetryIngest.TlsRefName
+		dst.Spec.TelemetryIngest.TLSRefName = src.Spec.TelemetryIngest.TLSRefName
 	} else {
 		dst.Spec.TelemetryIngest = nil
 	}

@@ -12,7 +12,7 @@ func (dtc *dynatraceClient) GetLatestActiveGateVersion(ctx context.Context, os s
 		LatestGatewayVersion string `json:"latestGatewayVersion"`
 	}{}
 
-	url := dtc.getLatestActiveGateVersionUrl(os)
+	url := dtc.getLatestActiveGateVersionURL(os)
 	err := dtc.makeRequestAndUnmarshal(ctx, url, dynatracePaaSToken, &response)
 
 	return response.LatestGatewayVersion, errors.WithStack(err)

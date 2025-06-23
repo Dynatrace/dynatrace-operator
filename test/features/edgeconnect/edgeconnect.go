@@ -44,10 +44,10 @@ func NormalModeFeature(t *testing.T) features.Feature {
 	testEdgeConnect := *ecComponents.New(
 		// this tenantConfigName should match with tenant edgeConnect tenantConfigName
 		ecComponents.WithName(testECname),
-		ecComponents.WithApiServer(secretConfig.ApiServer),
+		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
 		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
-		ecComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUid)),
+		ecComponents.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUID)),
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
@@ -80,7 +80,7 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 	testEdgeConnect := *ecComponents.New(
 		// this tenantConfigName should match with tenant edge connect tenantConfigName
 		ecComponents.WithName(testECname),
-		ecComponents.WithApiServer(secretConfig.ApiServer),
+		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
 		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		ecComponents.WithOAuthResource(secretConfig.Resource),
@@ -123,7 +123,7 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 	testEdgeConnect := *ecComponents.New(
 		// this tenantConfigName should match with tenant edge connect tenantConfigName
 		ecComponents.WithName(testECname),
-		ecComponents.WithApiServer(secretConfig.ApiServer),
+		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
 		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		ecComponents.WithOAuthResource(secretConfig.Resource),

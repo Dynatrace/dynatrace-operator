@@ -2,21 +2,21 @@ package dynatrace
 
 import "fmt"
 
-func (dtc *dynatraceClient) getAgentUrl(os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool) string {
+func (dtc *dynatraceClient) getAgentURL(os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool) string {
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&bitness=64&skipMetadata=%t",
 		dtc.url, os, installerType, version, flavor, arch, skipMetadata)
 
 	return appendTechnologies(url, technologies)
 }
 
-func (dtc *dynatraceClient) getLatestAgentUrl(os, installerType, flavor, arch string, technologies []string, skipMetadata bool) string {
+func (dtc *dynatraceClient) getLatestAgentURL(os, installerType, flavor, arch string, technologies []string, skipMetadata bool) string {
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s&skipMetadata=%t",
 		dtc.url, os, installerType, flavor, arch, skipMetadata)
 
 	return appendTechnologies(url, technologies)
 }
 
-func (dtc *dynatraceClient) getLatestAgentVersionUrl(os, installerType, flavor, arch string) string {
+func (dtc *dynatraceClient) getLatestAgentVersionURL(os, installerType, flavor, arch string) string {
 	if arch != "" {
 		return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
 			dtc.url, os, installerType, flavor, arch)
@@ -26,12 +26,12 @@ func (dtc *dynatraceClient) getLatestAgentVersionUrl(os, installerType, flavor, 
 		dtc.url, os, installerType, flavor)
 }
 
-func (dtc *dynatraceClient) getLatestActiveGateVersionUrl(os string) string {
+func (dtc *dynatraceClient) getLatestActiveGateVersionURL(os string) string {
 	return fmt.Sprintf("%s/v1/deployment/installer/gateway/%s/latest/metainfo",
 		dtc.url, os)
 }
 
-func (dtc *dynatraceClient) getAgentVersionsUrl(os, installerType, flavor, arch string) string {
+func (dtc *dynatraceClient) getAgentVersionsURL(os, installerType, flavor, arch string) string {
 	if arch != "" {
 		return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s&arch=%s",
 			dtc.url, os, installerType, flavor, arch)
@@ -41,7 +41,7 @@ func (dtc *dynatraceClient) getAgentVersionsUrl(os, installerType, flavor, arch 
 		dtc.url, os, installerType, flavor)
 }
 
-func (dtc *dynatraceClient) getOneAgentConnectionInfoUrl() string {
+func (dtc *dynatraceClient) getOneAgentConnectionInfoURL() string {
 	if dtc.networkZone != "" {
 		return fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo?networkZone=%s&defaultZoneFallback=true", dtc.url, dtc.networkZone)
 	}
@@ -49,15 +49,15 @@ func (dtc *dynatraceClient) getOneAgentConnectionInfoUrl() string {
 	return dtc.url + "/v1/deployment/installer/agent/connectioninfo"
 }
 
-func (dtc *dynatraceClient) getActiveGateConnectionInfoUrl() string {
+func (dtc *dynatraceClient) getActiveGateConnectionInfoURL() string {
 	return dtc.url + "/v1/deployment/installer/gateway/connectioninfo"
 }
 
-func (dtc *dynatraceClient) getEntitiesUrl() string {
+func (dtc *dynatraceClient) getEntitiesURL() string {
 	return dtc.url + "/v2/entities"
 }
 
-func (dtc *dynatraceClient) getSettingsUrl(validate bool) string {
+func (dtc *dynatraceClient) getSettingsURL(validate bool) string {
 	validationQuery := ""
 	if !validate {
 		validationQuery = "?validateOnly=false"
@@ -66,7 +66,7 @@ func (dtc *dynatraceClient) getSettingsUrl(validate bool) string {
 	return fmt.Sprintf("%s/v2/settings/objects%s", dtc.url, validationQuery)
 }
 
-func (dtc *dynatraceClient) getEffectiveSettingsUrl(validate bool) string {
+func (dtc *dynatraceClient) getEffectiveSettingsURL(validate bool) string {
 	validationQuery := ""
 	if !validate {
 		validationQuery = "?validateOnly=false"
@@ -75,27 +75,27 @@ func (dtc *dynatraceClient) getEffectiveSettingsUrl(validate bool) string {
 	return fmt.Sprintf("%s/v2/settings/effectiveValues%s", dtc.url, validationQuery)
 }
 
-func (dtc *dynatraceClient) getProcessModuleConfigUrl() string {
+func (dtc *dynatraceClient) getProcessModuleConfigURL() string {
 	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
 }
 
-func (dtc *dynatraceClient) getTokensLookupUrl() string {
+func (dtc *dynatraceClient) getTokensLookupURL() string {
 	return dtc.url + "/v2/apiTokens/lookup"
 }
 
-func (dtc *dynatraceClient) getActiveGateAuthTokenUrl() string {
+func (dtc *dynatraceClient) getActiveGateAuthTokenURL() string {
 	return dtc.url + "/v2/activeGateTokens"
 }
 
-func (dtc *dynatraceClient) getLatestOneAgentImageUrl() string {
+func (dtc *dynatraceClient) getLatestOneAgentImageURL() string {
 	return dtc.url + "/v1/deployment/image/agent/oneAgent/latest"
 }
 
-func (dtc *dynatraceClient) getLatestCodeModulesImageUrl() string {
+func (dtc *dynatraceClient) getLatestCodeModulesImageURL() string {
 	return dtc.url + "/v1/deployment/image/agent/codeModules/latest"
 }
 
-func (dtc *dynatraceClient) getLatestActiveGateImageUrl() string {
+func (dtc *dynatraceClient) getLatestActiveGateImageURL() string {
 	return dtc.url + "/v1/deployment/image/gateway/latest"
 }
 

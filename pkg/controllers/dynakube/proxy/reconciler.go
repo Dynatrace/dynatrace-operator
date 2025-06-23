@@ -93,12 +93,12 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) 
 		}, nil
 	}
 
-	proxyUrl, err := dk.Proxy(ctx, r.apiReader)
+	proxyURL, err := dk.Proxy(ctx, r.apiReader)
 	if err != nil {
 		return nil, err
 	}
 
-	scheme, host, port, username, password, err := parseProxyUrl(proxyUrl)
+	scheme, host, port, username, password, err := parseProxyURL(proxyURL)
 	if err != nil {
 		return nil, err
 	}
@@ -112,21 +112,21 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) 
 	}, nil
 }
 
-func parseProxyUrl(proxy string) (scheme, host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 6
+func parseProxyURL(proxy string) (scheme, host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 6
 	if !strings.HasPrefix(strings.ToLower(proxy), "http://") && !strings.HasPrefix(strings.ToLower(proxy), "https://") {
 		log.Info("proxy url has no scheme. The default 'http://' scheme used")
 
 		proxy = "http://" + proxy
 	}
 
-	proxyUrl, err := url.Parse(proxy)
+	proxyURL, err := url.Parse(proxy)
 	if err != nil {
 		return "", "", "", "", "", errors.New("could not parse proxy URL")
 	}
 
-	passwd, _ := proxyUrl.User.Password()
+	passwd, _ := proxyURL.User.Password()
 
-	return proxyUrl.Scheme, proxyUrl.Hostname(), proxyUrl.Port(), proxyUrl.User.Username(), passwd, nil
+	return proxyURL.Scheme, proxyURL.Hostname(), proxyURL.Port(), proxyURL.User.Username(), passwd, nil
 }
 
 func BuildSecretName(dynakubeName string) string {

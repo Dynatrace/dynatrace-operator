@@ -54,7 +54,7 @@ func TestService(t *testing.T) {
 		assert.Equal(t, int32(4317), service.Spec.Ports[0].TargetPort.IntVal)
 		assert.Equal(t, corev1.ProtocolTCP, service.Spec.Ports[0].Protocol)
 
-		assert.Equal(t, otlpHttpPortName, service.Spec.Ports[1].Name)
+		assert.Equal(t, otlpHTTPPortName, service.Spec.Ports[1].Name)
 		assert.Equal(t, int32(4318), service.Spec.Ports[1].Port)
 		assert.Equal(t, int32(4318), service.Spec.Ports[1].TargetPort.IntVal)
 		assert.Equal(t, corev1.ProtocolTCP, service.Spec.Ports[1].Protocol)
@@ -74,7 +74,7 @@ func TestService(t *testing.T) {
 		assert.Equal(t, int32(6831), service.Spec.Ports[4].TargetPort.IntVal)
 		assert.Equal(t, corev1.ProtocolUDP, service.Spec.Ports[4].Protocol)
 
-		assert.Equal(t, jaegerThriftHttpPortName, service.Spec.Ports[5].Name)
+		assert.Equal(t, jaegerThriftHTTPPortName, service.Spec.Ports[5].Name)
 		assert.Equal(t, int32(14268), service.Spec.Ports[5].Port)
 		assert.Equal(t, int32(14268), service.Spec.Ports[5].TargetPort.IntVal)
 		assert.Equal(t, corev1.ProtocolTCP, service.Spec.Ports[5].Protocol)

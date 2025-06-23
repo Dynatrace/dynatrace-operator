@@ -124,7 +124,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &expected[0], KubernetesSettingsSchemaId)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &expected[0], KubernetesSettingsSchemaID)
 
 		// assert
 		require.NoError(t, err)
@@ -147,7 +147,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &expected[0], KubernetesSettingsSchemaId)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &expected[0], KubernetesSettingsSchemaID)
 
 		// assert
 		require.NoError(t, err)
@@ -169,7 +169,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, nil, KubernetesSettingsSchemaId)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, nil, KubernetesSettingsSchemaID)
 
 		// assert
 		require.NoError(t, err)
@@ -192,7 +192,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &entities[0], KubernetesSettingsSchemaId)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &entities[0], KubernetesSettingsSchemaID)
 
 		// assert
 		require.Error(t, err)
@@ -202,7 +202,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 
 func createMonitoredEntitiesForTesting() []MonitoredEntity {
 	return []MonitoredEntity{
-		{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085},
-		{EntityId: "KUBERNETES_CLUSTER-119C75CCDA94799F", DisplayName: "operator test entity 2", LastSeenTms: 1639034988126},
+		{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085},
+		{EntityID: "KUBERNETES_CLUSTER-119C75CCDA94799F", DisplayName: "operator test entity 2", LastSeenTms: 1639034988126},
 	}
 }

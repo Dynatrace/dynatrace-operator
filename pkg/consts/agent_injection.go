@@ -8,14 +8,15 @@ const (
 	AgentInitSecretName                = "dynatrace-dynakube-config"
 	AgentInitSecretConfigField         = "config"
 
-	BootstrapperInitSecretName = "dynatrace-bootstrapper-config"
+	BootstrapperInitSecretName      = "dynatrace-bootstrapper-config"
+	BootstrapperInitCertsSecretName = "dynatrace-bootstrapper-certs"
 
 	LdPreloadFilename = "ld.so.preload"
 	LibAgentProcPath  = "/agent/lib64/liboneagentproc.so"
 
 	AgentCurlOptionsFileName = "curl_options.conf"
 
-	AgentInstallerUrlEnv     = "INSTALLER_URL"
+	AgentInstallerURLEnv     = "INSTALLER_URL"
 	AgentInstallerFlavorEnv  = "FLAVOR"
 	AgentInstallerTechEnv    = "TECHNOLOGIES"
 	AgentInstallerVersionEnv = "VERSION"

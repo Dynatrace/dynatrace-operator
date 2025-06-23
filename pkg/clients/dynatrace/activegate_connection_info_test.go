@@ -20,7 +20,7 @@ const (
 
 func Test_GetActiveGateConnectionInfo(t *testing.T) {
 	ctx := context.Background()
-	activegateJsonResponse := &activeGateConnectionInfoJsonResponse{
+	activegateJSONResponse := &activeGateConnectionInfoJSONResponse{
 		TenantUUID:             testTenantUUID,
 		TenantToken:            testTenantToken,
 		CommunicationEndpoints: testEndpoint,
@@ -34,7 +34,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 	}
 
 	t.Run("no network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJSONResponse), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo(ctx)
@@ -44,7 +44,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
 	})
 	t.Run("with network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "nz")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJSONResponse), "nz")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo(ctx)
@@ -54,7 +54,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
 	})
 	t.Run("with non-existent network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJSONResponse), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo(ctx)
@@ -64,7 +64,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
 	})
 	t.Run("handle malformed json", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(activeGateConnectionInfoEndpoint), "")
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJSON(activeGateConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
 		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo(ctx)
@@ -87,7 +87,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 	})
 }
 
-func tenantMalformedJson(url string) http.HandlerFunc {
+func tenantMalformedJSON(url string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if request.URL.Path == url {
 			writer.Write([]byte("this is not json"))

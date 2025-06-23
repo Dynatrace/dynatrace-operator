@@ -10,14 +10,14 @@ import (
 
 const (
 	TenantSecretSuffix            = "-activegate-tenant-secret"
-	TlsSecretSuffix               = "-activegate-tls-secret"
+	TLSSecretSuffix               = "-activegate-tls-secret"
 	ConnectionInfoConfigMapSuffix = "-activegate-connection-info"
 	AuthTokenSecretSuffix         = "-activegate-authtoken-secret"
 	DefaultImageRegistrySubPath   = "/linux/activegate"
 )
 
-func (ag *Spec) SetApiUrl(apiUrl string) {
-	ag.apiUrl = apiUrl
+func (ag *Spec) SetAPIURL(apiURL string) {
+	ag.apiURL = apiURL
 }
 
 func (ag *Spec) SetName(name string) {
@@ -31,13 +31,13 @@ func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
 }
 
-func (ag *Spec) apiUrlHost() string {
-	parsedUrl, err := url.Parse(ag.apiUrl)
+func (ag *Spec) apiURLHost() string {
+	parsedURL, err := url.Parse(ag.apiURL)
 	if err != nil {
 		return ""
 	}
 
-	return parsedUrl.Host
+	return parsedURL.Host
 }
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -84,20 +84,20 @@ func (ag *Spec) IsRoutingEnabled() bool {
 	return ag.IsMode(RoutingCapability.DisplayName)
 }
 
-func (ag *Spec) IsApiEnabled() bool {
-	return ag.IsMode(DynatraceApiCapability.DisplayName)
+func (ag *Spec) IsAPIEnabled() bool {
+	return ag.IsMode(DynatraceAPICapability.DisplayName)
 }
 
 func (ag *Spec) IsMetricsIngestEnabled() bool {
 	return ag.IsMode(MetricsIngestCapability.DisplayName)
 }
 
-func (ag *Spec) IsAutomaticTlsSecretEnabled() bool {
+func (ag *Spec) IsAutomaticTLSSecretEnabled() bool {
 	return ag.automaticTLSCertificateEnabled
 }
 
 func (ag *Spec) HasCaCert() bool {
-	return ag.IsEnabled() && (ag.TlsSecretName != "" || ag.IsAutomaticTlsSecretEnabled())
+	return ag.IsEnabled() && (ag.TLSSecretName != "" || ag.IsAutomaticTLSSecretEnabled())
 }
 
 // GetTenantSecretName returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
@@ -112,12 +112,12 @@ func (ag *Spec) GetAuthTokenSecretName() string {
 
 // GetTLSSecretName returns the name of the AG TLS secret.
 func (ag *Spec) GetTLSSecretName() string {
-	if ag.TlsSecretName != "" {
-		return ag.TlsSecretName
+	if ag.TLSSecretName != "" {
+		return ag.TLSSecretName
 	}
 
-	if ag.IsAutomaticTlsSecretEnabled() {
-		return ag.name + TlsSecretSuffix
+	if ag.IsAutomaticTLSSecretEnabled() {
+		return ag.name + TLSSecretSuffix
 	}
 
 	return ""
@@ -130,8 +130,8 @@ func (ag *Spec) GetConnectionInfoConfigMapName() string {
 // GetDefaultImage provides the image reference for the ActiveGate from tenant registry.
 // Format: repo:tag.
 func (ag *Spec) GetDefaultImage(version string) string {
-	apiUrlHost := ag.apiUrlHost()
-	if apiUrlHost == "" {
+	apiURLHost := ag.apiURLHost()
+	if apiURLHost == "" {
 		return ""
 	}
 
@@ -142,7 +142,7 @@ func (ag *Spec) GetDefaultImage(version string) string {
 		tag += "-" + api.RawTag
 	}
 
-	return apiUrlHost + DefaultImageRegistrySubPath + ":" + tag
+	return apiURLHost + DefaultImageRegistrySubPath + ":" + tag
 }
 
 // CustomActiveGateImage provides the image reference for the ActiveGate provided in the Spec.

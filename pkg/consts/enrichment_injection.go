@@ -11,9 +11,9 @@ const (
 
 	EnrichmentMountPath          = "/var/lib/dynatrace/enrichment"
 	EnrichmentPropertiesFilename = "dt_metadata.properties"
-	EnrichmentJsonFilename       = "dt_metadata.json"
+	EnrichmentJSONFilename       = "dt_metadata.json"
 
 	EnrichmentInitPath                       = "/tmp/enrichment"
 	EnrichmentInitPropertiesFilenameTemplate = "dt_metadata_%s.properties"
-	EnrichmentInitJsonFilenameTemplate       = "dt_metadata_%s.json"
+	EnrichmentInitJSONFilenameTemplate       = "dt_metadata_%s.json"
 )

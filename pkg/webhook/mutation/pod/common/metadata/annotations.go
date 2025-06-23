@@ -16,7 +16,7 @@ func CopyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk d
 	maps.Copy(copiedCustomRuleAnnotations, copiedPrefixAnnotations)
 
 	copiedCustomRuleAnnotations = removeMetadataPrefix(copiedCustomRuleAnnotations)
-	setPodMetadataJsonAnnotation(pod, copiedCustomRuleAnnotations)
+	setPodMetadataJSONAnnotation(pod, copiedCustomRuleAnnotations)
 
 	return copiedCustomRuleAnnotations
 }
@@ -67,7 +67,7 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 	return copiedAnnotations
 }
 
-func setPodMetadataJsonAnnotation(pod *corev1.Pod, annotations map[string]string) {
+func setPodMetadataJSONAnnotation(pod *corev1.Pod, annotations map[string]string) {
 	marshaledAnnotations, err := json.Marshal(annotations)
 
 	if err != nil {

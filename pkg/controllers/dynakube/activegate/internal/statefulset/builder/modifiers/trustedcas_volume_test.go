@@ -11,17 +11,17 @@ func TestTrustedCAsVolumeEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dk := getBaseDynakube()
 		enableKubeMonCapability(&dk)
-		dk.Spec.TrustedCAs = testTlsSecretName
+		dk.Spec.TrustedCAs = testTLSSecretName
 
 		mod := NewTrustedCAsVolumeModifier(dk)
 
 		assert.True(t, mod.Enabled())
 	})
 
-	t.Run("false - TlsSecretName", func(t *testing.T) {
+	t.Run("false - TLSSecretName", func(t *testing.T) {
 		dk := getBaseDynakube()
 		enableKubeMonCapability(&dk)
-		dk.Spec.ActiveGate.TlsSecretName = testTlsSecretName
+		dk.Spec.ActiveGate.TLSSecretName = testTLSSecretName
 
 		mod := NewTrustedCAsVolumeModifier(dk)
 
@@ -42,7 +42,7 @@ func TestTrustedCAsVolumeModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
 		enableKubeMonCapability(&dk)
-		dk.Spec.TrustedCAs = testTlsSecretName
+		dk.Spec.TrustedCAs = testTLSSecretName
 
 		mod := NewTrustedCAsVolumeModifier(dk)
 		builder := createBuilderForTesting()

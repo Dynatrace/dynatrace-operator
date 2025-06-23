@@ -19,7 +19,7 @@ func TestTooManyAGReplicas(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -52,7 +52,7 @@ func TestTooManyAGReplicas(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:     testApiUrl,
+					APIURL:     testAPIURL,
 					Kspm:       &kspm.Spec{},
 					ActiveGate: activeGate,
 					Templates: dynakube.TemplatesSpec{
@@ -74,7 +74,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -98,7 +98,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm: &kspm.Spec{
 						MappedHostPaths: []string{"/"},
 					},
@@ -122,11 +122,11 @@ func TestMissingKSPMDependency(t *testing.T) {
 					Name:      testName,
 					Namespace: testNamespace,
 					Annotations: map[string]string{
-						exp.AGAutomaticK8sApiMonitoringKey: "false",
+						exp.AGAutomaticK8sAPIMonitoringKey: "false",
 					},
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm: &kspm.Spec{
 						MappedHostPaths: []string{"/"},
 					},
@@ -154,11 +154,11 @@ func TestMissingKSPMDependency(t *testing.T) {
 					Name:      testName,
 					Namespace: testNamespace,
 					Annotations: map[string]string{
-						exp.AGAutomaticK8sApiMonitoringKey: "false",
+						exp.AGAutomaticK8sAPIMonitoringKey: "false",
 					},
 				},
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm: &kspm.Spec{
 						MappedHostPaths: []string{"/"},
 					},
@@ -182,7 +182,7 @@ func TestMissingKSPMImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -207,7 +207,7 @@ func TestMissingKSPMImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -224,7 +224,7 @@ func TestMissingKSPMImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -248,7 +248,7 @@ func TestMissingKSPMImage(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL: testApiUrl,
+					APIURL: testAPIURL,
 					Kspm:   &kspm.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -275,7 +275,7 @@ func TestMappedHostPath(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				APIURL: testApiUrl,
+				APIURL: testAPIURL,
 				Kspm:   &kspm.Spec{},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{

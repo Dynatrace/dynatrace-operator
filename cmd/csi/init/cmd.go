@@ -22,7 +22,7 @@ import (
 
 const use = "csi-init"
 
-var nodeId, endpoint string
+var nodeID, endpoint string
 
 func New() *cobra.Command {
 	cmd := &cobra.Command{
@@ -49,7 +49,7 @@ func run() func(*cobra.Command, []string) error {
 		signalHandler := ctrl.SetupSignalHandler()
 
 		csiOptions := dtcsi.CSIOptions{
-			NodeId:   nodeId,
+			NodeID:   nodeID,
 			Endpoint: endpoint,
 			RootDir:  dtcsi.DataPath,
 		}

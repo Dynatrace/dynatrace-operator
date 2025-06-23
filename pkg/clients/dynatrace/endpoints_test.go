@@ -31,8 +31,8 @@ func Test_dynatraceClient_getOneAgentConnectionInfoUrl(t *testing.T) {
 				url:         "https://testenvironment.live.dynatrace.com/api",
 				networkZone: tt.networkZone,
 			}
-			if got := dtc.getOneAgentConnectionInfoUrl(); got != tt.want {
-				t.Errorf("dynatraceClient.getOneAgentConnectionInfoUrl() = %v, want %v", got, tt.want)
+			if got := dtc.getOneAgentConnectionInfoURL(); got != tt.want {
+				t.Errorf("dynatraceClient.getOneAgentConnectionInfoURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -63,8 +63,8 @@ func Test_dynatraceClient_getActiveGateConnectionInfoUrl(t *testing.T) {
 				url:         "https://testenvironment.live.dynatrace.com/api",
 				networkZone: tt.networkZone,
 			}
-			if got := dtc.getActiveGateConnectionInfoUrl(); got != tt.want {
-				t.Errorf("dynatraceClient.getActiveGateConnectionInfoUrl() = %v, want %v", got, tt.want)
+			if got := dtc.getActiveGateConnectionInfoURL(); got != tt.want {
+				t.Errorf("dynatraceClient.getActiveGateConnectionInfoURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}

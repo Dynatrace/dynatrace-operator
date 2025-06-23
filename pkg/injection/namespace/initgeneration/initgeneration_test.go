@@ -36,7 +36,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		// setup tokens
 		apiToken := "api-test"
 		paasToken := "paas-test"
-		apiTokenSecret := createApiTokenSecret(dk, apiToken, paasToken)
+		apiTokenSecret := createAPITokenSecret(dk, apiToken, paasToken)
 
 		// add TrustedCA
 		setTrustedCA(dk, "ca-configmap")
@@ -49,10 +49,10 @@ func TestGenerateForNamespace(t *testing.T) {
 		setProxy(dk, proxyValue)
 
 		// add TLS secret
-		setTlsSecret(dk, "tls-test")
+		setTLSSecret(dk, "tls-test")
 
 		tlsValue := "tls-test-value"
-		tlsSecret := createTestTlsSecret(dk, tlsValue)
+		tlsSecret := createTestTLSSecret(dk, tlsValue)
 
 		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClient(dk, testNamespace, apiTokenSecret, getKubeNamespace(), caConfigMap, tlsSecret)
@@ -70,7 +70,7 @@ func TestGenerateForNamespace(t *testing.T) {
 
 		// setup tokens
 		apiToken := "api-test"
-		apiTokenSecret := createApiTokenSecret(dk, apiToken, apiToken)
+		apiTokenSecret := createAPITokenSecret(dk, apiToken, apiToken)
 
 		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClient(dk, testNamespace, apiTokenSecret, getKubeNamespace())
@@ -92,7 +92,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		// setup tokens
 		apiToken := "api-test"
 		paasToken := "paas-test"
-		apiTokenSecret := createApiTokenSecret(dk, apiToken, paasToken)
+		apiTokenSecret := createAPITokenSecret(dk, apiToken, paasToken)
 
 		// add TrustedCA
 		setTrustedCA(dk, "ca-configmap")
@@ -105,10 +105,10 @@ func TestGenerateForDynakube(t *testing.T) {
 		setProxy(dk, proxyValue)
 
 		// add TLS secret
-		setTlsSecret(dk, "tls-test")
+		setTLSSecret(dk, "tls-test")
 
 		tlsValue := "tls-test-value"
-		tlsSecret := createTestTlsSecret(dk, tlsValue)
+		tlsSecret := createTestTLSSecret(dk, tlsValue)
 
 		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret, getKubeNamespace(), caConfigMap, tlsSecret)
@@ -125,7 +125,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		dk := createDynakube()
 		// setup tokens
 		apiToken := "api-test"
-		apiTokenSecret := createApiTokenSecret(dk, apiToken, apiToken)
+		apiTokenSecret := createAPITokenSecret(dk, apiToken, apiToken)
 
 		testNamespace := createTestInjectedNamespace(dk, "test")
 		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret, getKubeNamespace())
@@ -142,7 +142,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		dk := createDynakube()
 		// setup tokens
 		apiToken := "api-test"
-		apiTokenSecret := createApiTokenSecret(dk, apiToken, apiToken)
+		apiTokenSecret := createAPITokenSecret(dk, apiToken, apiToken)
 
 		testNamespace := createTestInjectedNamespace(dk, "test")
 		testOtherNamespace := createTestInjectedNamespace(dk, "test-other")
@@ -219,11 +219,11 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 
 	apiToken := "api-test"
 	paasToken := "paas-test"
-	apiTokenSecret := createApiTokenSecret(baseDynakube, apiToken, paasToken)
+	apiTokenSecret := createAPITokenSecret(baseDynakube, apiToken, paasToken)
 
 	baseExpectedSecretConfig := &startup.SecretConfig{
-		ApiUrl:              baseDynakube.ApiUrl(),
-		ApiToken:            apiToken,
+		APIURL:              baseDynakube.APIURL(),
+		APIToken:            apiToken,
 		PaasToken:           paasToken,
 		TenantUUID:          baseDynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID,
 		Proxy:               "",
@@ -378,12 +378,12 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 
 	t.Run("Create SecretConfig with tlsSecret", func(t *testing.T) {
 		dk := baseDynakube.DeepCopy()
-		setTlsSecret(dk, "tls-test")
+		setTLSSecret(dk, "tls-test")
 		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
 
 		expectedSecretConfig := *baseExpectedSecretConfig
 		tlsValue := "tls-test-value"
-		tlsSecret := createTestTlsSecret(dk, tlsValue)
+		tlsSecret := createTestTLSSecret(dk, tlsValue)
 
 		// since we have ActiveGate we add it by default as noProxy
 		expectedSecretConfig.OneAgentNoProxy = "dynakube-test-activegate.dynatrace-test"
@@ -514,12 +514,12 @@ func setInitialConnectRetry(dk *dynakube.DynaKube, value string) {
 	dk.Annotations[exp.OAInitialConnectRetryKey] = value
 }
 
-func setTlsSecret(dk *dynakube.DynaKube, value string) {
+func setTLSSecret(dk *dynakube.DynaKube, value string) {
 	dk.Spec.ActiveGate = activegate.Spec{
 		Capabilities: []activegate.CapabilityDisplayName{
 			activegate.KubeMonCapability.DisplayName,
 		},
-		TlsSecretName: value,
+		TLSSecretName: value,
 	}
 }
 
@@ -545,9 +545,9 @@ func createTestCaConfigMap(dk *dynakube.DynaKube, value string) *corev1.ConfigMa
 	}
 }
 
-func createTestTlsSecret(dk *dynakube.DynaKube, value string) *corev1.Secret {
+func createTestTLSSecret(dk *dynakube.DynaKube, value string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: dk.Spec.ActiveGate.TlsSecretName, Namespace: dk.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: dk.Spec.ActiveGate.TLSSecretName, Namespace: dk.Namespace},
 		Data:       map[string][]byte{dynakube.TLSCertKey: []byte(value)},
 	}
 }
@@ -558,7 +558,7 @@ func getKubeNamespace() *corev1.Namespace {
 	}
 }
 
-func createApiTokenSecret(dk *dynakube.DynaKube, apiToken, paasToken string) *corev1.Secret {
+func createAPITokenSecret(dk *dynakube.DynaKube, apiToken, paasToken string) *corev1.Secret {
 	tokenSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: dk.Name, Namespace: dk.Namespace},
 		Data:       map[string][]byte{},

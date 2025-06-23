@@ -32,7 +32,7 @@ var (
 		ArgumentName: "metrics_ingest",
 	}
 
-	DynatraceApiCapability = Capability{
+	DynatraceAPICapability = Capability{
 		DisplayName:  "dynatrace-api",
 		ArgumentName: "restInterface",
 	}
@@ -46,7 +46,7 @@ var CapabilityDisplayNames = map[CapabilityDisplayName]struct{}{
 	RoutingCapability.DisplayName:       {},
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
-	DynatraceApiCapability.DisplayName:  {},
+	DynatraceAPICapability.DisplayName:  {},
 	DebuggingCapability.DisplayName:     {},
 }
 
@@ -82,14 +82,14 @@ type Spec struct {
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 
 	name   string
-	apiUrl string
+	apiURL string
 
 	// The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
 	// server.p12: certificate+key pair in pkcs12 format
 	// password: passphrase to read server.p12
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	TlsSecretName string `json:"tlsSecretName,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLSSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	TLSSecretName string `json:"tlsSecretName,omitempty"`
 
 	// Sets DNS Policy for the ActiveGate pods
 	// +kubebuilder:validation:Optional
