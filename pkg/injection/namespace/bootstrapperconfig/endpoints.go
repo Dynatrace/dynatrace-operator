@@ -23,13 +23,13 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 	endpointPropertiesBuilder := strings.Builder{}
 
 	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsURLSecretField, fields[dtingestendpoint.MetricsURLSecretField])); err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+		conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		return "", errors.WithStack(err)
 	}
 
 	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsTokenSecretField, fields[dtingestendpoint.MetricsTokenSecretField])); err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+		conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		return "", errors.WithStack(err)
 	}
@@ -42,7 +42,7 @@ func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dyn
 
 	tokens, err := k8ssecret.Query(s.client, s.apiReader, log).Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
