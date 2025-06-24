@@ -32,3 +32,6 @@ while [[ $NEXT_WAIT_TIME -ne 20 ]]; do
     sleep 60
   fi
 done
+
+echo "Timeout reached while waiting for environment '$FLC_ENVIRONMENT' to be destroyed."
+exit 1
