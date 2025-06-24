@@ -25,11 +25,7 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
   if [[ "$current_state" == "environment-deployed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' has been deployed successfully."
     break
-  elif [[ "$current_state" == "environment-deploying" ]]; then
-    echo "Environment '$FLC_ENVIRONMENT' is currently deploying. Waiting for it to complete..."
-    let NEXT_WAIT_TIME += 1
-    sleep 60
-  elif [[ "$current_state" == "environment-deploy-failed" ]]; then
+  elif [[ "$current_state" == "environment-deployment-failed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' deployment failed. Please check the logs for more details."
     exit 1
   elif [[ -z "$current_state" ]]; then
