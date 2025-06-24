@@ -20,7 +20,7 @@ echo "Waiting up to '$DEFAULT_TIMEOUT' for successful deployment of environment 
 NEXT_WAIT_TIME=0
 while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
   # Check if the environment is in the desired state
-  current_state=$(kubectl --namespace "$FLC_NAMESPACE" --for jsonpath='{.status.currentState}' flcenvironment "$FLC_ENVIRONMENT")
+  current_state=$(kubectl get flcenvironment "$FLC_ENVIRONMENT" --namespace "$FLC_NAMESPACE" -ojsonpath='{.status.currentState}')
 
   if [[ "$current_state" == "environment-deployed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' has been deployed successfully."

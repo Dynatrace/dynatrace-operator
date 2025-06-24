@@ -15,7 +15,7 @@ kubectl patch --namespace "$FLC_NAMESPACE" --type merge --patch '{"spec": {"desi
 NEXT_WAIT_TIME=0
 while [[ $NEXT_WAIT_TIME -ne 20 ]]; do
   # Check if the environment is in the desired state
-  current_state=$(kubectl --namespace "$FLC_NAMESPACE" --for jsonpath='{.status.currentState}' flcenvironment "$FLC_ENVIRONMENT")
+  current_state=$(kubectl get flcenvironment "$FLC_ENVIRONMENT" --namespace "$FLC_NAMESPACE" -ojsonpath='{.status.currentState}')
 
   if [[ "$current_state" == "environment-not-deployed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' has been destroyed successfully."
