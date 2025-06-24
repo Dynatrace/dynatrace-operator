@@ -182,16 +182,16 @@ func (dk *DynaKube) toActiveGateSpec(dst *dynakubelatest.DynaKube) { //nolint:du
 	dst.Spec.ActiveGate.PriorityClassName = dk.Spec.ActiveGate.PriorityClassName
 	dst.Spec.ActiveGate.VolumeClaimTemplate = dk.Spec.ActiveGate.PersistentVolumeClaim
 
-	dst.Spec.ActiveGate.CapabilityProperties.CustomProperties = dk.Spec.ActiveGate.CapabilityProperties.CustomProperties
-	dst.Spec.ActiveGate.CapabilityProperties.NodeSelector = dk.Spec.ActiveGate.CapabilityProperties.NodeSelector
-	dst.Spec.ActiveGate.CapabilityProperties.Labels = dk.Spec.ActiveGate.CapabilityProperties.Labels
-	dst.Spec.ActiveGate.CapabilityProperties.Replicas = dk.Spec.ActiveGate.CapabilityProperties.Replicas
-	dst.Spec.ActiveGate.CapabilityProperties.Image = dk.Spec.ActiveGate.CapabilityProperties.Image
-	dst.Spec.ActiveGate.CapabilityProperties.Group = dk.Spec.ActiveGate.CapabilityProperties.Group
-	dst.Spec.ActiveGate.CapabilityProperties.Resources = dk.Spec.ActiveGate.CapabilityProperties.Resources
-	dst.Spec.ActiveGate.CapabilityProperties.Tolerations = dk.Spec.ActiveGate.CapabilityProperties.Tolerations
-	dst.Spec.ActiveGate.CapabilityProperties.Env = dk.Spec.ActiveGate.CapabilityProperties.Env
-	dst.Spec.ActiveGate.CapabilityProperties.TopologySpreadConstraints = dk.Spec.ActiveGate.CapabilityProperties.TopologySpreadConstraints
+	dst.Spec.ActiveGate.CustomProperties = dk.Spec.ActiveGate.CustomProperties
+	dst.Spec.ActiveGate.NodeSelector = dk.Spec.ActiveGate.NodeSelector
+	dst.Spec.ActiveGate.Labels = dk.Spec.ActiveGate.Labels
+	dst.Spec.ActiveGate.Replicas = dk.Spec.ActiveGate.Replicas
+	dst.Spec.ActiveGate.Image = dk.Spec.ActiveGate.Image
+	dst.Spec.ActiveGate.Group = dk.Spec.ActiveGate.Group
+	dst.Spec.ActiveGate.Resources = dk.Spec.ActiveGate.Resources
+	dst.Spec.ActiveGate.Tolerations = dk.Spec.ActiveGate.Tolerations
+	dst.Spec.ActiveGate.Env = dk.Spec.ActiveGate.Env
+	dst.Spec.ActiveGate.TopologySpreadConstraints = dk.Spec.ActiveGate.TopologySpreadConstraints
 
 	dst.Spec.ActiveGate.Capabilities = make([]activegatelatest.CapabilityDisplayName, 0)
 	for _, capability := range dk.Spec.ActiveGate.Capabilities {

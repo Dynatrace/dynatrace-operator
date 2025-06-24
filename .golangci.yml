@@ -252,7 +252,6 @@ linters:
     staticcheck:
       checks:
         - all
-        - "-QF1008" # could remove embedded field from selector, example: dk.ObjectMeta.Labels == dk.Labels
   exclusions:
     generated: lax
     presets:

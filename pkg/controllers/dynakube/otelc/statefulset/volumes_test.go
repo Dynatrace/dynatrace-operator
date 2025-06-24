@@ -110,7 +110,7 @@ func TestVolumes(t *testing.T) {
 			TLSRefName: testTelemetryIngestSecret,
 		}
 
-		tlsSecret := getTLSSecret(dk.TelemetryIngest().Spec.TLSRefName, dk.Namespace, "crt", "key")
+		tlsSecret := getTLSSecret(dk.TelemetryIngest().TLSRefName, dk.Namespace, "crt", "key")
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 
@@ -120,7 +120,7 @@ func TestVolumes(t *testing.T) {
 			Name: customTLSCertVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.TelemetryIngest().Spec.TLSRefName,
+					SecretName: dk.TelemetryIngest().TLSRefName,
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.TLSCrtDataName,

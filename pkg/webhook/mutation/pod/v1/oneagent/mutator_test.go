@@ -310,8 +310,8 @@ func injectionPossibleWithValidTenantUUID(t *testing.T) {
 func injectionPossibleWithCodeModulesImage(t *testing.T) {
 	mutator := createTestPodMutator(nil)
 	dk := getTestDynakube()
-	dk.Status.CodeModules.VersionStatus.Version = ""
-	dk.Status.CodeModules.VersionStatus.ImageID = "test-image-id"
+	dk.Status.CodeModules.Version = ""
+	dk.Status.CodeModules.ImageID = "test-image-id"
 	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
 
 	ok, reason := mutator.isInjectionPossible(request)
@@ -347,7 +347,7 @@ func injectionNotPossibleWithoutCommunicationRoute(t *testing.T) {
 func injectionNotPossibleWithoutCodeModulesVersion(t *testing.T) {
 	mutator := createTestPodMutator(nil)
 	dk := getTestDynakube()
-	dk.Status.CodeModules.VersionStatus.Version = ""
+	dk.Status.CodeModules.Version = ""
 	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
 
 	ok, reason := mutator.isInjectionPossible(request)
@@ -361,7 +361,7 @@ func injectionNotPossibleWithMultipleIssues(t *testing.T) {
 	dk := getTestDynakube()
 	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = ""
 	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{}
-	dk.Status.CodeModules.VersionStatus.Version = ""
+	dk.Status.CodeModules.Version = ""
 	request := createTestMutationRequest(dk, nil, getTestNamespace(nil))
 
 	ok, reason := mutator.isInjectionPossible(request)
@@ -447,7 +447,7 @@ func getTestReadOnlyCSIDynakube() *dynakube.DynaKube {
 func getTestNoInjectionDynakube() *dynakube.DynaKube {
 	dk := getTestCSIDynakube()
 	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{}
-	dk.Status.CodeModules.VersionStatus.Version = ""
+	dk.Status.CodeModules.Version = ""
 	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = ""
 
 	return dk
@@ -475,7 +475,7 @@ func getTestDynakubeWithContainerExclusion() *dynakube.DynaKube {
 		},
 		Status: getTestDynakubeStatus(),
 	}
-	dk.ObjectMeta.Annotations[dtwebhook.AnnotationContainerInjection+"/sidecar-container"] = "false"
+	dk.Annotations[dtwebhook.AnnotationContainerInjection+"/sidecar-container"] = "false"
 
 	return dk
 }

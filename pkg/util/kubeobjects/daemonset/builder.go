@@ -84,16 +84,16 @@ func SetHostPID(isEnabled bool) builder.Option[*appsv1.DaemonSet] {
 
 func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]string) builder.Option[*appsv1.DaemonSet] {
 	return func(s *appsv1.DaemonSet) {
-		s.ObjectMeta.Labels = labels
+		s.Labels = labels
 		s.Spec.Selector = &metav1.LabelSelector{MatchLabels: matchLabels}
-		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(customLabels, templateLabels)
+		s.Spec.Template.Labels = maputils.MergeMap(customLabels, templateLabels)
 	}
 }
 
 func SetAllAnnotations(annotations, templateAnnotations map[string]string) builder.Option[*appsv1.DaemonSet] {
 	return func(s *appsv1.DaemonSet) {
-		s.ObjectMeta.Annotations = maputils.MergeMap(s.ObjectMeta.Annotations, annotations)
-		s.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(s.Spec.Template.ObjectMeta.Annotations, templateAnnotations)
+		s.Annotations = maputils.MergeMap(s.Annotations, annotations)
+		s.Spec.Template.Annotations = maputils.MergeMap(s.Spec.Template.Annotations, templateAnnotations)
 	}
 }
 

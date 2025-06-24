@@ -36,7 +36,7 @@ func (ts *TelemetryIngest) GetServiceName() string {
 		return ts.GetDefaultServiceName()
 	}
 
-	serviceName := ts.Spec.ServiceName
+	serviceName := ts.ServiceName
 	if serviceName == "" {
 		serviceName = ts.GetDefaultServiceName()
 	}

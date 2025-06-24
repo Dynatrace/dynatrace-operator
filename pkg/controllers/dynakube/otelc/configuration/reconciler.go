@@ -113,7 +113,7 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		options = append(options, otelcgen.WithSystemCAs(true))
 	}
 
-	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().Spec.TLSRefName != "" {
+	if r.dk.TelemetryIngest().IsEnabled() && r.dk.TelemetryIngest().TLSRefName != "" {
 		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)))
 	}
 

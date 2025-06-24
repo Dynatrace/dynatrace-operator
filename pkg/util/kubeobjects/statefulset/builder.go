@@ -64,16 +64,16 @@ func SetTopologySpreadConstraints(topologySpreadConstraints []corev1.TopologySpr
 
 func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]string) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.ObjectMeta.Labels = labels
+		s.Labels = labels
 		s.Spec.Selector = &metav1.LabelSelector{MatchLabels: matchLabels}
-		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(customLabels, templateLabels)
+		s.Spec.Template.Labels = maputils.MergeMap(customLabels, templateLabels)
 	}
 }
 
 func SetAllAnnotations(annotations, templateAnnotations map[string]string) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.ObjectMeta.Annotations = maputils.MergeMap(s.ObjectMeta.Annotations, annotations)
-		s.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(s.Spec.Template.ObjectMeta.Annotations, templateAnnotations)
+		s.Annotations = maputils.MergeMap(s.Annotations, annotations)
+		s.Spec.Template.Annotations = maputils.MergeMap(s.Spec.Template.Annotations, templateAnnotations)
 	}
 }
 
@@ -123,11 +123,11 @@ func SetRollingUpdateStrategyType() builder.Option[*appsv1.StatefulSet] {
 func SetPVCAnnotation() builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
 		if s.Spec.VolumeClaimTemplates != nil {
-			if s.ObjectMeta.Annotations == nil {
-				s.ObjectMeta.Annotations = map[string]string{}
+			if s.Annotations == nil {
+				s.Annotations = map[string]string{}
 			}
 
-			s.ObjectMeta.Annotations[AnnotationPVCHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
+			s.Annotations[AnnotationPVCHash], _ = hasher.GenerateHash(s.Spec.VolumeClaimTemplates)
 		}
 	}
 }
