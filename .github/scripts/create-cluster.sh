@@ -22,8 +22,8 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
   # Check if the environment is in the desired state
   current_state=$(kubectl --namespace "$FLC_NAMESPACE" --for jsonpath='{.status.currentState}' flcenvironment "$FLC_ENVIRONMENT")
 
-  if [[ "$current_state" == "$DESIRED_STATE" ]]; then
-    echo "Environment '$FLC_ENVIRONMENT' is in desired state '$DESIRED_STATE'."
+  if [[ "$current_state" == "environment-deployed" ]]; then
+    echo "Environment '$FLC_ENVIRONMENT' has been deployed successfully."
     break
   elif [[ "$current_state" == "environment-deploying" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' is currently deploying. Waiting for it to complete..."
@@ -36,7 +36,7 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
     echo "Environment '$FLC_ENVIRONMENT' does not exist or is not ready. Exiting."
     exit 1
   else
-    echo "Current state of environment '$FLC_ENVIRONMENT': '$current_state'. Waiting for desired state '$DESIRED_STATE'..."
+    echo "Current state of environment '$FLC_ENVIRONMENT': '$current_state'. Waiting for desired state 'environment-deployed'..."
     let NEXT_WAIT_TIME += 1
     sleep 60
   fi

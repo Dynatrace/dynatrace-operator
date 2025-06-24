@@ -3,7 +3,6 @@
 set -x
 
 DEFAULT_TIMEOUT="20m"
-DESIRED_STATE="environment-not-deployed"
 
 echo "Destroying environment '$FLC_ENVIRONMENT' in namespace '$FLC_NAMESPACE'"
 
@@ -18,8 +17,8 @@ while [[ $NEXT_WAIT_TIME -ne 20 ]]; do
   # Check if the environment is in the desired state
   current_state=$(kubectl --namespace "$FLC_NAMESPACE" --for jsonpath='{.status.currentState}' flcenvironment "$FLC_ENVIRONMENT")
 
-  if [[ "$current_state" == "$DESIRED_STATE" ]]; then
-    echo "Environment '$FLC_ENVIRONMENT' is in desired state '$DESIRED_STATE'."
+  if [[ "$current_state" == "environment-not-deployed" ]]; then
+    echo "Environment '$FLC_ENVIRONMENT' has been destroyed successfully."
     break
   elif [[ "$current_state" == "environment-destruction-failed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' destruction is failed. Please check the logs for more details."
@@ -28,7 +27,7 @@ while [[ $NEXT_WAIT_TIME -ne 20 ]]; do
     echo "Environment '$FLC_ENVIRONMENT' does not exist or is not ready. Exiting."
     exit 1
   else
-    echo "Current state of environment '$FLC_ENVIRONMENT': '$current_state'. Waiting for desired state '$DESIRED_STATE'..."
+    echo "Current state of environment '$FLC_ENVIRONMENT': '$current_state'. Waiting for desired state 'environment-not-deployed'..."
     let NEXT_WAIT_TIME += 1
     sleep 60
   fi
