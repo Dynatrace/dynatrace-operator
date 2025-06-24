@@ -5,6 +5,9 @@ metadata:
   namespace: dynatrace
 
 spec:
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+
+  # Required: Dynatrace apiUrl including the `/api` path at the end.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # Activate a local in-cluster ActiveGate to ingest telemetry data.
@@ -31,6 +34,9 @@ spec:
     - jaeger
     - statsd
 
-    # Name of the telemetry ingest service that your applications should use.
-    # Will result in telemetry-ingest.dynatrace.svc
+    # Optional: Name of secret holding a TLS certificate to secure the telemetry ingest endpoints.
+    tlsRefName: my-tls-secret
+
+    # Optional: Name of the telemetry ingest service that your applications should use.
+    # This will result in the service name telemetry-ingest.dynatrace.svc
     serviceName: telemetry-ingest
