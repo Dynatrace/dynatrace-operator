@@ -7,7 +7,11 @@ metadata:
 spec:
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
+  # Enable telemetry ingest. Without a local in-cluster ActiveGate ingested data
+  # is sent directly to your tenant.
   telemetryIngest:
+
+    # All protocols are enabled, you can choose to enable only the ones you need
     protocols:
     - otlp
     - zipkin

@@ -7,6 +7,7 @@ metadata:
 spec:
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
+  # Activate a local in-cluster ActiveGate to ingest telemetry data.
   activeGate:
     capabilities:
       - kubernetes-monitoring
@@ -20,11 +21,16 @@ spec:
         cpu: 1000m
         memory: 1.5Gi
 
+  # Enable telemetry ingest. Ingested data is sent to the local in-cluster ActiveGate.
   telemetryIngest:
+
+    # All protocols are enabled, you can choose to enable only the ones you need
     protocols:
     - otlp
     - zipkin
     - jaeger
     - statsd
 
+    # Name of the telemetry ingest service that your applications should use.
+    # Will result in telemetry-ingest.dynatrace.svc
     serviceName: telemetry-ingest
