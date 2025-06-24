@@ -27,7 +27,7 @@ type MemoryLimiter struct {
 var (
 	k8sattributes     = component.MustNewID("k8sattributes")
 	transform         = component.MustNewID("transform")
-	transformPodIp    = component.MustNewIDWithName("transform", "add-pod-ip")
+	transformPodIP    = component.MustNewIDWithName("transform", "add-pod-ip")
 	batch             = component.MustNewType("batch")
 	batchTraces       = component.NewIDWithName(batch, "traces")
 	batchMetrics      = component.NewIDWithName(batch, "metrics")
@@ -90,7 +90,7 @@ func (c *Config) buildProcessors() map[component.ID]component.Config {
 			},
 		},
 		transform:      c.buildTransform(),
-		transformPodIp: c.buildTransformPodIp(),
+		transformPodIP: c.buildTransformPodIP(),
 		batchTraces: &BatchConfig{
 			SendBatchSize:    5000,
 			SendBatchMaxSize: 5000,
@@ -123,7 +123,7 @@ func (c *Config) buildTransform() map[string]any {
 	}
 }
 
-func (c *Config) buildTransformPodIp() map[string]any {
+func (c *Config) buildTransformPodIP() map[string]any {
 	return map[string]any{
 		"error_mode": "ignore",
 		"trace_statements": []map[string]any{

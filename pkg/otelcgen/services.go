@@ -93,7 +93,7 @@ func buildExporters() []component.ID {
 
 func buildProcessors() []component.ID {
 	return []component.ID{
-		memoryLimiter, transformPodIp, k8sattributes, transform,
+		memoryLimiter, transformPodIP, k8sattributes, transform,
 	}
 }
 
