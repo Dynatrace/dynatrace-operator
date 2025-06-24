@@ -48,7 +48,7 @@ func WithCustomCAs(configMapName string) Option {
 func WithAnnotations(annotations map[string]string) Option {
 	return func(dk *dynakube.DynaKube) {
 		for key, value := range annotations {
-			dk.ObjectMeta.Annotations[key] = value
+			dk.Annotations[key] = value
 		}
 	}
 }

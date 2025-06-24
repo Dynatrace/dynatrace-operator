@@ -32,7 +32,7 @@ func New(opts ...Option) *edgeconnect.EdgeConnect {
 
 func WithName(name string) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
-		ec.ObjectMeta.Name = name
+		ec.Name = name
 	}
 }
 

@@ -130,7 +130,7 @@ func TestAddPodAttributes(t *testing.T) {
 
 		err := injector.addPodAttributes(&request)
 		require.NoError(t, err)
-		require.NotEqual(t, *expectedPod, *request.BaseRequest.Pod)
+		require.NotEqual(t, *expectedPod, *request.Pod)
 
 		validateAdditionAttributes(t, request)
 	})
@@ -186,7 +186,7 @@ func TestAddPodAttributes(t *testing.T) {
 
 		err := injector.addPodAttributes(&request)
 		require.Error(t, err)
-		require.Equal(t, *expectedPod, *request.BaseRequest.Pod)
+		require.Equal(t, *expectedPod, *request.Pod)
 	})
 }
 
@@ -242,7 +242,7 @@ func TestAddContainerAttributes(t *testing.T) {
 
 		addContainerAttributes(&request)
 
-		require.Equal(t, *expectedPod, *request.BaseRequest.Pod)
+		require.Equal(t, *expectedPod, *request.Pod)
 
 		validateContainerAttributes(t, pod, initContainer.Args)
 	})
@@ -283,7 +283,7 @@ func TestAddContainerAttributes(t *testing.T) {
 
 		addContainerAttributes(&request)
 
-		require.Equal(t, *expectedPod, *request.BaseRequest.Pod)
+		require.Equal(t, *expectedPod, *request.Pod)
 		require.Empty(t, initContainer.Args)
 	})
 
@@ -322,7 +322,7 @@ func TestAddContainerAttributes(t *testing.T) {
 
 		addContainerAttributes(&request)
 
-		require.Equal(t, *expectedPod, *request.BaseRequest.Pod)
+		require.Equal(t, *expectedPod, *request.Pod)
 		require.Len(t, initContainer.Args, 1)
 		validateContainerAttributes(t, pod, initContainer.Args)
 	})

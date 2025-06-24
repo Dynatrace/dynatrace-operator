@@ -12,7 +12,7 @@ import (
 
 func PrepareConfigFile(ctx context.Context, ec *edgeconnect.EdgeConnect, apiReader client.Reader, token string) ([]byte, error) {
 	cfg := config.EdgeConnect{
-		Name:            ec.ObjectMeta.Name,
+		Name:            ec.Name,
 		APIEndpointHost: ec.Spec.APIServer,
 		OAuth: config.OAuth{
 			Endpoint: ec.Spec.OAuth.Endpoint,

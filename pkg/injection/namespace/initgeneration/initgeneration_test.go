@@ -492,7 +492,7 @@ func setProxy(dk *dynakube.DynaKube, proxyValue string) {
 }
 
 func setAnnotation(dk *dynakube.DynaKube, value map[string]string) {
-	dk.ObjectMeta.Annotations = value
+	dk.Annotations = value
 }
 
 func setTrustedCA(dk *dynakube.DynaKube, value string) {

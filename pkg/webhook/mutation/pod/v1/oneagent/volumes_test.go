@@ -124,8 +124,8 @@ func TestAddOneAgentVolumes(t *testing.T) {
 
 		addOneAgentVolumes(pod, *dk)
 		require.Len(t, pod.Spec.Volumes, 2)
-		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
-		assert.False(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
+		assert.NotNil(t, pod.Spec.Volumes[0].CSI)
+		assert.False(t, *pod.Spec.Volumes[0].CSI.ReadOnly)
 	})
 
 	t.Run("should add oneagent volumes, with readonly csi", func(t *testing.T) {
@@ -134,8 +134,8 @@ func TestAddOneAgentVolumes(t *testing.T) {
 
 		addOneAgentVolumes(pod, *dk)
 		require.Len(t, pod.Spec.Volumes, 2)
-		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
-		assert.True(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
+		assert.NotNil(t, pod.Spec.Volumes[0].CSI)
+		assert.True(t, *pod.Spec.Volumes[0].CSI.ReadOnly)
 	})
 
 	t.Run("should add oneagent volumes, without csi", func(t *testing.T) {
@@ -146,7 +146,7 @@ func TestAddOneAgentVolumes(t *testing.T) {
 
 		addOneAgentVolumes(pod, *dk)
 		require.Len(t, pod.Spec.Volumes, 2)
-		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.EmptyDir)
+		assert.NotNil(t, pod.Spec.Volumes[0].EmptyDir)
 	})
 }
 

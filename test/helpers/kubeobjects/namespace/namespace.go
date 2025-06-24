@@ -37,22 +37,22 @@ func New(name string, opts ...Option) *corev1.Namespace {
 
 func WithLabels(labels map[string]string) Option {
 	return func(namespace *corev1.Namespace) {
-		namespace.ObjectMeta.Labels = labels
+		namespace.Labels = labels
 	}
 }
 
 func WithIstio() Option {
 	return func(namespace *corev1.Namespace) {
-		if namespace.ObjectMeta.Labels == nil {
-			namespace.ObjectMeta.Labels = map[string]string{}
+		if namespace.Labels == nil {
+			namespace.Labels = map[string]string{}
 		}
-		namespace.ObjectMeta.Labels[InjectionKey] = InjectionEnabledValue
+		namespace.Labels[InjectionKey] = InjectionEnabledValue
 	}
 }
 
 func WithAnnotation(annotations map[string]string) Option {
 	return func(namespace *corev1.Namespace) {
-		namespace.ObjectMeta.Annotations = annotations
+		namespace.Annotations = annotations
 	}
 }
 

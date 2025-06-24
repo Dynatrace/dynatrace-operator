@@ -102,20 +102,20 @@ func TestReconcile(t *testing.T) {
 
 		assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
 		assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
-		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.VersionStatus.Version)
+		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.Version)
 
 		// no change if probe not old enough
-		previousProbe := *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp
+		previousProbe := *dkStatus.CodeModules.LastProbeTimestamp
 		err = versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
-		assert.Equal(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
+		assert.Equal(t, previousProbe, *dkStatus.CodeModules.LastProbeTimestamp)
 
 		// change if probe old enough
 		changeTime(timeProvider, 15*time.Minute+1*time.Second)
 
 		err = versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
-		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
+		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.LastProbeTimestamp)
 	})
 
 	t.Run("public-registry", func(t *testing.T) {
@@ -153,12 +153,12 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, verifiedReason, condition.Reason)
 		assert.Equal(t, "Version verified for component.", condition.Message)
 
-		assert.Equal(t, testActiveGateImage.String(), dkStatus.ActiveGate.VersionStatus.ImageID)
-		assert.Equal(t, testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus.Version)
-		assert.Equal(t, testOneAgentImage.String(), dkStatus.OneAgent.VersionStatus.ImageID)
-		assert.Equal(t, testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus.Version)
-		assert.Equal(t, testCodeModulesImage.String(), dkStatus.CodeModules.VersionStatus.ImageID)
-		assert.Equal(t, testCodeModulesImage.Tag, dkStatus.CodeModules.VersionStatus.Version)
+		assert.Equal(t, testActiveGateImage.String(), dkStatus.ActiveGate.ImageID)
+		assert.Equal(t, testActiveGateImage.Tag, dkStatus.ActiveGate.Version)
+		assert.Equal(t, testOneAgentImage.String(), dkStatus.OneAgent.ImageID)
+		assert.Equal(t, testOneAgentImage.Tag, dkStatus.OneAgent.Version)
+		assert.Equal(t, testCodeModulesImage.String(), dkStatus.CodeModules.ImageID)
+		assert.Equal(t, testCodeModulesImage.Tag, dkStatus.CodeModules.Version)
 	})
 }
 

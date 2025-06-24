@@ -19,7 +19,7 @@ type WorkloadInfo struct {
 
 func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *WorkloadInfo {
 	return &WorkloadInfo{
-		Name: partialObjectMetadata.ObjectMeta.Name,
+		Name: partialObjectMetadata.Name,
 
 		// workload kind in lower case according to dt semantic-dictionary
 		// https://docs.dynatrace.com/docs/discover-dynatrace/references/semantic-dictionary/fields#kubernetes
@@ -44,9 +44,9 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: kubeobjects.GetName(*pod),
-			// pod.ObjectMeta.Namespace is empty yet
+			// pod.Namespace is empty yet
 			Namespace:       namespace,
-			OwnerReferences: pod.ObjectMeta.OwnerReferences,
+			OwnerReferences: pod.OwnerReferences,
 		},
 	}
 

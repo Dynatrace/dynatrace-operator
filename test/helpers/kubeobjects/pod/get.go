@@ -17,11 +17,11 @@ func GetPodsForOwner(ctx context.Context, t *testing.T, resource *resources.Reso
 
 	var targetPods corev1.PodList
 	for _, pod := range pods.Items {
-		if len(pod.ObjectMeta.OwnerReferences) < 1 {
+		if len(pod.OwnerReferences) < 1 {
 			continue
 		}
 
-		if pod.ObjectMeta.OwnerReferences[0].Name == ownerName {
+		if pod.OwnerReferences[0].Name == ownerName {
 			targetPods.Items = append(targetPods.Items, pod)
 		}
 	}

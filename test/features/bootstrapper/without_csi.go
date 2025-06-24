@@ -160,7 +160,7 @@ func checkInjection(deployment *sample.App) features.Func {
 			found := false
 			for _, v := range item.Spec.Volumes {
 				if v.Name == expectedVolume.Name {
-					require.Equal(t, expectedVolume.VolumeSource.Projected.Sources, v.VolumeSource.Projected.Sources)
+					require.Equal(t, expectedVolume.Projected.Sources, v.Projected.Sources)
 					found = true
 				}
 			}
