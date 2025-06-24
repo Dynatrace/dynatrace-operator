@@ -612,9 +612,9 @@ func TestLabels(t *testing.T) {
 
 		appLabels := buildAppLabels(dk.Name)
 
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.ObjectMeta.Labels)
+		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Labels)
 		assert.Equal(t, &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}, statefulSet.Spec.Selector)
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Spec.Template.ObjectMeta.Labels)
+		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Spec.Template.Labels)
 	})
 
 	t.Run("custom labels", func(t *testing.T) {
@@ -629,9 +629,9 @@ func TestLabels(t *testing.T) {
 		appLabels := buildAppLabels(dk.Name)
 		podLabels := maputils.MergeMap(customLabels, appLabels.BuildLabels())
 
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.ObjectMeta.Labels)
+		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Labels)
 		assert.Equal(t, &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}, statefulSet.Spec.Selector)
-		assert.Equal(t, podLabels, statefulSet.Spec.Template.ObjectMeta.Labels)
+		assert.Equal(t, podLabels, statefulSet.Spec.Template.Labels)
 	})
 }
 
@@ -639,9 +639,9 @@ func TestAnnotations(t *testing.T) {
 	t.Run("the default annotations", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakube())
 
-		assert.Len(t, statefulSet.ObjectMeta.Annotations, 2)
-		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 1)
-		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationExtensionsSecretHash])
+		assert.Len(t, statefulSet.Annotations, 2)
+		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
 	})
 
 	t.Run("custom annotations", func(t *testing.T) {
@@ -653,11 +653,11 @@ func TestAnnotations(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Len(t, statefulSet.ObjectMeta.Annotations, 2)
-		assert.Empty(t, statefulSet.ObjectMeta.Annotations["a"])
-		require.Len(t, statefulSet.Spec.Template.ObjectMeta.Annotations, 2)
-		assert.Equal(t, "b", statefulSet.Spec.Template.ObjectMeta.Annotations["a"])
-		assert.NotEmpty(t, statefulSet.Spec.Template.ObjectMeta.Annotations[api.AnnotationExtensionsSecretHash])
+		assert.Len(t, statefulSet.Annotations, 2)
+		assert.Empty(t, statefulSet.Annotations["a"])
+		require.Len(t, statefulSet.Spec.Template.Annotations, 2)
+		assert.Equal(t, "b", statefulSet.Spec.Template.Annotations["a"])
+		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
 	})
 }
 

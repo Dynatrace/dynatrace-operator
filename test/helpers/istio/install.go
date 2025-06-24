@@ -142,8 +142,8 @@ func checkVirtualServiceForAPIURL(dk dynakube.DynaKube) features.Func { //nolint
 		virtualService, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().VirtualServices(dk.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.NoError(t, err, "istio: failed to get '%s' virtual service object", serviceName)
 
-		require.NotEmpty(t, virtualService.ObjectMeta.OwnerReferences)
-		assert.Equal(t, dk.Name, virtualService.ObjectMeta.OwnerReferences[0].Name)
+		require.NotEmpty(t, virtualService.OwnerReferences)
+		assert.Equal(t, dk.Name, virtualService.OwnerReferences[0].Name)
 
 		require.NotEmpty(t, virtualService.Spec.GetHosts())
 		assert.Equal(t, apiHost.Host, virtualService.Spec.GetHosts()[0])
@@ -160,8 +160,8 @@ func checkServiceEntryForAPIURL(dk dynakube.DynaKube) features.Func { //nolint:d
 		serviceEntry, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().ServiceEntries(dk.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.NoError(t, err, "istio: failed to get '%s' service entry object", serviceName)
 
-		require.NotEmpty(t, serviceEntry.ObjectMeta.OwnerReferences)
-		assert.Equal(t, dk.Name, serviceEntry.ObjectMeta.OwnerReferences[0].Name)
+		require.NotEmpty(t, serviceEntry.OwnerReferences)
+		assert.Equal(t, dk.Name, serviceEntry.OwnerReferences[0].Name)
 
 		require.NotEmpty(t, serviceEntry.Spec.GetHosts())
 		assert.Equal(t, apiHost.Host, serviceEntry.Spec.GetHosts()[0])

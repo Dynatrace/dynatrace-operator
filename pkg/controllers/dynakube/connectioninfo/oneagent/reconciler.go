@@ -129,7 +129,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return err
 	}
 
-	r.dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.ConnectionInfo.TenantToken)
+	r.dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.TenantToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate TenantTokenHash")
 	}
