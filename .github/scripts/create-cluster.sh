@@ -33,7 +33,7 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
     exit 1
   else
     echo "Current state of environment '$FLC_ENVIRONMENT': '$current_state'. Waiting for desired state 'environment-deployed'..."
-    let NEXT_WAIT_TIME += 1
+    NEXT_WAIT_TIME=$((NEXT_WAIT_TIME+1))
     sleep 60
   fi
 done
