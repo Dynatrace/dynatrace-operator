@@ -22,7 +22,7 @@ while [[ $NEXT_WAIT_TIME -ne 20 ]]; do
     echo "Environment '$FLC_ENVIRONMENT' is in desired state '$DESIRED_STATE'."
     break
   elif [[ "$current_state" == "environment-destruction-failed" ]]; then
-    echo "Environment '$FLC_ENVIRONMENT' deployment failed. Please check the logs for more details."
+    echo "Environment '$FLC_ENVIRONMENT' destruction is failed. Please check the logs for more details."
     exit 1
   elif [[ -z "$current_state" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' does not exist or is not ready. Exiting."
