@@ -1,0 +1,15 @@
+apiVersion: dynatrace.com/v1beta5
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+
+spec:
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  telemetryIngest:
+    protocols:
+    - otlp
+    - zipkin
+    - statsd
+    - jaeger
