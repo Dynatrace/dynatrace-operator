@@ -133,8 +133,25 @@ func checkInjection(deployment *sample.App) features.Func {
 			expectedVolume := corev1.Volume{
 				Name: volumes.InputVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: consts.BootstrapperInitSecretName,
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: consts.BootstrapperInitSecretName,
+									},
+									Optional: ptr.To(false),
+								},
+							},
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: consts.BootstrapperInitCertsSecretName,
+									},
+									Optional: ptr.To(true),
+								},
+							},
+						},
 					},
 				},
 			}
@@ -143,8 +160,7 @@ func checkInjection(deployment *sample.App) features.Func {
 			found := false
 			for _, v := range item.Spec.Volumes {
 				if v.Name == expectedVolume.Name {
-					require.NotNil(t, v.Secret)
-					require.Equal(t, expectedVolume.Secret.SecretName, v.Secret.SecretName)
+					require.Equal(t, expectedVolume.VolumeSource.Projected.Sources, v.VolumeSource.Projected.Sources)
 					found = true
 				}
 			}
