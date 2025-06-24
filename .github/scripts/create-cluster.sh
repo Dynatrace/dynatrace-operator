@@ -12,23 +12,32 @@ echo "Creating environment '$FLC_ENVIRONMENT' in namespace '$FLC_NAMESPACE'"
 kubectl get flcenvironments --namespace "$FLC_NAMESPACE"
 
 echo "Patching environment '$FLC_ENVIRONMENT' to 'deployed'"
-kubectl patch --namespace "$FLC_NAMESPACE" --type merge --patch "{\"spec\": {\"desiredState\": \"$DESIRED_STATE\"}}" flcenvironment "$FLC_ENVIRONMENT"
+kubectl patch --namespace "$FLC_NAMESPACE" --type merge --patch '{"spec": {"desiredState": "environment-deployed"}}' flcenvironment "$FLC_ENVIRONMENT"
 
 echo "Waiting up to '$DEFAULT_TIMEOUT' for successful deployment of environment '$FLC_ENVIRONMENT'"
-kubectl wait --namespace "$FLC_NAMESPACE" --timeout="$DEFAULT_TIMEOUT" --for=condition=InTransition=false flcenvironment "$FLC_ENVIRONMENT"
 
-if [[ "$FLC_ENVIRONMENT" == *"ocp"* ]]; then
-  echo "PLATFORM is set to 'ocp'. Waiting for 5 minutes..."
-  sleep 300  # Wait for 5 minutes (300 seconds)
-  echo "done"
-fi
+# wait until timeout or until the environment is in the desired state
+NEXT_WAIT_TIME=0
+while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
+  # Check if the environment is in the desired state
+  current_state=$(kubectl --namespace "$FLC_NAMESPACE" --for jsonpath='{.status.currentState}' flcenvironment "$FLC_ENVIRONMENT")
 
-echo "Checking currentState='$DESIRED_STATE' for '$FLC_ENVIRONMENT'..."
-flc_state=$(kubectl get flcenvironment "$FLC_ENVIRONMENT" --namespace "$FLC_NAMESPACE" -ojsonpath="{.status.currentState}")
-if [[ "$flc_state" != "$DESIRED_STATE" ]]; then
-  echo "Pipeline deployment did not reach expected state '$DESIRED_STATE', currentState: ${flc_state}..."
-  exit 1
+  if [[ "$current_state" == "$DESIRED_STATE" ]]; then
+    echo "Environment '$FLC_ENVIRONMENT' is in desired state '$DESIRED_STATE'."
+    break
+  elif [[ "$current_state" == "environment-deploying" ]]; then
+    echo "Environment '$FLC_ENVIRONMENT' is currently deploying. Waiting for it to complete..."
+    let NEXT_WAIT_TIME += 1
+    sleep 60
+  elif [[ "$current_state" == "environment-deploy-failed" ]]; then
+    echo "Environment '$FLC_ENVIRONMENT' deployment failed. Please check the logs for more details."
+    exit 1
+  elif [[ -z "$current_state" ]]; then
+    echo "Environment '$FLC_ENVIRONMENT' does not exist or is not ready. Exiting."
+    exit 1
   else
-    echo "successful..."
-fi
-echo "done"
+    echo "Current state of environment '$FLC_ENVIRONMENT': '$current_state'. Waiting for desired state '$DESIRED_STATE'..."
+    let NEXT_WAIT_TIME += 1
+    sleep 60
+  fi
+done
