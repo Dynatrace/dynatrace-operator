@@ -13,48 +13,48 @@ import (
 )
 
 // ConvertFrom converts from the Hub version (latest) to this version (v1beta4).
-func (dk *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
+func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*dynakubelatest.DynaKube)
 
-	dk.fromStatus(src)
+	dst.fromStatus(src)
 
-	dk.fromBase(src)
-	dk.fromMetadataEnrichment(src)
-	dk.fromLogMonitoringSpec(src)
-	dk.fromKspmSpec(src)
-	dk.fromExtensionsSpec(src)
-	dk.fromOneAgentSpec(src)
-	dk.fromActiveGateSpec(src)
-	dk.fromTemplatesSpec(src)
+	dst.fromBase(src)
+	dst.fromMetadataEnrichment(src)
+	dst.fromLogMonitoringSpec(src)
+	dst.fromKspmSpec(src)
+	dst.fromExtensionsSpec(src)
+	dst.fromOneAgentSpec(src)
+	dst.fromActiveGateSpec(src)
+	dst.fromTemplatesSpec(src)
 
 	return nil
 }
 
-func (dk *DynaKube) fromBase(src *dynakubelatest.DynaKube) {
+func (dst *DynaKube) fromBase(src *dynakubelatest.DynaKube) {
 	if src.Annotations == nil {
 		src.Annotations = map[string]string{}
 	}
 
-	dk.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
+	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
 
-	dk.Spec.Proxy = src.Spec.Proxy
-	dk.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold
-	dk.Spec.APIURL = src.Spec.APIURL
-	dk.Spec.Tokens = src.Spec.Tokens
-	dk.Spec.TrustedCAs = src.Spec.TrustedCAs
-	dk.Spec.NetworkZone = src.Spec.NetworkZone
-	dk.Spec.CustomPullSecret = src.Spec.CustomPullSecret
-	dk.Spec.SkipCertCheck = src.Spec.SkipCertCheck
-	dk.Spec.EnableIstio = src.Spec.EnableIstio
+	dst.Spec.Proxy = src.Spec.Proxy
+	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold
+	dst.Spec.APIURL = src.Spec.APIURL
+	dst.Spec.Tokens = src.Spec.Tokens
+	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
+	dst.Spec.NetworkZone = src.Spec.NetworkZone
+	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
+	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
+	dst.Spec.EnableIstio = src.Spec.EnableIstio
 }
 
-func (dk *DynaKube) fromLogMonitoringSpec(src *dynakubelatest.DynaKube) {
+func (dst *DynaKube) fromLogMonitoringSpec(src *dynakubelatest.DynaKube) {
 	if src.Spec.LogMonitoring != nil {
-		dk.Spec.LogMonitoring = &logmonitoring.Spec{}
-		dk.Spec.LogMonitoring.IngestRuleMatchers = make([]logmonitoring.IngestRuleMatchers, 0)
+		dst.Spec.LogMonitoring = &logmonitoring.Spec{}
+		dst.Spec.LogMonitoring.IngestRuleMatchers = make([]logmonitoring.IngestRuleMatchers, 0)
 
 		for _, rule := range src.Spec.LogMonitoring.IngestRuleMatchers {
-			dk.Spec.LogMonitoring.IngestRuleMatchers = append(dk.Spec.LogMonitoring.IngestRuleMatchers, logmonitoring.IngestRuleMatchers{
+			dst.Spec.LogMonitoring.IngestRuleMatchers = append(dst.Spec.LogMonitoring.IngestRuleMatchers, logmonitoring.IngestRuleMatchers{
 				Attribute: rule.Attribute,
 				Values:    rule.Values,
 			})
@@ -62,42 +62,42 @@ func (dk *DynaKube) fromLogMonitoringSpec(src *dynakubelatest.DynaKube) {
 	}
 }
 
-func (dk *DynaKube) fromKspmSpec(src *dynakubelatest.DynaKube) {
+func (dst *DynaKube) fromKspmSpec(src *dynakubelatest.DynaKube) {
 	if src.Spec.Kspm != nil {
-		dk.Spec.Kspm = &kspm.Spec{}
+		dst.Spec.Kspm = &kspm.Spec{}
 	}
 }
 
-func (dk *DynaKube) fromExtensionsSpec(src *dynakubelatest.DynaKube) {
+func (dst *DynaKube) fromExtensionsSpec(src *dynakubelatest.DynaKube) {
 	if src.Spec.Extensions != nil {
-		dk.Spec.Extensions = &ExtensionsSpec{}
+		dst.Spec.Extensions = &ExtensionsSpec{}
 	}
 }
 
-func (dk *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:dupl
+func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:dupl
 	switch {
 	case src.OneAgent().IsClassicFullStackMode():
-		dk.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
+		dst.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
 	case src.OneAgent().IsCloudNativeFullstackMode():
-		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
-		dk.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
+		dst.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
+		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
+		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.OneAgent().IsApplicationMonitoringMode():
-		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-		dk.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
-		dk.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
+		dst.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
+		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 	case src.OneAgent().IsHostMonitoringMode():
-		dk.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
+		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
 	}
 
-	dk.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
+	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
 }
 
-func (dk *DynaKube) fromTemplatesSpec(src *dynakubelatest.DynaKube) {
-	dk.Spec.Templates.LogMonitoring = fromLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
-	dk.Spec.Templates.KspmNodeConfigurationCollector = fromKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KspmNodeConfigurationCollector)
-	dk.Spec.Templates.OpenTelemetryCollector = fromOpenTelemetryCollectorTemplate(src.Spec.Templates.OpenTelemetryCollector)
-	dk.Spec.Templates.ExtensionExecutionController = fromExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
+func (dst *DynaKube) fromTemplatesSpec(src *dynakubelatest.DynaKube) {
+	dst.Spec.Templates.LogMonitoring = fromLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
+	dst.Spec.Templates.KspmNodeConfigurationCollector = fromKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KspmNodeConfigurationCollector)
+	dst.Spec.Templates.OpenTelemetryCollector = fromOpenTelemetryCollectorTemplate(src.Spec.Templates.OpenTelemetryCollector)
+	dst.Spec.Templates.ExtensionExecutionController = fromExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
 
 func fromLogMonitoringTemplate(src *logmonitoringlatest.TemplateSpec) *logmonitoring.TemplateSpec {
@@ -172,40 +172,40 @@ func fromExtensionControllerTemplate(src dynakubelatest.ExtensionExecutionContro
 	return dst
 }
 
-func (dk *DynaKube) fromActiveGateSpec(src *dynakubelatest.DynaKube) { //nolint:dupl
-	dk.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
-	dk.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TLSSecretName
-	dk.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
-	dk.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
-	dk.Spec.ActiveGate.PersistentVolumeClaim = src.Spec.ActiveGate.VolumeClaimTemplate
+func (dst *DynaKube) fromActiveGateSpec(src *dynakubelatest.DynaKube) { //nolint:dupl
+	dst.Spec.ActiveGate.Annotations = src.Spec.ActiveGate.Annotations
+	dst.Spec.ActiveGate.TLSSecretName = src.Spec.ActiveGate.TLSSecretName
+	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
+	dst.Spec.ActiveGate.PriorityClassName = src.Spec.ActiveGate.PriorityClassName
+	dst.Spec.ActiveGate.PersistentVolumeClaim = src.Spec.ActiveGate.VolumeClaimTemplate
 
-	dk.Spec.ActiveGate.CustomProperties = src.Spec.ActiveGate.CustomProperties
-	dk.Spec.ActiveGate.NodeSelector = src.Spec.ActiveGate.NodeSelector
-	dk.Spec.ActiveGate.Labels = src.Spec.ActiveGate.Labels
-	dk.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
-	dk.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
-	dk.Spec.ActiveGate.Group = src.Spec.ActiveGate.Group
-	dk.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
-	dk.Spec.ActiveGate.Tolerations = src.Spec.ActiveGate.Tolerations
-	dk.Spec.ActiveGate.Env = src.Spec.ActiveGate.Env
-	dk.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
+	dst.Spec.ActiveGate.CustomProperties = src.Spec.ActiveGate.CustomProperties
+	dst.Spec.ActiveGate.NodeSelector = src.Spec.ActiveGate.NodeSelector
+	dst.Spec.ActiveGate.Labels = src.Spec.ActiveGate.Labels
+	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.Replicas
+	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
+	dst.Spec.ActiveGate.Group = src.Spec.ActiveGate.Group
+	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
+	dst.Spec.ActiveGate.Tolerations = src.Spec.ActiveGate.Tolerations
+	dst.Spec.ActiveGate.Env = src.Spec.ActiveGate.Env
+	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 
-	dk.Spec.ActiveGate.Capabilities = make([]activegate.CapabilityDisplayName, 0)
+	dst.Spec.ActiveGate.Capabilities = make([]activegate.CapabilityDisplayName, 0)
 	for _, capability := range src.Spec.ActiveGate.Capabilities {
-		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.CapabilityDisplayName(capability))
+		dst.Spec.ActiveGate.Capabilities = append(dst.Spec.ActiveGate.Capabilities, activegate.CapabilityDisplayName(capability))
 	}
 }
 
-func (dk *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
-	dk.fromOneAgentStatus(*src)
-	dk.fromActiveGateStatus(*src)
-	dk.Status.CodeModules = oneagent.CodeModulesStatus{
+func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
+	dst.fromOneAgentStatus(*src)
+	dst.fromActiveGateStatus(*src)
+	dst.Status.CodeModules = oneagent.CodeModulesStatus{
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dk.Status.MetadataEnrichment.Rules = make([]EnrichmentRule, 0)
+	dst.Status.MetadataEnrichment.Rules = make([]EnrichmentRule, 0)
 	for _, rule := range src.Status.MetadataEnrichment.Rules {
-		dk.Status.MetadataEnrichment.Rules = append(dk.Status.MetadataEnrichment.Rules,
+		dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
 			EnrichmentRule{
 				Type:   EnrichmentRuleType(rule.Type),
 				Source: rule.Source,
@@ -213,37 +213,37 @@ func (dk *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
 			})
 	}
 
-	dk.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
-	dk.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
-	dk.Status.DynatraceAPI = DynatraceAPIStatus{
+	dst.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
+	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
+	dst.Status.DynatraceAPI = DynatraceAPIStatus{
 		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
 	}
-	dk.Status.Phase = src.Status.Phase
-	dk.Status.KubeSystemUUID = src.Status.KubeSystemUUID
-	dk.Status.KubernetesClusterMEID = src.Status.KubernetesClusterMEID
-	dk.Status.KubernetesClusterName = src.Status.KubernetesClusterName
-	dk.Status.Conditions = src.Status.Conditions
+	dst.Status.Phase = src.Status.Phase
+	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
+	dst.Status.KubernetesClusterMEID = src.Status.KubernetesClusterMEID
+	dst.Status.KubernetesClusterName = src.Status.KubernetesClusterName
+	dst.Status.Conditions = src.Status.Conditions
 }
 
-func (dk *DynaKube) fromOneAgentStatus(src dynakubelatest.DynaKube) { //nolint:dupl
-	dk.Status.OneAgent.VersionStatus = src.Status.OneAgent.VersionStatus
+func (dst *DynaKube) fromOneAgentStatus(src dynakubelatest.DynaKube) { //nolint:dupl
+	dst.Status.OneAgent.VersionStatus = src.Status.OneAgent.VersionStatus
 
-	dk.Status.OneAgent.Instances = map[string]oneagent.Instance{}
+	dst.Status.OneAgent.Instances = map[string]oneagent.Instance{}
 	for key, instance := range src.Status.OneAgent.Instances {
-		dk.Status.OneAgent.Instances[key] = oneagent.Instance{
+		dst.Status.OneAgent.Instances[key] = oneagent.Instance{
 			PodName:   instance.PodName,
 			IPAddress: instance.IPAddress,
 		}
 	}
 
-	dk.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
-	dk.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
-	dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo
-	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = make([]oneagent.CommunicationHostStatus, 0)
+	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
+	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
+	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo
+	dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = make([]oneagent.CommunicationHostStatus, 0)
 
 	for _, host := range src.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
-		dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts =
-			append(dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts, oneagent.CommunicationHostStatus{
+		dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts =
+			append(dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts, oneagent.CommunicationHostStatus{
 				Protocol: host.Protocol,
 				Host:     host.Host,
 				Port:     host.Port,
@@ -251,10 +251,10 @@ func (dk *DynaKube) fromOneAgentStatus(src dynakubelatest.DynaKube) { //nolint:d
 	}
 }
 
-func (dk *DynaKube) fromActiveGateStatus(src dynakubelatest.DynaKube) {
-	dk.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
-	dk.Status.ActiveGate.ConnectionInfo = src.Status.ActiveGate.ConnectionInfo
-	dk.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
+func (dst *DynaKube) fromActiveGateStatus(src dynakubelatest.DynaKube) {
+	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
+	dst.Status.ActiveGate.ConnectionInfo = src.Status.ActiveGate.ConnectionInfo
+	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs
 }
 
 func fromHostInjectSpec(src oneagentlatest.HostInjectSpec) *oneagent.HostInjectSpec {
@@ -287,7 +287,7 @@ func fromAppInjectSpec(src oneagentlatest.AppInjectionSpec) *oneagent.AppInjecti
 	return dst
 }
 
-func (dk *DynaKube) fromMetadataEnrichment(src *dynakubelatest.DynaKube) {
-	dk.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
-	dk.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
+func (dst *DynaKube) fromMetadataEnrichment(src *dynakubelatest.DynaKube) {
+	dst.Spec.MetadataEnrichment.Enabled = src.Spec.MetadataEnrichment.Enabled
+	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 }
