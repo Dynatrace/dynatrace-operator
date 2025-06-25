@@ -19,7 +19,7 @@ while [[ $NEXT_WAIT_TIME -ne 20 ]]; do
 
   if [[ "$current_state" == "environment-not-deployed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' has been destroyed successfully."
-    break
+    exit 0
   elif [[ "$current_state" == "environment-destruction-failed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' destruction is failed. Please check the logs for more details."
     exit 1

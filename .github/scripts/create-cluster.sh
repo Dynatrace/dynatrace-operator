@@ -24,7 +24,7 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
 
   if [[ "$current_state" == "environment-deployed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' has been deployed successfully."
-    break
+    exit 0
   elif [[ "$current_state" == "environment-deployment-failed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' deployment failed. Please check the logs for more details."
     exit 1
