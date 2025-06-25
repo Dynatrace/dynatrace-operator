@@ -201,7 +201,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		Spec:       dkSpec,
 	}
 
-	dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo.TenantUUID = "test-tenant"
+	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
 	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{
 		{
 			Protocol: "http",

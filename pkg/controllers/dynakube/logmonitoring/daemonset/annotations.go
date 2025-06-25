@@ -15,7 +15,7 @@ func (r *Reconciler) getAnnotations() map[string]string {
 
 func (r *Reconciler) buildTenantTokenHashAnnotation() map[string]string {
 	annotations := map[string]string{
-		annotationTenantTokenHash: r.dk.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo.TenantTokenHash,
+		annotationTenantTokenHash: r.dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash,
 	}
 
 	return annotations

@@ -56,7 +56,7 @@ func New(timeProvider *timeprovider.Provider) (*Certificate, error) {
 		SerialNumber:       serialNumber,
 		Subject:            defaultCertSubject,
 		NotBefore:          timeProvider.Now().Time,
-		NotAfter:           timeProvider.Now().Time.Add(defaultCertExpiration),
+		NotAfter:           timeProvider.Now().Add(defaultCertExpiration),
 		SignatureAlgorithm: x509.SHA256WithRSA,
 	}
 

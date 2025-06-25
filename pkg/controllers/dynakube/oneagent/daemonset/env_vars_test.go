@@ -247,7 +247,7 @@ func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.DynaKube) {
 	assert.Equal(t, dk.Spec.Proxy.Value, env.Value)
 
 	if dk.Spec.Proxy.ValueFrom != "" {
-		assert.Equal(t, dk.Spec.Proxy.ValueFrom, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+		assert.Equal(t, dk.Spec.Proxy.ValueFrom, env.ValueFrom.SecretKeyRef.Name)
 		assert.Equal(t, "proxy", env.ValueFrom.SecretKeyRef.Key)
 	}
 }

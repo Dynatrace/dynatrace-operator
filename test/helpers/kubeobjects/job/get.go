@@ -17,11 +17,11 @@ func GetJobsForOwner(ctx context.Context, t *testing.T, resource *resources.Reso
 
 	var targetJobs batchv1.JobList
 	for _, jobItem := range jobs.Items {
-		if len(jobItem.ObjectMeta.OwnerReferences) < 1 {
+		if len(jobItem.OwnerReferences) < 1 {
 			continue
 		}
 
-		if jobItem.ObjectMeta.OwnerReferences[0].Name == ownerName {
+		if jobItem.OwnerReferences[0].Name == ownerName {
 			targetJobs.Items = append(targetJobs.Items, jobItem)
 		}
 	}

@@ -74,13 +74,13 @@ func SetAutomountServiceAccountToken(isEnabled bool) builder.Option[*batchv1.Job
 
 func SetAnnotations(annotations map[string]string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
-		s.ObjectMeta.Annotations = annotations
+		s.Annotations = annotations
 	}
 }
 
 func SetPodAnnotations(annotations map[string]string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
-		s.Spec.Template.ObjectMeta.Annotations = annotations
+		s.Spec.Template.Annotations = annotations
 	}
 }
 
@@ -105,18 +105,18 @@ func SetActiveDeadlineSeconds(deadline int64) builder.Option[*batchv1.Job] {
 
 func AddLabels(labels map[string]string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
-		s.ObjectMeta.Labels = maputils.MergeMap(labels, s.ObjectMeta.Labels)
+		s.Labels = maputils.MergeMap(labels, s.Labels)
 	}
 }
 
 func SetAllLabels(labels, matchLabels, templateLabels, customLabels map[string]string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
-		s.ObjectMeta.Labels = labels
+		s.Labels = labels
 		if matchLabels == nil {
 			s.Spec.Selector = &metav1.LabelSelector{MatchLabels: matchLabels}
 		}
 
-		s.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(customLabels, templateLabels)
+		s.Spec.Template.Labels = maputils.MergeMap(customLabels, templateLabels)
 	}
 }
 

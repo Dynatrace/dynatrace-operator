@@ -24,11 +24,11 @@ func GetReplicaSetsForOwner(ctx context.Context, t *testing.T, resource *resourc
 	replicasets := GetReplicaSetsForNamespace(ctx, t, resource, namespace)
 
 	for _, replicaset := range replicasets.Items {
-		if len(replicaset.ObjectMeta.OwnerReferences) < 1 {
+		if len(replicaset.OwnerReferences) < 1 {
 			continue
 		}
 
-		if replicaset.ObjectMeta.OwnerReferences[0].Name == ownerName {
+		if replicaset.OwnerReferences[0].Name == ownerName {
 			return &replicaset
 		}
 	}
