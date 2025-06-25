@@ -107,7 +107,6 @@ func (dk *DynaKube) GetDynatraceAPIRequestThreshold() uint16 {
 	return *dk.Spec.DynatraceAPIRequestThreshold
 }
 
-//nolint:staticcheck // ST1016 Using method receiver names like "dst" makes distinguishing between DynaKube versions easier
 func (dk *DynaKube) APIRequestThreshold() time.Duration {
 	return time.Duration(dk.GetDynatraceAPIRequestThreshold()) * time.Minute
 }
