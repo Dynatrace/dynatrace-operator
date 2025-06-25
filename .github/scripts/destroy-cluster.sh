@@ -33,5 +33,7 @@ while [[ $NEXT_WAIT_TIME -ne 20 ]]; do
   fi
 done
 
-echo "Timeout reached while waiting for environment '$FLC_ENVIRONMENT' to be destroyed."
-exit 1
+if [[ $NEXT_WAIT_TIME -eq 20 ]]; then
+  echo "Timeout reached while waiting for environment '$FLC_ENVIRONMENT' to be destroyed."
+  exit 1
+fi
