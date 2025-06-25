@@ -135,7 +135,7 @@ func (b *builder) addLogMonitoringEnv(envVarMap *prioritymap.Map) {
 	}
 }
 
-func (b *hostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
+func (hm *hostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
 	envVars := prioritymap.New()
 	prioritymap.Append(envVars, daemonset.Spec.Template.Spec.Containers[0].Env)
 	addDefaultValue(envVars, oneagentDisableContainerInjection, "true")
