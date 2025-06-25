@@ -2,9 +2,6 @@
 
 set -x
 
-DEFAULT_TIMEOUT="80m" # K8s takes <10min, Openshift >40min
-DESIRED_STATE="environment-deployed"
-
 kubectl version
 
 echo "Creating environment '$FLC_ENVIRONMENT' in namespace '$FLC_NAMESPACE'"
@@ -14,7 +11,7 @@ kubectl get flcenvironments --namespace "$FLC_NAMESPACE"
 echo "Patching environment '$FLC_ENVIRONMENT' to 'deployed'"
 kubectl patch --namespace "$FLC_NAMESPACE" --type merge --patch '{"spec": {"desiredState": "environment-deployed"}}' flcenvironment "$FLC_ENVIRONMENT"
 
-echo "Waiting up to '$DEFAULT_TIMEOUT' for successful deployment of environment '$FLC_ENVIRONMENT'"
+echo "Waiting up to 80m for successful deployment of environment '$FLC_ENVIRONMENT'"
 
 # wait until timeout or until the environment is in the desired state
 NEXT_WAIT_TIME=0
@@ -24,7 +21,7 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
 
   if [[ "$current_state" == "environment-deployed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' has been deployed successfully."
-    break
+    exit 0
   elif [[ "$current_state" == "environment-deployment-failed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' deployment failed. Please check the logs for more details."
     exit 1
