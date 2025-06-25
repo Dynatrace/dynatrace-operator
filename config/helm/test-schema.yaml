@@ -1,0 +1,5 @@
+x-google-marketplace:
+  schemaVersion: v2
+  applicationApiVersion: v1beta1
+  properties:
+    publishedVersion: 0.0.0-snapshot

@@ -2,10 +2,11 @@
 
 set -eu
 
-export REGISTRY=gcr.io/dynatrace-marketplace-dev
+export REGISTRY=quay.io/dynatrace
 export APP_NAME=dynatrace-operator
 TAG="${1:-""}"
 
-if docker build --tag "$REGISTRY/$APP_NAME/deployer${TAG}" -f config/helm/Dockerfile config/helm; then
-  docker push "$REGISTRY/$APP_NAME/deployer${TAG}"
+if podman build --tag "$REGISTRY/$APP_NAME/deployer${TAG}" -f config/helm/Dockerfile config/helm; then
+  podman push "$REGISTRY/$APP_NAME/deployer${TAG}"
+  echo "Deployer image built successfully: $REGISTRY/$APP_NAME/deployer${TAG}"
 fi
