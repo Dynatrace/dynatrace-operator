@@ -2,11 +2,60 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[]'
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "dynatrace.com/v1beta2",
+          "kind": "DynaKube",
+          "metadata": {
+            "name": "dynakube",
+            "namespace": "dynatrace"
+          },
+          "spec": {
+            "activeGate": {
+              "capabilities": [
+                "routing",
+                "kubernetes-monitoring",
+                "dynatrace-api"
+              ],
+              "resources": {
+                "limits": {
+                  "cpu": "1000m",
+                  "memory": "1.5Gi"
+                },
+                "requests": {
+                  "cpu": "500m",
+                  "memory": "512Mi"
+                }
+              }
+            },
+            "apiUrl": "https://ENVIRONMENTID.live.dynatrace.com/api",
+            "oneAgent": {
+              "classicFullStack": {
+                "tolerations": [
+                  {
+                    "effect": "NoSchedule",
+                    "key": "node-role.kubernetes.io/master",
+                    "operator": "Exists"
+                  },
+                  {
+                    "effect": "NoSchedule",
+                    "key": "node-role.kubernetes.io/control-plane",
+                    "operator": "Exists"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing
     containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
+    createdAt: "2025-06-26T09:28:27Z"
     operatorframework.io/suggested-namespace: dynatrace
+    operators.operatorframework.io/builder: operator-sdk-v1.40.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
   labels:
@@ -14,946 +63,12 @@ metadata:
     operatorframework.io/arch.arm64: supported
     operatorframework.io/arch.ppc64le: supported
     operatorframework.io/arch.s390x: supported
-  name: dynatrace-operator.v0.0.0
+  name: dynatrace-operator.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: DynaKube is the Schema for the DynaKube API
-      displayName: Dynatrace DynaKube
-      kind: DynaKube
-      name: dynakubes.dynatrace.com
-      resources:
-      - kind: DaemonSet
-        name: ""
-        version: v1
-      - kind: Pod
-        name: ""
-        version: v1
-      - kind: StatefulSet
-        name: ""
-        version: v1
-      specDescriptors:
-      - description: Location of the Dynatrace API to connect to, including your specific
-          environment ID
-        displayName: API URL
-        path: apiUrl
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Credentials for the DynaKube to connect back to Dynatrace.
-        displayName: API and PaaS Tokens
-        path: tokens
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Disable certificate validation checks for installer download
-          and API communication
-        displayName: Skip Certificate Check
-        path: skipCertCheck
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: 'Optional: Adds custom RootCAs from a configmap This property
-          only affects certificates used to communicate with the Dynatrace API. The
-          property is not applied to the ActiveGate'
-        displayName: Trusted CAs
-        path: trustedCAs
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:ConfigMap
-      - description: 'Optional: Sets Network Zone for OneAgent and ActiveGate pods'
-        displayName: Network Zone
-        path: networkZone
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: Pull secret for your private registry'
-        displayName: Custom PullSecret
-        path: customPullSecret
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: If enabled, Istio on the cluster will be configured automatically
-          to allow access to the Dynatrace environment
-        displayName: Enable Istio automatic management
-        path: enableIstio
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      version: v1
-    - description: DynaKube is the Schema for the DynaKube API
-      displayName: Dynatrace DynaKube
-      kind: DynaKube
-      name: dynakubes.dynatrace.com
-      resources:
-      - kind: DaemonSet
-        name: ""
-        version: v1
-      - kind: Pod
-        name: ""
-        version: v1
-      - kind: StatefulSet
-        name: ""
-        version: v1
-      specDescriptors:
-      - description: Location of the Dynatrace API to connect to, including your specific
-          environment UUID
-        displayName: API URL
-        path: apiUrl
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Credentials for the DynaKube to connect back to Dynatrace.
-        displayName: API and PaaS Tokens
-        path: tokens
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Disable certificate validation checks for installer download
-          and API communication
-        displayName: Skip Certificate Check
-        path: skipCertCheck
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: 'Optional: Adds custom RootCAs from a configmap This property
-          only affects certificates used to communicate with the Dynatrace API. The
-          property is not applied to the ActiveGate'
-        displayName: Trusted CAs
-        path: trustedCAs
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:ConfigMap
-      - description: 'Optional: Sets Network Zone for OneAgent and ActiveGate pods'
-        displayName: Network Zone
-        path: networkZone
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: Pull secret for your private registry'
-        displayName: Custom PullSecret
-        path: customPullSecret
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: If enabled, Istio on the cluster will be configured automatically
-          to allow access to the Dynatrace environment
-        displayName: Enable Istio automatic management
-        path: enableIstio
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: 'Optional: the ActiveGate container image. Defaults to the latest
-          ActiveGate image provided by the Docker Registry implementation from the
-          Dynatrace environment set as API URL.'
-        displayName: Image
-        path: activeGate.image
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: If specified, indicates the OneAgent version to use
-          Defaults to latest Example: {major.minor.release} - 1.200.0'
-        displayName: OneAgent version
-        path: oneAgent.version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: the Dynatrace installer container image Defaults to
-          docker.io/dynatrace/oneagent:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent
-          for OpenShift'
-        displayName: Image
-        path: oneAgent.image
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Disable automatic restarts of OneAgent pods in case a new version
-          is available
-        displayName: Automatically update Agent
-        path: oneAgent.autoUpdate
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Enables FullStack Monitoring
-        displayName: FullStack Monitoring
-        path: classicFullStack.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
-      - description: Node selector to control the selection of nodes (optional)
-        displayName: Node Selector
-        path: classicFullStack.nodeSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:Node
-      - description: 'Optional: set tolerations for the OneAgent pods'
-        displayName: Tolerations
-        path: classicFullStack.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: Defines the time to wait until OneAgent pod is ready
-          after update - default 300 sec'
-        displayName: Wait seconds until ready
-        path: classicFullStack.waitReadySeconds
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: 'Optional: define resources requests and limits for single pods'
-        displayName: Resource Requirements
-        path: classicFullStack.resources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: 'Optional: Arguments to the OneAgent installer'
-        displayName: OneAgent installer arguments
-        path: classicFullStack.args
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: List of environment variables to set for the installer'
-        displayName: OneAgent environment variable installer arguments
-        path: classicFullStack.env
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: If specified, indicates the pod''s priority. Name
-          must be defined by creating a PriorityClass object with that name. If not
-          specified the setting will be removed from the DaemonSet.'
-        displayName: Priority Class name
-        path: classicFullStack.priorityClassName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: 'Optional: Sets DNS Policy for the OneAgent pods'
-        displayName: DNS Policy
-        path: classicFullStack.dnsPolicy
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: set custom Service Account Name used with OneAgent
-          pods'
-        displayName: Service Account name
-        path: classicFullStack.serviceAccountName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:ServiceAccount
-      - description: 'Optional: Adds additional labels for the OneAgent pods'
-        displayName: Labels
-        path: classicFullStack.labels
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: Runs the OneAgent Pods as unprivileged (Early Adopter)'
-        displayName: Use unprivileged mode
-        path: classicFullStack.useUnprivilegedMode
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
-      - description: Defines if you want to use the immutable image or the installer
-        displayName: Use immutable image
-        path: classicFullStack.useImmutableImage
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
-      - description: Enables Capability
-        displayName: Capability
-        path: kubernetesMonitoring.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
-      - description: Enables Capability
-        displayName: Capability
-        path: routing.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
-      - description: Amount of replicas for your DynaKube
-        displayName: Replicas
-        path: kubernetesMonitoring.replicas
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: Amount of replicas for your DynaKube
-        displayName: Replicas
-        path: routing.replicas
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: 'Optional: Set activation group for ActiveGate'
-        displayName: Activation group
-        path: kubernetesMonitoring.group
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: Set activation group for ActiveGate'
-        displayName: Activation group
-        path: routing.group
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - displayName: Custom properties value
-        path: kubernetesMonitoring.customProperties.value
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - displayName: Custom properties value
-        path: routing.customProperties.value
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - displayName: Custom properties secret
-        path: kubernetesMonitoring.customProperties.valueFrom
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - displayName: Custom properties secret
-        path: routing.customProperties.valueFrom
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: 'Optional: define resources requests and limits for single ActiveGate
-          pods'
-        displayName: Resource Requirements
-        path: kubernetesMonitoring.resources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: 'Optional: define resources requests and limits for single ActiveGate
-          pods'
-        displayName: Resource Requirements
-        path: routing.resources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: 'Optional: Node selector to control the selection of nodes'
-        displayName: Node Selector
-        path: kubernetesMonitoring.nodeSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:Node
-      - description: 'Optional: Node selector to control the selection of nodes'
-        displayName: Node Selector
-        path: routing.nodeSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:Node
-      - description: 'Optional: set tolerations for the ActiveGatePods pods'
-        displayName: Tolerations
-        path: kubernetesMonitoring.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: set tolerations for the ActiveGatePods pods'
-        displayName: Tolerations
-        path: routing.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: Adds additional labels for the ActiveGate pods'
-        displayName: Labels
-        path: kubernetesMonitoring.labels
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: Adds additional labels for the ActiveGate pods'
-        displayName: Labels
-        path: routing.labels
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: Adds additional arguments for the ActiveGate instances'
-        displayName: Arguments
-        path: kubernetesMonitoring.args
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: Adds additional arguments for the ActiveGate instances'
-        displayName: Arguments
-        path: routing.args
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: List of environment variables to set for the ActiveGate'
-        displayName: Environment variables
-        path: kubernetesMonitoring.env
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: List of environment variables to set for the ActiveGate'
-        displayName: Environment variables
-        path: routing.env
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: set custom Service Account Name used with ActiveGate
-          pods'
-        displayName: Service Account name
-        path: kubernetesMonitoring.serviceAccountName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:ServiceAccount
-      - description: 'Optional: set custom Service Account Name used with ActiveGate
-          pods'
-        displayName: Service Account name
-        path: routing.serviceAccountName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:ServiceAccount
-      statusDescriptors:
-      - description: Dynatrace version being used.
-        displayName: Version
-        path: oneAgent.version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      version: v1alpha1
-    - description: DynaKube is the Schema for the DynaKube API
-      displayName: Dynatrace DynaKube
-      kind: DynaKube
-      name: dynakubes.dynatrace.com
-      resources:
-      - kind: DaemonSet
-        name: ""
-        version: v1
-      - kind: Pod
-        name: ""
-        version: v1
-      - kind: StatefulSet
-        name: ""
-        version: v1
-      specDescriptors:
-      - description: |-
-          Dynatrace `apiUrl`, including the `/api` path at the end.
-          - For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
-          - For Managed, change the `apiUrl` address.
-          For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
-        displayName: API URL
-        path: apiUrl
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Name of the secret holding the tokens used for connecting to
-          Dynatrace.
-        displayName: Tenant specific secrets
-        path: tokens
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: |-
-          Set custom proxy settings either directly or from a secret with the field `proxy`.
-          Applies to Dynatrace Operator, ActiveGate, and OneAgents.
-        displayName: Proxy
-        path: proxy
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: |-
-          Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
-          Set to `true` if you want to skip certification validation checks.
-        displayName: Skip Certificate Check
-        path: skipCertCheck
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: |-
-          Specify the name of the group to which you want to assign the host.
-          This method is preferred over the now obsolete `--set-host-group` argument.
-          If both settings are used, this field takes precedence over the `--set-host-group` argument.
-        displayName: Host Group
-        path: oneAgent.hostGroup
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: |-
-          Adds custom RootCAs from a configmap.
-          The key to the data must be `certs`.
-          This applies to both the Dynatrace Operator and the OneAgent. Doesn't apply to ActiveGate.
-        displayName: Trusted CAs
-        path: trustedCAs
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:ConfigMap
-      - description: Sets a network zone for the OneAgent and ActiveGate pods.
-        displayName: Network Zone
-        path: networkZone
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: |-
-          Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
-          To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
-          (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
-        displayName: Custom PullSecret
-        path: customPullSecret
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Minimum minutes between Dynatrace API requests.
-        displayName: Dynatrace API Request Threshold
-        path: dynatraceApiRequestThreshold
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: |-
-          When enabled, and if Istio is installed in the Kubernetes environment, Dynatrace Operator will create the corresponding VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
-          Disabled by default.
-        displayName: Enable Istio automatic management
-        path: enableIstio
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Configuration for Metadata Enrichment.
-        displayName: Metadata Enrichment
-        path: metadataEnrichment
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Use a custom ActiveGate image. Defaults to the latest ActiveGate
-          image provided by the registry on the tenant
-        displayName: Image
-        path: activeGate.image
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: |-
-          The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
-          `server.p12`: certificate+key pair in pkcs12 format
-          `password`: passphrase to read server.p12
-        displayName: TlsSecretName
-        path: activeGate.tlsSecretName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The OneAgent version to be used.
-        displayName: OneAgent version
-        path: oneAgent.applicationMonitoring.version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The OneAgent version to be used for OneAgents running in the
-          dedicated pod. This setting doesn't affect the OneAgent version used for
-          application monitoring.
-        displayName: OneAgent version
-        path: oneAgent.classicFullStack.version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The OneAgent version to be used for OneAgents running in the
-          dedicated pod. This setting doesn't affect the OneAgent version used for
-          application monitoring.
-        displayName: OneAgent version
-        path: oneAgent.cloudNativeFullStack.version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The OneAgent version to be used for OneAgents running in the
-          dedicated pod. This setting doesn't affect the OneAgent version used for
-          application monitoring.
-        displayName: OneAgent version
-        path: oneAgent.hostMonitoring.version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The OneAgent image that is used to inject into Pods.
-        displayName: CodeModulesImage
-        path: oneAgent.applicationMonitoring.codeModulesImage
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Use a custom OneAgent Docker image. Defaults to the image from
-          the Dynatrace cluster.
-        displayName: Image
-        path: oneAgent.classicFullStack.image
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The OneAgent image that is used to inject into Pods.
-        displayName: CodeModulesImage
-        path: oneAgent.cloudNativeFullStack.codeModulesImage
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Use a custom OneAgent Docker image. Defaults to the image from
-          the Dynatrace cluster.
-        displayName: Image
-        path: oneAgent.cloudNativeFullStack.image
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Use a custom OneAgent Docker image. Defaults to the image from
-          the Dynatrace cluster.
-        displayName: Image
-        path: oneAgent.hostMonitoring.image
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: |-
-          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
-          Enabled by default.
-        displayName: Automatically update Agent
-        path: oneAgent.classicFullStack.autoUpdate
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: |-
-          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
-          Enabled by default.
-        displayName: Automatically update Agent
-        path: oneAgent.cloudNativeFullStack.autoUpdate
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: |-
-          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
-          Enabled by default.
-        displayName: Automatically update Agent
-        path: oneAgent.hostMonitoring.autoUpdate
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: |-
-          Define resources requests and limits for the initContainer. For details, see Managing resources for containers
-          (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
-        displayName: Resource Requirements
-        path: oneAgent.applicationMonitoring.initResources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: |-
-          Define resources requests and limits for the initContainer. For details, see Managing resources for containers
-          (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
-        displayName: Resource Requirements
-        path: oneAgent.cloudNativeFullStack.initResources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: |-
-          Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
-        displayName: Namespace Selector
-        path: oneAgent.applicationMonitoring.namespaceSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
-      - description: Specify the node selector that controls on which nodes OneAgent
-          will be deployed.
-        displayName: Node Selector
-        path: oneAgent.classicFullStack.nodeSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:Node
-      - description: The SecComp Profile that will be configured in order to run in
-          secure computing mode.
-        displayName: OneAgent SecComp Profile
-        path: oneAgent.classicFullStack.secCompProfile
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
-      - description: |-
-          Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
-          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
-        displayName: Namespace Selector
-        path: oneAgent.cloudNativeFullStack.namespaceSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
-      - description: Specify the node selector that controls on which nodes OneAgent
-          will be deployed.
-        displayName: Node Selector
-        path: oneAgent.cloudNativeFullStack.nodeSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:Node
-      - description: The SecComp Profile that will be configured in order to run in
-          secure computing mode.
-        displayName: OneAgent SecComp Profile
-        path: oneAgent.cloudNativeFullStack.secCompProfile
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
-      - description: Specify the node selector that controls on which nodes OneAgent
-          will be deployed.
-        displayName: Node Selector
-        path: oneAgent.hostMonitoring.nodeSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:Node
-      - description: The SecComp Profile that will be configured in order to run in
-          secure computing mode.
-        displayName: OneAgent SecComp Profile
-        path: oneAgent.hostMonitoring.secCompProfile
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
-      - description: Tolerations to include with the OneAgent DaemonSet. For details,
-          see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
-        displayName: Tolerations
-        path: oneAgent.classicFullStack.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Tolerations to include with the OneAgent DaemonSet. For details,
-          see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
-        displayName: Tolerations
-        path: oneAgent.cloudNativeFullStack.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Tolerations to include with the OneAgent DaemonSet. For details,
-          see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
-        displayName: Tolerations
-        path: oneAgent.hostMonitoring.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: |-
-          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
-          - `resource.requests` shows the values needed to run
-          - `resource.limits` shows the maximum limits for the pod
-        displayName: Resource Requirements
-        path: oneAgent.classicFullStack.oneAgentResources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: |-
-          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
-          - `resource.requests` shows the values needed to run
-          - `resource.limits` shows the maximum limits for the pod
-        displayName: Resource Requirements
-        path: oneAgent.cloudNativeFullStack.oneAgentResources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: |-
-          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
-          - `resource.requests` shows the values needed to run
-          - `resource.limits` shows the maximum limits for the pod
-        displayName: Resource Requirements
-        path: oneAgent.hostMonitoring.oneAgentResources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: |-
-          Set additional arguments to the OneAgent installer.
-          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
-        displayName: OneAgent installer arguments
-        path: oneAgent.classicFullStack.args
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: |-
-          Set additional arguments to the OneAgent installer.
-          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
-        displayName: OneAgent installer arguments
-        path: oneAgent.cloudNativeFullStack.args
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: |-
-          Set additional arguments to the OneAgent installer.
-          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
-          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
-        displayName: OneAgent installer arguments
-        path: oneAgent.hostMonitoring.args
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Set additional environment variables for the OneAgent pods.
-        displayName: OneAgent environment variable installer arguments
-        path: oneAgent.classicFullStack.env
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Set additional environment variables for the OneAgent pods.
-        displayName: OneAgent environment variable installer arguments
-        path: oneAgent.cloudNativeFullStack.env
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Set additional environment variables for the OneAgent pods.
-        displayName: OneAgent environment variable installer arguments
-        path: oneAgent.hostMonitoring.env
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: |-
-          Assign a priority class to the ActiveGate pods. By default, no class is set.
-          For details, see Pod Priority and Preemption. (https://dt-url.net/n8437bl)
-        displayName: Priority Class name
-        path: activeGate.priorityClassName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: |-
-          Assign a priority class to the OneAgent pods. By default, no class is set.
-          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
-        displayName: Priority Class name
-        path: oneAgent.classicFullStack.priorityClassName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: |-
-          Assign a priority class to the OneAgent pods. By default, no class is set.
-          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
-        displayName: Priority Class name
-        path: oneAgent.cloudNativeFullStack.priorityClassName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: |-
-          Assign a priority class to the OneAgent pods. By default, no class is set.
-          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
-        displayName: Priority Class name
-        path: oneAgent.hostMonitoring.priorityClassName
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: Sets DNS Policy for the ActiveGate pods
-        displayName: DNS Policy
-        path: activeGate.dnsPolicy
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Set the DNS Policy for OneAgent pods. For details, see Pods DNS
-          Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
-        displayName: DNS Policy
-        path: oneAgent.classicFullStack.dnsPolicy
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Set the DNS Policy for OneAgent pods. For details, see Pods DNS
-          Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
-        displayName: DNS Policy
-        path: oneAgent.cloudNativeFullStack.dnsPolicy
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Set the DNS Policy for OneAgent pods. For details, see Pods DNS
-          Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
-        displayName: DNS Policy
-        path: oneAgent.hostMonitoring.dnsPolicy
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Your defined labels for OneAgent pods in order to structure workloads
-          as desired.
-        displayName: Labels
-        path: oneAgent.classicFullStack.labels
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Your defined labels for OneAgent pods in order to structure workloads
-          as desired.
-        displayName: Labels
-        path: oneAgent.cloudNativeFullStack.labels
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Your defined labels for OneAgent pods in order to structure workloads
-          as desired.
-        displayName: Labels
-        path: oneAgent.hostMonitoring.labels
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Adds additional annotations to the ActiveGate pods
-        displayName: Annotations
-        path: activeGate.annotations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Add custom OneAgent annotations.
-        displayName: Annotations
-        path: oneAgent.classicFullStack.annotations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Add custom OneAgent annotations.
-        displayName: Annotations
-        path: oneAgent.cloudNativeFullStack.annotations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Add custom OneAgent annotations.
-        displayName: Annotations
-        path: oneAgent.hostMonitoring.annotations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Amount of replicas for your ActiveGates
-        displayName: Replicas
-        path: activeGate.replicas
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: Set activation group for ActiveGate
-        displayName: Activation group
-        path: activeGate.group
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Custom properties value.
-        displayName: Custom properties value
-        path: activeGate.customProperties.value
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Proxy URL. It has preference over ValueFrom.
-        displayName: Proxy value
-        path: proxy.value
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Custom properties secret.
-        displayName: Custom properties secret
-        path: activeGate.customProperties.valueFrom
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Secret containing proxy URL.
-        displayName: Proxy secret
-        path: proxy.valueFrom
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: |-
-          Resource settings for ActiveGate container.
-          Consumption of the ActiveGate heavily depends on the workload to monitor. Adjust values accordingly.
-        displayName: Resource Requirements
-        path: activeGate.resources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Specify the node selector that controls on which nodes ActiveGate
-          will be deployed.
-        displayName: Node Selector
-        path: activeGate.nodeSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:Node
-      - description: Set tolerations for the ActiveGate pods
-        displayName: Tolerations
-        path: activeGate.tolerations
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Your defined labels for ActiveGate pods in order to structure
-          workloads as desired.
-        displayName: Labels
-        path: activeGate.labels
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: List of environment variables to set for the ActiveGate
-        displayName: Environment variables
-        path: activeGate.env
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Adds TopologySpreadConstraints to the ActiveGate pods
-        displayName: topologySpreadConstraints
-        path: activeGate.topologySpreadConstraints
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: General configuration about ActiveGate instances.
-        displayName: ActiveGate
-        path: activeGate
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Enables MetadataEnrichment, `false` by default.
-        displayName: MetaDataEnrichment
-        path: metadataEnrichment.enabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
-      - description: The namespaces where you want Dynatrace Operator to inject enrichment.
-        displayName: Namespace Selector
-        path: metadataEnrichment.namespaceSelector
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
-      - description: |-
-          General configuration about OneAgent instances.
-          You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
-        displayName: OneAgent
-        path: oneAgent
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      version: v1beta2
     - description: DynaKube is the Schema for the DynaKube API
       displayName: Dynatrace DynaKube
       kind: DynaKube
@@ -1598,6 +713,581 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
+    - description: DynaKube is the Schema for the DynaKube API
+      displayName: Dynatrace DynaKube
+      kind: DynaKube
+      name: dynakubes.dynatrace.com
+      resources:
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: |-
+          Dynatrace `apiUrl`, including the `/api` path at the end.
+          - For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+          - For Managed, change the `apiUrl` address.
+          For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
+        displayName: API URL
+        path: apiUrl
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Name of the secret holding the tokens used for connecting to
+          Dynatrace.
+        displayName: Tenant specific secrets
+        path: tokens
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: |-
+          Set custom proxy settings either directly or from a secret with the field `proxy`.
+          Applies to Dynatrace Operator, ActiveGate, and OneAgents.
+        displayName: Proxy
+        path: proxy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: |-
+          Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
+          Set to `true` if you want to skip certification validation checks.
+        displayName: Skip Certificate Check
+        path: skipCertCheck
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: |-
+          Specify the name of the group to which you want to assign the host.
+          This method is preferred over the now obsolete `--set-host-group` argument.
+          If both settings are used, this field takes precedence over the `--set-host-group` argument.
+        displayName: Host Group
+        path: oneAgent.hostGroup
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: |-
+          Adds custom RootCAs from a configmap.
+          The key to the data must be `certs`.
+          This applies to both the Dynatrace Operator and the OneAgent. Doesn't apply to ActiveGate.
+        displayName: Trusted CAs
+        path: trustedCAs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: Sets a network zone for the OneAgent and ActiveGate pods.
+        displayName: Network Zone
+        path: networkZone
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: |-
+          Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
+          To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
+          (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
+        displayName: Custom PullSecret
+        path: customPullSecret
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Minimum minutes between Dynatrace API requests.
+        displayName: Dynatrace API Request Threshold
+        path: dynatraceApiRequestThreshold
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: |-
+          When enabled, and if Istio is installed in the Kubernetes environment, Dynatrace Operator will create the corresponding VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
+          Disabled by default.
+        displayName: Enable Istio automatic management
+        path: enableIstio
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Configuration for Metadata Enrichment.
+        displayName: Metadata Enrichment
+        path: metadataEnrichment
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Use a custom ActiveGate image. Defaults to the latest ActiveGate
+          image provided by the registry on the tenant
+        displayName: Image
+        path: activeGate.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: |-
+          The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
+          `server.p12`: certificate+key pair in pkcs12 format
+          `password`: passphrase to read server.p12
+        displayName: TlsSecretName
+        path: activeGate.tlsSecretName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The OneAgent version to be used.
+        displayName: OneAgent version
+        path: oneAgent.applicationMonitoring.version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The OneAgent version to be used for OneAgents running in the
+          dedicated pod. This setting doesn't affect the OneAgent version used for
+          application monitoring.
+        displayName: OneAgent version
+        path: oneAgent.classicFullStack.version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The OneAgent version to be used for OneAgents running in the
+          dedicated pod. This setting doesn't affect the OneAgent version used for
+          application monitoring.
+        displayName: OneAgent version
+        path: oneAgent.cloudNativeFullStack.version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The OneAgent version to be used for OneAgents running in the
+          dedicated pod. This setting doesn't affect the OneAgent version used for
+          application monitoring.
+        displayName: OneAgent version
+        path: oneAgent.hostMonitoring.version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The OneAgent image that is used to inject into Pods.
+        displayName: CodeModulesImage
+        path: oneAgent.applicationMonitoring.codeModulesImage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Use a custom OneAgent Docker image. Defaults to the image from
+          the Dynatrace cluster.
+        displayName: Image
+        path: oneAgent.classicFullStack.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The OneAgent image that is used to inject into Pods.
+        displayName: CodeModulesImage
+        path: oneAgent.cloudNativeFullStack.codeModulesImage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Use a custom OneAgent Docker image. Defaults to the image from
+          the Dynatrace cluster.
+        displayName: Image
+        path: oneAgent.cloudNativeFullStack.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Use a custom OneAgent Docker image. Defaults to the image from
+          the Dynatrace cluster.
+        displayName: Image
+        path: oneAgent.hostMonitoring.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: |-
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+          Enabled by default.
+        displayName: Automatically update Agent
+        path: oneAgent.classicFullStack.autoUpdate
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: |-
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+          Enabled by default.
+        displayName: Automatically update Agent
+        path: oneAgent.cloudNativeFullStack.autoUpdate
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: |-
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+          Enabled by default.
+        displayName: Automatically update Agent
+        path: oneAgent.hostMonitoring.autoUpdate
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: |-
+          Define resources requests and limits for the initContainer. For details, see Managing resources for containers
+          (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
+        displayName: Resource Requirements
+        path: oneAgent.applicationMonitoring.initResources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Define resources requests and limits for the initContainer. For details, see Managing resources for containers
+          (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
+        displayName: Resource Requirements
+        path: oneAgent.cloudNativeFullStack.initResources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
+          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+        displayName: Namespace Selector
+        path: oneAgent.applicationMonitoring.namespaceSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
+      - description: Specify the node selector that controls on which nodes OneAgent
+          will be deployed.
+        displayName: Node Selector
+        path: oneAgent.classicFullStack.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: The SecComp Profile that will be configured in order to run in
+          secure computing mode.
+        displayName: OneAgent SecComp Profile
+        path: oneAgent.classicFullStack.secCompProfile
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
+      - description: |-
+          Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
+          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+        displayName: Namespace Selector
+        path: oneAgent.cloudNativeFullStack.namespaceSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
+      - description: Specify the node selector that controls on which nodes OneAgent
+          will be deployed.
+        displayName: Node Selector
+        path: oneAgent.cloudNativeFullStack.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: The SecComp Profile that will be configured in order to run in
+          secure computing mode.
+        displayName: OneAgent SecComp Profile
+        path: oneAgent.cloudNativeFullStack.secCompProfile
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
+      - description: Specify the node selector that controls on which nodes OneAgent
+          will be deployed.
+        displayName: Node Selector
+        path: oneAgent.hostMonitoring.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: The SecComp Profile that will be configured in order to run in
+          secure computing mode.
+        displayName: OneAgent SecComp Profile
+        path: oneAgent.hostMonitoring.secCompProfile
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
+      - description: Tolerations to include with the OneAgent DaemonSet. For details,
+          see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
+        displayName: Tolerations
+        path: oneAgent.classicFullStack.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Tolerations to include with the OneAgent DaemonSet. For details,
+          see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
+        displayName: Tolerations
+        path: oneAgent.cloudNativeFullStack.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Tolerations to include with the OneAgent DaemonSet. For details,
+          see Taints and Tolerations (https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
+        displayName: Tolerations
+        path: oneAgent.hostMonitoring.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          - `resource.requests` shows the values needed to run
+          - `resource.limits` shows the maximum limits for the pod
+        displayName: Resource Requirements
+        path: oneAgent.classicFullStack.oneAgentResources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          - `resource.requests` shows the values needed to run
+          - `resource.limits` shows the maximum limits for the pod
+        displayName: Resource Requirements
+        path: oneAgent.cloudNativeFullStack.oneAgentResources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          - `resource.requests` shows the values needed to run
+          - `resource.limits` shows the maximum limits for the pod
+        displayName: Resource Requirements
+        path: oneAgent.hostMonitoring.oneAgentResources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+        displayName: OneAgent installer arguments
+        path: oneAgent.classicFullStack.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+        displayName: OneAgent installer arguments
+        path: oneAgent.cloudNativeFullStack.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+          For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
+        displayName: OneAgent installer arguments
+        path: oneAgent.hostMonitoring.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Set additional environment variables for the OneAgent pods.
+        displayName: OneAgent environment variable installer arguments
+        path: oneAgent.classicFullStack.env
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Set additional environment variables for the OneAgent pods.
+        displayName: OneAgent environment variable installer arguments
+        path: oneAgent.cloudNativeFullStack.env
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Set additional environment variables for the OneAgent pods.
+        displayName: OneAgent environment variable installer arguments
+        path: oneAgent.hostMonitoring.env
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          Assign a priority class to the ActiveGate pods. By default, no class is set.
+          For details, see Pod Priority and Preemption. (https://dt-url.net/n8437bl)
+        displayName: Priority Class name
+        path: activeGate.priorityClassName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:PriorityClass
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+        displayName: Priority Class name
+        path: oneAgent.classicFullStack.priorityClassName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:PriorityClass
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+        displayName: Priority Class name
+        path: oneAgent.cloudNativeFullStack.priorityClassName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:PriorityClass
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+        displayName: Priority Class name
+        path: oneAgent.hostMonitoring.priorityClassName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:PriorityClass
+      - description: Sets DNS Policy for the ActiveGate pods
+        displayName: DNS Policy
+        path: activeGate.dnsPolicy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Set the DNS Policy for OneAgent pods. For details, see Pods DNS
+          Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
+        displayName: DNS Policy
+        path: oneAgent.classicFullStack.dnsPolicy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Set the DNS Policy for OneAgent pods. For details, see Pods DNS
+          Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
+        displayName: DNS Policy
+        path: oneAgent.cloudNativeFullStack.dnsPolicy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Set the DNS Policy for OneAgent pods. For details, see Pods DNS
+          Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
+        displayName: DNS Policy
+        path: oneAgent.hostMonitoring.dnsPolicy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Your defined labels for OneAgent pods in order to structure workloads
+          as desired.
+        displayName: Labels
+        path: oneAgent.classicFullStack.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Your defined labels for OneAgent pods in order to structure workloads
+          as desired.
+        displayName: Labels
+        path: oneAgent.cloudNativeFullStack.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Your defined labels for OneAgent pods in order to structure workloads
+          as desired.
+        displayName: Labels
+        path: oneAgent.hostMonitoring.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Adds additional annotations to the ActiveGate pods
+        displayName: Annotations
+        path: activeGate.annotations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Add custom OneAgent annotations.
+        displayName: Annotations
+        path: oneAgent.classicFullStack.annotations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Add custom OneAgent annotations.
+        displayName: Annotations
+        path: oneAgent.cloudNativeFullStack.annotations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Add custom OneAgent annotations.
+        displayName: Annotations
+        path: oneAgent.hostMonitoring.annotations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Amount of replicas for your ActiveGates
+        displayName: Replicas
+        path: activeGate.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: Set activation group for ActiveGate
+        displayName: Activation group
+        path: activeGate.group
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Custom properties value.
+        displayName: Custom properties value
+        path: activeGate.customProperties.value
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Proxy URL. It has preference over ValueFrom.
+        displayName: Proxy value
+        path: proxy.value
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Custom properties secret.
+        displayName: Custom properties secret
+        path: activeGate.customProperties.valueFrom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Secret containing proxy URL.
+        displayName: Proxy secret
+        path: proxy.valueFrom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: |-
+          Resource settings for ActiveGate container.
+          Consumption of the ActiveGate heavily depends on the workload to monitor. Adjust values accordingly.
+        displayName: Resource Requirements
+        path: activeGate.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: Specify the node selector that controls on which nodes ActiveGate
+          will be deployed.
+        displayName: Node Selector
+        path: activeGate.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: Set tolerations for the ActiveGate pods
+        displayName: Tolerations
+        path: activeGate.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Your defined labels for ActiveGate pods in order to structure
+          workloads as desired.
+        displayName: Labels
+        path: activeGate.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: List of environment variables to set for the ActiveGate
+        displayName: Environment variables
+        path: activeGate.env
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Adds TopologySpreadConstraints to the ActiveGate pods
+        displayName: topologySpreadConstraints
+        path: activeGate.topologySpreadConstraints
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: General configuration about ActiveGate instances.
+        displayName: ActiveGate
+        path: activeGate
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Enables MetadataEnrichment, `false` by default.
+        displayName: MetaDataEnrichment
+        path: metadataEnrichment.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: The namespaces where you want Dynatrace Operator to inject enrichment.
+        displayName: Namespace Selector
+        path: metadataEnrichment.namespaceSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
+      - description: |-
+          General configuration about OneAgent instances.
+          You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
+        displayName: OneAgent
+        path: oneAgent
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      version: v1beta2
+    - kind: DynaKube
+      name: dynakubes.dynatrace.com
+      version: v1beta3
+    - kind: DynaKube
+      name: dynakubes.dynatrace.com
+      version: v1beta4
+    - kind: DynaKube
+      name: dynakubes.dynatrace.com
+      version: v1beta5
+    - kind: EdgeConnect
+      name: edgeconnects.dynatrace.com
+      version: v1alpha1
+    - kind: EdgeConnect
+      name: edgeconnects.dynatrace.com
+      version: v1alpha2
   description: |
     The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
 
@@ -1644,8 +1334,729 @@ spec:
     mediatype: image/png
   install:
     spec:
-      deployments: null
-    strategy: ""
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          - nonroot-v2
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: dynatrace-activegate
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        - apiGroups:
+          - ""
+          resources:
+          - nodes/proxy
+          verbs:
+          - get
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: dynatrace-dynakube-oneagent
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          - pods
+          - namespaces
+          - replicationcontrollers
+          - events
+          - resourcequotas
+          - pods/proxy
+          - nodes/proxy
+          - nodes/metrics
+          - services
+          verbs:
+          - list
+          - watch
+          - get
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          - cronjobs
+          verbs:
+          - list
+          - watch
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - replicasets
+          - statefulsets
+          - daemonsets
+          verbs:
+          - list
+          - watch
+          - get
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - list
+          - watch
+          - get
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - clusterversions
+          verbs:
+          - list
+          - watch
+          - get
+        - apiGroups:
+          - dynatrace.com
+          resources:
+          - dynakubes
+          verbs:
+          - list
+          - watch
+          - get
+        - nonResourceURLs:
+          - /metrics
+          - /version
+          - /readyz
+          - /livez
+          verbs:
+          - get
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          - nonroot-v2
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          - namespaces
+          - nodes
+          - nodes/metrics
+          - nodes/proxy
+          - pods
+          - pods/proxy
+          - replicationcontrollers
+          - resourcequotas
+          - serviceaccounts
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - cronjobs
+          - jobs
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - deployments
+          - replicasets
+          - statefulsets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - networkpolicies
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - clusterroles
+          - rolebindings
+          - roles
+          verbs:
+          - get
+          - list
+          - watch
+        serviceAccountName: dynatrace-kubernetes-monitoring
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resourceNames:
+          - dynatrace-bootstrapper-config
+          - dynatrace-dynakube-config
+          - dynatrace-metadata-enrichment-endpoint
+          resources:
+          - secrets
+          verbs:
+          - get
+          - update
+          - delete
+          - list
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resourceNames:
+          - dynatrace-webhook
+          resources:
+          - mutatingwebhookconfigurations
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resourceNames:
+          - dynatrace-webhook
+          resources:
+          - validatingwebhookconfigurations
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - apiextensions.k8s.io
+          resourceNames:
+          - dynakubes.dynatrace.com
+          - edgeconnects.dynatrace.com
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          - nonroot-v2
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: dynatrace-operator
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resourceNames:
+          - dynatrace-dynakube-config
+          - dynatrace-bootstrapper-config
+          - dynatrace-metadata-enrichment-endpoint
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - replicationcontrollers
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - statefulsets
+          - daemonsets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          - cronjobs
+          verbs:
+          - get
+        - apiGroups:
+          - apps.openshift.io
+          resources:
+          - deploymentconfigs
+          verbs:
+          - get
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          - nonroot-v2
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: dynatrace-webhook
+      deployments:
+      - label:
+          app.kubernetes.io/component: operator
+          app.kubernetes.io/name: dynatrace-operator
+          app.kubernetes.io/version: 0.0.0-snapshot
+          dynatrace.com/install-source: manifest
+        name: dynatrace-operator
+        spec:
+          replicas: 1
+          revisionHistoryLimit: 1
+          selector:
+            matchLabels:
+              name: dynatrace-operator
+          strategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              annotations:
+                dynatrace.com/inject: "false"
+              labels:
+                app.kubernetes.io/component: operator
+                app.kubernetes.io/name: dynatrace-operator
+                app.kubernetes.io/version: 0.0.0-snapshot
+                name: dynatrace-operator
+            spec:
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                        - amd64
+                        - arm64
+                        - ppc64le
+                        - s390x
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                        - linux
+              containers:
+              - args:
+                - operator
+                env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: modules.json
+                  value: |
+                    {
+                      "csiDriver": false,
+                      "activeGate": true,
+                      "oneAgent": true,
+                      "extensions": true,
+                      "logMonitoring": true,
+                      "edgeConnect": true,
+                      "supportability": true,
+                      "kspm": true
+                    }
+                image: quay.io/dynatrace/dynatrace-operator:snapshot-release-1-6
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /livez
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                name: operator
+                ports:
+                - containerPort: 10080
+                  name: livez
+                - containerPort: 8080
+                  name: metrics
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                  privileged: false
+                  readOnlyRootFilesystem: true
+                  runAsGroup: 1001
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  seccompProfile:
+                    type: RuntimeDefault
+                startupProbe:
+                  exec:
+                    command:
+                    - /usr/local/bin/dynatrace-operator
+                    - startup-probe
+                  failureThreshold: 1
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+              securityContext:
+                seccompProfile:
+                  type: RuntimeDefault
+              serviceAccountName: dynatrace-operator
+              tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
+      - label:
+          app.kubernetes.io/component: webhook
+          app.kubernetes.io/name: dynatrace-operator
+          app.kubernetes.io/version: 0.0.0-snapshot
+        name: dynatrace-webhook
+        spec:
+          replicas: 2
+          revisionHistoryLimit: 1
+          selector:
+            matchLabels:
+              internal.dynatrace.com/app: webhook
+              internal.dynatrace.com/component: webhook
+          strategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              annotations:
+                dynatrace.com/inject: "false"
+                kubectl.kubernetes.io/default-container: webhook
+              labels:
+                app.kubernetes.io/component: webhook
+                app.kubernetes.io/name: dynatrace-operator
+                app.kubernetes.io/version: 0.0.0-snapshot
+                internal.dynatrace.com/app: webhook
+                internal.dynatrace.com/component: webhook
+            spec:
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                        - amd64
+                        - arm64
+                        - ppc64le
+                        - s390x
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                        - linux
+              containers:
+              - args:
+                - webhook-server
+                - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
+                env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: WEBHOOK_PORT
+                  value: "8443"
+                - name: HEALTH_PROBE_BIND_ADDRESS
+                  value: :10080
+                - name: METRICS_BIND_ADDRESS
+                  value: :8383
+                - name: modules.json
+                  value: |
+                    {
+                      "csiDriver": false,
+                      "activeGate": true,
+                      "oneAgent": true,
+                      "extensions": true,
+                      "logMonitoring": true,
+                      "edgeConnect": true,
+                      "supportability": true,
+                      "kspm": true
+                    }
+                image: quay.io/dynatrace/dynatrace-operator:snapshot-release-1-6
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /livez
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                name: webhook
+                ports:
+                - containerPort: 8443
+                  name: server-port
+                - containerPort: 10080
+                  name: livez
+                - containerPort: 8383
+                  name: metrics
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 300m
+                    memory: 128Mi
+                  requests:
+                    cpu: 300m
+                    memory: 128Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                  privileged: false
+                  readOnlyRootFilesystem: true
+                  runAsGroup: 1001
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  seccompProfile:
+                    type: RuntimeDefault
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs/
+                  name: certs-dir
+              securityContext:
+                seccompProfile:
+                  type: RuntimeDefault
+              serviceAccountName: dynatrace-webhook
+              tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: s390x
+              topologySpreadConstraints:
+              - labelSelector:
+                  matchLabels:
+                    internal.dynatrace.com/app: webhook
+                    internal.dynatrace.com/component: webhook
+                maxSkew: 1
+                topologyKey: topology.kubernetes.io/zone
+                whenUnsatisfiable: ScheduleAnyway
+              - labelSelector:
+                  matchLabels:
+                    internal.dynatrace.com/app: webhook
+                    internal.dynatrace.com/component: webhook
+                maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+              volumes:
+              - emptyDir:
+                  sizeLimit: 10Mi
+                name: certs-dir
+      permissions:
+      - rules:
+        - apiGroups:
+          - dynatrace.com
+          resources:
+          - dynakubes
+          - edgeconnects
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - dynatrace.com
+          resources:
+          - dynakubes/finalizers
+          - edgeconnects/finalizers
+          - dynakubes/status
+          - edgeconnects/status
+          verbs:
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          - daemonsets
+          - replicasets
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - secrets
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - get
+          - list
+        - apiGroups:
+          - networking.istio.io
+          resources:
+          - serviceentries
+          - virtualservices
+          verbs:
+          - get
+          - list
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - update
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - pods/log
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - pods/exec
+          verbs:
+          - create
+        serviceAccountName: dynatrace-operator
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          - pods
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - dynatrace.com
+          resources:
+          - dynakubes
+          verbs:
+          - get
+          - list
+          - watch
+        serviceAccountName: dynatrace-webhook
+    strategy: deployment
   installModes:
   - supported: false
     type: OwnNamespace
@@ -1673,4 +2084,212 @@ spec:
   provider:
     name: Dynatrace LLC
     url: www.dynatrace.com
-  version: 0.0.0
+  version: 0.0.1
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    conversionCRDs:
+    - dynakubes.dynatrace.com
+    - edgeconnects.dynatrace.com
+    deploymentName: dynatrace-webhook
+    generateName: cdynakubesedgeconnects.kb.io
+    sideEffects: None
+    targetPort: server-port
+    type: ConversionWebhook
+    webhookPath: /convert
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    generateName: v1alpha1.edgeconnect.webhook.dynatrace.com
+    matchPolicy: Exact
+    rules:
+    - apiGroups:
+      - dynatrace.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - edgeconnects
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-dynatrace-com-v1alpha1-edgeconnect
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    generateName: v1alpha2.edgeconnect.webhook.dynatrace.com
+    matchPolicy: Exact
+    rules:
+    - apiGroups:
+      - dynatrace.com
+      apiVersions:
+      - v1alpha2
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - edgeconnects
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-dynatrace-com-v1alpha2-edgeconnect
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    generateName: v1beta1.dynakube.webhook.dynatrace.com
+    matchPolicy: Exact
+    rules:
+    - apiGroups:
+      - dynatrace.com
+      apiVersions:
+      - v1beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - dynakubes
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-dynatrace-com-v1beta1-dynakube
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    generateName: v1beta2.dynakube.webhook.dynatrace.com
+    matchPolicy: Exact
+    rules:
+    - apiGroups:
+      - dynatrace.com
+      apiVersions:
+      - v1beta2
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - dynakubes
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-dynatrace-com-v1beta2-dynakube
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    generateName: v1beta3.dynakube.webhook.dynatrace.com
+    matchPolicy: Exact
+    rules:
+    - apiGroups:
+      - dynatrace.com
+      apiVersions:
+      - v1beta3
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - dynakubes
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-dynatrace-com-v1beta3-dynakube
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    generateName: v1beta4.dynakube.webhook.dynatrace.com
+    matchPolicy: Exact
+    rules:
+    - apiGroups:
+      - dynatrace.com
+      apiVersions:
+      - v1beta4
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - dynakubes
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-dynatrace-com-v1beta4-dynakube
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    generateName: v1beta5.dynakube.webhook.dynatrace.com
+    matchPolicy: Exact
+    rules:
+    - apiGroups:
+      - dynatrace.com
+      apiVersions:
+      - v1beta5
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - dynakubes
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-dynatrace-com-v1beta5-dynakube
+  - admissionReviewVersions:
+    - v1beta1
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    failurePolicy: Ignore
+    generateName: webhook.ns.dynatrace.com
+    reinvocationPolicy: IfNeeded
+    rules:
+    - apiGroups:
+      - ""
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - namespaces
+      scope: Cluster
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: MutatingAdmissionWebhook
+    webhookPath: /label-ns
+  - admissionReviewVersions:
+    - v1beta1
+    - v1
+    containerPort: 443
+    deploymentName: dynatrace-webhook
+    failurePolicy: Ignore
+    generateName: webhook.pod.dynatrace.com
+    reinvocationPolicy: IfNeeded
+    rules:
+    - apiGroups:
+      - ""
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      resources:
+      - pods
+      scope: Namespaced
+    sideEffects: None
+    targetPort: server-port
+    timeoutSeconds: 10
+    type: MutatingAdmissionWebhook
+    webhookPath: /inject

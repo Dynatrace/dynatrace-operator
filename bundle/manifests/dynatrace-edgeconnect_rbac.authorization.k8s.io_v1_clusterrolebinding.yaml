@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: 0.0.0-snapshot
+  name: dynatrace-edgeconnect
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-edgeconnect
+subjects:
+- kind: ServiceAccount
+  name: dynatrace-edgeconnect
+  namespace: dynatrace
