@@ -283,15 +283,15 @@ func TestRemoveAppInjection(t *testing.T) {
 	var namespace corev1.Namespace
 	err = clt.Get(context.Background(), client.ObjectKey{Name: testNamespace, Namespace: ""}, &namespace)
 	require.NoError(t, err)
-	assert.Nil(t, namespace.ObjectMeta.Labels)
-	require.NotNil(t, namespace.ObjectMeta.Annotations)
+	assert.Nil(t, namespace.Labels)
+	require.NotNil(t, namespace.Annotations)
 	assert.Equal(t, "true", namespace.Annotations[mapper.UpdatedViaDynakubeAnnotation])
 
 	err = clt.Get(context.Background(), client.ObjectKey{Name: testNamespace2, Namespace: ""}, &namespace)
 	require.NoError(t, err)
-	require.NotNil(t, namespace.ObjectMeta.Labels)
+	require.NotNil(t, namespace.Labels)
 	assert.Equal(t, testDynakube2, namespace.Labels[dtwebhook.InjectionInstanceLabel])
-	assert.Nil(t, namespace.ObjectMeta.Annotations)
+	assert.Nil(t, namespace.Annotations)
 
 	assertSecretNotFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)
 	assertSecretFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace2)

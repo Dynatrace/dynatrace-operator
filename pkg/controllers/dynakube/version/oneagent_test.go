@@ -415,14 +415,14 @@ func TestCheckLabels(t *testing.T) {
 	t.Run("Validate immutable oneAgent image when image version is not set", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		dk.Status.OneAgent.VersionStatus.Version = ""
+		dk.Status.OneAgent.Version = ""
 		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
 		require.Error(t, updater.ValidateStatus())
 	})
 	t.Run("Validate mutable oneAgent image with classicFullStack", func(t *testing.T) {
 		dk := newDynakubeForCheckLabelTest(versionStatus)
 		dk.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
-		dk.Status.OneAgent.VersionStatus.Type = "mutable"
+		dk.Status.OneAgent.Type = "mutable"
 		updater := newOneAgentUpdater(dk, fake.NewClient(), nil)
 		require.NoError(t, updater.ValidateStatus())
 	})

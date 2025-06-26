@@ -96,12 +96,12 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			})
 		}
 
-		if dk.TelemetryIngest().Spec.TLSRefName != "" {
+		if dk.TelemetryIngest().TLSRefName != "" {
 			volumes = append(volumes, corev1.Volume{
 				Name: customTLSCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.TelemetryIngest().Spec.TLSRefName,
+						SecretName: dk.TelemetryIngest().TLSRefName,
 						Items: []corev1.KeyToPath{
 							{
 								Key:  consts.TLSCrtDataName,
@@ -168,7 +168,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			})
 		}
 
-		if dk.TelemetryIngest().Spec.TLSRefName != "" {
+		if dk.TelemetryIngest().TLSRefName != "" {
 			vm = append(vm, corev1.VolumeMount{
 				Name:      customTLSCertVolumeName,
 				MountPath: otelcconsts.CustomTLSCertMountPath,

@@ -129,7 +129,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		return err
 	}
 
-	ec.ObjectMeta.Finalizers = nil
+	ec.Finalizers = nil
 	if err := controller.client.Update(ctx, ec); err != nil {
 		_log.Debug("updating the EdgeConnect object failed, couldn't remove the finalizers")
 
@@ -298,10 +298,10 @@ func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespac
 func (controller *Controller) updateFinalizers(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)
 
-	if ec.IsProvisionerModeEnabled() && len(ec.ObjectMeta.Finalizers) == 0 {
+	if ec.IsProvisionerModeEnabled() && len(ec.Finalizers) == 0 {
 		_log.Info("updating finalizers")
 
-		ec.ObjectMeta.Finalizers = []string{finalizerName}
+		ec.Finalizers = []string{finalizerName}
 		if err := controller.client.Update(ctx, ec); err != nil {
 			_log.Debug("updating finalizers failed")
 

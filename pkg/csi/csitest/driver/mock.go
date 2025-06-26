@@ -35,7 +35,7 @@ func (m *MockCSIDriver) StartOnAddress(network, address string) error {
 		return err
 	}
 
-	if err := m.CSIDriver.Start(l); err != nil {
+	if err := m.Start(l); err != nil {
 		l.Close()
 
 		return err

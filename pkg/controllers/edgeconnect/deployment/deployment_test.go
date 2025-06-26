@@ -96,12 +96,12 @@ func TestLabels(t *testing.T) {
 		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
 		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
 
-		require.Len(t, deployment.ObjectMeta.Labels, 5)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppNameLabel)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppCreatedByLabel)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppManagedByLabel)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppVersionLabel)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppComponentLabel)
+		require.Len(t, deployment.Labels, 5)
+		assert.Contains(t, deployment.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.Labels, labels.AppComponentLabel)
 	})
 
 	t.Run("Check custom label set correctly", func(t *testing.T) {
@@ -129,15 +129,15 @@ func TestLabels(t *testing.T) {
 		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
 		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
 
-		assert.Contains(t, deployment.Spec.Template.ObjectMeta.Labels, testLabelKey)
-		assert.Equal(t, testLabelValue, deployment.Spec.Template.ObjectMeta.Labels[testLabelKey])
+		assert.Contains(t, deployment.Spec.Template.Labels, testLabelKey)
+		assert.Equal(t, testLabelValue, deployment.Spec.Template.Labels[testLabelKey])
 
-		require.Len(t, deployment.ObjectMeta.Labels, 5)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppNameLabel)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppCreatedByLabel)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppManagedByLabel)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppVersionLabel)
-		assert.Contains(t, deployment.ObjectMeta.Labels, labels.AppComponentLabel)
+		require.Len(t, deployment.Labels, 5)
+		assert.Contains(t, deployment.Labels, labels.AppNameLabel)
+		assert.Contains(t, deployment.Labels, labels.AppCreatedByLabel)
+		assert.Contains(t, deployment.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deployment.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deployment.Labels, labels.AppComponentLabel)
 	})
 }
 
@@ -162,9 +162,9 @@ func TestAnnotations(t *testing.T) {
 
 		deployment := New(ec)
 
-		assert.Nil(t, deployment.Spec.Template.ObjectMeta.Annotations)
+		assert.Nil(t, deployment.Spec.Template.Annotations)
 
-		assert.NotContains(t, deployment.ObjectMeta.Annotations, testObjectMetaAnnotationKey)
+		assert.NotContains(t, deployment.Annotations, testObjectMetaAnnotationKey)
 	})
 
 	t.Run("Check custom annotations set correctly", func(t *testing.T) {
@@ -186,11 +186,11 @@ func TestAnnotations(t *testing.T) {
 		deployment := New(ec)
 
 		assert.Len(t, deployment.Spec.Template.Annotations, 1)
-		assert.Contains(t, deployment.Spec.Template.ObjectMeta.Annotations, testAnnotationKey)
-		assert.Equal(t, testAnnotationValue, deployment.Spec.Template.ObjectMeta.Annotations[testAnnotationKey])
+		assert.Contains(t, deployment.Spec.Template.Annotations, testAnnotationKey)
+		assert.Equal(t, testAnnotationValue, deployment.Spec.Template.Annotations[testAnnotationKey])
 
-		assert.NotContains(t, deployment.ObjectMeta.Annotations, testAnnotationKey)
-		assert.NotContains(t, deployment.ObjectMeta.Annotations, testObjectMetaAnnotationKey)
+		assert.NotContains(t, deployment.Annotations, testAnnotationKey)
+		assert.NotContains(t, deployment.Annotations, testObjectMetaAnnotationKey)
 	})
 }
 

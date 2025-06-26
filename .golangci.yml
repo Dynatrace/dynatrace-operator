@@ -252,9 +252,6 @@ linters:
     staticcheck:
       checks:
         - all
-        - "-ST1005"
-        - "-ST1016" # this is stylecheck, but has been rolled into staticcheck
-        - "-QF1008" # could remove embedded field from selector, example: dk.ObjectMeta.Labels == dk.Labels
   exclusions:
     generated: lax
     presets:
@@ -303,6 +300,7 @@ linters:
       - pkg/api/v1beta1/dynakube
       - pkg/api/v1beta2/dynakube
       - pkg/api/v1beta3/dynakube
+      - pkg/api/v1beta4/dynakube
       - third_party$
       - builtin$
       - examples$

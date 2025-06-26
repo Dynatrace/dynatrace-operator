@@ -17,71 +17,71 @@ const (
 	defaultEdgeConnectRepository = "docker.io/dynatrace/edgeconnect"
 )
 
-func (edgeConnect *EdgeConnect) Image() string {
+func (ec *EdgeConnect) Image() string {
 	repository := defaultEdgeConnectRepository
 	tag := api.LatestTag
 
-	if edgeConnect.Spec.ImageRef.Repository != "" {
-		repository = edgeConnect.Spec.ImageRef.Repository
+	if ec.Spec.ImageRef.Repository != "" {
+		repository = ec.Spec.ImageRef.Repository
 	}
 
-	if edgeConnect.Spec.ImageRef.Tag != "" {
-		tag = edgeConnect.Spec.ImageRef.Tag
+	if ec.Spec.ImageRef.Tag != "" {
+		tag = ec.Spec.ImageRef.Tag
 	}
 
 	return fmt.Sprintf("%s:%s", repository, tag)
 }
 
-func (edgeConnect *EdgeConnect) IsCustomImage() bool {
-	return edgeConnect.Spec.ImageRef.Repository != ""
+func (ec *EdgeConnect) IsCustomImage() bool {
+	return ec.Spec.ImageRef.Repository != ""
 }
 
-func (edgeConnect *EdgeConnect) IsAutoUpdateEnabled() bool {
-	return edgeConnect.Spec.AutoUpdate == nil || *edgeConnect.Spec.AutoUpdate
+func (ec *EdgeConnect) IsAutoUpdateEnabled() bool {
+	return ec.Spec.AutoUpdate == nil || *ec.Spec.AutoUpdate
 }
 
-func (edgeConnect *EdgeConnect) GetServiceAccountName() string {
+func (ec *EdgeConnect) GetServiceAccountName() string {
 	defaultServiceAccount := "dynatrace-edgeconnect"
-	if edgeConnect.Spec.ServiceAccountName == nil {
+	if ec.Spec.ServiceAccountName == nil {
 		return defaultServiceAccount
 	}
 
-	return *edgeConnect.Spec.ServiceAccountName
+	return *ec.Spec.ServiceAccountName
 }
 
-func (edgeConnect *EdgeConnect) IsProvisionerModeEnabled() bool {
-	return edgeConnect.Spec.OAuth.Provisioner
+func (ec *EdgeConnect) IsProvisionerModeEnabled() bool {
+	return ec.Spec.OAuth.Provisioner
 }
 
-func (edgeConnect *EdgeConnect) IsK8SAutomationEnabled() bool {
-	return edgeConnect.Spec.KubernetesAutomation != nil && edgeConnect.Spec.KubernetesAutomation.Enabled
+func (ec *EdgeConnect) IsK8SAutomationEnabled() bool {
+	return ec.Spec.KubernetesAutomation != nil && ec.Spec.KubernetesAutomation.Enabled
 }
 
-func (edgeConnect *EdgeConnect) EmptyPullSecret() corev1.Secret {
+func (ec *EdgeConnect) EmptyPullSecret() corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      edgeConnect.Spec.CustomPullSecret,
-			Namespace: edgeConnect.Namespace,
+			Name:      ec.Spec.CustomPullSecret,
+			Namespace: ec.Namespace,
 		},
 	}
 }
 
 func (ec *EdgeConnect) Conditions() *[]metav1.Condition { return &ec.Status.Conditions }
 
-func (e *EdgeConnect) HostPatterns() []string {
-	if !e.IsK8SAutomationEnabled() {
-		return e.Spec.HostPatterns
+func (ec *EdgeConnect) HostPatterns() []string {
+	if !ec.IsK8SAutomationEnabled() {
+		return ec.Spec.HostPatterns
 	}
 
 	var hostPatterns []string
 
-	for _, hostPattern := range e.Spec.HostPatterns {
-		if !strings.EqualFold(hostPattern, e.K8sAutomationHostPattern()) {
+	for _, hostPattern := range ec.Spec.HostPatterns {
+		if !strings.EqualFold(hostPattern, ec.K8sAutomationHostPattern()) {
 			hostPatterns = append(hostPatterns, hostPattern)
 		}
 	}
 
-	hostPatterns = append(hostPatterns, e.K8sAutomationHostPattern())
+	hostPatterns = append(hostPatterns, ec.K8sAutomationHostPattern())
 
 	return hostPatterns
 }
@@ -91,13 +91,13 @@ type HostMapping struct {
 	To   string `json:"to"`
 }
 
-func (e *EdgeConnect) HostMappings() []HostMapping {
+func (ec *EdgeConnect) HostMappings() []HostMapping {
 	hostMappings := make([]HostMapping, 0)
-	hostMappings = append(hostMappings, HostMapping{From: e.K8sAutomationHostPattern(), To: KubernetesDefaultDNS})
+	hostMappings = append(hostMappings, HostMapping{From: ec.K8sAutomationHostPattern(), To: KubernetesDefaultDNS})
 
 	return hostMappings
 }
 
-func (e *EdgeConnect) K8sAutomationHostPattern() string {
-	return e.Name + "." + e.Namespace + "." + e.Status.KubeSystemUID + "." + kubernetesHostnameSuffix
+func (ec *EdgeConnect) K8sAutomationHostPattern() string {
+	return ec.Name + "." + ec.Namespace + "." + ec.Status.KubeSystemUID + "." + kubernetesHostnameSuffix
 }
