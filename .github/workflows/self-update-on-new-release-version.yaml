@@ -40,12 +40,14 @@ jobs:
       - name: Create pull request for updating all files
         uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ secrets.WORKFLOW_REPO_TOKEN }}
           base: main
           delete-branch: true
           branch: create-pull-request/update-renovate-json5
           branch-suffix: short-commit-hash
           add-paths: |
             .github/renovate.json5
+            .github/workflows/e2e-tests-ondemand.yaml
           title: '[Automatic] Update because new branch created ${{ github.ref_name }}'
           labels: 'ci'
           commit-message: self update on new release ${{ github.ref_name }}
