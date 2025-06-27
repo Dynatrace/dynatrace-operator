@@ -166,7 +166,7 @@ func TestReconcile(t *testing.T) {
 		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
-		t.Run("dynakube with job + custom-pull-secret => job installer used, with error", func(t *testing.T) {
+	t.Run("dynakube with job + custom-pull-secret => job installer used, with error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		dk.Spec.CustomPullSecret = "test-ps"
 		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
