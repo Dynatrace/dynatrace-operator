@@ -135,6 +135,23 @@ func TestReconcile(t *testing.T) {
 		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
+	t.Run("dynakube with job + custom-pull-secret => job installer used, dtclient not created, no error", func(t *testing.T) {
+		dk := createDynaKubeWithJobFF(t)
+		dk.Spec.CustomPullSecret = "test-ps"
+		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		installer := createSuccessfulInstaller(t)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, dk.Spec.CustomPullSecret)
+		createPMCSourceFile(t, prov, dk)
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
+	})
+
 	t.Run("dynakube with job => job installer used, back-off when not ready, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
@@ -156,22 +173,6 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
 		installer := createFailingInstaller(t)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
-		createPMCSourceFile(t, prov, dk)
-
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
-		require.Error(t, err)
-		require.NotNil(t, result)
-
-		assert.True(t, areFsDirsCreated(t, prov, dk))
-		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
-	})
-
-	t.Run("dynakube with job + custom-pull-secret => job installer used, with error", func(t *testing.T) {
-		dk := createDynaKubeWithJobFF(t)
-		dk.Spec.CustomPullSecret = "test-ps"
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
-		installer := createFailingInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, dk.Spec.CustomPullSecret)
 		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
