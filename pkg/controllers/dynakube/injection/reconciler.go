@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type reconciler struct {
+type Reconciler struct {
 	client                      client.Client
 	apiReader                   client.Reader
 	dk                          *dynakube.DynaKube
@@ -59,7 +59,7 @@ func NewReconciler(
 		istioReconciler = istio.NewReconciler(istioClient)
 	}
 
-	return &reconciler{
+	return &Reconciler{
 		client:            client,
 		apiReader:         apiReader,
 		dk:                dk,
@@ -74,7 +74,7 @@ func NewReconciler(
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context) error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	// because the 2 injection type we have share the label that the webhook is listening to, we can only clean that label up if both are disabled
 	// but we should only clean-up the labels after everything else is cleaned up because the clean-up for the secrets depend on the label still being there
 	// but we have to do the mapping before everything when its necessary
@@ -107,7 +107,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) unmapDynakube(ctx context.Context) {
+func (r *Reconciler) unmapDynakube(ctx context.Context) {
 	if meta.FindStatusCondition(*r.dk.Conditions(), codeModulesInjectionConditionType) != nil &&
 		meta.FindStatusCondition(*r.dk.Conditions(), metaDataEnrichmentConditionType) != nil {
 		return
@@ -124,7 +124,7 @@ func (r *reconciler) unmapDynakube(ctx context.Context) {
 	}
 }
 
-func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
+func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
 	err := r.versionReconciler.ReconcileCodeModules(ctx, r.dk)
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ func (r *reconciler) setupOneAgentInjection(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
+func (r *Reconciler) generateCorrectInitSecret(ctx context.Context) error {
 	var err error
 	if r.dk.FF().IsNodeImagePull() {
 		err = bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk)
@@ -195,7 +195,7 @@ func (r *reconciler) generateCorrectInitSecret(ctx context.Context) error {
 	return err
 }
 
-func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
+func (r *Reconciler) cleanupOneAgentInjection(ctx context.Context) {
 	if meta.FindStatusCondition(*r.dk.Conditions(), codeModulesInjectionConditionType) != nil {
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), codeModulesInjectionConditionType)
 
@@ -218,7 +218,7 @@ func (r *reconciler) cleanupOneAgentInjection(ctx context.Context) {
 	}
 }
 
-func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
+func (r *Reconciler) setupEnrichmentInjection(ctx context.Context) error {
 	err := r.monitoredEntitiesReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
@@ -253,7 +253,7 @@ func (r *reconciler) setupEnrichmentInjection(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) cleanupEnrichmentInjection(ctx context.Context) {
+func (r *Reconciler) cleanupEnrichmentInjection(ctx context.Context) {
 	if meta.FindStatusCondition(*r.dk.Conditions(), metaDataEnrichmentConditionType) != nil {
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), metaDataEnrichmentConditionType)
 
@@ -271,7 +271,7 @@ func (r *reconciler) cleanupEnrichmentInjection(ctx context.Context) {
 	}
 }
 
-func (r *reconciler) createDynakubeMapper(ctx context.Context) *mapper.DynakubeMapper {
+func (r *Reconciler) createDynakubeMapper(ctx context.Context) *mapper.DynakubeMapper {
 	operatorNamespace := r.dk.GetNamespace()
 	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, operatorNamespace, r.dk)
 

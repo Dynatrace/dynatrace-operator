@@ -31,7 +31,6 @@ import (
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
-	injectionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/injection"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -344,7 +343,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
-		mockInjectionReconciler := injectionmock.NewReconciler(t)
+		mockInjectionReconciler := controllermock.NewReconciler(t)
 		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
@@ -394,7 +393,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockOtelcReconciler := controllermock.NewReconciler(t)
 		mockOtelcReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
-		mockLogMonitoringReconciler := injectionmock.NewReconciler(t)
+		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
 		mockLogMonitoringReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
 
 		controller := &Controller{
@@ -446,8 +445,8 @@ func createOtelcReconcilerBuilder(reconciler controllers.Reconciler) otelc.Recon
 	}
 }
 
-func createInjectionReconcilerBuilder(reconciler *injectionmock.Reconciler) injection.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dtclient.Client, _ *istio.Client, _ *dynakube.DynaKube) controllers.Reconciler {
+func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injection.ReconcilerBuilder {
+	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }

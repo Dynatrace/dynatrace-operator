@@ -9,7 +9,7 @@ gci_version=v0.13.6
 # renovate depName=golang.org/x/tools
 golang_tools_version=v0.34.0
 # renovate depName=github.com/vektra/mockery
-mockery_version=v2.53.4
+mockery_version=v3.5.0
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 markdownlint_cli_version=v0.45.0
 # renovate depName=github.com/helm-unittest/helm-unittest
@@ -82,7 +82,7 @@ prerequisites/markdownlint:
 
 ## Install verktra/mockery
 prerequisites/mockery:
-	go install github.com/vektra/mockery/v2@$(mockery_version)
+	go install github.com/vektra/mockery/v3@$(mockery_version)
 
 ## Install 'pre-commit' if it is missing
 prerequisites/setup-pre-commit:
