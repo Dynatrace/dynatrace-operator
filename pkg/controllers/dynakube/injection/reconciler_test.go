@@ -129,7 +129,7 @@ func TestReconciler(t *testing.T) {
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
 		fakeReconciler := createGenericReconcilerMock(t)
-		rec.(*reconciler).monitoredEntitiesReconciler = fakeReconciler
+		rec.(*Reconciler).monitoredEntitiesReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestReconciler(t *testing.T) {
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
 		fakeReconciler := createGenericReconcilerMock(t)
-		rec.(*reconciler).monitoredEntitiesReconciler = fakeReconciler
+		rec.(*Reconciler).monitoredEntitiesReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -249,7 +249,7 @@ func TestReconciler(t *testing.T) {
 		fakeReconciler := createGenericReconcilerMock(t)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
-		rec := NewReconciler(boomClient, boomClient, nil, istioClient, dk).(*reconciler)
+		rec := NewReconciler(boomClient, boomClient, nil, istioClient, dk).(*Reconciler)
 		rec.connectionInfoReconciler = fakeReconciler
 		rec.pmcSecretreconciler = fakeReconciler
 		rec.versionReconciler = fakeVersionReconciler
@@ -480,7 +480,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			dk,
 			namespaces[0], namespaces[1],
 		)
-		r := reconciler{client: clt, apiReader: clt, dk: dk}
+		r := Reconciler{client: clt, apiReader: clt, dk: dk}
 
 		err := r.generateCorrectInitSecret(ctx)
 		require.NoError(t, err)
@@ -503,7 +503,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			dk,
 			namespaces[0], namespaces[1],
 		)
-		r := reconciler{client: clt, apiReader: clt, dk: dk}
+		r := Reconciler{client: clt, apiReader: clt, dk: dk}
 
 		err := r.generateCorrectInitSecret(ctx)
 		require.NoError(t, err)
@@ -535,7 +535,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
-		r := reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
+		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
 		err := r.generateCorrectInitSecret(ctx)
 		require.NoError(t, err)
@@ -569,7 +569,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
-		r := reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
+		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
 		err := r.generateCorrectInitSecret(ctx)
 		require.NoError(t, err)
@@ -611,7 +611,7 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 			dk,
 			namespaces[0], namespaces[1],
 		)
-		r := reconciler{client: clt, apiReader: clt, dk: dk}
+		r := Reconciler{client: clt, apiReader: clt, dk: dk}
 
 		r.cleanupOneAgentInjection(ctx)
 
@@ -633,8 +633,8 @@ func newIstioTestingClient(fakeClient *fakeistio.Clientset, dk *dynakube.DynaKub
 	}
 }
 
-func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace string, oneAgentSpec oneagent.Spec) reconciler {
-	return reconciler{
+func createReconciler(clt client.Client, dynakubeName string, dynakubeNamespace string, oneAgentSpec oneagent.Spec) Reconciler {
+	return Reconciler{
 		client:    clt,
 		apiReader: clt,
 		dk: &dynakube.DynaKube{
