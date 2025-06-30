@@ -36,7 +36,7 @@ type DynaKubeValueSource struct { //nolint:revive
 
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
-// +kubebuilder:deprecatedversion:warning="The dynakube API is deprecated and will be removed in a future release."
+// +kubebuilder:deprecatedversion:warning="The dynakube API is deprecated and will be removed in Operator v1.7.0."
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace,shortName={dk,dks}

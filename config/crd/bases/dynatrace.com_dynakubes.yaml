@@ -30,8 +30,8 @@ spec:
       name: Age
       type: date
     deprecated: true
-    deprecationWarning: The dynakube API is deprecated and will be removed in a future
-      release.
+    deprecationWarning: The dynakube API is deprecated and will be removed in Operator
+      v1.7.0.
     name: v1beta1
     schema:
       openAPIV3Schema:
