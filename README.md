@@ -56,5 +56,5 @@ Dynatrace Operator is under Apache 2.0 license. See [LICENSE](LICENSE) for detai
 
 ## Reporting Issues or Ideas
 
-If you find a bug or security issue, please report it to Dynatrace support by creating a support ticket with ([here](https://support.dynatrace.com/).
+If you find a bug or security issue, please report it to Dynatrace support by [creating a ticket](https://support.dynatrace.com/).
 If you have an idea or feature request, please join our Dynatrace Community and create a post [here](https://community.dynatrace.com).
