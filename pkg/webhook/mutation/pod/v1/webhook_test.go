@@ -218,7 +218,7 @@ func assertContainersInfo(t *testing.T, request *dtwebhook.ReinvocationRequest, 
 func assertMutateCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {
 	mock, ok := mutator.(*webhookmock.PodMutator)
 	if !ok {
-		t.Fatalf("assertPodMutatorCalls: webhook is not a mock")
+		t.Fatal("assertPodMutatorCalls: webhook is not a mock")
 	}
 
 	mock.AssertNumberOfCalls(t, "Mutate", expectedCalls)
@@ -227,7 +227,7 @@ func assertMutateCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls
 func assertReinvokeCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {
 	mock, ok := mutator.(*webhookmock.PodMutator)
 	if !ok {
-		t.Fatalf("assertPodMutatorCalls: webhook is not a mock")
+		t.Fatal("assertPodMutatorCalls: webhook is not a mock")
 	}
 
 	mock.AssertNumberOfCalls(t, "Reinvoke", expectedCalls)

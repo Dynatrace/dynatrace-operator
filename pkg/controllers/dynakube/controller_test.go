@@ -667,7 +667,7 @@ func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIsti
 			fakeDiscovery.Resources = []*metav1.APIResourceList{{GroupVersion: istio.IstioGVR}}
 
 			if !ok {
-				t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
+				t.Fatal("couldn't convert Discovery() to *FakeDiscovery")
 			}
 		}
 

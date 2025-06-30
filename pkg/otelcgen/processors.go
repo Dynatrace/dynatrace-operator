@@ -27,6 +27,7 @@ type MemoryLimiter struct {
 var (
 	k8sattributes     = component.MustNewID("k8sattributes")
 	transform         = component.MustNewID("transform")
+	transformPodIP    = component.MustNewIDWithName("transform", "add-pod-ip")
 	batch             = component.MustNewType("batch")
 	batchTraces       = component.NewIDWithName(batch, "traces")
 	batchMetrics      = component.NewIDWithName(batch, "metrics")
@@ -88,7 +89,8 @@ func (c *Config) buildProcessors() map[component.ID]component.Config {
 				},
 			},
 		},
-		transform: c.buildTransform(),
+		transform:      c.buildTransform(),
+		transformPodIP: c.buildTransformPodIP(),
 		batchTraces: &BatchConfig{
 			SendBatchSize:    5000,
 			SendBatchMaxSize: 5000,
@@ -118,6 +120,18 @@ func (c *Config) buildTransform() map[string]any {
 		"log_statements":    c.dynatraceTransformations(),
 		"metric_statements": c.dynatraceTransformations(),
 		"trace_statements":  c.dynatraceTransformations(),
+	}
+}
+
+func (c *Config) buildTransformPodIP() map[string]any {
+	return map[string]any{
+		"error_mode": "ignore",
+		"trace_statements": []map[string]any{
+			{
+				"context":    "resource",
+				"statements": []string{"set(attributes[\"k8s.pod.ip\"], attributes[\"ip\"]) where attributes[\"k8s.pod.ip\"] == nil"},
+			},
+		},
 	}
 }
 

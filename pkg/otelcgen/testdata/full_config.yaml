@@ -125,6 +125,12 @@ processors:
           - delete_key(attributes, "k8s.deployment.name")
           - delete_key(attributes, "k8s.daemonset.name")
           - delete_key(attributes, "k8s.cronjob.name")
+  transform/add-pod-ip:
+    error_mode: ignore
+    trace_statements:
+      - context: resource
+        statements:
+          - set(attributes["k8s.pod.ip"], attributes["ip"]) where attributes["k8s.pod.ip"] == nil
   batch/traces:
     send_batch_size: 5000
     send_batch_max_size: 5000
@@ -201,6 +207,7 @@ service:
         - otlp
       processors:
         - memory_limiter
+        - transform/add-pod-ip
         - k8sattributes
         - transform
         - batch/logs
@@ -212,6 +219,7 @@ service:
         - statsd
       processors:
         - memory_limiter
+        - transform/add-pod-ip
         - k8sattributes
         - transform
         - cumulativetodelta
@@ -225,6 +233,7 @@ service:
         - zipkin
       processors:
         - memory_limiter
+        - transform/add-pod-ip
         - k8sattributes
         - transform
         - batch/traces
