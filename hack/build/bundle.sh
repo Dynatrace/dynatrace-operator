@@ -30,6 +30,11 @@ SDK_PARAMS=(
 --extra-service-accounts dynatrace-dynakube-oneagent
 --extra-service-accounts dynatrace-kubernetes-monitoring
 --extra-service-accounts dynatrace-activegate
+--extra-service-accounts dynatrace-opentelemetry-collector
+--extra-service-accounts dynatrace-edgeconnect
+--extra-service-accounts dynatrace-extensions-controller
+--extra-service-accounts dynatrace-logmonitoring
+--extra-service-accounts dynatrace-node-config-collector
 )
 
 if [ -n "${BUNDLE_CHANNELS}" ]; then
