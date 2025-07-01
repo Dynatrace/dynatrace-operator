@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/remote_command"
+	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/supportarchive/remotecommand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
