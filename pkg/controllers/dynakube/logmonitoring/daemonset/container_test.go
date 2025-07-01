@@ -1,6 +1,8 @@
 package daemonset
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -27,6 +29,7 @@ func TestGetContainer(t *testing.T) {
 		assert.Len(t, mainContainer.VolumeMounts, expectedMountLen)
 		assert.NotEmpty(t, mainContainer.Env)
 		assert.Len(t, mainContainer.Env, expectedBaseEnvLen)
+		assert.Empty(t, mainContainer.Resources)
 		assert.NotEmpty(t, mainContainer.SecurityContext)
 	})
 
@@ -45,6 +48,30 @@ func TestGetContainer(t *testing.T) {
 		require.NotEmpty(t, mainContainer)
 		assert.NotEmpty(t, mainContainer.Image)
 		assert.Equal(t, expectedRepo+":"+expectedTag, mainContainer.Image)
+	})
+
+	t.Run("resources are respected", func(t *testing.T) {
+		requests := corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+		limits := corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		}
+		dk := dynakube.DynaKube{}
+		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
+			Resources: corev1.ResourceRequirements{
+				Requests: requests,
+				Limits:   limits,
+			},
+		}
+		mainContainer := getContainer(dk, tenantUUID)
+
+		require.NotEmpty(t, mainContainer)
+		assert.NotEmpty(t, mainContainer.Resources)
+		assert.Equal(t, requests, mainContainer.Resources.Requests)
+		assert.Equal(t, limits, mainContainer.Resources.Limits)
 	})
 }
 

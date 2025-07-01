@@ -37,6 +37,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 		ImagePullPolicy: corev1.PullAlways,
 		VolumeMounts:    getVolumeMounts(tenantUUID),
 		Env:             getEnvs(),
+		Resources:       dk.LogMonitoring().Template().Resources,
 		SecurityContext: &securityContext,
 	}
 
