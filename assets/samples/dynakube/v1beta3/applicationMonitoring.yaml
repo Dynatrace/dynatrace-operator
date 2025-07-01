@@ -58,6 +58,23 @@ spec:
     #     operator: In
     #     values: [my-frontend, my-backend, my-database]
 
+    # Configuration for Log monitoring.
+    #
+    # logMonitoring: {}
+
+    # Optional: Specifies the rules and conditions for matching ingest attributes.
+    #
+    # ingestRuleMatchers:
+    #   - attribute: "k8s.namespace.name"
+    #     values:
+    #       - "kube-system"
+    #       - "dynatrace"
+    #       - "default"
+    #   - attribute: "k8s.pod.annotation",
+    #     values:
+    #       - "logs.dynatrace.com/ingest=true"
+    #       - "category=security"
+
   # Configuration for OneAgent
   #
   oneAgent:
@@ -175,3 +192,9 @@ spec:
     # Optional: Add TopologySpreadConstraints to the ActiveGate pods
     #
     # topologySpreadConstraints: []
+
+#  templates:
+#    logMonitoring:
+#      imageRef:
+#        repository: public.ecr.aws/dynatrace/dynatrace-logmodule
+#        tag: <tag>
