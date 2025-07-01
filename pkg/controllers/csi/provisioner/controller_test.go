@@ -123,7 +123,24 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
 		installer := createSuccessfulInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
+		createPMCSourceFile(t, prov, dk)
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
+	})
+
+	t.Run("dynakube with job + custom-pull-secret => job installer used, dtclient not created, no error", func(t *testing.T) {
+		dk := createDynaKubeWithJobFF(t)
+		dk.Spec.CustomPullSecret = "test-ps"
+		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		installer := createSuccessfulInstaller(t)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, dk.Spec.CustomPullSecret)
 		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
@@ -139,7 +156,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
 		installer := createNotReadyInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
 		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
@@ -155,7 +172,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
 		installer := createFailingInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
 		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
@@ -337,10 +354,16 @@ func mockImageInstallerBuilder(t *testing.T, mockedInstaller *installermock.Inst
 	}
 }
 
-func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) jobInstallerBuilder {
+func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer, pullSecret string) jobInstallerBuilder {
 	t.Helper()
 
-	return func(_ context.Context, _ afero.Fs, _ *job.Properties) installer.Installer {
+	return func(_ context.Context, _ afero.Fs, props *job.Properties) installer.Installer {
+		if pullSecret != "" {
+			assert.Contains(t, props.PullSecrets, pullSecret)
+		} else {
+			assert.Empty(t, props.PullSecrets)
+		}
+
 		return mockedInstaller
 	}
 }
