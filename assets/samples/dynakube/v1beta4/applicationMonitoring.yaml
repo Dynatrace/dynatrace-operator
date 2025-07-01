@@ -193,8 +193,8 @@ spec:
     #
     # topologySpreadConstraints: []
 
-#  templates:
-#    logMonitoring:
-#      imageRef:
-#        repository: public.ecr.aws/dynatrace/dynatrace-logmodule
-#        tag: <tag>
+  # templates:
+  #   logMonitoring:
+  #     imageRef:
+  #       repository: public.ecr.aws/dynatrace/dynatrace-logmodule
+  #       tag: <tag>
