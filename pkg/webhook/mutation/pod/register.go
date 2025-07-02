@@ -65,6 +65,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 		webhookNamespace: webhookNamespace,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
 		decoder:          admission.NewDecoder(mgr.GetScheme()),
+		recorder:         eventRecorder,
 	}})
 	log.Info("registered /inject endpoint")
 
