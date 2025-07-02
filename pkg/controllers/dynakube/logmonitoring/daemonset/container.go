@@ -56,6 +56,7 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container 
 		Command:         []string{bootstrapCommand},
 		Env:             getInitEnvs(dk),
 		Args:            getInitArgs(dk),
+		Resources:       dk.LogMonitoring().Template().Resources,
 		SecurityContext: &securityContext,
 	}
 
