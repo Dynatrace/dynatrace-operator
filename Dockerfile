@@ -28,7 +28,7 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.6-1751366659@sha256:ef76ed20e66a9b19ccbbafe5657d73246c78c8f06ef3161e0fce6831ed4f7352 AS base
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.6-1750786174@sha256:7a4818cdb8e0461d75d4bdfa42a355d3725bcc8cc0cc5d467021119d5962ce6b AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.6-1751445649@sha256:2e4eebec441e8bbc3459fcc83ddee0f7d3cfd219097b4110a37d7ff4fe0ff2e9 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
