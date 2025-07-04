@@ -208,6 +208,7 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
+    probeTimeout: 9s
     builtIn: false
   job:
     securityContext:

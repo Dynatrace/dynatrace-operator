@@ -251,7 +251,7 @@ spec:
         {{- end }}
         - --csi-address=/csi/csi.sock
         - --health-port=9808
-        - --probe-timeout=9s
+        - --probe-timeout={{- .Values.csidriver.livenessprobe.probeTimeout }}
         {{- if not .Values.csidriver.livenessprobe.builtIn }}
         command:
         - livenessprobe
