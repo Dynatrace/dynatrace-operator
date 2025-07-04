@@ -109,15 +109,15 @@ spec:
               fieldPath: spec.nodeName
         {{- if and (not .Values.debug) .Values.csidriver.server.livenessProbe.enabled }}
         livenessProbe:
-          failureThreshold: {{- .Values.csidriver.server.livenessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.csidriver.server.livenessProbe.failureThreshold }}
           httpGet:
             path: /healthz
             port: 9808
             scheme: HTTP
-          initialDelaySeconds: {{- .Values.csidriver.server.livenessProbe.initialDelaySeconds }}
-          periodSeconds: {{- .Values.csidriver.server.livenessProbe.periodSeconds }}
-          successThreshold: {{- .Values.csidriver.server.livenessProbe.successThreshold }}
-          timeoutSeconds: {{- .Values.csidriver.server.livenessProbe.timeoutSeconds }}
+          initialDelaySeconds: {{ .Values.csidriver.server.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.csidriver.server.livenessProbe.periodSeconds }}
+          successThreshold: {{ .Values.csidriver.server.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.csidriver.server.livenessProbe.timeoutSeconds }}
         {{- end }}
         ports:
         - containerPort: 8080
