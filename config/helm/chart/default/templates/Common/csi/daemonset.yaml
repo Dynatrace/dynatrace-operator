@@ -242,6 +242,7 @@ spec:
           name: registration-dir
         # Used to make a gRPC request (Probe()) to the driver to check if its running
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+      {{- if .Values.csidriver.server.livenessProbe.enabled }}
       - name: liveness-probe
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
@@ -267,6 +268,7 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
+      {{- end }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
