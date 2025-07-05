@@ -17,7 +17,7 @@ jobs:
       - name: Run vulnerable make with injected VERSION
         run: |
           echo "[+] Running vulnerable make VERSION input"
-          make VERSION="${{ github.event.inputs.version }}"
+          VERSION="${{ github.event.inputs.version }}" make build
           
       - name: Check if injection worked
         run: |
