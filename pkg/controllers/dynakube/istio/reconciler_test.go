@@ -540,7 +540,7 @@ func TestIstio(t *testing.T) {
 
 	fakeDiscovery, ok := ist.Discovery().(*fakediscovery.FakeDiscovery)
 	if !ok {
-		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
+		t.Fatal("couldn't convert Discovery() to *FakeDiscovery")
 	}
 
 	for _, tc := range tests {

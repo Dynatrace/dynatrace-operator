@@ -1,19 +1,18 @@
-quiet: False
-disable-version-string: True
-with-expecter: True
-issue-845-fix: True
-mockname: "{{.InterfaceName}}"
+all: false
+dir: 'test/mocks/{{.InterfaceDirRelative}}'
+pkgname: mocks
+force-file-write: true
+formatter: goimports
 filename: "{{.InterfaceName | snakecase}}.go"
-outpkg: mocks
-dir: "test/mocks/{{.InterfaceDirRelative}}"
+include-auto-generated: false
+log-level: info
+structname: '{{.InterfaceName}}'
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: '{{.Template}}.schema.json'
 packages:
-  github.com/Dynatrace/dynatrace-operator/cmd/config:
-    interfaces:
-      Provider:
-  github.com/Dynatrace/dynatrace-operator/cmd/manager:
-    interfaces:
-      Provider:
-  github.com/Dynatrace/dynatrace-operator/cmd/remote_command:
+  github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/remotecommand:
     interfaces:
       Executor:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
@@ -35,13 +34,7 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
       Reconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection:
-    interfaces:
-      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
-    interfaces:
-      Reconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata:
     interfaces:
       Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
@@ -60,14 +53,23 @@ packages:
       PodMutator:
       PodInjector:
   sigs.k8s.io/controller-runtime/pkg/manager:
+    config:
+      dir: "test/mocks/{{.SrcPackagePath}}"
     interfaces:
       Manager:
   sigs.k8s.io/controller-runtime/pkg/reconcile:
+    config:
+      dir: "test/mocks/{{.SrcPackagePath}}"
     interfaces:
       Reconciler:
   k8s.io/client-go/kubernetes/typed/core/v1:
+    config:
+      dir: "test/mocks/{{.SrcPackagePath}}"
     interfaces:
       PodInterface:
   github.com/container-storage-interface/spec/lib/go/csi:
+    config:
+      include-auto-generated: true
+      dir: "test/mocks/{{.SrcPackagePath}}"
     interfaces:
       IdentityServer:
