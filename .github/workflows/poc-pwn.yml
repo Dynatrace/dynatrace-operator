@@ -1,0 +1,17 @@
+name: Shell Injection PoC
+
+on:
+  workflow_dispatch:
+    inputs:
+      chart:
+        description: 'Enter Helm chart name'
+        required: true
+
+jobs:
+  exploit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Shell Injection Exploit
+        run: |
+          echo "Running: ${{ inputs.chart }}"
+          ${{ inputs.chart }}
