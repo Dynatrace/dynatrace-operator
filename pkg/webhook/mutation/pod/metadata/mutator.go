@@ -90,7 +90,7 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
 	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 	if copiedMetadataAnnotations == nil {
-		log.Info("copied metadata annotations from namespace is nil, not copying map to attributes UserDefined")
+		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
 
 		return
 	}

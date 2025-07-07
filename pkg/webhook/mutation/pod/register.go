@@ -48,26 +48,51 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 		return errors.WithStack(err)
 	}
 
-	webhookPodImage, err := getWebhookContainerImage(*webhookPod)
+	wh, err := newWebhook(
+		kubeClient,
+		metaClient,
+		apiReader,
+		eventRecorder,
+		admission.NewDecoder(mgr.GetScheme()),
+		*webhookPod,
+		isOpenShift,
+	)
 	if err != nil {
 		return err
 	}
 
-	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
-		oaMutator:        oneagent.NewMutator(webhookPodImage),
+	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: wh})
+	log.Info("registered /inject endpoint")
+
+	return nil
+}
+
+func newWebhook(
+	kubeClient,
+	metaClient client.Client,
+	apiReader client.Reader,
+	eventRecorder events.EventRecorder,
+	decoder admission.Decoder,
+	webhookPod corev1.Pod,
+	isOpenshift bool) (*webhook, error) {
+
+	webhookPodImage, err := getWebhookContainerImage(webhookPod)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhook{
+		oaMutator:        oneagent.NewMutator(),
 		metaMutator:      metadata.NewMutator(metaClient),
 		kubeClient:       kubeClient,
 		apiReader:        apiReader,
 		recorder:         eventRecorder,
-		isOpenShift:      isOpenShift,
-		webhookNamespace: webhookNamespace,
+		isOpenShift:      isOpenshift,
+		webhookNamespace: webhookPod.Namespace,
 		webhookPodImage:  webhookPodImage,
-		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
-		decoder:          admission.NewDecoder(mgr.GetScheme()),
-	}})
-	log.Info("registered /inject endpoint")
-
-	return nil
+		deployedViaOLM:   kubesystem.IsDeployedViaOlm(webhookPod),
+		decoder:          decoder,
+	}, nil
 }
 
 func registerLivezEndpoint(mgr manager.Manager) {

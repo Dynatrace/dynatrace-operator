@@ -14,7 +14,6 @@ const (
 	// AnnotationOneAgentInject can be set at pod level to enable/disable OneAgent injection.
 	AnnotationInject   = AnnotationPrefix + ".dynatrace.com/inject"
 	AnnotationInjected = AnnotationPrefix + ".dynatrace.com/injected"
-	AnnotationReason   = AnnotationPrefix + ".dynatrace.com/reason"
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.

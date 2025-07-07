@@ -19,7 +19,7 @@ const (
 
 type Mutator struct {}
 
-func NewMutator(webhookImageName string) dtwebhook.Mutator {
+func NewMutator() dtwebhook.Mutator {
 	return &Mutator{}
 }
 
@@ -61,24 +61,6 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
-func SetInjectedAnnotation(pod *corev1.Pod) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[AnnotationInjected] = "true"
-}
-
-func SetNotInjectedAnnotations(pod *corev1.Pod, reason string) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[AnnotationInjected] = "false"
-	pod.Annotations[AnnotationReason] = reason
-}
-
-
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	installPath := maputils.GetField(request.Pod.Annotations, AnnotationInstallPath, DefaultInstallPath)
 
@@ -87,7 +69,10 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		return err
 	}
 
-	mutateUserContainers(request.BaseRequest, installPath)
+	// not checking the returned bool, as getting a `false` value shouldn't happen
+	// the caller of mutate already checks if it needs to be mutated
+	_ = mutateUserContainers(request.BaseRequest, installPath)
+	setInjectedAnnotation(request.Pod)
 
 	return nil
 }
@@ -137,4 +122,12 @@ func setIsInjectedEnv(container *corev1.Container) {
 			Value: "true",
 		},
 	)
+}
+
+func setInjectedAnnotation(pod *corev1.Pod) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+
+	pod.Annotations[AnnotationInjected] = "true"
 }

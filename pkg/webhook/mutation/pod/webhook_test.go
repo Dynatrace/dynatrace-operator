@@ -11,7 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	podwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +27,7 @@ import (
 )
 
 const (
-	testImage         = "test-image"
+	testWebhookImage  = "test-wh-image"
 	testNamespaceName = "test-namespace"
 	testClusterID     = "test-cluster-id"
 	testPodName       = "test-pod"
@@ -313,7 +314,7 @@ func TestHandle(t *testing.T) {
 func getTestPodWithInjectionDisabled() *corev1.Pod {
 	pod := getTestPod()
 	pod.Annotations = map[string]string{
-		dtwebhook.AnnotationDynatraceInject: "false",
+		podwebhook.AnnotationDynatraceInject: "false",
 	}
 
 	return pod
@@ -334,21 +335,47 @@ func getTestPodWithInjectionDisabledOnContainer() *corev1.Pod {
 	pod.Annotations = map[string]string{}
 
 	for _, c := range pod.Spec.Containers {
-		pod.Annotations[dtwebhook.AnnotationContainerInjection+"/"+c.Name] = "false"
+		pod.Annotations[podwebhook.AnnotationContainerInjection+"/"+c.Name] = "false"
 	}
 
 	return pod
 }
 
-func createTestWebhook(v1, v2 dtwebhook.PodInjector, objects []client.Object) *webhook {
+func getTestWebhookPod(t *testing.T) corev1.Pod {
+	t.Helper()
+
+	return corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-webhook",
+			Namespace: "test-namespace",
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  dtwebhook.WebhookContainerName,
+					Image: testWebhookImage,
+				},
+			},
+		},
+	}
+}
+
+func createTestWebhook(t *testing.T, oaMut, metaMut podwebhook.Mutator, objects []client.Object) *webhook {
+	t.Helper()
+
 	decoder := admission.NewDecoder(scheme.Scheme)
 
-	return &webhook{
-		apiReader:        fake.NewClient(objects...),
-		decoder:          decoder,
-		webhookNamespace: testNamespaceName,
-		recorder:         events.NewRecorder(record.NewFakeRecorder(10)),
-	}
+	fakeClient := fake.NewClient(objects...)
+
+	wh, err := newWebhook(fakeClient, fakeClient, fakeClient,
+		events.NewRecorder(record.NewFakeRecorder(10)), decoder, getTestWebhookPod(t), false)
+
+	require.NoError(t, err)
+
+	wh.oaMutator = oaMut
+	wh.metaMutator = metaMut
+
+	return wh
 }
 
 func getTestDynakube() *dynakube.DynaKube {

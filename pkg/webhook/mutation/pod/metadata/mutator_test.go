@@ -11,12 +11,13 @@ import (
 
 func TestSetInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
+		mut := NewMutator(nil)
 		request := createTestMutationRequest(nil, nil)
 
-		require.False(t, IsInjected(request.BaseRequest))
+		require.False(t, mut.IsInjected(request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
 		require.Len(t, request.Pod.Annotations, 1)
-		require.True(t, IsInjected(request.BaseRequest))
+		require.True(t, mut.IsInjected(request.BaseRequest))
 	})
 }
 

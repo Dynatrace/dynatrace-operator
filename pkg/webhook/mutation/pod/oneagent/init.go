@@ -18,19 +18,23 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 	isSelfExtractingImage := IsSelfExtractingImage(mutationRequest.BaseRequest, isCSI)
 
 	if isCSI {
+		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
 		addCSIBinVolume(
 			mutationRequest.Pod,
 			mutationRequest.DynaKube.Name,
 			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String())
 	} else {
+		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
 		addEmptyDirBinVolume(mutationRequest.Pod)
 	}
 
 	if isSelfExtractingImage {
+		log.Info("configuring init-container with self-extracting image", "name", mutationRequest.PodName())
 		// The first element would be the "bootstrap" sub command, which is not needed incase of self-extracting image
 		mutationRequest.InstallContainer.Args = mutationRequest.InstallContainer.Args[1:]
 
 	} else if !isCSI {
+		log.Info("configuring init-container for ZIP download", "name", mutationRequest.PodName())
 		downloadArgs := []arg.Arg{
 			{Name: bootstrapper.TargetVersionFlag, Value: mutationRequest.DynaKube.OneAgent().GetCodeModulesVersion()},
 		}
@@ -56,6 +60,7 @@ func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.Dy
 	}
 
 	if dk.OneAgent().IsCloudNativeFullstackMode() {
+		log.Info("configuring init-container to setup fullstack mode", "pod.name", pod.GetName(), "pod.generateName", pod.GetGenerateName())
 		tenantUUID, err := dk.TenantUUID()
 		if err != nil {
 			return err

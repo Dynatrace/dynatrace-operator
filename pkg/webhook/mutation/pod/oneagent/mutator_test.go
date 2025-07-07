@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -27,12 +27,14 @@ func TestContainerIsInjected(t *testing.T) {
 }
 
 func TestMutate(t *testing.T) {
+	mut := NewMutator()
+
 	t.Run("success", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
 
 		original := createTestMutationRequestWithoutInjectedContainers()
-		updated := Mutate(request)
-		require.True(t, updated)
+		err := mut.Mutate(request)
+		require.NoError(t, err)
 		// update install container
 		assert.NotEqual(t, original.InstallContainer, request.InstallContainer)
 
@@ -50,8 +52,8 @@ func TestMutate(t *testing.T) {
 			AnnotationInstallPath: expectedInstallPath,
 		}
 
-		updated := Mutate(request)
-		require.True(t, updated)
+		err := mut.Mutate(request)
+		require.NoError(t, err)
 
 		assert.Contains(t, request.InstallContainer.Args, "--"+configure.InstallPathFlag+"="+expectedInstallPath)
 
@@ -73,16 +75,16 @@ func TestMutate(t *testing.T) {
 
 		request.Pod.Spec.Containers = updateContainer
 
-		updated := Mutate(request)
-		require.False(t, updated)
+		err := mut.Mutate(request)
+		require.NoError(t, err)
 	})
 
 	t.Run("no tenantUUID + cloudnative => no update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
 		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 
-		updated := Mutate(request)
-		require.False(t, updated)
+		err := mut.Mutate(request)
+		require.NoError(t, err)
 	})
 
 	t.Run("tenantUUID + cloudnative => update", func(t *testing.T) {
@@ -90,17 +92,19 @@ func TestMutate(t *testing.T) {
 		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		request.DynaKube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "example"
 
-		updated := Mutate(request)
-		require.True(t, updated)
+		err := mut.Mutate(request)
+		require.NoError(t, err)
 	})
 }
 
 func TestReinvoke(t *testing.T) {
+	mut := NewMutator()
+
 	t.Run("success", func(t *testing.T) {
 		request := createTestMutationRequestWithInjectedContainers()
 
 		original := createTestMutationRequestWithInjectedContainers()
-		updated := Reinvoke(request.BaseRequest)
+		updated := mut.Reinvoke(request.ToReinvocationRequest())
 		require.True(t, updated)
 
 		// no update to install container
@@ -125,7 +129,7 @@ func TestReinvoke(t *testing.T) {
 			AnnotationInstallPath: expectedInstallPath,
 		}
 
-		updated := Reinvoke(request.BaseRequest)
+		updated := mut.Reinvoke(request.ToReinvocationRequest())
 		require.True(t, updated)
 
 		for _, c := range request.Pod.Spec.Containers {
@@ -147,7 +151,7 @@ func TestReinvoke(t *testing.T) {
 
 		request.Pod.Spec.Containers = updateContainer
 
-		updated := Reinvoke(request.BaseRequest)
+		updated := mut.Reinvoke(request.ToReinvocationRequest())
 		require.False(t, updated)
 	})
 }

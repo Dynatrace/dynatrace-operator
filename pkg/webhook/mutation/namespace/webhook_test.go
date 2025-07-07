@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

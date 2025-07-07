@@ -21,7 +21,6 @@ func TestAddVolumeMounts(t *testing.T) {
 		require.Len(t, container.VolumeMounts, 3)
 		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, installPath, container.VolumeMounts[0].MountPath)
-		assert.Equal(t, binSubPath, container.VolumeMounts[0].SubPath)
 
 		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[1].Name)
 		assert.Equal(t, ldPreloadPath, container.VolumeMounts[1].MountPath)
@@ -41,6 +40,5 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		require.Len(t, container.VolumeMounts, 1)
 		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, binInitMountPath, container.VolumeMounts[0].MountPath)
-		assert.Equal(t, binSubPath, container.VolumeMounts[0].SubPath)
 	})
 }

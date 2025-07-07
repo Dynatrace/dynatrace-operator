@@ -52,7 +52,7 @@ func createEnvVarRef(envName string) string {
 	return fmt.Sprintf("$(%s)", envName)
 }
 
-func addContainerAttributes(request *dtwebhook.MutationRequest) error {
+func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 	attributes := []containerattr.Attributes{}
 	for _, c := range request.NewContainers(isInjected) {
 		attributes = append(attributes, containerattr.Attributes{
@@ -66,13 +66,15 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) error {
 	if len(attributes) > 0 {
 		args, err := containerattr.ToArgs(attributes)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
+
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 func isInjected(container corev1.Container) bool {

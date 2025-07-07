@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
-	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,12 +33,21 @@ func (wh *webhook) handle(mutationRequest *dtwebhook.MutationRequest) error {
 
 			return nil
 		}
-
 		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName())
+
+		return nil
 	} else {
-		if err := wh.handlePodMutation(mutationRequest); err != nil {
+		mutated, err := wh.handlePodMutation(mutationRequest)
+		if err != nil {
 			return err
 		}
+
+		if !mutated{
+			setNotInjectedAnnotations(mutationRequest, NoMutationNeededReason)
+
+			return nil
+		}
+
 	}
 
 	setDynatraceInjectedAnnotation(mutationRequest)
@@ -60,14 +68,14 @@ func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 	return false
 }
 
-func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
+func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
 	mutationRequest.InstallContainer = wh.createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
 
 	var mutated bool
 	if wh.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
 		err := wh.oaMutator.Mutate(mutationRequest)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		mutated = true
@@ -76,50 +84,49 @@ func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest)
 	if wh.metaMutator.IsEnabled(mutationRequest.BaseRequest) {
 		err := wh.metaMutator.Mutate(mutationRequest)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		mutated = true
 	}
 
 	if mutated {
-		err := addContainerAttributes(mutationRequest)
+		_, err := addContainerAttributes(mutationRequest)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		err = addPodAttributes(mutationRequest)
 		if err != nil {
 			log.Info("failed to add pod attributes to init-container")
 
-			return err
+			return false, err
 		}
 
 		addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 		wh.recorder.SendPodInjectEvent()
 	}
 
-	return nil
+	return true, nil
 }
 
 func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
 	mutationRequest.InstallContainer = container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
 
-	err := addContainerAttributes(mutationRequest)
+	// metadata enrichment does not need to be reinvoked, addContainerAttributes() does what is needed
+	hasNewContainers, err := addContainerAttributes(mutationRequest)
 	if err != nil {
 		log.Error(err, "error during reinvocation for updating the init-container, failed to update container-attributes on the init container")
 
 		return false
 	}
 
-	var updated bool
+	var oaUpdated bool
 	if wh.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
-		updated = wh.oaMutator.Reinvoke(mutationRequest.ToReinvocationRequest())
+		oaUpdated = wh.oaMutator.Reinvoke(mutationRequest.ToReinvocationRequest())
 	}
 
-	// metadata enrichment does not need to be reinvoked, addContainerAttributes() does what is needed
-
-	return updated
+	return hasNewContainers || oaUpdated
 }
 
 func (wh *webhook) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
@@ -128,7 +135,7 @@ func (wh *webhook) isInputSecretPresent(mutationRequest *dtwebhook.MutationReque
 	if k8serrors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("unable to copy source of %s as it is not available, injection not possible", sourceSecretName), "pod", mutationRequest.PodName())
 
-		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
+		setNotInjectedAnnotations(mutationRequest, NoBootstrapperConfigReason)
 
 		return false
 	}
@@ -136,7 +143,7 @@ func (wh *webhook) isInputSecretPresent(mutationRequest *dtwebhook.MutationReque
 	if err != nil {
 		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
 
-		oacommon.SetNotInjectedAnnotations(mutationRequest.Pod, NoBootstrapperConfigReason)
+		setNotInjectedAnnotations(mutationRequest, NoBootstrapperConfigReason)
 
 		return false
 	}
@@ -166,4 +173,13 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 
 	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
 	delete(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
+}
+
+func setNotInjectedAnnotations(mutationRequest *dtwebhook.MutationRequest, reason string) {
+	if mutationRequest.Pod.Annotations == nil {
+		mutationRequest.Pod.Annotations = make(map[string]string)
+	}
+
+	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "false"
+	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceReason] = reason
 }
