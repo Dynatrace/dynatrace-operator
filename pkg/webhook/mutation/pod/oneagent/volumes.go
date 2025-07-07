@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	binVolumeName    = "oneagent-bin"
+	BinVolumeName    = "oneagent-bin"
 	binInitMountPath = "/mnt/bin"
 
 	ldPreloadPath    = "/etc/ld.so.preload"
@@ -24,7 +24,7 @@ const (
 func addVolumeMounts(container *corev1.Container, installPath string) {
 	container.VolumeMounts = append(container.VolumeMounts,
 		corev1.VolumeMount{
-			Name:      binVolumeName,
+			Name:      BinVolumeName,
 			MountPath: installPath,
 		},
 		corev1.VolumeMount{
@@ -38,14 +38,14 @@ func addVolumeMounts(container *corev1.Container, installPath string) {
 func addInitVolumeMounts(initContainer *corev1.Container) {
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
 		corev1.VolumeMount{
-			Name:      binVolumeName,
+			Name:      BinVolumeName,
 			MountPath: binInitMountPath,
 		},
 	)
 }
 
 func addEmptyDirBinVolume(pod *corev1.Pod) {
-	if volumeutils.IsIn(pod.Spec.Volumes, binVolumeName) {
+	if volumeutils.IsIn(pod.Spec.Volumes, BinVolumeName) {
 		return
 	}
 
@@ -55,14 +55,14 @@ func addEmptyDirBinVolume(pod *corev1.Pod) {
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: binVolumeName,
+			Name: BinVolumeName,
 			VolumeSource: volumeSource,
 		},
 	)
 }
 
 func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {
-	if volumeutils.IsIn(pod.Spec.Volumes, binVolumeName) {
+	if volumeutils.IsIn(pod.Spec.Volumes, BinVolumeName) {
 		return
 	}
 
@@ -80,7 +80,7 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: binVolumeName,
+			Name: BinVolumeName,
 			VolumeSource: volumeSource,
 		},
 	)
