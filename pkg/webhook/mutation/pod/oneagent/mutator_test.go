@@ -13,12 +13,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestIsEnabled(t *testing.T) {
+	matchLabels := map[string]string{
+		"match": "me",
+	}
+
 	type testCase struct {
 		title   string
 		podMods func(*corev1.Pod)
+		nsMods  func(*corev1.Namespace)
 		dkMods  func(*dynakube.DynaKube)
 		enabled bool
 	}
@@ -27,13 +33,15 @@ func TestIsEnabled(t *testing.T) {
 		{
 			title:   "nothing enabled => not enabled",
 			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
 			dkMods:  func(dk *dynakube.DynaKube) {},
 			enabled: false,
 		},
 
 		{
-			title:   "only OA enabled, without FF => enabled",
+			title:   "only OA enabled => enabled",
 			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 			},
@@ -43,33 +51,78 @@ func TestIsEnabled(t *testing.T) {
 		{
 			title:   "OA + FF enabled => enabled",
 			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+			},
+			enabled: true,
+		},
+		{
+			title:   "OA enabled + auto-inject false => disabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "false",
+				}
 			},
 			enabled: false,
 		},
 		{
-			title: "OA + FF enabled + correct Volume-Type => enabled",
-			podMods: func(p *corev1.Pod) {
-				p.Annotations = map[string]string{AnnotationVolumeType: EphemeralVolumeType}
-			},
+			title:   "OA enabled + auto-inject false + no pod annotation => disabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "false",
+				}
 			},
 			enabled: false,
 		},
 		{
-			title: "OA + FF enabled + incorrect Volume-Type => disabled",
+			title: "OA enabled + auto-inject false + pod annotation => enabled",
 			podMods: func(p *corev1.Pod) {
-				p.Annotations = map[string]string{AnnotationVolumeType: CSIVolumeType}
+				p.Annotations = map[string]string{
+					AnnotationInject: "true",
+				}
+			},
+			nsMods: func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "false",
+				}
+			},
+			enabled: true,
+		},
+		{
+			title:   "OA enabled + labels not match => disabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				}
+			},
+			enabled: false,
+		},
+		{
+			title:   "OA enabled + labels match => enabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods: func(n *corev1.Namespace) {
+				n.Labels = matchLabels
 			},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+				dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				}
 			},
-			enabled: false,
+			enabled: true,
 		},
 	}
 	for _, test := range cases {
@@ -77,10 +130,13 @@ func TestIsEnabled(t *testing.T) {
 			pod := &corev1.Pod{}
 			test.podMods(pod)
 
+			ns := &corev1.Namespace{}
+			test.nsMods(ns)
+
 			dk := &dynakube.DynaKube{}
 			test.dkMods(dk)
 
-			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk}}
+			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
 
 			assert.Equal(t, test.enabled, IsEnabled(req.BaseRequest))
 

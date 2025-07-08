@@ -80,7 +80,6 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 
 func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{{Name: bootstrapper.MetadataEnrichmentFlag}})...)
-
 }
 
 func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {

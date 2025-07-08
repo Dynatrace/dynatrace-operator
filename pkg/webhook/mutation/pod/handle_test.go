@@ -216,6 +216,7 @@ func getAppMonSpec(initResources *corev1.ResourceRequirements) oneagent.Spec {
 
 func createTestMutationRequestWithInjectedPod(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	t.Helper()
+
 	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getInjectedPod(t), *dk)
 }
 

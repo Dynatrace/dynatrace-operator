@@ -3,11 +3,199 @@ package metadata
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
+
+func TestIsEnabled(t *testing.T) {
+	matchLabels := map[string]string{
+		"match": "me",
+	}
+
+	type testCase struct {
+		title      string
+		podMods    func(*corev1.Pod)
+		nsMods     func(*corev1.Namespace)
+		dkMods     func(*dynakube.DynaKube)
+		withCSI    bool
+		withoutCSI bool
+	}
+
+	cases := []testCase{
+		{
+			title:      "nothing enabled => not enabled",
+			podMods:    func(p *corev1.Pod) {},
+			nsMods:     func(n *corev1.Namespace) {},
+			dkMods:     func(dk *dynakube.DynaKube) {},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+		{
+			title:   "only OA enabled, without FF => not enabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+			},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+		{
+			title:   "meta enabled => enabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+			},
+			withCSI:    true,
+			withoutCSI: true,
+		},
+		{
+			title:   "meta enabled + auto-inject false => disabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "false",
+				}
+			},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+		{
+			title:   "meta enabled + auto-inject false + no pod annotation => disabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "false",
+				}
+			},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+		{
+			title: "meta enabled + auto-inject false + pod annotation => enabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{
+					AnnotationInject: "true",
+				}
+			},
+			nsMods: func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Annotations = map[string]string{
+					exp.InjectionAutomaticKey: "false",
+				}
+			},
+			withCSI:    true,
+			withoutCSI: true,
+		},
+		{
+			title:   "meta enabled + labels not match => disabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Spec.MetadataEnrichment.NamespaceSelector = metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				}
+			},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+		{
+			title:   "meta enabled + labels match => enabled",
+			podMods: func(p *corev1.Pod) {},
+			nsMods: func(n *corev1.Namespace) {
+				n.Labels = matchLabels
+			},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
+				dk.Spec.MetadataEnrichment.NamespaceSelector = metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				}
+			},
+			withCSI:    true,
+			withoutCSI: true,
+		},
+		{
+			title:   "OA + FF enabled => enabled with no CSI",
+			podMods: func(p *corev1.Pod) {},
+			nsMods:  func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+			},
+			withCSI:    false,
+			withoutCSI: true,
+		},
+		{
+			title: "OA + FF enabled + ephemeral Volume-Type => enabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{oacommon.AnnotationVolumeType: oacommon.EphemeralVolumeType}
+			},
+			nsMods: func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+			},
+			withCSI:    true,
+			withoutCSI: true,
+		},
+		{
+			title: "OA + FF enabled + csi Volume-Type => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{oacommon.AnnotationVolumeType: oacommon.CSIVolumeType}
+			},
+			nsMods: func(n *corev1.Namespace) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+			},
+			withCSI:    false,
+			withoutCSI: false,
+		},
+	}
+	for _, test := range cases {
+		t.Run(test.title, func(t *testing.T) {
+			pod := &corev1.Pod{}
+			test.podMods(pod)
+
+			ns := &corev1.Namespace{}
+			test.nsMods(ns)
+
+			dk := &dynakube.DynaKube{}
+			test.dkMods(dk)
+
+			mut := NewMutator(fake.NewClient())
+
+			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
+
+			assert.Equal(t, test.withCSI, mut.IsEnabled(req.BaseRequest))
+
+			installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+			assert.Equal(t, test.withoutCSI, mut.IsEnabled(req.BaseRequest))
+		})
+	}
+}
 
 func TestSetInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
@@ -46,7 +234,6 @@ func TestWorkloadAnnotations(t *testing.T) {
 		assert.Equal(t, "superworkload", request.Pod.Annotations[AnnotationWorkloadKind])
 	})
 }
-
 
 // func TestAddPodAttributes(t *testing.T) {
 // 	validateAttributes := func(t *testing.T, request dtwebhook.MutationRequest) podattr.Attributes {
