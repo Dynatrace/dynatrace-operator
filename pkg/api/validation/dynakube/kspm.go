@@ -19,7 +19,13 @@ const (
 )
 
 func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.KSPM().IsEnabled() && dk.ActiveGate().GetReplicas() > 1 {
+	var agReplicas int32 = 1
+
+	if dk.ActiveGate().GetReplicas() != nil {
+		agReplicas = *dk.ActiveGate().GetReplicas()
+	}
+
+	if dk.KSPM().IsEnabled() && agReplicas > 1 {
 		return errorTooManyAGReplicas
 	}
 

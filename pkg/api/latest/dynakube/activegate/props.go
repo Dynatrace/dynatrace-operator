@@ -63,13 +63,8 @@ func (ag *Spec) GetServiceAccountOwner() string {
 	}
 }
 
-func (ag *Spec) GetReplicas() int32 {
-	var defaultReplicas int32 = 1
-	if ag.Replicas == nil {
-		return defaultReplicas
-	}
-
-	return *ag.Replicas
+func (ag *Spec) GetReplicas() *int32 {
+	return ag.Replicas
 }
 
 func (ag *Spec) GetServiceAccountName() string {

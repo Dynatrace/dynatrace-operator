@@ -48,9 +48,17 @@ const (
 	customEecTLSCertificateFullPath = customEecTLSCertificatePath + "/" + consts.TLSCrtDataName
 )
 
+func getShardsEnvValue(dk *dynakube.DynaKube) int32 {
+	if dk.Spec.Templates.OpenTelemetryCollector.Replicas != nil {
+		return *dk.Spec.Templates.OpenTelemetryCollector.Replicas
+	}
+
+	return defaultReplicas
+}
+
 func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
-		{Name: envShards, Value: strconv.Itoa(int(getReplicas(dk)))},
+		{Name: envShards, Value: strconv.Itoa(int(getShardsEnvValue(dk)))},
 		{Name: envPodNamePrefix, Value: dk.OtelCollectorStatefulsetName()},
 		{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{

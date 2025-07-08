@@ -90,7 +90,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	}
 
 	desiredSts, err := statefulset.Build(r.dk, r.dk.ExtensionsExecutionControllerStatefulsetName(), buildContainer(r.dk),
-		statefulset.SetReplicas(1),
+		statefulset.SetReplicas(ptr.To(int32(1))),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
 		statefulset.SetAllAnnotations(nil, templateAnnotations),

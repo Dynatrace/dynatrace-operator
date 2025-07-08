@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -22,7 +22,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
+		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getShardsEnvValue(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-otel-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{
@@ -71,7 +71,7 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Len(t, statefulSet.Spec.Template.Spec.Containers[0].Env, 12)
 
-		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
+		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getShardsEnvValue(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-otel-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
 			FieldRef: &corev1.ObjectFieldSelector{

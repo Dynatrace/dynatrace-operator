@@ -147,7 +147,7 @@ func TestStatefulsetBase(t *testing.T) {
 	t.Run("replicas", func(t *testing.T) {
 		statefulSet := getStatefulset(t, getTestDynakubeWithExtensions())
 
-		assert.Equal(t, int32(1), *statefulSet.Spec.Replicas)
+		assert.Nil(t, statefulSet.Spec.Replicas)
 	})
 
 	t.Run("pod management policy", func(t *testing.T) {

@@ -32,9 +32,9 @@ func Build(owner metav1.Object, name string, container corev1.Container, options
 	return builder.Build(owner, &appsv1.StatefulSet{}, neededOpts...)
 }
 
-func SetReplicas(replicas int32) builder.Option[*appsv1.StatefulSet] {
+func SetReplicas(replicas *int32) builder.Option[*appsv1.StatefulSet] {
 	return func(s *appsv1.StatefulSet) {
-		s.Spec.Replicas = ptr.To(replicas)
+		s.Spec.Replicas = replicas
 	}
 }
 

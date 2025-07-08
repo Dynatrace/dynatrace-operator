@@ -71,7 +71,11 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 	dst.Spec.ActiveGate.DNSPolicy = src.Spec.ActiveGate.DNSPolicy
 	dst.Spec.ActiveGate.TopologySpreadConstraints = src.Spec.ActiveGate.TopologySpreadConstraints
 	dst.Spec.ActiveGate.Resources = src.Spec.ActiveGate.Resources
-	dst.Spec.ActiveGate.Replicas = src.Spec.ActiveGate.GetReplicas()
+	if src.Spec.ActiveGate.GetReplicas() == nil {
+		dst.Spec.ActiveGate.Replicas = 1
+	} else {
+		dst.Spec.ActiveGate.Replicas = *src.Spec.ActiveGate.GetReplicas()
+	}
 	dst.Spec.ActiveGate.Capabilities = []CapabilityDisplayName{}
 
 	for _, capability := range src.Spec.ActiveGate.Capabilities {

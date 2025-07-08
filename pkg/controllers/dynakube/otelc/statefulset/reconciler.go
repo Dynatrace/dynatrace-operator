@@ -98,7 +98,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	}
 
 	sts, err := statefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), getContainer(r.dk),
-		statefulset.SetReplicas(getReplicas(r.dk)),
+		statefulset.SetReplicas(r.dk.Spec.Templates.OpenTelemetryCollector.Replicas),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
 		statefulset.SetAllAnnotations(nil, templateAnnotations),
@@ -221,14 +221,6 @@ func (r *Reconciler) checkDataIngestTokenExists(ctx context.Context) bool {
 	}
 
 	return token.CheckForDataIngestToken(tokens)
-}
-
-func getReplicas(dk *dynakube.DynaKube) int32 {
-	if dk.Spec.Templates.OpenTelemetryCollector.Replicas != nil {
-		return *dk.Spec.Templates.OpenTelemetryCollector.Replicas
-	}
-
-	return defaultReplicas
 }
 
 func buildSecurityContext() *corev1.SecurityContext {
