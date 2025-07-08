@@ -4,14 +4,92 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 )
+
+func TestIsEnabled(t *testing.T) {
+	type testCase struct {
+		title   string
+		podMods func(*corev1.Pod)
+		dkMods  func(*dynakube.DynaKube)
+		enabled bool
+	}
+
+	cases := []testCase{
+		{
+			title:   "nothing enabled => not enabled",
+			podMods: func(p *corev1.Pod) {},
+			dkMods:  func(dk *dynakube.DynaKube) {},
+			enabled: false,
+		},
+
+		{
+			title:   "only OA enabled, without FF => enabled",
+			podMods: func(p *corev1.Pod) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+			},
+			enabled: true,
+		},
+
+		{
+			title:   "OA + FF enabled => enabled",
+			podMods: func(p *corev1.Pod) {},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+			},
+			enabled: false,
+		},
+		{
+			title: "OA + FF enabled + correct Volume-Type => enabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{AnnotationVolumeType: EphemeralVolumeType}
+			},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+			},
+			enabled: false,
+		},
+		{
+			title: "OA + FF enabled + incorrect Volume-Type => disabled",
+			podMods: func(p *corev1.Pod) {
+				p.Annotations = map[string]string{AnnotationVolumeType: CSIVolumeType}
+			},
+			dkMods: func(dk *dynakube.DynaKube) {
+				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
+			},
+			enabled: false,
+		},
+	}
+	for _, test := range cases {
+		t.Run(test.title, func(t *testing.T) {
+			pod := &corev1.Pod{}
+			test.podMods(pod)
+
+			dk := &dynakube.DynaKube{}
+			test.dkMods(dk)
+
+			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk}}
+
+			assert.Equal(t, test.enabled, IsEnabled(req.BaseRequest))
+
+			installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+			assert.Equal(t, test.enabled, IsEnabled(req.BaseRequest))
+		})
+	}
+}
 
 func TestContainerIsInjected(t *testing.T) {
 	t.Run("is injected", func(t *testing.T) {

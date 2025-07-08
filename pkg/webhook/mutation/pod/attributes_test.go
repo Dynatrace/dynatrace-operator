@@ -8,12 +8,10 @@ import (
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/volumes"
-	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/metadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -54,58 +52,14 @@ func TestAddPodAttributes(t *testing.T) {
 		return attr
 	}
 
-	validateAdditionAttributes := func(t *testing.T, request dtwebhook.MutationRequest) {
-		t.Helper()
-
-		attr := validateAttributes(t, request)
-
-		require.NotEmpty(t, request.Pod.OwnerReferences)
-		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), attr.WorkloadKind)
-		assert.Equal(t, request.Pod.OwnerReferences[0].Name, attr.WorkloadName)
-
-		metaAnnotationCount := 0
-
-		for key := range request.Namespace.Annotations {
-			if strings.Contains(key, metacommon.AnnotationPrefix) {
-				metaAnnotationCount++
-			}
-		}
-
-		assert.Len(t, attr.UserDefined, metaAnnotationCount)
-		require.Len(t, request.Pod.Annotations, 4+metaAnnotationCount)
-		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[metacommon.AnnotationWorkloadKind])
-		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[metacommon.AnnotationWorkloadName])
-		assert.Equal(t, "true", request.Pod.Annotations[metacommon.AnnotationInjected])
-	}
-
-	t.Run("metadata enrichment passes => additional args and annotations", func(t *testing.T) {
+	t.Run("args and envs added", func(t *testing.T) {
 		initContainer := corev1.Container{
 			Args: []string{},
 		}
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "test",
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						Name:       "owner",
-						APIVersion: "v1",
-						Kind:       "ReplicationController",
-						Controller: ptr.To(true),
-					},
-				},
-			},
+				Namespace: "test"},
 		}
-		owner := corev1.ReplicationController{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ReplicationController",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "owner",
-			},
-		}
-		injector := createTestWebhookBase()
-		injector.metaClient = fake.NewClient(&owner, &pod)
 
 		expectedPod := pod.DeepCopy()
 
@@ -132,61 +86,7 @@ func TestAddPodAttributes(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEqual(t, *expectedPod, *request.Pod)
 
-		validateAdditionAttributes(t, request)
-	})
-
-	t.Run("metadata enrichment fails => error", func(t *testing.T) {
-		injector := createTestWebhookBase()
-		injector.metaClient = fake.NewClient()
-
-		initContainer := corev1.Container{
-			Args: []string{},
-		}
-		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "test",
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						Name:       "owner",
-						APIVersion: "v1",
-						Kind:       "ReplicationController",
-						Controller: ptr.To(true),
-					},
-				},
-			},
-		}
-
-		expectedPod := pod.DeepCopy()
-
-		request := dtwebhook.MutationRequest{
-			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
-				Namespace: corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Annotations: map[string]string{
-							metacommon.AnnotationPrefix + "/test": "test",
-						},
-					},
-				},
-				DynaKube: dynakube.DynaKube{
-					Spec: dynakube.DynaKubeSpec{
-						MetadataEnrichment: dynakube.MetadataEnrichment{
-							Enabled: ptr.To(true),
-						},
-					},
-					Status: dynakube.DynaKubeStatus{
-						KubernetesClusterMEID: "meid",
-						KubeSystemUUID:        "systemuuid",
-						KubernetesClusterName: "meidname",
-					},
-				},
-			},
-			InstallContainer: &initContainer,
-		}
-
-		err := addPodAttributes(&request)
-		require.Error(t, err)
-		require.Equal(t, *expectedPod, *request.Pod)
+		validateAttributes(t, request)
 	})
 }
 

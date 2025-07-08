@@ -4,113 +4,26 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
-	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
+	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	customImage = "custom-image"
 )
-
-func TestIsEnabled(t *testing.T) {
-	type testCase struct {
-		title      string
-		podMods    func(*corev1.Pod)
-		dkMods     func(*dynakube.DynaKube)
-		withCSI    bool
-		withoutCSI bool
-	}
-
-	cases := []testCase{
-		{
-			title:      "nothing enabled => not enabled",
-			podMods:    func(p *corev1.Pod) {},
-			dkMods:     func(dk *dynakube.DynaKube) {},
-			withCSI:    false,
-			withoutCSI: false,
-		},
-
-		{
-			title:   "only OA enabled, without FF => not enabled",
-			podMods: func(p *corev1.Pod) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-			},
-			withCSI:    false,
-			withoutCSI: false,
-		},
-
-		{
-			title:   "OA + FF enabled => enabled with no csi",
-			podMods: func(p *corev1.Pod) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
-			},
-			withCSI:    false,
-			withoutCSI: true,
-		},
-		{
-			title: "OA + FF enabled + correct Volume-Type => enabled",
-			podMods: func(p *corev1.Pod) {
-				p.Annotations = map[string]string{oacommon.AnnotationVolumeType: oacommon.EphemeralVolumeType}
-			},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
-			},
-			withCSI:    true,
-			withoutCSI: true,
-		},
-		{
-			title: "OA + FF enabled + incorrect Volume-Type => disabled",
-			podMods: func(p *corev1.Pod) {
-				p.Annotations = map[string]string{oacommon.AnnotationVolumeType: oacommon.CSIVolumeType}
-			},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
-			},
-			withCSI:    false,
-			withoutCSI: false,
-		},
-	}
-	for _, test := range cases {
-		t.Run(test.title, func(t *testing.T) {
-			pod := &corev1.Pod{}
-			test.podMods(pod)
-
-			dk := &dynakube.DynaKube{}
-			test.dkMods(dk)
-
-			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk}}
-
-			assert.Equal(t, test.withCSI, IsEnabled(req))
-
-			installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
-
-			assert.Equal(t, test.withoutCSI, IsEnabled(req))
-		})
-	}
-}
 
 func TestHandleImpl(t *testing.T) {
 	initSecret := corev1.Secret{
@@ -128,26 +41,23 @@ func TestHandleImpl(t *testing.T) {
 	}
 
 	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
-		injector := createTestWebhookBase()
-		clt := fake.NewClient()
-		injector.apiReader = clt
+		wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t))
 
 		request := createTestMutationRequest(getTestDynakube())
 
-		err := injector.handle(request)
+		err := wh.handle(request)
 		require.NoError(t, err)
 
-		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
 		require.True(t, ok)
 		assert.Equal(t, "false", isInjected)
 
-		reason, ok := request.Pod.Annotations[oacommon.AnnotationReason]
+		reason, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
 		require.True(t, ok)
 		assert.Equal(t, NoBootstrapperConfigReason, reason)
 	})
 
 	t.Run("no init secret and no certs + source (both) => replicate (both) + inject", func(t *testing.T) {
-		injector := createTestWebhookBase()
 		request := createTestMutationRequest(getTestDynakubeWithAGCerts())
 
 		source := corev1.Secret{
@@ -164,33 +74,31 @@ func TestHandleImpl(t *testing.T) {
 			},
 			Data: map[string][]byte{"certs": []byte("very secure")},
 		}
-		clt := fake.NewClient(&source, &sourceCerts)
-		injector.kubeClient = clt
-		injector.apiReader = clt
 
-		err := injector.handle(request)
+		wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t), &source, &sourceCerts)
+
+		err := wh.handle(request)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
+		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
 
 		var replicatedCerts corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
 		require.NoError(t, err)
 		assert.Equal(t, sourceCerts.Data, replicatedCerts.Data)
 
-		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
 		require.True(t, ok)
 		assert.Equal(t, "true", isInjected)
 
-		_, ok = request.Pod.Annotations[oacommon.AnnotationReason]
+		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
 		require.False(t, ok)
 	})
 
 	t.Run("no init and no certs, but don't replicate certs because we don't need it (AG is not enabled)", func(t *testing.T) {
-		injector := createTestWebhookBase()
 		request := createTestMutationRequest(getTestDynakube())
 
 		source := corev1.Secret{
@@ -208,64 +116,43 @@ func TestHandleImpl(t *testing.T) {
 			},
 			Data: map[string][]byte{"certs": []byte("very secure")},
 		}
-		clt := fake.NewClient(&source, &sourceCerts)
-		injector.kubeClient = clt
-		injector.apiReader = clt
+		wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t), &source, &sourceCerts)
 
-		err := injector.handle(request)
+		err := wh.handle(request)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
+		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
 
 		var replicatedCerts corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
 		require.Error(t, err)
 		require.True(t, k8sErrors.IsNotFound(err))
 		assert.Empty(t, replicatedCerts.Data)
 
-		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
 		require.True(t, ok)
 		assert.Equal(t, "true", isInjected)
 
-		_, ok = request.Pod.Annotations[oacommon.AnnotationReason]
+		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
 		require.False(t, ok)
 	})
 
-	t.Run("no codeModulesImage => no injection + only annotation", func(t *testing.T) {
-		injector := createTestWebhookBase()
-		injector.apiReader = fake.NewClient(&initSecret, &certsSecret)
-
-		request := createTestMutationRequest(&dynakube.DynaKube{})
-
-		err := injector.handle(request)
-		require.NoError(t, err)
-
-		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
-		require.True(t, ok)
-		assert.Equal(t, "false", isInjected)
-
-		reason, ok := request.Pod.Annotations[oacommon.AnnotationReason]
-		require.True(t, ok)
-		assert.Equal(t, NoCodeModulesImageReason, reason)
-	})
-
 	t.Run("happy path", func(t *testing.T) {
-		injector := createTestWebhookBase()
-		injector.apiReader = fake.NewClient(&initSecret, &certsSecret)
+		wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t), &initSecret, &certsSecret)
 
 		request := createTestMutationRequest(getTestDynakube())
 
-		err := injector.handle(request)
+		err := wh.handle(request)
 		require.NoError(t, err)
 
-		isInjected, ok := request.Pod.Annotations[oacommon.AnnotationInjected]
+		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
 		require.True(t, ok)
 		assert.Equal(t, "true", isInjected)
 
-		_, ok = request.Pod.Annotations[oacommon.AnnotationReason]
+		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
 		require.False(t, ok)
 
 		installContainer := container.FindInitContainerInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
@@ -277,22 +164,16 @@ func TestHandleImpl(t *testing.T) {
 
 func TestIsInjected(t *testing.T) {
 	t.Run("init-container present == injected", func(t *testing.T) {
-		injector := createTestWebhookBase()
+		wh := createTestWebhook(t, nil, nil)
 
-		assert.True(t, injector.isInjected(createTestMutationRequestWithInjectedPod(getTestDynakube())))
+		assert.True(t, wh.isInjected(createTestMutationRequestWithInjectedPod(t, getTestDynakube())))
 	})
 
 	t.Run("init-container NOT present != injected", func(t *testing.T) {
-		injector := createTestWebhookBase()
+		wh := createTestWebhook(t, nil, nil)
 
-		assert.False(t, injector.isInjected(createTestMutationRequest(getTestDynakube())))
+		assert.False(t, wh.isInjected(createTestMutationRequest(getTestDynakube())))
 	})
-}
-
-func createTestWebhookBase() *webhook {
-	return &webhook{
-		recorder: events.NewRecorder(record.NewFakeRecorder(10)),
-	}
 }
 
 func getTestDynakubeWithAGCerts() *dynakube.DynaKube {
@@ -333,11 +214,14 @@ func getAppMonSpec(initResources *corev1.ResourceRequirements) oneagent.Spec {
 	}
 }
 
-func createTestMutationRequestWithInjectedPod(dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
-	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getInjectedPod(), *dk)
+func createTestMutationRequestWithInjectedPod(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	t.Helper()
+	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getInjectedPod(t), *dk)
 }
 
-func getInjectedPod() *corev1.Pod {
+func getInjectedPod(t *testing.T) *corev1.Pod {
+	t.Helper()
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testPodName,
@@ -367,7 +251,10 @@ func getInjectedPod() *corev1.Pod {
 			},
 		},
 	}
-	installContainer := createInitContainerBase(pod, *getTestDynakube(), false)
+
+	wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t))
+
+	installContainer := wh.createInitContainerBase(pod, *getTestDynakube())
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
 
 	return pod
