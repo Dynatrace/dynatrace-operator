@@ -7,7 +7,7 @@ inputs:
     required: true
   labels:
     description: The labels for the built image
-    required: true
+    required: false
   tags:
     description: The tags of the built image. Should be the whole image URIs, like docker.io/dynatrace/dynatrace-operator:snapshot,quay.io/dynatrace/dynatrace-operator:snapshot
     required: true
