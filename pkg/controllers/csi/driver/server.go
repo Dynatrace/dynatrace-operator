@@ -103,12 +103,12 @@ func (srv *Server) Start(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to start server")
 	}
 
-	maxGrpcRequests, err := strconv.Atoi(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"))
+	maxGrpcRequests, err := strconv.ParseInt(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"), 10, 32)
 	if err != nil {
 		maxGrpcRequests = MaxGrpcRequests
 	}
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(grpcLimiter(int32(maxGrpcRequests)))) //nolint:gosec
+	server := grpc.NewServer(grpc.UnaryInterceptor(grpcLimiter(int32(maxGrpcRequests))))
 
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
