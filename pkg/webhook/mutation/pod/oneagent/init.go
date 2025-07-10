@@ -32,7 +32,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		log.Info("configuring init-container with self-extracting image", "name", mutationRequest.PodName())
 		// The first element would be the "bootstrap" sub command, which is not needed incase of self-extracting image
 		mutationRequest.InstallContainer.Args = mutationRequest.InstallContainer.Args[1:]
-
+		mutationRequest.InstallContainer.Image = mutationRequest.DynaKube.OneAgent().GetCodeModulesImage()
 	} else if !isCSI {
 		log.Info("configuring init-container for ZIP download", "name", mutationRequest.PodName())
 		downloadArgs := []arg.Arg{
