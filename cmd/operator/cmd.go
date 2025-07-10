@@ -2,6 +2,8 @@ package operator
 
 import (
 	"context"
+	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dterror"
 	"os"
 	"reflect"
 
@@ -43,6 +45,21 @@ func run() func(cmd *cobra.Command, args []string) error {
 		version.LogVersion()
 		logd.LogBaseLoggerSettings()
 
+		_log := logd.Get().WithName("dt-error-code-test")
+		dtErr := dterror.New("DEC:42", "Test error with error codes")
+		_log.Error(dtErr, "log test error")
+		_log.Error(errors.New("Test error without error code"), "log plain go error")
+		_log.DtError(errors.New("Test error without error code"), "log go error with error code", "DEC:21", "key1", "value1")
+
+		dtErr = logTestError(0)
+		_log.Error(dtErr, "log test error from below")
+
+		err := externalLogTestError(0)
+		_log.Error(err, "external log test error")
+
+		err = errors.WithStack(err)
+		_log.Error(err, "external log test error with stack")
+
 		kubeCfg, err := config.GetConfig()
 		if err != nil {
 			return err
@@ -56,6 +73,20 @@ func run() func(cmd *cobra.Command, args []string) error {
 
 		return runInPod(kubeCfg)
 	}
+}
+
+func logTestError(i int) error {
+	if i > 5 {
+		return dterror.Errorf("DEC:42", "Test error at level %d", i)
+	}
+	return logTestError(i + 1)
+}
+
+func externalLogTestError(i int) error {
+	if i > 5 {
+		return fmt.Errorf("external error")
+	}
+	return externalLogTestError(i + 1)
 }
 
 func runInPod(kubeCfg *rest.Config) error {
