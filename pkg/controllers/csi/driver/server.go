@@ -44,7 +44,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const MaxGrpcRequests = 20
+const DefaultMaxGrpcRequests = 20
 
 var counter atomic.Int32
 
@@ -105,7 +105,7 @@ func (srv *Server) Start(ctx context.Context) error {
 
 	maxGrpcRequests, err := strconv.ParseInt(os.Getenv("GRPC_MAX_REQUESTS_LIMIT"), 10, 32)
 	if err != nil {
-		maxGrpcRequests = MaxGrpcRequests
+		maxGrpcRequests = DefaultMaxGrpcRequests
 	}
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(grpcLimiter(int32(maxGrpcRequests))))
@@ -334,7 +334,7 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 		defer counter.Add(-1)
 
 		if counter.Load() > maxGrpcRequests {
-			msg := fmt.Sprintf("rate limit exceeded, current value %d more than max %d", counter.Load(), MaxGrpcRequests)
+			msg := fmt.Sprintf("rate limit exceeded, current value %d more than max %d", counter.Load(), DefaultMaxGrpcRequests)
 
 			log.Info(msg, logValues...)
 
