@@ -18,27 +18,36 @@ func TestAddVolumeMounts(t *testing.T) {
 		installPath := "test/path"
 
 		addVolumeMounts(container, installPath)
-		require.Len(t, container.VolumeMounts, 3)
-		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[0].Name)
+		require.Len(t, container.VolumeMounts, 2)
+		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, installPath, container.VolumeMounts[0].MountPath)
 
 		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[1].Name)
 		assert.Equal(t, ldPreloadPath, container.VolumeMounts[1].MountPath)
 		assert.Equal(t, filepath.Join(volumes.InitConfigSubPath, ldPreloadSubPath), container.VolumeMounts[1].SubPath)
-
-		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[2].Name)
-		assert.Equal(t, filepath.Join(volumes.InitConfigSubPath, container.Name), container.VolumeMounts[2].SubPath)
-		assert.Equal(t, volumes.ConfigMountPath, container.VolumeMounts[2].MountPath)
 	})
 }
 
 func TestAddInitVolumeMounts(t *testing.T) {
 	t.Run("should add init volume mounts", func(t *testing.T) {
 		container := &corev1.Container{}
+		readonly := false
 
-		addInitVolumeMounts(container)
+		addInitBinMount(container, readonly)
 		require.Len(t, container.VolumeMounts, 1)
-		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
 		assert.Equal(t, binInitMountPath, container.VolumeMounts[0].MountPath)
+		assert.Equal(t, readonly, container.VolumeMounts[0].ReadOnly)
+	})
+
+	t.Run("should add readonly init volume mounts", func(t *testing.T) {
+		container := &corev1.Container{}
+		readonly := true
+
+		addInitBinMount(container, readonly)
+		require.Len(t, container.VolumeMounts, 1)
+		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
+		assert.Equal(t, binInitMountPath, container.VolumeMounts[0].MountPath)
+		assert.Equal(t, readonly, container.VolumeMounts[0].ReadOnly)
 	})
 }

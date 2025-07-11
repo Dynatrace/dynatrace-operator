@@ -23,9 +23,13 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 			mutationRequest.Pod,
 			mutationRequest.DynaKube.Name,
 			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String())
+		// incase of CSI, the CSI volume itself is already always readonly, so the mount should always be readonly, the init-container should just read from it
+		addInitBinMount(mutationRequest.InstallContainer, true)
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
 		addEmptyDirBinVolume(mutationRequest.Pod)
+		// incase of no CSI, the the emptyDir can't be readonly for the init-container as it first has to download/move the agent into it
+		addInitBinMount(mutationRequest.InstallContainer, false)
 	}
 
 	if isSelfExtractingImage {
@@ -46,8 +50,6 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 
 		mutationRequest.InstallContainer.Args = append(mutationRequest.InstallContainer.Args, arg.ConvertArgsToStrings(downloadArgs)...)
 	}
-
-	addInitVolumeMounts(mutationRequest.InstallContainer)
 
 	return addInitArgs(*mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath)
 }

@@ -26,6 +26,7 @@ func addVolumeMounts(container *corev1.Container, installPath string) {
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
 			MountPath: installPath,
+			ReadOnly:  true,
 		},
 		corev1.VolumeMount{
 			Name:      volumes.ConfigVolumeName,
@@ -35,11 +36,12 @@ func addVolumeMounts(container *corev1.Container, installPath string) {
 	)
 }
 
-func addInitVolumeMounts(initContainer *corev1.Container) {
+func addInitBinMount(initContainer *corev1.Container, readonly bool) {
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
 			MountPath: binInitMountPath,
+			ReadOnly:  readonly,
 		},
 	)
 }
