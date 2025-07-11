@@ -84,7 +84,7 @@ jobs:
 
   build-images:
     name: Build images
-    needs: [detect-changes, prepare]
+    needs: [detect-changes]
     if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
     strategy:
       matrix:
@@ -110,9 +110,8 @@ jobs:
         uses: ./.github/actions/build-push-image
         with:
           platforms: ${{ matrix.platform }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
-          annotation: "version=${{ needs.prepare.outputs.version }}"
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
+          suffix: ${{ matrix.image-postfix }}
           dockerfile: ./fips.Dockerfile
 
   index:

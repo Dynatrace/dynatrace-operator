@@ -69,13 +69,12 @@ jobs:
       - name: Build ${{ matrix.platform }} image
         uses: ./.github/actions/build-push-image
         env:
-            ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
-            DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
+            ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}
+            DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}
         with:
           platforms: ${{ matrix.platform }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          tags: ${{ env.DOCKER_IMAGE }},${{ env.ECR_IMAGE }}
-          annotation: "version=${{ needs.prepare.outputs.version }}"
+          images: ${{ env.DOCKER_IMAGE }},${{ env.ECR_IMAGE }}
+          suffix: ${{ matrix.image-postfix }}
           dockerfile: ./fips.Dockerfile
 
   index:
