@@ -33,6 +33,7 @@ func (wh *webhook) handle(mutationRequest *dtwebhook.MutationRequest) error {
 
 			return nil
 		}
+
 		log.Info("no change, all containers already injected", "podName", mutationRequest.PodName())
 
 		return nil
@@ -42,7 +43,7 @@ func (wh *webhook) handle(mutationRequest *dtwebhook.MutationRequest) error {
 			return err
 		}
 
-		if !mutated{
+		if !mutated {
 			setNotInjectedAnnotations(mutationRequest, NoMutationNeededReason)
 
 			return nil
@@ -72,6 +73,7 @@ func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest)
 	mutationRequest.InstallContainer = wh.createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
 
 	var mutated bool
+
 	if wh.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
 		err := wh.oaMutator.Mutate(mutationRequest)
 		if err != nil {

@@ -148,8 +148,7 @@ func TestHandle(t *testing.T) {
 		assert.True(t, resp.Allowed)
 		assert.Equal(t, admission.Patched(""), resp)
 	})
-
-	//TODO: add tests
+	// TODO: add tests
 }
 
 func getTestPodWithInjectionDisabled() *corev1.Pod {

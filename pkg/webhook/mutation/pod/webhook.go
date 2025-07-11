@@ -38,19 +38,20 @@ func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, is
 }
 
 type webhook struct {
+	recorder    events.EventRecorder
 	metaMutator dtwebhook.Mutator
-	oaMutator dtwebhook.Mutator
+	oaMutator   dtwebhook.Mutator
 
-	recorder events.EventRecorder
-	decoder  admission.Decoder
+	decoder admission.Decoder
 
-	kubeClient  client.Client
-	apiReader   client.Reader
-	isOpenShift bool
+	kubeClient client.Client
+	apiReader  client.Reader
 
 	webhookPodImage  string
 	webhookNamespace string
-	deployedViaOLM   bool
+	isOpenShift      bool
+
+	deployedViaOLM bool
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {

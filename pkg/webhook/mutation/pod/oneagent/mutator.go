@@ -6,7 +6,7 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	corev1 "k8s.io/api/core/v1"
-		metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -17,7 +17,7 @@ const (
 	isInjectedEnv = "DT_CM_INJECTED"
 )
 
-type Mutator struct {}
+type Mutator struct{}
 
 func NewMutator() dtwebhook.Mutator {
 	return &Mutator{}

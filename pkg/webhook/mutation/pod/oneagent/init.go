@@ -61,6 +61,7 @@ func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.Dy
 
 	if dk.OneAgent().IsCloudNativeFullstackMode() {
 		log.Info("configuring init-container to setup fullstack mode", "pod.name", pod.GetName(), "pod.generateName", pod.GetGenerateName())
+
 		tenantUUID, err := dk.TenantUUID()
 		if err != nil {
 			return err

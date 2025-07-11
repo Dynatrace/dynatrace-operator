@@ -75,7 +75,6 @@ func newWebhook(
 	decoder admission.Decoder,
 	webhookPod corev1.Pod,
 	isOpenshift bool) (*webhook, error) {
-
 	webhookPodImage, err := getWebhookContainerImage(webhookPod)
 	if err != nil {
 		return nil, err

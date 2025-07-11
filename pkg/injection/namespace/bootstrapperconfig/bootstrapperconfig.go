@@ -184,7 +184,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		}
 
 		data[download.InputFileName] = downloadConfigBytes
-
+	} else if dk.OneAgent().IsAppInjectionNeeded() {
 		pmcSecret, err := s.preparePMC(ctx, dk)
 		if err != nil {
 			return nil, errors.WithStack(err)

@@ -4,13 +4,13 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
+	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
 	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/volumes"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
-	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
 )
 
 const (
@@ -55,7 +55,7 @@ func addEmptyDirBinVolume(pod *corev1.Pod) {
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: BinVolumeName,
+			Name:         BinVolumeName,
 			VolumeSource: volumeSource,
 		},
 	)
@@ -80,7 +80,7 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) {
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: BinVolumeName,
+			Name:         BinVolumeName,
 			VolumeSource: volumeSource,
 		},
 	)

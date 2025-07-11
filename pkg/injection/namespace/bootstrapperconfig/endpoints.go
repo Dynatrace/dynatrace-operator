@@ -68,7 +68,6 @@ func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dyn
 	return fields, nil
 }
 
-
 func ingestURLFor(dk *dynakube.DynaKube) (string, error) {
 	switch {
 	case dk.ActiveGate().IsMetricsIngestEnabled():
