@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	goerrors "errors"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dterror"
 	"os"
 	"time"
 
@@ -280,7 +281,7 @@ func (controller *Controller) setupIstioClient(dk *dynakube.DynaKube) (*istio.Cl
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	} else if !isInstalled {
-		return nil, errors.New("istio not installed, yet is enabled, aborting reconciliation, check configuration")
+		return nil, dterror.New("DEC:C4", "istio not installed, yet is enabled, aborting reconciliation, check configuration")
 	}
 
 	return istioClient, nil
