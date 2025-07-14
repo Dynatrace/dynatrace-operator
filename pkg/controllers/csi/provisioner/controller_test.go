@@ -2,7 +2,6 @@ package csiprovisioner
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -370,22 +369,6 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 			dtclient.APIToken: []byte("this is a token"),
 		},
 	}
-}
-
-func getPMC(t *testing.T) []byte {
-	t.Helper()
-
-	pmc := dtclient.ProcessModuleConfig{
-		Revision: 0,
-		Properties: []dtclient.ProcessModuleProperty{
-			{Section: "test-section", Key: "test-key", Value: "test-value"},
-		},
-	}
-
-	pmcJSON, err := json.Marshal(pmc)
-	require.NoError(t, err)
-
-	return pmcJSON
 }
 
 func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {
