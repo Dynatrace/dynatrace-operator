@@ -19,8 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/oneagent"
-	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
+	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
@@ -586,8 +585,8 @@ func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 			volumes := podItem.Spec.Volumes
 			volumeMounts := podItem.Spec.Containers[0].VolumeMounts
 
-			assert.True(t, isVolumeAttached(t, volumes, oamutation.OneAgentBinVolumeName))
-			assert.True(t, isVolumeMounted(t, volumeMounts, oamutation.OneAgentBinVolumeName))
+			assert.True(t, isVolumeAttached(t, volumes, oacommon.BinVolumeName))
+			assert.True(t, isVolumeMounted(t, volumeMounts, oacommon.BinVolumeName))
 
 			listCommand := shell.ListDirectory(oacommon.DefaultInstallPath)
 			executionResult, err := pod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...)

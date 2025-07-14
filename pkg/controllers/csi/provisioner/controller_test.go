@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
@@ -76,7 +75,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with version => url installer used, no error", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
-		prov := createProvisioner(t, dk, createToken(t, dk), createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk, createToken(t, dk))
 		installer := createSuccessfulInstaller(t)
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, installer)
 		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
@@ -105,7 +104,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with image => image installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createSuccessfulInstaller(t)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, installer)
 		createPMCSourceFile(t, prov, dk)
@@ -121,7 +120,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with job => job installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createSuccessfulInstaller(t)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
 		createPMCSourceFile(t, prov, dk)
@@ -154,7 +153,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with job => job installer used, back-off when not ready, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createNotReadyInstaller(t)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
 		createPMCSourceFile(t, prov, dk)
@@ -170,7 +169,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with job => job installer used, with error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createFailingInstaller(t)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
 		createPMCSourceFile(t, prov, dk)
@@ -378,20 +377,6 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 		},
 		Data: map[string][]byte{
 			dtclient.APIToken: []byte("this is a token"),
-		},
-	}
-}
-
-func createPMCSecret(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
-	t.Helper()
-
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.GetName() + processmoduleconfigsecret.SecretSuffix,
-			Namespace: dk.Namespace,
-		},
-		Data: map[string][]byte{
-			processmoduleconfigsecret.SecretKeyProcessModuleConfig: getPMC(t),
 		},
 	}
 }

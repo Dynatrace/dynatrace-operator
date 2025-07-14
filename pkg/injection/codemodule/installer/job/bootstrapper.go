@@ -6,7 +6,7 @@ import (
 	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )

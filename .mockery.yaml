@@ -48,10 +48,9 @@ packages:
       recursive: true
     interfaces:
       Modifier:
-  github.com/Dynatrace/dynatrace-operator/pkg/webhook:
+  github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common:
     interfaces:
-      PodMutator:
-      PodInjector:
+      Mutator:
   sigs.k8s.io/controller-runtime/pkg/manager:
     config:
       dir: "test/mocks/{{.SrcPackagePath}}"

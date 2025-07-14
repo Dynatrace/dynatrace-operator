@@ -17,16 +17,6 @@ func GetByName(mounts []corev1.VolumeMount, volumeName string) (*corev1.VolumeMo
 	)
 }
 
-func IsIn(mounts []corev1.VolumeMount, volumeName string) bool {
-	for _, vm := range mounts {
-		if vm.Name == volumeName {
-			return true
-		}
-	}
-
-	return false
-}
-
 func IsPathIn(mounts []corev1.VolumeMount, path string) bool {
 	for _, vm := range mounts {
 		if vm.MountPath == path {

@@ -84,23 +84,6 @@ func TestPublishVolume(t *testing.T) {
 		assert.Empty(t, mounter.MountPoints)
 	})
 
-	t.Run("early return (with error) - ruxit.conf not present", func(t *testing.T) {
-		fs := getTestFs(t)
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		volumeCfg := getTestVolumeConfig(t)
-
-		binaryDir := path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
-		require.NoError(t, fs.MkdirAll(binaryDir, os.ModePerm))
-
-		pub := NewPublisher(fs, mounter, path)
-
-		resp, err := pub.PublishVolume(ctx, &volumeCfg)
-		require.Error(t, err)
-		require.Nil(t, resp)
-
-		assert.Empty(t, mounter.MountPoints)
-	})
-
 	t.Run("happy path", func(t *testing.T) {
 		fs := getTestFs(t)
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
@@ -136,16 +119,6 @@ func TestPublishVolume(t *testing.T) {
 		workDir := path.AppMountWorkDir(volumeCfg.VolumeID)
 		workDirExits, _ := fs.IsDir(workDir)
 		assert.True(t, workDirExits)
-
-		// Config copied correctly, original untouched
-		copiedConfFile := path.OverlayVarRuxitAgentProcConf(volumeCfg.VolumeID)
-		copiedConf, err := fs.ReadFile(copiedConfFile)
-		require.NoError(t, err)
-		assert.Equal(t, conf, copiedConf)
-
-		originalConf, err := fs.ReadFile(confFile)
-		require.NoError(t, err)
-		assert.Equal(t, conf, originalConf)
 
 		// Mount happened
 		// mounter.IsMountPoint can't be used as it uses os.Stat

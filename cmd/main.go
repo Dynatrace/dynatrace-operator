@@ -24,7 +24,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/csi/registrar"
 	csiServer "github.com/Dynatrace/dynatrace-operator/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/cmd/operator"
-	"github.com/Dynatrace/dynatrace-operator/cmd/standalone"
 	startupProbe "github.com/Dynatrace/dynatrace-operator/cmd/startupprobe"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/cmd/supportarchive"
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
@@ -60,7 +59,6 @@ func main() {
 	cmd.AddCommand(
 		webhook.New(),
 		operator.New(),
-		standalone.NewStandaloneCommand(),
 		troubleshoot.New(),
 		supportArchive.New(),
 		startupProbe.New(),

@@ -50,7 +50,7 @@ func (cl *Client) Do(ctx context.Context, fs afero.Afero, inputDir string, targe
 	}
 
 	oneAgentInstaller := cl.newInstaller(
-		fs,
+		fs.Fs,
 		client,
 		&props,
 	)

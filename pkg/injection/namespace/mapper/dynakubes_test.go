@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -180,24 +180,24 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		assert.Empty(t, ns.Labels)
 		assert.Len(t, ns.Annotations, 1)
 	})
-	t.Run("Remove "+consts.AgentInitSecretName+" and "+consts.EnrichmentEndpointSecretName+" secrets", func(t *testing.T) {
+	t.Run("Remove "+consts.BootstrapperInitSecretName+" and "+consts.BootstrapperInitCertsSecretName+" secrets", func(t *testing.T) {
 		clt := fake.NewClient(namespace, namespace2)
 		ctx := context.Background()
 
 		namespaces, err := GetNamespacesForDynakube(ctx, clt, dk.Name)
 		require.NoError(t, err)
 
-		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.AgentInitSecretName, Namespace: namespace.Name}})
-		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.EnrichmentEndpointSecretName, Namespace: namespace.Name}})
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: namespace.Name}})
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitCertsSecretName, Namespace: namespace.Name}})
 
 		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dk)
 		err = dm.UnmapFromDynaKube(namespaces)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespace.Name}, &secret)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.EnrichmentEndpointSecretName, Namespace: namespace.Name}, &secret)
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitCertsSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Remove "+consts.BootstrapperInitSecretName, func(t *testing.T) {
