@@ -93,11 +93,6 @@ func TestPublishVolume(t *testing.T) {
 		binaryDir := path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
 		require.NoError(t, fs.MkdirAll(binaryDir, os.ModePerm))
 
-		// Config present
-		confFile := path.AgentSharedRuxitAgentProcConf(volumeCfg.DynakubeName)
-		conf := []byte("testing")
-		require.NoError(t, fs.WriteFile(confFile, conf, os.ModePerm))
-
 		pub := NewPublisher(fs, mounter, path)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)

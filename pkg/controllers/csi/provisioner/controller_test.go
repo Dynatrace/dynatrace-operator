@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -20,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
@@ -79,7 +76,6 @@ func TestReconcile(t *testing.T) {
 		installer := createSuccessfulInstaller(t)
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, installer)
 		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
-		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -107,7 +103,6 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		installer := createSuccessfulInstaller(t)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, installer)
-		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -123,7 +118,6 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		installer := createSuccessfulInstaller(t)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
-		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -137,10 +131,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube with job + custom-pull-secret => job installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		dk.Spec.CustomPullSecret = "test-ps"
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createSuccessfulInstaller(t)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, dk.Spec.CustomPullSecret)
-		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -156,7 +149,6 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		installer := createNotReadyInstaller(t)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
-		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -172,7 +164,6 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		installer := createFailingInstaller(t)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
-		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
@@ -379,21 +370,6 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 			dtclient.APIToken: []byte("this is a token"),
 		},
 	}
-}
-
-func createPMCSourceFile(t *testing.T, prov OneAgentProvisioner, dk *dynakube.DynaKube) {
-	t.Helper()
-
-	targetDir := prov.getTargetDir(*dk)
-
-	pmcPath := filepath.Join(targetDir, processmoduleconfig.RuxitAgentProcPath)
-	pmcDir := filepath.Dir(pmcPath)
-	require.NoError(t, prov.fs.MkdirAll(pmcDir, os.ModePerm))
-
-	pmcFile, err := prov.fs.OpenFile(pmcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
-	require.NoError(t, err)
-	_, err = pmcFile.Write(getPMC(t))
-	require.NoError(t, err)
 }
 
 func getPMC(t *testing.T) []byte {
