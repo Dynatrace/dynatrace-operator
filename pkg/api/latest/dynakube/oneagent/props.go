@@ -16,7 +16,7 @@ const (
 	OneAgentConnectionInfoConfigMapSuffix = "-oneagent-connection-info"
 	PodNameOsAgent                        = "oneagent"
 	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
-	storageVolumeDefaultHostPath          = "/var/opt/dynatrace"
+	StorageVolumeDefaultHostPath          = "/var/opt/dynatrace"
 )
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
@@ -335,7 +335,7 @@ func (oa *OneAgent) GetHostPath() string {
 			return oa.CloudNativeFullStack.StorageHostPath
 		}
 
-		return storageVolumeDefaultHostPath
+		return StorageVolumeDefaultHostPath
 	}
 
 	if oa.IsHostMonitoringMode() {
@@ -343,7 +343,7 @@ func (oa *OneAgent) GetHostPath() string {
 			return oa.HostMonitoring.StorageHostPath
 		}
 
-		return storageVolumeDefaultHostPath
+		return StorageVolumeDefaultHostPath
 	}
 
 	return ""

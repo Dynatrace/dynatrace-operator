@@ -3,6 +3,7 @@ package daemonset
 import (
 	"fmt"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -13,12 +14,15 @@ const (
 	configVolumeName      = "config"
 	configVolumeMountPath = "/var/lib/dynatrace/oneagent/agent/config/deployment.conf"
 
-	// for the logmonitoring to read/write
-	dtLibVolumeName      = "dynatrace-lib"
-	dtLibVolumeMountPath = "/var/lib/dynatrace"
-	dtSubPathTemplate    = "logmonitoring-%s"
-	dtLogVolumePath      = "/tmp/dynatrace"
+	// for the logmonitoring configurations to read/write
+	dtLibVolumeName                 = "dynatrace-lib"
+	dtLibVolumeMountPath            = "/var/lib/dynatrace"
+	dtLibVolumeMountSubPathTemplate = "logmonitoring-%s"
+	dtLibVolumeHostPath             = oneagent.StorageVolumeDefaultHostPath
+
+	// for the logmonitoring logs to read/write
 	dtLogVolumeName      = "dynatrace-logs"
+	dtLogVolumeMountPath = "/tmp/dynatrace"
 
 	// for the logs that the logmonitoring will ingest
 	dockerLogsVolumeName = "docker-container-logs"
@@ -53,7 +57,7 @@ func getDTVolumeMounts(tenantUUID string) corev1.VolumeMount {
 	return corev1.VolumeMount{
 
 		Name:      dtLibVolumeName,
-		SubPath:   fmt.Sprintf(dtSubPathTemplate, tenantUUID),
+		SubPath:   fmt.Sprintf(dtLibVolumeMountSubPathTemplate, tenantUUID),
 		MountPath: dtLibVolumeMountPath,
 	}
 }
@@ -63,8 +67,8 @@ func getDTLogVolumeMounts(tenantUUID string) corev1.VolumeMount {
 	return corev1.VolumeMount{
 
 		Name:      dtLogVolumeName,
-		SubPath:   fmt.Sprintf(dtSubPathTemplate, tenantUUID),
-		MountPath: dtLogVolumePath,
+		SubPath:   fmt.Sprintf(dtLibVolumeMountSubPathTemplate, tenantUUID),
+		MountPath: dtLogVolumeMountPath,
 	}
 }
 
@@ -75,7 +79,7 @@ func getDTVolumes() []corev1.Volume {
 			Name: dtLibVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: dtLogVolumePath,
+					Path: dtLibVolumeHostPath,
 					Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 				},
 			},

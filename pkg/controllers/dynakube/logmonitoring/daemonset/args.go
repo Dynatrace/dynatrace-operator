@@ -19,7 +19,7 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		fmt.Sprintf("-c k8s_node_name $(%s)", nodeNameEnv),
 		fmt.Sprintf("-c k8s_cluster_id $(%s)", clusterUIDEnv),
 		"-c k8s_containername " + containerName,
-		"-l " + dtLogVolumePath,
+		"-l " + dtLogVolumeMountPath,
 	}
 
 	return append(baseArgs, dk.LogMonitoring().Template().Args...)
