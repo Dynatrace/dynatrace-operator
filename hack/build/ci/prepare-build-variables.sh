@@ -1,29 +1,36 @@
 #!/bin/bash
 
-createDockerImageTag() {
+create_docker_image_tag() {
   if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-    echo "snapshot-$(echo "${GITHUB_HEAD_REF}" | sed 's#[^a-zA-Z0-9_-]#-#g')"
-  else
-    if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-      echo "${GITHUB_REF_NAME}"
-    elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-      echo "snapshot"
-    else
-      echo "snapshot-$(echo "${GITHUB_REF_NAME}" | sed 's#[^a-zA-Z0-9_-]#-#g')"
-    fi
+    echo "snapshot-${GITHUB_HEAD_REF//[^a-zA-Z0-9_-]/-}"; return
   fi
+
+  if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+    echo "${GITHUB_REF_NAME}"; return
+  fi
+
+  if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+    echo "snapshot"; return
+  fi
+
+  echo "snapshot-${GITHUB_REF_NAME//[^a-zA-Z0-9_-]/-}"
 }
 
-createDockerImageLabels() {
+create_docker_image_labels() {
   if [[ "${GITHUB_REF_TYPE}" != "tag" ]] && [[ ! "${GITHUB_REF_NAME}" =~ ^release-* ]] && [[ "${GITHUB_REF_NAME}" != "main" ]]; then
     echo "quay.expires-after=10d"
   fi
 
-  echo "build-date=$(date --iso-8601)"
+  echo "build-date=$(date)" #--iso-8601)"
   echo "vcs-ref=${GITHUB_SHA}"
 }
 
-printBuildRelatedVariables() {
+print_build_variables() {
+  local docker_image_tag docker_image_labels go_linker_args
+  docker_image_tag=$(create_docker_image_tag)
+  docker_image_labels=$(create_docker_image_labels)
+  go_linker_args=$(hack/build/create_go_linker_args.sh "${docker_image_tag}" "${GITHUB_SHA}")
+
   echo "go_linker_args=${go_linker_args}"
   echo "docker_image_labels=${docker_image_labels}"
   echo "docker_image_tag=${docker_image_tag}"
@@ -31,7 +38,4 @@ printBuildRelatedVariables() {
 }
 
 # prepare variables
-docker_image_tag=$(createDockerImageTag)
-docker_image_labels=$(createDockerImageLabels)
-go_linker_args=$(hack/build/create_go_linker_args.sh "${docker_image_tag}" "${GITHUB_SHA}")
-printBuildRelatedVariables >> "$GITHUB_OUTPUT"
+print_build_variables >> "$GITHUB_OUTPUT"
