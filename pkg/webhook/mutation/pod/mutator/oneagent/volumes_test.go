@@ -1,7 +1,6 @@
 package oneagent
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
@@ -25,7 +24,7 @@ func TestAddVolumeMounts(t *testing.T) {
 
 		assert.Equal(t, volumes.ConfigVolumeName, container.VolumeMounts[1].Name)
 		assert.Equal(t, ldPreloadPath, container.VolumeMounts[1].MountPath)
-		assert.Equal(t, filepath.Join(volumes.InitConfigSubPath, ldPreloadSubPath), container.VolumeMounts[1].SubPath)
+		assert.Equal(t, ldPreloadSubPath, container.VolumeMounts[1].SubPath)
 	})
 }
 

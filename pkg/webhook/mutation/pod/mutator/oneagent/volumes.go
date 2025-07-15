@@ -1,8 +1,6 @@
 package oneagent
 
 import (
-	"path/filepath"
-
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
@@ -31,7 +29,7 @@ func addVolumeMounts(container *corev1.Container, installPath string) {
 		corev1.VolumeMount{
 			Name:      volumes.ConfigVolumeName,
 			MountPath: ldPreloadPath,
-			SubPath:   filepath.Join(volumes.InitConfigSubPath, ldPreloadSubPath),
+			SubPath:   ldPreloadSubPath,
 		},
 	)
 }

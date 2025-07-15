@@ -2,7 +2,6 @@ package pod
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -111,7 +110,7 @@ func TestAddContainerAttributes(t *testing.T) {
 					{
 						Name:      volumes.ConfigVolumeName,
 						MountPath: volumes.ConfigMountPath,
-						SubPath:   filepath.Join(volumes.InitConfigSubPath, attr.ContainerName),
+						SubPath:   attr.ContainerName,
 					},
 				},
 			})
