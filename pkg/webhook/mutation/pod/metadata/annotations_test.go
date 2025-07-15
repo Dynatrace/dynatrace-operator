@@ -24,7 +24,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test-annotation": "test-value",
 		}
 
-		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "copyofannotations", request.Pod.Annotations[dynakube.MetadataPrefix+"copyofannotations"])
@@ -76,7 +76,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			dynakube.MetadataPrefix + "copyofannotations": "do-not-overwrite",
 		}
 
-		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 5)
 		require.Empty(t, request.Pod.Labels)
 
@@ -135,7 +135,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 
-		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 3)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "test-label-value", request.Pod.Annotations[dynakube.MetadataPrefix+"dt.test-label"])

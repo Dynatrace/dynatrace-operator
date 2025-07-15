@@ -221,7 +221,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 		request := createTestMutationRequest(nil, nil)
 
 		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
-		setWorkloadAnnotations(request.Pod, &WorkloadInfo{Name: workloadInfoName, Kind: workloadInfoKind})
+		setWorkloadAnnotations(request.Pod, &workloadInfo{Name: workloadInfoName, Kind: workloadInfoKind})
 		require.Len(t, request.Pod.Annotations, 2)
 		assert.Equal(t, workloadInfoName, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
 		assert.Equal(t, workloadInfoKind, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadKind, "not-found"))

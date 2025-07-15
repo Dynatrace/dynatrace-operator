@@ -12,13 +12,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type WorkloadInfo struct {
+type workloadInfo struct {
 	Name string
 	Kind string
 }
 
-func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *WorkloadInfo {
-	return &WorkloadInfo{
+func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *workloadInfo {
+	return &workloadInfo{
 		Name: partialObjectMetadata.Name,
 
 		// workload kind in lower case according to dt semantic-dictionary
@@ -27,7 +27,7 @@ func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *Workl
 	}
 }
 
-func retrieveWorkload(metaClient client.Client, request *dtwebhook.MutationRequest) (*WorkloadInfo, error) {
+func retrieveWorkload(metaClient client.Client, request *dtwebhook.MutationRequest) (*workloadInfo, error) {
 	workload, err := findRootOwnerOfPod(request.Context, metaClient, request.Pod, request.Namespace.Name)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func retrieveWorkload(metaClient client.Client, request *dtwebhook.MutationReque
 	return workload, nil
 }
 
-func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod, namespace string) (*WorkloadInfo, error) {
+func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod, namespace string) (*workloadInfo, error) {
 	podPartialMetadata := &metav1.PartialObjectMetadata{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: pod.APIVersion,

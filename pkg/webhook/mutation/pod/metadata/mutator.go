@@ -87,7 +87,7 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 }
 
 func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
-	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+	copiedMetadataAnnotations := copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 	if copiedMetadataAnnotations == nil {
 		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
 
@@ -109,7 +109,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	pod.Annotations[AnnotationInjected] = "true"
 }
 
-func setWorkloadAnnotations(pod *corev1.Pod, workload *WorkloadInfo) {
+func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
 	}

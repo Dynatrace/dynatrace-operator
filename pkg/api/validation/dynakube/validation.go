@@ -36,7 +36,6 @@ var (
 		NoAPIURL,
 		IsInvalidAPIURL,
 		IsThirdGenAPIUrl,
-		disabledCSIForReadonlyCSIVolume,
 		invalidActiveGateCapabilities,
 		duplicateActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
