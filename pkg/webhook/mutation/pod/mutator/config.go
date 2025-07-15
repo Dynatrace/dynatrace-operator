@@ -1,4 +1,4 @@
-package common
+package mutator
 
 const (
 	// InjectionInstanceLabel can be set in a Namespace and indicates the corresponding DynaKube object assigned to it.

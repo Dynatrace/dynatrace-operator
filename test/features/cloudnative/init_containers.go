@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
+	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"

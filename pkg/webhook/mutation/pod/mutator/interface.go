@@ -1,4 +1,4 @@
-package common
+package mutator
 
 type Mutator interface {
 	// IsEnabled returns true if the mutator needs to be executed for the given request.

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
+	common "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	mock "github.com/stretchr/testify/mock"
 )
 
