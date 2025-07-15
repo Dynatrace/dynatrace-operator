@@ -21,7 +21,7 @@ create_docker_image_labels() {
     echo "quay.expires-after=10d"
   fi
 
-  echo "build-date=$(date)" #--iso-8601)"
+  echo "build-date=$(date --iso-8601)"
   echo "vcs-ref=${GITHUB_SHA}"
 }
 
