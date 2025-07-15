@@ -26,3 +26,13 @@ func IsPathIn(mounts []corev1.VolumeMount, path string) bool {
 
 	return false
 }
+
+func IsIn(mounts []corev1.VolumeMount, volumeName string) bool {
+	for _, m := range mounts {
+		if m.Name == volumeName {
+			return true
+		}
+	}
+
+	return false
+}

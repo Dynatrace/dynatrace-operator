@@ -226,19 +226,6 @@ func TestIsSelfExtractingImage(t *testing.T) {
 	}
 }
 
-func TestContainerIsInjected(t *testing.T) {
-	t.Run("is injected", func(t *testing.T) {
-		request := createTestMutationRequestWithoutInjectedContainers()
-
-		for _, c := range request.Pod.Spec.Containers {
-			container := &c
-			assert.False(t, containerIsInjected(*container))
-			setIsInjectedEnv(container)
-			assert.True(t, containerIsInjected(*container))
-		}
-	})
-}
-
 func TestMutate(t *testing.T) {
 	mut := NewMutator()
 
@@ -286,7 +273,7 @@ func TestMutate(t *testing.T) {
 
 		for _, c := range request.Pod.Spec.Containers {
 			container := &c
-			setIsInjectedEnv(container)
+			addVolumeMounts(container, "test")
 			updateContainer = append(updateContainer, *container)
 		}
 
@@ -368,7 +355,7 @@ func TestReinvoke(t *testing.T) {
 
 		for _, c := range request.Pod.Spec.Containers {
 			container := &c
-			setIsInjectedEnv(container)
+			addVolumeMounts(container, "test")
 			updateContainer = append(updateContainer, *container)
 		}
 
@@ -448,10 +435,7 @@ func createTestMutationRequestWithInjectedContainers() *dtwebhook.MutationReques
 	request := createTestMutationRequestWithoutInjectedContainers()
 
 	i := 0
-	request.Pod.Spec.Containers[i].Env = append(request.Pod.Spec.Containers[i].Env, corev1.EnvVar{
-		Name:  isInjectedEnv,
-		Value: "true",
-	})
+	addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
 
 	return request
 }

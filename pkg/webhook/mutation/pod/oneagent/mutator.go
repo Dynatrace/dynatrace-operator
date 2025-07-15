@@ -2,7 +2,7 @@ package oneagent
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common"
 	corev1 "k8s.io/api/core/v1"
@@ -13,8 +13,6 @@ import (
 const (
 	CSIVolumeType       = "csi"
 	EphemeralVolumeType = "ephemeral"
-
-	isInjectedEnv = "DT_CM_INJECTED"
 )
 
 type Mutator struct{}
@@ -88,7 +86,7 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 }
 
 func containerIsInjected(container corev1.Container) bool {
-	return env.IsIn(container.Env, isInjectedEnv)
+	return mounts.IsIn(container.VolumeMounts, BinVolumeName)
 }
 
 func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string) bool {
@@ -116,17 +114,6 @@ func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, n
 	if dk.FF().IsLabelVersionDetection() {
 		addVersionDetectionEnvs(container, namespace)
 	}
-
-	setIsInjectedEnv(container)
-}
-
-func setIsInjectedEnv(container *corev1.Container) {
-	container.Env = append(container.Env,
-		corev1.EnvVar{
-			Name:  isInjectedEnv,
-			Value: "true",
-		},
-	)
 }
 
 func setInjectedAnnotation(pod *corev1.Pod) {
