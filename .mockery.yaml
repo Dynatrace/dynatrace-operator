@@ -48,7 +48,7 @@ packages:
       recursive: true
     interfaces:
       Modifier:
-  github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common:
+  github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator:
     interfaces:
       Mutator:
   sigs.k8s.io/controller-runtime/pkg/manager:

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	common "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -37,7 +37,7 @@ func (_m *Mutator) EXPECT() *Mutator_Expecter {
 }
 
 // IsEnabled provides a mock function for the type Mutator
-func (_mock *Mutator) IsEnabled(request *common.BaseRequest) bool {
+func (_mock *Mutator) IsEnabled(request *mutator.BaseRequest) bool {
 	ret := _mock.Called(request)
 
 	if len(ret) == 0 {
@@ -45,7 +45,7 @@ func (_mock *Mutator) IsEnabled(request *common.BaseRequest) bool {
 	}
 
 	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func(*common.BaseRequest) bool); ok {
+	if returnFunc, ok := ret.Get(0).(func(*mutator.BaseRequest) bool); ok {
 		r0 = returnFunc(request)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -59,16 +59,16 @@ type Mutator_IsEnabled_Call struct {
 }
 
 // IsEnabled is a helper method to define mock.On call
-//   - request *common.BaseRequest
+//   - request *mutator.BaseRequest
 func (_e *Mutator_Expecter) IsEnabled(request interface{}) *Mutator_IsEnabled_Call {
 	return &Mutator_IsEnabled_Call{Call: _e.mock.On("IsEnabled", request)}
 }
 
-func (_c *Mutator_IsEnabled_Call) Run(run func(request *common.BaseRequest)) *Mutator_IsEnabled_Call {
+func (_c *Mutator_IsEnabled_Call) Run(run func(request *mutator.BaseRequest)) *Mutator_IsEnabled_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *common.BaseRequest
+		var arg0 *mutator.BaseRequest
 		if args[0] != nil {
-			arg0 = args[0].(*common.BaseRequest)
+			arg0 = args[0].(*mutator.BaseRequest)
 		}
 		run(
 			arg0,
@@ -82,13 +82,13 @@ func (_c *Mutator_IsEnabled_Call) Return(b bool) *Mutator_IsEnabled_Call {
 	return _c
 }
 
-func (_c *Mutator_IsEnabled_Call) RunAndReturn(run func(request *common.BaseRequest) bool) *Mutator_IsEnabled_Call {
+func (_c *Mutator_IsEnabled_Call) RunAndReturn(run func(request *mutator.BaseRequest) bool) *Mutator_IsEnabled_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // IsInjected provides a mock function for the type Mutator
-func (_mock *Mutator) IsInjected(request *common.BaseRequest) bool {
+func (_mock *Mutator) IsInjected(request *mutator.BaseRequest) bool {
 	ret := _mock.Called(request)
 
 	if len(ret) == 0 {
@@ -96,7 +96,7 @@ func (_mock *Mutator) IsInjected(request *common.BaseRequest) bool {
 	}
 
 	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func(*common.BaseRequest) bool); ok {
+	if returnFunc, ok := ret.Get(0).(func(*mutator.BaseRequest) bool); ok {
 		r0 = returnFunc(request)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -110,16 +110,16 @@ type Mutator_IsInjected_Call struct {
 }
 
 // IsInjected is a helper method to define mock.On call
-//   - request *common.BaseRequest
+//   - request *mutator.BaseRequest
 func (_e *Mutator_Expecter) IsInjected(request interface{}) *Mutator_IsInjected_Call {
 	return &Mutator_IsInjected_Call{Call: _e.mock.On("IsInjected", request)}
 }
 
-func (_c *Mutator_IsInjected_Call) Run(run func(request *common.BaseRequest)) *Mutator_IsInjected_Call {
+func (_c *Mutator_IsInjected_Call) Run(run func(request *mutator.BaseRequest)) *Mutator_IsInjected_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *common.BaseRequest
+		var arg0 *mutator.BaseRequest
 		if args[0] != nil {
-			arg0 = args[0].(*common.BaseRequest)
+			arg0 = args[0].(*mutator.BaseRequest)
 		}
 		run(
 			arg0,
@@ -133,13 +133,13 @@ func (_c *Mutator_IsInjected_Call) Return(b bool) *Mutator_IsInjected_Call {
 	return _c
 }
 
-func (_c *Mutator_IsInjected_Call) RunAndReturn(run func(request *common.BaseRequest) bool) *Mutator_IsInjected_Call {
+func (_c *Mutator_IsInjected_Call) RunAndReturn(run func(request *mutator.BaseRequest) bool) *Mutator_IsInjected_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Mutate provides a mock function for the type Mutator
-func (_mock *Mutator) Mutate(request *common.MutationRequest) error {
+func (_mock *Mutator) Mutate(request *mutator.MutationRequest) error {
 	ret := _mock.Called(request)
 
 	if len(ret) == 0 {
@@ -147,7 +147,7 @@ func (_mock *Mutator) Mutate(request *common.MutationRequest) error {
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(*common.MutationRequest) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(*mutator.MutationRequest) error); ok {
 		r0 = returnFunc(request)
 	} else {
 		r0 = ret.Error(0)
@@ -161,16 +161,16 @@ type Mutator_Mutate_Call struct {
 }
 
 // Mutate is a helper method to define mock.On call
-//   - request *common.MutationRequest
+//   - request *mutator.MutationRequest
 func (_e *Mutator_Expecter) Mutate(request interface{}) *Mutator_Mutate_Call {
 	return &Mutator_Mutate_Call{Call: _e.mock.On("Mutate", request)}
 }
 
-func (_c *Mutator_Mutate_Call) Run(run func(request *common.MutationRequest)) *Mutator_Mutate_Call {
+func (_c *Mutator_Mutate_Call) Run(run func(request *mutator.MutationRequest)) *Mutator_Mutate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *common.MutationRequest
+		var arg0 *mutator.MutationRequest
 		if args[0] != nil {
-			arg0 = args[0].(*common.MutationRequest)
+			arg0 = args[0].(*mutator.MutationRequest)
 		}
 		run(
 			arg0,
@@ -184,13 +184,13 @@ func (_c *Mutator_Mutate_Call) Return(err error) *Mutator_Mutate_Call {
 	return _c
 }
 
-func (_c *Mutator_Mutate_Call) RunAndReturn(run func(request *common.MutationRequest) error) *Mutator_Mutate_Call {
+func (_c *Mutator_Mutate_Call) RunAndReturn(run func(request *mutator.MutationRequest) error) *Mutator_Mutate_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Reinvoke provides a mock function for the type Mutator
-func (_mock *Mutator) Reinvoke(request *common.ReinvocationRequest) bool {
+func (_mock *Mutator) Reinvoke(request *mutator.ReinvocationRequest) bool {
 	ret := _mock.Called(request)
 
 	if len(ret) == 0 {
@@ -198,7 +198,7 @@ func (_mock *Mutator) Reinvoke(request *common.ReinvocationRequest) bool {
 	}
 
 	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func(*common.ReinvocationRequest) bool); ok {
+	if returnFunc, ok := ret.Get(0).(func(*mutator.ReinvocationRequest) bool); ok {
 		r0 = returnFunc(request)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -212,16 +212,16 @@ type Mutator_Reinvoke_Call struct {
 }
 
 // Reinvoke is a helper method to define mock.On call
-//   - request *common.ReinvocationRequest
+//   - request *mutator.ReinvocationRequest
 func (_e *Mutator_Expecter) Reinvoke(request interface{}) *Mutator_Reinvoke_Call {
 	return &Mutator_Reinvoke_Call{Call: _e.mock.On("Reinvoke", request)}
 }
 
-func (_c *Mutator_Reinvoke_Call) Run(run func(request *common.ReinvocationRequest)) *Mutator_Reinvoke_Call {
+func (_c *Mutator_Reinvoke_Call) Run(run func(request *mutator.ReinvocationRequest)) *Mutator_Reinvoke_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *common.ReinvocationRequest
+		var arg0 *mutator.ReinvocationRequest
 		if args[0] != nil {
-			arg0 = args[0].(*common.ReinvocationRequest)
+			arg0 = args[0].(*mutator.ReinvocationRequest)
 		}
 		run(
 			arg0,
@@ -235,7 +235,7 @@ func (_c *Mutator_Reinvoke_Call) Return(b bool) *Mutator_Reinvoke_Call {
 	return _c
 }
 
-func (_c *Mutator_Reinvoke_Call) RunAndReturn(run func(request *common.ReinvocationRequest) bool) *Mutator_Reinvoke_Call {
+func (_c *Mutator_Reinvoke_Call) RunAndReturn(run func(request *mutator.ReinvocationRequest) bool) *Mutator_Reinvoke_Call {
 	_c.Call.Return(run)
 	return _c
 }
