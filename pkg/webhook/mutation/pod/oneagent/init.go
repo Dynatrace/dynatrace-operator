@@ -14,25 +14,23 @@ import (
 )
 
 func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath string) error {
-	isCSI := isCSIVolume(mutationRequest.BaseRequest)
-
-	if isCSI {
+	if isCSIVolume(mutationRequest.BaseRequest) {
 		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
 		addCSIBinVolume(
 			mutationRequest.Pod,
 			mutationRequest.DynaKube.Name,
 			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String())
-		// incase of CSI, the CSI volume itself is already always readonly, so the mount should always be readonly, the init-container should just read from it
+		// in case of CSI, the CSI volume itself is already always readonly, so the mount should always be readonly, the init-container should just read from it
 		addInitBinMount(mutationRequest.InstallContainer, true)
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
 		addEmptyDirBinVolume(mutationRequest.Pod)
-		// incase of no CSI, the the emptyDir can't be readonly for the init-container as it first has to download/move the agent into it
+		// in case of no CSI, the the emptyDir can't be readonly for the init-container, as it first has to download/move the agent into it
 		addInitBinMount(mutationRequest.InstallContainer, false)
 
 		if mutationRequest.DynaKube.FF().IsNodeImagePull() {
 			log.Info("configuring init-container with self-extracting image", "name", mutationRequest.PodName())
-			// The first element would be the "bootstrap" sub command, which is not needed incase of self-extracting image
+			// The first element would be the "bootstrap" subcommand, which is not needed in case of self-extracting image
 			mutationRequest.InstallContainer.Args = mutationRequest.InstallContainer.Args[1:]
 			mutationRequest.InstallContainer.Image = mutationRequest.DynaKube.OneAgent().GetCodeModulesImage()
 		} else {
@@ -85,16 +83,7 @@ func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.Dy
 }
 
 func getTechnology(pod corev1.Pod, dk dynakube.DynaKube) string {
-	if technology, ok := pod.Annotations[AnnotationTechnologies]; ok {
-		return technology
-	}
-
-	technology := dk.FF().GetNodeImagePullTechnology()
-	if technology != "" {
-		return technology
-	}
-
-	return ""
+	return maputils.GetField(pod.Annotations, AnnotationTechnologies, dk.FF().GetNodeImagePullTechnology())
 }
 
 func HasPodUserSet(ctx *corev1.PodSecurityContext) bool {

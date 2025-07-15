@@ -1,11 +1,11 @@
 package common
 
 type Mutator interface {
-	// Enabled returns true if the mutator needs to be executed for the given request.
+	// IsEnabled returns true if the mutator needs to be executed for the given request.
 	// This is used to filter out mutators that are not needed for the given request.
 	IsEnabled(request *BaseRequest) bool
 
-	// Injected returns true if the mutator has already injected into the pod of the given request.
+	// IsInjected returns true if the mutator has already injected into the pod of the given request.
 	// This is used during reinvocation to prevent multiple injections.
 	IsInjected(request *BaseRequest) bool
 
