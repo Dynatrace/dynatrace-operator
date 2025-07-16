@@ -47,7 +47,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		return nil
 	}
 
-	if !updater.IsAutoUpdateEnabled() {
+	if !updater.IsAutoUpdateEnabled() && currentSource != status.CustomVersionVersionSource {
 		previousSource := updater.Target().Source
 
 		emptyVersionStatus := status.VersionStatus{}
