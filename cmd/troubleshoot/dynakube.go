@@ -3,6 +3,7 @@ package troubleshoot
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -131,11 +132,17 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
 	}
 
-	if err = tokens.VerifyScopes(ctx, dtc, *dk); err != nil {
+	var missingOptionalScopes []string
+
+	if missingOptionalScopes, err = tokens.VerifyScopes(ctx, dtc, *dk); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
 	}
 
-	logInfof(log, "token scopes are valid")
+	if len(missingOptionalScopes) > 0 {
+		logInfof(log, "token scopes are valid however some optional scopes are missing so some features may not work: %s", strings.Join(missingOptionalScopes, ", "))
+	} else {
+		logInfof(log, "token scopes are valid")
+	}
 
 	return nil
 }

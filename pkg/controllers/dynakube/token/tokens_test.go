@@ -73,7 +73,7 @@ func TestTokens(t *testing.T) {
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -88,7 +88,7 @@ func TestTokens(t *testing.T) {
 			dtclient.PaasToken: &paasToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Len(t, tokens.PaasToken().Features, 1)
@@ -101,7 +101,7 @@ func TestTokens(t *testing.T) {
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -119,7 +119,7 @@ func TestTokens(t *testing.T) {
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -137,7 +137,7 @@ func TestTokens(t *testing.T) {
 			dtclient.DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -152,7 +152,7 @@ func TestTokens(t *testing.T) {
 			dtclient.DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
