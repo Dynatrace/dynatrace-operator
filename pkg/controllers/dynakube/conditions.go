@@ -1,6 +1,8 @@
 package dynakube
 
 import (
+	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -9,7 +11,30 @@ import (
 const (
 	TokenReadyConditionMessage             = "Token ready"
 	TokenWithoutDataIngestConditionMessage = "Token ready, DataIngest token not provided"
+	ReasonOptionalScope                    = "OptionalScope"
 )
+
+func (controller *Controller) setConditionOptionalScopeAvailable(dk *dynakube.DynaKube, conditionType string, scope string) {
+	tokenCondition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  ReasonOptionalScope,
+		Message: fmt.Sprintf("optional %s scope is available", scope),
+	}
+
+	controller.setAndLogCondition(dk, tokenCondition)
+}
+
+func (controller *Controller) setConditionOptionalScopeMissing(dk *dynakube.DynaKube, conditionType string, scope string) {
+	tokenCondition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  ReasonOptionalScope,
+		Message: fmt.Sprintf("optional %s scope is not available, some features may not work", scope),
+	}
+
+	controller.setAndLogCondition(dk, tokenCondition)
+}
 
 func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
 	tokenErrorCondition := metav1.Condition{

@@ -303,7 +303,14 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		SetDynakube(*dk).
 		SetTokens(tokens)
 
-	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dk.Status)
+	setConditionOptionalScopeMissing := func(conditionType string, scope string) {
+		controller.setConditionOptionalScopeMissing(dk, conditionType, scope)
+	}
+	setConditionOptionalScopeAvailable := func(conditionType string, scope string) {
+		controller.setConditionOptionalScopeAvailable(dk, conditionType, scope)
+	}
+
+	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dk.Status, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
