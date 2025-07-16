@@ -124,7 +124,7 @@ func TestTokens(t *testing.T) {
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Kubernetes API Monitoring' is missing scope 'entities.read, settings.read, settings.write' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
+		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("data ingest enabled => dataingest token missing rights => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{}

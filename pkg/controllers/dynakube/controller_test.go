@@ -256,7 +256,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(nil, errors.New("BOOM"))
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("BOOM"))
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -291,7 +291,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockedDtc, nil)
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything, mock.Anything, mock.Anything).Return(mockedDtc, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -572,7 +572,7 @@ func TestTokenConditions(t *testing.T) {
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything, mock.Anything, mock.Anything).Return(mockClient, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,

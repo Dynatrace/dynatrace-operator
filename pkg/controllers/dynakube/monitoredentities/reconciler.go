@@ -38,13 +38,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
+	conditions.SetStatusOutdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
+
 	if !conditions.IsOptionalScopeAvailable(r.dk, dynatrace.ConditionTypeAPITokenEntitiesRead) {
 		log.Info(dynatrace.TokenScopeEntitiesRead + " optional scope not available, skipping reconciliation")
-
-		return nil
 	}
-
-	conditions.SetStatusOutdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
 
 	monitoredEntities, err := r.dtClient.GetMonitoredEntitiesForKubeSystemUUID(ctx, r.dk.Status.KubeSystemUUID)
 	if err != nil {

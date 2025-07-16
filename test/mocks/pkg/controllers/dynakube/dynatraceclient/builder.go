@@ -97,8 +97,8 @@ func (_c *Builder_Build_Call) RunAndReturn(run func() (dynatrace.Client, error))
 }
 
 // BuildWithTokenVerification provides a mock function for the type Builder
-func (_mock *Builder) BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStatus, optionalScopeMissing dynatraceclient.SetConditionOptionalScope, optionalScopeAvailable dynatraceclient.SetConditionOptionalScope) (dynatrace.Client, error) {
-	ret := _mock.Called(dkStatus, optionalScopeMissing, optionalScopeAvailable)
+func (_mock *Builder) BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStatus, setConditionOptionalScopeMissing dynatraceclient.SetConditionOptionalScope, setConditionOptionalScopeAvailable dynatraceclient.SetConditionOptionalScope) (dynatrace.Client, error) {
+	ret := _mock.Called(dkStatus, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BuildWithTokenVerification")
@@ -107,17 +107,17 @@ func (_mock *Builder) BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStat
 	var r0 dynatrace.Client
 	var r1 error
 	if returnFunc, ok := ret.Get(0).(func(*dynakube.DynaKubeStatus, dynatraceclient.SetConditionOptionalScope, dynatraceclient.SetConditionOptionalScope) (dynatrace.Client, error)); ok {
-		return returnFunc(dkStatus, optionalScopeMissing, optionalScopeAvailable)
+		return returnFunc(dkStatus, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)
 	}
 	if returnFunc, ok := ret.Get(0).(func(*dynakube.DynaKubeStatus, dynatraceclient.SetConditionOptionalScope, dynatraceclient.SetConditionOptionalScope) dynatrace.Client); ok {
-		r0 = returnFunc(dkStatus, optionalScopeMissing, optionalScopeAvailable)
+		r0 = returnFunc(dkStatus, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dynatrace.Client)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(*dynakube.DynaKubeStatus, dynatraceclient.SetConditionOptionalScope, dynatraceclient.SetConditionOptionalScope) error); ok {
-		r1 = returnFunc(dkStatus, optionalScopeMissing, optionalScopeAvailable)
+		r1 = returnFunc(dkStatus, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -131,13 +131,13 @@ type Builder_BuildWithTokenVerification_Call struct {
 
 // BuildWithTokenVerification is a helper method to define mock.On call
 //   - dkStatus *dynakube.DynaKubeStatus
-//   - optionalScopeMissing dynatraceclient.SetConditionOptionalScope
-//   - optionalScopeAvailable dynatraceclient.SetConditionOptionalScope
-func (_e *Builder_Expecter) BuildWithTokenVerification(dkStatus interface{}, optionalScopeMissing interface{}, optionalScopeAvailable interface{}) *Builder_BuildWithTokenVerification_Call {
-	return &Builder_BuildWithTokenVerification_Call{Call: _e.mock.On("BuildWithTokenVerification", dkStatus, optionalScopeMissing, optionalScopeAvailable)}
+//   - setConditionOptionalScopeMissing dynatraceclient.SetConditionOptionalScope
+//   - setConditionOptionalScopeAvailable dynatraceclient.SetConditionOptionalScope
+func (_e *Builder_Expecter) BuildWithTokenVerification(dkStatus interface{}, setConditionOptionalScopeMissing interface{}, setConditionOptionalScopeAvailable interface{}) *Builder_BuildWithTokenVerification_Call {
+	return &Builder_BuildWithTokenVerification_Call{Call: _e.mock.On("BuildWithTokenVerification", dkStatus, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)}
 }
 
-func (_c *Builder_BuildWithTokenVerification_Call) Run(run func(dkStatus *dynakube.DynaKubeStatus, optionalScopeMissing dynatraceclient.SetConditionOptionalScope, optionalScopeAvailable dynatraceclient.SetConditionOptionalScope)) *Builder_BuildWithTokenVerification_Call {
+func (_c *Builder_BuildWithTokenVerification_Call) Run(run func(dkStatus *dynakube.DynaKubeStatus, setConditionOptionalScopeMissing dynatraceclient.SetConditionOptionalScope, setConditionOptionalScopeAvailable dynatraceclient.SetConditionOptionalScope)) *Builder_BuildWithTokenVerification_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 *dynakube.DynaKubeStatus
 		if args[0] != nil {
@@ -165,7 +165,7 @@ func (_c *Builder_BuildWithTokenVerification_Call) Return(client dynatrace.Clien
 	return _c
 }
 
-func (_c *Builder_BuildWithTokenVerification_Call) RunAndReturn(run func(dkStatus *dynakube.DynaKubeStatus, optionalScopeMissing dynatraceclient.SetConditionOptionalScope, optionalScopeAvailable dynatraceclient.SetConditionOptionalScope) (dynatrace.Client, error)) *Builder_BuildWithTokenVerification_Call {
+func (_c *Builder_BuildWithTokenVerification_Call) RunAndReturn(run func(dkStatus *dynakube.DynaKubeStatus, setConditionOptionalScopeMissing dynatraceclient.SetConditionOptionalScope, setConditionOptionalScopeAvailable dynatraceclient.SetConditionOptionalScope) (dynatrace.Client, error)) *Builder_BuildWithTokenVerification_Call {
 	_c.Call.Return(run)
 	return _c
 }
