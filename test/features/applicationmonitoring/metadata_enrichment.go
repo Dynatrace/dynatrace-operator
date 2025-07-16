@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
@@ -246,6 +247,10 @@ func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) deployment.PodConsumer
 
 		require.Len(t, initContainers, 1)
 
+		// The `--metadata-enrichment` is what turns on the feature in the init-container
+		assert.Contains(t, initContainers[0].Args, "--"+bootstrapper.MetadataEnrichmentFlag)
+		// The `--target=/mnt/bin` is a sign that the init-container will download/configure the oneagent
+		assert.NotContains(t, initContainers[0].Args, "--"+bootstrapper.TargetFolderFlag+"="+oacommon.BinInitMountPath)
 		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadKind)
 		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadName)
 	}

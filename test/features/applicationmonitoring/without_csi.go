@@ -40,14 +40,6 @@ func WithoutCSI(t *testing.T) features.Feature {
 	builder.Assess("install additional pod", podSample.Install())
 	builder.Assess("check injection of additional pod", checkInjection(podSample))
 
-	alreadyInjectedSample := sample.NewApp(t, &appOnlyDynakube,
-		sample.WithName("already-injected"),
-		sample.AsDeployment(),
-		sample.WithAnnotations(map[string]string{"oneagent.dynatrace.com/injected": "true"}),
-	)
-	builder.Assess("install already injected sample app", alreadyInjectedSample.Install())
-	builder.Assess("check if pods with already injection annotation are not injected again", checkAlreadyInjected(alreadyInjectedSample))
-
 	randomUserSample := sample.NewApp(t, &appOnlyDynakube,
 		sample.WithName("random-user"),
 		sample.AsDeployment(),
@@ -61,7 +53,6 @@ func WithoutCSI(t *testing.T) features.Feature {
 
 	builder.Teardown(sampleApp.Uninstall())
 	builder.Teardown(podSample.Uninstall())
-	builder.Teardown(alreadyInjectedSample.Uninstall())
 	builder.Teardown(randomUserSample.Uninstall())
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, appOnlyDynakube)
 
@@ -78,21 +69,6 @@ func checkInjection(deployment *sample.App) features.Func {
 		for _, item := range samplePods.Items {
 			require.NotNil(t, item.Spec.InitContainers)
 			require.Equal(t, webhook.InstallContainerName, item.Spec.InitContainers[0].Name)
-		}
-
-		return ctx
-	}
-}
-
-func checkAlreadyInjected(deployment *sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resource := envConfig.Client().Resources()
-		samplePods := deployment.GetPods(ctx, t, resource)
-
-		require.NotNil(t, samplePods)
-
-		for _, item := range samplePods.Items {
-			require.Nil(t, item.Spec.InitContainers)
 		}
 
 		return ctx

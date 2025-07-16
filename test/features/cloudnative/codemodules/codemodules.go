@@ -611,7 +611,7 @@ func isVolumeMounted(t *testing.T, volumeMounts []corev1.VolumeMount, volumeMoun
 			result = true
 
 			assert.Equal(t, oacommon.DefaultInstallPath, volumeMount.MountPath)
-			assert.False(t, volumeMount.ReadOnly)
+			assert.True(t, volumeMount.ReadOnly)
 		}
 	}
 
@@ -628,7 +628,7 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 			assert.Equal(t, dtcsi.DriverName, volume.CSI.Driver)
 
 			if volume.CSI.ReadOnly != nil {
-				assert.False(t, *volume.CSI.ReadOnly)
+				assert.True(t, *volume.CSI.ReadOnly)
 			}
 		}
 	}

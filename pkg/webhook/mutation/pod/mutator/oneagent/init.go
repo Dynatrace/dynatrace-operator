@@ -54,7 +54,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) error {
 	args := []arg.Arg{
 		{Name: cmd.SourceFolderFlag, Value: consts.AgentCodeModuleSource},
-		{Name: cmd.TargetFolderFlag, Value: binInitMountPath},
+		{Name: cmd.TargetFolderFlag, Value: BinInitMountPath},
 		{Name: configure.InstallPathFlag, Value: installPath},
 	}
 

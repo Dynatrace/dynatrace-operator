@@ -65,7 +65,7 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 			require.NoError(t, err)
 			logs.AssertContains(t, logStream, "init completed")
 
-			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/opt/dynatrace/oneagent-paas/log/php/"))
+			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
 			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifNotEmptyCommand...)
 
 			require.NoError(t, err)

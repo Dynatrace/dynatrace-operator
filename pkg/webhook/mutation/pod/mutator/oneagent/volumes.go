@@ -13,7 +13,7 @@ import (
 
 const (
 	BinVolumeName    = "oneagent-bin"
-	binInitMountPath = "/mnt/bin"
+	BinInitMountPath = "/mnt/bin"
 
 	ldPreloadPath    = "/etc/ld.so.preload"
 	ldPreloadSubPath = preload.ConfigPath
@@ -38,7 +38,7 @@ func addInitBinMount(initContainer *corev1.Container, readonly bool) {
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
-			MountPath: binInitMountPath,
+			MountPath: BinInitMountPath,
 			ReadOnly:  readonly,
 		},
 	)

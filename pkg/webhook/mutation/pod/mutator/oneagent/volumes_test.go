@@ -36,7 +36,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		addInitBinMount(container, readonly)
 		require.Len(t, container.VolumeMounts, 1)
 		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
-		assert.Equal(t, binInitMountPath, container.VolumeMounts[0].MountPath)
+		assert.Equal(t, BinInitMountPath, container.VolumeMounts[0].MountPath)
 		assert.Equal(t, readonly, container.VolumeMounts[0].ReadOnly)
 	})
 
@@ -47,7 +47,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		addInitBinMount(container, readonly)
 		require.Len(t, container.VolumeMounts, 1)
 		assert.Equal(t, BinVolumeName, container.VolumeMounts[0].Name)
-		assert.Equal(t, binInitMountPath, container.VolumeMounts[0].MountPath)
+		assert.Equal(t, BinInitMountPath, container.VolumeMounts[0].MountPath)
 		assert.Equal(t, readonly, container.VolumeMounts[0].ReadOnly)
 	})
 }
