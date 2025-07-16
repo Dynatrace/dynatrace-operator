@@ -120,6 +120,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 
+		var secret corev1.Secret
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: r.dk.ActiveGate().GetTLSSecretName(), Namespace: testNamespace}, &secret)
+		require.NoError(t, err)
+
 		// remove AG from spec
 		dk.Spec.ActiveGate = activegate.Spec{}
 		r.connectionReconciler = createGenericReconcilerMock(t)
@@ -129,6 +133,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: r.dk.ActiveGate().GetTLSSecretName(), Namespace: testNamespace}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Reconcile DynaKube without Proxy after a DynaKube with proxy must not interfere with the second DKs Proxy Secret", func(t *testing.T) { // TODO: This is not a unit test, it tests the functionality of another package, it should use a mock for that

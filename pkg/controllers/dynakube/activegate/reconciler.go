@@ -196,6 +196,13 @@ func (r *Reconciler) deleteCapability(ctx context.Context) error {
 		return err
 	}
 
+	// we must run tls reconciler to ensure that the TLS secret is deleted
+	// TODO: consider to not mix two different patterns
+	tlsSecretReconciler := tls.NewReconciler(r.client, r.apiReader, r.dk)
+	if err := tlsSecretReconciler.Reconcile(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
