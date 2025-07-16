@@ -35,12 +35,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-    needs: [prepare]
     env:
-      GCR_IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
-      ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}
-      RHCC_IMAGE: quay.io/${{ secrets.RHCC_REPOSITORY }}:${{ needs.prepare.outputs.version }}
-      DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}
+      GCR_IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY }}
+      ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}
+      RHCC_IMAGE: quay.io/${{ secrets.RHCC_REPOSITORY }}
+      DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -84,8 +83,7 @@ jobs:
         uses: ./.github/actions/build-push-image
         with:
           platforms: ${{ env.PLATFORMS }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          tags: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
+          images: ${{ env.RHCC_IMAGE }},${{ env.GCR_IMAGE }},${{ env.ECR_IMAGE }},${{ env.DOCKER_IMAGE }}
           annotation: ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
     outputs:
       digest: ${{steps.build-image.outputs.digest}}
