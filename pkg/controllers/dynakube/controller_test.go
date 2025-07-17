@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
@@ -256,7 +257,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("BOOM"))
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(nil, errors.New("BOOM"))
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -291,7 +292,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything, mock.Anything, mock.Anything).Return(mockedDtc, nil)
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockedDtc, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -572,7 +573,7 @@ func TestTokenConditions(t *testing.T) {
 		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything, mock.Anything, mock.Anything).Return(mockClient, nil)
+		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -734,6 +735,128 @@ func createTenantSecrets(dk *dynakube.DynaKube) []client.Object {
 			Data: map[string][]byte{
 				connectioninfo.TenantTokenKey: []byte("test-token"),
 			},
+		},
+	}
+}
+
+func TestTokenConditionsOptionalScopes(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("conditions not set", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+
+		fakeClient := fake.NewClient()
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+
+		_, err := controller.setupTokensAndClient(ctx, dk)
+
+		require.Error(t, err)
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, "secrets \""+testName+"\" not found")
+		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead))
+		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead))
+		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite))
+	})
+	t.Run("no missing scopes", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+
+		fakeClient := fake.NewClient(createAPISecret())
+
+		fakeDtClient := dtclientmock.NewClient(t)
+		fakeDtClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
+			dtclient.TokenScopeEntitiesRead,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil)
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			dynatraceClientBuilder: dynatraceclient.NewBuilder(fakeClient, func(url, apiToken, paasToken string, opts ...dtclient.Option) (dtclient.Client, error) {
+				return fakeDtClient, nil
+			}),
+		}
+
+		_, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	})
+	t.Run("two missing scopes", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+
+		fakeClient := fake.NewClient(createAPISecret())
+
+		fakeDtClient := dtclientmock.NewClient(t)
+		fakeDtClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil)
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			dynatraceClientBuilder: dynatraceclient.NewBuilder(fakeClient, func(url, apiToken, paasToken string, opts ...dtclient.Option) (dtclient.Client, error) {
+				return fakeDtClient, nil
+			}),
+		}
+
+		_, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	})
+}
+
+func createDynakubeWithK8SMonitoring() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
+			},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.KubeMonCapability.DisplayName,
+				},
+			},
+		},
+	}
+}
+
+func createAPISecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			dtclient.APIToken: []byte(testAPIToken),
 		},
 	}
 }

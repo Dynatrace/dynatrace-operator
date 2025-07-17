@@ -69,7 +69,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		config:                 config,
 		operatorNamespace:      os.Getenv(env.PodNamespace),
 		clusterID:              clusterID,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader, dtclient.NewClient),
 		istioClientBuilder:     istio.NewClient,
 
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
@@ -303,14 +303,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		SetDynakube(*dk).
 		SetTokens(tokens)
 
-	setConditionOptionalScopeMissing := func(conditionType string, scope string) {
-		controller.setConditionOptionalScopeMissing(dk, conditionType, scope)
-	}
-	setConditionOptionalScopeAvailable := func(conditionType string, scope string) {
-		controller.setConditionOptionalScopeAvailable(dk, conditionType, scope)
-	}
-
-	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dk.Status, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)
+	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dk.Status)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 

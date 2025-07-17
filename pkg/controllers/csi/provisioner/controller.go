@@ -76,7 +76,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		kubeClient:             mgr.GetClient(),
 		fs:                     fs,
 		path:                   path,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader(), dtclient.NewClient),
 		urlInstallerBuilder:    url.NewURLInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
 		jobInstallerBuilder:    job.NewInstaller,

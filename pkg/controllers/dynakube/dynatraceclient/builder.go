@@ -2,6 +2,7 @@ package dynatraceclient
 
 import (
 	"context"
+	"fmt"
 	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -14,26 +15,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type SetConditionOptionalScope func(conditionType string, scope string)
+const (
+	ReasonOptionalScope = "OptionalScope"
+)
 
 type Builder interface {
 	SetContext(ctx context.Context) Builder
 	SetDynakube(dk dynakube.DynaKube) Builder
 	SetTokens(tokens token.Tokens) Builder
 	Build() (dtclient.Client, error)
-	BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStatus, setConditionOptionalScopeMissing SetConditionOptionalScope, setConditionOptionalScopeAvailable SetConditionOptionalScope) (dtclient.Client, error)
+	BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStatus) (dtclient.Client, error)
 }
 
 type builder struct {
-	ctx       context.Context
-	apiReader client.Reader
-	tokens    token.Tokens
-	dk        dynakube.DynaKube
+	ctx                    context.Context
+	apiReader              client.Reader
+	tokens                 token.Tokens
+	newDynatraceClientFunc dtclient.NewFunc
+	dk                     dynakube.DynaKube
 }
 
-func NewBuilder(apiReader client.Reader) Builder {
+func NewBuilder(apiReader client.Reader, newDynatraceClientFunc dtclient.NewFunc) Builder {
 	return builder{
-		apiReader: apiReader,
+		apiReader:              apiReader,
+		newDynatraceClientFunc: newDynatraceClientFunc,
 	}
 }
 
@@ -98,10 +103,10 @@ func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
 		paasToken = apiToken
 	}
 
-	return dtclient.NewClient(dynatraceClientBuilder.dk.Spec.APIURL, apiToken, paasToken, opts.Opts...)
+	return dynatraceClientBuilder.newDynatraceClientFunc(dynatraceClientBuilder.dk.Spec.APIURL, apiToken, paasToken, opts.Opts...)
 }
 
-func (dynatraceClientBuilder builder) BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStatus, setConditionOptionalScopeMissing SetConditionOptionalScope, setConditionOptionalScopeAvailable SetConditionOptionalScope) (dtclient.Client, error) {
+func (dynatraceClientBuilder builder) BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStatus) (dtclient.Client, error) {
 	dynatraceClient, err := dynatraceClientBuilder.Build()
 	if err != nil {
 		return nil, err
@@ -114,7 +119,7 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dkStatus *dynak
 
 	dynatraceClientBuilder.tokens = dynatraceClientBuilder.getTokens().AddFeatureScopesToTokens()
 
-	err = dynatraceClientBuilder.verifyTokenScopes(dynatraceClient, dkStatus, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)
+	err = dynatraceClientBuilder.verifyTokenScopes(dynatraceClient, dkStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +127,7 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dkStatus *dynak
 	return dynatraceClient, nil
 }
 
-func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dkStatus *dynakube.DynaKubeStatus, setConditionOptionalScopeMissing SetConditionOptionalScope, setConditionOptionalScopeAvailable SetConditionOptionalScope) error {
+func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dkStatus *dynakube.DynaKubeStatus) error {
 	if !dynatraceClientBuilder.dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",
@@ -141,17 +146,17 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 
 	dkStatus.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
 
-	dynatraceClientBuilder.updateOptionalScopesConditions(missingOptionalScopes, setConditionOptionalScopeMissing, setConditionOptionalScopeAvailable)
+	dynatraceClientBuilder.updateOptionalScopesConditions(dkStatus, missingOptionalScopes)
 
 	return nil
 }
 
-func (dynatraceClientBuilder builder) updateOptionalScopesConditions(missingOptionalScopes []string, setConditionOptionalScopeMissing SetConditionOptionalScope, setConditionOptionalScopeAvailable SetConditionOptionalScope) {
+func (dynatraceClientBuilder builder) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, missingOptionalScopes []string) {
 	for scope, conditionType := range dtclient.OptionalScopes {
 		if slices.Contains(missingOptionalScopes, scope) {
-			setConditionOptionalScopeMissing(conditionType, scope)
+			setConditionOptionalScopeMissing(dkStatus, conditionType, scope)
 		} else {
-			setConditionOptionalScopeAvailable(conditionType, scope)
+			setConditionOptionalScopeAvailable(dkStatus, conditionType, scope)
 		}
 	}
 }
@@ -163,4 +168,24 @@ func lastErrorFromCondition(dkStatus *dynakube.DynaKubeStatus) error {
 	}
 
 	return nil
+}
+
+func setConditionOptionalScopeAvailable(dkStatus *dynakube.DynaKubeStatus, conditionType string, scope string) {
+	tokenCondition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  ReasonOptionalScope,
+		Message: fmt.Sprintf("optional %s scope is available", scope),
+	}
+	meta.SetStatusCondition(&dkStatus.Conditions, tokenCondition)
+}
+
+func setConditionOptionalScopeMissing(dkStatus *dynakube.DynaKubeStatus, conditionType string, scope string) {
+	tokenCondition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  ReasonOptionalScope,
+		Message: fmt.Sprintf("optional %s scope is not available, some features may not work", scope),
+	}
+	meta.SetStatusCondition(&dkStatus.Conditions, tokenCondition)
 }

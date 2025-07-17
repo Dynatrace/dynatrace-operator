@@ -37,7 +37,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 				dtclient.APIToken:  {Value: testValue},
 				dtclient.PaasToken: {Value: testValueAlternative},
 			},
-			dk: *dk,
+			dk:                     *dk,
+			newDynatraceClientFunc: dtclient.NewClient,
 		}
 		dtc, err := dynatraceClientBuilder.Build()
 
@@ -45,7 +46,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.NotNil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles nil instance`, func(t *testing.T) {
-		dtc, err := builder{}.Build()
+		dtc, err := builder{
+			newDynatraceClientFunc: dtclient.NewClient,
+		}.Build()
 		assert.Nil(t, dtc)
 		require.Error(t, err)
 	})
@@ -65,7 +68,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 				dtclient.APIToken:  {Value: ""},
 				dtclient.PaasToken: {Value: ""},
 			},
-			dk: *dk,
+			dk:                     *dk,
+			newDynatraceClientFunc: dtclient.NewClient,
 		}
 
 		dtc, err := dynatraceClientBuilder.Build()
@@ -74,8 +78,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 		require.Error(t, err)
 
 		dynatraceClientBuilder = builder{
-			apiReader: fakeClient,
-			dk:        *dk,
+			apiReader:              fakeClient,
+			dk:                     *dk,
+			newDynatraceClientFunc: dtclient.NewClient,
 		}
 		dtc, err = dynatraceClientBuilder.Build()
 
@@ -99,7 +104,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 				dtclient.APIToken:  {Value: testValue},
 				dtclient.PaasToken: {Value: testValueAlternative},
 			},
-			dk: *dk,
+			dk:                     *dk,
+			newDynatraceClientFunc: dtclient.NewClient,
 		}
 		dtc, err := dynatraceClientBuilder.Build()
 
@@ -123,7 +129,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 				dtclient.APIToken:  {Value: testValue},
 				dtclient.PaasToken: {Value: testValueAlternative},
 			},
-			dk: *dk,
+			dk:                     *dk,
+			newDynatraceClientFunc: dtclient.NewClient,
 		}
 		dtc, err := dtf.Build()
 

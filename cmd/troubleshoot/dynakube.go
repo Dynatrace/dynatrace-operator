@@ -116,7 +116,7 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 
 	logInfof(log, "checking if token scopes are valid")
 
-	dtc, err := dynatraceclient.NewBuilder(apiReader).
+	dtc, err := dynatraceclient.NewBuilder(apiReader, dtclient.NewClient).
 		SetContext(ctx).
 		SetDynakube(*dk).
 		SetTokens(dynatraceAPISecretTokens).
@@ -152,7 +152,7 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 
 	logInfof(log, "checking if can pull latest agent version")
 
-	dtc, err := dynatraceclient.NewBuilder(apiReader).
+	dtc, err := dynatraceclient.NewBuilder(apiReader, dtclient.NewClient).
 		SetContext(ctx).
 		SetDynakube(*dk).
 		SetTokens(dynatraceAPISecretTokens).
