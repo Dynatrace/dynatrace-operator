@@ -493,19 +493,22 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgec
 
 func newEdgeConnectClient() func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnectClient.Client, error) {
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnectClient.Client, error) {
+		oauthScopes := []string{
+			"app-engine:edge-connects:read",
+			"app-engine:edge-connects:write",
+			"app-engine:edge-connects:delete",
+			"oauth2:clients:manage",
+		}
+		if ec.IsK8SAutomationEnabled() {
+			oauthScopes = append(oauthScopes, "settings:objects:read", "settings:objects:write")
+		}
+
 		edgeConnectClient, err := edgeconnectClient.NewClient(
 			oauthCredentials.clientID,
 			oauthCredentials.clientSecret,
 			edgeconnectClient.WithBaseURL("https://"+ec.Spec.APIServer),
 			edgeconnectClient.WithTokenURL(ec.Spec.OAuth.Endpoint),
-			edgeconnectClient.WithOauthScopes([]string{
-				"app-engine:edge-connects:read",
-				"app-engine:edge-connects:write",
-				"app-engine:edge-connects:delete",
-				"oauth2:clients:manage",
-				"settings:objects:read",
-				"settings:objects:write",
-			}),
+			edgeconnectClient.WithOauthScopes(oauthScopes),
 			edgeconnectClient.WithContext(ctx),
 		)
 		if err != nil {
