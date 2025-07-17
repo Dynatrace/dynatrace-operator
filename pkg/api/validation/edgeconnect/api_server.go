@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
@@ -9,6 +10,16 @@ import (
 
 const (
 	errorInvalidAPIServer = `The EdgeConnect's specification has an invalid apiServer value set.
+	Make sure you correctly specify the apiServer in your custom resource.
+	`
+
+	errorMissingAllowedSuffixAPIServer = `The EdgeConnect's specification has an invalid apiServer value set.
+	Missing required suffix.
+	Make sure you correctly specify the apiServer in your custom resource.
+	`
+
+	errorProtocolIsNotAllowedAPIServer = `The EdgeConnect's specification has an invalid apiServer value set.
+	Should NOT include protocol.
 	Make sure you correctly specify the apiServer in your custom resource.
 	`
 )
@@ -21,7 +32,7 @@ var (
 	}
 )
 
-func isInvalidAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
+func isAllowedSuffixAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
 	for _, suffix := range allowedSuffix {
 		if strings.HasSuffix(ec.Spec.APIServer, suffix) {
 			hostnameWithDomains := strings.FieldsFunc(suffix,
@@ -42,5 +53,20 @@ func isInvalidAPIServer(_ context.Context, _ *Validator, ec *edgeconnect.EdgeCon
 		}
 	}
 
-	return errorInvalidAPIServer
+	return errorMissingAllowedSuffixAPIServer
+}
+
+func checkAPIServerProtocolNotSet(_ context.Context, _ *Validator, ec *edgeconnect.EdgeConnect) string {
+	parsedURL, err := url.Parse(ec.Spec.APIServer)
+	if err != nil {
+		log.Info("API Server URL is not a valid URL", "err", err.Error())
+
+		return errorInvalidAPIServer
+	}
+
+	if parsedURL.Scheme != "" {
+		return errorProtocolIsNotAllowedAPIServer
+	}
+
+	return ""
 }
