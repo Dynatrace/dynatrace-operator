@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	traces  = pipeline.MustNewID("traces")
-	metrics = pipeline.MustNewID("metrics")
-	logs    = pipeline.MustNewID("logs")
+	traces  = pipeline.NewID(pipeline.SignalTraces)
+	metrics = pipeline.NewID(pipeline.SignalMetrics)
+	logs    = pipeline.NewID(pipeline.SignalLogs)
 
 	allowedPipelinesLogsReceiversIDs = []component.ID{OtlpID}
 
