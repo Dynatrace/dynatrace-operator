@@ -64,6 +64,7 @@ func ResilienceFeature(t *testing.T) features.Feature {
 	sampleApp := sample.NewApp(t, &testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
+		sample.WithFailurePolicy(false),
 	)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 

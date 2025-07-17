@@ -60,7 +60,6 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 
 			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
 			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifNotEmptyCommand...)
-
 			require.NoError(t, err)
 
 			stdOut := executionResult.StdOut.String()

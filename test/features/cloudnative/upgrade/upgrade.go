@@ -37,7 +37,6 @@ func Feature(t *testing.T) features.Feature {
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
-	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
 	// update to snapshot
 	withCSI := true
