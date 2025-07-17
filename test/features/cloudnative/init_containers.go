@@ -50,7 +50,7 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 			}
 			require.NotNil(t, oneAgentInstallInitContainer, "init container not found in '%s' pod", podItem.Name)
 
-			if sampleApp.CanInitError() {
+			if !sampleApp.CanInitError() {
 				assert.Contains(t, oneAgentInstallInitContainer.Args, "--"+cmd.SuppressErrorsFlag, "errors may be suppressed, further checks are not useful")
 
 				continue
