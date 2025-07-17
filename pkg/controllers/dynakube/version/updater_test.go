@@ -80,6 +80,27 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 	})
+
+	t.Run("autoUpdate disabled, runs if status custom-version is set", func(t *testing.T) {
+		target := &status.VersionStatus{}
+		versionReconciler := reconciler{
+			timeProvider: timeProvider,
+		}
+		updater := newCustomVersionUpdater(t, target, "123", false)
+
+		// 1. call => status empty => should run
+		err := versionReconciler.run(ctx, updater)
+		require.NoError(t, err)
+		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
+		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
+		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
+
+		// 2. call => it is custom version => should run
+		err = versionReconciler.run(ctx, updater)
+		require.NoError(t, err)
+		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
+		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
+	})
 	t.Run("public registry", func(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
@@ -297,6 +318,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return(version)
+	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
 	return updater
 }
