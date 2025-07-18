@@ -3,6 +3,7 @@ package token
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -49,20 +50,27 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) error {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) ([]string, error) {
 	scopeErrors := make([]error, 0)
+	collectedMissingOptionalScopes := make([]string, 0)
 
 	for _, token := range tokens {
-		if err := token.verifyScopes(ctx, dtClient, dk); err != nil {
+		missingOptionalScopes, err := token.verifyScopes(ctx, dtClient, dk)
+		if err != nil {
 			scopeErrors = append(scopeErrors, err)
 		}
+
+		collectedMissingOptionalScopes = append(collectedMissingOptionalScopes, missingOptionalScopes...)
 	}
 
 	if len(scopeErrors) > 0 {
-		return concatErrors(scopeErrors)
+		return nil, concatErrors(scopeErrors)
 	}
 
-	return nil
+	slices.Sort(collectedMissingOptionalScopes)
+	collectedMissingOptionalScopes = slices.Compact(collectedMissingOptionalScopes)
+
+	return collectedMissingOptionalScopes, nil
 }
 
 func (tokens Tokens) VerifyValues() error {
