@@ -14,11 +14,15 @@ RUN go mod download -x
 
 COPY pkg ./pkg
 COPY cmd ./cmd
+COPY .git /.git
 
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
+
+RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.9.0
+RUN cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output dynatrace-operator-bin-sbom.cdx.json
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     --mount=type=cache,target="/go/pkg" \
