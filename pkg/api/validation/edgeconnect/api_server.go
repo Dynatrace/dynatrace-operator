@@ -14,7 +14,10 @@ const (
 	`
 
 	errorMissingAllowedSuffixAPIServer = `The EdgeConnect's specification has an invalid apiServer value set.
-	Missing required suffix.
+	Example valid values: 
+	-  For prod: "<tenantID>.apps.dynatrace.com"
+	-  For dev: "<tenantID>.dev.apps.dynatracelabs.com"
+	-  For sprint: "<tenantID>.sprint.apps.dynatracelabs.com"
 	Make sure you correctly specify the apiServer in your custom resource.
 	`
 
