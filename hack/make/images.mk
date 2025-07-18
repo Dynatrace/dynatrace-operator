@@ -31,7 +31,7 @@ ifeq ($(TAG), snapshot)
 endif
 
 ## Builds an Operator image with a given IMAGE and TAG-OPERATOR_BUILD_ARCH
-images/build: ensure-tag-not-snapshot
+images/build: prerequisites/cyclonedx-gomod ensure-tag-not-snapshot
 	$(BUILD_IMAGE_SH) "${IMAGE}" "${TAG}-${OPERATOR_BUILD_ARCH}" "${DEBUG}" "Dockerfile" "${OPERATOR_BUILD_PLATFORM}"
 
 ## Pushes an ALREADY BUILT Operator image as an image-index with a given IMAGE and TAG, containing the image for the OPERATOR_BUILD_ARCH
