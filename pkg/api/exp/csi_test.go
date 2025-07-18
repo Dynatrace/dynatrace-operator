@@ -9,39 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIsCSIVolumeReadOnly(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   bool
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   false,
-		},
-		{
-			title: "overrule",
-			in:    "true",
-			out:   true,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				CSIReadOnlyVolumeKey: c.in,
-			}}
-
-			out := ff.IsCSIVolumeReadOnly()
-
-			assert.Equal(t, c.out, out)
-		})
-	}
-}
-
 func TestGetCSIMaxRetryTimeout(t *testing.T) {
 	type testCase struct {
 		title string

@@ -10,13 +10,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	oamutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
@@ -133,7 +133,7 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *val
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
 		}).ForEachPod(func(podItem corev1.Pod) {
-			dir := filepath.Join(oamutation.OneAgentConfMountPath, common.RuxitConfFileName)
+			dir := filepath.Join(volumes.ConfigMountPath, pmc.DestinationRuxitAgentProcPath)
 			readFileCommand := shell.ReadFile(dir)
 			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), readFileCommand...)
 			assert.Contains(t, result.StdOut.String(), fmt.Sprintf("proxy %s", proxySpec.Value))

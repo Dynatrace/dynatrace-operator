@@ -125,7 +125,7 @@ func (installer Installer) installAgent(ctx context.Context, targetDir string) e
 
 func (installer Installer) isInitContainerMode() bool {
 	if installer.props != nil {
-		return installer.props.PathResolver.RootDir == consts.AgentBinDirMount
+		return installer.props.PathResolver.RootDir == consts.AgentInitBinDirMount
 	}
 
 	return false
@@ -142,5 +142,5 @@ func (installer Installer) isAlreadyDownloaded(targetDir string) bool {
 }
 
 func isStandaloneInstall(targetDir string) bool {
-	return consts.AgentBinDirMount == targetDir
+	return consts.AgentInitBinDirMount == targetDir
 }

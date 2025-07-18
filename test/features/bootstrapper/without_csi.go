@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2/common/volumes"
+	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
@@ -120,7 +120,6 @@ func checkInjection(deployment *sample.App) features.Func {
 			require.Equal(t, webhook.InstallContainerName, item.Spec.InitContainers[0].Name)
 
 			args := item.Spec.InitContainers[0].Args
-			// TODO use bootstrapper repo consts in the future
 			require.Contains(t, args, "--source=/opt/dynatrace/oneagent")
 			require.Contains(t, args, "--target=/mnt/bin")
 			require.Contains(t, args, "--config-directory=/mnt/config")
@@ -128,7 +127,6 @@ func checkInjection(deployment *sample.App) features.Func {
 			require.NotContains(t, args, "--work=")
 			require.NotContains(t, args, "--debug")
 			require.Contains(t, args, "--technology=php")
-			require.Contains(t, args, "--suppress-error")
 
 			expectedVolume := corev1.Volume{
 				Name: volumes.InputVolumeName,

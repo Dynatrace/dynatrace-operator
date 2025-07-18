@@ -11,24 +11,16 @@ const (
 	// Deprecated: Dedicated field since v1beta3.
 	InjectionMetadataEnrichmentKey = FFPrefix + "metadata-enrichment"
 
-	InjectionIgnoreUnknownStateKey    = FFPrefix + "ignore-unknown-state"
 	InjectionIgnoredNamespacesKey     = FFPrefix + "ignored-namespaces"
 	InjectionAutomaticKey             = FFPrefix + "automatic-injection"
 	InjectionLabelVersionDetectionKey = FFPrefix + "label-version-detection"
 	InjectionFailurePolicyKey         = FFPrefix + "injection-failure-policy"
 	InjectionSeccompKey               = FFPrefix + "init-container-seccomp-profile"
-	InjectionEnforcementModeKey       = FFPrefix + "enforcement-mode"
 )
 
 // Deprecated: Dedicated field since v1beta3.
 func (ff *FeatureFlags) DisableMetadataEnrichment() bool {
 	return ff.getDisableFlagWithDeprecatedAnnotation(InjectionMetadataEnrichmentKey, InjectionDisableMetadataEnrichmentKey)
-}
-
-// IgnoreUnknownState is a feature flag that makes the operator inject into applications even when the dynakube is in an UNKNOWN state,
-// this may cause extra host to appear in the tenant for each process.
-func (ff *FeatureFlags) IgnoreUnknownState() bool {
-	return ff.getBoolWithDefault(InjectionIgnoreUnknownStateKey, false)
 }
 
 // IsAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
@@ -82,10 +74,4 @@ func (ff *FeatureFlags) GetInjectionFailurePolicy() string {
 
 func (ff *FeatureFlags) HasInitSeccomp() bool {
 	return ff.getBoolWithDefault(InjectionSeccompKey, false)
-}
-
-// IsEnforcementMode is a feature flag to control how the initContainer
-// sets the tenantUUID to the container.conf file (always vs if oneAgent is present).
-func (ff *FeatureFlags) IsEnforcementMode() bool {
-	return ff.getBoolWithDefault(InjectionEnforcementModeKey, true)
 }

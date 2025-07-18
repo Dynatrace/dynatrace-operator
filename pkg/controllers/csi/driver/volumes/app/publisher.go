@@ -19,9 +19,7 @@ package app
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
-	"path/filepath"
 	"time"
 
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
@@ -202,7 +200,7 @@ func (pub *Publisher) addPodInfoSymlink(volumeCfg *csivolumes.VolumeConfig) erro
 func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (string, error) {
 	upperDir := pub.path.AppMountVarDir(volumeCfg.VolumeID)
 
-	err := pub.prepareAgentConfigInUpperDir(volumeCfg)
+	err := pub.fs.MkdirAll(upperDir, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
@@ -213,43 +211,6 @@ func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (strin
 	}
 
 	return upperDir, nil
-}
-
-func (pub *Publisher) prepareAgentConfigInUpperDir(volumeCfg *csivolumes.VolumeConfig) error {
-	destAgentConfPath := pub.path.OverlayVarRuxitAgentProcConf(volumeCfg.VolumeID)
-
-	err := pub.fs.MkdirAll(filepath.Dir(destAgentConfPath), os.ModePerm)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to create overlay upper directory agent config directory structure, path: %s", destAgentConfPath)
-	}
-
-	srcAgentConfPath := pub.path.AgentSharedRuxitAgentProcConf(volumeCfg.DynakubeName)
-	srcFile, err := pub.fs.Open(srcAgentConfPath)
-
-	if err != nil {
-		return errors.WithMessagef(err, "failed to open ruxitagentproc.conf file, path: %s", srcAgentConfPath)
-	}
-
-	defer func() { _ = srcFile.Close() }()
-
-	srcStat, err := srcFile.Stat()
-	if err != nil {
-		return errors.WithMessage(err, "failed to get source ruxitagentproc.conf file info")
-	}
-
-	destFile, err := pub.fs.OpenFile(destAgentConfPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcStat.Mode())
-	if err != nil {
-		return errors.WithMessagef(err, "failed to open destination ruxitagentproc.conf file, path: %s", destAgentConfPath)
-	}
-
-	defer func() { _ = destFile.Close() }()
-
-	_, err = io.Copy(destFile, srcFile)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to copy ruxitagentproc.conf file to overlay, from->to: %s -> %s", srcAgentConfPath, destAgentConfPath)
-	}
-
-	return err
 }
 
 func (pub *Publisher) preparePodInfoUpperDir(volumeCfg *csivolumes.VolumeConfig) error {
