@@ -98,3 +98,12 @@ startupProbe:
       }
     }
 {{- end -}}
+
+# Store into variable if apparmor should be enabled
+{{- define "kubernetes.appArmorSecurityContextSupported" -}}
+{{- if semverCompare ">=1.31.0" .Capabilities.KubeVersion.Version  -}}
+    true
+{{- else -}}
+    false
+{{- end -}}
+{{- end -}}

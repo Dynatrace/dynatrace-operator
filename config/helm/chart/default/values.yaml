@@ -113,6 +113,7 @@ csidriver:
       operator: Exists
   labels: {}
   annotations: {}
+  apparmor: false # enforces apparmor default profile for csi-init, registrar and livenessprobe containers
   updateStrategy:
     rollingUpdate:
       maxSurge: 0

@@ -38,7 +38,7 @@ spec:
       annotations:
         dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: webhook
-        {{- if (.Values.webhook).apparmor}}
+        {{- if and (.Values.webhook.apparmor) (ne (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
         container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
         {{- end }}
         {{- if .Values.webhook.annotations}}
@@ -126,6 +126,10 @@ spec:
               mountPath: /tmp/k8s-webhook-server/serving-certs/
           securityContext:
           {{- include "webhook.securityContext" . | nindent 12 }}
+          {{- if and (.Values.webhook.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+            appArmorProfile:
+              type: RuntimeDefault
+          {{- end }}
       serviceAccountName: dynatrace-webhook
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
