@@ -34,7 +34,7 @@ func TestApiServer(t *testing.T) {
 	})
 
 	t.Run(`invalid apiServer (missing tenant)`, func(t *testing.T) {
-		assertDenied(t, []string{errorInvalidApiServer}, &edgeconnect.EdgeConnect{
+		assertDenied(t, []string{errorMissingAllowedSuffixAPIServer}, &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
 				ApiServer: allowedSuffix[0],
 				OAuth: edgeconnect.OAuthSpec{
@@ -47,9 +47,61 @@ func TestApiServer(t *testing.T) {
 	})
 
 	t.Run(`invalid apiServer (wrong suffix)`, func(t *testing.T) {
-		assertDenied(t, []string{errorInvalidApiServer}, &edgeconnect.EdgeConnect{
+		assertDenied(t, []string{errorMissingAllowedSuffixAPIServer}, &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
 				ApiServer: "doma.in",
+				OAuth: edgeconnect.OAuthSpec{
+					ClientSecret: "secret",
+					Endpoint:     "endpoint",
+					Resource:     "resource",
+				},
+			},
+		})
+	})
+
+	t.Run(`invalid apiServer url should NOT be empty string`, func(t *testing.T) {
+		assertDenied(t, []string{errorMissingAllowedSuffixAPIServer}, &edgeconnect.EdgeConnect{
+			Spec: edgeconnect.EdgeConnectSpec{
+				ApiServer: "",
+				OAuth: edgeconnect.OAuthSpec{
+					ClientSecret: "secret",
+					Endpoint:     "endpoint",
+					Resource:     "resource",
+				},
+			},
+		})
+	})
+
+	t.Run(`invalid apiServer url should not start with numbers`, func(t *testing.T) {
+		assertDenied(t, []string{errorInvalidAPIServer}, &edgeconnect.EdgeConnect{
+			Spec: edgeconnect.EdgeConnectSpec{
+				ApiServer: string([]byte{0}) + allowedSuffix[0],
+				OAuth: edgeconnect.OAuthSpec{
+					ClientSecret: "secret",
+					Endpoint:     "endpoint",
+					Resource:     "resource",
+				},
+			},
+		})
+	})
+
+	t.Run(`invalid apiServer (includes http protocol)`, func(t *testing.T) {
+		assertDenied(t, []string{errorProtocolIsNotAllowedAPIServer}, &edgeconnect.EdgeConnect{
+			Spec: edgeconnect.EdgeConnectSpec{
+				ApiServer: "http://doma.in",
+				OAuth: edgeconnect.OAuthSpec{
+					ClientSecret: "secret",
+					Endpoint:     "endpoint",
+					Resource:     "resource",
+				},
+			},
+		})
+	})
+
+	t.Run(`invalid apiServer (includes https protocol)`, func(t *testing.T) {
+		assertDenied(t, []string{errorProtocolIsNotAllowedAPIServer}, &edgeconnect.EdgeConnect{
+			Spec: edgeconnect.EdgeConnectSpec{
+				ApiServer: "https://doma.in",
 				OAuth: edgeconnect.OAuthSpec{
 					ClientSecret: "secret",
 					Endpoint:     "endpoint",
