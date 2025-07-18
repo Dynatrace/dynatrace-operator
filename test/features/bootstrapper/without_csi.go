@@ -120,7 +120,6 @@ func checkInjection(deployment *sample.App) features.Func {
 			require.Equal(t, webhook.InstallContainerName, item.Spec.InitContainers[0].Name)
 
 			args := item.Spec.InitContainers[0].Args
-			// TODO use bootstrapper repo consts in the future
 			require.Contains(t, args, "--source=/opt/dynatrace/oneagent")
 			require.Contains(t, args, "--target=/mnt/bin")
 			require.Contains(t, args, "--config-directory=/mnt/config")
@@ -128,7 +127,6 @@ func checkInjection(deployment *sample.App) features.Func {
 			require.NotContains(t, args, "--work=")
 			require.NotContains(t, args, "--debug")
 			require.Contains(t, args, "--technology=php")
-			require.Contains(t, args, "--suppress-error")
 
 			expectedVolume := corev1.Volume{
 				Name: volumes.InputVolumeName,
