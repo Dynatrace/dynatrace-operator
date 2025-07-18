@@ -2,6 +2,7 @@ package oneagent
 
 import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
@@ -13,8 +14,6 @@ import (
 
 const (
 	BinVolumeName    = "oneagent-bin"
-	BinInitMountPath = "/mnt/bin"
-
 	ldPreloadPath    = "/etc/ld.so.preload"
 	ldPreloadSubPath = preload.ConfigPath
 )
@@ -38,7 +37,7 @@ func addInitBinMount(initContainer *corev1.Container, readonly bool) {
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
-			MountPath: BinInitMountPath,
+			MountPath: consts.AgentInitBinDirMount,
 			ReadOnly:  readonly,
 		},
 	)

@@ -227,7 +227,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 	})
 	t.Run(`false if standalone`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		targetDir := consts.AgentBinDirMount
+		targetDir := consts.AgentInitBinDirMount
 		installer := &Installer{
 			fs:    fs,
 			props: &Properties{},

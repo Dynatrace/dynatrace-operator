@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper/download"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -96,7 +95,7 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 				TargetVersion: targetVersion,
 				URL:           "",
 				SkipMetadata:  false,
-				PathResolver:  metadata.PathResolver{RootDir: consts.AgentBinDirMount},
+				PathResolver:  metadata.PathResolver{RootDir: targetFolder},
 			}
 
 			client := download.New()

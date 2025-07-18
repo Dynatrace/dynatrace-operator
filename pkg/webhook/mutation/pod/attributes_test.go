@@ -8,7 +8,6 @@ import (
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
@@ -39,15 +38,15 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Equal(t, request.DynaKube.Status.KubernetesClusterMEID, attr.DTClusterEntity)
 		assert.Equal(t, request.DynaKube.Status.KubernetesClusterName, attr.ClusterName)
 		assert.Equal(t, request.DynaKube.Status.KubeSystemUUID, attr.ClusterUID)
-		assert.Contains(t, attr.PodName, consts.K8sPodNameEnv)
-		assert.Contains(t, attr.PodUID, consts.K8sPodUIDEnv)
-		assert.Contains(t, attr.NodeName, consts.K8sNodeNameEnv)
+		assert.Contains(t, attr.PodName, K8sPodNameEnv)
+		assert.Contains(t, attr.PodUID, K8sPodUIDEnv)
+		assert.Contains(t, attr.NodeName, K8sNodeNameEnv)
 		assert.Equal(t, request.Pod.Namespace, attr.NamespaceName)
 
 		require.Len(t, request.InstallContainer.Env, 3)
-		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, consts.K8sPodNameEnv))
-		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, consts.K8sPodUIDEnv))
-		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, consts.K8sNodeNameEnv))
+		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, K8sPodNameEnv))
+		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, K8sPodUIDEnv))
+		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, K8sNodeNameEnv))
 
 		return attr
 	}

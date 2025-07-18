@@ -34,6 +34,8 @@ const (
 	// DefaultInstallPath is the default directory to install the app-only OneAgent package.
 	DefaultInstallPath = "/opt/dynatrace/oneagent-paas"
 
+	AgentCodeModuleSource = "/opt/dynatrace/oneagent"
+
 	PreloadEnv           = "LD_PRELOAD"
 	NetworkZoneEnv       = "DT_NETWORK_ZONE"
 	DynatraceMetadataEnv = "DT_DEPLOYMENT_METADATA"

@@ -6,7 +6,6 @@ import (
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -17,9 +16,9 @@ import (
 func addPodAttributes(request *dtwebhook.MutationRequest) error {
 	attrs := podattr.Attributes{
 		PodInfo: podattr.PodInfo{
-			PodName:       createEnvVarRef(consts.K8sPodNameEnv),
-			PodUID:        createEnvVarRef(consts.K8sPodUIDEnv),
-			NodeName:      createEnvVarRef(consts.K8sNodeNameEnv),
+			PodName:       createEnvVarRef(K8sPodNameEnv),
+			PodUID:        createEnvVarRef(K8sPodUIDEnv),
+			NodeName:      createEnvVarRef(K8sNodeNameEnv),
 			NamespaceName: request.Pod.Namespace,
 		},
 		ClusterInfo: podattr.ClusterInfo{
@@ -31,9 +30,9 @@ func addPodAttributes(request *dtwebhook.MutationRequest) error {
 	}
 
 	envs := []corev1.EnvVar{
-		{Name: consts.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
-		{Name: consts.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
-		{Name: consts.K8sNodeNameEnv, ValueFrom: env.NewEnvVarSourceForField("spec.nodeName")},
+		{Name: K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
+		{Name: K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
+		{Name: K8sNodeNameEnv, ValueFrom: env.NewEnvVarSourceForField("spec.nodeName")},
 	}
 
 	request.InstallContainer.Env = append(request.InstallContainer.Env, envs...)

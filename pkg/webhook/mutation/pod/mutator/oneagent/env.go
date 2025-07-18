@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	corev1 "k8s.io/api/core/v1"
@@ -54,7 +54,7 @@ func addVersionDetectionEnvs(container *corev1.Container, namespace corev1.Names
 }
 
 func addPreloadEnv(container *corev1.Container, installPath string) {
-	preloadPath := filepath.Join(installPath, consts.LibAgentProcPath)
+	preloadPath := filepath.Join(installPath, preload.LibAgentProcPath)
 
 	ldPreloadEnv := env.FindEnvVar(container.Env, PreloadEnv)
 	if ldPreloadEnv != nil {
