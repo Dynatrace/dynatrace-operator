@@ -24,7 +24,8 @@ type validatorFunc func(ctx context.Context, dv *Validator, ec *edgeconnect.Edge
 
 var validatorErrorFuncs = []validatorFunc{
 	isModuleDisabled,
-	isInvalidAPIServer,
+	checkAPIServerProtocolNotSet,
+	isAllowedSuffixAPIServer,
 	nameTooLong,
 	checkHostPatternsValue,
 	isInvalidServiceName,
