@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,18 +38,15 @@ func TestBuildDynatraceClient(t *testing.T) {
 				dtclient.APIToken:  {Value: testValue},
 				dtclient.PaasToken: {Value: testValueAlternative},
 			},
-			dk:                     *dk,
-			newDynatraceClientFunc: dtclient.NewClient,
+			dk: *dk,
 		}
-		dtc, err := dynatraceClientBuilder.Build()
+		dtc, err := dynatraceClientBuilder.Build(context.Background())
 
 		require.NoError(t, err)
 		assert.NotNil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles nil instance`, func(t *testing.T) {
-		dtc, err := builder{
-			newDynatraceClientFunc: dtclient.NewClient,
-		}.Build()
+		dtc, err := builder{}.Build(context.Background())
 		assert.Nil(t, dtc)
 		require.Error(t, err)
 	})
@@ -68,21 +66,19 @@ func TestBuildDynatraceClient(t *testing.T) {
 				dtclient.APIToken:  {Value: ""},
 				dtclient.PaasToken: {Value: ""},
 			},
-			dk:                     *dk,
-			newDynatraceClientFunc: dtclient.NewClient,
+			dk: *dk,
 		}
 
-		dtc, err := dynatraceClientBuilder.Build()
+		dtc, err := dynatraceClientBuilder.Build(context.Background())
 
 		assert.Nil(t, dtc)
 		require.Error(t, err)
 
 		dynatraceClientBuilder = builder{
-			apiReader:              fakeClient,
-			dk:                     *dk,
-			newDynatraceClientFunc: dtclient.NewClient,
+			apiReader: fakeClient,
+			dk:        *dk,
 		}
-		dtc, err = dynatraceClientBuilder.Build()
+		dtc, err = dynatraceClientBuilder.Build(context.Background())
 
 		assert.Nil(t, dtc)
 		require.Error(t, err)
@@ -104,10 +100,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 				dtclient.APIToken:  {Value: testValue},
 				dtclient.PaasToken: {Value: testValueAlternative},
 			},
-			dk:                     *dk,
-			newDynatraceClientFunc: dtclient.NewClient,
+			dk: *dk,
 		}
-		dtc, err := dynatraceClientBuilder.Build()
+		dtc, err := dynatraceClientBuilder.Build(context.Background())
 
 		require.Error(t, err)
 		assert.Nil(t, dtc)
@@ -129,10 +124,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 				dtclient.APIToken:  {Value: testValue},
 				dtclient.PaasToken: {Value: testValueAlternative},
 			},
-			dk:                     *dk,
-			newDynatraceClientFunc: dtclient.NewClient,
+			dk: *dk,
 		}
-		dtc, err := dtf.Build()
+		dtc, err := dtf.Build(context.Background())
 
 		require.Error(t, err)
 		assert.Nil(t, dtc)

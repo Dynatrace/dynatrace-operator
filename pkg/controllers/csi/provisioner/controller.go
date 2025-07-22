@@ -76,7 +76,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		kubeClient:             mgr.GetClient(),
 		fs:                     fs,
 		path:                   path,
-		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader(), dtclient.NewClient),
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewURLInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
 		jobInstallerBuilder:    job.NewInstaller,
@@ -177,10 +177,9 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk dynakube
 	}
 
 	dynatraceClient, err := provisioner.dynatraceClientBuilder.
-		SetContext(ctx).
 		SetDynakube(dk).
 		SetTokens(tokens).
-		Build()
+		Build(ctx)
 
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create Dynatrace client")
