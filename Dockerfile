@@ -21,6 +21,7 @@ ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
 
+# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.9.0
 RUN cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output dynatrace-operator-bin-sbom.cdx.json
 
