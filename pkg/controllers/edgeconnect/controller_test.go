@@ -1046,6 +1046,41 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 	})
 }
 
+func TestController_newEdgeConnectClient(t *testing.T) {
+	t.Run("New Edge Connect Client with scopes including k8s automation extra scopes", func(t *testing.T) {
+		ec := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
+		ecClient := newEdgeConnectClient()
+		require.NotNil(t, ecClient)
+		actualClient, err := ecClient(context.Background(), ec, oauthCredentialsType{clientID: "fake", clientSecret: "fake"})
+		require.NoError(t, err)
+		require.NotNil(t, actualClient)
+		assert.Equal(t, []string{"app-engine:edge-connects:read", "app-engine:edge-connects:write", "app-engine:edge-connects:delete", "oauth2:clients:manage", "settings:objects:read", "settings:objects:write"}, actualClient.GetScopes())
+	})
+
+	t.Run("New Edge Connect Client with min scopes and without k8s automation", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				APIServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnect.OAuthSpec{
+					ClientSecret: testName + "client",
+					Provisioner:  true,
+				},
+				HostPatterns: []string{},
+			},
+		}
+		ecClient := newEdgeConnectClient()
+		require.NotNil(t, ecClient)
+		actualClient, err := ecClient(context.Background(), ec, oauthCredentialsType{clientID: "fake", clientSecret: "fake"})
+		require.NoError(t, err)
+		require.NotNil(t, actualClient)
+		assert.Equal(t, []string{"app-engine:edge-connects:read", "app-engine:edge-connects:write", "app-engine:edge-connects:delete", "oauth2:clients:manage"}, actualClient.GetScopes())
+	})
+}
+
 func mockController() *Controller {
 	return &Controller{
 		client:                   fake.NewClient(),
