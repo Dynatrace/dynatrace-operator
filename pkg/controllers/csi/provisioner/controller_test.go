@@ -375,7 +375,6 @@ func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("Build", mock.Anything).Return(nil, errors.New("BOOM"))
@@ -387,7 +386,6 @@ func mockSuccessfulDtClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("Build", mock.Anything).Return(dtclientmock.NewClient(t), nil)

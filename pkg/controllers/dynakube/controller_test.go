@@ -253,10 +253,9 @@ func TestSetupTokensAndClient(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(nil, errors.New("BOOM"))
+		mockDtcBuilder.On("Build", mock.Anything).Return(nil, errors.New("BOOM"))
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -286,12 +285,18 @@ func TestSetupTokensAndClient(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
 		mockedDtc := dtclientmock.NewClient(t)
+		mockedDtc.On("GetTokenScopes", mock.Anything, "this is a token").Return(dtclient.TokenScopes{
+			dtclient.TokenScopeEntitiesRead,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil)
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockedDtc, nil)
+		mockDtcBuilder.On("Build", mock.Anything).Return(mockedDtc, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -307,8 +312,8 @@ func TestSetupTokensAndClient(t *testing.T) {
 }
 
 func assertTokenCondition(t *testing.T, dk *dynakube.DynaKube, hasError bool) {
-	condition := dk.Status.Conditions[0]
-	assert.Equal(t, dynakube.TokenConditionType, condition.Type)
+	condition := meta.FindStatusCondition(dk.Status.Conditions, dynakube.TokenConditionType)
+	assert.NotNil(t, condition)
 
 	if hasError {
 		assert.Equal(t, dynakube.ReasonTokenError, condition.Reason)
@@ -568,11 +573,18 @@ func TestTokenConditions(t *testing.T) {
 			},
 		})
 		mockClient := dtclientmock.NewClient(t)
+		mockClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
+			dtclient.TokenScopeEntitiesRead,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil)
+
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
+		mockDtcBuilder.On("Build", mock.Anything).Return(mockClient, nil)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -734,6 +746,146 @@ func createTenantSecrets(dk *dynakube.DynaKube) []client.Object {
 			Data: map[string][]byte{
 				connectioninfo.TenantTokenKey: []byte("test-token"),
 			},
+		},
+	}
+}
+
+func TestTokenConditionsOptionalScopes(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("conditions not set", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+
+		fakeClient := fake.NewClient()
+
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+
+		_, err := controller.setupTokensAndClient(ctx, dk)
+
+		require.Error(t, err)
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, "secrets \""+testName+"\" not found")
+		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead))
+		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead))
+		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite))
+	})
+	t.Run("no missing scopes", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+
+		controller := createFakeControllerAndClients(t, dtclient.TokenScopes{
+			dtclient.TokenScopeEntitiesRead,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		})
+
+		_, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	})
+	t.Run("one optional scopes missing", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+
+		controller := createFakeControllerAndClients(t, dtclient.TokenScopes{
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		})
+
+		_, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	})
+	t.Run("all optional scopes missing", func(t *testing.T) {
+		dk := createDynakubeWithK8SMonitoring()
+
+		controller := createFakeControllerAndClients(t, dtclient.TokenScopes{
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		})
+
+		_, err := controller.setupTokensAndClient(ctx, dk)
+		require.NoError(t, err)
+
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	})
+}
+
+func createFakeControllerAndClients(t *testing.T, tokenScopes dtclient.TokenScopes) *Controller {
+	fakeClient := fake.NewClient(createAPISecret())
+
+	fakeDtClient := dtclientmock.NewClient(t)
+	fakeDtClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(tokenScopes, nil)
+
+	fakeBuilder := dtbuildermock.NewBuilder(t)
+	fakeBuilder.On("Build", mock.Anything).Return(fakeDtClient, nil)
+	fakeBuilder.On("SetDynakube", mock.Anything).Return(fakeBuilder, nil)
+	fakeBuilder.On("SetTokens", mock.Anything).Return(fakeBuilder, nil)
+
+	return &Controller{
+		client:                 fakeClient,
+		apiReader:              fakeClient,
+		dynatraceClientBuilder: fakeBuilder,
+	}
+}
+
+func createDynakubeWithK8SMonitoring() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
+			},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.KubeMonCapability.DisplayName,
+				},
+			},
+		},
+	}
+}
+
+func createAPISecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			dtclient.APIToken: []byte(testAPIToken),
 		},
 	}
 }

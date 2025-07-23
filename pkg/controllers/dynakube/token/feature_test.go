@@ -46,4 +46,43 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 		assert.True(t, missing)
 		assert.Equal(t, []string{"scope1", "scope2"}, scopes)
 	})
+
+	t.Run("no optional scope missing", func(t *testing.T) {
+		feature := Feature{
+			Name:           "Access problem and event feed, metrics, and topology",
+			OptionalScopes: []string{"scope1", "scope2"},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return true
+			},
+		}
+		missing, scopes := feature.IsOptionalScopeMissing([]string{"scope1", "scope2"})
+		assert.False(t, missing)
+		assert.Empty(t, scopes)
+	})
+
+	t.Run("one optional scope missing", func(t *testing.T) {
+		feature := Feature{
+			Name:           "Access problem and event feed, metrics, and topology",
+			OptionalScopes: []string{"scope1", "scope2"},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return true
+			},
+		}
+		missing, scopes := feature.IsOptionalScopeMissing([]string{"scope1"})
+		assert.True(t, missing)
+		assert.Equal(t, []string{"scope2"}, scopes)
+	})
+
+	t.Run("all optional scopes missing", func(t *testing.T) {
+		feature := Feature{
+			Name:           "Access problem and event feed, metrics, and topology",
+			OptionalScopes: []string{"scope1", "scope2"},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return true
+			},
+		}
+		missing, scopes := feature.IsOptionalScopeMissing([]string{})
+		assert.True(t, missing)
+		assert.Equal(t, []string{"scope1", "scope2"}, scopes)
+	})
 }

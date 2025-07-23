@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -27,16 +28,28 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) error {
+func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) ([]string, error) {
 	if len(token.Features) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	scopes, err := dtClient.GetTokenScopes(ctx, token.Value)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	err = token.verifyRequiredScopes(scopes, dk)
+
+	missingOptionalScopes := token.verifyOptionalScopes(scopes, dk)
+
+	if len(missingOptionalScopes) > 0 {
+		log.Info("some optional scopes are missing", "missing scopes", missingOptionalScopes, "token", token.Type)
+	}
+
+	return missingOptionalScopes, err
+}
+
+func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakube.DynaKube) error {
 	collectedErrors := make([]error, 0)
 
 	for _, feature := range token.Features {
@@ -56,6 +69,23 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 	}
 
 	return nil
+}
+
+func (token *Token) verifyOptionalScopes(scopes dtclient.TokenScopes, dk dynakube.DynaKube) []string {
+	collectedMissingOptionalScopes := make([]string, 0)
+
+	for _, feature := range token.Features {
+		if feature.IsEnabled(dk) {
+			isMissing, missingScopes := feature.IsOptionalScopeMissing(scopes)
+			if isMissing {
+				collectedMissingOptionalScopes = append(collectedMissingOptionalScopes, missingScopes...)
+			}
+		}
+	}
+
+	slices.Sort(collectedMissingOptionalScopes)
+
+	return slices.Compact(collectedMissingOptionalScopes)
 }
 
 func (token *Token) verifyValue() error {
