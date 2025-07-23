@@ -17,11 +17,17 @@ COPY cmd ./cmd
 
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
+ARG TARGETARCH
+ARG TARGETOS
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     CGO_ENABLED=1 GOFIPS=1 \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
+
+# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
+RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.9.0
+RUN CGO_ENABLED=1 cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM registry.access.redhat.com/ubi9-micro:9.6-1752500771@sha256:233cce2df15dc7cd790f7f1ddbba5d4f59f31677c13a47703db3c2ca2fea67b6 AS base
@@ -81,6 +87,9 @@ COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.16.0@sha256:88092d10090
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
+
+# operator sbom
+COPY --from=operator-build /app/build/_output/bin/dynatrace-operator-bin-sbom.cdx.json /dynatrace-operator-bin-sbom.cdx.json
 
 # custom scripts
 COPY hack/build/bin /usr/local/bin
