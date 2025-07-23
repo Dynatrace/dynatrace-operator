@@ -119,6 +119,20 @@ const (
 	TokenScopeActiveGateTokenCreate = "activeGateTokenManagement.create"
 )
 
+const (
+	ConditionTypeAPITokenSettingsRead  = "ApiTokenSettingsRead"
+	ConditionTypeAPITokenSettingsWrite = "ApiTokenSettingsWrite"
+	ConditionTypeAPITokenEntitiesRead  = "ApiTokenEntitiesRead"
+)
+
+var (
+	OptionalScopes = map[string]string{
+		TokenScopeSettingsRead:  ConditionTypeAPITokenSettingsRead,
+		TokenScopeSettingsWrite: ConditionTypeAPITokenSettingsWrite,
+		TokenScopeEntitiesRead:  ConditionTypeAPITokenEntitiesRead,
+	}
+)
+
 type NewFunc func(url, apiToken, paasToken string, opts ...Option) (Client, error)
 
 var _ NewFunc = NewClient

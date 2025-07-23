@@ -42,8 +42,8 @@ func (_m *Builder) EXPECT() *Builder_Expecter {
 }
 
 // Build provides a mock function for the type Builder
-func (_mock *Builder) Build() (dynatrace.Client, error) {
-	ret := _mock.Called()
+func (_mock *Builder) Build(ctx context.Context) (dynatrace.Client, error) {
+	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Build")
@@ -51,18 +51,18 @@ func (_mock *Builder) Build() (dynatrace.Client, error) {
 
 	var r0 dynatrace.Client
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func() (dynatrace.Client, error)); ok {
-		return returnFunc()
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (dynatrace.Client, error)); ok {
+		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func() dynatrace.Client); ok {
-		r0 = returnFunc()
+	if returnFunc, ok := ret.Get(0).(func(context.Context) dynatrace.Client); ok {
+		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(dynatrace.Client)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func() error); ok {
-		r1 = returnFunc()
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -75,120 +75,12 @@ type Builder_Build_Call struct {
 }
 
 // Build is a helper method to define mock.On call
-func (_e *Builder_Expecter) Build() *Builder_Build_Call {
-	return &Builder_Build_Call{Call: _e.mock.On("Build")}
-}
-
-func (_c *Builder_Build_Call) Run(run func()) *Builder_Build_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Builder_Build_Call) Return(client dynatrace.Client, err error) *Builder_Build_Call {
-	_c.Call.Return(client, err)
-	return _c
-}
-
-func (_c *Builder_Build_Call) RunAndReturn(run func() (dynatrace.Client, error)) *Builder_Build_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// BuildWithTokenVerification provides a mock function for the type Builder
-func (_mock *Builder) BuildWithTokenVerification(dkStatus *dynakube.DynaKubeStatus) (dynatrace.Client, error) {
-	ret := _mock.Called(dkStatus)
-
-	if len(ret) == 0 {
-		panic("no return value specified for BuildWithTokenVerification")
-	}
-
-	var r0 dynatrace.Client
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(*dynakube.DynaKubeStatus) (dynatrace.Client, error)); ok {
-		return returnFunc(dkStatus)
-	}
-	if returnFunc, ok := ret.Get(0).(func(*dynakube.DynaKubeStatus) dynatrace.Client); ok {
-		r0 = returnFunc(dkStatus)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dynatrace.Client)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(*dynakube.DynaKubeStatus) error); ok {
-		r1 = returnFunc(dkStatus)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Builder_BuildWithTokenVerification_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildWithTokenVerification'
-type Builder_BuildWithTokenVerification_Call struct {
-	*mock.Call
-}
-
-// BuildWithTokenVerification is a helper method to define mock.On call
-//   - dkStatus *dynakube.DynaKubeStatus
-func (_e *Builder_Expecter) BuildWithTokenVerification(dkStatus interface{}) *Builder_BuildWithTokenVerification_Call {
-	return &Builder_BuildWithTokenVerification_Call{Call: _e.mock.On("BuildWithTokenVerification", dkStatus)}
-}
-
-func (_c *Builder_BuildWithTokenVerification_Call) Run(run func(dkStatus *dynakube.DynaKubeStatus)) *Builder_BuildWithTokenVerification_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *dynakube.DynaKubeStatus
-		if args[0] != nil {
-			arg0 = args[0].(*dynakube.DynaKubeStatus)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *Builder_BuildWithTokenVerification_Call) Return(client dynatrace.Client, err error) *Builder_BuildWithTokenVerification_Call {
-	_c.Call.Return(client, err)
-	return _c
-}
-
-func (_c *Builder_BuildWithTokenVerification_Call) RunAndReturn(run func(dkStatus *dynakube.DynaKubeStatus) (dynatrace.Client, error)) *Builder_BuildWithTokenVerification_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// SetContext provides a mock function for the type Builder
-func (_mock *Builder) SetContext(ctx context.Context) dynatraceclient.Builder {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SetContext")
-	}
-
-	var r0 dynatraceclient.Builder
-	if returnFunc, ok := ret.Get(0).(func(context.Context) dynatraceclient.Builder); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(dynatraceclient.Builder)
-		}
-	}
-	return r0
-}
-
-// Builder_SetContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetContext'
-type Builder_SetContext_Call struct {
-	*mock.Call
-}
-
-// SetContext is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Builder_Expecter) SetContext(ctx interface{}) *Builder_SetContext_Call {
-	return &Builder_SetContext_Call{Call: _e.mock.On("SetContext", ctx)}
+func (_e *Builder_Expecter) Build(ctx interface{}) *Builder_Build_Call {
+	return &Builder_Build_Call{Call: _e.mock.On("Build", ctx)}
 }
 
-func (_c *Builder_SetContext_Call) Run(run func(ctx context.Context)) *Builder_SetContext_Call {
+func (_c *Builder_Build_Call) Run(run func(ctx context.Context)) *Builder_Build_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -201,12 +93,12 @@ func (_c *Builder_SetContext_Call) Run(run func(ctx context.Context)) *Builder_S
 	return _c
 }
 
-func (_c *Builder_SetContext_Call) Return(builder dynatraceclient.Builder) *Builder_SetContext_Call {
-	_c.Call.Return(builder)
+func (_c *Builder_Build_Call) Return(client dynatrace.Client, err error) *Builder_Build_Call {
+	_c.Call.Return(client, err)
 	return _c
 }
 
-func (_c *Builder_SetContext_Call) RunAndReturn(run func(ctx context.Context) dynatraceclient.Builder) *Builder_SetContext_Call {
+func (_c *Builder_Build_Call) RunAndReturn(run func(ctx context.Context) (dynatrace.Client, error)) *Builder_Build_Call {
 	_c.Call.Return(run)
 	return _c
 }
