@@ -22,8 +22,7 @@ go_build_tags=$(hack/build/create_go_build_tags.sh false)
 out_image="${image}:${tag}"
 
 # directory required by docker copy command
-mkdir -p third_party_licenses
-touch dynatrace-operator-bin-sbom.cdx.json
+mkdir -p third_party_licenses 
 
 if ! command -v docker 2>/dev/null; then
   CONTAINER_CMD=podman
@@ -38,4 +37,3 @@ ${CONTAINER_CMD} build "--platform=${platform}" . -f "${dockerfile}" -t "${out_i
   --label "quay.expires-after=14d"
 
 rm -rf third_party_licenses
-rm dynatrace-operator-bin-sbom.cdx.json
