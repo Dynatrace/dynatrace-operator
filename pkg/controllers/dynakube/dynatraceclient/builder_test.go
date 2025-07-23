@@ -23,6 +23,8 @@ const (
 )
 
 func TestBuildDynatraceClient(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run(`BuildDynatraceClient works with minimal setup`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -40,13 +42,13 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dynatraceClientBuilder.Build(context.Background())
+		dtc, err := dynatraceClientBuilder.Build(ctx)
 
 		require.NoError(t, err)
 		assert.NotNil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles nil instance`, func(t *testing.T) {
-		dtc, err := builder{}.Build(context.Background())
+		dtc, err := builder{}.Build(ctx)
 		assert.Nil(t, dtc)
 		require.Error(t, err)
 	})
@@ -69,7 +71,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			dk: *dk,
 		}
 
-		dtc, err := dynatraceClientBuilder.Build(context.Background())
+		dtc, err := dynatraceClientBuilder.Build(ctx)
 
 		assert.Nil(t, dtc)
 		require.Error(t, err)
@@ -78,7 +80,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			apiReader: fakeClient,
 			dk:        *dk,
 		}
-		dtc, err = dynatraceClientBuilder.Build(context.Background())
+		dtc, err = dynatraceClientBuilder.Build(ctx)
 
 		assert.Nil(t, dtc)
 		require.Error(t, err)
@@ -102,7 +104,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dynatraceClientBuilder.Build(context.Background())
+		dtc, err := dynatraceClientBuilder.Build(ctx)
 
 		require.Error(t, err)
 		assert.Nil(t, dtc)
@@ -126,7 +128,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dtf.Build(context.Background())
+		dtc, err := dtf.Build(ctx)
 
 		require.Error(t, err)
 		assert.Nil(t, dtc)
