@@ -424,6 +424,52 @@ func (_c *Client_GetEdgeConnects_Call) RunAndReturn(run func(name string) (edgec
 	return _c
 }
 
+// GetScopes provides a mock function for the type Client
+func (_mock *Client) GetScopes() []string {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetScopes")
+	}
+
+	var r0 []string
+	if returnFunc, ok := ret.Get(0).(func() []string); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	return r0
+}
+
+// Client_GetScopes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetScopes'
+type Client_GetScopes_Call struct {
+	*mock.Call
+}
+
+// GetScopes is a helper method to define mock.On call
+func (_e *Client_Expecter) GetScopes() *Client_GetScopes_Call {
+	return &Client_GetScopes_Call{Call: _e.mock.On("GetScopes")}
+}
+
+func (_c *Client_GetScopes_Call) Run(run func()) *Client_GetScopes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Client_GetScopes_Call) Return(strings []string) *Client_GetScopes_Call {
+	_c.Call.Return(strings)
+	return _c
+}
+
+func (_c *Client_GetScopes_Call) RunAndReturn(run func() []string) *Client_GetScopes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateConnectionSetting provides a mock function for the type Client
 func (_mock *Client) UpdateConnectionSetting(es edgeconnect.EnvironmentSetting) error {
 	ret := _mock.Called(es)
