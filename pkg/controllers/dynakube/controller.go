@@ -52,7 +52,8 @@ const (
 )
 
 const (
-	ReasonOptionalScope = "OptionalScope"
+	ReasonOptionalScope        = "OptionalScope"
+	ReasonOptionalScopePresent = "ScopePresent"
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -496,7 +497,7 @@ func setConditionOptionalScopeAvailable(dkStatus *dynakube.DynaKubeStatus, condi
 	tokenCondition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  ReasonOptionalScope,
+		Reason:  ReasonOptionalScopePresent,
 		Message: scope + " is available",
 	}
 	meta.SetStatusCondition(&dkStatus.Conditions, tokenCondition)
