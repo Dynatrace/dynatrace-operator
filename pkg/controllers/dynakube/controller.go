@@ -316,7 +316,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 		return nil, err
 	}
 
-	err = controller.tokenVerification(ctx, dynatraceClient, dk)
+	err = controller.verifyTokens(ctx, dynatraceClient, dk)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
@@ -442,7 +442,7 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	return &dkMapper
 }
 
-func (controller *Controller) tokenVerification(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
 	err := controller.tokens.VerifyValues()
 	if err != nil {
 		return err
