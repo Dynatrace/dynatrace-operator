@@ -36,6 +36,8 @@
   regexManagers: [
     {
       fileMatch: [
+        "(^|/|\\.)fips.Dockerfile$",
+        "(^|/|\\.)Dockerfile$",
         "(^|/|\\.)prerequisites.mk$",
         "(^|/|\\.)third-party-licenses.sh$",
       ],

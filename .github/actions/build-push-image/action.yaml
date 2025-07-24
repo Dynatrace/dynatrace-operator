@@ -41,10 +41,6 @@ runs:
       shell: bash
       run: |
         hack/build/ci/third-party-licenses.sh
-    - name: Create empty SBOM file
-      shell: bash
-      run: |
-        touch dynatrace-operator-bin-sbom.cdx.json
     - name: Set build date
       shell: bash
       id: set-build-date
