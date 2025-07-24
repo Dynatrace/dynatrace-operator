@@ -175,7 +175,7 @@
       ],
       allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
       enabled: true,
-    }
+    },
   ],
   platformAutomerge: true,
 }
