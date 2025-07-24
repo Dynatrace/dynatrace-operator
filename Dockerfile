@@ -64,7 +64,7 @@ COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
 
 # operator sbom
-COPY --from=operator-build /app/build/_output/bin/dynatrace-operator-bin-sbom.cdx.json /dynatrace-operator-bin-sbom.cdx.json
+COPY --from=operator-build ./app/build/_output/bin/dynatrace-operator-bin-sbom.cdx.json ./dynatrace-operator-bin-sbom.cdx.json
 
 # custom scripts
 COPY hack/build/bin /usr/local/bin
