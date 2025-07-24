@@ -62,6 +62,7 @@ spec:
         - maxSkew: 1
           topologyKey: "kubernetes.io/hostname"
           whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
           labelSelector:
             matchLabels:
               {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 14 }}

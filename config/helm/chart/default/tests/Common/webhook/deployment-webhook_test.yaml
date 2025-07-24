@@ -64,6 +64,7 @@ tests:
               - maxSkew: 1
                 topologyKey: "kubernetes.io/hostname"
                 whenUnsatisfiable: DoNotSchedule
+                nodeTaintsPolicy: Honor
                 labelSelector:
                   matchLabels:
                     internal.dynatrace.com/app: webhook
