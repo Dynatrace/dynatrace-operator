@@ -134,39 +134,6 @@ func TestGetInjectionFailurePolicy(t *testing.T) {
 	}
 }
 
-func TestIgnoreUnknownState(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   bool
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   false,
-		},
-		{
-			title: "overrule",
-			in:    "true",
-			out:   true,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				InjectionIgnoreUnknownStateKey: c.in,
-			}}
-
-			out := ff.IgnoreUnknownState()
-
-			assert.Equal(t, c.out, out)
-		})
-	}
-}
-
 func TestIsInjectionAutomatic(t *testing.T) {
 	type testCase struct {
 		title string
@@ -260,39 +227,6 @@ func TestHasInitSeccomp(t *testing.T) {
 			}}
 
 			out := ff.HasInitSeccomp()
-
-			assert.Equal(t, c.out, out)
-		})
-	}
-}
-
-func TestIsEnforcementMode(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   bool
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   true,
-		},
-		{
-			title: "overrule",
-			in:    "false",
-			out:   false,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				InjectionEnforcementModeKey: c.in,
-			}}
-
-			out := ff.IsEnforcementMode()
 
 			assert.Equal(t, c.out, out)
 		})

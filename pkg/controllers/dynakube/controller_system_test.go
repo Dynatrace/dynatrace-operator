@@ -420,10 +420,9 @@ func createFakeClientAndReconciler(t *testing.T, mockClient dtclient.Client, dk 
 	fakeClient := fake.NewClientWithIndex(objects...)
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.On("BuildWithTokenVerification", mock.Anything).Return(mockClient, nil)
+	mockDtcBuilder.On("Build", mock.Anything).Return(mockClient, nil)
 
 	controller := &Controller{
 		client:                              fakeClient,

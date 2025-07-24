@@ -9,13 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
 )
 
@@ -47,7 +45,7 @@ func (provisioner *OneAgentProvisioner) installAgent(ctx context.Context, dk dyn
 		return err
 	}
 
-	return provisioner.setupAgentConfigDir(ctx, dk, targetDir)
+	return nil
 }
 
 func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dynakube.DynaKube) (installer.Installer, error) {
@@ -141,13 +139,4 @@ func (provisioner *OneAgentProvisioner) createLatestVersionSymlink(dk dynakube.D
 	}
 
 	return err
-}
-
-func (provisioner *OneAgentProvisioner) setupAgentConfigDir(ctx context.Context, dk dynakube.DynaKube, targetDir string) error {
-	latestProcessModuleConfig, err := processmoduleconfigsecret.GetSecretData(ctx, provisioner.apiReader, dk.Name, dk.Namespace)
-	if err != nil {
-		return err
-	}
-
-	return processmoduleconfig.UpdateFromDir(provisioner.fs, provisioner.path.AgentConfigDir(dk.GetName()), targetDir, latestProcessModuleConfig)
 }

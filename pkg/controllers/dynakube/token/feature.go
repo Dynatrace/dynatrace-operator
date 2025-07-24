@@ -10,6 +10,7 @@ type Feature struct {
 	IsEnabled      func(dk dynakube.DynaKube) bool
 	Name           string
 	RequiredScopes []string
+	OptionalScopes []string
 }
 
 func (feature *Feature) IsScopeMissing(scopes []string) (bool, []string) {
@@ -24,11 +25,23 @@ func (feature *Feature) IsScopeMissing(scopes []string) (bool, []string) {
 	return len(missingScopes) > 0, missingScopes
 }
 
+func (feature *Feature) IsOptionalScopeMissing(scopes []string) (bool, []string) {
+	missingScopes := make([]string, 0)
+
+	for _, optionalScope := range feature.OptionalScopes {
+		if !slices.Contains(scopes, optionalScope) {
+			missingScopes = append(missingScopes, optionalScope)
+		}
+	}
+
+	return len(missingScopes) > 0, missingScopes
+}
+
 func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 	return []Feature{
 		{
 			Name: "Kubernetes API Monitoring",
-			RequiredScopes: []string{
+			OptionalScopes: []string{
 				dtclient.TokenScopeEntitiesRead,
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite},

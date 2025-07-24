@@ -5,7 +5,6 @@ package standard
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
 	classicToCloud "github.com/Dynatrace/dynatrace-operator/test/features/classic/switchmodes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
@@ -45,7 +44,6 @@ func TestMain(m *testing.M) {
 func TestStandard(t *testing.T) {
 	feats := []features.Feature{
 		cloudnativeStandard.Feature(t, false, true),
-		applicationmonitoring.ReadOnlyCSIVolume(t),
 		codemodules.InstallFromImage(t),
 		publicregistry.Feature(t),
 		noInjection.Feature(t),

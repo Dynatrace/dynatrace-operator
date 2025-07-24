@@ -28,4 +28,7 @@ type Client interface {
 
 	// DeleteConnectionSetting deletes a connection setting object
 	DeleteConnectionSetting(objectID string) error
+
+	// GetScopes returns all scopes
+	GetScopes() []string
 }

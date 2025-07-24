@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getAllScopesForAPIToken() dtclient.TokenScopes {
@@ -73,7 +74,7 @@ func TestTokens(t *testing.T) {
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -88,7 +89,7 @@ func TestTokens(t *testing.T) {
 			dtclient.PaasToken: &paasToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Len(t, tokens.PaasToken().Features, 1)
@@ -101,7 +102,7 @@ func TestTokens(t *testing.T) {
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -119,12 +120,12 @@ func TestTokens(t *testing.T) {
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Kubernetes API Monitoring' is missing scope 'entities.read, settings.read, settings.write' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
+		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("data ingest enabled => dataingest token missing rights => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
@@ -137,7 +138,7 @@ func TestTokens(t *testing.T) {
 			dtclient.DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -152,12 +153,79 @@ func TestTokens(t *testing.T) {
 			dtclient.DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 3)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 1)
 		assert.NoError(t, err)
+	})
+}
+
+func TestOptionalTokens(t *testing.T) {
+	t.Run("optional scope is missing", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+		}
+
+		apiTokenNoMissingScopes := "api-token-value1"
+		apiTokenMissingEntitiesRead := "api-token-value2"
+		apiTokenMissingEntitiesReadSettingsRead := "api-token-value3"
+
+		fakeClient := dtclientmock.NewClient(t)
+		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(dtclient.TokenScopes{
+			dtclient.TokenScopeEntitiesRead,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil).Maybe()
+		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingEntitiesRead).Return(dtclient.TokenScopes{
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil).Maybe()
+		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingEntitiesReadSettingsRead).Return(dtclient.TokenScopes{
+			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil).Maybe()
+
+		missingScopes := map[string][]string{
+			apiTokenNoMissingScopes: {},
+			apiTokenMissingEntitiesRead: {
+				dtclient.TokenScopeEntitiesRead,
+			},
+			apiTokenMissingEntitiesReadSettingsRead: {
+				dtclient.TokenScopeEntitiesRead,
+				dtclient.TokenScopeSettingsRead,
+			},
+		}
+
+		for tokenValue, scopes := range missingScopes {
+			apiToken := newToken(dtclient.APIToken, tokenValue)
+			tokens := Tokens{
+				dtclient.APIToken: &apiToken,
+			}
+			tokens = tokens.AddFeatureScopesToTokens()
+			missingOptionalScopes, err := tokens.VerifyScopes(context.Background(), fakeClient, dk)
+
+			assert.Len(t, tokens.APIToken().Features, 3, tokenValue)
+			assert.Equal(t, scopes, missingOptionalScopes, tokenValue)
+			assert.NoError(t, err, tokenValue)
+		}
 	})
 }
 

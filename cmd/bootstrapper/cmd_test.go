@@ -41,7 +41,7 @@ func TestBootstrapArgs(t *testing.T) {
 			"--target=" + targetValue,
 			"--version=" + versionValue,
 			"--suppress-error=" + "false",
-			"--technologies=" + technologiesValue,
+			"--technology=" + technologiesValue,
 			"--flavor=" + flavorValue,
 			"--input-directory=" + inputDirectoryValue,
 			"--config-directory=" + configDirectoryValue,

@@ -36,7 +36,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 	}
 
 	extractDest := extractor.pathResolver.AgentTempUnzipRootDir()
-	if extractor.pathResolver.RootDir == consts.AgentBinDirMount {
+	if extractor.pathResolver.RootDir == consts.AgentInitBinDirMount {
 		extractDest = targetDir
 	}
 

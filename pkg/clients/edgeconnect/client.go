@@ -358,3 +358,8 @@ func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
 
 	return response, nil
 }
+
+// GetScopes returns all scopes that are used by the client
+func (c *client) GetScopes() []string {
+	return c.Scopes
+}

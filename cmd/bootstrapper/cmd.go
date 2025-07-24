@@ -3,10 +3,10 @@ package bootstrapper
 import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/move"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper/download"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -17,14 +17,14 @@ import (
 )
 
 const (
-	use = "bootstrap"
+	Use = "bootstrap"
 
 	TargetFolderFlag   = cmd.TargetFolderFlag
-	TargetVersionFlag  = "version"
 	SuppressErrorsFlag = cmd.SuppressErrorsFlag
-	TechnologiesFlag   = "technologies"
-	FlavorFlag         = "flavor"
+	TechnologiesFlag   = move.TechnologyFlag
 
+	TargetVersionFlag      = "version"
+	FlavorFlag             = "flavor"
 	MetadataEnrichmentFlag = "metadata-enrichment"
 )
 
@@ -48,7 +48,7 @@ func New() *cobra.Command {
 
 func newCmd(fs afero.Fs) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                use,
+		Use:                Use,
 		RunE:               run(afero.Afero{Fs: fs}),
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
 		SilenceUsage:       true,
@@ -95,7 +95,7 @@ func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
 				TargetVersion: targetVersion,
 				URL:           "",
 				SkipMetadata:  false,
-				PathResolver:  metadata.PathResolver{RootDir: consts.AgentBinDirMount},
+				PathResolver:  metadata.PathResolver{RootDir: targetFolder},
 			}
 
 			client := download.New()

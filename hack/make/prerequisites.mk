@@ -1,9 +1,9 @@
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-kustomize_version=v5.7.0
+kustomize_version=v5.7.1
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.18.0
 # renovate depName=github.com/golangci/golangci-lint/v2
-golang_ci_cmd_version=v2.2.2
+golang_ci_cmd_version=v2.3.0
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.13.6
 # renovate depName=golang.org/x/tools
@@ -18,8 +18,7 @@ helmunittest_version=v0.8.2
 cyclonedx_gomod_version=v1.9.0
 
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
-# ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
-ENVTEST_K8S_VERSION = 1.32 # TODO: change it when env test list add it and cotroller-runtime lib updated
+ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
