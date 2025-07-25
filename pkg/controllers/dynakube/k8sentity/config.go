@@ -1,4 +1,4 @@
-package monitoredentities
+package k8sentity
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"

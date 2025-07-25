@@ -128,9 +128,9 @@ func (oa *OneAgent) GetNamespaceSelector() *metav1.LabelSelector {
 		return &oa.CloudNativeFullStack.NamespaceSelector
 	case oa.IsApplicationMonitoringMode():
 		return &oa.ApplicationMonitoring.NamespaceSelector
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 func (oa *OneAgent) GetSecCompProfile() string {
@@ -154,9 +154,9 @@ func (oa *OneAgent) GetNodeSelector(fallbackNodeSelector map[string]string) map[
 		return oa.HostMonitoring.NodeSelector
 	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.NodeSelector
+	default:
+		return fallbackNodeSelector
 	}
-
-	return fallbackNodeSelector
 }
 
 // GetImage provides the image reference set in Status for the OneAgent.
@@ -181,9 +181,9 @@ func (oa *OneAgent) GetCustomVersion() string {
 		return oa.ApplicationMonitoring.Version
 	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.Version
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 // GetCustomImage provides the image reference for the OneAgent provided in the Spec.

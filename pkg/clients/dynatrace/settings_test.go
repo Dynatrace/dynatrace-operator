@@ -18,8 +18,8 @@ const (
 	testScope    = "test-scope"
 )
 
-func TestDynatraceClient_GetKubernetesClusterEntity(t *testing.T) {
-	mockK8sSettingsAPI := func(status int, expectedEntity KubernetesClusterEntity) http.HandlerFunc {
+func TestDynatraceClient_GetK8sClusterME(t *testing.T) {
+	mockK8sSettingsAPI := func(status int, expectedEntity K8sClusterME) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 
@@ -85,7 +85,7 @@ func TestDynatraceClient_GetKubernetesClusterEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetKubernetesClusterEntity(ctx, testUID)
+		actual, err := dtc.GetK8sClusterME(ctx, testUID)
 
 		// assert
 		require.NotNil(t, actual)
@@ -95,7 +95,7 @@ func TestDynatraceClient_GetKubernetesClusterEntity(t *testing.T) {
 
 	t.Run("no k8s entity for this uuid exist", func(t *testing.T) {
 		// arrange
-		expected := KubernetesClusterEntity{}
+		expected := K8sClusterME{}
 
 		dynatraceServer := httptest.NewServer(mockK8sSettingsAPI(http.StatusOK, expected))
 		defer dynatraceServer.Close()
@@ -106,7 +106,7 @@ func TestDynatraceClient_GetKubernetesClusterEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetKubernetesClusterEntity(ctx, testUID)
+		actual, err := dtc.GetK8sClusterME(ctx, testUID)
 
 		// assert
 		require.NoError(t, err)
@@ -124,7 +124,7 @@ func TestDynatraceClient_GetKubernetesClusterEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetKubernetesClusterEntity(ctx, "")
+		actual, err := dtc.GetK8sClusterME(ctx, "")
 
 		// assert
 		require.Error(t, err)
@@ -133,7 +133,7 @@ func TestDynatraceClient_GetKubernetesClusterEntity(t *testing.T) {
 
 	t.Run("no monitored entities found because of an api error", func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockK8sSettingsAPI(http.StatusInternalServerError, KubernetesClusterEntity{}))
+		dynatraceServer := httptest.NewServer(mockK8sSettingsAPI(http.StatusInternalServerError, K8sClusterME{}))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -142,7 +142,7 @@ func TestDynatraceClient_GetKubernetesClusterEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetKubernetesClusterEntity(ctx, testUID)
+		actual, err := dtc.GetK8sClusterME(ctx, testUID)
 
 		// assert
 		require.Error(t, err)
@@ -211,7 +211,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, KubernetesClusterEntity{}, KubernetesSettingsSchemaID)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, K8sClusterME{}, KubernetesSettingsSchemaID)
 
 		// assert
 		require.NoError(t, err)
@@ -242,8 +242,8 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 	})
 }
 
-func createKubernetesClusterEntityForTesting() KubernetesClusterEntity {
-	return KubernetesClusterEntity{
+func createKubernetesClusterEntityForTesting() K8sClusterME {
+	return K8sClusterME{
 		ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1",
 	}
 }

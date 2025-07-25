@@ -26,7 +26,8 @@ type kubernetesSettingValue struct {
 	Label string `json:"label"`
 }
 
-type KubernetesClusterEntity struct {
+// K8sClusterME is representing the relevant info for a Kubernetes Cluster Monitored Entity
+type K8sClusterME struct {
 	ID   string
 	Name string
 }
@@ -57,14 +58,14 @@ const (
 	kubernetesSettingsSchemaID = "builtin:cloud.kubernetes"
 )
 
-func (dtc *dynatraceClient) GetKubernetesClusterEntity(ctx context.Context, kubeSystemUUID string) (KubernetesClusterEntity, error) {
+func (dtc *dynatraceClient) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
 	if kubeSystemUUID == "" {
-		return KubernetesClusterEntity{}, errors.New("no kube-system namespace UUID given")
+		return K8sClusterME{}, errors.New("no kube-system namespace UUID given")
 	}
 
 	req, err := createBaseRequest(ctx, dtc.getSettingsURL(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
-		return KubernetesClusterEntity{}, err
+		return K8sClusterME{}, err
 	}
 
 	q := req.URL.Query()
@@ -80,29 +81,29 @@ func (dtc *dynatraceClient) GetKubernetesClusterEntity(ctx context.Context, kube
 	if err != nil {
 		log.Info("request for kubernetes setting exists failed")
 
-		return KubernetesClusterEntity{}, err
+		return K8sClusterME{}, err
 	}
 
 	var resDataJSON getSettingsForKubeSystemUUIDResponse
 
 	err = dtc.unmarshalToJSON(res, &resDataJSON)
 	if err != nil {
-		return KubernetesClusterEntity{}, errors.WithMessage(err, "error parsing response body")
+		return K8sClusterME{}, errors.WithMessage(err, "error parsing response body")
 	}
 
 	if len(resDataJSON.Settings) == 0 {
 		log.Info("no kubernetes settings object according to API", "resp", resDataJSON)
 
-		return KubernetesClusterEntity{}, nil
+		return K8sClusterME{}, nil
 	}
 
-	return KubernetesClusterEntity{
+	return K8sClusterME{
 		ID:   resDataJSON.Settings[0].EntityID,
 		Name: resDataJSON.Settings[0].Value.Label,
 	}, nil
 }
 
-func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity KubernetesClusterEntity, schemaID string) (GetSettingsResponse, error) {
+func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (GetSettingsResponse, error) {
 	if monitoredEntity.ID == "" {
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}

@@ -1,4 +1,4 @@
-package monitoredentities
+package k8sentity
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.Empty(t, dk.Status.KubernetesClusterMEID)
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), MEIDConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), meIDConditionType)
 		require.NotNil(t, condition)
 		assert.Equal(t, conditions.ScopeMissingReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
@@ -39,8 +39,8 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("no error if has valid kube system uuid", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetKubernetesClusterEntity",
-			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.KubernetesClusterEntity{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil)
+		clt.On("GetK8sClusterME",
+			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil)
 
 		dk := createDynaKube()
 
@@ -53,8 +53,8 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("no error if no MEs are found", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetKubernetesClusterEntity",
-			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.KubernetesClusterEntity{}, nil)
+		clt.On("GetK8sClusterME",
+			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.K8sClusterME{}, nil)
 
 		dk := createDynaKube()
 

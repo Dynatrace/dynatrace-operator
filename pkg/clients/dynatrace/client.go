@@ -68,17 +68,17 @@ type Client interface {
 	// CreateOrUpdateKubernetesAppSetting returns the object id of the created k8s app settings if successful, or an api error otherwise
 	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
 
-	// GetKubernetesClusterEntity returns the KUBERNETES_CLUSTER entity for the give kubernetes cluster,
+	// GetK8sClusterME returns the Kubernetes Cluster Monitored Entity for the give kubernetes cluster.
 	// Uses the `settings.read` scope to list the `builtin:cloud.kubernetes` settings.
 	// - Only 1 such setting exists per tenant per kubernetes cluster
-	// - The `scope` for the setting is the ID of the KUBERNETES_CLUSTER entity
-	// - The `label` of the setting is the Name of the KUBERNETES_CLUSTER entity
-	// In case 0 settings are found, so no KUBERNETES_CLUSTER entity exist, we return an empty object, without an error.
-	GetKubernetesClusterEntity(ctx context.Context, kubeSystemUUID string) (KubernetesClusterEntity, error)
+	// - The `scope` for the setting is the ID (example: KUBERNETES_CLUSTER-A1234567BCD8EFGH) of the Kubernetes Cluster Monitored Entity
+	// - The `label` of the setting is the Name (example: my-dynakube) of the Kubernetes Cluster Monitored Entity
+	// In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exist, we return an empty object, without an error.
+	GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error)
 
 	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects,
 	// or an api error otherwise
-	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity KubernetesClusterEntity, schemaID string) (GetSettingsResponse, error)
+	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (GetSettingsResponse, error)
 
 	// GetSettingsForLogModule returns the settings response with the number of settings objects,
 	// or an api error otherwise

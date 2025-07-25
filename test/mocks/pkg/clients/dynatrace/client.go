@@ -685,23 +685,23 @@ func (_c *Client_GetCommunicationHostForClient_Call) RunAndReturn(run func() (dy
 	return _c
 }
 
-// GetKubernetesClusterEntity provides a mock function for the type Client
-func (_mock *Client) GetKubernetesClusterEntity(ctx context.Context, kubeSystemUUID string) (dynatrace.KubernetesClusterEntity, error) {
+// GetK8sClusterME provides a mock function for the type Client
+func (_mock *Client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (dynatrace.K8sClusterME, error) {
 	ret := _mock.Called(ctx, kubeSystemUUID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetKubernetesClusterEntity")
+		panic("no return value specified for GetK8sClusterME")
 	}
 
-	var r0 dynatrace.KubernetesClusterEntity
+	var r0 dynatrace.K8sClusterME
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (dynatrace.KubernetesClusterEntity, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (dynatrace.K8sClusterME, error)); ok {
 		return returnFunc(ctx, kubeSystemUUID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) dynatrace.KubernetesClusterEntity); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) dynatrace.K8sClusterME); ok {
 		r0 = returnFunc(ctx, kubeSystemUUID)
 	} else {
-		r0 = ret.Get(0).(dynatrace.KubernetesClusterEntity)
+		r0 = ret.Get(0).(dynatrace.K8sClusterME)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = returnFunc(ctx, kubeSystemUUID)
@@ -711,19 +711,19 @@ func (_mock *Client) GetKubernetesClusterEntity(ctx context.Context, kubeSystemU
 	return r0, r1
 }
 
-// Client_GetKubernetesClusterEntity_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetKubernetesClusterEntity'
-type Client_GetKubernetesClusterEntity_Call struct {
+// Client_GetK8sClusterME_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetK8sClusterME'
+type Client_GetK8sClusterME_Call struct {
 	*mock.Call
 }
 
-// GetKubernetesClusterEntity is a helper method to define mock.On call
+// GetK8sClusterME is a helper method to define mock.On call
 //   - ctx context.Context
 //   - kubeSystemUUID string
-func (_e *Client_Expecter) GetKubernetesClusterEntity(ctx interface{}, kubeSystemUUID interface{}) *Client_GetKubernetesClusterEntity_Call {
-	return &Client_GetKubernetesClusterEntity_Call{Call: _e.mock.On("GetKubernetesClusterEntity", ctx, kubeSystemUUID)}
+func (_e *Client_Expecter) GetK8sClusterME(ctx interface{}, kubeSystemUUID interface{}) *Client_GetK8sClusterME_Call {
+	return &Client_GetK8sClusterME_Call{Call: _e.mock.On("GetK8sClusterME", ctx, kubeSystemUUID)}
 }
 
-func (_c *Client_GetKubernetesClusterEntity_Call) Run(run func(ctx context.Context, kubeSystemUUID string)) *Client_GetKubernetesClusterEntity_Call {
+func (_c *Client_GetK8sClusterME_Call) Run(run func(ctx context.Context, kubeSystemUUID string)) *Client_GetK8sClusterME_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -741,12 +741,12 @@ func (_c *Client_GetKubernetesClusterEntity_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *Client_GetKubernetesClusterEntity_Call) Return(kubernetesClusterEntity dynatrace.KubernetesClusterEntity, err error) *Client_GetKubernetesClusterEntity_Call {
+func (_c *Client_GetK8sClusterME_Call) Return(kubernetesClusterEntity dynatrace.K8sClusterME, err error) *Client_GetK8sClusterME_Call {
 	_c.Call.Return(kubernetesClusterEntity, err)
 	return _c
 }
 
-func (_c *Client_GetKubernetesClusterEntity_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string) (dynatrace.KubernetesClusterEntity, error)) *Client_GetKubernetesClusterEntity_Call {
+func (_c *Client_GetK8sClusterME_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string) (dynatrace.K8sClusterME, error)) *Client_GetK8sClusterME_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1435,7 +1435,7 @@ func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(ctx context
 }
 
 // GetSettingsForMonitoredEntity provides a mock function for the type Client
-func (_mock *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity dynatrace.KubernetesClusterEntity, schemaID string) (dynatrace.GetSettingsResponse, error) {
+func (_mock *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity dynatrace.K8sClusterME, schemaID string) (dynatrace.GetSettingsResponse, error) {
 	ret := _mock.Called(ctx, monitoredEntity, schemaID)
 
 	if len(ret) == 0 {
@@ -1444,15 +1444,15 @@ func (_mock *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitore
 
 	var r0 dynatrace.GetSettingsResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, dynatrace.KubernetesClusterEntity, string) (dynatrace.GetSettingsResponse, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dynatrace.K8sClusterME, string) (dynatrace.GetSettingsResponse, error)); ok {
 		return returnFunc(ctx, monitoredEntity, schemaID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, dynatrace.KubernetesClusterEntity, string) dynatrace.GetSettingsResponse); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dynatrace.K8sClusterME, string) dynatrace.GetSettingsResponse); ok {
 		r0 = returnFunc(ctx, monitoredEntity, schemaID)
 	} else {
 		r0 = ret.Get(0).(dynatrace.GetSettingsResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, dynatrace.KubernetesClusterEntity, string) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, dynatrace.K8sClusterME, string) error); ok {
 		r1 = returnFunc(ctx, monitoredEntity, schemaID)
 	} else {
 		r1 = ret.Error(1)
@@ -1473,15 +1473,15 @@ func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx interface{}, monito
 	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, monitoredEntity, schemaID)}
 }
 
-func (_c *Client_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context.Context, monitoredEntity dynatrace.KubernetesClusterEntity, schemaID string)) *Client_GetSettingsForMonitoredEntity_Call {
+func (_c *Client_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context.Context, monitoredEntity dynatrace.K8sClusterME, schemaID string)) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 dynatrace.KubernetesClusterEntity
+		var arg1 dynatrace.K8sClusterME
 		if args[1] != nil {
-			arg1 = args[1].(dynatrace.KubernetesClusterEntity)
+			arg1 = args[1].(dynatrace.K8sClusterME)
 		}
 		var arg2 string
 		if args[2] != nil {
@@ -1501,7 +1501,7 @@ func (_c *Client_GetSettingsForMonitoredEntity_Call) Return(getSettingsResponse 
 	return _c
 }
 
-func (_c *Client_GetSettingsForMonitoredEntity_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity dynatrace.KubernetesClusterEntity, schemaID string) (dynatrace.GetSettingsResponse, error)) *Client_GetSettingsForMonitoredEntity_Call {
+func (_c *Client_GetSettingsForMonitoredEntity_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity dynatrace.K8sClusterME, schemaID string) (dynatrace.GetSettingsResponse, error)) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Return(run)
 	return _c
 }

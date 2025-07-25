@@ -125,7 +125,7 @@ func TestReconciler(t *testing.T) {
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
 		fakeReconciler := createReconcilerMock(t)
-		rec.(*Reconciler).monitoredEntitiesReconciler = fakeReconciler
+		rec.(*Reconciler).k8sEntityReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestReconciler(t *testing.T) {
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
 		fakeReconciler := createUncalledReconcilerMock(t)
-		rec.(*Reconciler).monitoredEntitiesReconciler = fakeReconciler
+		rec.(*Reconciler).k8sEntityReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
@@ -245,7 +245,7 @@ func TestReconciler(t *testing.T) {
 		rec := NewReconciler(boomClient, boomClient, nil, istioClient, dk).(*Reconciler)
 		rec.connectionInfoReconciler = fakeReconciler
 		rec.versionReconciler = fakeVersionReconciler
-		rec.monitoredEntitiesReconciler = fakeReconciler
+		rec.k8sEntityReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.Error(t, err)
@@ -264,7 +264,7 @@ func TestRemoveAppInjection(t *testing.T) {
 	rec.versionReconciler = createVersionReconcilerMock(t)
 	rec.connectionInfoReconciler = createUncalledReconcilerMock(t)
 	rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
-	rec.monitoredEntitiesReconciler = createUncalledReconcilerMock(t)
+	rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
 
@@ -296,7 +296,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createUncalledReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -309,7 +309,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createUncalledReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -322,7 +322,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createUncalledReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -335,7 +335,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createUncalledReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
@@ -349,7 +349,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
 		rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createUncalledReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		err := rec.setupEnrichmentInjection(context.Background())
@@ -362,7 +362,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
 		rec.enrichmentRulesReconciler = createReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createReconcilerMock(t)
+		rec.k8sEntityReconciler = createReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
 
 		err := rec.setupEnrichmentInjection(context.Background())
