@@ -77,24 +77,17 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set correct error
+      - name: Cluster created successfully
         id: cluster_creation_status
         if: failure()
         run: |
           echo "cluster_status=${{ steps.run_e2e_test.outputs.cluster_status }}"
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             echo "cluster_creation_failed=true" >> $GITHUB_OUTPUT
-          else
-            echo "test_failed=true" >> $GITHUB_OUTPUT
-          fi
-      - name: Cluster created successfully
-        if: failure()
-        run: |
-          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
-          else
-            exit 0
           fi
+          
+          echo "test_failed=true" >> $GITHUB_OUTPUT
 
   notify-failure:
     name: Notify failure in Slack

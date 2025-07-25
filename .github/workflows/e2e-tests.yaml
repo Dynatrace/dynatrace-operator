@@ -48,8 +48,6 @@ jobs:
         run: |
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
-          else
-            exit 0
           fi
   run-in-ocp:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
@@ -84,8 +82,6 @@ jobs:
         run: |
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
-          else
-            exit 0
           fi
   run-in-ocp-fips:
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
@@ -120,8 +116,6 @@ jobs:
         run: |
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
-          else
-            exit 0
           fi
 
   notify-slack:
