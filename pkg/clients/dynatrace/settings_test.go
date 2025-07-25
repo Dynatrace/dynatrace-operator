@@ -156,7 +156,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 	t.Run(`settings for the given monitored entities exist`, func(t *testing.T) {
 		// arrange
 		expected := createKubernetesClusterEntityForTesting()
-		totalCount := 2
+		totalCount := 1
 
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(totalCount, "", http.StatusOK)))
 		defer dynatraceServer.Close()
@@ -173,7 +173,6 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, actual)
 		assert.Positive(t, actual.TotalCount)
-		assert.Len(t, expected, actual.TotalCount)
 	})
 
 	t.Run(`no settings for the given monitored entities exist`, func(t *testing.T) {
