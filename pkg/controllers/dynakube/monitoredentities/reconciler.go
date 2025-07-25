@@ -41,7 +41,9 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	conditions.SetStatusOutdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
 
 	if !conditions.IsOptionalScopeAvailable(r.dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
-		log.Info(dynatrace.TokenScopeSettingsRead + " optional scope not available")
+		msg := dynatrace.TokenScopeSettingsRead + " optional scope not available"
+		log.Info(msg)
+		conditions.SetScopeMissing(r.dk.Conditions(), MEIDConditionType, msg)
 
 		return nil
 	}

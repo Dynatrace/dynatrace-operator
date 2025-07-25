@@ -6,9 +6,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -27,6 +30,12 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Empty(t, dk.Status.KubernetesClusterMEID)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), MEIDConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, conditions.ScopeMissingReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Contains(t, condition.Message, dtclient.TokenScopeSettingsRead)
 	})
 	t.Run("no error if has valid kube system uuid", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)

@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	DataIngestTokenMissing string = "DataIngestTokenMissing"
+	DataIngestTokenMissing = "DataIngestTokenMissing"
+	ScopeMissingReason     = "ScopeMissing"
 )
 
 func SetDataIngestTokenMissing(conditions *[]metav1.Condition, conditionType string, msg string) {
@@ -14,6 +15,16 @@ func SetDataIngestTokenMissing(conditions *[]metav1.Condition, conditionType str
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  DataIngestTokenMissing,
+		Message: msg,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func SetScopeMissing(conditions *[]metav1.Condition, conditionType, msg string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  ScopeMissingReason,
 		Message: msg,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
