@@ -21,10 +21,13 @@ jobs:
     runs-on:
       - self-hosted
       - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Run e2e test
+        id: run_e2e_test
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto-daily
@@ -40,16 +43,27 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cluster created successfully
+        if: failure()
+        run: |
+          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+            exit 1
+          else
+            exit 0
+          fi
   run-in-ocp:
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
       - self-hosted
       - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Run e2e test
+        id: run_e2e_test
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto-daily
@@ -65,16 +79,27 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cluster created successfully
+        if: failure()
+        run: |
+          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+            exit 1
+          else
+            exit 0
+          fi
   run-in-ocp-fips:
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
     environment: E2E
     runs-on:
       - self-hosted
       - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Run e2e test
+        id: run_e2e_test
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: dto-ocp-ondemand
@@ -90,6 +115,14 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cluster created successfully
+        if: failure()
+        run: |
+          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+            exit 1
+          else
+            exit 0
+          fi
 
   notify-slack:
     name: Notify test results in Slack
@@ -98,12 +131,41 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
-      - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: webhook-trigger
-          payload-templated: true
-          payload: |
-            "message": "tests ${{needs.run-in-k8s.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on kubernetes :kubernetes:\ntests ${{needs.run-in-ocp.result == 'success' && 'passed :green_heavy_check_mark:' || 'failed :red_circle:'}} on openshift :openshift:\n using ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-            "run_id": "${{ github.run_id }}"
+      - name: Set Slack message
+        id: set_slack_message
+        run: |
+          get_status() {
+            if [ "$1" = "skipped" ]; then
+              echo "failed cluster creation and skipped tests :large_yellow_circle:"
+            elif [ "$2" = "success" ]; then
+              echo "passed :green_heavy_check_mark:"
+            else
+              echo "failed :red_circle:"
+            fi
+          }
+
+          K8S_STATUS=$(get_status "${{ needs.run-in-k8s.outputs.cluster_status }}" "${{ needs.run-in-k8s.result }}")
+          OCP_STATUS=$(get_status "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
+          OCP_FIPS_STATUS=$(get_status "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
+
+          MESSAGE="tests ${K8S_STATUS} on kubernetes :kubernetes:
+          tests ${OCP_STATUS} on openshift :openshift:
+          tests ${OCP_FIPS_STATUS} on FIPS openshift :lock:
+          using ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          
+          echo "SLACK_MESSAGE<<EOF" >> $GITHUB_ENV
+          echo "$MESSAGE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      # - name: Notify failure in Slack # TODO gakr: remove comment
+      #   uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+      #   with:
+      #     webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     webhook-type: webhook-trigger
+      #     payload-templated: true
+      #     payload: |
+      #       "message": "${{ env.SLACK_MESSAGE }}"
+      #       "run_id": "${{ github.run_id }}"
+      - name: Simulate slack notification
+        run: |
+          echo "SLACK_MESSAGE: ${{ env.SLACK_MESSAGE }}"
+          echo "This is a simulated Slack notification step for testing purposes."
