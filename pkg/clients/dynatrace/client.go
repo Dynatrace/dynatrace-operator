@@ -68,6 +68,12 @@ type Client interface {
 	// CreateOrUpdateKubernetesAppSetting returns the object id of the created k8s app settings if successful, or an api error otherwise
 	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
 
+	// GetKubernetesClusterEntity returns the KUBERNETES_CLUSTER entity for the give kubernetes cluster,
+	// Uses the `settings.read` scope to list the `builtin:cloud.kubernetes` settings.
+	// - Only 1 such setting exists per tenant per kubernetes cluster
+	// - The `scope` for the setting is the ID of the KUBERNETES_CLUSTER entity
+	// - The `label` of the setting is the Name of the KUBERNETES_CLUSTER entity
+	// In case 0 settings are found, so no KUBERNETES_CLUSTER entity exist, we return an empty object, without an error.
 	GetKubernetesClusterEntity(ctx context.Context, kubeSystemUUID string) (KubernetesClusterEntity, error)
 
 	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects,
