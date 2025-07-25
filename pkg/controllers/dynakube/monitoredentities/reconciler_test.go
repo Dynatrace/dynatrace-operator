@@ -15,24 +15,22 @@ import (
 
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
-
-	t.Run("no error if not enabled", func(t *testing.T) {
+	t.Run("no error + no run if no scope in status", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
-
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Status.Conditions = []metav1.Condition{}
 
 		reconciler := NewReconciler(clt, &dk)
 
 		err := reconciler.Reconcile(ctx)
 
 		require.NoError(t, err)
+		require.Empty(t, dk.Status.KubernetesClusterMEID)
 	})
-	t.Run("no error if enabled and has valid kube system uuid", func(t *testing.T) {
+	t.Run("no error if has valid kube system uuid", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetMonitoredEntitiesForKubeSystemUUID",
-			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
+		clt.On("GetKubernetesClusterEntity",
+			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.KubernetesClusterEntity{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil)
 
 		dk := createDynaKube()
 
@@ -45,8 +43,8 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("no error if no MEs are found", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetMonitoredEntitiesForKubeSystemUUID",
-			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{}, nil)
+		clt.On("GetKubernetesClusterEntity",
+			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.KubernetesClusterEntity{}, nil)
 
 		dk := createDynaKube()
 
@@ -71,6 +69,12 @@ func createDynaKube() dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			KubeSystemUUID: "kube-system-uuid",
+			Conditions: []metav1.Condition{
+				{
+					Type:   dtclient.ConditionTypeAPITokenSettingsRead,
+					Status: metav1.ConditionTrue,
+				},
+			},
 		},
 	}
 }

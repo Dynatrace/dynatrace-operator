@@ -18,7 +18,6 @@ import (
 
 func getAllScopesForAPIToken() dtclient.TokenScopes {
 	return []string{
-		dtclient.TokenScopeEntitiesRead,
 		dtclient.TokenScopeSettingsRead,
 		dtclient.TokenScopeSettingsWrite,
 		dtclient.TokenScopeActiveGateTokenCreate,
@@ -185,7 +184,6 @@ func TestOptionalTokens(t *testing.T) {
 
 		fakeClient := dtclientmock.NewClient(t)
 		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeEntitiesRead,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
@@ -206,10 +204,8 @@ func TestOptionalTokens(t *testing.T) {
 		missingScopes := map[string][]string{
 			apiTokenNoMissingScopes: {},
 			apiTokenMissingEntitiesRead: {
-				dtclient.TokenScopeEntitiesRead,
 			},
 			apiTokenMissingEntitiesReadSettingsRead: {
-				dtclient.TokenScopeEntitiesRead,
 				dtclient.TokenScopeSettingsRead,
 			},
 		}

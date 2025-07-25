@@ -11,16 +11,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-type monitoredEntitiesResponse struct {
-	Entities   []MonitoredEntity `json:"entities"`
-	TotalCount int               `json:"totalCount"`
-	PageSize   int               `json:"pageSize"`
+type getSettingsForKubeSystemUUIDResponse struct {
+	Settings   []kubernetesSetting `json:"items"`
+	TotalCount int                 `json:"totalCount"`
+	PageSize   int                 `json:"pageSize"`
 }
 
-type MonitoredEntity struct {
-	EntityID    string `json:"entityId"`
-	DisplayName string `json:"displayName"`
-	LastSeenTms int64  `json:"lastSeenTms"`
+type kubernetesSetting struct {
+	EntityID string                 `json:"scope"`
+	Value    kubernetesSettingValue `json:"value"`
+}
+
+type kubernetesSettingValue struct {
+	Label string `json:"label"`
+}
+
+type KubernetesClusterEntity struct {
+	ID   string
+	Name string
 }
 
 type GetSettingsResponse struct {
@@ -40,57 +48,62 @@ const (
 	pageSizeQueryParam = "pageSize"
 	entitiesPageSize   = "500"
 
-	entitySelectorQueryParam       = "entitySelector"
-	kubernetesEntitySelectorFormat = "type(KUBERNETES_CLUSTER),kubernetesClusterId(%s)"
+	scopesQueryParam               = "scopes"
+	filterQueryParam               = "filter"
+	fieldsQueryParam               = "fields"
+	kubernetesSettingsNeededFields = "value,scope"
 
-	fromQueryParam = "from"
-	entitiesFrom   = "-365d"
-
-	fieldsQueryParam     = "fields"
-	entitiesNeededFields = "+lastSeenTms"
-
-	schemaIDsQueryParam = "schemaIds"
-	scopesQueryParam    = "scopes"
+	schemaIDsQueryParam        = "schemaIds"
+	kubernetesSettingsSchemaID = "builtin:cloud.kubernetes"
 )
 
-func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(ctx context.Context, kubeSystemUUID string) ([]MonitoredEntity, error) {
+func (dtc *dynatraceClient) GetKubernetesClusterEntity(ctx context.Context, kubeSystemUUID string) (KubernetesClusterEntity, error) {
 	if kubeSystemUUID == "" {
-		return nil, errors.New("no kube-system namespace UUID given")
+		return KubernetesClusterEntity{}, errors.New("no kube-system namespace UUID given")
 	}
 
-	req, err := createBaseRequest(ctx, dtc.getEntitiesURL(), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(ctx, dtc.getSettingsURL(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
-		return nil, err
+		return KubernetesClusterEntity{}, err
 	}
 
 	q := req.URL.Query()
 	q.Add(pageSizeQueryParam, entitiesPageSize)
-	q.Add(entitySelectorQueryParam, fmt.Sprintf(kubernetesEntitySelectorFormat, kubeSystemUUID))
-	q.Add(fromQueryParam, entitiesFrom)
-	q.Add(fieldsQueryParam, entitiesNeededFields)
+	q.Add(schemaIDsQueryParam, kubernetesSettingsSchemaID)
+	q.Add(fieldsQueryParam, kubernetesSettingsNeededFields)
+	q.Add(filterQueryParam, fmt.Sprintf("value.clusterId='%s'", kubeSystemUUID))
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
 	defer utils.CloseBodyAfterRequest(res)
 
 	if err != nil {
-		log.Info("check if ME exists failed")
+		log.Info("request for kubernetes setting exists failed")
 
-		return nil, err
+		return KubernetesClusterEntity{}, err
 	}
 
-	var resDataJSON monitoredEntitiesResponse
+	var resDataJSON getSettingsForKubeSystemUUIDResponse
 
 	err = dtc.unmarshalToJSON(res, &resDataJSON)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error parsing response body")
+		return KubernetesClusterEntity{}, errors.WithMessage(err, "error parsing response body")
 	}
 
-	return resDataJSON.Entities, nil
+	if len(resDataJSON.Settings) == 0 {
+		log.Info("no kubernetes settings object according to API", "resp", resDataJSON)
+
+		return KubernetesClusterEntity{}, nil
+	}
+
+	return KubernetesClusterEntity{
+		ID:   resDataJSON.Settings[0].EntityID,
+		Name: resDataJSON.Settings[0].Value.Label,
+	}, nil
 }
 
-func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *MonitoredEntity, schemaID string) (GetSettingsResponse, error) {
-	if monitoredEntity == nil {
+func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity KubernetesClusterEntity, schemaID string) (GetSettingsResponse, error) {
+	if monitoredEntity.ID == "" {
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}
 
@@ -101,7 +114,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, m
 
 	q := req.URL.Query()
 	q.Add(schemaIDsQueryParam, schemaID)
-	q.Add(scopesQueryParam, monitoredEntity.EntityID)
+	q.Add(scopesQueryParam, monitoredEntity.ID)
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)

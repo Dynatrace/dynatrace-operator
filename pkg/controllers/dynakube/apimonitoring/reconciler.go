@@ -54,22 +54,22 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 		return "", err
 	}
 
-	var monitoredEntity *dtclient.MonitoredEntity
+	var k8sEntity dtclient.KubernetesClusterEntity
 
 	if r.dk.Status.KubernetesClusterMEID != "" {
-		monitoredEntity = &dtclient.MonitoredEntity{
-			EntityID: r.dk.Status.KubernetesClusterMEID,
+		k8sEntity = dtclient.KubernetesClusterEntity{
+			ID: r.dk.Status.KubernetesClusterMEID,
 		}
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.KubernetesSettingsSchemaID)
+	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.KubernetesSettingsSchemaID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
 
 	if settings.TotalCount > 0 {
-		_, err = r.handleKubernetesAppEnabled(ctx, monitoredEntity)
+		_, err = r.handleKubernetesAppEnabled(ctx, k8sEntity)
 		if err != nil {
 			return "", err
 		}
@@ -94,15 +94,15 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 	return objectID, nil
 }
 
-func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEntity *dtclient.MonitoredEntity) (string, error) {
+func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity dtclient.KubernetesClusterEntity) (string, error) {
 	if r.dk.FF().IsK8sAppEnabled() {
-		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.AppTransitionSchemaID)
+		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.AppTransitionSchemaID)
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")
 		}
 
 		if appSettings.TotalCount == 0 {
-			meID := monitoredEntity.EntityID
+			meID := k8sEntity.ID
 			if meID != "" {
 				transitionSchemaObjectID, err := r.dtc.CreateOrUpdateKubernetesAppSetting(ctx, meID)
 				if err != nil {

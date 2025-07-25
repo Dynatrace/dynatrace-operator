@@ -40,41 +40,30 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	conditions.SetStatusOutdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
 
-	// TODO: update this check making the reconciler ready for optional scopes
-	if !conditions.IsOptionalScopeAvailable(r.dk, dynatrace.ConditionTypeAPITokenEntitiesRead) {
-		log.Info(dynatrace.TokenScopeEntitiesRead + " optional scope not available")
+	if !conditions.IsOptionalScopeAvailable(r.dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
+		log.Info(dynatrace.TokenScopeSettingsRead + " optional scope not available")
+
+		return nil
 	}
 
-	monitoredEntities, err := r.dtClient.GetMonitoredEntitiesForKubeSystemUUID(ctx, r.dk.Status.KubeSystemUUID)
+	k8sEntity, err := r.dtClient.GetKubernetesClusterEntity(ctx, r.dk.Status.KubeSystemUUID)
 	if err != nil {
 		log.Info("failed to retrieve MEs")
 
 		return err
 	}
 
-	if len(monitoredEntities) == 0 {
+	if k8sEntity.ID == "" {
 		log.Info("no MEs found, no kubernetesClusterMEID will be set in the dynakube status")
 
 		return nil
 	}
 
-	newestEntity := findLatestEntity(monitoredEntities)
-	r.dk.Status.KubernetesClusterMEID = newestEntity.EntityID
-	r.dk.Status.KubernetesClusterName = newestEntity.DisplayName
+	r.dk.Status.KubernetesClusterMEID = k8sEntity.ID
+	r.dk.Status.KubernetesClusterName = k8sEntity.Name
 	conditions.SetStatusUpdated(r.dk.Conditions(), MEIDConditionType, "Kubernetes Cluster MEID is up to date")
 
 	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
 
 	return nil
-}
-
-func findLatestEntity(monitoredEntities []dynatrace.MonitoredEntity) dynatrace.MonitoredEntity {
-	latest := monitoredEntities[0]
-	for _, entity := range monitoredEntities {
-		if entity.LastSeenTms > latest.LastSeenTms {
-			latest = entity
-		}
-	}
-
-	return latest
 }

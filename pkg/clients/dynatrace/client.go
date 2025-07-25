@@ -68,13 +68,11 @@ type Client interface {
 	// CreateOrUpdateKubernetesAppSetting returns the object id of the created k8s app settings if successful, or an api error otherwise
 	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
 
-	// GetMonitoredEntitiesForKubeSystemUUID returns a (possibly empty) list of k8s monitored entities for the given uuid,
-	// or an api error otherwise
-	GetMonitoredEntitiesForKubeSystemUUID(ctx context.Context, kubeSystemUUID string) ([]MonitoredEntity, error)
+	GetKubernetesClusterEntity(ctx context.Context, kubeSystemUUID string) (KubernetesClusterEntity, error)
 
 	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects,
 	// or an api error otherwise
-	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity *MonitoredEntity, schemaID string) (GetSettingsResponse, error)
+	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity KubernetesClusterEntity, schemaID string) (GetSettingsResponse, error)
 
 	// GetSettingsForLogModule returns the settings response with the number of settings objects,
 	// or an api error otherwise
@@ -113,7 +111,6 @@ const (
 const (
 	TokenScopeInstallerDownload     = "InstallerDownload"
 	TokenScopeMetricsIngest         = "metrics.ingest"
-	TokenScopeEntitiesRead          = "entities.read"
 	TokenScopeSettingsRead          = "settings.read"
 	TokenScopeSettingsWrite         = "settings.write"
 	TokenScopeActiveGateTokenCreate = "activeGateTokenManagement.create"
@@ -122,14 +119,12 @@ const (
 const (
 	ConditionTypeAPITokenSettingsRead  = "ApiTokenSettingsRead"
 	ConditionTypeAPITokenSettingsWrite = "ApiTokenSettingsWrite"
-	ConditionTypeAPITokenEntitiesRead  = "ApiTokenEntitiesRead"
 )
 
 var (
 	OptionalScopes = map[string]string{
 		TokenScopeSettingsRead:  ConditionTypeAPITokenSettingsRead,
 		TokenScopeSettingsWrite: ConditionTypeAPITokenSettingsWrite,
-		TokenScopeEntitiesRead:  ConditionTypeAPITokenEntitiesRead,
 	}
 )
 

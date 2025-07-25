@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -219,13 +218,7 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 }
 
 type v2APIMockParams struct {
-	entitiesAPI entitiesMockParams
 	settingsAPI settingsMockParams
-}
-
-type entitiesMockParams struct {
-	status   int
-	expected []MonitoredEntity
 }
 
 type settingsMockParams struct {
@@ -240,15 +233,6 @@ func createKubernetesSettingsMockParams(totalCount int, objectID string, status 
 			totalCount: totalCount,
 			objectID:   objectID,
 			status:     status,
-		},
-	}
-}
-
-func createEntitiesMockParams(expected []MonitoredEntity, status int) v2APIMockParams {
-	return v2APIMockParams{
-		entitiesAPI: entitiesMockParams{
-			status:   status,
-			expected: expected,
 		},
 	}
 }
@@ -281,44 +265,10 @@ func mockDynatraceServerV2Handler(params v2APIMockParams) http.HandlerFunc {
 				}
 
 				mockHandleEffectiveSettingsRequest(r, w, params.settingsAPI.totalCount)
-			case "/v2/entities":
-				if params.entitiesAPI.status != http.StatusOK {
-					writeError(w, params.entitiesAPI.status)
-
-					return
-				}
-
-				mockHandleEntitiesRequest(r, w, params.entitiesAPI.expected)
 			default:
 				writeError(w, http.StatusBadRequest)
 			}
 		}
-	}
-}
-
-func mockHandleEntitiesRequest(request *http.Request, writer http.ResponseWriter, entities []MonitoredEntity) {
-	if request.Method == http.MethodGet {
-		if !strings.Contains(request.Form.Get("entitySelector"), "type(KUBERNETES_CLUSTER)") {
-			writer.WriteHeader(http.StatusBadRequest)
-
-			return
-		}
-
-		meResponse := monitoredEntitiesResponse{
-			TotalCount: len(entities),
-			PageSize:   500,
-			Entities:   entities,
-		}
-
-		entitiesResponse, err := json.Marshal(meResponse)
-		if err != nil {
-			return
-		}
-
-		writer.WriteHeader(http.StatusOK)
-		writer.Write(entitiesResponse)
-	} else {
-		writeError(writer, http.StatusMethodNotAllowed)
 	}
 }
 

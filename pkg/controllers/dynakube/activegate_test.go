@@ -175,11 +175,18 @@ func TestReconcileActiveGate(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				KubeSystemUUID: testUID,
+				Conditions: []metav1.Condition{
+					{
+						Type:   dtclient.ConditionTypeAPITokenSettingsRead,
+						Status: metav1.ConditionTrue,
+					},
+				},
 			},
 		}
+
 		fakeClient := fake.NewClientWithIndex(dk)
 
-		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{})
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{dtclient.ConditionTypeAPITokenSettingsRead})
 		mockClient.On("CreateOrUpdateKubernetesSetting",
 			mock.AnythingOfType("context.backgroundCtx"),
 			mock.AnythingOfType("string"),
