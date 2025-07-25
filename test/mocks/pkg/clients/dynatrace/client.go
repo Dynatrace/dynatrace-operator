@@ -685,6 +685,72 @@ func (_c *Client_GetCommunicationHostForClient_Call) RunAndReturn(run func() (dy
 	return _c
 }
 
+// GetKubernetesClusterEntity provides a mock function for the type Client
+func (_mock *Client) GetKubernetesClusterEntity(ctx context.Context, kubeSystemUUID string) (dynatrace.KubernetesClusterEntity, error) {
+	ret := _mock.Called(ctx, kubeSystemUUID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetKubernetesClusterEntity")
+	}
+
+	var r0 dynatrace.KubernetesClusterEntity
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (dynatrace.KubernetesClusterEntity, error)); ok {
+		return returnFunc(ctx, kubeSystemUUID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) dynatrace.KubernetesClusterEntity); ok {
+		r0 = returnFunc(ctx, kubeSystemUUID)
+	} else {
+		r0 = ret.Get(0).(dynatrace.KubernetesClusterEntity)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, kubeSystemUUID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Client_GetKubernetesClusterEntity_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetKubernetesClusterEntity'
+type Client_GetKubernetesClusterEntity_Call struct {
+	*mock.Call
+}
+
+// GetKubernetesClusterEntity is a helper method to define mock.On call
+//   - ctx context.Context
+//   - kubeSystemUUID string
+func (_e *Client_Expecter) GetKubernetesClusterEntity(ctx interface{}, kubeSystemUUID interface{}) *Client_GetKubernetesClusterEntity_Call {
+	return &Client_GetKubernetesClusterEntity_Call{Call: _e.mock.On("GetKubernetesClusterEntity", ctx, kubeSystemUUID)}
+}
+
+func (_c *Client_GetKubernetesClusterEntity_Call) Run(run func(ctx context.Context, kubeSystemUUID string)) *Client_GetKubernetesClusterEntity_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Client_GetKubernetesClusterEntity_Call) Return(kubernetesClusterEntity dynatrace.KubernetesClusterEntity, err error) *Client_GetKubernetesClusterEntity_Call {
+	_c.Call.Return(kubernetesClusterEntity, err)
+	return _c
+}
+
+func (_c *Client_GetKubernetesClusterEntity_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string) (dynatrace.KubernetesClusterEntity, error)) *Client_GetKubernetesClusterEntity_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLatestActiveGateImage provides a mock function for the type Client
 func (_mock *Client) GetLatestActiveGateImage(ctx context.Context) (*dynatrace.LatestImageInfo, error) {
 	ret := _mock.Called(ctx)
@@ -1298,72 +1364,6 @@ func (_c *Client_GetRulesSettings_Call) Return(getRulesSettingsResponse dynatrac
 }
 
 func (_c *Client_GetRulesSettings_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string, entityID string) (dynatrace.GetRulesSettingsResponse, error)) *Client_GetRulesSettings_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetKubernetesClusterEntity provides a mock function for the type Client
-func (_mock *Client) GetKubernetesClusterEntity(ctx context.Context, kubeSystemUUID string) (dynatrace.KubernetesClusterEntity, error) {
-	ret := _mock.Called(ctx, kubeSystemUUID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetKubernetesClusterEntity")
-	}
-
-	var r0 dynatrace.KubernetesClusterEntity
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (dynatrace.KubernetesClusterEntity, error)); ok {
-		return returnFunc(ctx, kubeSystemUUID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) dynatrace.KubernetesClusterEntity); ok {
-		r0 = returnFunc(ctx, kubeSystemUUID)
-	} else {
-		r0 = ret.Get(0).(dynatrace.KubernetesClusterEntity)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, kubeSystemUUID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_GetKubernetesClusterEntity_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetKubernetesClusterEntity'
-type Client_GetKubernetesClusterEntity_Call struct {
-	*mock.Call
-}
-
-// GetKubernetesClusterEntity is a helper method to define mock.On call
-//   - ctx context.Context
-//   - kubeSystemUUID string
-func (_e *Client_Expecter) GetKubernetesClusterEntity(ctx interface{}, kubeSystemUUID interface{}) *Client_GetKubernetesClusterEntity_Call {
-	return &Client_GetKubernetesClusterEntity_Call{Call: _e.mock.On("GetKubernetesClusterEntity", ctx, kubeSystemUUID)}
-}
-
-func (_c *Client_GetKubernetesClusterEntity_Call) Run(run func(ctx context.Context, kubeSystemUUID string)) *Client_GetKubernetesClusterEntity_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Client_GetKubernetesClusterEntity_Call) Return(kubernetesClusterEntity dynatrace.KubernetesClusterEntity, err error) *Client_GetKubernetesClusterEntity_Call {
-	_c.Call.Return(kubernetesClusterEntity, err)
-	return _c
-}
-
-func (_c *Client_GetKubernetesClusterEntity_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string) (dynatrace.KubernetesClusterEntity, error)) *Client_GetKubernetesClusterEntity_Call {
 	_c.Call.Return(run)
 	return _c
 }
