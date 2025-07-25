@@ -3,9 +3,9 @@
 set -x
 
 # TODO gakr: remove the following 3 lines
-cluster_status="skipped"
-echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
 if [[ "$FLC_ENVIRONMENT" == "dto-k8s-1-27" ]]; then
+  cluster_status="skipped"
+  echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
   exit 1
 fi
 exit 0

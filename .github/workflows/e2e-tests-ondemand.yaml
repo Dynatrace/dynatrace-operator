@@ -84,7 +84,7 @@ jobs:
       - name: Set Slack message
         id: set_slack_message
         run: |
-          if [ "${{ needs.run-matrix.outputs.cluster_creation_failed }}" = "true" ] && [ "${{ job.status }}" = "success" ]; then
+          if [ "${{ needs.run-matrix.outputs.cluster_creation_failed }}" = "true" ] && [ "${{ needs.run-matrix.outputs.test_failed }}" != "true" ]; then
             echo "SLACK_MESSAGE=:large_yellow_circle: Cluster creation issues: Some E2E ondemand tests were skipped on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
           else
             echo "SLACK_MESSAGE=:red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV

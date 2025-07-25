@@ -3,6 +3,9 @@
 set -eu -o pipefail
 
 # TODO gakr remove line
+if [[ "$FLC_ENVIRONMENT" == "dto-k8s-1-28" ]]; then
+  exit 1
+fi
 exit 0
 
 echo "Switching to target branch directory..."
