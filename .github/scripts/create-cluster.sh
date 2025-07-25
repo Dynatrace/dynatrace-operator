@@ -21,13 +21,19 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
 
   if [[ "$current_state" == "environment-deployed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' has been deployed successfully."
+    cluster_status="success"
+    echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
     exit 0
   elif [[ "$current_state" == "environment-deployment-failed" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' deployment failed. Please check the logs for more details."
-    exit 1
+    cluster_status="skipped"
+    echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
+    exit 0
   elif [[ -z "$current_state" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' does not exist or is not ready. Exiting."
-    exit 1
+    cluster_status="skipped"
+    echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
+    exit 0
   else
     echo "Current state of environment '$FLC_ENVIRONMENT': '$current_state'. Waiting for desired state 'environment-deployed'..."
     NEXT_WAIT_TIME=$((NEXT_WAIT_TIME+1))
@@ -36,4 +42,6 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
 done
 
 echo "Timeout reached while waiting for environment '$FLC_ENVIRONMENT' to be deployed."
-exit 1
+cluster_status="skipped"
+echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
+exit 0

@@ -54,10 +54,13 @@ jobs:
     runs-on:
       - self-hosted
       - operator-e2e
+    outputs:
+      skip_tests: ${{ steps.run_e2e_test.outputs.skip_tests }}
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Run e2e test
+        id: run_e2e_test
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
@@ -78,9 +81,17 @@ jobs:
     name: Notify failure in Slack
     environment: E2E
     needs: [run-matrix]
-    if: ${{ failure() || cancelled() }}
+    if: ${{ failure() || cancelled() || needs.run-matrix.outputs.skip_tests == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Set Slack message
+        id: set_slack_message
+        run: |
+          if [ "${{ needs.run-matrix.outputs.skip_tests }}" = "true" ]; then
+            echo "SLACK_MESSAGE=:large_yellow_circle: Some E2E ondemand tests were skipped on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) due to cluster creation issues" >> $GITHUB_ENV
+          else
+            echo "SLACK_MESSAGE=:red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
+          fi
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
@@ -88,5 +99,5 @@ jobs:
           webhook-type: webhook-trigger
           payload-templated: true
           payload: |
-            "message": ":red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            "message": "${{ env.SLACK_MESSAGE }}"
             "run_id": "${{ github.run_id }}"
