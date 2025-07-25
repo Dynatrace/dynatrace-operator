@@ -42,7 +42,6 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 		{
 			Name: "Kubernetes API Monitoring",
 			OptionalScopes: []string{
-				dtclient.TokenScopeEntitiesRead,
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite},
 			IsEnabled: func(dk dynakube.DynaKube) bool {

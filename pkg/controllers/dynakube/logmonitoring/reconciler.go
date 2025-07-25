@@ -7,10 +7,10 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,7 +23,7 @@ type Reconciler struct {
 	configSecretReconciler           controllers.Reconciler
 	daemonsetReconciler              controllers.Reconciler
 	oneAgentConnectionInfoReconciler controllers.Reconciler
-	monitoredEntitiesReconciler      controllers.Reconciler
+	k8sEntityReconciler              controllers.Reconciler
 	logmonsettingsReconciler         controllers.Reconciler
 }
 
@@ -42,13 +42,13 @@ func NewReconciler(clt client.Client,
 		configSecretReconciler:           configsecret.NewReconciler(clt, apiReader, dk),
 		daemonsetReconciler:              daemonset.NewReconciler(clt, apiReader, dk),
 		oneAgentConnectionInfoReconciler: oaconnectioninfo.NewReconciler(clt, apiReader, dtc, dk),
-		monitoredEntitiesReconciler:      monitoredentities.NewReconciler(dtc, dk),
+		k8sEntityReconciler:              k8sentity.NewReconciler(dtc, dk),
 		logmonsettingsReconciler:         logmonsettings.NewReconciler(dtc, dk),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.monitoredEntitiesReconciler.Reconcile(ctx)
+	err := r.k8sEntityReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package monitoredentities
+package k8sentity
 
 import (
 	"context"
@@ -6,9 +6,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -16,23 +19,28 @@ import (
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("no error if not enabled", func(t *testing.T) {
+	t.Run("no error + no run if no scope in status", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
-
 		dk := createDynaKube()
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
+		dk.Status.Conditions = []metav1.Condition{}
 
 		reconciler := NewReconciler(clt, &dk)
 
 		err := reconciler.Reconcile(ctx)
 
 		require.NoError(t, err)
+		require.Empty(t, dk.Status.KubernetesClusterMEID)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), meIDConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, conditions.ScopeMissingReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Contains(t, condition.Message, dtclient.TokenScopeSettingsRead)
 	})
-	t.Run("no error if enabled and has valid kube system uuid", func(t *testing.T) {
+	t.Run("no error if has valid kube system uuid", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetMonitoredEntitiesForKubeSystemUUID",
-			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085}}, nil)
+		clt.On("GetK8sClusterME",
+			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil)
 
 		dk := createDynaKube()
 
@@ -45,8 +53,8 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("no error if no MEs are found", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetMonitoredEntitiesForKubeSystemUUID",
-			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return([]dtclient.MonitoredEntity{}, nil)
+		clt.On("GetK8sClusterME",
+			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.K8sClusterME{}, nil)
 
 		dk := createDynaKube()
 
@@ -71,6 +79,12 @@ func createDynaKube() dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			KubeSystemUUID: "kube-system-uuid",
+			Conditions: []metav1.Condition{
+				{
+					Type:   dtclient.ConditionTypeAPITokenSettingsRead,
+					Status: metav1.ConditionTrue,
+				},
+			},
 		},
 	}
 }

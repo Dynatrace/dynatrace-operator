@@ -10,8 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/metadata/rules"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -22,15 +22,15 @@ import (
 )
 
 type Reconciler struct {
-	client                      client.Client
-	apiReader                   client.Reader
-	dk                          *dynakube.DynaKube
-	istioReconciler             istio.Reconciler
-	versionReconciler           version.Reconciler
-	connectionInfoReconciler    controllers.Reconciler
-	monitoredEntitiesReconciler controllers.Reconciler
-	enrichmentRulesReconciler   controllers.Reconciler
-	dynatraceClient             dynatrace.Client
+	client                    client.Client
+	apiReader                 client.Reader
+	dk                        *dynakube.DynaKube
+	istioReconciler           istio.Reconciler
+	versionReconciler         version.Reconciler
+	connectionInfoReconciler  controllers.Reconciler
+	k8sEntityReconciler       controllers.Reconciler
+	enrichmentRulesReconciler controllers.Reconciler
+	dynatraceClient           dynatrace.Client
 }
 
 type ReconcilerBuilder func(
@@ -56,15 +56,15 @@ func NewReconciler(
 	}
 
 	return &Reconciler{
-		client:                      client,
-		apiReader:                   apiReader,
-		dk:                          dk,
-		dynatraceClient:             dynatraceClient,
-		istioReconciler:             istioReconciler,
-		versionReconciler:           version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
-		connectionInfoReconciler:    oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
-		enrichmentRulesReconciler:   rules.NewReconciler(dynatraceClient, dk),
-		monitoredEntitiesReconciler: monitoredentities.NewReconciler(dynatraceClient, dk),
+		client:                    client,
+		apiReader:                 apiReader,
+		dk:                        dk,
+		dynatraceClient:           dynatraceClient,
+		istioReconciler:           istioReconciler,
+		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
+		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
+		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dk),
+		k8sEntityReconciler:       k8sentity.NewReconciler(dynatraceClient, dk),
 	}
 }
 
@@ -177,7 +177,7 @@ func (r *Reconciler) generateInitSecret(ctx context.Context) error {
 }
 
 func (r *Reconciler) setupEnrichmentInjection(ctx context.Context) error {
-	err := r.monitoredEntitiesReconciler.Reconcile(ctx)
+	err := r.k8sEntityReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}

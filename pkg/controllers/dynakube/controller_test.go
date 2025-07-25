@@ -286,7 +286,6 @@ func TestSetupTokensAndClient(t *testing.T) {
 
 		mockedDtc := dtclientmock.NewClient(t)
 		mockedDtc.On("GetTokenScopes", mock.Anything, "this is a token").Return(dtclient.TokenScopes{
-			dtclient.TokenScopeEntitiesRead,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
@@ -574,7 +573,6 @@ func TestTokenConditions(t *testing.T) {
 		})
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeEntitiesRead,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
@@ -724,6 +722,12 @@ func getTestDynkubeStatus() *dynakube.DynaKubeStatus {
 			},
 		},
 		KubeSystemUUID: testUID,
+		Conditions: []metav1.Condition{
+			{
+				Type:   dtclient.ConditionTypeAPITokenSettingsRead,
+				Status: metav1.ConditionTrue,
+			},
+		},
 	}
 }
 
@@ -764,10 +768,9 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		}
 
 		_, err := controller.setupTokensAndClient(ctx, dk)
-
 		require.Error(t, err)
+
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, "secrets \""+testName+"\" not found")
-		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead))
 		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead))
 		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite))
 	})
@@ -775,7 +778,6 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
 
 		controller := createFakeControllerAndClients(t, dtclient.TokenScopes{
-			dtclient.TokenScopeEntitiesRead,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
@@ -785,10 +787,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(ctx, dk)
 		require.NoError(t, err)
 
-		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionTrue, cond.Status)
-		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
 		require.NotNil(t, cond)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
 		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
@@ -808,10 +807,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(ctx, dk)
 		require.NoError(t, err)
 
-		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionFalse, cond.Status)
-		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
 		require.NotNil(t, cond)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
 		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
@@ -829,10 +825,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(ctx, dk)
 		require.NoError(t, err)
 
-		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenEntitiesRead)
-		require.NotNil(t, cond)
-		assert.Equal(t, metav1.ConditionFalse, cond.Status)
-		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
 		require.NotNil(t, cond)
 		assert.Equal(t, metav1.ConditionFalse, cond.Status)
 		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
