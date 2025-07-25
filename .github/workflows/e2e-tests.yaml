@@ -148,14 +148,8 @@ jobs:
           OCP_STATUS=$(get_status "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
           OCP_FIPS_STATUS=$(get_status "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
 
-          MESSAGE="${K8S_STATUS} on kubernetes :kubernetes:
-          ${OCP_STATUS} on openshift :openshift:
-          ${OCP_FIPS_STATUS} on FIPS openshift :lock:
-          using ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-          
-          echo "SLACK_MESSAGE<<EOF" >> $GITHUB_ENV
-          echo "$MESSAGE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          MESSAGE="${K8S_STATUS} on kubernetes :kubernetes:\n${OCP_STATUS} on openshift :openshift:\n${OCP_FIPS_STATUS} on FIPS openshift :lock:\nusing ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          echo "SLACK_MESSAGE=$MESSAGE" >> $GITHUB_ENV
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
