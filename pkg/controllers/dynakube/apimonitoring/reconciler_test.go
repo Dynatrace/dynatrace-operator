@@ -105,7 +105,7 @@ func createReconcilerWithError(t *testing.T, dk *dynakube.DynaKube, monitoredEnt
 		Return(dtclient.K8sClusterME{}, monitoredEntitiesError)
 	mockClient.On("GetSettingsForMonitoredEntity",
 		mock.AnythingOfType("context.backgroundCtx"),
-		mock.AnythingOfType("dynatrace.KubernetesClusterEntity"),
+		mock.AnythingOfType("dynatrace.K8sClusterME"),
 		mock.AnythingOfType("string")).
 		Return(dtclient.GetSettingsResponse{}, getSettingsResponseError)
 	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, "KUBERNETES_CLUSTER-119C75CCDA94799F").

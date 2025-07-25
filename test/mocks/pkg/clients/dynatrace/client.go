@@ -741,8 +741,8 @@ func (_c *Client_GetK8sClusterME_Call) Run(run func(ctx context.Context, kubeSys
 	return _c
 }
 
-func (_c *Client_GetK8sClusterME_Call) Return(kubernetesClusterEntity dynatrace.K8sClusterME, err error) *Client_GetK8sClusterME_Call {
-	_c.Call.Return(kubernetesClusterEntity, err)
+func (_c *Client_GetK8sClusterME_Call) Return(k8sClusterME dynatrace.K8sClusterME, err error) *Client_GetK8sClusterME_Call {
+	_c.Call.Return(k8sClusterME, err)
 	return _c
 }
 
@@ -1467,7 +1467,7 @@ type Client_GetSettingsForMonitoredEntity_Call struct {
 
 // GetSettingsForMonitoredEntity is a helper method to define mock.On call
 //   - ctx context.Context
-//   - monitoredEntity dynatrace.KubernetesClusterEntity
+//   - monitoredEntity dynatrace.K8sClusterME
 //   - schemaID string
 func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx interface{}, monitoredEntity interface{}, schemaID interface{}) *Client_GetSettingsForMonitoredEntity_Call {
 	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, monitoredEntity, schemaID)}
