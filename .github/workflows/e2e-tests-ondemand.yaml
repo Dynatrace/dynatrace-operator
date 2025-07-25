@@ -28,6 +28,28 @@ jobs:
             platform: k8s
           - version: 1-28
             platform: k8s
+          - version: 1-29
+            platform: k8s
+          - version: 1-30
+            platform: k8s
+          - version: 1-31
+            platform: k8s
+          - version: 1-32
+            platform: k8s
+          - version: 4-12
+            platform: ocp
+          - version: 4-13
+            platform: ocp
+          - version: 4-14
+            platform: ocp
+          - version: 4-15
+            platform: ocp
+          - version: 4-16
+            platform: ocp
+          - version: 4-17
+            platform: ocp
+          - version: 4-18
+            platform: ocp
     environment: E2E
     runs-on:
       - self-hosted
@@ -89,16 +111,12 @@ jobs:
           else
             echo "SLACK_MESSAGE=:red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
           fi
-      # - name: Notify failure in Slack TODO gakr
-      #   uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-      #   with:
-      #     webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-      #     webhook-type: webhook-trigger
-      #     payload-templated: true
-      #     payload: |
-      #       "message": "${{ env.SLACK_MESSAGE }}"
-      #       "run_id": "${{ github.run_id }}"
-      - name: Simulate slack notification
-        run: |
-          echo "SLACK_MESSAGE: ${{ env.SLACK_MESSAGE }}"
-          echo "This is a simulated Slack notification step for testing purposes."
+      - name: Notify failure in Slack
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload-templated: true
+          payload: |
+            "message": "${{ env.SLACK_MESSAGE }}"
+            "run_id": "${{ github.run_id }}"

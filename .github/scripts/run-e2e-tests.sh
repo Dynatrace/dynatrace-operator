@@ -2,12 +2,6 @@
 
 set -eu -o pipefail
 
-# TODO gakr remove line
-if [[ "$FLC_ENVIRONMENT" == "dto-ocp-latest-flc" ]]; then
-  exit 1
-fi
-exit 0
-
 echo "Switching to target branch directory..."
 cd target
 

@@ -116,8 +116,8 @@ runs:
         FLC_NAMESPACE: ${{ inputs.flc-namespace }}
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
       if: always()
-    # - name: Publish test results TODO gakr: remove comment
-    #   uses: EnricoMi/publish-unit-test-result-action@v2
-    #   with:
-    #     files: target/results/*.xml
-    #   if: steps.check_cluster_status.outputs.skip_tests != 'true'
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: target/results/*.xml
+      if: always()
