@@ -2,7 +2,7 @@
 
 set -x
 
-# TODO remove line
+# TODO gakr remove line
 exit 0
 
 echo "Destroying environment '$FLC_ENVIRONMENT' in namespace '$FLC_NAMESPACE'"

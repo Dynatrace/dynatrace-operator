@@ -2,7 +2,7 @@
 
 set -eu -o pipefail
 
-# TODO remove line
+# TODO gakr remove line
 exit 0
 
 echo "Switching to target branch directory..."
