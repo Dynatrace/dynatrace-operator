@@ -44,6 +44,10 @@ inputs:
   github-token:
     description: The GitHub token
     required: true
+outputs:
+  cluster_status:
+    description: Status of the cluster creation ['skipped'|'success']
+    value: ${{ steps.create_cluster.outputs.cluster_status }}
 runs:
   using: composite
   steps:
