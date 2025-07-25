@@ -5,7 +5,7 @@ set -x
 # TODO remove the following 3 lines
 cluster_status="skipped"
 echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
-exit 0
+exit 1
 
 kubectl version
 
@@ -33,12 +33,12 @@ while [[ $NEXT_WAIT_TIME -ne 80 ]]; do
     echo "Environment '$FLC_ENVIRONMENT' deployment failed. Please check the logs for more details."
     cluster_status="skipped"
     echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
-    exit 0
+    exit 1
   elif [[ -z "$current_state" ]]; then
     echo "Environment '$FLC_ENVIRONMENT' does not exist or is not ready. Exiting."
     cluster_status="skipped"
     echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
-    exit 0
+    exit 1
   else
     echo "Current state of environment '$FLC_ENVIRONMENT': '$current_state'. Waiting for desired state 'environment-deployed'..."
     NEXT_WAIT_TIME=$((NEXT_WAIT_TIME+1))
@@ -49,4 +49,4 @@ done
 echo "Timeout reached while waiting for environment '$FLC_ENVIRONMENT' to be deployed."
 cluster_status="skipped"
 echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
-exit 0
+exit 1
