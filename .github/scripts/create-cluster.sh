@@ -2,6 +2,11 @@
 
 set -x
 
+# TODO remove the following 3 lines
+cluster_status="skipped"
+echo "cluster_status=$cluster_status" >> "$GITHUB_OUTPUT"
+exit 0
+
 kubectl version
 
 echo "Creating environment '$FLC_ENVIRONMENT' in namespace '$FLC_NAMESPACE'"

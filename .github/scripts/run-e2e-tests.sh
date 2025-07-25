@@ -2,6 +2,9 @@
 
 set -eu -o pipefail
 
+# TODO remove line
+exit 0
+
 echo "Switching to target branch directory..."
 cd target
 

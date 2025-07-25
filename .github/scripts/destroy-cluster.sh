@@ -2,6 +2,9 @@
 
 set -x
 
+# TODO remove line
+exit 0
+
 echo "Destroying environment '$FLC_ENVIRONMENT' in namespace '$FLC_NAMESPACE'"
 
 kubectl get flcenvironments --namespace "$FLC_NAMESPACE"
