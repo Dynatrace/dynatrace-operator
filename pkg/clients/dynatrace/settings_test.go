@@ -26,6 +26,7 @@ func TestDynatraceClient_GetKubernetesClusterEntity(t *testing.T) {
 			if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
 				writeError(w, http.StatusUnauthorized)
 			}
+
 			if r.Method != http.MethodGet {
 				writeError(w, http.StatusMethodNotAllowed)
 			}

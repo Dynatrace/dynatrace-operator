@@ -15,6 +15,7 @@ import (
 
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
+
 	t.Run("no error + no run if no scope in status", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
 		dk := createDynaKube()

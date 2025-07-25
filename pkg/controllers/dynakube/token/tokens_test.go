@@ -202,9 +202,8 @@ func TestOptionalTokens(t *testing.T) {
 		}, nil).Maybe()
 
 		missingScopes := map[string][]string{
-			apiTokenNoMissingScopes: {},
-			apiTokenMissingEntitiesRead: {
-			},
+			apiTokenNoMissingScopes:     {},
+			apiTokenMissingEntitiesRead: {},
 			apiTokenMissingEntitiesReadSettingsRead: {
 				dtclient.TokenScopeSettingsRead,
 			},
