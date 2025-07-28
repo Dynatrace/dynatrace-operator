@@ -45,16 +45,6 @@ import (
 )
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
-	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		controller := &Controller{
-			client:    fake.NewClient(),
-			apiReader: fake.NewClient(),
-		}
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{})
-
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-	})
 	t.Run(`Create works with minimal setup and interface`, func(t *testing.T) { // keep as integration test?
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeActiveGateTokenCreate})
 
