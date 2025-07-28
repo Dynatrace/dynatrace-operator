@@ -1,11 +1,13 @@
-package hostagent
+package oneagent
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type TemplateSpec struct {
+// If Image provided == enable
+type HostAgentSpec struct {
 	Image             ImageRefSpec                    `json:"image,omitempty"`
 	CustomPullSecret  string                          `json:"customPullSecret,omitempty"`
 	Annotations       map[string]string               `json:"annotations,omitempty"`
@@ -23,6 +25,14 @@ type TemplateSpec struct {
 	Env               []corev1.EnvVar                 `json:"env,omitempty"`
 	UpdateStrategy    *appsv1.DaemonSetUpdateStrategy `json:"updateStrategy,omitempty"`
 	StorageHostPath   string                          `json:"storageHostPath,omitempty"` // TODO: maybe make nicer
+}
+
+type CodeModulesSpec struct {
+	Image             ImageRefSpec                `json:"image"`
+	CustomPullSecret  string                      `json:"customPullSecret,omitempty"`
+	NamespaceSelector metav1.LabelSelector        `json:"namespaceSelector"`
+	Resources         corev1.ResourceRequirements `json:"resources"`
+	// TODO: add more as desired
 }
 
 type ImageRefSpec struct {

@@ -2,7 +2,7 @@
 // +groupName=dynatrace.com
 // +versionName=v1alpha1
 // +kubebuilder:validation:Optional
-package hostagent
+package oneagent
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
@@ -22,7 +22,9 @@ type Spec struct { //nolint:revive
 
 	HostGroup string `json:"hostGroup,omitempty"`
 
-	Template TemplateSpec `json:"template"`
+	HostAgent HostAgentSpec `json:"hostAgent"`
+	// TODO: maybe add logmon here?
+	CodeModule CodeModulesSpec `json:"codeModule"`
 }
 
 type ProxySpec struct {
@@ -44,30 +46,17 @@ type ProxySpec struct {
 	Propagate *bool `json:"propagate,omitempty"`
 }
 
-// +kubebuilder:object:generate=true
-type ValueSource struct {
-	// Raw value for given property.
-	// +nullable
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="property value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Value string `json:"value,omitempty"`
-
-	// Name of the secret to get the property from.
-	// +nullable
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="property secret name",order=33,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
-	ValueFrom string `json:"valueFrom,omitempty"`
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// HostAgent is the Schema for the HostAgent API
+// OneAgent is the Schema for the OneAgent API
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=hostagents,scope=Namespaced,categories=dynatrace,shortName={ha,has}
+// +kubebuilder:resource:path=oneagents,scope=Namespaced,categories=dynatrace,shortName={oa,oas}
 // +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiURL`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-type HostAgent struct {
+type OneAgent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
 
@@ -77,15 +66,15 @@ type HostAgent struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// HostAgentList contains a list of ActiveGate
+// OneAgentList contains a list of ActiveGate
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
-type HostAgentList struct { //nolint:revive
+type OneAgentList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
-	Items           []HostAgent `json:"items"`
+	Items           []OneAgent `json:"items"`
 }
 
 func init() {
-	v1alpha1.SchemeBuilder.Register(&HostAgent{}, &HostAgentList{})
+	v1alpha1.SchemeBuilder.Register(&OneAgent{}, &OneAgentList{})
 }

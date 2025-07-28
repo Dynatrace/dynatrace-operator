@@ -1,4 +1,4 @@
-package hostagent
+package oneagent
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
