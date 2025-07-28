@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -67,6 +68,8 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update if outdated", func(t *testing.T) {
 		dk := createDynaKube()
+		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
+
 		expectedResponse := createRulesResponse()
 		specialMessage := "TESTING" // if the special message changes == condition updated
 		conditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
@@ -86,12 +89,15 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
-		require.Len(t, dk.Status.Conditions, 1)
-		assert.NotEqual(t, specialMessage, dk.Status.Conditions[0].Message)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		assert.NotEqual(t, specialMessage, condition.Message)
 	})
 
 	t.Run("set rules correctly", func(t *testing.T) {
 		dk := createDynaKube()
+		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
+
 		expectedResponse := createRulesResponse()
 
 		dtc := dtclientmock.NewClient(t)
@@ -102,12 +108,14 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
-		require.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, conditions.StatusUpdatedReason, dk.Status.Conditions[0].Reason)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, conditions.StatusUpdatedReason, condition.Reason)
 	})
 
 	t.Run("set rules correctly, even if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
+		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		dk.Annotations = map[string]string{
@@ -124,12 +132,15 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
-		require.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, conditions.StatusUpdatedReason, dk.Status.Conditions[0].Reason)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, conditions.StatusUpdatedReason, condition.Reason)
 	})
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
+		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
+
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
 		reconciler := NewReconciler(dtc, &dk)
@@ -138,8 +149,24 @@ func TestReconcile(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
-		require.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, conditions.DynatraceAPIErrorReason, dk.Status.Conditions[0].Reason)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
+	})
+
+	t.Run("no update if optional scope missing", func(t *testing.T) {
+		dk := createDynaKube()
+		dtc := dtclientmock.NewClient(t)
+		reconciler := NewReconciler(dtc, &dk)
+
+		err := reconciler.Reconcile(ctx)
+
+		require.NoError(t, err)
+		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, conditions.OptionalScopeReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
 

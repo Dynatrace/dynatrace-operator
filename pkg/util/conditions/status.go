@@ -8,6 +8,9 @@ import (
 const (
 	StatusUpdatedReason  = "StatusUpdated"
 	StatusOutdatedReason = "StatusOutdated"
+
+	OptionalScopeReason        = "OptionalScope"
+	OptionalScopePresentReason = "ScopePresent"
 )
 
 func SetStatusUpdated(conditions *[]metav1.Condition, conditionType, msg string) {
@@ -28,4 +31,34 @@ func SetStatusOutdated(conditions *[]metav1.Condition, conditionType, msg string
 		Message: msg,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func SetStatusOptionalScopeMissing(conditions *[]metav1.Condition, conditionType, msg string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  OptionalScopeReason,
+		Message: msg,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func SetOptionalScopeAvailable(conditions *[]metav1.Condition, conditionType string, scope string) {
+	tokenCondition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  OptionalScopePresentReason,
+		Message: scope + " is available",
+	}
+	_ = meta.SetStatusCondition(conditions, tokenCondition)
+}
+
+func SetOptionalScopeMissing(conditions *[]metav1.Condition, conditionType string, scope string) {
+	tokenCondition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  OptionalScopeReason,
+		Message: scope + " is not available, some features may not work",
+	}
+	_ = meta.SetStatusCondition(conditions, tokenCondition)
 }
