@@ -81,7 +81,7 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 		pod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					"volume.dynatrace.com/oneagent-bin": "300Mi",
+					"volume.dynatrace.com/oneagent-bin": "500Mi",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -98,7 +98,7 @@ func Test_addEmptyDirBinVolume(t *testing.T) {
 			Name: BinVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: ptr.To(resource.MustParse("300Mi")),
+					SizeLimit: ptr.To(resource.MustParse("500Mi")),
 				},
 			},
 		}, pod.Spec.Volumes[0])

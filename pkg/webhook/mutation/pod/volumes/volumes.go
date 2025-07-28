@@ -2,11 +2,16 @@ package volumes
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
+)
+
+var (
+	log = logd.Get().WithName("volumes-mutation")
 )
 
 const (
@@ -29,7 +34,10 @@ func AddConfigVolume(pod *corev1.Pod) {
 	emptyDirVS := corev1.EmptyDirVolumeSource{}
 
 	if r, ok := pod.Annotations[AnnotationConfigVolumeNameResource]; ok && r != "" {
-		if sizeLimit, err := resource.ParseQuantity(r); err == nil {
+		sizeLimit, err := resource.ParseQuantity(r)
+		if err != nil {
+			log.Error(err, "failed to parse quantity from annotation "+AnnotationConfigVolumeNameResource, "value", r)
+		} else {
 			emptyDirVS = corev1.EmptyDirVolumeSource{
 				SizeLimit: &sizeLimit,
 			}
