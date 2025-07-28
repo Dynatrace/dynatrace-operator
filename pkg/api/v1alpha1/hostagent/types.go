@@ -2,7 +2,7 @@
 // +groupName=dynatrace.com
 // +versionName=v1alpha1
 // +kubebuilder:validation:Optional
-package activegate
+package hostagent
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
@@ -11,15 +11,16 @@ import (
 
 // Spec defines the desired state of ActiveGate.
 type Spec struct { //nolint:revive
-	APIRUL string    `json:"apiURL,omitempty"`
+	APIRUL        string    `json:"apiURL,omitempty"`
 	Tokens        string    `json:"tokens,omitempty"`
 	TrustedCAs    string    `json:"trustedCAs,omitempty"`
 	NetworkZone   string    `json:"networkZone,omitempty"`
 	Proxy         ProxySpec `json:"proxy"`
 	SkipCertCheck bool      `json:"skipCertCheck,omitempty"`
 
-	Group            string       `json:"group,omitempty"`
-	CustomProperties *ValueSource `json:"customProperties,omitempty"`
+	InitialConnectRetry *int `json:"initialConnectRetry,omitempty"`
+
+	HostGroup string `json:"hostGroup,omitempty"`
 
 	Template TemplateSpec `json:"template"`
 }
@@ -58,15 +59,15 @@ type ValueSource struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ActiveGate is the Schema for the ActiveGate API
+// HostAgent is the Schema for the HostAgent API
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=activegates,scope=Namespaced,categories=dynatrace,shortName={ag,ags}
+// +kubebuilder:resource:path=hostagents,scope=Namespaced,categories=dynatrace,shortName={ha,has}
 // +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiURL`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-type ActiveGate struct {
+type HostAgent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
 
@@ -76,15 +77,15 @@ type ActiveGate struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ActiveGateList contains a list of ActiveGate
+// HostAgentList contains a list of ActiveGate
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
-type ActiveGateList struct { //nolint:revive
+type HostAgentList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
-	Items           []ActiveGate `json:"items"`
+	Items           []HostAgent `json:"items"`
 }
 
 func init() {
-	v1alpha1.SchemeBuilder.Register(&ActiveGate{}, &ActiveGateList{})
+	v1alpha1.SchemeBuilder.Register(&HostAgent{}, &HostAgentList{})
 }

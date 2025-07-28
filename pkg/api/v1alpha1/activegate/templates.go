@@ -4,6 +4,7 @@ import corev1 "k8s.io/api/core/v1"
 
 type TemplateSpec struct {
 	Image                         ImageRefSpec                      `json:"image,omitempty"`
+	CustomPullSecret              string                            `json:"customPullSecret,omitempty"`
 	Annotations                   map[string]string                 `json:"annotations,omitempty"`
 	NodeSelector                  map[string]string                 `json:"nodeSelector,omitempty"`
 	Replicas                      *int32                            `json:"replicas,omitempty"`
