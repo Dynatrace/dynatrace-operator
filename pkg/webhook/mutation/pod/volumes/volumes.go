@@ -5,6 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 )
 
@@ -15,6 +16,9 @@ const (
 
 	InputVolumeName    = "dynatrace-input"
 	InitInputMountPath = "/mnt/input"
+
+	// AnnotationConfigVolumeNameResource is used to specify the volume size for EmptyDir for dynatrace-config.
+	AnnotationConfigVolumeNameResource = "volume.dynatrace.com/" + ConfigVolumeName
 )
 
 func AddConfigVolume(pod *corev1.Pod) {
@@ -22,11 +26,21 @@ func AddConfigVolume(pod *corev1.Pod) {
 		return
 	}
 
+	emptyDirVS := corev1.EmptyDirVolumeSource{}
+
+	if r, ok := pod.Annotations[AnnotationConfigVolumeNameResource]; ok && r != "" {
+		if sizeLimit, err := resource.ParseQuantity(r); err == nil {
+			emptyDirVS = corev1.EmptyDirVolumeSource{
+				SizeLimit: &sizeLimit,
+			}
+		}
+	}
+
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
 			Name: ConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				EmptyDir: &emptyDirVS,
 			},
 		},
 	)

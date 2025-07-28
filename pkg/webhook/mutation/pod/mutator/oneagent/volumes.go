@@ -9,6 +9,7 @@ import (
 	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 )
 
@@ -48,8 +49,18 @@ func addEmptyDirBinVolume(pod *corev1.Pod) {
 		return
 	}
 
+	emptyDirVS := corev1.EmptyDirVolumeSource{}
+
+	if r, ok := pod.Annotations[AnnotationOneAgenBinResource]; ok && r != "" {
+		if sizeLimit, err := resource.ParseQuantity(r); err == nil {
+			emptyDirVS = corev1.EmptyDirVolumeSource{
+				SizeLimit: &sizeLimit,
+			}
+		}
+	}
+
 	volumeSource := corev1.VolumeSource{
-		EmptyDir: &corev1.EmptyDirVolumeSource{},
+		EmptyDir: &emptyDirVS,
 	}
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
