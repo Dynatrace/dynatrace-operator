@@ -1,0 +1,9 @@
+@tenant = {{$dotenv TENANT}}
+@api_token = {{$dotenv API_TOKEN}}
+
+GET https://{{tenant}}.dev.dynatracelabs.com/api/v2/settings/schemas HTTP/3
+content-type: application/json
+Authorization: Api-Token {{api_token}}
+Accept: application/json
+
+
