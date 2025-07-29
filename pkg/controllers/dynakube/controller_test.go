@@ -235,7 +235,7 @@ func TestAPIError(t *testing.T) {
 			},
 			LogMonitoring: &logmonitoring.Spec{},
 		},
-		Status: *getTestDynkubeStatus(),
+		Status: *getTestDynakubeStatus(),
 	}
 
 	t.Run("should return error result on 503", func(t *testing.T) {
@@ -745,7 +745,7 @@ func assertCondition(t *testing.T, dk *dynakube.DynaKube, expectedConditionType 
 	assert.Equal(t, expectedMessage, actualCondition.Message)
 }
 
-func getTestDynkubeStatus() *dynakube.DynaKubeStatus {
+func getTestDynakubeStatus() *dynakube.DynaKubeStatus {
 	return &dynakube.DynaKubeStatus{
 		ActiveGate: activegate.Status{
 			ConnectionInfo: communication.ConnectionInfo{
