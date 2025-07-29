@@ -22,8 +22,11 @@ const (
 	InputVolumeName    = "dynatrace-input"
 	InitInputMountPath = "/mnt/input"
 
+	// AnnotationResourcePrefix is used as a prefix for all volume resource annotations.
+	AnnotationResourcePrefix = "volume.dynatrace.com/"
+
 	// AnnotationConfigVolumeNameResource is used to specify the volume size for EmptyDir for dynatrace-config.
-	AnnotationConfigVolumeNameResource = "volume.dynatrace.com/" + ConfigVolumeName
+	AnnotationConfigVolumeNameResource = AnnotationResourcePrefix + ConfigVolumeName
 )
 
 func AddConfigVolume(pod *corev1.Pod) {

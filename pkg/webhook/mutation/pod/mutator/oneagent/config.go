@@ -32,7 +32,7 @@ const (
 	AnnotationVolumeType = AnnotationPrefix + ".dynatrace.com/volume-type"
 
 	// AnnotationOneAgenBinResource is used to specify the volume size for EmptyDir for oneagent-bin.
-	AnnotationOneAgenBinResource = "volume.dynatrace.com/oneagent-bin"
+	AnnotationOneAgenBinResource = volumes.AnnotationResourcePrefix + "oneagent-bin"
 
 	// DefaultInstallPath is the default directory to install the app-only OneAgent package.
 	DefaultInstallPath = "/opt/dynatrace/oneagent-paas"
