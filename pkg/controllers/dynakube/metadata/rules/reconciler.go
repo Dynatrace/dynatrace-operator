@@ -48,7 +48,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	if !conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
 		log.Info("metadata-enrichment rules are not set in the status because the optional scope is not available", "scope", dtclient.TokenScopeSettingsRead)
-		conditions.SetScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the settings.read optional scope is not available")
+		conditions.SetScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the optional 'settings.read' scope is not available")
 
 		return nil
 	}
