@@ -107,17 +107,17 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        {{- if not .Values.debug }}
+        {{- if and (not .Values.debug) .Values.csidriver.server.livenessProbe.enabled }}
         livenessProbe:
-          failureThreshold: 5
+          failureThreshold: {{ .Values.csidriver.server.livenessProbe.failureThreshold }}
           httpGet:
             path: /healthz
             port: 9808
             scheme: HTTP
-          initialDelaySeconds: 15
-          periodSeconds: 15
-          successThreshold: 1
-          timeoutSeconds: 10
+          initialDelaySeconds: {{ .Values.csidriver.server.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.csidriver.server.livenessProbe.periodSeconds }}
+          successThreshold: {{ .Values.csidriver.server.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.csidriver.server.livenessProbe.timeoutSeconds }}
         {{- end }}
         ports:
         - containerPort: 8080
@@ -242,6 +242,7 @@ spec:
           name: registration-dir
         # Used to make a gRPC request (Probe()) to the driver to check if its running
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+      {{- if .Values.csidriver.server.livenessProbe.enabled }}
       - name: liveness-probe
         image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
@@ -267,6 +268,7 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
+      {{- end }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
