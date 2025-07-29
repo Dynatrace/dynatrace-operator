@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # This script cleans up all Kubernetes settings found on the tenant by filtering by schemaId cloud.kubernetes
 # and deleting them via Dynatrace API.
 
