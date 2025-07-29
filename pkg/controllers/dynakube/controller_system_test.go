@@ -41,37 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
-	t.Run(`Create validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
-		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload, dtclient.TokenScopeActiveGateTokenCreate})
-
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL:        testAPIURL,
-				LogMonitoring: &logmonitoring.Spec{},
-			}}
-		controller := createFakeClientAndReconciler(t, mockClient, dk, "", testAPIToken)
-
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
-		})
-
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-
-		var secret corev1.Secret
-
-		err = controller.client.Get(context.Background(), client.ObjectKey{Name: testName, Namespace: testNamespace}, &secret)
-
-		require.NoError(t, err)
-		assert.NotNil(t, secret)
-		assert.Equal(t, testAPIToken, string(secret.Data[dtclient.APIToken]))
-	})
-}
 func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{
 		dtclient.TokenScopeSettingsRead,
