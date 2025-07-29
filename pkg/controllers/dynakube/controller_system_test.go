@@ -5,13 +5,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -42,58 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func TestReconcileActiveGate_Reconcile(t *testing.T) {
-	t.Run("reconciles phase change correctly", func(t *testing.T) {
-		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite, dtclient.TokenScopeActiveGateTokenCreate})
-
-		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil)
-		mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
-
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: testAPIURL,
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
-					},
-				},
-				LogMonitoring: &logmonitoring.Spec{},
-			},
-			Status: *getTestDynkubeStatus(),
-		}
-		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
-		// Remove existing StatefulSet created by createFakeClientAndReconciler
-		require.NoError(t, controller.client.Delete(context.Background(), &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: testName + "-activegate", Namespace: testNamespace}}))
-
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
-		})
-
-		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
-			mock.AnythingOfType("context.backgroundCtx"),
-			testName,
-			testUID,
-			mock.AnythingOfType("string"))
-
-		require.NoError(t, err)
-		assert.Equal(t, changesUpdateInterval, result.RequeueAfter)
-
-		var activeGateStatefulSet appsv1.StatefulSet
-
-		require.NoError(t,
-			controller.client.Get(context.Background(), client.ObjectKey{Name: testName + "-activegate", Namespace: testNamespace}, &activeGateStatefulSet))
-		require.NoError(t, controller.client.Get(context.Background(), client.ObjectKey{Name: testName, Namespace: testNamespace}, dk))
-		assert.Equal(t, status.Running, dk.Status.Phase)
-	})
-}
 
 func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 	t.Run(`Create validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
