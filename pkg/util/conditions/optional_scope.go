@@ -20,7 +20,7 @@ func IsOptionalScopeAvailable(dk *dynakube.DynaKube, conditionType string) bool 
 	return condition.Status == metav1.ConditionTrue
 }
 
-func SetScopeMissing(conditions *[]metav1.Condition, conditionType, msg string) {
+func SetOptionalScopeMissing(conditions *[]metav1.Condition, conditionType, msg string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
@@ -30,7 +30,7 @@ func SetScopeMissing(conditions *[]metav1.Condition, conditionType, msg string) 
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetScopeAvailable(conditions *[]metav1.Condition, conditionType string, msg string) {
+func SetOptionalScopeAvailable(conditions *[]metav1.Condition, conditionType string, msg string) {
 	tokenCondition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,

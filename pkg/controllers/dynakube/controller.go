@@ -482,9 +482,9 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, missingOptionalScopes []string) {
 	for scope, conditionType := range dtclient.OptionalScopes {
 		if slices.Contains(missingOptionalScopes, scope) {
-			conditions.SetScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
+			conditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
 		} else {
-			conditions.SetScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
+			conditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
 		}
 	}
 }
