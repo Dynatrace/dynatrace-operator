@@ -1,0 +1,25 @@
+name: E2E cleanup
+
+on:
+  schedule:
+    # every Sunday at 00:00 UTC
+    - cron: 0 0 * * 0
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Cleanup ${{ secrets.TENANT1_NAME }} Kubernetes settings
+    environment: E2E
+    runs-on:
+      - self-hosted
+      - operator-e2e
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: ./hack/tenant/clean_kubernetes_settings.sh
+      - name: Run e2e test
+        uses: ./hack/tenant/clean_kubernetes_settings.sh
+        with:
+          tenant-name: ${{ secrets.TENANT1_NAME }}
+          tenant-apitoken: ${{ secrets.TENANT1_APITOKEN }}
