@@ -2,13 +2,11 @@ package dynakube
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
@@ -130,52 +128,6 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	}, routingSvc)
 	require.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
-}
-
-func TestAPIError(t *testing.T) {
-	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeActiveGateTokenCreate})
-	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
-
-	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: dynakube.DynaKubeSpec{
-			APIURL:   testAPIURL,
-			OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{HostInjectSpec: oneagent.HostInjectSpec{}}},
-			ActiveGate: activegate.Spec{
-				Capabilities: []activegate.CapabilityDisplayName{
-					activegate.KubeMonCapability.DisplayName,
-				},
-			},
-			LogMonitoring: &logmonitoring.Spec{},
-		},
-		Status: *getTestDynkubeStatus(),
-	}
-
-	t.Run("should return error result on 503", func(t *testing.T) {
-		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusServiceUnavailable, Message: "Service unavailable"})
-		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
-
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
-		})
-
-		require.NoError(t, err)
-		assert.Equal(t, fastUpdateInterval, result.RequeueAfter)
-	})
-	t.Run("should return error result on 429", func(t *testing.T) {
-		mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusTooManyRequests, Message: "Too many requests"})
-		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
-
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
-		})
-
-		require.NoError(t, err)
-		assert.Equal(t, fastUpdateInterval, result.RequeueAfter)
-	})
 }
 
 func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *dtclientmock.Client {
