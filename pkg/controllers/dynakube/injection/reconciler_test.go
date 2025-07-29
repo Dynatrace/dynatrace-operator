@@ -107,7 +107,7 @@ func TestReconciler(t *testing.T) {
 				},
 			},
 		}
-		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
+		conditions.SetScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 		clt := fake.NewClientWithIndex(
 			clientNotInjectedNamespace(testNamespace, testDynakube),
 			clientNotInjectedNamespace(testNamespace2, testDynakube2),

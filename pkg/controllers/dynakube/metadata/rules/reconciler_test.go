@@ -68,7 +68,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update if outdated", func(t *testing.T) {
 		dk := createDynaKube()
-		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
+		conditions.SetScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 
 		expectedResponse := createRulesResponse()
 		specialMessage := "TESTING" // if the special message changes == condition updated
@@ -96,7 +96,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set rules correctly", func(t *testing.T) {
 		dk := createDynaKube()
-		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
+		conditions.SetScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 
 		expectedResponse := createRulesResponse()
 
@@ -115,7 +115,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set rules correctly, even if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
-		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
+		conditions.SetScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		dk.Annotations = map[string]string{
@@ -139,7 +139,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
-		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, dtclient.TokenScopeSettingsRead)
+		conditions.SetScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
@@ -165,7 +165,7 @@ func TestReconcile(t *testing.T) {
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, conditions.OptionalScopeReason, condition.Reason)
+		assert.Equal(t, conditions.OptionalScopeMissingReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }

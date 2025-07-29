@@ -6,6 +6,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	OptionalScopeMissingReason = "ScopeMissing"
+	OptionalScopePresentReason = "ScopePresent"
+)
+
 func IsOptionalScopeAvailable(dk *dynakube.DynaKube, conditionType string) bool {
 	condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
 	if condition == nil {
@@ -13,4 +18,24 @@ func IsOptionalScopeAvailable(dk *dynakube.DynaKube, conditionType string) bool 
 	}
 
 	return condition.Status == metav1.ConditionTrue
+}
+
+func SetScopeMissing(conditions *[]metav1.Condition, conditionType, msg string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  OptionalScopeMissingReason,
+		Message: msg,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func SetScopeAvailable(conditions *[]metav1.Condition, conditionType string, msg string) {
+	tokenCondition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  OptionalScopePresentReason,
+		Message: msg,
+	}
+	_ = meta.SetStatusCondition(conditions, tokenCondition)
 }
