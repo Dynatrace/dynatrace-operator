@@ -44,28 +44,6 @@ import (
 )
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
-	t.Run(`Create works with minimal setup and interface`, func(t *testing.T) { // keep as integration test?
-		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeActiveGateTokenCreate})
-
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL:        testAPIURL,
-				LogMonitoring: &logmonitoring.Spec{},
-			},
-		}
-		controller := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
-
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
-		})
-
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-	})
 	t.Run("reconciles phase change correctly", func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite, dtclient.TokenScopeActiveGateTokenCreate})
 

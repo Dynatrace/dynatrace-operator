@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -38,6 +39,10 @@ const (
 	testNamespace   = "test-namespace"
 	testProxyName   = "test-proxy"
 	testServiceName = testName + "-activegate"
+
+	testHost   = "test-host"
+	testUUID   = "test-uuid"
+	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
 )
 
 var (
@@ -55,11 +60,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
-			}}
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:        testAPIURL,
+				LogMonitoring: &logmonitoring.Spec{},
+			},
+		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, createMockDtClient(t, false), nil, nil)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
+		assert.NotNil(t, r)
 	})
 	t.Run(`Pull secret reconciler is called even if ActiveGate disabled`, func(t *testing.T) {
 		dk := &dynakube.DynaKube{
