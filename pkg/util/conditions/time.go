@@ -15,5 +15,5 @@ func IsOutdated(timeProvider *timeprovider.Provider, dk *dynakube.DynaKube, cond
 		return true
 	}
 
-	return (condition.Status == metav1.ConditionFalse && condition.Reason != ScopeMissingReason) || timeProvider.IsOutdated(&condition.LastTransitionTime, dk.APIRequestThreshold())
+	return (condition.Status == metav1.ConditionFalse && condition.Reason != OptionalScopeMissingReason) || timeProvider.IsOutdated(&condition.LastTransitionTime, dk.APIRequestThreshold())
 }

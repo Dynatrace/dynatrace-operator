@@ -33,7 +33,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), meIDConditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, conditions.ScopeMissingReason, condition.Reason)
+		assert.Equal(t, conditions.OptionalScopeMissingReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Contains(t, condition.Message, dtclient.TokenScopeSettingsRead)
 	})
