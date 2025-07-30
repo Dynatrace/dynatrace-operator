@@ -19,7 +19,9 @@ jobs:
         with:
           sparse-checkout: ./hack/tenant/cleanup-kubernetes-settings.sh
       - name: Run cleanup script
-        uses: ./hack/tenant/cleanup-kubernetes-settings.sh
-        with:
+        shell: bash
+        env:
           tenant-name: ${{ secrets.TENANT1_NAME }}
           tenant-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+        run: |
+          ./hack/tenant/cleanup-kubernetes-settings.sh
