@@ -396,6 +396,49 @@ tests:
                   type: DirectoryOrCreate
                 name: mountpoint-dir
 
+  - it: should use correct values for livenessprobe for server provided by the operator
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.server.livenessProbe.failureThreshold: 2
+      csidriver.server.livenessProbe.initialDelaySeconds: 2
+      csidriver.server.livenessProbe.periodSeconds: 2
+      csidriver.server.livenessProbe.successThreshold: 2
+      csidriver.server.livenessProbe.timeoutSeconds: 2
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            failureThreshold: 2
+            httpGet:
+              path: /healthz
+              port: 9808
+              scheme: HTTP
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            successThreshold: 2
+            timeoutSeconds: 2
+
+  - it: should not use livenessProbe when it's disabled
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.server.livenessProbe.enabled: false
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].livenessProbe
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 3
+      - notContains:
+          path: spec.template.spec.containers
+          content:
+            name: liveness-probe
+          count: 1
+          any: true
+
   - it: should use livenessprobe and csi-node-driver-registrar commands provided by the operator if they are preferred
     set:
       platform: kubernetes
