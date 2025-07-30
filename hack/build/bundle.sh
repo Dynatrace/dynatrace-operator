@@ -67,6 +67,7 @@ if [ "${PLATFORM}" = "openshift" ]; then
 	echo 'LABEL com.redhat.delivery.backport=true' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	sed 's/\bkubectl\b/oc/g' "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml" > "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml.output"
 	mv "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml.output" "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml"
+        # allow installation on v4.10 and beyond
 	echo '  com.redhat.openshift.versions: v4.10' >> "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml"
 fi
 grep -v 'scorecard' "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml" > "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml.output"
