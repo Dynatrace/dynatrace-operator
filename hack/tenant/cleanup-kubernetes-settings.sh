@@ -27,7 +27,7 @@ object_ids=$(jq -r '.items[].objectId' "$response_file")
 
 for object_id in $object_ids; do
   echo "Deleting objectId $object_id"
-  curl -X 'DELETE' \
+  curl -s -X 'DELETE' \
   "https://$TENANT_NAME.dev.dynatracelabs.com/api/v2/settings/objects/$object_id?adminAccess=false" \
   -H 'accept: */*' \
   -H "Authorization: Api-Token $TENANT_APITOKEN"
