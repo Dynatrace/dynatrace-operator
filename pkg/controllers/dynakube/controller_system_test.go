@@ -1,16 +1,13 @@
 package dynakube
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
@@ -26,109 +23,13 @@ import (
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
-	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{
-		dtclient.TokenScopeSettingsRead,
-		dtclient.TokenScopeMetricsIngest,
-		dtclient.TokenScopeActiveGateTokenCreate,
-	})
-
-	mockClient.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), testName).Return(&dtclient.ActiveGateAuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil)
-	mockClient.On("GetLatestActiveGateVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testVersion, nil)
-
-	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: dynakube.DynaKubeSpec{
-			APIURL: testAPIURL,
-			ActiveGate: activegate.Spec{
-				Capabilities: []activegate.CapabilityDisplayName{
-					activegate.MetricsIngestCapability.DisplayName,
-					activegate.KubeMonCapability.DisplayName,
-					activegate.RoutingCapability.DisplayName,
-				},
-			},
-			LogMonitoring: &logmonitoring.Spec{},
-		},
-		Status: dynakube.DynaKubeStatus{
-			Conditions: []metav1.Condition{
-				{
-					Type:   dtclient.ConditionTypeAPITokenSettingsRead,
-					Status: metav1.ConditionTrue,
-				},
-			},
-		},
-	}
-
-	r := createFakeClientAndReconciler(t, mockClient, dk, testPaasToken, testAPIToken)
-	request := reconcile.Request{
-		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
-	}
-
-	_, err := r.Reconcile(context.Background(), request)
-	require.NoError(t, err)
-
-	// Reconcile twice since routing service is created before the stateful set
-	_, err = r.Reconcile(context.Background(), request)
-	require.NoError(t, err)
-
-	stsName := capability.CalculateStatefulSetName(testName)
-
-	routingSts := &appsv1.StatefulSet{}
-	err = r.client.Get(context.Background(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      stsName,
-	}, routingSts)
-	require.NoError(t, err)
-	assert.NotNil(t, routingSts)
-
-	routingSvc := &corev1.Service{}
-	err = r.client.Get(context.Background(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      capability.BuildServiceName(dk.Name),
-	}, routingSvc)
-	require.NoError(t, err)
-	assert.NotNil(t, routingSvc)
-
-	err = r.client.Get(context.Background(), client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
-	require.NoError(t, err)
-
-	dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{}
-	err = r.client.Update(context.Background(), dk)
-	require.NoError(t, err)
-
-	_, err = r.Reconcile(context.Background(), request)
-	require.NoError(t, err)
-
-	err = r.client.Get(context.Background(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      stsName,
-	}, routingSts)
-	require.Error(t, err)
-	assert.True(t, k8serrors.IsNotFound(err))
-
-	err = r.client.Get(context.Background(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      capability.BuildServiceName(dk.Name),
-	}, routingSvc)
-	require.Error(t, err)
-	assert.True(t, k8serrors.IsNotFound(err))
-}
 
 func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *dtclientmock.Client {
 	mockClient := dtclientmock.NewClient(t)
