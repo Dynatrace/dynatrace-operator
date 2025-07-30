@@ -3,11 +3,14 @@ package dynakube
 import (
 	"context"
 	"errors"
+
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
@@ -212,4 +215,67 @@ func TestReconcileActiveGate(t *testing.T) {
 			mock.AnythingOfType("string"))
 		require.NoError(t, err)
 	})
+}
+
+func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *dtclientmock.Client {
+	mockClient := dtclientmock.NewClient(t)
+
+	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		Protocol: testProtocol,
+		Host:     testHost,
+		Port:     testPort,
+	}, nil).Maybe()
+	mockClient.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(dtclient.OneAgentConnectionInfo{
+		CommunicationHosts: []dtclient.CommunicationHost{
+			{
+				Protocol: testProtocol,
+				Host:     testHost,
+				Port:     testPort,
+			},
+			{
+				Protocol: testAnotherProtocol,
+				Host:     testAnotherHost,
+				Port:     testAnotherPort,
+			},
+		},
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID: testUUID,
+		},
+	}, nil).Maybe()
+	mockClient.On("GetTokenScopes", mock.AnythingOfType("context.backgroundCtx"), testPaasToken).
+		Return(paasTokenScopes, nil).Maybe()
+	mockClient.On("GetTokenScopes", mock.AnythingOfType("context.backgroundCtx"), testAPIToken).
+		Return(apiTokenScopes, nil).Maybe()
+	mockClient.On("GetOneAgentConnectionInfo").
+		Return(
+			mock.AnythingOfType("context.backgroundCtx"),
+			dtclient.OneAgentConnectionInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{
+					TenantUUID: testUUID,
+				},
+			}, nil).Maybe()
+	mockClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.Anything, mock.Anything).
+		Return(testVersion, nil).Maybe()
+	mockClient.On("GetK8sClusterME", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string")).
+		Return(dtclient.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil).Maybe()
+	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), dtclient.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, mock.AnythingOfType("string")).
+		Return(dtclient.GetSettingsResponse{}, nil).Maybe()
+	mockClient.On("GetSettingsForMonitoredEntity", mock.AnythingOfType("context.backgroundCtx"), dtclient.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: ""}, mock.AnythingOfType("string")).
+		Return(dtclient.GetSettingsResponse{}, nil).Maybe()
+	mockClient.On("CreateOrUpdateKubernetesSetting", mock.AnythingOfType("context.backgroundCtx"), testName, testUID, mock.AnythingOfType("string")).
+		Return(testObjectID, nil).Maybe()
+	mockClient.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).
+		Return(dtclient.ActiveGateConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: testUUID,
+			},
+		}, nil).Maybe()
+	mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
+		Return(&dtclient.ProcessModuleConfig{}, nil).Maybe()
+	mockClient.On("GetSettingsForLogModule", mock.AnythingOfType("context.backgroundCtx"), "KUBERNETES_CLUSTER-0E30FE4BF2007587").
+		Return(dtclient.GetLogMonSettingsResponse{}, nil).Maybe()
+	mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "KUBERNETES_CLUSTER-0E30FE4BF2007587", "operator test entity 1", []logmonitoring.IngestRuleMatchers{}).
+		Return(testObjectID, nil).Maybe()
+
+	return mockClient
 }
