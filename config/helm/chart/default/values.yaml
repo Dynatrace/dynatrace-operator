@@ -154,6 +154,13 @@ csidriver:
       limits:
         cpu: 50m
         memory: 100Mi
+    livenessProbe:
+      enabled: true
+      failureThreshold: 5
+      initialDelaySeconds: 15
+      periodSeconds: 15
+      successThreshold: 1
+      timeoutSeconds: 10
   provisioner:
     securityContext:
       runAsUser: 0

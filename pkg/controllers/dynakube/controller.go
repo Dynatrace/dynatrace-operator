@@ -27,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -49,11 +50,6 @@ const (
 	fastUpdateInterval    = 1 * time.Minute
 	changesUpdateInterval = 5 * time.Minute
 	defaultUpdateInterval = 30 * time.Minute
-)
-
-const (
-	ReasonOptionalScope        = "OptionalScope"
-	ReasonOptionalScopePresent = "ScopePresent"
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -486,31 +482,11 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, missingOptionalScopes []string) {
 	for scope, conditionType := range dtclient.OptionalScopes {
 		if slices.Contains(missingOptionalScopes, scope) {
-			setConditionOptionalScopeMissing(dkStatus, conditionType, scope)
+			conditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
 		} else {
-			setConditionOptionalScopeAvailable(dkStatus, conditionType, scope)
+			conditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
 		}
 	}
-}
-
-func setConditionOptionalScopeAvailable(dkStatus *dynakube.DynaKubeStatus, conditionType string, scope string) {
-	tokenCondition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  ReasonOptionalScopePresent,
-		Message: scope + " is available",
-	}
-	meta.SetStatusCondition(&dkStatus.Conditions, tokenCondition)
-}
-
-func setConditionOptionalScopeMissing(dkStatus *dynakube.DynaKubeStatus, conditionType string, scope string) {
-	tokenCondition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  ReasonOptionalScope,
-		Message: scope + " is not available, some features may not work",
-	}
-	meta.SetStatusCondition(&dkStatus.Conditions, tokenCondition)
 }
 
 func lastErrorFromCondition(dkStatus *dynakube.DynaKubeStatus) error {
