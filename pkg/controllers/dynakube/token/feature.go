@@ -63,6 +63,13 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 				return !paasTokenExists
 			},
 		},
+		{
+			Name:           "MetadataEnrichment Rules",
+			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.MetadataEnrichmentEnabled() || dk.FF().IsNodeImagePull()
+			},
+		},
 	}
 }
 
