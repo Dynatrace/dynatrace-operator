@@ -73,7 +73,12 @@ const (
 	// misc
 	logVolumeName = "log"
 
-	userGroupID int64 = 1001
+	// database extension POD stuff
+	pocDataSourceConfig = "datasource-config"
+	//	pocPostgreSQLDataSourceMountPath                     = "/opt/dynatrace/remotepluginmodule/agent/datasources/sql"
+	pocDataSourceConfigMapNameAnnotation       = "poc.database-extensions.dynatrace.com/datasource-configmap"
+	pocDataSourceConfigMapMountPath            = "poc.database-extensions.dynatrace.com/datasource-configmap-mount-path"
+	userGroupID                          int64 = 1001
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
@@ -300,6 +305,11 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			MountPath: httpsCertMountPath,
 			ReadOnly:  true,
 		},
+		{
+			Name:      pocDataSourceConfig,
+			MountPath: dk.Annotations[pocDataSourceConfigMapMountPath],
+			ReadOnly:  true,
+		},
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
@@ -359,6 +369,16 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: dk.ExtensionsTLSSecretName(),
+					},
+				},
+			},
+			{
+				Name: pocDataSourceConfig,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dk.GetAnnotations()[pocDataSourceConfigMapNameAnnotation],
+						},
 					},
 				},
 			},
