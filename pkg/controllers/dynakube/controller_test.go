@@ -11,13 +11,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
@@ -696,62 +694,6 @@ func assertCondition(t *testing.T, dk *dynakube.DynaKube, expectedConditionType 
 	assert.Equal(t, expectedConditionStatus, actualCondition.Status)
 	assert.Equal(t, expectedReason, actualCondition.Reason)
 	assert.Equal(t, expectedMessage, actualCondition.Message)
-}
-
-func getTestDynkubeStatus() *dynakube.DynaKubeStatus {
-	return &dynakube.DynaKubeStatus{
-		ActiveGate: activegate.Status{
-			ConnectionInfo: communication.ConnectionInfo{
-				TenantUUID: testUUID,
-				Endpoints:  "endpoint",
-			},
-		},
-		OneAgent: oneagent.Status{
-			ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-				ConnectionInfo: communication.ConnectionInfo{
-					TenantUUID: testUUID,
-					Endpoints:  "endpoint",
-				},
-				CommunicationHosts: []oneagent.CommunicationHostStatus{
-					{
-						Protocol: "http",
-						Host:     "localhost",
-						Port:     9999,
-					},
-				},
-			},
-		},
-		KubeSystemUUID: testUID,
-		Conditions: []metav1.Condition{
-			{
-				Type:   dtclient.ConditionTypeAPITokenSettingsRead,
-				Status: metav1.ConditionTrue,
-			},
-		},
-	}
-}
-
-func createTenantSecrets(dk *dynakube.DynaKube) []client.Object {
-	return []client.Object{
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.OneAgent().GetTenantSecret(),
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				connectioninfo.TenantTokenKey: []byte("test-token"),
-			},
-		},
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.ActiveGate().GetTenantSecretName(),
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				connectioninfo.TenantTokenKey: []byte("test-token"),
-			},
-		},
-	}
 }
 
 func TestTokenConditionsOptionalScopes(t *testing.T) {
