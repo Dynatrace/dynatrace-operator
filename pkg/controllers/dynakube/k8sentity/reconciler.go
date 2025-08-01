@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !conditions.IsOptionalScopeAvailable(r.dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
 		msg := dynatrace.TokenScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
-		conditions.SetScopeMissing(r.dk.Conditions(), meIDConditionType, msg)
+		conditions.SetOptionalScopeMissing(r.dk.Conditions(), meIDConditionType, msg)
 
 		return nil
 	}
