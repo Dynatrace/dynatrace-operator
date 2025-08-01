@@ -50,7 +50,6 @@ func createCertInitManager(cfg *rest.Config, namespace string) (manager.Manager,
 		HealthProbeBindAddress: healthProbeBindAddress,
 		LivenessEndpointName:   livenessEndpointName,
 	})
-
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

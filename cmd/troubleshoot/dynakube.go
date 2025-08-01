@@ -56,6 +56,7 @@ func checkDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Re
 
 func getSelectedDynakube(ctx context.Context, apiReader client.Reader, namespaceName, dynakubeName string) (dynakube.DynaKube, error) {
 	var dk dynakube.DynaKube
+
 	err := apiReader.Get(
 		ctx,
 		client.ObjectKey{
@@ -64,7 +65,6 @@ func getSelectedDynakube(ctx context.Context, apiReader client.Reader, namespace
 		},
 		&dk,
 	)
-
 	if err != nil {
 		return dynakube.DynaKube{}, determineSelectedDynakubeError(namespaceName, dynakubeName, err)
 	}
@@ -120,7 +120,6 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 		SetDynakube(*dk).
 		SetTokens(dynatraceAPISecretTokens).
 		Build(ctx)
-
 	if err != nil {
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
