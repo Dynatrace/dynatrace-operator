@@ -65,7 +65,6 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		}
 
 		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, nsList, dk, data)
-
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -84,7 +83,6 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 		// Create the certs secret for all namespaces
 		err := s.createSecretForNSlist(ctx, consts.BootstrapperInitCertsSecretName, CertsConditionType, nsList, dk, certs)
-
 		if err != nil {
 			return errors.WithStack(err)
 		}

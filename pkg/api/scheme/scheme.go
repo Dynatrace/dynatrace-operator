@@ -55,4 +55,4 @@ func init() {
 	utilruntime.Must(corev1.AddToScheme(Scheme))
 	utilruntime.Must(apiv1.AddToScheme(Scheme))
 	// +kubebuilder:scaffold:scheme
-} //nolint:wsl
+}

@@ -11,8 +11,8 @@ import (
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube, dtc dynatrace.Client, istioClient *istio.Client) error {
 	reconciler := controller.activeGateReconcilerBuilder(controller.client, controller.apiReader, dk, dtc, istioClient, controller.tokens)
-	err := reconciler.Reconcile(ctx)
 
+	err := reconciler.Reconcile(ctx)
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")
 	}

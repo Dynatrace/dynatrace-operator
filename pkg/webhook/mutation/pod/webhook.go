@@ -56,8 +56,8 @@ type webhook struct {
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	emptyPatch := admission.Patched("")
-	mutationRequest, err := wh.createMutationRequestBase(ctx, request)
 
+	mutationRequest, err := wh.createMutationRequestBase(ctx, request)
 	if err != nil {
 		emptyPatch.Result.Message = fmt.Sprintf("unable to inject into pod (err=%s)", err.Error())
 		log.Error(err, "building mutation request base encountered an error")

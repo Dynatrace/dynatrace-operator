@@ -46,7 +46,6 @@ func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
 		Name:      reader.dk.Tokens(),
 		Namespace: reader.dk.Namespace,
 	}, &tokenSecret)
-
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

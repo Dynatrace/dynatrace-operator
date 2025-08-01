@@ -52,6 +52,7 @@ func (u updater) RequiresReconcile() bool {
 
 func (u updater) Update(ctx context.Context) error {
 	var err error
+
 	defer func() {
 		if err == nil {
 			u.Target().LastProbeTimestamp = u.timeProvider.Now()
@@ -70,7 +71,6 @@ func (u updater) Update(ctx context.Context) error {
 		}
 
 		image, err = u.combineImageWithDigest(imageVersion.Digest)
-
 		if err != nil {
 			return err
 		}

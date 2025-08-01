@@ -69,7 +69,6 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 
 func setPodMetadataJSONAnnotation(pod *corev1.Pod, annotations map[string]string) {
 	marshaledAnnotations, err := json.Marshal(annotations)
-
 	if err != nil {
 		log.Error(err, "failed to marshal annotations to map", "annotations", annotations)
 	}

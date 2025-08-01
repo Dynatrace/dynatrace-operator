@@ -3,7 +3,7 @@ kustomize_version=v5.7.1
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.18.0
 # renovate depName=github.com/golangci/golangci-lint/v2
-golang_ci_cmd_version=v2.2.2
+golang_ci_cmd_version=v2.3.0
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.13.7
 # renovate depName=golang.org/x/tools
@@ -41,9 +41,7 @@ CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 ## Install go linters
 prerequisites/go-linting: prerequisites/go-deadcode
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(golang_ci_cmd_version)
-	go install github.com/daixiang0/gci@$(gci_version)
 	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
-	go install github.com/bombsimon/wsl/v4/cmd...@master
 	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
 
 ## Install go deadcode

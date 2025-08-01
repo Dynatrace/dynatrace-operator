@@ -61,7 +61,7 @@ linters:
     - usestdlibvars
     - wastedassign
     - whitespace
-    - wsl
+    - wsl_v5
     - zerologlint
   settings:
     depguard:
@@ -170,7 +170,7 @@ linters:
             - 468
         - name: cyclomatic
           arguments:
-            - 12
+            - 13
         - name: banned-characters
           disabled: true
         - name: file-header
@@ -249,6 +249,8 @@ linters:
             - ^[a-z][\w]{0,}$
         - name: unchecked-type-assertion
           disabled: true
+        - name: enforce-switch-style
+          disabled: true
     staticcheck:
       checks:
         - all
@@ -263,14 +265,14 @@ linters:
       - linters:
           - dupl
           - perfsprint
-          - wsl
+          - wsl_v5
         path: _(test|gen)\.go
       - linters:
           - govet
           - noctx
           - perfsprint
           - thelper
-          - wsl
+          - wsl_v5
         path: (test/*)
       - linters:
           - dupl

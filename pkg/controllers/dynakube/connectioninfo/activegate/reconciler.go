@@ -63,7 +63,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	err := r.reconcileConnectionInfo(ctx)
-
 	if err != nil {
 		return err
 	}

@@ -30,6 +30,7 @@ func (extractor OneAgentExtractor) cleanTempZipDir() {
 
 func (extractor OneAgentExtractor) moveToTargetDir(targetDir string) error {
 	defer extractor.cleanTempZipDir()
+
 	log.Info("moving unpacked archive to target", "targetDir", targetDir)
 
 	_, err := extractor.fs.Stat(extractor.pathResolver.AgentTempUnzipDir())

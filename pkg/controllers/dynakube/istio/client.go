@@ -118,8 +118,8 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 	}
 
 	newVirtualService.ResourceVersion = oldVirtualService.ResourceVersion
-	_, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Update(ctx, newVirtualService, metav1.UpdateOptions{})
 
+	_, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Update(ctx, newVirtualService, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update virtual service", "name", newVirtualService.GetName(), "error", err.Error())
 
@@ -209,8 +209,8 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 	}
 
 	newServiceEntry.ResourceVersion = oldServiceEntry.ResourceVersion
-	_, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
 
+	_, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update service entry", "name", newServiceEntry.GetName(), "error", err.Error())
 

@@ -61,6 +61,7 @@ func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*a
 
 func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	var sts appsv1.StatefulSet
+
 	sts.Kind = "StatefulSet"
 	sts.APIVersion = "apps/v1"
 	sts.ObjectMeta = statefulSetBuilder.getBaseObjectMeta()

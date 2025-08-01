@@ -358,6 +358,7 @@ func (b *builder) securityContext() *corev1.SecurityContext {
 					Type:             corev1.SeccompProfileTypeLocalhost,
 					LocalhostProfile: &secCompName,
 				}
+			default:
 			}
 		}
 	}

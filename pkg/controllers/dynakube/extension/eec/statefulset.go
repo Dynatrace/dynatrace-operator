@@ -104,7 +104,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		setVolumes(r.dk),
 		setPersistentVolumeClaim(r.dk),
 	)
-
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 

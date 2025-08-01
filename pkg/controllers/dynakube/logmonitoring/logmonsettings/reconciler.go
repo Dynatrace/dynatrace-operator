@@ -80,7 +80,6 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	}
 
 	objectID, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
-
 	if err != nil {
 		setLogMonitoringSettingError(r.dk.Conditions(), ConditionType, err.Error())
 

@@ -92,7 +92,6 @@ func (c *client) CreateConnectionSetting(es EnvironmentSetting) error {
 	}
 
 	_, err = c.getSettingsAPIResponseData(response)
-
 	if err != nil {
 		return errors.WithMessage(err, "error reading response data")
 	}
@@ -121,7 +120,6 @@ func (c *client) UpdateConnectionSetting(es EnvironmentSetting) error {
 	defer utils.CloseBodyAfterRequest(response)
 
 	_, err = c.getSettingsAPIResponseData(response)
-
 	if err != nil {
 		return errors.WithMessage(err, "error reading response data")
 	}
@@ -144,7 +142,6 @@ func (c *client) DeleteConnectionSetting(objectID string) error {
 	}
 
 	_, err = c.getSettingsAPIResponseData(response)
-
 	if err != nil {
 		return errors.WithMessage(err, "error reading response data")
 	}

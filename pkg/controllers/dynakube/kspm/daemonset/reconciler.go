@@ -46,8 +46,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
 		query := daemonset.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 
+		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up KSPM daemonset")
 		}
@@ -99,7 +99,6 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		daemonset.SetAutomountServiceAccountToken(false),
 		daemonset.SetHostPID(true),
 	)
-
 	if err != nil {
 		return nil, err
 	}

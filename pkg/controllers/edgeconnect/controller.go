@@ -118,7 +118,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	return controller.reconcileEdgeConnect(ctx, ec)
 }
 
-//nolint:revive
 func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name, "scenario", "deletion")
 
@@ -201,7 +200,6 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 	oldStatus := *ec.Status.DeepCopy()
 
 	err := controller.reconcileEdgeConnectCR(ctx, ec)
-
 	if err != nil {
 		ec.Status.SetPhase(status.Error)
 		_log.Debug("error reconciling EdgeConnect, setting phase 'Error'")
@@ -595,7 +593,6 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 		consts.KeyEdgeConnectOauthClientSecret: []byte(createResponse.OauthClientSecret),
 		consts.KeyEdgeConnectOauthResource:     []byte(createResponse.OauthClientResource),
 		consts.KeyEdgeConnectID:                []byte(createResponse.ID)})
-
 	if err != nil {
 		_log.Debug("unable to create EdgeConnect secret")
 
@@ -808,7 +805,6 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 		ec.Name+"-"+consts.EdgeConnectSecretSuffix,
 		secretData,
 	)
-
 	if err != nil {
 		conditions.SetSecretGenFailed(ec.Conditions(), consts.SecretConfigConditionType, err)
 
@@ -837,8 +833,8 @@ func (controller *Controller) createOrUpdateEdgeConnectConfigSecret(ctx context.
 
 func (controller *Controller) getToken(ctx context.Context, ec *edgeconnect.EdgeConnect) (string, error) {
 	query := k8ssecret.Query(controller.client, controller.apiReader, log)
-	secretV, err := query.Get(ctx, types.NamespacedName{Name: ec.Name + "-" + consts.EdgeConnectSecretSuffix, Namespace: ec.Namespace})
 
+	secretV, err := query.Get(ctx, types.NamespacedName{Name: ec.Name + "-" + consts.EdgeConnectSecretSuffix, Namespace: ec.Namespace})
 	if err != nil {
 		return "", err
 	}
