@@ -62,7 +62,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
-
 		if err != nil {
 			log.Error(err, "failed to clean up "+r.dk.OtelCollectorStatefulsetName()+" statufulset")
 
@@ -111,7 +110,6 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
 	)
-
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 

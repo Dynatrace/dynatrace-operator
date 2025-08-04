@@ -40,8 +40,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		query := k8sconfigmap.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: GetConfigMapName(r.dk.Name), Namespace: r.dk.Namespace}})
 
+		err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: GetConfigMapName(r.dk.Name), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up OTELC configuration configmap")
 		}

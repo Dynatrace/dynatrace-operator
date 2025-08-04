@@ -44,13 +44,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	query := k8ssecret.Query(client, apiReader, log)
-	_, err := query.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
 
+	_, err := query.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new token for kspm")
 
 		secretConfig, err := generateKSPMTokenSecret(dk.KSPM().GetTokenSecretName(), dk)
-
 		if err != nil {
 			conditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
 
@@ -89,8 +88,8 @@ func removeKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 	}
 
 	query := k8ssecret.Query(client, apiReader, log)
-	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}})
 
+	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}})
 	if err != nil {
 		log.Info("could not delete kspm token", "name", dk.KSPM().GetTokenSecretName())
 
@@ -111,12 +110,12 @@ func generateKSPMTokenSecret(name string, dk *dynakube.DynaKube) (secret *corev1
 
 	secretData := make(map[string][]byte)
 	secretData[kspm.TokenSecretKey] = []byte(newToken.String())
+
 	secretConfig, err := k8ssecret.Build(dk,
 		name,
 		secretData,
 		k8ssecret.SetLabels(k8slabels.NewCoreLabels(dk.Name, k8slabels.KSPMComponentLabel).BuildLabels()),
 	)
-
 	if err != nil {
 		return nil, err
 	}

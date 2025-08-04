@@ -92,7 +92,6 @@ func RunTroubleshootCmd(ctx context.Context, log logd.Logger, namespaceName stri
 	}
 
 	dks, err := getDynakubes(ctx, log, apiReader, namespaceName, dynakubeFlagValue)
-
 	if checkCRD(log, err) != nil {
 		logErrorf(log, "error during getting dynakubes: %v", err)
 

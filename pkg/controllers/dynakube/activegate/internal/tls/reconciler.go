@@ -65,7 +65,6 @@ func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 		Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		Namespace: r.dk.Namespace,
 	})
-
 	if err != nil && k8serrors.IsNotFound(err) {
 		return r.createSelfSignedTLSSecret(ctx)
 	}

@@ -167,8 +167,8 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 			Namespace: dkNamespace,
 		},
 	}
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
 
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
 	if k8serrors.IsNotFound(err) {
 		namespaces, err := mapper.GetNamespacesForDynakube(ctx, controller.apiReader, dkName)
 		if err != nil {

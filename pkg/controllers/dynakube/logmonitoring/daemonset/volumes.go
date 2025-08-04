@@ -133,6 +133,7 @@ func getIngestVolumes() []corev1.Volume {
 
 func getVolumeMounts(tenantUUID string) []corev1.VolumeMount {
 	var mounts []corev1.VolumeMount
+
 	mounts = append(mounts, getConfigVolumeMount())
 	mounts = append(mounts, getDTVolumeMounts(tenantUUID))
 	mounts = append(mounts, getDTLogVolumeMounts(tenantUUID))
@@ -143,6 +144,7 @@ func getVolumeMounts(tenantUUID string) []corev1.VolumeMount {
 
 func getVolumes(dkName string) []corev1.Volume {
 	var volumes []corev1.Volume
+
 	volumes = append(volumes, getConfigVolume(dkName))
 	volumes = append(volumes, getDTVolumes()...)
 	volumes = append(volumes, getIngestVolumes()...)

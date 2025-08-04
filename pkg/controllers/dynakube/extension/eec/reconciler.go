@@ -47,7 +47,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
-
 		if err != nil {
 			log.Error(err, "failed to clean up "+r.dk.ExtensionsExecutionControllerStatefulsetName()+" statufulset")
 
