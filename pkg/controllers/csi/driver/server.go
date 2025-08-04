@@ -78,7 +78,6 @@ func (srv *Server) SetupWithManager(mgr ctrl.Manager) error {
 
 func (srv *Server) Start(ctx context.Context) error {
 	endpoint, err := url.Parse(srv.opts.Endpoint)
-
 	if err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("failed to parse endpoint '%s'", srv.opts.Endpoint))
 	}
@@ -342,7 +341,6 @@ func grpcLimiter(maxGrpcRequests int32) grpc.UnaryServerInterceptor {
 		}
 
 		resp, err := handler(ctx, req)
-
 		if err != nil {
 			logValues = append(logValues, "error", err.Error())
 

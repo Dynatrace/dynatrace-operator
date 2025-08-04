@@ -144,7 +144,6 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
 
 	if r.istioReconciler != nil {
 		err = r.istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, r.dk)
-
 		if err != nil {
 			log.Error(err, "error reconciling istio configuration for codemodules")
 		}

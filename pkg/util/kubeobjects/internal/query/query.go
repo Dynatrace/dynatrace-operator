@@ -87,7 +87,6 @@ func (c Generic[T, L]) Delete(ctx context.Context, object T, options ...client.D
 
 func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, error) {
 	currentObject, err := c.Get(ctx, asNamespacedName(newObject))
-
 	if k8serrors.IsNotFound(err) {
 		err = c.Create(ctx, newObject)
 		if err != nil {

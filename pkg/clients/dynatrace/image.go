@@ -113,7 +113,6 @@ func (dtc *dynatraceClient) createLatestImageRequest(ctx context.Context, url st
 		dtc.apiToken,
 		bytes.NewReader(bodyData),
 	)
-
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -132,7 +132,6 @@ func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequ
 
 func (wh *webhook) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
 	err := wh.replicateSecret(mutationRequest, sourceSecretName, targetSecretName)
-
 	if k8serrors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("unable to copy source of %s as it is not available, injection not possible", sourceSecretName), "pod", mutationRequest.PodName())
 
@@ -156,8 +155,8 @@ func (wh *webhook) replicateSecret(mutationRequest *dtwebhook.MutationRequest, s
 	var initSecret corev1.Secret
 
 	secretObjectKey := client.ObjectKey{Name: targetSecretName, Namespace: mutationRequest.Namespace.Name}
-	err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
 
+	err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
 	if k8serrors.IsNotFound(err) {
 		log.Info(targetSecretName+" is not available, trying to replicate", "pod", mutationRequest.PodName())
 

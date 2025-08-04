@@ -27,7 +27,6 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 		}
 
 		err = service.Query(r.client, r.apiReader, log).Delete(ctx, svc)
-
 		if err != nil {
 			log.Error(err, "failed to clean up extension service")
 

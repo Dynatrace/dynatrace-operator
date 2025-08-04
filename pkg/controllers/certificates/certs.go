@@ -77,7 +77,6 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 	}
 
 	var err error
-
 	if block, _ := pem.Decode(cs.Data[RootCert]); block == nil {
 		log.Info("failed to parse root certificates, renewing", "error", "can't decode PEM file")
 
