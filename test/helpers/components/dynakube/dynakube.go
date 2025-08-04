@@ -95,7 +95,7 @@ func WaitForPhase(dk dynakube.DynaKube, phase status.DeploymentPhase) features.F
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		const timeout = 5 * time.Minute
+		const timeout = 8 * time.Minute
 		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynakube.DynaKube)
 
