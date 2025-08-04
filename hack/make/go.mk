@@ -1,6 +1,6 @@
 ## Runs golangci-lint
 go/golangci:
-	golangci-lint run --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s
+	golangci-lint run --fix --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s
 
 ## Runs betteralign
 go/betteralign:

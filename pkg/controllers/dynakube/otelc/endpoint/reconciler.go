@@ -45,8 +45,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 func (r *Reconciler) ensureOtlpAPIEndpointConfigMap(ctx context.Context) error {
 	query := k8sconfigmap.Query(r.client, r.apiReader, log)
-	_, err := query.Get(ctx, types.NamespacedName{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: r.dk.Namespace})
 
+	_, err := query.Get(ctx, types.NamespacedName{Name: consts.OtlpAPIEndpointConfigMapName, Namespace: r.dk.Namespace})
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new config map for telemetry api endpoint")
 

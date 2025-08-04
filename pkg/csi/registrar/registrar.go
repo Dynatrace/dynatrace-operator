@@ -69,7 +69,7 @@ func (s Server) Start(ctx context.Context) error {
 		oldmask = unix.Umask(permAllUG)
 	}
 
-	lis, err := net.Listen("unix", socketPath) //nolint:noctx
+	lis, err := net.Listen("unix", socketPath)
 	if err != nil {
 		log.Error(err, "failed to listen on socket "+socketPath)
 

@@ -44,8 +44,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	query := k8ssecret.Query(client, apiReader, log)
-	_, err := query.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
 
+	_, err := query.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new token for kspm")
 
