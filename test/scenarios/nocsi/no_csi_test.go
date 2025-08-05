@@ -3,18 +3,25 @@
 package nocsi
 
 import (
-	"testing"
-
+	"context"
+	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/test/features/classic"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/standard"
-	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/klog/v2"
+	"testing"
+
+	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
@@ -63,6 +70,38 @@ func TestNoCSI(t *testing.T) {
 		telemetryingest.WithTelemetryIngestEndpointTLS(t),
 		telemetryingest.OtelCollectorConfigUpdate(t),
 	}
+
+	testEnv.AfterEachFeature(func(ctx context.Context, c *envconf.Config, t *testing.T, f features.Feature) (context.Context, error) {
+		if t.Failed() {
+			klog.InfoS("feature failed", "f", f.Name(), "failed", t.Failed())
+
+			resource := c.Client().Resources()
+
+			optFunc := func(options *metav1.ListOptions) {
+				options.Limit = int64(300)
+				options.FieldSelector = fmt.Sprint(fields.OneTermEqualSelector("type", corev1.EventTypeWarning))
+			}
+
+			events := event.List(t, ctx, resource, "dynatrace", optFunc)
+
+			klog.InfoS("Events list", "events total", len(events.Items))
+			for _, eventItem := range events.Items {
+				klog.InfoS("Event", "name", eventItem.Name, "message", eventItem.Message, "reason", eventItem.Reason, "type", eventItem.Type)
+			}
+
+			pods := &corev1.PodList{}
+			err := resource.List(ctx, pods)
+			if err != nil {
+				klog.Error(err)
+			}
+
+			for _, pod := range pods.Items {
+				klog.InfoS("Pod list", "pod", pod.Name, "status", pod.Status.Phase)
+			}
+		}
+
+		return ctx, nil
+	})
 
 	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
 }
