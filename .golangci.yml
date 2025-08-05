@@ -249,6 +249,8 @@ linters:
             - ^[a-z][\w]{0,}$
         - name: unchecked-type-assertion
           disabled: true
+        - name: enforce-switch-style
+          disabled: true
     staticcheck:
       checks:
         - all

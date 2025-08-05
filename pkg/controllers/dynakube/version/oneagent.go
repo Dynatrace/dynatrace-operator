@@ -132,7 +132,7 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 
 	var err error
 
-	switch updater.Target().Source { //nolint:revive // Ignore non-exhaustive switch
+	switch updater.Target().Source {
 	case status.TenantRegistryVersionSource:
 		previousVersion = updater.Target().Version
 	case status.PublicRegistryVersionSource:
