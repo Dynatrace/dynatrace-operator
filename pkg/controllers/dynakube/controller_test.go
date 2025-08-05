@@ -17,6 +17,7 @@ import (
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
@@ -24,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	oneagentcontroller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -68,6 +70,8 @@ const (
 	testNamespace = "test-namespace"
 
 	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
+
+	testMessage = "test-message"
 )
 
 func TestGetDynakubeOrCleanup(t *testing.T) {
@@ -131,6 +135,18 @@ func TestMinimalRequest(t *testing.T) {
 		result, err := controller.Reconcile(context.Background(), reconcile.Request{})
 
 		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run("reconcile fails with faulty client", func(t *testing.T) {
+		controller := &Controller{
+			client:    errorClient{},
+			apiReader: errorClient{},
+		}
+
+		result, err := controller.Reconcile(context.Background(), reconcile.Request{})
+
+		require.Error(t, err)
 		assert.NotNil(t, result)
 	})
 }
@@ -417,6 +433,117 @@ func TestReconcileComponents(t *testing.T) {
 	})
 }
 
+func TestReconcileDynaKube(t *testing.T) {
+	ctx := context.Background()
+	baseDk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+	}
+
+	fakeClient := fake.NewClient(baseDk, createAPISecret())
+	mockClient := dtclientmock.NewClient(t)
+	mockClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
+		dtclient.TokenScopeSettingsRead,
+		dtclient.TokenScopeSettingsWrite,
+		dtclient.TokenScopeInstallerDownload,
+		dtclient.TokenScopeActiveGateTokenCreate,
+	}, nil)
+	mockDtcBuilder := dtbuildermock.NewBuilder(t)
+	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.On("Build", mock.Anything).Return(mockClient, nil)
+
+	mockDeploymentMetadataReconciler := controllermock.NewReconciler(t)
+	mockDeploymentMetadataReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockProxyReconciler := controllermock.NewReconciler(t)
+	mockProxyReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+	mockOneAgentReconciler := controllermock.NewReconciler(t)
+	mockOneAgentReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+	mockActiveGateReconciler := controllermock.NewReconciler(t)
+	mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+	mockInjectionReconciler := controllermock.NewReconciler(t)
+	mockInjectionReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+	mockLogMonitoringReconciler := controllermock.NewReconciler(t)
+	mockLogMonitoringReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+	mockExtensionReconciler := controllermock.NewReconciler(t)
+	mockExtensionReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+	mockOtelcReconciler := controllermock.NewReconciler(t)
+	mockOtelcReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+	mockKSPMReconciler := controllermock.NewReconciler(t)
+	mockKSPMReconciler.On("Reconcile", mock.Anything).Return(nil)
+
+	fakeIstio := fakeistio.NewSimpleClientset()
+
+	baseController := &Controller{
+		apiReader:                           fakeClient,
+		client:                              fakeClient,
+		istioClientBuilder:                  fakeIstioClientBuilder(t, fakeIstio, true),
+		activeGateReconcilerBuilder:         createActivegateReconcilerBuilder(mockActiveGateReconciler),
+		deploymentMetadataReconcilerBuilder: createDeploymentMetadataReconcilerBuilder(mockDeploymentMetadataReconciler),
+		dynatraceClientBuilder:              mockDtcBuilder,
+		extensionReconcilerBuilder:          createExtensionReconcilerBuilder(mockExtensionReconciler),
+		injectionReconcilerBuilder:          createInjectionReconcilerBuilder(mockInjectionReconciler),
+		istioReconcilerBuilder:              istio.NewReconciler,
+		kspmReconcilerBuilder:               createKSPMReconcilerBuilder(mockKSPMReconciler),
+		logMonitoringReconcilerBuilder:      createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
+		oneAgentReconcilerBuilder:           createOneAgentReconcilerBuilder(mockOneAgentReconciler),
+		otelcReconcilerBuilder:              createOtelcReconcilerBuilder(mockOtelcReconciler),
+		proxyReconcilerBuilder:              createProxyReconcilerBuilder(mockProxyReconciler),
+	}
+
+	request := reconcile.Request{
+		NamespacedName: types.NamespacedName{Name: testName, Namespace: testNamespace},
+	}
+
+	t.Run("reconcile the controller and its sub controllers", func(t *testing.T) {
+		controller := baseController
+
+		result, err := controller.Reconcile(ctx, request)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run("reconcile the controller with istio enabled", func(t *testing.T) {
+		dk := baseDk.DeepCopy()
+		dk.Spec.APIURL = testAPIURL
+		dk.Spec.EnableIstio = true
+
+		fakeClientWithIstio := fake.NewClientWithIndex(dk, createAPISecret())
+
+		controller := baseController
+		controller.client = fakeClientWithIstio
+		controller.apiReader = fakeClientWithIstio
+
+		result, err := controller.Reconcile(ctx, request)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run("reconciling the controller with istio enabled (but without valid API URL) should fail", func(t *testing.T) {
+		dk := baseDk.DeepCopy()
+		dk.Spec.EnableIstio = true
+
+		fakeClientWithIstio := fake.NewClientWithIndex(dk, createAPISecret())
+
+		controller := baseController
+		controller.client = fakeClientWithIstio
+		controller.apiReader = fakeClientWithIstio
+
+		result, err := controller.Reconcile(ctx, request)
+		require.Error(t, err)
+		assert.NotNil(t, result)
+	})
+}
+
 func createActivegateReconcilerBuilder(reconciler controllers.Reconciler) ag.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube, _ dtclient.Client, _ *istio.Client, _ token.Tokens) controllers.Reconciler {
 		return reconciler
@@ -461,6 +588,18 @@ func createKSPMReconcilerBuilder(reconciler controllers.Reconciler) kspm.Reconci
 
 func createAPIMonitoringReconcilerBuilder(reconciler controllers.Reconciler) apimonitoring.ReconcilerBuilder {
 	return func(_ dtclient.Client, _ *dynakube.DynaKube, _ string) controllers.Reconciler {
+		return reconciler
+	}
+}
+
+func createDeploymentMetadataReconcilerBuilder(reconciler controllers.Reconciler) deploymentmetadata.ReconcilerBuilder {
+	return func(_ client.Client, _ client.Reader, _ dynakube.DynaKube, _ string) controllers.Reconciler {
+		return reconciler
+	}
+}
+
+func createProxyReconcilerBuilder(reconciler controllers.Reconciler) proxy.ReconcilerBuilder {
+	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -612,6 +751,64 @@ func TestTokenConditions(t *testing.T) {
 
 		require.NoError(t, err)
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionTrue, dynakube.ReasonTokenReady, TokenReadyConditionMessage)
+	})
+	t.Run("token status condition remains unchanged unless new condition doesn't match", func(t *testing.T) {
+		transitionTime := metav1.NewTime(time.Now())
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Status: dynakube.DynaKubeStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               dynakube.TokenConditionType,
+						Status:             metav1.ConditionTrue,
+						LastTransitionTime: transitionTime,
+						Reason:             dynakube.ReasonTokenReady,
+						Message:            testMessage,
+					},
+				},
+			},
+		}
+
+		newCondition := metav1.Condition{
+			Type:               dynakube.TokenConditionType,
+			Status:             metav1.ConditionTrue,
+			LastTransitionTime: transitionTime,
+			Reason:             dynakube.ReasonTokenReady,
+			Message:            testMessage,
+		}
+
+		controller := &Controller{}
+		controller.setAndLogCondition(dk, newCondition)
+
+		assertCondition(t, dk, newCondition.Type, newCondition.Status, newCondition.Reason, newCondition.Message)
+	})
+	t.Run("deprecated conditions types are removed", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Status: dynakube.DynaKubeStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type: dynakube.PaaSTokenConditionType,
+					},
+					{
+						Type: dynakube.APITokenConditionType,
+					},
+					{
+						Type: dynakube.DataIngestTokenConditionType,
+					},
+				},
+			},
+		}
+
+		controller := &Controller{}
+		controller.removeDeprecatedConditionTypes(dk)
+		assert.Empty(t, dk.Status.Conditions)
 	})
 }
 
@@ -773,6 +970,29 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		cond = meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite)
 		require.NotNil(t, cond)
 		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	})
+}
+
+func TestLastErrorFromCondition(t *testing.T) {
+	t.Run("status nil => nil returned", func(t *testing.T) {
+		dkStatus := &dynakube.DynaKubeStatus{}
+		err := lastErrorFromCondition(dkStatus)
+		assert.NoError(t, err)
+	})
+	t.Run("status with token error => error returned", func(t *testing.T) {
+		dkStatus := &dynakube.DynaKubeStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:    dynakube.TokenConditionType,
+					Status:  metav1.ConditionTrue,
+					Reason:  dynakube.ReasonTokenError,
+					Message: testMessage,
+				},
+			},
+		}
+
+		err := lastErrorFromCondition(dkStatus)
+		require.Error(t, err)
 	})
 }
 
