@@ -84,30 +84,23 @@ func createImageInfo(imageURI string) containerattr.ImageInfo { // TODO: move to
 	// can't use the name.ParseReference() as that will fill in some defaults if certain things are defined, but we want to preserve the original string value, without any modification. Tried it with a regexp, was worse.
 	imageInfo := containerattr.ImageInfo{}
 
-	repoPart := ""
-
-	registrySplit := strings.SplitN(imageURI, "/", 2)
-	if len(registrySplit) == 1 {
-		repoPart = registrySplit[0]
-	} else if len(registrySplit) == 2 {
-		imageInfo.Registry = registrySplit[0]
-		repoPart = registrySplit[1]
+	registry, repo, ok := strings.Cut(imageURI, "/")
+	if ok {
+		imageInfo.Registry = registry
+	} else {
+		repo = registry
 	}
 
-	digestSplit := strings.SplitN(repoPart, "@", 2)
-	if len(digestSplit) == 1 {
-		repoPart = digestSplit[0]
-	} else if len(digestSplit) == 2 {
-		imageInfo.ImageDigest = digestSplit[1]
-		repoPart = digestSplit[0]
+	repo, digest, ok := strings.Cut(repo, "@")
+	if ok {
+		imageInfo.ImageDigest = digest
 	}
 
-	tagSplit := strings.SplitN(repoPart, ":", 2)
-	if len(tagSplit) == 1 {
-		imageInfo.Repository = tagSplit[0]
-	} else if len(tagSplit) == 2 {
-		imageInfo.Tag = tagSplit[1]
-		imageInfo.Repository = tagSplit[0]
+	var tag string
+
+	imageInfo.Repository, tag, ok = strings.Cut(repo, ":")
+	if ok {
+		imageInfo.Tag = tag
 	}
 
 	return imageInfo
