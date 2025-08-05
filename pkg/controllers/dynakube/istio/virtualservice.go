@@ -44,7 +44,7 @@ func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.Virtu
 	for i, commHost := range commHosts {
 		hosts[i] = commHost.Host
 
-		switch commHost.Protocol {
+		switch commHost.Protocol { //nolint:revive // Ignore non-exhaustive switch
 		case protocolHTTPS:
 			tlses = append(tlses, buildVirtualServiceTLSRoute(commHost.Host, commHost.Port))
 		case protocolHTTP:

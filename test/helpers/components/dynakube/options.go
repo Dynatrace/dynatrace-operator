@@ -107,7 +107,7 @@ func WithNameBasedOneAgentNamespaceSelector() Option {
 				"oa-inject": dk.Name,
 			},
 		}
-		switch {
+		switch { //nolint:revive // Ignore non-exhaustive switch
 		case dk.OneAgent().IsCloudNativeFullstackMode():
 			dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = namespaceSelector
 		case dk.OneAgent().IsApplicationMonitoringMode():
@@ -129,7 +129,7 @@ func WithNameBasedMetadataEnrichmentNamespaceSelector() Option {
 
 func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 	return func(dk *dynakube.DynaKube) {
-		switch {
+		switch { //nolint:revive // Ignore non-exhaustive switch
 		case dk.OneAgent().IsCloudNativeFullstackMode():
 			dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector = selector
 		case dk.OneAgent().IsApplicationMonitoringMode():

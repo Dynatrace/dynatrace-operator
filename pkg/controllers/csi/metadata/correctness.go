@@ -174,7 +174,7 @@ func GetRelevantOverlayMounts(mounter mount.Interface, baseFolder string) ([]Ove
 			}
 
 			for _, opt := range mountPoint.Opts {
-				switch {
+				switch { //nolint:revive // Ignore non-exhaustive switch
 				case strings.HasPrefix(opt, "lowerdir="):
 					split := strings.SplitN(opt, "=", 2)
 					overlayMount.LowerDir = split[1]

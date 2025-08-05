@@ -45,7 +45,7 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 
 		var exists bool
 
-		switch rule.Type {
+		switch rule.Type { //nolint:revive // Ignore non-exhaustive switch
 		case dynakube.EnrichmentLabelRule:
 			valueFromNamespace, exists = namespace.Labels[rule.Source]
 		case dynakube.EnrichmentAnnotationRule:

@@ -37,7 +37,7 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	_, hasPaasToken := tokens[dtclient.PaasToken]
 
 	for _, token := range tokens {
-		switch token.Type {
+		switch token.Type { //nolint:revive // Ignore non-exhaustive switch
 		case dtclient.APIToken:
 			token.addFeatures(getFeaturesForAPIToken(hasPaasToken))
 		case dtclient.PaasToken:

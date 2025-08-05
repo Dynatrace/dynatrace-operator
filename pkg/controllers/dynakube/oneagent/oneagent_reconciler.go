@@ -307,7 +307,7 @@ func (r *Reconciler) buildDesiredDaemonSet(dk *dynakube.DynaKube) (*appsv1.Daemo
 
 	var err error
 
-	switch {
+	switch { //nolint:revive // Ignore non-exhaustive switch
 	case dk.OneAgent().IsClassicFullStackMode():
 		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet()
 	case dk.OneAgent().IsHostMonitoringMode():

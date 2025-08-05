@@ -150,7 +150,7 @@ func (c *Config) protocolsToIDs() []component.ID {
 	ids := []component.ID{}
 
 	for _, p := range c.protocols {
-		switch p {
+		switch p { //nolint:revive // Ignore non-exhaustive switch
 		case JaegerProtocol:
 			ids = append(ids, JaegerID)
 		case ZipkinProtocol:

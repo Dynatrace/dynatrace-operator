@@ -97,7 +97,7 @@ func (srv *Server) Start(ctx context.Context) error {
 
 	log.Info("starting listener", "scheme", endpoint.Scheme, "address", addr)
 
-	listener, err := net.Listen(endpoint.Scheme, addr)
+	listener, err := (&net.ListenConfig{}).Listen(ctx, endpoint.Scheme, addr)
 	if err != nil {
 		return errors.WithMessage(err, "failed to start server")
 	}

@@ -195,9 +195,9 @@ func (oa *OneAgent) GetCustomImage() string {
 		return oa.HostMonitoring.Image
 	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.Image
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 // GetDefaultImage provides the image reference for the OneAgent from tenant registry.
@@ -232,9 +232,9 @@ func (oa *OneAgent) GetArguments() []string {
 		return oa.ClassicFullStack.Args
 	case oa.IsHostMonitoringMode() && oa.HostMonitoring.Args != nil:
 		return oa.HostMonitoring.Args
+	default:
+		return []string{}
 	}
-
-	return []string{}
 }
 
 func (oa *OneAgent) GetHostGroupAsParam() string {
@@ -275,9 +275,9 @@ func (oa *OneAgent) GetEnvironment() []corev1.EnvVar {
 		return oa.ClassicFullStack.Env
 	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.Env
+	default:
+		return []corev1.EnvVar{}
 	}
-
-	return []corev1.EnvVar{}
 }
 
 func (oa *OneAgent) GetEndpoints() string {
