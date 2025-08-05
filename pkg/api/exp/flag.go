@@ -57,15 +57,7 @@ func (ff *FeatureFlags) getDisableFlagWithDeprecatedAnnotation(annotation string
 }
 
 func (ff *FeatureFlags) getRaw(annotation string) string {
-	if ff.annotations == nil {
-		return ""
-	}
-
-	if raw, ok := ff.annotations[annotation]; ok {
-		return raw
-	}
-
-	return ""
+	return ff.annotations[annotation]
 }
 
 func (ff *FeatureFlags) getBoolWithDefault(annotation string, defaultVal bool) bool {
