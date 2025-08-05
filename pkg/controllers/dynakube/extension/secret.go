@@ -29,7 +29,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 			return nil
 		}
 
-		err = k8ssecret.Query(r.client, r.apiReader, log).Delete(ctx, secret)
+		err = r.secretQuery.Delete(ctx, secret)
 		if err != nil {
 			log.Error(err, "failed to clean up extension secret")
 
@@ -39,7 +39,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		return nil
 	}
 
-	_, err := k8ssecret.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
+	_, err := r.secretQuery.Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to check existence of extension secret")
 		conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
@@ -72,7 +72,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 			return err
 		}
 
-		_, err = k8ssecret.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newSecret)
+		_, err = r.secretQuery.CreateOrUpdate(ctx, newSecret)
 		if err != nil {
 			log.Info("failed to create/update extension secret")
 			conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)

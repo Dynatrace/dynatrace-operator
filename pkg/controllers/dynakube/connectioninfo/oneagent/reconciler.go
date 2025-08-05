@@ -25,8 +25,8 @@ type reconciler struct {
 	apiReader    client.Reader
 	dtc          dtclient.Client
 	timeProvider *timeprovider.Provider
-
-	dk *dynakube.DynaKube
+	dk           *dynakube.DynaKube
+	secretQuery  k8ssecret.QueryObject
 }
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
 
@@ -39,6 +39,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 		dk:           dk,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
+		secretQuery:  k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -50,9 +51,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		query := k8ssecret.Query(r.client, r.apiReader, log)
-
-		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}})
+		err := r.secretQuery.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
 		}
@@ -162,9 +161,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(r.client, r.apiReader, log)
-
-	_, err = query.CreateOrUpdate(ctx, secret)
+	_, err = r.secretQuery.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
 		conditions.SetKubeAPIError(r.dk.Conditions(), oaConnectionInfoConditionType, err)

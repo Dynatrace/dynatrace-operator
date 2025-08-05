@@ -317,6 +317,7 @@ func TestReconcile(t *testing.T) {
 			},
 		})
 		controller.apiReader = boomClient
+		controller.secretQuery = k8ssecret.Query(controller.client, controller.apiReader, log)
 
 		err := controller.reconcileEdgeConnectRegular(context.Background(), ec)
 		require.Error(t, err)
@@ -801,6 +802,7 @@ func createFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, ob
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: mockEdgeConnectClientBuilder,
+		secretQuery:              k8ssecret.Query(fakeClient, fakeClient, log),
 	}
 
 	return controller
@@ -831,6 +833,7 @@ func createFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.E
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: builder,
+		secretQuery:              k8ssecret.Query(fakeClient, fakeClient, log),
 	}
 
 	return controller

@@ -29,18 +29,20 @@ const (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-	dk        *dynakube.DynaKube
-	dtc       dtclient.Client
+	client      client.Client
+	apiReader   client.Reader
+	dk          *dynakube.DynaKube
+	dtc         dtclient.Client
+	secretQuery k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, dtc dtclient.Client) *Reconciler {
 	return &Reconciler{
-		client:    clt,
-		apiReader: apiReader,
-		dk:        dk,
-		dtc:       dtc,
+		client:      clt,
+		apiReader:   apiReader,
+		dk:          dk,
+		dtc:         dtc,
+		secretQuery: k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -67,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
-	secret, err := r.secretQuery().Get(ctx, client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: r.dk.Namespace})
+	secret, err := r.secretQuery.Get(ctx, client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: r.dk.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating activeGateAuthToken secret")
@@ -131,7 +133,7 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 		return errors.WithStack(err)
 	}
 
-	err = r.secretQuery().WithOwner(r.dk).Create(ctx, secret)
+	err = r.secretQuery.WithOwner(r.dk).Create(ctx, secret)
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
@@ -144,7 +146,7 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
-	if err := r.secretQuery().Delete(ctx, secret); err != nil {
+	if err := r.secretQuery.Delete(ctx, secret); err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return err
@@ -164,8 +166,4 @@ func (r *Reconciler) conditionSetSecretCreated(secret *corev1.Secret) {
 	tokenPublicPart := strings.Join(tokenAllParts[:2], ".")
 
 	setAuthSecretCreated(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
-}
-
-func (r *Reconciler) secretQuery() k8ssecret.QueryObject {
-	return k8ssecret.Query(r.client, r.apiReader, log)
 }
