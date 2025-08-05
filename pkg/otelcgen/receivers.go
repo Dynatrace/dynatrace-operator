@@ -39,9 +39,9 @@ func (c *Config) buildReceiverComponent(componentID component.ID) component.Conf
 				},
 			},
 		}
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 func (c *Config) buildReceivers() (map[component.ID]component.Config, error) {

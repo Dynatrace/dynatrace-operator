@@ -64,9 +64,9 @@ func (certSecret *certificateSecret) isRecent() bool {
 		return false
 	case !reflect.DeepEqual(certSecret.certificates.Data, certSecret.secret.Data):
 		return false
+	default:
+		return true
 	}
-
-	return true
 }
 
 func (certSecret *certificateSecret) validateCertificates(namespace string) error {

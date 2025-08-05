@@ -23,9 +23,9 @@ func GetOneAgentDeploymentType(dk dynakube.DynaKube) string {
 		return ClassicFullStackDeploymentType
 	case dk.OneAgent().IsApplicationMonitoringMode():
 		return ApplicationMonitoringDeploymentType
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func NewDeploymentMetadata(orchestratorID string, dt string) *DeploymentMetadata {
