@@ -62,10 +62,6 @@ const (
 	testPort     = uint32(1234)
 	testProtocol = "test-protocol"
 
-	testAnotherHost     = "test-another-host"
-	testAnotherPort     = uint32(5678)
-	testAnotherProtocol = "test-another-protocol"
-
 	testName      = "test-name"
 	testNamespace = "test-namespace"
 
@@ -450,13 +446,16 @@ func TestReconcileDynaKube(t *testing.T) {
 		dtclient.TokenScopeInstallerDownload,
 		dtclient.TokenScopeActiveGateTokenCreate,
 	}, nil)
+
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
+
 	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("Build", mock.Anything).Return(mockClient, nil)
 
 	mockDeploymentMetadataReconciler := controllermock.NewReconciler(t)
 	mockDeploymentMetadataReconciler.On("Reconcile", mock.Anything).Return(nil)
+
 	mockProxyReconciler := controllermock.NewReconciler(t)
 	mockProxyReconciler.On("Reconcile", mock.Anything).Return(nil)
 
