@@ -27,8 +27,8 @@ func TestAddPodAttributes(t *testing.T) {
 		rawArgs := []string{}
 
 		for _, arg := range request.InstallContainer.Args {
-			_, rawArg, ok := strings.Cut(arg, "=")
-			require.True(t, ok, "missing '=': "+arg)
+			_, rawArg, found := strings.Cut(arg, "=")
+			require.True(t, found, "missing '=': "+arg)
 			rawArgs = append(rawArgs, rawArg)
 		}
 
