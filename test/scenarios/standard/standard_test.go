@@ -3,6 +3,7 @@
 package standard
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
@@ -15,11 +16,10 @@ import (
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/supportarchive"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 var (
@@ -38,20 +38,47 @@ func TestMain(m *testing.M) {
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(true))
 	}
+
+	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
+		if t.Failed() {
+			// Log events if the test failed
+			events.LogEvents(ctx, c, t)
+		}
+
+		return ctx, nil
+	})
+
 	testEnv.Run(m)
 }
 
-func TestStandard(t *testing.T) {
-	feats := []features.Feature{
-		cloudnativeStandard.Feature(t, false, true),
-		codemodules.InstallFromImage(t),
-		publicregistry.Feature(t),
-		noInjection.Feature(t),
-		supportArchive.Feature(t),
-		classicToCloud.Feature(t),
-		cloudToClassic.Feature(t),
-		bootstrapper.InstallWithCSI(t),
-	}
+func TestStandard_cloudnative(t *testing.T) {
+	testEnv.Test(t, cloudnativeStandard.Feature(t, false, true))
+}
 
-	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
+func TestStandard_cloudnative_codemodules_image(t *testing.T) {
+	testEnv.Test(t, codemodules.InstallFromImage(t))
+}
+
+func TestStandard_public_registry_images(t *testing.T) {
+	testEnv.Test(t, publicregistry.Feature(t))
+}
+
+func TestStandard_cloudnative_disabled_auto_inject(t *testing.T) {
+	testEnv.Test(t, noInjection.Feature(t))
+}
+
+func TestStandard_support_archive(t *testing.T) {
+	testEnv.Test(t, supportArchive.Feature(t))
+}
+
+func TestStandard_classic_to_cloudnative(t *testing.T) {
+	testEnv.Test(t, classicToCloud.Feature(t))
+}
+
+func TestStandard_cloudnative_to_classic(t *testing.T) {
+	testEnv.Test(t, cloudToClassic.Feature(t))
+}
+
+func TestStandard_node_image_pull_with_csi(t *testing.T) {
+	testEnv.Test(t, bootstrapper.InstallWithCSI(t))
 }

@@ -4,7 +4,6 @@ package nocsi
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -19,16 +18,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 var (
@@ -47,61 +40,85 @@ func TestMain(m *testing.M) {
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(false))
 	}
-	testEnv.Run(m)
-}
 
-func TestNoCSI(t *testing.T) {
-	feats := []features.Feature{
-		activegate.Feature(t, nil),
-		applicationmonitoring.MetadataEnrichment(t),
-		applicationmonitoring.LabelVersionDetection(t),
-		applicationmonitoring.WithoutCSI(t),
-		extensions.Feature(t),
-		edgeconnect.NormalModeFeature(t),
-		edgeconnect.ProvisionerModeFeature(t),
-		edgeconnect.AutomationModeFeature(t),
-		classic.Feature(t),
-		bootstrapper.NoCSI(t),
-		logmonitoring.Feature(t),
-		hostmonitoring.WithoutCSI(t),
-		cloudnativeStandard.Feature(t, false, false),
-		telemetryingest.WithLocalActiveGateAndCleanup(t),
-		telemetryingest.WithPublicActiveGate(t),
-		telemetryingest.WithTelemetryIngestEndpointTLS(t),
-		telemetryingest.OtelCollectorConfigUpdate(t),
-	}
-
-	testEnv.AfterEachFeature(func(ctx context.Context, c *envconf.Config, t *testing.T, f features.Feature) (context.Context, error) {
+	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
-			klog.InfoS("feature failed", "f", f.Name(), "failed", t.Failed())
-
-			resource := c.Client().Resources()
-
-			optFunc := func(options *metav1.ListOptions) {
-				options.Limit = int64(300)
-				options.FieldSelector = fmt.Sprint(fields.OneTermEqualSelector("type", corev1.EventTypeWarning))
-			}
-
-			events := event.List(t, ctx, resource, "dynatrace", optFunc)
-
-			klog.InfoS("Events list", "events total", len(events.Items))
-			for _, eventItem := range events.Items {
-				klog.InfoS("Event", "name", eventItem.Name, "message", eventItem.Message, "reason", eventItem.Reason, "type", eventItem.Type)
-			}
-
-			pods := &corev1.PodList{}
-			err := resource.List(ctx, pods)
-			if err != nil {
-				klog.Error(err)
-			}
-
-			for _, pod := range pods.Items {
-				klog.InfoS("Pod list", "pod", pod.Name, "status", pod.Status.Phase)
-			}
+			// Log events if the test failed
+			events.LogEvents(ctx, c, t)
 		}
 
 		return ctx, nil
 	})
+	testEnv.Run(m)
+}
 
-	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
+func TestNoCSI_activegate(t *testing.T) {
+	testEnv.Test(t, activegate.Feature(t, nil))
+}
+
+func TestNoCSI_metadata_enrichment(t *testing.T) {
+	testEnv.Test(t, applicationmonitoring.MetadataEnrichment(t))
+}
+
+func TestNoCSI_labelversion(t *testing.T) {
+	testEnv.Test(t, applicationmonitoring.LabelVersionDetection(t))
+}
+
+func TestNoCSI_app_monitoring_without_csi(t *testing.T) {
+	testEnv.Test(t, applicationmonitoring.WithoutCSI(t))
+}
+
+func TestNoCSI_extensions(t *testing.T) {
+	testEnv.Test(t, extensions.Feature(t))
+}
+
+func TestNoCSI_edgeconnect_install(t *testing.T) {
+	testEnv.Test(t, edgeconnect.NormalModeFeature(t))
+}
+
+func TestNoCSI_edgeconnect_install_provisioner(t *testing.T) {
+	testEnv.Test(t, edgeconnect.ProvisionerModeFeature(t))
+}
+
+func TestNoCSI_custom_edgeconnect(t *testing.T) {
+	testEnv.Test(t, edgeconnect.AutomationModeFeature(t))
+}
+
+func TestNoCSI_classic(t *testing.T) {
+	testEnv.Test(t, classic.Feature(t))
+}
+
+//	telemetryingest.OtelCollectorConfigUpdate(t),
+
+func TestNoCSI_node_image_pull_with_no_csi(t *testing.T) {
+	testEnv.Test(t, bootstrapper.NoCSI(t))
+}
+
+func TestNoCSI_logmonitoring_components_rollout(t *testing.T) {
+	testEnv.Test(t, logmonitoring.Feature(t))
+}
+
+func TestNoCSI_host_monitoring_without_csi(t *testing.T) {
+	testEnv.Test(t, hostmonitoring.WithoutCSI(t))
+}
+
+func TestNoCSI_cloudnative(t *testing.T) {
+	const istioEnabled, withCSI = false, false
+	testEnv.Test(t, cloudnativeStandard.Feature(t, istioEnabled, withCSI))
+}
+
+func TestNoCSI_telemetryingest_w_local_ag_and_cleanup_after(t *testing.T) {
+	testEnv.Test(t, telemetryingest.WithLocalActiveGateAndCleanup(t))
+}
+
+func TestNoCSI_telemetryingest_w_public_ag(t *testing.T) {
+	testEnv.Test(t, telemetryingest.WithPublicActiveGate(t))
+}
+
+func TestNoCSI_telemetryingest_w_otel_collector_endpoint_tls(t *testing.T) {
+	testEnv.Test(t, telemetryingest.WithTelemetryIngestEndpointTLS(t))
+}
+
+func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
+	testEnv.Test(t, telemetryingest.OtelCollectorConfigUpdate(t))
 }
