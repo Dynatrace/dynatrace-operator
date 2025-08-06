@@ -15,9 +15,7 @@ import (
 )
 
 func TestAddFile(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	tmpDir := t.TempDir()
 
 	archiveFile, err := createZipArchiveFile(tmpDir)
 	require.NoError(t, err)

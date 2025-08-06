@@ -91,8 +91,7 @@ func containerIsInjected(container corev1.Container) bool {
 
 func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string) bool {
 	newContainers := request.NewContainers(containerIsInjected)
-	for i := range newContainers {
-		container := newContainers[i]
+	for _, container := range newContainers {
 		addOneAgentToContainer(request.DynaKube, container, request.Namespace, installPath)
 	}
 
