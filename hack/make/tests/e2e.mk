@@ -44,7 +44,11 @@ test/e2e/release: manifests/crd/helm
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run activegate -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "activegate" -args $(SKIPCLEANUP)
+
+## Runs ActiveGate proxy e2e test only
+test/e2e/activegate/proxy: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -run "activegate" -args $(SKIPCLEANUP)
 
 ## Runs ClassicFullStack e2e test only
 test/e2e/classic: manifests/crd/helm
