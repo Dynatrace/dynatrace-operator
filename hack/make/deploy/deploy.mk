@@ -1,4 +1,5 @@
 ENABLE_CSI ?= true
+DEBUG_LOGS ?= true
 PLATFORM ?= "kubernetes"
 
 ## Deploy the operator without the csi-driver
@@ -19,6 +20,7 @@ deploy: manifests/crd/helm
 			--set csidriver.enabled=$(ENABLE_CSI) \
 			--set manifests=true \
 			--set image="$(IMAGE_URI)" \
+			--set debugLogs=$(DEBUG_LOGS) \
 			--set debug=$(DEBUG)
 
 ## Undeploy the current operator installation
