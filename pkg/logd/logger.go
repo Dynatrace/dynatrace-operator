@@ -86,5 +86,6 @@ func (l *Logger) debugLog(message string, keysAndValues ...any) {
 
 func (l *Logger) Write(p []byte) (n int, err error) {
 	l.debugLog("HTTP-Server log", "msg", string(p))
+
 	return len(p), nil
 }
