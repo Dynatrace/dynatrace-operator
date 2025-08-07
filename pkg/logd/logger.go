@@ -83,3 +83,8 @@ func (l Logger) WithValues(keysAndValues ...any) Logger {
 func (l *Logger) debugLog(message string, keysAndValues ...any) {
 	l.Logger.V(debugLogLevelElevation).Info(message, keysAndValues...)
 }
+
+func (l *Logger) Write(p []byte) (n int, err error) {
+	l.debugLog("HTTP-Server log", "msg", string(p))
+	return len(p), nil
+}
