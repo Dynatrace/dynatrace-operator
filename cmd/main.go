@@ -15,7 +15,7 @@ limitations under the License.
 package main
 
 import (
-	"log"
+	stdLog "log"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
@@ -36,7 +36,7 @@ import (
 )
 
 var (
-	_log = logd.Get().WithName("main")
+	log = logd.Get().WithName("main")
 )
 
 func newRootCommand() *cobra.Command {
@@ -53,8 +53,8 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 }
 
 func main() {
-	ctrl.SetLogger(_log.Logger)
-	log.SetOutput(&_log)
+	ctrl.SetLogger(log.Logger)
+	stdLog.SetOutput(&log)
 
 	cmd := newRootCommand()
 
@@ -74,7 +74,7 @@ func main() {
 
 	err := cmd.Execute()
 	if err != nil {
-		_log.Info(err.Error())
+		log.Info(err.Error())
 		os.Exit(1)
 	}
 }
