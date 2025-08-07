@@ -680,7 +680,7 @@ tests:
           path: spec.template.spec.volumes[0].emptyDir.sizeLimit
           value: 84Mi
 
-  - it: should have LOG_LEVEL=debug in debugLogs=true
+  - it: should have LOG_LEVEL=debug if debugLogs=true
     set:
       debugLogs: true
     asserts:

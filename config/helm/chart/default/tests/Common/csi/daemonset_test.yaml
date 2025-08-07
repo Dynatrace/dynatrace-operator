@@ -439,7 +439,7 @@ tests:
           count: 1
           any: true
 
-  - it: should have LOG_LEVEL=debug in debugLogs=true
+  - it: should have LOG_LEVEL=debug if debugLogs=true
     set:
       debugLogs: true
       csidriver.enabled: true

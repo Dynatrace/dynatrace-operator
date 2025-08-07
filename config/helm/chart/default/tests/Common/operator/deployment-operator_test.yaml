@@ -454,7 +454,7 @@ tests:
           path: spec.template.metadata.labels.testKey
           value: testValue
 
-  - it: should have LOG_LEVEL=debug in debugLogs=true
+  - it: should have LOG_LEVEL=debug if debugLogs=true
     set:
       debugLogs: true
     asserts:
