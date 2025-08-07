@@ -88,8 +88,6 @@ func TestNoCSI_classic(t *testing.T) {
 	testEnv.Test(t, classic.Feature(t))
 }
 
-//	telemetryingest.OtelCollectorConfigUpdate(t),
-
 func TestNoCSI_node_image_pull_with_no_csi(t *testing.T) {
 	testEnv.Test(t, bootstrapper.NoCSI(t))
 }
