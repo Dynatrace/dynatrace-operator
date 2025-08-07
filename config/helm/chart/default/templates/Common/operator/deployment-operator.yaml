@@ -67,6 +67,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{- if .Values.debugLogs }}
+            - name: LOG_LEVEL
+              value: "debug"
+            {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12}}
           ports:
             - containerPort: 10080

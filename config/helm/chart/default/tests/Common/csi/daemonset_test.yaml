@@ -439,6 +439,26 @@ tests:
           count: 1
           any: true
 
+  - it: should have LOG_LEVEL=debug in debugLogs=true
+    set:
+      debugLogs: true
+      csidriver.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOG_LEVEL
+            value: "debug"
+          count: 1
+          any: true
+      - contains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: LOG_LEVEL
+            value: "debug"
+          count: 1
+          any: true
+
   - it: should use livenessprobe and csi-node-driver-registrar commands provided by the operator if they are preferred
     set:
       platform: kubernetes

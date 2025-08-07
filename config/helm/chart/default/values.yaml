@@ -27,6 +27,9 @@ imageRef:
 customPullSecret: ""
 installCRD: true
 
+# turns on the debug logs for all components
+debugLogs: false
+
 operator:
   nodeSelector: {}
   tolerations: []
