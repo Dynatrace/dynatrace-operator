@@ -43,7 +43,6 @@ func TestMain(m *testing.M) {
 
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
-			// Log events if the test failed
 			events.LogEvents(ctx, c, t)
 		}
 
