@@ -28,7 +28,6 @@ spec:
     - dk
     - dks
     singular: dynakube
-  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -7993,7 +7992,6 @@ spec:
     - ec
     - ecs
     singular: edgeconnect
-  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
