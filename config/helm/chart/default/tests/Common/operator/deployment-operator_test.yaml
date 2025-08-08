@@ -454,6 +454,18 @@ tests:
           path: spec.template.metadata.labels.testKey
           value: testValue
 
+  - it: should have LOG_LEVEL=debug if debugLogs=true
+    set:
+      debugLogs: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOG_LEVEL
+            value: "debug"
+          count: 1
+          any: true
+
   - it: should set ephemeral-storage request/limits
     set:
       platform: kubernetes
