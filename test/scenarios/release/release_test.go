@@ -3,16 +3,16 @@
 package release
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 var (
@@ -33,13 +33,18 @@ func TestMain(m *testing.M) {
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(true))
 	}
+
+	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
+		if t.Failed() {
+			events.LogEvents(ctx, c, t)
+		}
+
+		return ctx, nil
+	})
+
 	testEnv.Run(m)
 }
 
 func TestRelease(t *testing.T) {
-	feats := []features.Feature{
-		upgrade.Feature(t),
-	}
-
-	testEnv.Test(t, scenarios.FilterFeatures(*cfg, feats)...)
+	testEnv.Test(t, upgrade.Feature(t))
 }
