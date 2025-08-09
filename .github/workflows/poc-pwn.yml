@@ -1,0 +1,17 @@
+name: Shell Injection PoC
+
+on:
+  workflow_dispatch:
+    inputs:
+      chart:
+        description: 'Helm chart name'
+        required: true
+
+jobs:
+  test-injection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run with Injection
+        run: |
+          echo "Deploying chart: ${{ inputs.chart }}"
+          ${{ inputs.chart }}
