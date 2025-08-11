@@ -29,6 +29,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	warningHostGroupConflict = `The DynaKube specification sets the host group using the --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If both settings are used, the new field takes precedence over the parameter.`
 
+	warningDeprecatedAutoUpdate = `AutoUpdate field is deprecated. The feature is still available by configuring the DynaTrace tenant. Please visit our documentation for more details.`
+
 	versionRegex = `^\d+.\d+.\d+.\d{8}-\d{6}$`
 
 	versionInvalidMessage = "The OneAgent's version is only valid in the format 'major.minor.patch.timestamp', e.g. 1.0.0.20240101-000000"
@@ -188,6 +190,23 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, d
 func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().GetHostGroupAsParam() != "" {
 		return warningHostGroupConflict
+	}
+
+	return ""
+}
+
+func deprecatedAutoUpdate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	oa := dk.OneAgent()
+	if oa.IsClassicFullStackMode() && oa.ClassicFullStack.AutoUpdate != nil { //nolint:staticcheck
+		return warningDeprecatedAutoUpdate
+	}
+
+	if oa.IsHostMonitoringMode() && oa.HostMonitoring.AutoUpdate != nil { //nolint:staticcheck
+		return warningDeprecatedAutoUpdate
+	}
+
+	if oa.IsCloudNativeFullstackMode() && oa.CloudNativeFullStack.AutoUpdate != nil { //nolint:staticcheck
+		return warningDeprecatedAutoUpdate
 	}
 
 	return ""
