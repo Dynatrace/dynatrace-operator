@@ -55,7 +55,7 @@ func (controller *Controller) determineActiveGatePhase(dk *dynakube.DynaKube) st
 }
 
 func (controller *Controller) determineExtensionsExecutionControllerPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(dk, dk.ExtensionsExecutionControllerStatefulsetName())
+	return controller.determinePrometheusStatefulsetPhase(dk, dk.Extensions().ExecutionControllerStatefulsetName())
 }
 
 func (controller *Controller) determineExtensionsCollectorPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
@@ -63,7 +63,7 @@ func (controller *Controller) determineExtensionsCollectorPhase(dk *dynakube.Dyn
 }
 
 func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
-	if dk.IsExtensionsEnabled() {
+	if dk.Extensions().Enabled() {
 		statefulSet := &appsv1.StatefulSet{}
 
 		err := controller.client.Get(context.Background(), types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -167,7 +168,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &dynakube.ExtensionsSpec{},
+			Extensions: &extension.Spec{},
 		},
 	}
 
@@ -190,7 +191,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("eec pods not ready -> deploying", func(t *testing.T) {
-		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.ExtensionsExecutionControllerStatefulsetName(), 1, 0))
+		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.Extensions().ExecutionControllerStatefulsetName(), 1, 0))
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -200,7 +201,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("eec deployed -> running", func(t *testing.T) {
-		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.ExtensionsExecutionControllerStatefulsetName(), 1, 1))
+		fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.Extensions().ExecutionControllerStatefulsetName(), 1, 1))
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -218,7 +219,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &dynakube.ExtensionsSpec{},
+			Extensions: &extension.Spec{},
 		},
 	}
 
@@ -391,14 +392,14 @@ func TestDynakubePhaseChanges(t *testing.T) {
 
 			Kspm: &kspm.Spec{},
 
-			Extensions: &dynakube.ExtensionsSpec{},
+			Extensions: &extension.Spec{},
 		},
 	}
 
 	agReady := createStatefulset(testNamespace, "test-name-activegate", 1, 1)
 	agNotReady := createStatefulset(testNamespace, "test-name-activegate", 1, 0)
-	eecReady := createStatefulset(testNamespace, dk.ExtensionsExecutionControllerStatefulsetName(), 1, 1)
-	eecNotReady := createStatefulset(testNamespace, dk.ExtensionsExecutionControllerStatefulsetName(), 1, 0)
+	eecReady := createStatefulset(testNamespace, dk.Extensions().ExecutionControllerStatefulsetName(), 1, 1)
+	eecNotReady := createStatefulset(testNamespace, dk.Extensions().ExecutionControllerStatefulsetName(), 1, 0)
 	otelcReady := createStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 2, 2)
 	otelcNotReady := createStatefulset(testNamespace, dk.OtelCollectorStatefulsetName(), 2, 1)
 	oaReady := createDaemonSet(testNamespace, "test-name-oneagent", 3, 3)

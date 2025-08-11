@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
@@ -44,7 +45,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.ExtensionsTokenSecretName(),
+						SecretName: dk.Extensions().TokenSecretName(),
 						Items: []corev1.KeyToPath{
 							{
 								Key:  consts.OtelcTokenSecretKey,
@@ -89,7 +90,7 @@ func TestVolumes(t *testing.T) {
 			Name: consts.ExtensionsTokensVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.ExtensionsTokenSecretName(),
+					SecretName: dk.Extensions().TokenSecretName(),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.OtelcTokenSecretKey,
@@ -386,7 +387,7 @@ func getTestDynakubeWithTelemetryIngest() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			TelemetryIngest: &telemetryingest.Spec{},
-			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
+			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: extension.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }
@@ -399,9 +400,9 @@ func getTestDynakubeWithExtensionsAndTelemetryIngest() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions:      &dynakube.ExtensionsSpec{},
+			Extensions:      &extension.Spec{},
 			TelemetryIngest: &telemetryingest.Spec{},
-			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
+			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: extension.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }

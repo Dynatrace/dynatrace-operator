@@ -24,14 +24,14 @@ const (
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	var volumes []corev1.Volume
 
-	if dk.IsExtensionsEnabled() {
+	if ext := dk.Extensions(); ext.Enabled() {
 		volumes = append(
 			volumes,
 			corev1.Volume{
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.ExtensionsTokenSecretName(),
+						SecretName: ext.TokenSecretName(),
 						Items: []corev1.KeyToPath{
 							{
 								Key:  consts.OtelcTokenSecretKey,
@@ -46,7 +46,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: extensionsControllerTLSVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.ExtensionsTLSSecretName(),
+						SecretName: dk.Extensions().TLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
 								Key:  consts.TLSCrtDataName,
@@ -137,7 +137,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	var vm []corev1.VolumeMount
 
-	if dk.IsExtensionsEnabled() {
+	if dk.Extensions().Enabled() {
 		vm = append(
 			vm,
 			corev1.VolumeMount{
@@ -187,5 +187,5 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 }
 
 func isTrustedCAsVolumeNeeded(dk *dynakube.DynaKube) bool {
-	return dk.IsExtensionsEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
+	return dk.Extensions().Enabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
 }

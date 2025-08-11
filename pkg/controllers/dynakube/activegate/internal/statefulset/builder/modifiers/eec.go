@@ -31,7 +31,7 @@ type EecModifier struct {
 }
 
 func (mod EecModifier) Enabled() bool {
-	return mod.dk.IsExtensionsEnabled()
+	return mod.dk.Extensions().Enabled()
 }
 
 func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -50,7 +50,7 @@ func (mod EecModifier) getVolumes() []corev1.Volume {
 			Name: eecVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  mod.dk.ExtensionsTokenSecretName(),
+					SecretName:  mod.dk.Extensions().TokenSecretName(),
 					DefaultMode: &mode,
 					Items: []corev1.KeyToPath{
 						{

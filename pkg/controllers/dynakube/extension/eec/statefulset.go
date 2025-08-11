@@ -89,7 +89,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		topologySpreadConstraints = r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
 	}
 
-	desiredSts, err := statefulset.Build(r.dk, r.dk.ExtensionsExecutionControllerStatefulsetName(), buildContainer(r.dk),
+	desiredSts, err := statefulset.Build(r.dk, r.dk.Extensions().ExecutionControllerStatefulsetName(), buildContainer(r.dk),
 		statefulset.SetReplicas(1),
 		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
@@ -118,7 +118,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		log.Info("failed to create/update " + r.dk.ExtensionsExecutionControllerStatefulsetName() + " statefulset")
+		log.Info("failed to create/update " + r.dk.Extensions().ExecutionControllerStatefulsetName() + " statefulset")
 		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
 
 		return err
@@ -139,7 +139,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	tlsSecret, err := query.Get(ctx, types.NamespacedName{
-		Name:      r.dk.ExtensionsTLSSecretName(),
+		Name:      r.dk.Extensions().TLSSecretName(),
 		Namespace: r.dk.Namespace,
 	})
 	if err != nil {
@@ -247,7 +247,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},
-		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.ExtensionsServiceNameFQDN()},
+		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.Extensions().ServiceNameFQDN()},
 		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
 		{Name: envHTTPSCertPathPem, Value: envEecHTTPSCertPathPem},
 		{Name: envHTTPSPrivKeyPathPem, Value: envEecHTTPSPrivKeyPathPem},
@@ -336,7 +336,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.ExtensionsTokenSecretName(),
+						SecretName:  dk.Extensions().TokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -357,7 +357,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.ExtensionsTLSSecretName(),
+						SecretName: dk.Extensions().TLSSecretName(),
 					},
 				},
 			},

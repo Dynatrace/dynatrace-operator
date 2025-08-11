@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	extensionlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -139,7 +140,7 @@ func fromKspmNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfiguration
 	return dst
 }
 
-func fromOpenTelemetryCollectorTemplate(src dynakubelatest.OpenTelemetryCollectorSpec) OpenTelemetryCollectorSpec {
+func fromOpenTelemetryCollectorTemplate(src extensionlatest.OpenTelemetryCollectorSpec) OpenTelemetryCollectorSpec {
 	dst := OpenTelemetryCollectorSpec{}
 
 	dst.Labels = src.Labels
@@ -154,7 +155,7 @@ func fromOpenTelemetryCollectorTemplate(src dynakubelatest.OpenTelemetryCollecto
 	return dst
 }
 
-func fromExtensionControllerTemplate(src dynakubelatest.ExtensionExecutionControllerSpec) ExtensionExecutionControllerSpec {
+func fromExtensionControllerTemplate(src extensionlatest.ExecutionControllerSpec) ExtensionExecutionControllerSpec {
 	dst := ExtensionExecutionControllerSpec{}
 
 	dst.PersistentVolumeClaim = src.PersistentVolumeClaim

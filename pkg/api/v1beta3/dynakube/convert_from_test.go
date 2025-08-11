@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	extensionlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -130,7 +131,7 @@ func TestConvertFrom(t *testing.T) {
 
 	t.Run("migrate extensions from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
-		from.Spec.Extensions = &dynakubelatest.ExtensionsSpec{}
+		from.Spec.Extensions = &extensionlatest.Spec{}
 		to := DynaKube{}
 
 		err := to.ConvertFrom(&from)
@@ -393,7 +394,7 @@ func compareLogMonitoringSpec(t *testing.T, oldSpec *logmonitoring.Spec, newSpec
 	}
 }
 
-func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollectorSpec, newSpec dynakubelatest.OpenTelemetryCollectorSpec) {
+func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollectorSpec, newSpec extensionlatest.OpenTelemetryCollectorSpec) {
 	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
@@ -404,7 +405,7 @@ func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollect
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 }
 
-func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec ExtensionExecutionControllerSpec, newSpec dynakubelatest.ExtensionExecutionControllerSpec) {
+func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec ExtensionExecutionControllerSpec, newSpec extensionlatest.ExecutionControllerSpec) {
 	assert.Equal(t, *oldSpec.PersistentVolumeClaim, *newSpec.PersistentVolumeClaim)
 	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
@@ -641,8 +642,8 @@ func getNewLogMonitoringSpec() *logmonitoringlatest.Spec {
 	return &newSpec
 }
 
-func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec {
-	return dynakubelatest.OpenTelemetryCollectorSpec{
+func getNewOpenTelemetryTemplateSpec() extensionlatest.OpenTelemetryCollectorSpec {
+	return extensionlatest.OpenTelemetryCollectorSpec{
 		Labels: map[string]string{
 			"otelc-label-key1": "otelc-label-value1",
 			"otelc-label-key2": "otelc-label-value2",
@@ -678,8 +679,8 @@ func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec
 	}
 }
 
-func getNewExtensionExecutionControllerSpec() dynakubelatest.ExtensionExecutionControllerSpec {
-	return dynakubelatest.ExtensionExecutionControllerSpec{
+func getNewExtensionExecutionControllerSpec() extensionlatest.ExecutionControllerSpec {
+	return extensionlatest.ExecutionControllerSpec{
 		PersistentVolumeClaim: getPersistentVolumeClaimSpec(),
 		Labels: map[string]string{
 			"eec-label-key1": "eec-label-value1",
