@@ -171,9 +171,11 @@ func getTestDynakube() *dynakube.DynaKube {
 			Extensions: &extension.Spec{},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extension.ExecutionControllerSpec{
-					ImageRef: image.Ref{
-						Repository: testEecImageRepository,
-						Tag:        testEecImageTag,
+					CommonProperties: extension.CommonProperties{
+						ImageRef: image.Ref{
+							Repository: testEecImageRepository,
+							Tag:        testEecImageTag,
+						},
 					},
 				},
 			},

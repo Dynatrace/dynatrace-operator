@@ -30,9 +30,11 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					Extensions: &extension.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extension.ExecutionControllerSpec{
-							ImageRef: image.Ref{
-								Repository: "a",
-								Tag:        "b",
+							CommonProperties: extension.CommonProperties{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
 							},
 						},
 					},
@@ -55,8 +57,10 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extension.ExecutionControllerSpec{
-							ImageRef: image.Ref{
-								Repository: "a",
+							CommonProperties: extension.CommonProperties{
+								ImageRef: image.Ref{
+									Repository: "a",
+								},
 							},
 						},
 					},
@@ -79,8 +83,10 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extension.ExecutionControllerSpec{
-							ImageRef: image.Ref{
-								Tag: "b",
+							CommonProperties: extension.CommonProperties{
+								ImageRef: image.Ref{
+									Tag: "b",
+								},
 							},
 						},
 					},
@@ -121,9 +127,11 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extension.ExecutionControllerSpec{
-							ImageRef: image.Ref{
-								Repository: "a",
-								Tag:        "b",
+							CommonProperties: extension.CommonProperties{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
 							},
 							UseEphemeralVolume:    false,
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
@@ -146,9 +154,11 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extension.ExecutionControllerSpec{
-							ImageRef: image.Ref{
-								Repository: "a",
-								Tag:        "b",
+							CommonProperties: extension.CommonProperties{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
 							},
 							UseEphemeralVolume: true,
 						},
@@ -171,9 +181,11 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extension.ExecutionControllerSpec{
-							ImageRef: image.Ref{
-								Repository: "a",
-								Tag:        "b",
+							CommonProperties: extension.CommonProperties{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
 							},
 							UseEphemeralVolume:    true,
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
@@ -209,7 +221,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 			Extensions: &extension.Spec{},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extension.ExecutionControllerSpec{
-					ImageRef: imgRef,
+					CommonProperties: extension.CommonProperties{
+						ImageRef: imgRef,
+					},
 				},
 			},
 			ActiveGate: agSpec,
@@ -227,7 +241,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 				Extensions: &extension.Spec{},
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extension.ExecutionControllerSpec{
-						ImageRef: imgRef,
+						CommonProperties: extension.CommonProperties{
+							ImageRef: imgRef,
+						},
 					},
 				},
 				ActiveGate: agSpec,
@@ -246,7 +262,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 				Extensions: &extension.Spec{},
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extension.ExecutionControllerSpec{
-						ImageRef: imgRef,
+						CommonProperties: extension.CommonProperties{
+							ImageRef: imgRef,
+						},
 					},
 				},
 				ActiveGate: agSpec,
@@ -271,7 +289,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 				Extensions: nil,
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extension.ExecutionControllerSpec{
-						ImageRef: imgRef,
+						CommonProperties: extension.CommonProperties{
+							ImageRef: imgRef,
+						},
 					},
 				},
 				ActiveGate: agSpec,

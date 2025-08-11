@@ -644,75 +644,79 @@ func getNewLogMonitoringSpec() *logmonitoringlatest.Spec {
 
 func getNewOpenTelemetryTemplateSpec() extensionlatest.OpenTelemetryCollectorSpec {
 	return extensionlatest.OpenTelemetryCollectorSpec{
-		Labels: map[string]string{
-			"otelc-label-key1": "otelc-label-value1",
-			"otelc-label-key2": "otelc-label-value2",
-		},
-		Annotations: map[string]string{
-			"otelc-annotation-key1": "otelc-annotation-value1",
-			"otelc-annotation-key2": "otelc-annotation-value2",
+		CommonProperties: extensionlatest.CommonProperties{
+			Labels: map[string]string{
+				"otelc-label-key1": "otelc-label-value1",
+				"otelc-label-key2": "otelc-label-value2",
+			},
+			Annotations: map[string]string{
+				"otelc-annotation-key1": "otelc-annotation-value1",
+				"otelc-annotation-key2": "otelc-annotation-value2",
+			},
+			TLSRefName: "tls-ref-name",
+			ImageRef: image.Ref{
+				Repository: "image-repo.repohost.test/repo",
+				Tag:        "image-tag",
+			},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+				},
+				Claims: []corev1.ResourceClaim{{
+					Name:    "claim-name",
+					Request: "claim-request",
+				}},
+			},
+			Tolerations: []corev1.Toleration{
+				{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
+			},
+			TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+				{MaxSkew: 1},
+			},
 		},
 		Replicas: ptr.To(int32(42)),
-		ImageRef: image.Ref{
-			Repository: "image-repo.repohost.test/repo",
-			Tag:        "image-tag",
-		},
-		TLSRefName: "tls-ref-name",
-		Resources: corev1.ResourceRequirements{
-			Limits: corev1.ResourceList{
-				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
-			},
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
-			},
-			Claims: []corev1.ResourceClaim{{
-				Name:    "claim-name",
-				Request: "claim-request",
-			}},
-		},
-		Tolerations: []corev1.Toleration{
-			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
-		},
-		TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
-			{MaxSkew: 1},
-		},
 	}
 }
 
 func getNewExtensionExecutionControllerSpec() extensionlatest.ExecutionControllerSpec {
 	return extensionlatest.ExecutionControllerSpec{
-		PersistentVolumeClaim: getPersistentVolumeClaimSpec(),
-		Labels: map[string]string{
-			"eec-label-key1": "eec-label-value1",
-			"eec-label-key2": "eec-label-value2",
-		},
-		Annotations: map[string]string{
-			"eec-annotation-key1": "eec-annotation-value1",
-			"eec-annotation-key2": "eec-annotation-value2",
-		},
-		ImageRef: image.Ref{
-			Repository: "image-repo.repohost.test/repo",
-			Tag:        "image-tag",
-		},
-		TLSRefName: "tls-ref-name",
-		Resources: corev1.ResourceRequirements{
-			Limits: corev1.ResourceList{
-				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+		CommonProperties: extensionlatest.CommonProperties{
+			Labels: map[string]string{
+				"eec-label-key1": "eec-label-value1",
+				"eec-label-key2": "eec-label-value2",
 			},
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+			Annotations: map[string]string{
+				"eec-annotation-key1": "eec-annotation-value1",
+				"eec-annotation-key2": "eec-annotation-value2",
 			},
-			Claims: []corev1.ResourceClaim{{
-				Name:    "claim-name",
-				Request: "claim-request",
-			}},
+			TLSRefName: "tls-ref-name",
+			ImageRef: image.Ref{
+				Repository: "image-repo.repohost.test/repo",
+				Tag:        "image-tag",
+			},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+				},
+				Claims: []corev1.ResourceClaim{{
+					Name:    "claim-name",
+					Request: "claim-request",
+				}},
+			},
+			Tolerations: []corev1.Toleration{
+				{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
+			},
+			TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+				{MaxSkew: 1},
+			},
 		},
-		Tolerations: []corev1.Toleration{
-			{Key: "otelc-toleration-key", Operator: "In", Value: "otelc-toleration-value"},
-		},
-		TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
-			{MaxSkew: 1},
-		},
+		PersistentVolumeClaim:       getPersistentVolumeClaimSpec(),
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
 		UseEphemeralVolume:          true,

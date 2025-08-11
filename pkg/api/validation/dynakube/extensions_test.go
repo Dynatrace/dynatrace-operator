@@ -59,9 +59,11 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 			Extensions: &extension.Spec{},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extension.ExecutionControllerSpec{
-					ImageRef: image.Ref{
-						Repository: "repo/image",
-						Tag:        "version",
+					CommonProperties: extension.CommonProperties{
+						ImageRef: image.Ref{
+							Repository: "repo/image",
+							Tag:        "version",
+						},
 					},
 				},
 			},
