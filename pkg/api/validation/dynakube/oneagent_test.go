@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -853,6 +854,39 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 			} else {
 				assertDenied(t, []string{tc.expectedError}, &tc.dk)
 			}
+		})
+	}
+}
+
+func Test_findDuplicates(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  []string
+		expect []string
+	}{
+		{
+			name: "empty",
+		},
+		{
+			name:  "no duplicates",
+			input: []string{"foo", "bar", "baz"},
+		},
+		{
+			name:   "single duplicates",
+			input:  []string{"foo", "bar", "bar", "foo", "baz"},
+			expect: []string{"bar", "foo"},
+		},
+		{
+			name:   "multiple duplicates",
+			input:  []string{"foo", "bar", "bar", "bar", "foo", "baz", "foo"},
+			expect: []string{"bar", "foo"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := findDuplicates(test.input)
+			assert.Equal(t, test.expect, got)
 		})
 	}
 }

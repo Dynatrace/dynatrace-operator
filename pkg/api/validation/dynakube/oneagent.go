@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -248,14 +247,15 @@ func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 }
 
 func findDuplicates[S ~[]E, E comparable](s S) []E {
-	seen := make(map[E]bool)
+	seen := make(map[E]int)
 
-	duplicates := make([]E, 0)
+	var duplicates []E
+
+	const seenTwice = 2
 
 	for _, val := range s {
-		if _, ok := seen[val]; !ok {
-			seen[val] = true
-		} else if !slices.Contains(duplicates, val) {
+		seen[val]++
+		if seen[val] == seenTwice {
 			duplicates = append(duplicates, val)
 		}
 	}
