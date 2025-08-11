@@ -6,8 +6,7 @@ import (
 
 func (dk *DynaKube) Extensions() *extension.Extensions {
 	ext := &extension.Extensions{
-		ExecutionController:    &dk.Spec.Templates.ExtensionExecutionController,
-		OpenTelemetryCollector: &dk.Spec.Templates.OpenTelemetryCollector,
+		ExecutionControllerSpec: &dk.Spec.Templates.ExtensionExecutionController,
 	}
 	// Set required fields for getters that may be called when extensions are disabled.
 	ext.SetName(dk.Name)

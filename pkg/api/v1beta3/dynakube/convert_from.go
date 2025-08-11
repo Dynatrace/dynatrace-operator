@@ -3,6 +3,7 @@ package dynakube
 import (
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	extensionlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	otellatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otel"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -140,7 +141,7 @@ func fromKspmNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfiguration
 	return dst
 }
 
-func fromOpenTelemetryCollectorTemplate(src extensionlatest.OpenTelemetryCollectorSpec) OpenTelemetryCollectorSpec {
+func fromOpenTelemetryCollectorTemplate(src otellatest.CollectorSpec) OpenTelemetryCollectorSpec {
 	dst := OpenTelemetryCollectorSpec{}
 
 	dst.Labels = src.Labels

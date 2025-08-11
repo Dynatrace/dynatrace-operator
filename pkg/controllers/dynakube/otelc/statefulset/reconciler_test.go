@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -361,7 +362,7 @@ func getTestDynakubeWithExtensions() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: &extension.Spec{},
-			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: extension.OpenTelemetryCollectorSpec{}},
+			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: otel.CollectorSpec{}},
 		},
 	}
 }
