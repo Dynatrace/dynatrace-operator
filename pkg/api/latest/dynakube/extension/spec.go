@@ -2,7 +2,6 @@ package extension
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -13,62 +12,6 @@ type Extensions struct {
 	name      string
 	namespace string
 	enabled   bool
-}
-
-func (e *Extensions) SetName(name string) {
-	e.name = name
-}
-
-func (e *Extensions) SetNamespace(namespace string) {
-	e.namespace = namespace
-}
-
-func (e *Extensions) SetEnabled(enabled bool) {
-	e.enabled = enabled
-}
-
-func (e *Extensions) Enabled() bool {
-	return e.enabled
-}
-
-func (e *Extensions) TLSRefName() string {
-	return e.ExecutionController.TLSRefName
-}
-
-func (e *Extensions) NeedsSelfSignedTLS() bool {
-	return e.TLSRefName() == ""
-}
-
-func (e *Extensions) TLSSecretName() string {
-	if e.NeedsSelfSignedTLS() {
-		return e.SelfSignedTLSSecretName()
-	}
-
-	return e.TLSRefName()
-}
-
-func (e *Extensions) SelfSignedTLSSecretName() string {
-	return e.name + consts.ExtensionsSelfSignedTLSSecretSuffix
-}
-
-func (e *Extensions) ExecutionControllerStatefulsetName() string {
-	return e.name + "-extensions-controller"
-}
-
-func (e *Extensions) TokenSecretName() string {
-	return e.name + "-extensions-token"
-}
-
-func (e *Extensions) PortName() string {
-	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsCollectorTargetPortName
-}
-
-func (e *Extensions) ServiceNameFQDN() string {
-	return e.ServiceName() + "." + e.namespace
-}
-
-func (e *Extensions) ServiceName() string {
-	return e.name + consts.ExtensionsControllerSuffix
 }
 
 // +kubebuilder:object:generate=true

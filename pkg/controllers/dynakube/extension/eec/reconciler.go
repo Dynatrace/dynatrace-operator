@@ -33,22 +33,22 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if ext := r.dk.Extensions(); !ext.Enabled() {
+	if ext := r.dk.Extensions(); !ext.IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), extensionsControllerStatefulSetConditionType) == nil {
 			return nil
 		}
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionsControllerStatefulSetConditionType)
 
-		sts, err := statefulset.Build(r.dk, ext.ExecutionControllerStatefulsetName(), corev1.Container{})
+		sts, err := statefulset.Build(r.dk, ext.GetExecutionControllerStatefulsetName(), corev1.Container{})
 		if err != nil {
-			log.Error(err, "could not build "+ext.ExecutionControllerStatefulsetName()+" during cleanup")
+			log.Error(err, "could not build "+ext.GetExecutionControllerStatefulsetName()+" during cleanup")
 
 			return err
 		}
 
 		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 		if err != nil {
-			log.Error(err, "failed to clean up "+ext.ExecutionControllerStatefulsetName()+" statufulset")
+			log.Error(err, "failed to clean up "+ext.GetExecutionControllerStatefulsetName()+" statufulset")
 
 			return nil
 		}
@@ -57,13 +57,13 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, r.dk.Extensions().ExecutionControllerStatefulsetName())
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		return errors.New("tenantUUID unknown")
 	}
 
 	if r.dk.Status.KubeSystemUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, r.dk.Extensions().ExecutionControllerStatefulsetName())
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		return errors.New("kubeSystemUUID unknown")
 	}

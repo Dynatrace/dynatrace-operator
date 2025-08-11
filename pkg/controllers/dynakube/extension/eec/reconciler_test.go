@@ -80,14 +80,14 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().ExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 	require.NoError(t, err)
 
 	return statefulSet
 }
 
 func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
-	tlsSecret := getTLSSecret(dk.Extensions().TLSSecretName(), dk.Namespace, "super-cert", "super-key")
+	tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 
 	err := client.Create(context.Background(), &tlsSecret)
 	require.NoError(t, err)
@@ -123,7 +123,7 @@ func TestConditions(t *testing.T) {
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().ExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -139,7 +139,7 @@ func TestConditions(t *testing.T) {
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().ExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -148,7 +148,7 @@ func TestConditions(t *testing.T) {
 	t.Run("extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions = nil
-		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, dk.Extensions().ExecutionControllerStatefulsetName())
+		conditions.SetStatefulSetCreated(dk.Conditions(), extensionsControllerStatefulSetConditionType, dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		mockK8sClient := fake.NewClient(dk)
 
@@ -156,7 +156,7 @@ func TestConditions(t *testing.T) {
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().ExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -208,19 +208,19 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().ExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
 
 		// then update the TLS Secret and call reconcile again
-		updatedTLSSecret := getTLSSecret(dk.Extensions().TLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
+		updatedTLSSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
 		err = mockK8sClient.Update(context.Background(), &updatedTLSSecret)
 		require.NoError(t, err)
 
 		err = reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().ExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
@@ -863,7 +863,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().TokenSecretName(),
+						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -884,7 +884,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().TLSSecretName(),
+						SecretName: dk.Extensions().GetTLSSecretName(),
 					},
 				},
 			},
@@ -911,7 +911,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().TokenSecretName(),
+						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -932,7 +932,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().TLSSecretName(),
+						SecretName: dk.Extensions().GetTLSSecretName(),
 					},
 				},
 			},
@@ -981,7 +981,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().TokenSecretName(),
+						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -1002,7 +1002,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().TLSSecretName(),
+						SecretName: dk.Extensions().GetTLSSecretName(),
 					},
 				},
 			},
@@ -1029,7 +1029,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().TokenSecretName(),
+						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -1050,7 +1050,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().TLSSecretName(),
+						SecretName: dk.Extensions().GetTLSSecretName(),
 					},
 				},
 			},
@@ -1088,7 +1088,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().TokenSecretName(),
+						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -1109,7 +1109,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().TLSSecretName(),
+						SecretName: dk.Extensions().GetTLSSecretName(),
 					},
 				},
 			},
@@ -1147,7 +1147,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().TokenSecretName(),
+						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
 				},
@@ -1168,7 +1168,7 @@ func TestVolumes(t *testing.T) {
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().TLSSecretName(),
+						SecretName: dk.Extensions().GetTLSSecretName(),
 					},
 				},
 			},

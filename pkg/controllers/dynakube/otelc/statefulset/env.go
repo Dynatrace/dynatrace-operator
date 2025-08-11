@@ -77,12 +77,12 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getDynakubeNoProxyEnvValue(dk)})
 	}
 
-	if dk.Extensions().Enabled() {
+	if dk.Extensions().IsEnabled() {
 		envs = append(
 			envs,
 			corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Extensions().TokenSecretName()},
+					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Extensions().GetTokenSecretName()},
 					Key:                  consts.OtelcTokenSecretKey,
 				}},
 			},
@@ -113,7 +113,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		)
 	}
 
-	if dk.Extensions().Enabled() && dk.Spec.TrustedCAs != "" {
+	if dk.Extensions().IsEnabled() && dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: otelcConsts.TrustedCAVolumePath})
 	}
 
@@ -139,8 +139,8 @@ func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
 	noProxyValues := []string{}
 
-	if ext := dk.Extensions(); ext.Enabled() {
-		noProxyValues = append(noProxyValues, ext.ServiceNameFQDN())
+	if ext := dk.Extensions(); ext.IsEnabled() {
+		noProxyValues = append(noProxyValues, ext.GetServiceNameFQDN())
 	}
 
 	if dk.ActiveGate().IsEnabled() {

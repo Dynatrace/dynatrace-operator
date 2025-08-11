@@ -16,7 +16,7 @@ import (
 )
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
-	if !r.dk.Extensions().Enabled() {
+	if !r.dk.Extensions().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
 			return nil
 		}
@@ -96,5 +96,5 @@ func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Toke
 }
 
 func (r *reconciler) getSecretName() string {
-	return r.dk.Extensions().TokenSecretName()
+	return r.dk.Extensions().GetTokenSecretName()
 }

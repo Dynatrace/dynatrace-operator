@@ -13,7 +13,7 @@ import (
 )
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
-	if !r.dk.Extensions().Enabled() {
+	if !r.dk.Extensions().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
 			return nil
 		}
@@ -55,7 +55,7 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.Extensions().ServiceName())
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.Extensions().GetServiceName())
 
 	return nil
 }
@@ -67,7 +67,7 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 
 	svcPorts := []corev1.ServicePort{
 		{
-			Name:       r.dk.Extensions().PortName(),
+			Name:       r.dk.Extensions().GetPortName(),
 			Port:       consts.OtelCollectorComPort,
 			Protocol:   corev1.ProtocolTCP,
 			TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsCollectorTargetPortName},
@@ -75,7 +75,7 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 	}
 
 	return service.Build(r.dk,
-		r.dk.Extensions().ServiceName(),
+		r.dk.Extensions().GetServiceName(),
 		appLabels.BuildMatchLabels(),
 		svcPorts,
 		service.SetLabels(coreLabels.BuildLabels()),

@@ -45,7 +45,7 @@ func TestVolumes(t *testing.T) {
 				Name: consts.ExtensionsTokensVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().TokenSecretName(),
+						SecretName: dk.Extensions().GetTokenSecretName(),
 						Items: []corev1.KeyToPath{
 							{
 								Key:  consts.OtelcTokenSecretKey,
@@ -90,7 +90,7 @@ func TestVolumes(t *testing.T) {
 			Name: consts.ExtensionsTokensVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.Extensions().TokenSecretName(),
+					SecretName: dk.Extensions().GetTokenSecretName(),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  consts.OtelcTokenSecretKey,

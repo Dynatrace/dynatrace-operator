@@ -42,7 +42,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if ext := r.dk.Extensions(); ext.Enabled() && ext.NeedsSelfSignedTLS() {
+	if ext := r.dk.Extensions(); ext.IsEnabled() && ext.NeedsSelfSignedTLS() {
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
 
@@ -58,7 +58,7 @@ func (r *reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 	query := k8ssecret.Query(r.client, r.client, log)
 
 	_, err := query.Get(ctx, types.NamespacedName{
-		Name:      r.dk.Extensions().SelfSignedTLSSecretName(),
+		Name:      r.dk.Extensions().GetSelfSignedTLSSecretName(),
 		Namespace: r.dk.Namespace,
 	})
 	if err != nil && k8serrors.IsNotFound(err) {
@@ -79,7 +79,7 @@ func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 
 	return query.Delete(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.Extensions().SelfSignedTLSSecretName(),
+			Name:      r.dk.Extensions().GetSelfSignedTLSSecretName(),
 			Namespace: r.dk.Namespace,
 		},
 	})
@@ -115,7 +115,7 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
 	secretData := map[string][]byte{consts.TLSCrtDataName: pemCert, consts.TLSKeyDataName: pemPk}
 
-	secret, err := k8ssecret.Build(r.dk, r.dk.Extensions().SelfSignedTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(r.dk, r.dk.Extensions().GetSelfSignedTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
 		conditions.SetSecretGenFailed(r.dk.Conditions(), conditionType, err)
 

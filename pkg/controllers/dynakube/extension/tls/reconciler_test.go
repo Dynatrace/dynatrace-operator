@@ -45,7 +45,7 @@ func TestReconcile(t *testing.T) {
 
 		var secret corev1.Secret
 
-		key := client.ObjectKey{Name: dk.Extensions().SelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
 		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
@@ -64,7 +64,7 @@ func TestReconcile(t *testing.T) {
 
 		var secret corev1.Secret
 
-		key := client.ObjectKey{Name: dk.Extensions().SelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
 		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestReconcile(t *testing.T) {
 
 		var secret corev1.Secret
 
-		key := client.ObjectKey{Name: dk.Extensions().SelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
 		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.NoError(t, err)
@@ -112,7 +112,7 @@ func TestReconcile(t *testing.T) {
 
 		var secret corev1.Secret
 
-		key := client.ObjectKey{Name: dk.Extensions().SelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
 		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
@@ -134,7 +134,7 @@ func TestReconcile(t *testing.T) {
 
 		var secret corev1.Secret
 
-		key := client.ObjectKey{Name: dk.Extensions().SelfSignedTLSSecretName(), Namespace: testNamespaceName}
+		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
 		err = fakeClient.Get(context.Background(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
@@ -148,14 +148,14 @@ func TestGetTLSSecretName(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
 
-		secretName := dk.Extensions().TLSSecretName()
-		assert.Equal(t, dk.Extensions().SelfSignedTLSSecretName(), secretName)
+		secretName := dk.Extensions().GetTLSSecretName()
+		assert.Equal(t, dk.Extensions().GetSelfSignedTLSSecretName(), secretName)
 	})
 	t.Run("tlsRefName secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-value"
 
-		secretName := dk.Extensions().TLSSecretName()
+		secretName := dk.Extensions().GetTLSSecretName()
 		assert.Equal(t, "dummy-value", secretName)
 	})
 }
@@ -203,7 +203,7 @@ func mockSelfSignedTLSSecret(t *testing.T, client client.Client, dk *dynakube.Dy
 func getSelfSignedTLSSecret(dk *dynakube.DynaKube) corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.Extensions().TLSSecretName(),
+			Name:      dk.Extensions().GetTLSSecretName(),
 			Namespace: dk.Namespace,
 		},
 		Data: map[string][]byte{

@@ -46,7 +46,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.Extensions().Enabled() || r.dk.TelemetryIngest().IsEnabled() {
+	if r.dk.Extensions().IsEnabled() || r.dk.TelemetryIngest().IsEnabled() {
 		return r.createOrUpdateStatefulset(ctx)
 	} else { // do cleanup or
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
@@ -138,12 +138,12 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
 	templateAnnotations := map[string]string{}
 
-	if r.dk.Extensions().Enabled() {
+	if r.dk.Extensions().IsEnabled() {
 		if r.dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
 			templateAnnotations = r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
 		}
 
-		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.Extensions().TLSSecretName())
+		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.Extensions().GetTLSSecretName())
 		if err != nil {
 			return nil, err
 		}

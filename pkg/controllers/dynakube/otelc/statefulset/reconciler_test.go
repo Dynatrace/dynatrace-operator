@@ -128,7 +128,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
 
 		// then update the TLS Secret and call reconcile again
-		updatedTLSSecret := getTLSSecret(dk.Extensions().TLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
+		updatedTLSSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
 		err = mockK8sClient.Update(context.Background(), &updatedTLSSecret)
 		require.NoError(t, err)
 
@@ -399,7 +399,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) 
 }
 
 func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
-	tlsSecret := getTLSSecret(dk.Extensions().TLSSecretName(), dk.Namespace, "super-cert", "super-key")
+	tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 
 	err := client.Create(context.Background(), &tlsSecret)
 	require.NoError(t, err)
