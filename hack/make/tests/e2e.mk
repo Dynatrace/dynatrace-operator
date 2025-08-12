@@ -80,11 +80,11 @@ test/e2e/cloudnative/codemodules-with-proxy-custom-ca-ag-cert: manifests/crd/hel
 
 ## Runs CloudNative codemodules e2e test with proxy and automatically created AG certificates
 test/e2e/cloudnative/codemodules-with-proxy-custom-ca-auto-ag-cert: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -run "codemodules-with-proxy-custom-ca-auto-ag-cert" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -run "codemodules_with_proxy_custom_ca_auto_ag_cert" -args $(SKIPCLEANUP)
 
 ## Runs CloudNative automatic injection disabled e2e test only
 test/e2e/cloudnative/disabledautoinjection: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -run "cloudnative-disabled-auto-inject" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -run "cloudnative_disabled_auto_inject" -args $(SKIPCLEANUP)
 
 ## Runs CloudNative default e2e test only
 test/e2e/cloudnative/default: manifests/crd/helm
@@ -124,7 +124,7 @@ test/e2e/applicationmonitoring/withoutcsi: manifests/crd/helm
 
 ## Runs Application Monitoring bootstrapper with CSI e2e test only
 test/e2e/applicationmonitoring/bootstrapper-csi: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -run "node_image-pull-with-csi" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -run "node_image_pull_with_csi" -args $(SKIPCLEANUP)
 
 ## Runs Application Monitoring bootstrapper with no CSI e2e test only
 test/e2e/applicationmonitoring/bootstrapper-no-csi: manifests/crd/helm
@@ -148,7 +148,7 @@ test/e2e/gke-autopilot: manifests/crd/helm
 
 ## Runs extensions related e2e tests
 test/e2e/extensions: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "extensions_components_rollout" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "extensions" -args $(SKIPCLEANUP)
 
 ## Runs LogMonitoring related e2e tests
 test/e2e/logmonitoring: manifests/crd/helm
@@ -164,16 +164,16 @@ test/e2e/cloudnative/withoutcsi: manifests/crd/helm
 
 ## Runs TelemetryIngest related e2e tests
 test/e2e/telemetryingest: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest-.*" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest_.*" -args $(SKIPCLEANUP)
 
 test/e2e/telemetryingest/public-active-gate: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest_with_public_ag_components_rollout" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest_w_public_ag" -args $(SKIPCLEANUP)
 
 test/e2e/telemetryingest/local-active-gate-and-cleanup: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest_with_local_active_gate_component_rollout_and_cleanup_after_disable" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest_w_local_ag_and_cleanup_after" -args $(SKIPCLEANUP)
 
 test/e2e/telemetryingest/otel-collector-endpoint-tls: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest-with-otel-collector-endpoint-tls" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest_w_otel_collector_endpoint_tls" -args $(SKIPCLEANUP)
 
 test/e2e/telemetryingest/otel-collector-config-udpate: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest_configuration_update" -args $(SKIPCLEANUP)
