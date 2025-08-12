@@ -32,6 +32,8 @@ rules:
       - nodes/proxy
       - nodes/metrics
       - services
+      - persistentvolumeclaims
+      - persistentvolumes
     verbs:
       - list
       - watch
@@ -76,6 +78,24 @@ rules:
       - dynatrace.com
     resources:
       - dynakubes
+      - edgeconnects
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+      - networkpolicies
     verbs:
       - list
       - watch
