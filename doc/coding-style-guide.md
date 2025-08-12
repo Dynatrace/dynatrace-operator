@@ -15,7 +15,7 @@
 - [Logging](#logging)
   - [Do's](#dos-1)
   - [Don'ts](#donts-1)
-  - [Debugging](#debugging)
+  - [Debug logs](#debug-logs)
 - [Testing](#testing)
   - [Do's](#dos-2)
   - [Don'ts](#donts-2)
