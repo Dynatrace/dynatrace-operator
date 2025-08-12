@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
@@ -388,7 +387,7 @@ func getTestDynakubeWithTelemetryIngest() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			TelemetryIngest: &telemetryingest.Spec{},
-			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: otel.CollectorSpec{}},
+			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: extension.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }
@@ -403,7 +402,7 @@ func getTestDynakubeWithExtensionsAndTelemetryIngest() *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			Extensions:      &extension.Spec{},
 			TelemetryIngest: &telemetryingest.Spec{},
-			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: otel.CollectorSpec{}},
+			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: extension.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }

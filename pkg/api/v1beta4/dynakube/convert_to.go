@@ -7,7 +7,6 @@ import (
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	otellatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otel"
 	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube/logmonitoring"
@@ -144,8 +143,8 @@ func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollecto
 	return dst
 }
 
-func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) otellatest.CollectorSpec {
-	dst := otellatest.CollectorSpec{}
+func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) extensionlatest.OpenTelemetryCollectorSpec {
+	dst := extensionlatest.OpenTelemetryCollectorSpec{}
 
 	dst.Labels = src.Labels
 	dst.Annotations = src.Annotations

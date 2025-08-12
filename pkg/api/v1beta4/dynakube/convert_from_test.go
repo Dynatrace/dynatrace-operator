@@ -11,7 +11,6 @@ import (
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	otellatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -396,7 +395,7 @@ func compareLogMonitoringSpec(t *testing.T, oldSpec *logmonitoring.Spec, newSpec
 	}
 }
 
-func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollectorSpec, newSpec otellatest.CollectorSpec) {
+func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollectorSpec, newSpec extensionlatest.OpenTelemetryCollectorSpec) {
 	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
@@ -645,8 +644,8 @@ func getNewLogMonitoringSpec() *logmonitoringlatest.Spec {
 	return &newSpec
 }
 
-func getNewOpenTelemetryTemplateSpec() otellatest.CollectorSpec {
-	return otellatest.CollectorSpec{
+func getNewOpenTelemetryTemplateSpec() extensionlatest.OpenTelemetryCollectorSpec {
+	return extensionlatest.OpenTelemetryCollectorSpec{
 		Labels: map[string]string{
 			"otelc-label-key1": "otelc-label-value1",
 			"otelc-label-key2": "otelc-label-value2",
