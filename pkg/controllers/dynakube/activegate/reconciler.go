@@ -70,7 +70,7 @@ func NewReconciler(clt client.Client, //nolint
 	pullSecretReconciler := dtpullsecret.NewReconciler(clt, apiReader, dk, tokens)
 
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *value.Source) controllers.Reconciler {
-		return customproperties.NewReconciler(clt, dk, customPropertiesOwnerName, customPropertiesSource)
+		return customproperties.NewReconciler(clt, apiReader, dk, customPropertiesOwnerName, customPropertiesSource)
 	}
 
 	return &Reconciler{

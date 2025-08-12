@@ -31,20 +31,18 @@ const (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	client                    client.Client
 	customPropertiesSource    *value.Source
 	dk                        *dynakube.DynaKube
 	customPropertiesOwnerName string
 	secretQuery               k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
 	return &Reconciler{
-		client:                    clt,
 		dk:                        dk,
 		customPropertiesSource:    customPropertiesSource,
 		customPropertiesOwnerName: customPropertiesOwnerName,
-		secretQuery:               k8ssecret.Query(clt, clt, log),
+		secretQuery:               k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -85,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	_, err = r.secretQuery.WithOwner(r.dk).CreateOrUpdate(ctx, customPropertiesSecret) // TODO: pass in an apiReader instead of the client 2 times
+	_, err = r.secretQuery.WithOwner(r.dk).CreateOrUpdate(ctx, customPropertiesSecret)
 	if err != nil {
 		return err
 	}

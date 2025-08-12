@@ -21,7 +21,6 @@ import (
 )
 
 type reconciler struct {
-	client       client.Client
 	apiReader    client.Reader
 	dtc          dtclient.Client
 	timeProvider *timeprovider.Provider
@@ -35,7 +34,6 @@ var _ ReconcilerBuilder = NewReconciler
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
-		client:       clt,
 		apiReader:    apiReader,
 		dk:           dk,
 		dtc:          dtc,
