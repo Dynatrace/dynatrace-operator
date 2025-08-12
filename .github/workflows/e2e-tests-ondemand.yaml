@@ -77,7 +77,7 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cluster creation status
+      - name: Determine cluster status
         id: cluster_creation_status
         if: failure()
         run: |
