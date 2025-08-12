@@ -345,7 +345,8 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 func TestMyFunction(t *testing.T) {
     // Common setup, used for multiple cases
     testString := "test"
-    mockMyClient := func(prop int) MyClient {
+    mockMyClient := func(t *testing.T, prop int) MyClient {
+      t.Helper()
       // Creating MyClient mock, specific to this test.
       // - can be reused per `t.Run`
       // - can be just configurable enough to meet the requirements of the `t.Run`s in this test
