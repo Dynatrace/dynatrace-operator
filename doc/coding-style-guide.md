@@ -333,6 +333,13 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
   - Having one `createTestReconciler(p1,p2,p3,p4,p5)` that tries to mock all and fit in all test cases is just maintenance hell, because if you change 1 test-case then you will change all others, also your mocks will be too forgiving, which is great for bugs.
     - Create small, test specific mocks.
     - Such mocks can be created with helper functions defined within the test case, to reuse it within the test case.
+- Helper functions per-test are preferred to helper functions per-package
+  - Writing helper functions for a whole package can backfire quickly as it binds tests together unnecessary.
+    - example: Change 1 helper function -> break 3 tests but fix 2 -> probably should be split into test specific helpers
+    - For simpler common setups func it can still make sense.
+  - All helper func must use `t.Helper()` as their first-line, for improved error reporting.
+- Defining (testing) `consts` per-test is preferred to defining (testing) `consts` per-package
+  - Figuring out what is `myTestConst52` that is defined 3 files over and used by 12 tests is not fun to maintain and easy to follow.
 - Use `t.Run` and give a title that describes what you are testing in that run.
 - Use `t.Context` instead of `context.Background`.
   - [Added in go 1.24](https://pkg.go.dev/testing#T.Context), so we don't really use it, update it where you change code
@@ -344,18 +351,29 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 ```go
 func TestMyFunction(t *testing.T) {
     // Common setup, used for multiple cases
-    testString := "test"
+    const testString = "test"
+
+    mySetupFunc := func(t *testing.T, prop int) {
+      t.Helper()
+      // Do some test specific setup/helper logic
+      // - can be reused per `t.Run`
+      // - can be just configurable enough to meet the requirements of the `t.Run`s in this test
+      // - "hidden" from other tests, so reusing it is more intentional and wont affect this test
+    }
+
     mockMyClient := func(t *testing.T, prop int) MyClient {
       t.Helper()
       // Creating MyClient mock, specific to this test.
       // - can be reused per `t.Run`
       // - can be just configurable enough to meet the requirements of the `t.Run`s in this test
+      // - "hidden" from other tests, so reusing it is more intentional and wont affect this test
     }
 
     // Each test case of a function gets a t.Run
     t.Run("useful title", func(t *testing.T) {
         // Arrange/Setup
         testInt := 1
+        mySetupFunc(testInt)
         client := mockMyClient(testInt)
 
         // Act
@@ -364,19 +382,6 @@ func TestMyFunction(t *testing.T) {
         // Assert
         require.Nil(t, err)
         assert.Equal(t, out, testString)
-    })
-
-    t.Run("other useful title", func(t *testing.T) {
-        // Arrange
-        testInt := 4
-        client := mockMyClient(testInt)
-
-        // Act
-        out, err := MyFunction(t.Context(), client, testString, testInt)
-
-        // Assert
-        require.Error(t, err)
-        assert.Empty(t, out)
     })
 }
 ```
