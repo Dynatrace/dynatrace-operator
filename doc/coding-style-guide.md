@@ -383,6 +383,10 @@ func TestMyFunction(t *testing.T) {
         require.Nil(t, err)
         assert.Equal(t, out, testString)
     })
+
+    t.Run("another useful title", func(t *testing.T) {
+        //...
+    })
 }
 ```
 
