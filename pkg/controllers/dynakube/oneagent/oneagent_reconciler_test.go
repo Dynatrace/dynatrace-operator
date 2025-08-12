@@ -537,7 +537,7 @@ func TestHasSpecChanged(t *testing.T) {
 }
 
 func TestNewDaemonset_Affinity(t *testing.T) {
-	t.Run(`adds correct affinities`, func(t *testing.T) {
+	t.Run("adds correct affinities", func(t *testing.T) {
 		r := Reconciler{}
 		dk := newDynaKube()
 		ds, err := r.buildDesiredDaemonSet(dk)
@@ -744,7 +744,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	fakeClient := fake.NewClient(
 		dk)
 
-	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {
+	t.Run("create OneAgent connection info ConfigMap", func(t *testing.T) {
 		reconciler := Reconciler{
 			dk:                       dk,
 			client:                   fakeClient,

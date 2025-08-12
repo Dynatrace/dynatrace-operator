@@ -25,12 +25,12 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 		},
 	}
 
-	t.Run(`endpoints empty`, func(t *testing.T) {
+	t.Run("endpoints empty", func(t *testing.T) {
 		hosts := parseCommunicationHostFromActiveGateEndpoints("")
 		assert.Empty(t, hosts)
 	})
 
-	t.Run(`activegate endpoint set`, func(t *testing.T) {
+	t.Run("activegate endpoint set", func(t *testing.T) {
 		dk.Status.ActiveGate.ConnectionInfo.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443"
 
 		hosts := GetEndpointsAsCommunicationHosts(dk)
@@ -39,7 +39,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 		assert.Equal(t, "https", hosts[0].Protocol)
 		assert.Equal(t, uint32(443), hosts[0].Port)
 	})
-	t.Run(`activegate multiple endpoints set`, func(t *testing.T) {
+	t.Run("activegate multiple endpoints set", func(t *testing.T) {
 		dk.Status.ActiveGate.ConnectionInfo.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443,https://efg5678.some.other.activegate.endpointurl.com"
 
 		hosts := GetEndpointsAsCommunicationHosts(dk)
@@ -48,7 +48,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 		assert.Contains(t, hostNames, "abcd123.some.activegate.endpointurl.com")
 		assert.Contains(t, hostNames, "efg5678.some.other.activegate.endpointurl.com")
 	})
-	t.Run(`activegate duplicate endpoints set`, func(t *testing.T) {
+	t.Run("activegate duplicate endpoints set", func(t *testing.T) {
 		dk.Status.ActiveGate.ConnectionInfo.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443,https://abcd123.some.activegate.endpointurl.com:443,https://abcd123.some.activegate.endpointurl.com:443"
 
 		hosts := GetEndpointsAsCommunicationHosts(dk)

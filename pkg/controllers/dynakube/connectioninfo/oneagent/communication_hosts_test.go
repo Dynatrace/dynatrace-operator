@@ -34,12 +34,12 @@ func TestGetCommunicationHosts(t *testing.T) {
 		},
 	}
 
-	t.Run(`communications host empty`, func(t *testing.T) {
+	t.Run("communications host empty", func(t *testing.T) {
 		hosts := GetCommunicationHosts(dk)
 		assert.Empty(t, hosts)
 	})
 
-	t.Run(`communication-hosts field found`, func(t *testing.T) {
+	t.Run("communication-hosts field found", func(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{
 			{
 				Protocol: "protocol",

@@ -16,7 +16,7 @@ import (
 func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run(`create settings with monitoring for the given monitored entity id`, func(t *testing.T) {
+	t.Run("create settings with monitoring for the given monitored entity id", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusOK)))
 		defer dynatraceServer.Close()
@@ -36,7 +36,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		assert.Equal(t, testObjectID, actual)
 	})
 
-	t.Run(`create settings for the given monitored entity id`, func(t *testing.T) {
+	t.Run("create settings for the given monitored entity id", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusOK)))
 		defer dynatraceServer.Close()
@@ -56,7 +56,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		assert.Equal(t, testObjectID, actual)
 	})
 
-	t.Run(`don't create settings for the given monitored entity id because no kube-system uuid is provided`, func(t *testing.T) {
+	t.Run("don't create settings for the given monitored entity id because no kube-system uuid is provided", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusOK)))
 		defer dynatraceServer.Close()
@@ -74,7 +74,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		assert.Empty(t, actual)
 	})
 
-	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
+	t.Run("don't create settings for the given monitored entity id because of api error", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusBadRequest)))
 		defer dynatraceServer.Close()
@@ -93,7 +93,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		assert.Empty(t, actual)
 	})
 
-	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
+	t.Run("don't create settings for the given monitored entity id because of api error", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusNotFound)))
 		defer dynatraceServer.Close()
@@ -116,7 +116,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 func TestDynatraceClient_CreateOrUpdateAppKubernetesSetting(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run(`create app settings with monitoring for the given monitored entity id`, func(t *testing.T) {
+	t.Run("create app settings with monitoring for the given monitored entity id", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusOK)))
 		defer dynatraceServer.Close()
@@ -136,7 +136,7 @@ func TestDynatraceClient_CreateOrUpdateAppKubernetesSetting(t *testing.T) {
 		assert.Equal(t, testObjectID, actual)
 	})
 
-	t.Run(`don't create app settings for the given monitored entity id because of api error`, func(t *testing.T) {
+	t.Run("don't create app settings for the given monitored entity id because of api error", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, testObjectID, http.StatusNotFound)))
 		defer dynatraceServer.Close()
@@ -157,7 +157,7 @@ func TestDynatraceClient_CreateOrUpdateAppKubernetesSetting(t *testing.T) {
 }
 
 func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
-	t.Run(`get k8s settings request body for Hierarchical Monitoring Settings`, func(t *testing.T) {
+	t.Run("get k8s settings request body for Hierarchical Monitoring Settings", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, "", http.StatusBadRequest)))
 		defer dynatraceServer.Close()
@@ -186,7 +186,7 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		assert.Contains(t, string(bodyJSON), "clusterIdEnabled")
 	})
 
-	t.Run(`get k8s settings request body`, func(t *testing.T) {
+	t.Run("get k8s settings request body", func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(1, "", http.StatusBadRequest)))
 		defer dynatraceServer.Close()

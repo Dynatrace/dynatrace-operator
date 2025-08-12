@@ -15,7 +15,7 @@ import (
 )
 
 func TestExtensionExecutionControllerImage(t *testing.T) {
-	t.Run(`the image specified`, func(t *testing.T) {
+	t.Run("the image specified", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -39,7 +39,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			})
 	})
 
-	t.Run(`missing tag`, func(t *testing.T) {
+	t.Run("missing tag", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorExtensionExecutionControllerImageNotSpecified},
 			&dynakube.DynaKube{
@@ -63,7 +63,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			})
 	})
 
-	t.Run(`missing repository`, func(t *testing.T) {
+	t.Run("missing repository", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorExtensionExecutionControllerImageNotSpecified},
 			&dynakube.DynaKube{
@@ -87,7 +87,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			})
 	})
 
-	t.Run(`image not specified`, func(t *testing.T) {
+	t.Run("image not specified", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorExtensionExecutionControllerImageNotSpecified},
 			&dynakube.DynaKube{
@@ -106,7 +106,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 }
 
 func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
-	t.Run(`EphemeralVolume disabled and PVC specified`, func(t *testing.T) {
+	t.Run("EphemeralVolume disabled and PVC specified", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -131,7 +131,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				},
 			})
 	})
-	t.Run(`EphemeralVolume enabled and no PVC specified`, func(t *testing.T) {
+	t.Run("EphemeralVolume enabled and no PVC specified", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -155,7 +155,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				},
 			})
 	})
-	t.Run(`EphemeralVolume enabled and PVC specified`, func(t *testing.T) {
+	t.Run("EphemeralVolume enabled and PVC specified", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorExtensionExecutionControllerInvalidPVCConfiguration},
 			&dynakube.DynaKube{

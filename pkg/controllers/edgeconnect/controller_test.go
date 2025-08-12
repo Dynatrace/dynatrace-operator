@@ -147,7 +147,7 @@ func TestReconcile(t *testing.T) {
 		expectedTimestamp := controller.timeProvider.Now().Truncate(time.Second)
 		assert.Equal(t, expectedTimestamp, ec.Status.UpdatedTimestamp.Time)
 	})
-	t.Run(`Reconciles phase change correctly`, func(t *testing.T) {
+	t.Run("Reconciles phase change correctly", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -182,7 +182,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, controller.client.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, ec))
 		assert.Equal(t, status.Running, ec.Status.DeploymentPhase)
 	})
-	t.Run(`Reconciles doesn't fail if edgeconnectClient not found`, func(t *testing.T) {
+	t.Run("Reconciles doesn't fail if edgeconnectClient not found", func(t *testing.T) {
 		controller := createFakeClientAndReconciler(t, nil)
 
 		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -191,7 +191,7 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 	})
-	t.Run(`Reconciles custom CA provided`, func(t *testing.T) {
+	t.Run("Reconciles custom CA provided", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -223,7 +223,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretCreated`, func(t *testing.T) {
+	t.Run("SecretConfigConditionType is set SecretCreated", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -259,7 +259,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, ec.Name+"-"+consts.EdgeConnectSecretSuffix+" created", condition.Message)
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretGenFailed failed to get clientSecret`, func(t *testing.T) {
+	t.Run("SecretConfigConditionType is set SecretGenFailed failed to get clientSecret", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -290,7 +290,7 @@ func TestReconcile(t *testing.T) {
 		assert.Contains(t, condition.Message, "Failed to generate secret: failed to get clientSecret")
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretGenFailed failed`, func(t *testing.T) {
+	t.Run("SecretConfigConditionType is set SecretGenFailed failed", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,

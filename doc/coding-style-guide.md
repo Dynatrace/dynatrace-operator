@@ -333,7 +333,7 @@ func TestMyFunction(t *testing.T) {
     testString := "test"
 
     // Each test case of a function gets a t.Run
-    t.Run(`useful title`, func(t *testing.T) {
+    t.Run("useful title", func(t *testing.T) {
         // Arrange/Setup
         testInt := 1
 
@@ -345,7 +345,7 @@ func TestMyFunction(t *testing.T) {
         assert.Equal(t, out, testString)
     })
 
-    t.Run(`other useful title`, func(t *testing.T) {
+    t.Run("other useful title", func(t *testing.T) {
         // Arrange
         testInt := 4
 
