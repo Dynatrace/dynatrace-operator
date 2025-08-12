@@ -138,7 +138,7 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	t.Run(`reconcile successfully without mutatingwebhookconfiguration`, func(t *testing.T) {
+	t.Run("reconcile successfully without mutatingwebhookconfiguration", func(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd,
 			&admissionregistrationv1.ValidatingWebhookConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -163,7 +163,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 
-	t.Run(`reconcile successfully without validatingwebhookconfiguration`, func(t *testing.T) {
+	t.Run("reconcile successfully without validatingwebhookconfiguration", func(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd,
 			&admissionregistrationv1.MutatingWebhookConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -191,7 +191,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 
-	t.Run(`update crd successfully with up-to-date secret`, func(t *testing.T) {
+	t.Run("update crd successfully with up-to-date secret", func(t *testing.T) {
 		deployment := &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      webhook.DeploymentName,
@@ -220,7 +220,7 @@ func TestReconcile(t *testing.T) {
 
 	// Generation must not be skipped because webhook startup routine listens for the secret
 	// See cmd/operator/manager.go and cmd/operator/watcher.go
-	t.Run(`do not skip certificates generation if no configuration exists`, func(t *testing.T) {
+	t.Run("do not skip certificates generation if no configuration exists", func(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd, &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      webhook.DeploymentName,

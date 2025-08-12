@@ -106,7 +106,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, dk.ExtensionsTokenSecretName()+" created", condition.Message)
 	})
-	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
+	t.Run("Extension SecretCreated failure condition is set when error", func(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
 

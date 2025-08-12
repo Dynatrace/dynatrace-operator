@@ -153,7 +153,7 @@ func TestDynatraceClient_GetK8sClusterME(t *testing.T) {
 func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run(`settings for the given monitored entities exist`, func(t *testing.T) {
+	t.Run("settings for the given monitored entities exist", func(t *testing.T) {
 		// arrange
 		expected := createKubernetesClusterEntityForTesting()
 		totalCount := 1
@@ -175,7 +175,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		assert.Positive(t, actual.TotalCount)
 	})
 
-	t.Run(`no settings for the given monitored entities exist`, func(t *testing.T) {
+	t.Run("no settings for the given monitored entities exist", func(t *testing.T) {
 		// arrange
 		expected := createKubernetesClusterEntityForTesting()
 		totalCount := 0
@@ -197,7 +197,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		assert.Less(t, actual.TotalCount, 1)
 	})
 
-	t.Run(`no settings for an empty list of monitored entities exist`, func(t *testing.T) {
+	t.Run("no settings for an empty list of monitored entities exist", func(t *testing.T) {
 		// it is immaterial what we put here since no http call is executed when the list of
 		// monitored entities is empty, therefore also no settings will be returned
 		totalCount := 999
@@ -219,7 +219,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		assert.Empty(t, actual.TotalCount)
 	})
 
-	t.Run(`no settings found for because of an api error`, func(t *testing.T) {
+	t.Run("no settings found for because of an api error", func(t *testing.T) {
 		// arrange
 		k8sEntity := createKubernetesClusterEntityForTesting()
 		// it is immaterial what we put here since the http request is producing an error

@@ -25,7 +25,7 @@ const (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run(`ActiveGate disabled`, func(t *testing.T) {
+	t.Run("ActiveGate disabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -44,7 +44,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 
-	t.Run(`custom ActiveGate TLS secret exists`, func(t *testing.T) {
+	t.Run("custom ActiveGate TLS secret exists", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -71,7 +71,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 
-	t.Run(`automatic-tls-certificate feature disabled`, func(t *testing.T) {
+	t.Run("automatic-tls-certificate feature disabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -100,7 +100,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 
-	t.Run(`secret created`, func(t *testing.T) {
+	t.Run("secret created", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,

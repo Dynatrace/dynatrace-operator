@@ -24,7 +24,7 @@ const (
 )
 
 func TestInvalidActiveGateProxy(t *testing.T) {
-	t.Run(`valid proxy url`, func(t *testing.T) {
+	t.Run("valid proxy url", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -38,7 +38,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 			})
 	})
 
-	t.Run(`valid proxy url, no password`, func(t *testing.T) {
+	t.Run("valid proxy url, no password", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -52,7 +52,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 			})
 	})
 
-	t.Run(`invalid proxy url`, func(t *testing.T) {
+	t.Run("invalid proxy url", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorInvalidProxyURL},
 			&dynakube.DynaKube{
@@ -67,7 +67,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 			})
 	})
 
-	t.Run(`valid proxy secret url`, func(t *testing.T) {
+	t.Run("valid proxy secret url", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -90,7 +90,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 			})
 	})
 
-	t.Run(`missing proxy secret`, func(t *testing.T) {
+	t.Run("missing proxy secret", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorMissingProxySecret},
 			&dynakube.DynaKube{
@@ -105,7 +105,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 			})
 	})
 
-	t.Run(`invalid format of proxy secret`, func(t *testing.T) {
+	t.Run("invalid format of proxy secret", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorMissingProxySecret},
 			&dynakube.DynaKube{
@@ -129,7 +129,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 			})
 	})
 
-	t.Run(`invalid proxy secret url`, func(t *testing.T) {
+	t.Run("invalid proxy secret url", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorInvalidProxyURL},
 			&dynakube.DynaKube{
@@ -153,7 +153,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 			})
 	})
 
-	t.Run(`invalid proxy secret url - entrypoint.sh`, func(t *testing.T) {
+	t.Run("invalid proxy secret url - entrypoint.sh", func(t *testing.T) {
 		assert.True(t, isStringValidForAG("password"))
 		assert.True(t, isStringValidForAG("test~!@#^*()_-|}{[]\":;?><./pass"))
 

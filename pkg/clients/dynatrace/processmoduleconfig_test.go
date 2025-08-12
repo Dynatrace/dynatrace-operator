@@ -90,13 +90,13 @@ func TestReadResponseForProcessModuleConfig(t *testing.T) {
 }
 
 func TestAddHostGroup(t *testing.T) {
-	t.Run(`hostGroup, no api`, func(t *testing.T) {
+	t.Run("hostGroup, no api", func(t *testing.T) {
 		emptyResponse := ProcessModuleConfig{}
 		result := emptyResponse.AddHostGroup("test")
 		assert.NotNil(t, result)
 		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
 	})
-	t.Run(`hostGroup, api present`, func(t *testing.T) {
+	t.Run("hostGroup, api present", func(t *testing.T) {
 		pmc := ProcessModuleConfig{
 			Properties: []ProcessModuleProperty{
 				{
@@ -111,7 +111,7 @@ func TestAddHostGroup(t *testing.T) {
 		assert.Len(t, result.ToMap()["general"], 2)
 		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
 	})
-	t.Run(`empty hostGroup`, func(t *testing.T) {
+	t.Run("empty hostGroup", func(t *testing.T) {
 		pmc := ProcessModuleConfig{
 			Properties: []ProcessModuleProperty{
 				{
@@ -125,7 +125,7 @@ func TestAddHostGroup(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, *result, pmc)
 	})
-	t.Run(`empty hostGroup, remove previous hostgroup`, func(t *testing.T) {
+	t.Run("empty hostGroup, remove previous hostgroup", func(t *testing.T) {
 		pmc := ProcessModuleConfig{
 			Properties: []ProcessModuleProperty{
 				{

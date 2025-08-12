@@ -30,7 +30,7 @@ func createTestDynakubeWithProxy(proxy value.Source) *dynakube.DynaKube {
 }
 
 func TestOptions(t *testing.T) {
-	t.Run(`Test append network zone`, func(t *testing.T) {
+	t.Run("Test append network zone", func(t *testing.T) {
 		opts := newOptions(context.Background())
 
 		assert.NotNil(t, opts)
@@ -44,7 +44,7 @@ func TestOptions(t *testing.T) {
 
 		assert.NotEmpty(t, opts.Opts)
 	})
-	t.Run(`Test append cert check`, func(t *testing.T) {
+	t.Run("Test append cert check", func(t *testing.T) {
 		opts := newOptions(context.Background())
 
 		assert.NotNil(t, opts)
@@ -61,7 +61,7 @@ func TestOptions(t *testing.T) {
 		assert.NotNil(t, opts)
 		assert.NotEmpty(t, opts.Opts)
 	})
-	t.Run(`Test append proxy settings`, func(t *testing.T) {
+	t.Run("Test append proxy settings", func(t *testing.T) {
 		opts := newOptions(context.Background())
 
 		assert.NotNil(t, opts)
@@ -92,7 +92,7 @@ func TestOptions(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
 	})
-	t.Run(`AppendProxySettings handles missing or malformed secret`, func(t *testing.T) {
+	t.Run("AppendProxySettings handles missing or malformed secret", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		opts := newOptions(context.Background())
 		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
@@ -114,7 +114,7 @@ func TestOptions(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
 	})
-	t.Run(`Test append trusted certificates`, func(t *testing.T) {
+	t.Run("Test append trusted certificates", func(t *testing.T) {
 		opts := newOptions(context.Background())
 
 		assert.NotNil(t, opts)
@@ -139,7 +139,7 @@ func TestOptions(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
 	})
-	t.Run(`AppendTrustedCerts handles missing or malformed config map`, func(t *testing.T) {
+	t.Run("AppendTrustedCerts handles missing or malformed config map", func(t *testing.T) {
 		opts := newOptions(context.Background())
 
 		assert.NotNil(t, opts)
