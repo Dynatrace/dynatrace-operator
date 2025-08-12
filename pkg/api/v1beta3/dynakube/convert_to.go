@@ -141,8 +141,8 @@ func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollecto
 	return dst
 }
 
-func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) extensionlatest.OpenTelemetryCollectorSpec {
-	dst := extensionlatest.OpenTelemetryCollectorSpec{}
+func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubelatest.OpenTelemetryCollectorSpec {
+	dst := dynakubelatest.OpenTelemetryCollectorSpec{}
 
 	dst.Labels = src.Labels
 	dst.Annotations = src.Annotations

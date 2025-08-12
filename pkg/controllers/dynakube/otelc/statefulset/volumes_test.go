@@ -387,7 +387,7 @@ func getTestDynakubeWithTelemetryIngest() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			TelemetryIngest: &telemetryingest.Spec{},
-			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: extension.OpenTelemetryCollectorSpec{}},
+			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }
@@ -402,7 +402,7 @@ func getTestDynakubeWithExtensionsAndTelemetryIngest() *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			Extensions:      &extension.Spec{},
 			TelemetryIngest: &telemetryingest.Spec{},
-			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: extension.OpenTelemetryCollectorSpec{}},
+			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }

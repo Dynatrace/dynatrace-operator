@@ -161,7 +161,7 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 	// +kubebuilder:validation:Optional
-	OpenTelemetryCollector extension.OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
+	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController extension.ExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 }

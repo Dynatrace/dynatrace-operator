@@ -361,7 +361,7 @@ func getTestDynakubeWithExtensions() *dynakube.DynaKube {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: &extension.Spec{},
-			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: extension.OpenTelemetryCollectorSpec{}},
+			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
 	}
 }

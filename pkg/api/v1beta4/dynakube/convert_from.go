@@ -140,7 +140,7 @@ func fromKspmNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfiguration
 	return dst
 }
 
-func fromOpenTelemetryCollectorTemplate(src extensionlatest.OpenTelemetryCollectorSpec) OpenTelemetryCollectorSpec {
+func fromOpenTelemetryCollectorTemplate(src dynakubelatest.OpenTelemetryCollectorSpec) OpenTelemetryCollectorSpec {
 	dst := OpenTelemetryCollectorSpec{}
 
 	dst.Labels = src.Labels
