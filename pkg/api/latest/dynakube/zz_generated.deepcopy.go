@@ -19,7 +19,7 @@ limitations under the License.
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
@@ -114,7 +114,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	}
 	if in.Extensions != nil {
 		in, out := &in.Extensions, &out.Extensions
-		*out = new(extension.Spec)
+		*out = new(extensions.Spec)
 		**out = **in
 	}
 	if in.TelemetryIngest != nil {

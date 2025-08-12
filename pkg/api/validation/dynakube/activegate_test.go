@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -122,7 +122,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extension.Spec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						UseEphemeralVolume:  true,
 						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},

@@ -3,7 +3,7 @@ package modifiers
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -11,7 +11,7 @@ import (
 func TestEecEnabled(t *testing.T) {
 	t.Run("Extensions are enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions = &extension.Spec{}
+		dk.Spec.Extensions = &extensions.Spec{}
 
 		mod := NewEecVolumeModifier(dk)
 
@@ -31,7 +31,7 @@ func TestEecEnabled(t *testing.T) {
 func TestEecModify(t *testing.T) {
 	t.Run("Statefulset is successfully modified with eec volume", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions = &extension.Spec{}
+		dk.Spec.Extensions = &extensions.Spec{}
 
 		mod := NewEecVolumeModifier(dk)
 		builder := createBuilderForTesting()

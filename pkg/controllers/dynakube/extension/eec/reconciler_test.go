@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -49,9 +49,9 @@ func getTestDynakube() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extension.Spec{},
+			Extensions: &extensions.Spec{},
 			Templates: dynakube.TemplatesSpec{
-				ExtensionExecutionController: extension.ExecutionControllerSpec{
+				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: image.Ref{
 						Repository: testEecImageRepository,
 						Tag:        testEecImageTag,

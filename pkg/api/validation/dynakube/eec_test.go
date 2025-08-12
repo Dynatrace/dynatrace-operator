@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,9 +27,9 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
-					Extensions: &extension.Spec{},
+					Extensions: &extensions.Spec{},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: extension.ExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
@@ -47,14 +47,14 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extension.Spec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: extension.ExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 							},
@@ -71,14 +71,14 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extension.Spec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: extension.ExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Tag: "b",
 							},
@@ -95,7 +95,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extension.Spec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -113,14 +113,14 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extension.Spec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: extension.ExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
@@ -138,14 +138,14 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extension.Spec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: extension.ExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
@@ -163,14 +163,14 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extension.Spec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: extension.ExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
@@ -206,9 +206,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     testAPIURL,
-			Extensions: &extension.Spec{},
+			Extensions: &extensions.Spec{},
 			Templates: dynakube.TemplatesSpec{
-				ExtensionExecutionController: extension.ExecutionControllerSpec{
+				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: imgRef,
 				},
 			},
@@ -224,9 +224,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     "https://f.q.d.n/123",
-				Extensions: &extension.Spec{},
+				Extensions: &extensions.Spec{},
 				Templates: dynakube.TemplatesSpec{
-					ExtensionExecutionController: extension.ExecutionControllerSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
 						ImageRef: imgRef,
 					},
 				},
@@ -243,9 +243,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     testAPIURL,
-				Extensions: &extension.Spec{},
+				Extensions: &extensions.Spec{},
 				Templates: dynakube.TemplatesSpec{
-					ExtensionExecutionController: extension.ExecutionControllerSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
 						ImageRef: imgRef,
 					},
 				},
@@ -270,7 +270,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 				APIURL:     testAPIURL,
 				Extensions: nil,
 				Templates: dynakube.TemplatesSpec{
-					ExtensionExecutionController: extension.ExecutionControllerSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
 						ImageRef: imgRef,
 					},
 				},

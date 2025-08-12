@@ -6,7 +6,7 @@ package dynakube
 import (
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -92,7 +92,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
 	// are deployed by the operator.
 	// +kubebuilder:validation:Optional
-	Extensions *extension.Spec `json:"extensions,omitempty"`
+	Extensions *extensions.Spec `json:"extensions,omitempty"`
 
 	// When a TelemetryIngestSpec is provided, the OTEL collector is deployed by the operator.
 	// +kubebuilder:validation:Optional
@@ -163,7 +163,7 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
 	// +kubebuilder:validation:Optional
-	ExtensionExecutionController extension.ExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
+	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

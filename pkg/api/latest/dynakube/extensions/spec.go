@@ -1,4 +1,4 @@
-package extension
+package extensions
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"

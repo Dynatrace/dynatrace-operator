@@ -1,11 +1,11 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 )
 
-func (dk *DynaKube) Extensions() *extension.Extensions {
-	ext := &extension.Extensions{
+func (dk *DynaKube) Extensions() *extensions.Extensions {
+	ext := &extensions.Extensions{
 		ExecutionControllerSpec: &dk.Spec.Templates.ExtensionExecutionController,
 	}
 	// Set required fields for getters that may be called when extensions are disabled.

@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -168,7 +168,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extension.Spec{},
+			Extensions: &extensions.Spec{},
 		},
 	}
 
@@ -219,7 +219,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extension.Spec{},
+			Extensions: &extensions.Spec{},
 		},
 	}
 
@@ -392,7 +392,7 @@ func TestDynakubePhaseChanges(t *testing.T) {
 
 			Kspm: &kspm.Spec{},
 
-			Extensions: &extension.Spec{},
+			Extensions: &extensions.Spec{},
 		},
 	}
 

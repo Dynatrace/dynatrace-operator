@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -85,7 +85,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Extension secret is generated when Prometheus is enabled", func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions = &extension.Spec{}
+		dk.Spec.Extensions = &extensions.Spec{}
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
@@ -109,7 +109,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions = &extension.Spec{}
+		dk.Spec.Extensions = &extensions.Spec{}
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader, dk)
@@ -127,7 +127,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("Create service when extensions are enabled with minimal setup", func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions = &extension.Spec{}
+		dk.Spec.Extensions = &extensions.Spec{}
 
 		mockK8sClient := fake.NewClient(dk)
 

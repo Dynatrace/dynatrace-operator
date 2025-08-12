@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -56,9 +56,9 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     apiURL,
-			Extensions: &extension.Spec{},
+			Extensions: &extensions.Spec{},
 			Templates: dynakube.TemplatesSpec{
-				ExtensionExecutionController: extension.ExecutionControllerSpec{
+				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: image.Ref{
 						Repository: "repo/image",
 						Tag:        "version",

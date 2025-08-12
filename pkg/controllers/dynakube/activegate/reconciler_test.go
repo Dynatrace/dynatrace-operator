@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -280,7 +280,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Extensions: &extension.Spec{},
+				Extensions: &extensions.Spec{},
 			},
 		}
 
@@ -311,7 +311,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
-				Extensions: &extension.Spec{},
+				Extensions: &extensions.Spec{},
 			},
 		}
 
@@ -342,7 +342,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: &extension.Spec{},
+				Extensions: &extensions.Spec{},
 			},
 		}
 
@@ -373,7 +373,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: &extension.Spec{},
+				Extensions: &extensions.Spec{},
 			},
 		}
 

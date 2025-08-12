@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -114,13 +114,13 @@ func TestEnvironmentVariables(t *testing.T) {
 func TestProxyEnvsNoProxy(t *testing.T) {
 	tests := []struct {
 		name            string
-		extensions      *extension.Spec
+		extensions      *extensions.Spec
 		telemetryIngest *telemetryingest.Spec
 		activeGate      *activegate.Spec
 	}{
 		{
 			name:            "extensions without proxy",
-			extensions:      &extension.Spec{},
+			extensions:      &extensions.Spec{},
 			telemetryIngest: nil,
 		},
 		{
@@ -137,7 +137,7 @@ func TestProxyEnvsNoProxy(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, without proxy",
-			extensions:      &extension.Spec{},
+			extensions:      &extensions.Spec{},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 		},
@@ -167,7 +167,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		extensions      *extension.Spec
+		extensions      *extensions.Spec
 		telemetryIngest *telemetryingest.Spec
 		activeGate      *activegate.Spec
 		proxy           *value.Source
@@ -176,7 +176,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 	}{
 		{
 			name:            "extensions with proxy secret",
-			extensions:      &extension.Spec{},
+			extensions:      &extensions.Spec{},
 			telemetryIngest: nil,
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
@@ -205,7 +205,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy secret",
-			extensions:      &extension.Spec{},
+			extensions:      &extensions.Spec{},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 			proxy: &value.Source{
@@ -256,7 +256,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		extensions      *extension.Spec
+		extensions      *extensions.Spec
 		telemetryIngest *telemetryingest.Spec
 		activeGate      *activegate.Spec
 		proxy           *value.Source
@@ -265,7 +265,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 	}{
 		{
 			name:            "extensions with proxy value",
-			extensions:      &extension.Spec{},
+			extensions:      &extensions.Spec{},
 			telemetryIngest: nil,
 			proxy: &value.Source{
 				Value: testProxyValue,
@@ -294,7 +294,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy value",
-			extensions:      &extension.Spec{},
+			extensions:      &extensions.Spec{},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 			proxy: &value.Source{

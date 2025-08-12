@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	extensionlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extension"
+	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -131,7 +131,7 @@ func TestConvertFrom(t *testing.T) {
 
 	t.Run("migrate extensions from latest to v1beta4", func(t *testing.T) {
 		from := getNewDynakubeBase()
-		from.Spec.Extensions = &extensionlatest.Spec{}
+		from.Spec.Extensions = &extensionslatest.Spec{}
 		to := DynaKube{}
 
 		err := to.ConvertFrom(&from)
@@ -406,7 +406,7 @@ func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollect
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
 }
 
-func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec ExtensionExecutionControllerSpec, newSpec extensionlatest.ExecutionControllerSpec) {
+func compareExtensionsExecutionControllerTemplateSpec(t *testing.T, oldSpec ExtensionExecutionControllerSpec, newSpec extensionslatest.ExecutionControllerSpec) {
 	assert.Equal(t, *oldSpec.PersistentVolumeClaim, *newSpec.PersistentVolumeClaim)
 	assert.Equal(t, oldSpec.Labels, newSpec.Labels)
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
@@ -681,8 +681,8 @@ func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec
 	}
 }
 
-func getNewExtensionExecutionControllerSpec() extensionlatest.ExecutionControllerSpec {
-	return extensionlatest.ExecutionControllerSpec{
+func getNewExtensionExecutionControllerSpec() extensionslatest.ExecutionControllerSpec {
+	return extensionslatest.ExecutionControllerSpec{
 		PersistentVolumeClaim: getPersistentVolumeClaimSpec(),
 		Labels: map[string]string{
 			"eec-label-key1": "eec-label-value1",
