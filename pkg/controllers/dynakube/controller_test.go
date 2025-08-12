@@ -123,7 +123,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 	})
 }
 func TestMinimalRequest(t *testing.T) {
-	t.Run(`Create works with minimal setup`, func(t *testing.T) {
+	t.Run("Create works with minimal setup", func(t *testing.T) {
 		controller := &Controller{
 			client:    fake.NewClient(),
 			apiReader: fake.NewClient(),

@@ -23,7 +23,7 @@ var otherDynakubeObjectMeta = metav1.ObjectMeta{
 }
 
 func TestTelemetryIngestProtocols(t *testing.T) {
-	t.Run(`no list of protocols`, func(t *testing.T) {
+	t.Run("no list of protocols", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -36,7 +36,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`empty list of protocols`, func(t *testing.T) {
+	t.Run("empty list of protocols", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -49,7 +49,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`unknown protocol`, func(t *testing.T) {
+	t.Run("unknown protocol", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestUnknownProtocols},
 			&dynakube.DynaKube{
@@ -67,7 +67,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`unknown protocols`, func(t *testing.T) {
+	t.Run("unknown protocols", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestUnknownProtocols},
 			&dynakube.DynaKube{
@@ -86,7 +86,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`duplicated protocol`, func(t *testing.T) {
+	t.Run("duplicated protocol", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestDuplicatedProtocols},
 			&dynakube.DynaKube{
@@ -104,7 +104,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`duplicated protocols`, func(t *testing.T) {
+	t.Run("duplicated protocols", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestDuplicatedProtocols},
 			&dynakube.DynaKube{
@@ -124,7 +124,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`default config`, func(t *testing.T) {
+	t.Run("default config", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -135,7 +135,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`no telemetry service`, func(t *testing.T) {
+	t.Run("no telemetry service", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -145,7 +145,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`service name too long`, func(t *testing.T) {
+	t.Run("service name too long", func(t *testing.T) {
 		assertDenied(t,
 			[]string{invalidTelemetryIngestNameErrorMessage()},
 			&dynakube.DynaKube{
@@ -159,7 +159,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 			})
 	})
 
-	t.Run(`service name violates DNS-1035`, func(t *testing.T) {
+	t.Run("service name violates DNS-1035", func(t *testing.T) {
 		assertDenied(t,
 			[]string{invalidTelemetryIngestNameErrorMessage()},
 			&dynakube.DynaKube{
@@ -175,7 +175,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 }
 
 func TestConflictingServiceNames(t *testing.T) {
-	t.Run(`no conflicts`, func(t *testing.T) {
+	t.Run("no conflicts", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -193,7 +193,7 @@ func TestConflictingServiceNames(t *testing.T) {
 			})
 	})
 
-	t.Run(`custom service name vs custom service name`, func(t *testing.T) {
+	t.Run("custom service name vs custom service name", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestServiceNameInUse},
 			&dynakube.DynaKube{
@@ -216,7 +216,7 @@ func TestConflictingServiceNames(t *testing.T) {
 			})
 	})
 
-	t.Run(`custom service name vs default service name`, func(t *testing.T) {
+	t.Run("custom service name vs default service name", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestServiceNameInUse},
 			&dynakube.DynaKube{
@@ -237,7 +237,7 @@ func TestConflictingServiceNames(t *testing.T) {
 			})
 	})
 
-	t.Run(`default service name vs custom service name`, func(t *testing.T) {
+	t.Run("default service name vs custom service name", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestServiceNameInUse},
 			&dynakube.DynaKube{
@@ -260,7 +260,7 @@ func TestConflictingServiceNames(t *testing.T) {
 }
 
 func TestForbiddenSuffix(t *testing.T) {
-	t.Run(`activegate`, func(t *testing.T) {
+	t.Run("activegate", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestForbiddenServiceName},
 			&dynakube.DynaKube{
@@ -273,7 +273,7 @@ func TestForbiddenSuffix(t *testing.T) {
 				},
 			})
 	})
-	t.Run(`extensions`, func(t *testing.T) {
+	t.Run("extensions", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestForbiddenServiceName},
 			&dynakube.DynaKube{
@@ -286,7 +286,7 @@ func TestForbiddenSuffix(t *testing.T) {
 				},
 			})
 	})
-	t.Run(`telemetry ingest`, func(t *testing.T) {
+	t.Run("telemetry ingest", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestForbiddenServiceName},
 			&dynakube.DynaKube{
@@ -299,7 +299,7 @@ func TestForbiddenSuffix(t *testing.T) {
 				},
 			})
 	})
-	t.Run(`webhook`, func(t *testing.T) {
+	t.Run("webhook", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorTelemetryIngestForbiddenServiceName},
 			&dynakube.DynaKube{

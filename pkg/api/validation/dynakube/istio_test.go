@@ -7,7 +7,7 @@ import (
 )
 
 func TestNoResourcesAvailable(t *testing.T) {
-	t.Run(`no resources`, func(t *testing.T) {
+	t.Run("no resources", func(t *testing.T) {
 		assertDenied(t, []string{errorNoResources}, &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:      testAPIURL,

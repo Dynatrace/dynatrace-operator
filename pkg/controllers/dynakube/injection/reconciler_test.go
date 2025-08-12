@@ -213,7 +213,7 @@ func TestReconciler(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 	})
-	t.Run(`failure is logged in condition`, func(t *testing.T) {
+	t.Run("failure is logged in condition", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -291,7 +291,7 @@ func TestRemoveAppInjection(t *testing.T) {
 }
 
 func TestSetupOneAgentInjection(t *testing.T) {
-	t.Run(`no injection - ClassicFullStack`, func(t *testing.T) {
+	t.Run("no injection - ClassicFullStack", func(t *testing.T) {
 		clt := clientNoInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			ClassicFullStack: &oneagent.HostInjectSpec{},
@@ -304,7 +304,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`no injection - HostMonitoring`, func(t *testing.T) {
+	t.Run("no injection - HostMonitoring", func(t *testing.T) {
 		clt := clientNoInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			HostMonitoring: &oneagent.HostInjectSpec{},
@@ -317,7 +317,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`injection - ApplicationMonitoring`, func(t *testing.T) {
+	t.Run("injection - ApplicationMonitoring", func(t *testing.T) {
 		clt := clientOneAgentInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -330,7 +330,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`injection - CloudNativeFullStack`, func(t *testing.T) {
+	t.Run("injection - CloudNativeFullStack", func(t *testing.T) {
 		clt := clientOneAgentInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -345,7 +345,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 }
 
 func TestSetupEnrichmentInjection(t *testing.T) {
-	t.Run(`no enrichment injection`, func(t *testing.T) {
+	t.Run("no enrichment injection", func(t *testing.T) {
 		clt := clientNoInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -358,7 +358,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`enrichment injection`, func(t *testing.T) {
+	t.Run("enrichment injection", func(t *testing.T) {
 		clt := clientEnrichmentInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},

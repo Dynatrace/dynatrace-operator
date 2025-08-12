@@ -26,7 +26,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		testPort = 9999
 	)
 
-	t.Run(`generate with hostname`, func(t *testing.T) {
+	t.Run("generate with hostname", func(t *testing.T) {
 		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -60,7 +60,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		result = buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts2)
 		assert.NotEqual(t, expected, result)
 	})
-	t.Run(`generate with two different hostnames and same port`, func(t *testing.T) {
+	t.Run("generate with two different hostnames and same port", func(t *testing.T) {
 		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -91,7 +91,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.Equal(t, expected, result)
 	})
-	t.Run(`generate with Ip`, func(t *testing.T) {
+	t.Run("generate with Ip", func(t *testing.T) {
 		const testIP = "42.42.42.42"
 		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
@@ -127,7 +127,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		result = buildServiceEntryIPs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts2)
 		assert.NotEqual(t, expected, result)
 	})
-	t.Run(`generate with two different Ips and same ports`, func(t *testing.T) {
+	t.Run("generate with two different Ips and same ports", func(t *testing.T) {
 		const (
 			testIP  = "42.42.42.42"
 			testIP1 = "42.42.42.43"

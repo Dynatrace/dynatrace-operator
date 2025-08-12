@@ -12,9 +12,9 @@ import (
 )
 
 func TestDeprecatedFeatureFlag(t *testing.T) {
-	t.Run(`Feature flag is deprecated`, DeprecatedFeatureFlagWithDeprecatedFlags)
-	t.Run(`Feature flag is not deprecated`, DeprecatedFeatureFlagWithoutDeprecatedFlags)
-	t.Run(`No annotations`, DeprecatedFeatureFlagWithNoAnnotations)
+	t.Run("Feature flag is deprecated", DeprecatedFeatureFlagWithDeprecatedFlags)
+	t.Run("Feature flag is not deprecated", DeprecatedFeatureFlagWithoutDeprecatedFlags)
+	t.Run("No annotations", DeprecatedFeatureFlagWithNoAnnotations)
 }
 
 func DeprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {

@@ -88,7 +88,7 @@ func TestGetLatestAgent(t *testing.T) {
 		url:        dynatraceServer.URL,
 	}
 
-	t.Run(`file download successful`, func(t *testing.T) {
+	t.Run("file download successful", func(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")
 		require.NoError(t, err)
 
@@ -100,7 +100,7 @@ func TestGetLatestAgent(t *testing.T) {
 
 		assert.Equal(t, agentResponse, string(resp))
 	})
-	t.Run(`missing agent error`, func(t *testing.T) {
+	t.Run("missing agent error", func(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")
 		require.NoError(t, err)
 
@@ -112,7 +112,7 @@ func TestGetLatestAgent(t *testing.T) {
 func TestDynatraceClient_GetAgent(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run(`handle response correctly`, func(t *testing.T) {
+	t.Run("handle response correctly", func(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, agentRequestHandler)
 		defer dynatraceServer.Close()
 
@@ -122,7 +122,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
 	})
-	t.Run(`handle server error`, func(t *testing.T) {
+	t.Run("handle server error", func(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
@@ -136,7 +136,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run(`handle response correctly`, func(t *testing.T) {
+	t.Run("handle response correctly", func(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, versionsRequestHandler)
 		defer dynatraceServer.Close()
 
@@ -149,7 +149,7 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		assert.Contains(t, availableVersions, "1.123.3")
 		assert.Contains(t, availableVersions, "1.123.4")
 	})
-	t.Run(`handle server error`, func(t *testing.T) {
+	t.Run("handle server error", func(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 

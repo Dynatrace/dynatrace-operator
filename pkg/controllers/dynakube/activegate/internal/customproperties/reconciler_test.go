@@ -24,7 +24,7 @@ const (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run(`Create works with minimal setup`, func(t *testing.T) {
+	t.Run("Create works with minimal setup", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -36,7 +36,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`Create creates custom properties secret for no-proxy`, func(t *testing.T) {
+	t.Run("Create creates custom properties secret for no-proxy", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -73,7 +73,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, customPropertiesConditionType, dk.Status.Conditions[0].Type)
 	})
 
-	t.Run(`Create creates custom properties secret for no-proxy with custom properties`, func(t *testing.T) {
+	t.Run("Create creates custom properties secret for no-proxy with custom properties", func(t *testing.T) {
 		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -108,7 +108,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, []byte(expectedValue), customPropertiesSecret.Data[DataKey])
 	})
 
-	t.Run(`Always copy custom properties to secret`, func(t *testing.T) {
+	t.Run("Always copy custom properties to secret", func(t *testing.T) {
 		valueSource := value.Source{ValueFrom: testKey}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -141,7 +141,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, []byte(testValue), customPropertiesSecret.Data[DataKey])
 	})
 
-	t.Run(`Create creates custom properties secret`, func(t *testing.T) {
+	t.Run("Create creates custom properties secret", func(t *testing.T) {
 		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -163,7 +163,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 	})
-	t.Run(`Create updates custom properties only if data changed`, func(t *testing.T) {
+	t.Run("Create updates custom properties only if data changed", func(t *testing.T) {
 		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

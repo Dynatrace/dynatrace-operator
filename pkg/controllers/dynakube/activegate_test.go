@@ -64,7 +64,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "failed to reconcile ActiveGate: BOOM", err.Error())
 	})
-	t.Run(`reconcile disabled automatic kubernetes api monitoring`, func(t *testing.T) {
+	t.Run("reconcile disabled automatic kubernetes api monitoring", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -100,7 +100,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		err := controller.reconcileActiveGate(ctx, dk, nil, nil)
 		require.NoError(t, err)
 	})
-	t.Run(`reconcile automatic kubernetes api monitoring`, func(t *testing.T) {
+	t.Run("reconcile automatic kubernetes api monitoring", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -138,7 +138,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		err := controller.reconcileActiveGate(ctx, dk, nil, nil)
 		require.NoError(t, err)
 	})
-	t.Run(`reconcile automatic kubernetes api monitoring with custom cluster name`, func(t *testing.T) {
+	t.Run("reconcile automatic kubernetes api monitoring with custom cluster name", func(t *testing.T) {
 		const clusterLabel = "..blabla..;.🙃"
 
 		dk := &dynakube.DynaKube{

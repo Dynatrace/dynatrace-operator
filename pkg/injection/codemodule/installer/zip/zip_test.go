@@ -9,13 +9,13 @@ import (
 )
 
 func TestExtractZip(t *testing.T) {
-	t.Run(`file nil`, func(t *testing.T) {
+	t.Run("file nil", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		extractor := createTestExtractor(fs)
 		err := extractor.ExtractZip(nil, "")
 		require.EqualError(t, err, "file is nil")
 	})
-	t.Run(`unzip test zip file`, func(t *testing.T) {
+	t.Run("unzip test zip file", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		zipFile := SetupTestArchive(t, fs, TestRawZip)
 

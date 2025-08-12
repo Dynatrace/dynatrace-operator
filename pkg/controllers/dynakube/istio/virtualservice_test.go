@@ -122,7 +122,7 @@ func TestVirtualServiceTLSRoute(t *testing.T) {
 }
 
 func TestBuildVirtualServiceSpec(t *testing.T) {
-	t.Run(`is http route correctly set if protocol is "http"`, func(t *testing.T) {
+	t.Run("is http route correctly set if protocol is 'http'", func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecHTTP(t)
 		result := buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost1, Port: testPort1, Protocol: protocolHTTP},
@@ -136,7 +136,7 @@ func TestBuildVirtualServiceSpec(t *testing.T) {
 
 		assert.False(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 	})
-	t.Run(`is TLS route correctly set if protocol is "https"`, func(t *testing.T) {
+	t.Run("is TLS route correctly set if protocol is 'https'", func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecTLS(t)
 		result := buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost1, Port: testPort1, Protocol: protocolHTTPS},
