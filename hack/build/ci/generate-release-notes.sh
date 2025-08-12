@@ -6,7 +6,7 @@ tag_without_leading_v=${tag:1}
 output_file=${OUTPUT_FILE:-CHANGELOG.md}
 pre_release=${PRE_RELEASE:-false}
 
-pre_release_warning="> ⚠️ This is a pre-release, which has no official support by Dynatrace. If you run into issues with this specific release, please open a Github Issue!
+pre_release_warning="> ⚠️ This is a pre-release, which has no official support by Dynatrace.
 >
 > Release notes for ${tag_without_prerelease} will be published in our official documentation.
 "
