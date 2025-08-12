@@ -36,11 +36,11 @@ func createTestValidatingWebhookConfig(_ *testing.T) *admissionregistrationv1.Va
 }
 
 func TestGetClientConfigsFromMutatingWebhook(t *testing.T) {
-	t.Run(`returns nil when config is nil`, func(t *testing.T) {
+	t.Run("returns nil when config is nil", func(t *testing.T) {
 		clientConfigs := getClientConfigsFromMutatingWebhook(nil)
 		assert.Nil(t, clientConfigs)
 	})
-	t.Run(`returns client configs of all configured webhooks`, func(t *testing.T) {
+	t.Run("returns client configs of all configured webhooks", func(t *testing.T) {
 		const expectedClientConfigs = 3
 
 		clientConfigs := getClientConfigsFromMutatingWebhook(createTestMutatingWebhookConfig(t))
@@ -51,11 +51,11 @@ func TestGetClientConfigsFromMutatingWebhook(t *testing.T) {
 }
 
 func TestGetClientConfigsFromValidatingWebhook(t *testing.T) {
-	t.Run(`returns nil when config is nil`, func(t *testing.T) {
+	t.Run("returns nil when config is nil", func(t *testing.T) {
 		clientConfigs := getClientConfigsFromValidatingWebhook(nil)
 		assert.Nil(t, clientConfigs)
 	})
-	t.Run(`returns client configs of all configured webhooks`, func(t *testing.T) {
+	t.Run("returns client configs of all configured webhooks", func(t *testing.T) {
 		const expectedClientConfigs = 3
 
 		clientConfigs := getClientConfigsFromValidatingWebhook(createTestValidatingWebhookConfig(t))

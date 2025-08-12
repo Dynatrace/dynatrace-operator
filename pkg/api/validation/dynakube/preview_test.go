@@ -8,7 +8,7 @@ import (
 )
 
 func TestPreviewWarning(t *testing.T) {
-	t.Run(`no warning`, func(t *testing.T) {
+	t.Run("no warning", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{

@@ -38,7 +38,7 @@ func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
 func TestInstallAgentFromUrl(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run(`error when creating temp file`, func(t *testing.T) {
+	t.Run("error when creating temp file", func(t *testing.T) {
 		fs := failFs{
 			Fs: afero.NewMemMapFs(),
 		}
@@ -49,7 +49,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		err := installer.installAgent(ctx, "")
 		require.EqualError(t, err, testErrorMessage)
 	})
-	t.Run(`error when downloading latest agent`, func(t *testing.T) {
+	t.Run("error when downloading latest agent", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := dtclientmock.NewClient(t)
 		dtc.
@@ -74,7 +74,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		err := installer.installAgent(ctx, "")
 		require.EqualError(t, err, testErrorMessage)
 	})
-	t.Run(`error unzipping file`, func(t *testing.T) {
+	t.Run("error unzipping file", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
 		dtc := dtclientmock.NewClient(t)
@@ -107,7 +107,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		err := installer.installAgent(ctx, "")
 		require.Error(t, err)
 	})
-	t.Run(`downloading and unzipping agent via version`, func(t *testing.T) {
+	t.Run("downloading and unzipping agent via version", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := dtclientmock.NewClient(t)
 		dtc.On("GetAgent",
@@ -148,7 +148,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		err := installer.installAgent(ctx, testDir)
 		require.NoError(t, err)
 	})
-	t.Run(`downloading and unzipping latest agent`, func(t *testing.T) {
+	t.Run("downloading and unzipping latest agent", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := dtclientmock.NewClient(t)
 		dtc.
@@ -182,7 +182,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		err := installer.installAgent(ctx, testDir)
 		require.NoError(t, err)
 	})
-	t.Run(`downloading and unzipping agent via url`, func(t *testing.T) {
+	t.Run("downloading and unzipping agent via url", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := dtclientmock.NewClient(t)
 		dtc.
@@ -214,7 +214,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 }
 
 func TestIsAlreadyDownloaded(t *testing.T) {
-	t.Run(`true if exits`, func(t *testing.T) {
+	t.Run("true if exits", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		targetDir := "test/test"
 		err := fs.MkdirAll(targetDir, 0666)
@@ -225,7 +225,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 		}
 		assert.True(t, installer.isAlreadyDownloaded(targetDir))
 	})
-	t.Run(`false if standalone`, func(t *testing.T) {
+	t.Run("false if standalone", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		targetDir := consts.AgentInitBinDirMount
 		installer := &Installer{

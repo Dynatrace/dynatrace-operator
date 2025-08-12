@@ -61,7 +61,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 
-	t.Run(`store ActiveGate connection info to DynaKube status + create tenant secret`, func(t *testing.T) {
+	t.Run("store ActiveGate connection info to DynaKube status + create tenant secret", func(t *testing.T) {
 		dk := getTestDynakube()
 
 		dtc := dtclientmock.NewClient(t)
@@ -86,7 +86,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 	})
 
-	t.Run(`update ActiveGate connection info + update tenant secret`, func(t *testing.T) {
+	t.Run("update ActiveGate connection info + update tenant secret", func(t *testing.T) {
 		dk := getTestDynakube()
 
 		dtc := dtclientmock.NewClient(t)
@@ -121,7 +121,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 	})
-	t.Run(`update ActiveGate connection info if tenant secret is missing, ignore timestamp`, func(t *testing.T) {
+	t.Run("update ActiveGate connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
 		dk := getTestDynakube()
 
 		dtc := dtclientmock.NewClient(t)
@@ -150,7 +150,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 	})
-	t.Run(`ActiveGate connection info error shown in conditions`, func(t *testing.T) {
+	t.Run("ActiveGate connection info error shown in conditions", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {

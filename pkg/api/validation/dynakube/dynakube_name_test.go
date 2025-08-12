@@ -10,7 +10,7 @@ import (
 )
 
 func TestNameStartsWithDigit(t *testing.T) {
-	t.Run(`dynakube name starts with digit`, func(t *testing.T) {
+	t.Run("dynakube name starts with digit", func(t *testing.T) {
 		assertDenied(t, []string{errorNoDNS1053Label}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "1dynakube",

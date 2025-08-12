@@ -10,14 +10,14 @@ import (
 )
 
 func TestExtractGzip(t *testing.T) {
-	t.Run(`path empty`, func(t *testing.T) {
+	t.Run("path empty", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		extractor := createTestExtractor(fs)
 		err := extractor.ExtractGzip("", "")
 		require.Error(t, err)
 	})
 
-	t.Run(`unzip test gzip file`, func(t *testing.T) {
+	t.Run("unzip test gzip file", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		gzipFile := SetupTestArchive(t, fs, TestRawGzip)
 

@@ -23,7 +23,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		createDynakubeWithAppInject("appMonitoring-2", convertToLabelSelector(matchLabels)),
 	}
 
-	t.Run(`Match to unlabeled namespace`, func(t *testing.T) {
+	t.Run("Match to unlabeled namespace", func(t *testing.T) {
 		namespace := createNamespace("test-namespace", nil)
 		clt := fake.NewClient(dks[0], dks[1])
 		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)

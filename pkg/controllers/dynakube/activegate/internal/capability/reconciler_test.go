@@ -89,7 +89,7 @@ func verifyReconciler(t *testing.T, r *Reconciler) {
 func TestReconcile(t *testing.T) {
 	clt := createClient()
 
-	t.Run(`reconciler works with multiple capabilities`, func(t *testing.T) {
+	t.Run("reconciler works with multiple capabilities", func(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithService)
 		mockStatefulSetReconciler := getMockReconciler(t, nil)
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
@@ -104,7 +104,7 @@ func TestReconcile(t *testing.T) {
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)
 	})
-	t.Run(`statefulSetReconciler errors`, func(t *testing.T) {
+	t.Run("statefulSetReconciler errors", func(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t, errors.New(""))
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
@@ -119,7 +119,7 @@ func TestReconcile(t *testing.T) {
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.Error(t, err)
 	})
-	t.Run(`customPropertiesReconciler errors`, func(t *testing.T) {
+	t.Run("customPropertiesReconciler errors", func(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t)
 		mockCustompropertiesReconciler := getMockReconciler(t, errors.New(""))
@@ -133,7 +133,7 @@ func TestReconcile(t *testing.T) {
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.Error(t, err)
 	})
-	t.Run(`statefulSetReconciler and customPropertiesReconciler error`, func(t *testing.T) {
+	t.Run("statefulSetReconciler and customPropertiesReconciler error", func(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t, errors.New(""))
 		mockCustompropertiesReconciler := getMockReconciler(t, errors.New(""))
@@ -145,7 +145,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.Error(t, err)
 	})
-	t.Run(`service gets created`, func(t *testing.T) {
+	t.Run("service gets created", func(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithService)
 		mockStatefulSetReconciler := getMockReconciler(t, nil)
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
@@ -166,7 +166,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, service)
 		require.NoError(t, err)
 	})
-	t.Run(`service is created even though capability does not need it`, func(t *testing.T) {
+	t.Run("service is created even though capability does not need it", func(t *testing.T) {
 		clt := createClient()
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler(t, nil)
@@ -199,7 +199,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 	mockCustompropertiesReconciler := getMockReconciler(t, nil)
 	mockTLSSecretReconciler := getMockReconciler(t, nil)
 
-	t.Run(`create service works`, func(t *testing.T) {
+	t.Run("create service works", func(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
@@ -216,7 +216,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 	})
-	t.Run(`ports get updated`, func(t *testing.T) {
+	t.Run("ports get updated", func(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
@@ -244,7 +244,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		require.NotEqual(t, actualService, service)
 		require.NotEqual(t, actualService.Spec.Ports, service.Spec.Ports)
 	})
-	t.Run(`labels get updated`, func(t *testing.T) {
+	t.Run("labels get updated", func(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
 		verifyReconciler(t, r)
 
@@ -287,7 +287,7 @@ func TestPortsAreOutdated(t *testing.T) {
 	err := r.Reconcile(context.Background())
 	require.NoError(t, err)
 
-	t.Run(`ports are detected as outdated`, func(t *testing.T) {
+	t.Run("ports are detected as outdated", func(t *testing.T) {
 		service := &corev1.Service{}
 		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)
@@ -316,7 +316,7 @@ func TestLabelsAreOutdated(t *testing.T) {
 	err := r.Reconcile(context.Background())
 	require.NoError(t, err)
 
-	t.Run(`labels are detected as outdated`, func(t *testing.T) {
+	t.Run("labels are detected as outdated", func(t *testing.T) {
 		service := &corev1.Service{}
 		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)
@@ -328,7 +328,7 @@ func TestLabelsAreOutdated(t *testing.T) {
 
 		assert.True(t, r.labelsAreOutdated(service, desiredService))
 	})
-	t.Run(`labelSelectors are detected as outdated`, func(t *testing.T) {
+	t.Run("labelSelectors are detected as outdated", func(t *testing.T) {
 		service := &corev1.Service{}
 		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
 		require.NoError(t, err)

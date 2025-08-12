@@ -74,7 +74,7 @@ func TestReconcile(t *testing.T) {
 		Create: clientCreateWithTimestamp(),
 	}
 
-	t.Run(`reconcile auth token for first time`, func(t *testing.T) {
+	t.Run("reconcile auth token for first time", func(t *testing.T) {
 		dk := newDynaKube()
 
 		clt := fake.NewClientBuilder().Build()
@@ -92,7 +92,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 	})
-	t.Run(`reconcile outdated auth token`, func(t *testing.T) {
+	t.Run("reconcile outdated auth token", func(t *testing.T) {
 		dk := newDynaKube()
 
 		clt := interceptor.NewClient(fake.NewClientBuilder().Build(), interceptorFuncs)
@@ -144,7 +144,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotEqual(t, firstCreationTimestamp, secondCreationTimestamp)
 		assert.NotEqual(t, secondTransition, firstTransition)
 	})
-	t.Run(`reconcile valid auth token`, func(t *testing.T) {
+	t.Run("reconcile valid auth token", func(t *testing.T) {
 		dk := newDynaKube()
 
 		clt := interceptor.NewClient(fake.NewClientBuilder().Build(), interceptorFuncs)

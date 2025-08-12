@@ -51,7 +51,7 @@ var (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run(`Create works with minimal setup`, func(t *testing.T) {
+	t.Run("Create works with minimal setup", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -62,7 +62,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
-	t.Run(`Pull secret reconciler is called even if ActiveGate disabled`, func(t *testing.T) {
+	t.Run("Pull secret reconciler is called even if ActiveGate disabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -93,7 +93,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.True(t, k8serrors.IsNotFound(err))
 		require.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtpullsecret.PullSecretConditionType))
 	})
-	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
+	t.Run("Create AG capability (creation and deletion)", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -204,7 +204,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = noProxyReconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
-	t.Run(`Reconciles Kubernetes Monitoring`, func(t *testing.T) {
+	t.Run("Reconciles Kubernetes Monitoring", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -538,7 +538,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		},
 	}
 
-	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
+	t.Run("create activegate ConfigMap", func(t *testing.T) {
 		fakeReconciler := controllermock.NewReconciler(t)
 		fakeReconciler.On("Reconcile", mock.Anything).Return(nil)
 

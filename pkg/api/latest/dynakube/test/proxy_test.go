@@ -19,8 +19,8 @@ const (
 )
 
 func TestProxy(t *testing.T) {
-	t.Run(`get proxy value`, proxyValueTester)
-	t.Run(`get proxy value from secret`, proxyValueFromTester)
+	t.Run("get proxy value", proxyValueTester)
+	t.Run("get proxy value from secret", proxyValueFromTester)
 }
 
 func proxyValueTester(t *testing.T) {

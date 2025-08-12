@@ -326,6 +326,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 - Use `<...>mock` as package import alias, in all cases, even if no alias would strictly be necessary.
   - Examples: `dtclientmock`, `controllermock`, `dtbuildermock`, `injectionmock`, `registrymock`
 - Use this structure: (or table-tests)
+  - The usage of `"` instead of ``` ` ``` in `t.Run` is important, as in VSCode you can't run individual tests if they are defined as ``` t.Run(`test`, ...) ```, but can when defined as``` t.Run("test", ...) ```.
 
 ```go
 func TestMyFunction(t *testing.T) {
@@ -333,7 +334,7 @@ func TestMyFunction(t *testing.T) {
     testString := "test"
 
     // Each test case of a function gets a t.Run
-    t.Run(`useful title`, func(t *testing.T) {
+    t.Run("useful title", func(t *testing.T) {
         // Arrange/Setup
         testInt := 1
 
@@ -345,7 +346,7 @@ func TestMyFunction(t *testing.T) {
         assert.Equal(t, out, testString)
     })
 
-    t.Run(`other useful title`, func(t *testing.T) {
+    t.Run("other useful title", func(t *testing.T) {
         // Arrange
         testInt := 4
 

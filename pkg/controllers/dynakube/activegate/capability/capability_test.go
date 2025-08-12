@@ -60,7 +60,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 }
 
 func TestBuildProxySecretName(t *testing.T) {
-	t.Run(`correct secret name`, func(t *testing.T) {
+	t.Run("correct secret name", func(t *testing.T) {
 		expectedProxySecretName := "someDK-internal-proxy"
 		actualProxySecretName := proxy.BuildSecretName("someDK")
 		require.NotEmpty(t, actualProxySecretName)
@@ -69,7 +69,7 @@ func TestBuildProxySecretName(t *testing.T) {
 }
 
 func TestBuildServiceName(t *testing.T) {
-	t.Run(`build service name`, func(t *testing.T) {
+	t.Run("build service name", func(t *testing.T) {
 		expectedServiceName := "testName-" + consts.MultiActiveGateName
 		actualServiceName := BuildServiceName("testName")
 		require.NotEmpty(t, actualServiceName)
@@ -78,14 +78,14 @@ func TestBuildServiceName(t *testing.T) {
 }
 
 func TestNewMultiCapability(t *testing.T) {
-	t.Run(`creates new multicapability`, func(t *testing.T) {
+	t.Run("creates new multicapability", func(t *testing.T) {
 		dk := buildDynakube(capabilities, false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedArgName, mc.ArgName())
 	})
-	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
+	t.Run("creates new multicapability without capabilities set in dynakube", func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, false, false)
 		mc := NewMultiCapability(dk)
@@ -96,14 +96,14 @@ func TestNewMultiCapability(t *testing.T) {
 }
 
 func TestNewMultiCapabilityWithExtensions(t *testing.T) {
-	t.Run(`creates new multicapability with Extensions enabled`, func(t *testing.T) {
+	t.Run("creates new multicapability with Extensions enabled", func(t *testing.T) {
 		dk := buildDynakube(capabilities, true, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedArgNameWithExtensions, mc.ArgName())
 	})
-	t.Run(`creates new multicapability without capabilities set in dynakube and Extensions enabled`, func(t *testing.T) {
+	t.Run("creates new multicapability without capabilities set in dynakube and Extensions enabled", func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, true, false)
 		mc := NewMultiCapability(dk)
@@ -114,14 +114,14 @@ func TestNewMultiCapabilityWithExtensions(t *testing.T) {
 }
 
 func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
-	t.Run(`creates new multicapability with TelemetryIngest enabled`, func(t *testing.T) {
+	t.Run("creates new multicapability with TelemetryIngest enabled", func(t *testing.T) {
 		dk := buildDynakube(capabilities, false, true)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedArgNameWithTelemetryIngest, mc.ArgName())
 	})
-	t.Run(`creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled`, func(t *testing.T) {
+	t.Run("creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled", func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, false, true)
 		mc := NewMultiCapability(dk)
@@ -132,7 +132,7 @@ func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
 }
 
 func TestNewMultiCapabilityWithDebugging(t *testing.T) {
-	t.Run(`creates new multicapability with debugging capability enabled`, func(t *testing.T) {
+	t.Run("creates new multicapability with debugging capability enabled", func(t *testing.T) {
 		dk := buildDynakube(append(capabilities, activegate.DebuggingCapability.DisplayName), false, false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
