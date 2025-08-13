@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -57,13 +59,17 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	if !r.isMEConfigured() {
-		log.Info("Kubernetes settings are not yet available, which are needed for LogMonitoring, will requeue")
+	hasAllScopes := r.hasReadScope() && r.hasWriteScope()
+
+	if hasAllScopes && !r.isMEConfigured() {
+		log.Info("Kubernetes settings are not yet available and both settings.write and settings.read token scopes are availaible, will requeue")
 
 		return KubernetesSettingsNotAvailableError
 	}
 
-	ds, err := r.generateDaemonSet()
+	useMetadata := r.isMEConfigured() && hasAllScopes
+
+	ds, err := r.generateDaemonSet(useMetadata)
 	if err != nil {
 		return err
 	}
@@ -83,7 +89,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
+func (r *Reconciler) generateDaemonSet(useMetadata bool) (*appsv1.DaemonSet, error) {
 	tenantUUID, err := r.dk.TenantUUID()
 	if err != nil {
 		return nil, err
@@ -94,7 +100,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	maxUnavailable := intstr.FromInt(r.dk.FF().GetOneAgentMaxUnavailable())
 
 	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
-		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
+		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID, useMetadata)),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
 		daemonset.SetAllAnnotations(nil, r.getAnnotations()),
 		daemonset.SetServiceAccount(serviceAccountName),
@@ -121,6 +127,14 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return ds, nil
+}
+
+func (r *Reconciler) hasReadScope() bool {
+	return conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead)
+}
+
+func (r *Reconciler) hasWriteScope() bool {
+	return conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite)
 }
 
 func (r *Reconciler) isMEConfigured() bool {

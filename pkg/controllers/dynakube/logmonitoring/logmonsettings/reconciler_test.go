@@ -32,7 +32,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(ctx, true, false)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when fetching settings")
 
@@ -55,7 +55,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(ctx, true, false)
 		require.NoError(t, err)
 
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
@@ -85,7 +85,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(ctx, true, true)
 		require.NoError(t, err)
 
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
@@ -116,11 +116,49 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(ctx, true, true)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when creating")
 
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
+		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
+	})
+	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 1}, nil)
+
+		dk := &dynakube.DynaKube{Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
+		r := &reconciler{dk: dk, dtc: mockClient}
+
+		err := r.checkLogMonitoringSettings(ctx, true, false)
+		require.NoError(t, err)
+
+		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
+		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
+	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.
+			On("CreateLogMonitoringSetting", mock.Anything, "meid", "cluster-name", mock.Anything).
+			Return("test-object-id", nil)
+
+		dk := &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "meid",
+				KubernetesClusterName: "cluster-name",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				LogMonitoring: &logmonitoring.Spec{},
+			},
+		}
+
+		r := &reconciler{dk: dk, dtc: mockClient}
+
+		err := r.checkLogMonitoringSettings(ctx, false, true)
+		require.NoError(t, err)
+
+		mockClient.AssertNotCalled(t, "GetSettingsForLogModule", mock.Anything, mock.Anything)
 		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
 	})
 }

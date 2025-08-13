@@ -22,12 +22,29 @@ func TestGetInitEnvs(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
-		envs := getInitEnvs(dk)
+		envs := getInitEnvs(dk, true)
 
 		assert.Len(t, envs, expectedBaseInitEnvLen)
 
 		for _, env := range envs {
 			hasValueOrFieldPath(t, env)
+		}
+	})
+	t.Run("get base init envs without MEID but all scopes set", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		dk.Name = "dk-name-test"
+		dk.Status.KubeSystemUUID = "test-cluster-uuid"
+		dk.Status.KubernetesClusterMEID = ""
+		dk.Status.KubernetesClusterName = "test-cluster-name"
+
+		envs := getInitEnvs(dk, false)
+
+		assert.Len(t, envs, expectedBaseInitEnvLen-1)
+
+		for _, env := range envs {
+			if env.Name == "DT_ENTITY_KUBERNETES_CLUSTER" {
+				require.Empty(t, env.Value)
+			}
 		}
 	})
 }

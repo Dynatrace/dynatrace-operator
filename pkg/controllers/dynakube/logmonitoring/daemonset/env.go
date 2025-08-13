@@ -27,8 +27,8 @@ const (
 	ruxitConfigPath = "/var/lib/dynatrace/oneagent/agent/config/ruxitagentproc.conf"
 )
 
-func getInitEnvs(dk dynakube.DynaKube) []corev1.EnvVar {
-	return []corev1.EnvVar{
+func getInitEnvs(dk dynakube.DynaKube, useMetadata bool) []corev1.EnvVar {
+	envs := []corev1.EnvVar{
 		{
 			Name: nodeNameEnv,
 			ValueFrom: &corev1.EnvVarSource{
@@ -70,14 +70,19 @@ func getInitEnvs(dk dynakube.DynaKube) []corev1.EnvVar {
 			Value: dk.Status.KubernetesClusterName,
 		},
 		{
-			Name:  entityEnv,
-			Value: dk.Status.KubernetesClusterMEID,
-		},
-		{
 			Name:  basePodNameEnv,
 			Value: dk.LogMonitoring().GetDaemonSetName(),
 		},
 	}
+
+	if useMetadata {
+		envs = append(envs, corev1.EnvVar{
+			Name:  entityEnv,
+			Value: dk.Status.KubernetesClusterMEID,
+		})
+	}
+
+	return envs
 }
 
 func GetKubeletEnvs() []corev1.EnvVar {

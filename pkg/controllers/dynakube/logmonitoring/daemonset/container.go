@@ -2,6 +2,7 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
@@ -44,7 +45,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	return container
 }
 
-func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
+func getInitContainer(dk dynakube.DynaKube, tenantUUID string, useMetadata bool) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededInitCapabilities
 
@@ -54,8 +55,8 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container 
 		ImagePullPolicy: corev1.PullAlways,
 		VolumeMounts:    []corev1.VolumeMount{getDTVolumeMounts(tenantUUID)},
 		Command:         []string{bootstrapCommand},
-		Env:             getInitEnvs(dk),
-		Args:            getInitArgs(dk),
+		Env:             getInitEnvs(dk, useMetadata),
+		Args:            getInitArgs(dk, useMetadata),
 		Resources:       dk.LogMonitoring().Template().Resources,
 		SecurityContext: &securityContext,
 	}

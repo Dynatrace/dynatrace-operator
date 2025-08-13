@@ -9,14 +9,15 @@ import (
 )
 
 const (
-	expectedBaseInitArgsLen = 12
+	expectedBaseInitArgsLen            = 12
+	expectedBaseInitArgsLenWithoutMEID = 11
 )
 
 func TestGetInitArgs(t *testing.T) {
 	t.Run("get base init args", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
-		args := getInitArgs(dk)
+		args := getInitArgs(dk, true)
 
 		assert.Len(t, args, expectedBaseInitArgsLen)
 
@@ -34,12 +35,23 @@ func TestGetInitArgs(t *testing.T) {
 				"customArg2",
 			},
 		}
-		args := getInitArgs(dk)
+		args := getInitArgs(dk, true)
 
 		assert.Len(t, args, expectedBaseInitArgsLen+len(dk.LogMonitoring().Args))
 
 		for _, customArg := range dk.LogMonitoring().Args {
 			assert.Contains(t, args, customArg)
+		}
+	})
+	t.Run("get base init args when no MEID or not all necessary scopes are set", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		dk.Name = "dk-name-test"
+		args := getInitArgs(dk, false)
+
+		assert.Len(t, args, expectedBaseInitArgsLenWithoutMEID)
+
+		for _, arg := range args {
+			assert.NotEmpty(t, arg)
 		}
 	})
 }
