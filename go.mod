@@ -19,7 +19,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v1.37.0
-	go.opentelemetry.io/collector/config/configtls v1.37.0
+	go.opentelemetry.io/collector/config/configtls v1.38.0
 	go.opentelemetry.io/collector/confmap v1.37.0
 	go.opentelemetry.io/collector/pipeline v0.131.0
 	go.opentelemetry.io/collector/service v0.131.0
@@ -37,6 +37,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.33.3
 	k8s.io/apimachinery v0.33.3
 	k8s.io/client-go v0.33.3
+	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubelet v0.33.3
 	k8s.io/mount-utils v0.33.3
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
@@ -107,7 +108,7 @@ require (
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.131.0 // indirect
 	go.opentelemetry.io/collector/component/componenttest v0.131.0 // indirect
-	go.opentelemetry.io/collector/config/configopaque v1.37.0 // indirect
+	go.opentelemetry.io/collector/config/configopaque v1.38.0 // indirect
 	go.opentelemetry.io/collector/config/configtelemetry v0.131.0 // indirect
 	go.opentelemetry.io/collector/connector v0.131.0 // indirect
 	go.opentelemetry.io/collector/connector/connectortest v0.131.0 // indirect
@@ -174,7 +175,6 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/component-base v0.33.3 // indirect
-	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
