@@ -175,7 +175,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		annotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 
 		require.Len(t, annotations, 2)
-		require.Len(t, request.Pod.Annotations, 3) //2 annotations + json annotation
+		require.Len(t, request.Pod.Annotations, 3)
 
 		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[dynakube.MetadataPrefix+"someannotation"])
 

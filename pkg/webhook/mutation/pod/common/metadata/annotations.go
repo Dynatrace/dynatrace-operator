@@ -32,7 +32,7 @@ func copyAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) map[stri
 
 	for key, value := range pod.Annotations {
 		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
-			addedAnnotations[key] = value //add all annotations that are on the pod and that are copied from namespace
+			addedAnnotations[key] = value
 		}
 	}
 
