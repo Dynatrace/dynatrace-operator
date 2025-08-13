@@ -57,9 +57,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	if !hasReadScope && !hasWriteScope {
 		log.Info("LogMonitoring settings are not available due to missing scopes, will skip reconciliation")
+
 		return nil
 	} else if !hasReadScope && r.dk.Status.KubernetesClusterMEID == "" {
 		log.Info("LogMonitoring settings are not yet available and settings.read scope is missing, will skip reconciliation")
+
 		return nil
 	}
 
@@ -80,8 +82,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) checkLogMonitoringSettings(ctx context.Context, hasReadScope, hasWriteScope bool) error {
 	log.Info("start reconciling log monitoring settings")
 
-	var err error
-	var logMonitoringSettings dtclient.GetLogMonSettingsResponse
+	var (
+		err                   error
+		logMonitoringSettings dtclient.GetLogMonSettingsResponse
+	)
+
 	if hasReadScope {
 		logMonitoringSettings, err = r.dtc.GetSettingsForLogModule(ctx, r.dk.Status.KubernetesClusterMEID)
 		if err != nil {

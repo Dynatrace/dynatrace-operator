@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -62,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	hasAllScopes := r.hasReadScope() && r.hasWriteScope()
 
 	if hasAllScopes && !r.isMEConfigured() {
-		log.Info("Kubernetes settings are not yet available and both settings.write and settings.read token scopes are availaible, will requeue")
+		log.Info("Kubernetes settings are not yet available and both settings.write and settings.read token scopes are available, will requeue")
 
 		return KubernetesSettingsNotAvailableError
 	}
