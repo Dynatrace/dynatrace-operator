@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -69,7 +70,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "ecc module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &dynakube.ExtensionsSpec{}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &extensions.Spec{}}},
 			modules:         installconfig.Modules{Extensions: false},
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: errorExtensionsModuleDisabled,
@@ -83,7 +84,7 @@ func TestIsModuleDisabled(t *testing.T) {
 		},
 		{
 			title:           "ecc module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &dynakube.ExtensionsSpec{}}},
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &extensions.Spec{}}},
 			modules:         installconfig.Modules{Extensions: true},
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: "",
