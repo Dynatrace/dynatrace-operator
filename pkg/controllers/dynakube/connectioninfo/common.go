@@ -10,7 +10,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -27,10 +26,8 @@ const (
 	EnvDtTenant = "DT_TENANT"
 )
 
-func IsTenantSecretPresent(ctx context.Context, apiReader client.Reader, secretNamespacedName types.NamespacedName, log logd.Logger) (bool, error) {
-	query := k8ssecret.Query(nil, apiReader, log)
-
-	_, err := query.Get(ctx, secretNamespacedName)
+func IsTenantSecretPresent(ctx context.Context, secretQuery k8ssecret.QueryObject, secretNamespacedName types.NamespacedName, log logd.Logger) (bool, error) {
+	_, err := secretQuery.Get(ctx, secretNamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating secret, because missing", "secretName", secretNamespacedName.Name)

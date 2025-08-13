@@ -22,7 +22,6 @@ import (
 
 type reconciler struct {
 	client       client.Client
-	apiReader    client.Reader
 	dtc          dtclient.Client
 	timeProvider *timeprovider.Provider
 	dk           *dynakube.DynaKube
@@ -35,7 +34,6 @@ var _ ReconcilerBuilder = NewReconciler
 func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		client:       clt,
-		apiReader:    apiReader,
 		dk:           dk,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
@@ -83,7 +81,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}
 
 	if !conditions.IsOutdated(r.timeProvider, r.dk, oaConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
+		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secretQuery, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
