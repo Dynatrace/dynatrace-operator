@@ -163,6 +163,7 @@ jobs:
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
+  # Commented out and moved to gcr-deployer-image.yaml as per DAQ-11982
   # build-gcr-deployer:
   #     name: Build GCR deployer image
   #     environment: Release
