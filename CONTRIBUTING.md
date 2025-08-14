@@ -28,6 +28,10 @@ Make sure all the following are true when creating a pull-request:
 
 There are 2 types of bugfixes, where the process differs.
 
+But a general rule:
+
+- Always add/update unittest when doing a bugfix, to make sure it doesn't happen again.
+
 #### Bugfix for bugs in production
 
 1. Must be fixed first on the (release) branch where it will be first released. On this PR use the `bugfix` label.
