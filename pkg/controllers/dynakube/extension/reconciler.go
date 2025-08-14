@@ -17,7 +17,7 @@ type reconciler struct {
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
 	dk           *dynakube.DynaKube
-	secretQuery  k8ssecret.QueryObject
+	secrets      k8ssecret.QueryObject
 }
 
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
@@ -30,7 +30,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 		apiReader:    apiReader,
 		dk:           dk,
 		timeProvider: timeprovider.New(),
-		secretQuery:  k8ssecret.Query(clt, apiReader, log),
+		secrets:      k8ssecret.Query(clt, apiReader, log),
 	}
 }
 

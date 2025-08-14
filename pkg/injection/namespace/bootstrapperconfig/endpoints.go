@@ -45,7 +45,7 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
-	tokens, err := s.secretQuery.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
+	tokens, err := s.secrets.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 

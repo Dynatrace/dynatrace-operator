@@ -29,16 +29,16 @@ const (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	dk          *dynakube.DynaKube
-	dtc         dtclient.Client
-	secretQuery k8ssecret.QueryObject
+	dk      *dynakube.DynaKube
+	dtc     dtclient.Client
+	secrets k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, dtc dtclient.Client) *Reconciler {
 	return &Reconciler{
-		dk:          dk,
-		dtc:         dtc,
-		secretQuery: k8ssecret.Query(clt, apiReader, log),
+		dk:      dk,
+		dtc:     dtc,
+		secrets: k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -65,7 +65,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
-	secret, err := r.secretQuery.Get(ctx, client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: r.dk.Namespace})
+	secret, err := r.secrets.Get(ctx, client.ObjectKey{Name: r.dk.ActiveGate().GetAuthTokenSecretName(), Namespace: r.dk.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating activeGateAuthToken secret")
@@ -129,7 +129,7 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 		return errors.WithStack(err)
 	}
 
-	err = r.secretQuery.WithOwner(r.dk).Create(ctx, secret)
+	err = r.secrets.WithOwner(r.dk).Create(ctx, secret)
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
@@ -142,7 +142,7 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
-	if err := r.secretQuery.Delete(ctx, secret); err != nil {
+	if err := r.secrets.Delete(ctx, secret); err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return err

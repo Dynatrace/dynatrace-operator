@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		authToken, err := r.secretQuery.Get(context.Background(), types.NamespacedName{
+		authToken, err := r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})
@@ -111,7 +111,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		firstTransition := condition.LastTransitionTime
 
-		authToken, err := r.secretQuery.Get(context.Background(), types.NamespacedName{
+		authToken, err := r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})
@@ -122,7 +122,7 @@ func TestReconcile(t *testing.T) {
 		authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
 		// time.Round is called because client.Update(secret)->json.Marshall(secret) rounds CreationTimestamp to seconds
 		authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(-5 * time.Second)}
-		err = r.secretQuery.Update(context.Background(), authToken)
+		err = r.secrets.Update(context.Background(), authToken)
 		require.NoError(t, err)
 
 		firstCreationTimestamp := authToken.CreationTimestamp
@@ -139,7 +139,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
 
-		authToken, err = r.secretQuery.Get(context.Background(), types.NamespacedName{
+		authToken, err = r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})
@@ -168,7 +168,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		firstTransition := condition.LastTransitionTime
 
-		authToken, err := r.secretQuery.Get(context.Background(), types.NamespacedName{
+		authToken, err := r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})
@@ -180,7 +180,7 @@ func TestReconcile(t *testing.T) {
 		authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
 		// time.Round is called because client.Update(secret)->json.Marshall(secret) rounds CreationTimestamp to seconds
 		authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(1 * time.Minute)}
-		err = r.secretQuery.Update(context.Background(), authToken)
+		err = r.secrets.Update(context.Background(), authToken)
 		require.NoError(t, err)
 
 		firstCreationTimestamp := authToken.CreationTimestamp
@@ -197,7 +197,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
 
-		authToken, err = r.secretQuery.Get(context.Background(), types.NamespacedName{
+		authToken, err = r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})

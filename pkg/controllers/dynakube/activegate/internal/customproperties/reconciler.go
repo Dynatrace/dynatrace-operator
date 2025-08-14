@@ -34,7 +34,7 @@ type Reconciler struct {
 	customPropertiesSource    *value.Source
 	dk                        *dynakube.DynaKube
 	customPropertiesOwnerName string
-	secretQuery               k8ssecret.QueryObject
+	secrets                   k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
@@ -42,7 +42,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 		dk:                        dk,
 		customPropertiesSource:    customPropertiesSource,
 		customPropertiesOwnerName: customPropertiesOwnerName,
-		secretQuery:               k8ssecret.Query(clt, apiReader, log),
+		secrets:                   k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil
 		}
 
-		err := r.secretQuery.Delete(ctx,
+		err := r.secrets.Delete(ctx,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.buildCustomPropertiesName(r.dk.Name),
@@ -83,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	_, err = r.secretQuery.WithOwner(r.dk).CreateOrUpdate(ctx, customPropertiesSecret)
+	_, err = r.secrets.WithOwner(r.dk).CreateOrUpdate(ctx, customPropertiesSecret)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, er
 		if r.customPropertiesSource.Value != "" {
 			value = r.customPropertiesSource.Value
 		} else if r.customPropertiesSource.ValueFrom != "" {
-			customPropertiesSecret, err := r.secretQuery.Get(ctx, types.NamespacedName{
+			customPropertiesSecret, err := r.secrets.Get(ctx, types.NamespacedName{
 				Name:      r.customPropertiesSource.ValueFrom,
 				Namespace: r.dk.Namespace})
 			if err != nil {

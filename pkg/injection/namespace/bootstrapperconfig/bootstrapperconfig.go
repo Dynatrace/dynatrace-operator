@@ -30,7 +30,7 @@ type SecretGenerator struct {
 	dtClient     dtclient.Client
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
-	secretQuery  k8ssecret.QueryObject
+	secrets      k8ssecret.QueryObject
 }
 
 func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient dtclient.Client) *SecretGenerator {
@@ -39,7 +39,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 		dtClient:     dtClient,
 		apiReader:    apiReader,
 		timeProvider: timeprovider.New(),
-		secretQuery:  k8ssecret.Query(client, apiReader, log),
+		secrets:      k8ssecret.Query(client, apiReader, log),
 	}
 }
 
@@ -110,7 +110,7 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 		return err
 	}
 
-	err = s.secretQuery.CreateOrUpdateForNamespaces(ctx, secret, nsList)
+	err = s.secrets.CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
@@ -149,14 +149,14 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 		nsList = append(nsList, ns.Name)
 	}
 
-	secretQuery := k8ssecret.Query(client, apiReader, log)
+	secrets := k8ssecret.Query(client, apiReader, log)
 
-	err := secretQuery.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
+	err := secrets.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	if err != nil {
 		log.Error(err, "failed to delete the source bootstrapper-config secret", "name", GetSourceConfigSecretName(dk.Name))
 	}
 
-	return secretQuery.DeleteForNamespaces(ctx, consts.BootstrapperInitSecretName, nsList)
+	return secrets.DeleteForNamespaces(ctx, consts.BootstrapperInitSecretName, nsList)
 }
 
 func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
@@ -167,14 +167,14 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 		nsList = append(nsList, ns.Name)
 	}
 
-	secretQuery := k8ssecret.Query(client, apiReader, log)
+	secrets := k8ssecret.Query(client, apiReader, log)
 
-	err := secretQuery.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
+	err := secrets.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
 	if err != nil {
 		log.Error(err, "failed to delete the source bootstrapper-certs secret", "name", GetSourceCertsSecretName(dk.Name))
 	}
 
-	return secretQuery.DeleteForNamespaces(ctx, consts.BootstrapperInitCertsSecretName, nsList)
+	return secrets.DeleteForNamespaces(ctx, consts.BootstrapperInitCertsSecretName, nsList)
 }
 
 // generate gets the necessary info the create the init secret data

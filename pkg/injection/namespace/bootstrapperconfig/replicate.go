@@ -55,7 +55,7 @@ func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynaku
 		return err
 	}
 
-	_, err = s.secretQuery.WithOwner(dk).CreateOrUpdate(ctx, secret)
+	_, err = s.secrets.WithOwner(dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 

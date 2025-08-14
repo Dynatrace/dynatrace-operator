@@ -14,22 +14,22 @@ import (
 
 // DynakubeMapper manages the mapping creation from the dynakube's side
 type DynakubeMapper struct {
-	ctx         context.Context
-	client      client.Client
-	apiReader   client.Reader
-	dk          *dynakube.DynaKube
-	operatorNs  string
-	secretQuery k8ssecret.QueryObject
+	ctx        context.Context
+	client     client.Client
+	apiReader  client.Reader
+	dk         *dynakube.DynaKube
+	operatorNs string
+	secrets    k8ssecret.QueryObject
 }
 
 func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynakube.DynaKube) DynakubeMapper {
 	return DynakubeMapper{
-		ctx:         ctx,
-		client:      clt,
-		apiReader:   apiReader,
-		operatorNs:  operatorNs,
-		dk:          dk,
-		secretQuery: k8ssecret.Query(clt, apiReader, log),
+		ctx:        ctx,
+		client:     clt,
+		apiReader:  apiReader,
+		operatorNs: operatorNs,
+		dk:         dk,
+		secrets:    k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -68,12 +68,12 @@ func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error 
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
 		}
 
-		err := dm.secretQuery.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, ns.Name)
+		err := dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, ns.Name)
 		if err != nil {
 			return err
 		}
 
-		err = dm.secretQuery.DeleteForNamespace(dm.ctx, consts.BootstrapperInitCertsSecretName, ns.Name)
+		err = dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitCertsSecretName, ns.Name)
 		if err != nil {
 			return err
 		}

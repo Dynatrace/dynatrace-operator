@@ -36,7 +36,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		_, err = r.secretQuery.Get(context.Background(), types.NamespacedName{
+		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		})
@@ -65,7 +65,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		_, err = r.secretQuery.Get(context.Background(), types.NamespacedName{
+		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		})
@@ -96,7 +96,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		_, err = r.secretQuery.Get(context.Background(), types.NamespacedName{
+		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		})
@@ -124,7 +124,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		agTLSSecret, err := r.secretQuery.Get(context.Background(), types.NamespacedName{
+		agTLSSecret, err := r.secrets.Get(context.Background(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		})

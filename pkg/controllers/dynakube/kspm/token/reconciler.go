@@ -19,16 +19,16 @@ import (
 )
 
 type Reconciler struct {
-	dk          *dynakube.DynaKube
-	secretQuery k8ssecret.QueryObject
+	dk      *dynakube.DynaKube
+	secrets k8ssecret.QueryObject
 }
 
 type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler
 
 func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
 	return &Reconciler{
-		dk:          dk,
-		secretQuery: k8ssecret.Query(client, apiReader, log),
+		dk:      dk,
+		secrets: k8ssecret.Query(client, apiReader, log),
 	}
 }
 
@@ -41,7 +41,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) ensureKSPMSecret(ctx context.Context) error {
-	_, err := r.secretQuery.Get(ctx, types.NamespacedName{Name: r.dk.KSPM().GetTokenSecretName(), Namespace: r.dk.Namespace})
+	_, err := r.secrets.Get(ctx, types.NamespacedName{Name: r.dk.KSPM().GetTokenSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new token for kspm")
 
@@ -59,7 +59,7 @@ func (r *Reconciler) ensureKSPMSecret(ctx context.Context) error {
 			return err
 		}
 
-		err = r.secretQuery.Create(ctx, secretConfig)
+		err = r.secrets.Create(ctx, secretConfig)
 		if err != nil {
 			log.Info("could not create secret for kspm token", "name", secretConfig.Name)
 			conditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
@@ -83,7 +83,7 @@ func (r *Reconciler) removeKSPMSecret(ctx context.Context) error {
 		return nil // no condition == nothing is there to clean up
 	}
 
-	err := r.secretQuery.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetTokenSecretName(), Namespace: r.dk.Namespace}})
+	err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetTokenSecretName(), Namespace: r.dk.Namespace}})
 	if err != nil {
 		log.Info("could not delete kspm token", "name", r.dk.KSPM().GetTokenSecretName())
 

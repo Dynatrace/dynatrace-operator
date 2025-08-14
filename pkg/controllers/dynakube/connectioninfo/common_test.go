@@ -34,9 +34,9 @@ func TestIsTenantSecretPresent(t *testing.T) {
 
 		existingSecretNamespacedName := types.NamespacedName{Name: testName, Namespace: testNamespace}
 
-		secretQuery := k8ssecret.Query(fakeClient, fakeClient, log)
+		secrets := k8ssecret.Query(fakeClient, fakeClient, log)
 
-		isPresent, err := IsTenantSecretPresent(ctx, secretQuery, existingSecretNamespacedName, log)
+		isPresent, err := IsTenantSecretPresent(ctx, secrets, existingSecretNamespacedName, log)
 		assert.True(t, isPresent)
 		assert.NoError(t, err)
 	})
@@ -44,9 +44,9 @@ func TestIsTenantSecretPresent(t *testing.T) {
 	t.Run("secret not found", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 
-		secretQuery := k8ssecret.Query(fakeClient, fakeClient, log)
+		secrets := k8ssecret.Query(fakeClient, fakeClient, log)
 
-		isPresent, err := IsTenantSecretPresent(ctx, secretQuery, secretNamespacedName, log)
+		isPresent, err := IsTenantSecretPresent(ctx, secrets, secretNamespacedName, log)
 		assert.False(t, isPresent)
 		assert.NoError(t, err)
 	})
@@ -60,9 +60,9 @@ func TestIsTenantSecretPresent(t *testing.T) {
 			},
 		})
 
-		secretQuery := k8ssecret.Query(fakeClient, fakeClient, log)
+		secrets := k8ssecret.Query(fakeClient, fakeClient, log)
 
-		isPresent, err := IsTenantSecretPresent(ctx, secretQuery, secretNamespacedName, log)
+		isPresent, err := IsTenantSecretPresent(ctx, secrets, secretNamespacedName, log)
 		assert.False(t, isPresent)
 		assert.ErrorIs(t, err, testError)
 	})

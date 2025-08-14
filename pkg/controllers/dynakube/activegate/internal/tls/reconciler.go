@@ -30,7 +30,7 @@ const (
 type Reconciler struct {
 	dk           *dynakube.DynaKube
 	timeProvider *timeprovider.Provider
-	secretQuery  k8ssecret.QueryObject
+	secrets      k8ssecret.QueryObject
 }
 
 type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler
@@ -39,7 +39,7 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 	return &Reconciler{
 		dk:           dk,
 		timeProvider: timeprovider.New(),
-		secretQuery:  k8ssecret.Query(client, apiReader, log),
+		secrets:      k8ssecret.Query(client, apiReader, log),
 	}
 }
 
@@ -57,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
-	_, err := r.secretQuery.Get(ctx, types.NamespacedName{
+	_, err := r.secrets.Get(ctx, types.NamespacedName{
 		Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		Namespace: r.dk.Namespace,
 	})
@@ -75,7 +75,7 @@ func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 }
 
 func (r *Reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
-	return r.secretQuery.Delete(ctx, &corev1.Secret{
+	return r.secrets.Delete(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 			Namespace: r.dk.Namespace,
@@ -135,7 +135,7 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 
 	secret.Type = corev1.SecretTypeOpaque
 
-	err = r.secretQuery.Create(ctx, secret)
+	err = r.secrets.Create(ctx, secret)
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 

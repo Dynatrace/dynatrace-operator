@@ -26,8 +26,8 @@ const (
 	EnvDtTenant = "DT_TENANT"
 )
 
-func IsTenantSecretPresent(ctx context.Context, secretQuery k8ssecret.QueryObject, secretNamespacedName types.NamespacedName, log logd.Logger) (bool, error) {
-	_, err := secretQuery.Get(ctx, secretNamespacedName)
+func IsTenantSecretPresent(ctx context.Context, secrets k8ssecret.QueryObject, secretNamespacedName types.NamespacedName, log logd.Logger) (bool, error) {
+	_, err := secrets.Get(ctx, secretNamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating secret, because missing", "secretName", secretNamespacedName.Name)
