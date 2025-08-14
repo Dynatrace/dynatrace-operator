@@ -27,3 +27,8 @@ type VersionStatus struct {
 	// Image type
 	Type string `json:"type,omitempty"`
 }
+
+// IsZero returns true if the VersionStatus fields are not initialized.
+func (status *VersionStatus) IsZero() bool {
+	return status == nil || *status == VersionStatus{}
+}

@@ -50,8 +50,7 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	if !updater.IsAutoUpdateEnabled() && currentSource != status.CustomVersionVersionSource {
 		previousSource := updater.Target().Source
 
-		emptyVersionStatus := status.VersionStatus{}
-		if updater.Target() == nil || *updater.Target() == emptyVersionStatus {
+		if updater.Target().IsZero() {
 			log.Info("initial status update in progress with no auto update", "updater", updater.Name())
 		} else if previousSource == currentSource {
 			log.Info("status updated skipped, due to no auto update", "updater", updater.Name())
