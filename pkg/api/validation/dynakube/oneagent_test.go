@@ -9,8 +9,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 func TestConflictingOneAgentConfiguration(t *testing.T) {
@@ -854,6 +856,68 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 			} else {
 				assertDenied(t, []string{tc.expectedError}, &tc.dk)
 			}
+		})
+	}
+}
+
+func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
+	baseDK := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL:   testAPIURL,
+			OneAgent: oneagent.Spec{},
+		},
+	}
+
+	enabled := true
+
+	checkWarnings := func(t *testing.T, warnings admission.Warnings) {
+		t.Helper()
+		require.Len(t, warnings, 1)
+		assert.Contains(t, warnings[0], warningDeprecatedAutoUpdate)
+	}
+
+	testcases := []struct {
+		name       string
+		valid      oneagent.Spec
+		deprecated oneagent.Spec
+	}{
+		{
+			"classic fullstack",
+			oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}},
+			oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{AutoUpdate: &enabled}},
+		},
+		{
+			"host monitoring",
+			oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}},
+			oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{AutoUpdate: &enabled}},
+		},
+		{
+			"cloudnative fullstack",
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
+			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{HostInjectSpec: oneagent.HostInjectSpec{AutoUpdate: &enabled}}},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			validDK := baseDK.DeepCopy()
+			validDK.Spec.OneAgent = tc.valid
+			deprecatedDK := baseDK.DeepCopy()
+			deprecatedDK.Spec.OneAgent = tc.deprecated
+
+			warnings, err := assertAllowed(t, deprecatedDK)
+			require.NoError(t, err, "creation")
+			checkWarnings(t, warnings)
+
+			warnings, err = assertUpdateAllowed(t, validDK, deprecatedDK)
+			require.NoError(t, err, "add deprecated field")
+			checkWarnings(t, warnings)
+
+			assertUpdateAllowedWithoutWarnings(t, deprecatedDK, validDK)
 		})
 	}
 }
