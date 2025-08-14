@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/eec"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -15,8 +16,8 @@ type reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
-
-	dk *dynakube.DynaKube
+	dk           *dynakube.DynaKube
+	secrets      k8ssecret.QueryObject
 }
 
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
@@ -29,6 +30,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 		apiReader:    apiReader,
 		dk:           dk,
 		timeProvider: timeprovider.New(),
+		secrets:      k8ssecret.Query(clt, apiReader, log),
 	}
 }
 

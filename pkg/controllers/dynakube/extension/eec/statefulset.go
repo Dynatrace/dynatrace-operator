@@ -136,9 +136,9 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations = r.dk.Spec.Templates.ExtensionExecutionController.Annotations
 	}
 
-	query := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client, log)
 
-	tlsSecret, err := query.Get(ctx, types.NamespacedName{
+	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      r.dk.Extensions().GetTLSSecretName(),
 		Namespace: r.dk.Namespace,
 	})

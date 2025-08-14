@@ -131,7 +131,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		r := &reconciler{client: mockK8sClient, apiReader: mockK8sClient, dk: dk, timeProvider: timeprovider.New()}
+		r := NewReconciler(mockK8sClient, mockK8sClient, dk)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)

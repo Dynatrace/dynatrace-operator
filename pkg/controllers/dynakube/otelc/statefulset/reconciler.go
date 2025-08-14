@@ -173,9 +173,9 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 }
 
 func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string) (string, error) {
-	query := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client, log)
 
-	tlsSecret, err := query.Get(ctx, types.NamespacedName{
+	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      secretName,
 		Namespace: r.dk.Namespace,
 	})
