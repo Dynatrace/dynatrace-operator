@@ -15,7 +15,7 @@
 - [Logging](#logging)
   - [Do's](#dos-1)
   - [Don'ts](#donts-1)
-  - [Debugging](#debugging)
+  - [Debug logs](#debug-logs)
 - [Testing](#testing)
   - [Do's](#dos-2)
   - [Don'ts](#donts-2)
@@ -257,7 +257,7 @@ import (
   - Example: `log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)`
 - Don't start a log message with uppercase characters, unless it's a name of an exact proper noun.
 
-### Debugging
+### Debug logs
 
 - Do not log errors that bubble up to the controller runtime. They will be logged anyway, and we do not want to log errors multiple times because it's confusing.
 - Use debug logs to show the flow.
@@ -318,11 +318,31 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 ### Do's
 
 - Write unit-tests ;)
+- Name test functions like the following
+  - for public funcs -> `func TestPublicFunc(t *testing.T)`
+  - for private funcs -> `func Test_privateFunc(t *testing.T)`
+  - for public method for public struct -> `func Test_MyStruct_PublicMethod(t *testing.T)`
+  - for private method for public struct -> `func Test_MyStruct_privateMethod(t *testing.T)`
+  - for public method for private struct -> `func Test_myStruct_PublicMethod(t *testing.T)`
+  - for private method for private struct -> `func Test_myStruct_privateMethod(t *testing.T)`
+  - Avoid "scenarios" in the name, use `t.Run` within the tests.
+    - So avoid funcs like `func Test_MyStruct_PublicMethod_Scenario1(t *testing.T)` and instead use `t.Run("scenario1", ...)` within `func Test_MyStruct_PublicMethod`
 - Use `assert` and `require`. (`github.com/stretchr/testify/assert, github.com/stretchr/testify/require`)
 - `require` is your friend, use it for checking errors (`require.NoError(t, err)`) or anywhere where executing the rest of the `assert`s in case of the check failing would just be noise in the output.
-- Abstract the setup/assert phase as much as possible so it can be reused in other tests in the package.
+- Mock per test, not per package.
+  - Having one `createTestReconciler(p1,p2,p3,p4,p5)` that tries to mock all and fit in all test cases is just maintenance hell, because if you change 1 test-case then you will change all others, also your mocks will be too forgiving, which is great for bugs.
+    - Create small, test specific mocks.
+    - Such mocks can be created with helper functions defined within the test case, to reuse it within the test case.
+- Helper functions per-test are preferred to helper functions per-package
+  - Writing helper functions for a whole package can backfire quickly as it binds tests together unnecessary.
+    - example: Change 1 helper function -> break 3 tests but fix 2 -> probably should be split into test specific helpers
+    - For simpler common setups func it can still make sense.
+  - All helper func must use `t.Helper()` as their first-line, for improved error reporting.
+- Defining (testing) `consts` per-test is preferred to defining (testing) `consts` per-package
+  - Figuring out what is `myTestConst52` that is defined 3 files over and used by 12 tests is not fun to maintain and easy to follow.
 - Use `t.Run` and give a title that describes what you are testing in that run.
-- Use `context.Background` when a context is needed, use `context.TODO` ONLY for actual TODOs. (example: you want to create a special context here later to test something specific)
+- Use `t.Context` instead of `context.Background`.
+  - [Added in go 1.24](https://pkg.go.dev/testing#T.Context), so we don't really use it, update it where you change code
 - Use `<...>mock` as package import alias, in all cases, even if no alias would strictly be necessary.
   - Examples: `dtclientmock`, `controllermock`, `dtbuildermock`, `injectionmock`, `registrymock`
 - Use this structure: (or table-tests)
@@ -331,31 +351,41 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 ```go
 func TestMyFunction(t *testing.T) {
     // Common setup, used for multiple cases
-    testString := "test"
+    const testString = "test"
+
+    mySetupFunc := func(t *testing.T, prop int) {
+      t.Helper()
+      // Do some test specific setup/helper logic
+      // - can be reused per `t.Run`
+      // - can be just configurable enough to meet the requirements of the `t.Run`s in this test
+      // - "hidden" from other tests, so reusing it is more intentional and wont affect this test
+    }
+
+    mockMyClient := func(t *testing.T, prop int) MyClient {
+      t.Helper()
+      // Creating MyClient mock, specific to this test.
+      // - can be reused per `t.Run`
+      // - can be just configurable enough to meet the requirements of the `t.Run`s in this test
+      // - "hidden" from other tests, so reusing it is more intentional and wont affect this test
+    }
 
     // Each test case of a function gets a t.Run
     t.Run("useful title", func(t *testing.T) {
         // Arrange/Setup
         testInt := 1
+        mySetupFunc(testInt)
+        client := mockMyClient(testInt)
 
         // Act
-        out, err := MyFunction(testString, testInt)
+        out, err := MyFunction(t.Context(), client, testString, testInt)
 
         // Assert
         require.Nil(t, err)
         assert.Equal(t, out, testString)
     })
 
-    t.Run("other useful title", func(t *testing.T) {
-        // Arrange
-        testInt := 4
-
-        // Act
-        out, err := MyFunction(testString, testInt)
-
-        // Assert
-        require.Error(t, err)
-        assert.Empty(t, out)
+    t.Run("another useful title", func(t *testing.T) {
+        //...
     })
 }
 ```
@@ -364,7 +394,7 @@ func TestMyFunction(t *testing.T) {
 
 - Don't name the testing helper functions/variables/constants in a way that could be confused with actual functions. (e.g. add `test` to the beginning)
 - Avoid magic ints/strings/... where possible, give names to your values and try to reuse them where possible
-- Don't name test functions like `TestMyFunctionFirstCase`, instead use single `TestMyFunction` test function with multiple `t.Run` cases in it that have descriptive names.
+- Don't use `.Maybe()` when mocking, have test specific mocks, so the calls are checked for you.
 
 ## E2E testing guide
 
