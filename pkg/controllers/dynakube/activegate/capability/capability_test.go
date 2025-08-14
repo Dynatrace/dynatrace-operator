@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
@@ -33,7 +34,7 @@ var capabilities = []activegate.CapabilityDisplayName{
 }
 
 func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableTelemetryIngest bool) *dynakube.DynaKube {
-	extensionsSpec := &dynakube.ExtensionsSpec{}
+	extensionsSpec := &extensions.Spec{}
 	if !enableExtensions {
 		extensionsSpec = nil
 	}

@@ -3,6 +3,7 @@ package dynakube
 import (
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -71,7 +72,7 @@ func (src *DynaKube) toKspmSpec(dst *dynakubelatest.DynaKube) {
 
 func (src *DynaKube) toExtensionsSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.Extensions != nil {
-		dst.Spec.Extensions = &dynakubelatest.ExtensionsSpec{}
+		dst.Spec.Extensions = &extensionslatest.Spec{}
 	}
 }
 
@@ -155,8 +156,8 @@ func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubela
 	return dst
 }
 
-func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) dynakubelatest.ExtensionExecutionControllerSpec {
-	dst := dynakubelatest.ExtensionExecutionControllerSpec{}
+func toExtensionControllerTemplate(src ExtensionExecutionControllerSpec) extensionslatest.ExecutionControllerSpec {
+	dst := extensionslatest.ExecutionControllerSpec{}
 
 	dst.PersistentVolumeClaim = src.PersistentVolumeClaim
 	dst.Labels = src.Labels
