@@ -69,6 +69,7 @@ var (
 		missingActiveGateMemoryLimit,
 		unsupportedOneAgentImage,
 		conflictingHostGroupSettings,
+		deprecatedAutoUpdate,
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,

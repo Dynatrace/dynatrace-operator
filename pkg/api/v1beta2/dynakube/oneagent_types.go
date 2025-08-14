@@ -109,6 +109,7 @@ type HostInjectSpec struct {
 	// +listType=set
 	Args []string `json:"args,omitempty"`
 
+	// Deprecated: This field will be removed in a future release.
 	// Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
 	// Enabled by default.
 	// +kubebuilder:validation:Optional

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -29,6 +28,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	warningOneAgentInstallerEnvVars = `The environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please ensure you are using a supported image.`
 
 	warningHostGroupConflict = `The DynaKube specification sets the host group using the --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If both settings are used, the new field takes precedence over the parameter.`
+
+	warningDeprecatedAutoUpdate = `AutoUpdate field is deprecated. The feature is still available by configuring the DynaTrace tenant. Please visit our documentation for more details.`
 
 	versionRegex = `^\d+.\d+.\d+.\d{8}-\d{6}$`
 
@@ -194,6 +195,23 @@ func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.
 	return ""
 }
 
+func deprecatedAutoUpdate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	oa := dk.OneAgent()
+	if oa.IsClassicFullStackMode() && oa.ClassicFullStack.AutoUpdate != nil { //nolint:staticcheck
+		return warningDeprecatedAutoUpdate
+	}
+
+	if oa.IsHostMonitoringMode() && oa.HostMonitoring.AutoUpdate != nil { //nolint:staticcheck
+		return warningDeprecatedAutoUpdate
+	}
+
+	if oa.IsCloudNativeFullstackMode() && oa.CloudNativeFullStack.AutoUpdate != nil { //nolint:staticcheck
+		return warningDeprecatedAutoUpdate
+	}
+
+	return ""
+}
+
 func isOneAgentVersionValid(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	agentVersion := dk.OneAgent().GetCustomVersion()
 	if agentVersion == "" {
@@ -248,14 +266,15 @@ func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 }
 
 func findDuplicates[S ~[]E, E comparable](s S) []E {
-	seen := make(map[E]bool)
+	seen := make(map[E]int)
 
-	duplicates := make([]E, 0)
+	var duplicates []E
+
+	const seenTwice = 2
 
 	for _, val := range s {
-		if _, ok := seen[val]; !ok {
-			seen[val] = true
-		} else if !slices.Contains(duplicates, val) {
+		seen[val]++
+		if seen[val] == seenTwice {
 			duplicates = append(duplicates, val)
 		}
 	}
