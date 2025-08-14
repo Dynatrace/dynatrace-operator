@@ -24,6 +24,7 @@ const (
 	`
 	errorTelemetryIngestServiceNameInUse     = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is already used by other Dynakube.`
 	errorTelemetryIngestForbiddenServiceName = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is incorrect because of forbidden suffix.`
+	warningOtelCollectorMissingImage         = `Default image OTel Collector image for Telemetry Ingest will no longer be supported in a future version. Please configure repository/tag for the OTel collector.`
 )
 
 func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -167,6 +168,18 @@ func forbiddenTelemetryIngestServiceNameSuffix(_ context.Context, _ *Validator, 
 		log.Info(errorTelemetryIngestForbiddenServiceName, "telemetry service name", dk.TelemetryIngest().ServiceName)
 
 		return fmt.Sprintf("%s Telemetry service name: %s", errorTelemetryIngestForbiddenServiceName, dk.TelemetryIngest().ServiceName)
+	}
+
+	return ""
+}
+
+func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.TelemetryIngest().IsEnabled() {
+		return ""
+	}
+
+	if dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository == "" || dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag == "" {
+		return warningOtelCollectorMissingImage
 	}
 
 	return ""
