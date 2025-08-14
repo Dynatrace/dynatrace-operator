@@ -18,10 +18,35 @@ Make sure all the following are true when creating a pull-request:
 - The [coding style guide](doc/coding-style-guide.md) was followed when creating the change.
 - The PR has a meaningful title [guidelines](https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#use-imperative-mood-in-your-commit-message-subject).
 - The PR is labeled accordingly with a **single** label.
+- The PR has a link to a Jira ticket that requested the change. (If it exists)
 - Unit tests have been updated/added.
 - Relevant documentation has been updated/added.
   - [ARCHITECTURE.md](https://github.com/Dynatrace/dynatrace-operator/blob/main/ARCHITECTURE.md)
   - [Other docs](https://github.com/Dynatrace/dynatrace-operator/blob/main/doc)
+
+### Bug fixes
+
+There are 2 types of bugfixes, where the process differs.
+
+#### Bugfix for bugs in production
+
+1. Must be fixed first on the (release) branch where it will be first released. On this PR use the `bugfix` label.
+2. Cherry picked to `main` afterwards. On this PR use the `cherrypick` label.
+
+##### Reasoning
+
+We have the labels, but using them inconsistently makes them useless.
+
+#### Bugfix for bugs in main (ie.: not released), example: for new features
+
+1. The initial PR introducing the (buggy) feature must be **reverted**.
+2. (re)Implement feature with fix in it. The bugfix must be in separate commits in the PR, at the end, these commits should have the bugfix ticket in their description.
+
+##### Reasoning
+
+We should aim to have each commit as valid/working state of the repo. It can help us cherry-pick/revert things in the future.
+
+- Cherry-picking/reverting is rather error-prone when you need to find the 2 initial (flawed) implementation PRs and the 5 small bug-fix PR for each, and if you miss one, nothing will work.
 
 ## Quick start
 
