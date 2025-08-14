@@ -22,19 +22,21 @@ func copyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk d
 }
 
 func copyAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) map[string]string {
-	addedAnnotations := make(map[string]string)
+	metadataAnnotations := make(map[string]string)
 
 	for key, value := range namespace.Annotations {
 		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
-			added := setPodAnnotationIfNotExists(pod, key, value)
-
-			if added {
-				addedAnnotations[key] = value
-			}
+			_ = setPodAnnotationIfNotExists(pod, key, value)
 		}
 	}
 
-	return addedAnnotations
+	for key, value := range pod.Annotations {
+		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
+			metadataAnnotations[key] = value
+		}
+	}
+
+	return metadataAnnotations
 }
 
 func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
@@ -73,7 +75,7 @@ func setPodMetadataJSONAnnotation(pod *corev1.Pod, annotations map[string]string
 		log.Error(err, "failed to marshal annotations to map", "annotations", annotations)
 	}
 
-	setPodAnnotationIfNotExists(pod, dynakube.MetadataAnnotation, string(marshaledAnnotations))
+	_ = setPodAnnotationIfNotExists(pod, dynakube.MetadataAnnotation, string(marshaledAnnotations))
 }
 
 func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) bool {
