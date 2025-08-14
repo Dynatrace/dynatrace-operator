@@ -178,15 +178,15 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 		require.Equal(t, "othervalue", request.Pod.Annotations[dynakube.MetadataPrefix+"anotherannotation"])
 
-		var actualMetadataJson map[string]string
+		var actualMetadataJSON map[string]string
 
-		require.NoError(t, json.Unmarshal([]byte(request.Pod.Annotations[dynakube.MetadataAnnotation]), &actualMetadataJson))
+		require.NoError(t, json.Unmarshal([]byte(request.Pod.Annotations[dynakube.MetadataAnnotation]), &actualMetadataJSON))
 
-		expectedMetadataJson := map[string]string{
+		expectedMetadataJSON := map[string]string{
 			"someannotation":    "do-not-overwrite",
 			"anotherannotation": "othervalue",
 		}
-		require.Equal(t, expectedMetadataJson, actualMetadataJson)
+		require.Equal(t, expectedMetadataJSON, actualMetadataJSON)
 	})
 }
 
