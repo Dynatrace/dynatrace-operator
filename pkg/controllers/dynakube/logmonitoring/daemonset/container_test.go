@@ -80,7 +80,7 @@ func TestGetInitContainer(t *testing.T) {
 
 	t.Run("get main container", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, true)
 
 		require.NotEmpty(t, initContainer)
 
@@ -107,7 +107,7 @@ func TestGetInitContainer(t *testing.T) {
 				Tag:        expectedTag,
 			},
 		}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, true)
 
 		require.NotEmpty(t, initContainer)
 		assert.NotEmpty(t, initContainer.Image)
@@ -129,12 +129,23 @@ func TestGetInitContainer(t *testing.T) {
 				Limits:   limits,
 			},
 		}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, true)
 
 		require.NotEmpty(t, initContainer)
 		assert.NotEmpty(t, initContainer.Resources)
 		assert.Equal(t, requests, initContainer.Resources.Requests)
 		assert.Equal(t, limits, initContainer.Resources.Limits)
+	})
+	t.Run("get main container without the use of metadata", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		initContainer := getInitContainer(dk, tenantUUID, false)
+
+		require.NotEmpty(t, initContainer)
+
+		assert.NotEmpty(t, initContainer.Args)
+		assert.Len(t, initContainer.Args, expectedBaseInitArgsLen-1)
+		assert.NotEmpty(t, initContainer.Env)
+		assert.Len(t, initContainer.Env, expectedBaseInitEnvLen-1)
 	})
 }
 
@@ -175,7 +186,7 @@ func TestSecurityContext(t *testing.T) {
 
 	t.Run("main and init container securityContext differ only in capabilities", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk, tenantUUID, false)
 		mainContainer := getContainer(dk, tenantUUID)
 
 		require.NotNil(t, initContainer)
