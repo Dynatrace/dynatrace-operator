@@ -316,7 +316,7 @@ func TestForbiddenSuffix(t *testing.T) {
 }
 
 func TestImages(t *testing.T) {
-	t.Run(`otel collector image`, func(t *testing.T) {
+	t.Run(`otel collector image missing`, func(t *testing.T) {
 		assertAllowedWithWarnings(t, 1,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -327,7 +327,7 @@ func TestImages(t *testing.T) {
 			})
 	})
 
-	t.Run(`otel collector image`, func(t *testing.T) {
+	t.Run(`otel collector image present`, func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
