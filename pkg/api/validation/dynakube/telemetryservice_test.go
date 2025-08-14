@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -308,6 +309,38 @@ func TestForbiddenSuffix(t *testing.T) {
 					APIURL: testApiUrl,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "test-webhook",
+					},
+				},
+			})
+	})
+}
+
+func TestImages(t *testing.T) {
+	t.Run(`otel collector image`, func(t *testing.T) {
+		assertAllowedWithWarnings(t, 1,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testApiUrl,
+					TelemetryIngest: &telemetryingest.Spec{},
+				},
+			})
+	})
+
+	t.Run(`otel collector image`, func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testApiUrl,
+					TelemetryIngest: &telemetryingest.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
 					},
 				},
 			})
