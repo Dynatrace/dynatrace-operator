@@ -77,6 +77,7 @@ var (
 		kspmWithoutK8SMonitoring,
 		noMappedHostPaths,
 		extensionsWithoutK8SMonitoring,
+		missingOtelCollectorImage,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
