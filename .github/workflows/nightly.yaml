@@ -27,7 +27,6 @@ jobs:
         run: |
           hack/build/ci/prepare-build-variables.sh
     outputs:
-      labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
