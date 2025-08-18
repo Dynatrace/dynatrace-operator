@@ -130,7 +130,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 
-	t.Run("does not return an error if no clusterMEID set", func(t *testing.T) {
+	t.Run("requeues when all scopes are there and no clusterMEID set", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Status.KubernetesClusterMEID = ""
 
@@ -141,7 +141,8 @@ func TestReconcile(t *testing.T) {
 
 		err := reconciler.Reconcile(context.Background())
 
-		require.NoError(t, err)
+		require.Error(t, err)
+		require.EqualError(t, err, KubernetesSettingsNotAvailableError.Error())
 	})
 }
 
@@ -150,7 +151,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(true)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -187,7 +188,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(true)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -207,7 +208,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(true)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -224,7 +225,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(true)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -240,7 +241,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		}
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(true)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -254,7 +255,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.CustomPullSecret = customPullSecret
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(true)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -275,7 +276,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			Tolerations: customTolerations,
 		}
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(true)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -291,7 +292,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 			NodeSelector: customNodeSelector,
 		}
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(true)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -299,9 +300,11 @@ func TestGenerateDaemonSet(t *testing.T) {
 	})
 	t.Run("generate a daemonset with no kubernetes cluster name set in env and arg section if no MEID and all scopes set", func(t *testing.T) {
 		dk := createDynakube(true)
+		dk.Status.KubernetesClusterMEID = ""
+		dk.Status.KubernetesClusterName = ""
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
-		daemonset, err := reconciler.generateDaemonSet(false)
+		daemonset, err := reconciler.generateDaemonSet()
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -363,40 +366,6 @@ func TestGenerateDaemonSet(t *testing.T) {
 			}
 		}
 		require.True(t, found)
-	})
-	t.Run("switch from ignoring metadata to using metadata triggers change", func(t *testing.T) {
-		dk := createDynakube(true)
-		setScopes(dk, false, true) // only write scope enabled
-
-		mockK8sClient := fake.NewClient()
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := reconciler.Reconcile(context.Background())
-		require.NoError(t, err)
-
-		var ds1 appsv1.DaemonSet
-		err = mockK8sClient.Get(context.Background(), types.NamespacedName{
-			Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace,
-		}, &ds1)
-		require.NoError(t, err)
-
-		init1 := ds1.Spec.Template.Spec.InitContainers[0]
-		require.NotContains(t, init1.Args, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
-
-		setScopes(dk, true, true) // enable both scopes
-		dk.Status.KubernetesClusterMEID = "test-meid"
-		dk.Status.KubernetesClusterName = "test-name"
-
-		err = reconciler.Reconcile(context.Background())
-		require.NoError(t, err)
-
-		var ds2 appsv1.DaemonSet
-		err = mockK8sClient.Get(context.Background(), types.NamespacedName{
-			Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace,
-		}, &ds2)
-		require.NoError(t, err)
-
-		init2 := ds2.Spec.Template.Spec.InitContainers[0]
-		require.Contains(t, init2.Args, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 	})
 }
 

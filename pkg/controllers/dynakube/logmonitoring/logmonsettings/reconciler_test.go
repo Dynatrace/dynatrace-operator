@@ -11,7 +11,97 @@ import (
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestScopes(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 1}, nil)
+
+		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
+			LogMonitoring: &logmonitoring.Spec{},
+		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
+		r := &reconciler{dk: dk, dtc: mockClient}
+
+		setScopes(dk, true, true)
+
+		err := r.Reconcile(ctx)
+		require.NoError(t, err)
+
+		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
+		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
+	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 0}, nil)
+		mockClient.
+			On("CreateLogMonitoringSetting", mock.Anything, "meid", "", mock.Anything).
+			Return("test-object-id", nil)
+
+		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
+			LogMonitoring: &logmonitoring.Spec{},
+		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
+		r := &reconciler{dk: dk, dtc: mockClient}
+
+		setScopes(dk, true, true)
+
+		err := r.Reconcile(ctx)
+		require.NoError(t, err)
+
+		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
+		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
+	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 1}, nil)
+
+		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
+			LogMonitoring: &logmonitoring.Spec{},
+		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
+		r := &reconciler{dk: dk, dtc: mockClient}
+
+		setScopes(dk, true, false)
+
+		err := r.Reconcile(ctx)
+		require.NoError(t, err)
+
+		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
+		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
+	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.
+			On("CreateLogMonitoringSetting", mock.Anything, "meid", "cluster-name", mock.Anything).
+			Return("test-object-id", nil)
+
+		dk := &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "meid",
+				KubernetesClusterName: "cluster-name",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				LogMonitoring: &logmonitoring.Spec{},
+			},
+		}
+
+		r := &reconciler{dk: dk, dtc: mockClient}
+
+		setScopes(dk, false, true)
+
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		mockClient.AssertNotCalled(t, "GetSettingsForLogModule", mock.Anything, mock.Anything)
+		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
+	})
+}
 
 func TestCheckLogMonitoringSettings(t *testing.T) {
 	ctx := context.Background()
@@ -32,7 +122,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx, true, false)
+		err := r.checkLogMonitoringSettings(ctx, []string{""})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when fetching settings")
 
@@ -55,7 +145,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx, true, false)
+		err := r.checkLogMonitoringSettings(ctx, []string{""})
 		require.NoError(t, err)
 
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
@@ -85,7 +175,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx, true, true)
+		err := r.checkLogMonitoringSettings(ctx, []string{""})
 		require.NoError(t, err)
 
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
@@ -116,49 +206,24 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx, true, true)
+		err := r.checkLogMonitoringSettings(ctx, []string{""})
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when creating")
 
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
 		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
 	})
-	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
-			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 1}, nil)
+}
 
-		dk := &dynakube.DynaKube{Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
-		r := &reconciler{dk: dk, dtc: mockClient}
-
-		err := r.checkLogMonitoringSettings(ctx, true, false)
-		require.NoError(t, err)
-
-		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
-		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-	})
-	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.
-			On("CreateLogMonitoringSetting", mock.Anything, "meid", "cluster-name", mock.Anything).
-			Return("test-object-id", nil)
-
-		dk := &dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "meid",
-				KubernetesClusterName: "cluster-name",
-			},
-			Spec: dynakube.DynaKubeSpec{
-				LogMonitoring: &logmonitoring.Spec{},
-			},
+func setScopes(dk *dynakube.DynaKube, read, write bool) {
+	set := func(t string, ok bool) {
+		if ok {
+			meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: t, Status: metav1.ConditionTrue})
+		} else {
+			meta.RemoveStatusCondition(dk.Conditions(), t)
 		}
+	}
 
-		r := &reconciler{dk: dk, dtc: mockClient}
-
-		err := r.checkLogMonitoringSettings(ctx, false, true)
-		require.NoError(t, err)
-
-		mockClient.AssertNotCalled(t, "GetSettingsForLogModule", mock.Anything, mock.Anything)
-		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
-	})
+	set(dtclient.ConditionTypeAPITokenSettingsRead, read)
+	set(dtclient.ConditionTypeAPITokenSettingsWrite, write)
 }

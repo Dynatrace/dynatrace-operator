@@ -16,8 +16,10 @@ const (
 func TestGetInitArgs(t *testing.T) {
 	t.Run("get base init args", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
+		dk.Status.KubernetesClusterMEID = "test-me-id"
+		dk.Status.KubernetesClusterName = "test-cluster-name"
 		dk.Name = "dk-name-test"
-		args := getInitArgs(dk, true)
+		args := getInitArgs(dk)
 
 		assert.Len(t, args, expectedBaseInitArgsLen)
 
@@ -29,13 +31,15 @@ func TestGetInitArgs(t *testing.T) {
 	t.Run("add user defined args to existing init args", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
+		dk.Status.KubernetesClusterMEID = "test-me-id"
+		dk.Status.KubernetesClusterName = "test-cluster-name"
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Args: []string{
 				"customArg1",
 				"customArg2",
 			},
 		}
-		args := getInitArgs(dk, true)
+		args := getInitArgs(dk)
 
 		assert.Len(t, args, expectedBaseInitArgsLen+len(dk.LogMonitoring().Args))
 
@@ -43,10 +47,11 @@ func TestGetInitArgs(t *testing.T) {
 			assert.Contains(t, args, customArg)
 		}
 	})
+
 	t.Run("get base init args when no MEID or not all necessary scopes are set", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
-		args := getInitArgs(dk, false)
+		args := getInitArgs(dk)
 
 		assert.Len(t, args, expectedBaseInitArgsLenWithoutMEID)
 

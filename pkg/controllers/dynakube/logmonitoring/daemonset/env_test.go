@@ -22,7 +22,7 @@ func TestGetInitEnvs(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
-		envs := getInitEnvs(dk, true)
+		envs := getInitEnvs(dk)
 
 		assert.Len(t, envs, expectedBaseInitEnvLen)
 
@@ -37,7 +37,7 @@ func TestGetInitEnvs(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = ""
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
-		envs := getInitEnvs(dk, false)
+		envs := getInitEnvs(dk)
 
 		assert.Len(t, envs, expectedBaseInitEnvLen-1)
 
