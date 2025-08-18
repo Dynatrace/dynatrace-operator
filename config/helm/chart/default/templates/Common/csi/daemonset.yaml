@@ -199,7 +199,7 @@ spec:
         ports:
           - name: livez
             containerPort: 10090
-          - name: provisioner-metrics
+          - name: prov-metrics
             containerPort: 8090
         resources:
           {{- include "csidriver.provisioner.resources" . | nindent 10 }}
