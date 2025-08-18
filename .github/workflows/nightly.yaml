@@ -46,7 +46,7 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
     outputs:
-      digest: ${{steps.build-image.outputs.digest}}
+      digest: ${{ steps.build-image.outputs.digest }}
 
   signing:
     name: Sign the image index/manifests + Add SBOM
