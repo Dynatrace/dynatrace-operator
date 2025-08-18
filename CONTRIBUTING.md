@@ -60,7 +60,7 @@ If the bug flew under the radar, and got discovered later:
 
 - We must aim to have `main` to be in a correct state by end of day. So that we do not (re)test known to be buggy state.
 - Using `revert` quickly can quickly unblock others and allow the proper fix to be not rushed due to time pressure.
-- Cherry-picking 1 commit is easier than cherry-picking 2 commits where the 2. commit is bugfix for the 1.commit, but you have several unrelated commits between them.
+- Cherry-picking 1 commit is easier than cherry-picking 2 commits where the 2nd commit is the bugfix for the 1st commit, but you have several unrelated commits between them.
 - Linking related changes is always nicer for tracking, and helps with cherry-picks for cases were using `revert` would have been an overkill.
 
 ## Quick start
