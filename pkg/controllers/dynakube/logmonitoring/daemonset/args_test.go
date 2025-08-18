@@ -17,7 +17,6 @@ func TestGetInitArgs(t *testing.T) {
 	t.Run("get base init args", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Status.KubernetesClusterMEID = "test-me-id"
-		dk.Status.KubernetesClusterName = "test-cluster-name"
 		dk.Name = "dk-name-test"
 		args := getInitArgs(dk)
 

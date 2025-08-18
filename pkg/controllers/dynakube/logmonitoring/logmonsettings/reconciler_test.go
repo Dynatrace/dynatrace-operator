@@ -61,8 +61,6 @@ func TestScopes(t *testing.T) {
 
 	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
-			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 1}, nil)
 
 		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
 			LogMonitoring: &logmonitoring.Spec{},
@@ -74,15 +72,12 @@ func TestScopes(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
+		mockClient.AssertNotCalled(t, "GetSettingsForLogModule", ctx, "meid")
 		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	})
 
 	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.
-			On("CreateLogMonitoringSetting", mock.Anything, "meid", "cluster-name", mock.Anything).
-			Return("test-object-id", nil)
 
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -102,7 +97,7 @@ func TestScopes(t *testing.T) {
 		require.NoError(t, err)
 
 		mockClient.AssertNotCalled(t, "GetSettingsForLogModule", mock.Anything, mock.Anything)
-		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
+		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
 	})
 }
 
@@ -125,7 +120,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx, []string{""})
+		err := r.checkLogMonitoringSettings(ctx)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when fetching settings")
 
@@ -148,7 +143,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx, []string{""})
+		err := r.checkLogMonitoringSettings(ctx)
 		require.NoError(t, err)
 
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
@@ -178,7 +173,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx, []string{""})
+		err := r.checkLogMonitoringSettings(ctx)
 		require.NoError(t, err)
 
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
@@ -209,7 +204,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			dtc: mockClient,
 		}
 
-		err := r.checkLogMonitoringSettings(ctx, []string{""})
+		err := r.checkLogMonitoringSettings(ctx)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when creating")
 
