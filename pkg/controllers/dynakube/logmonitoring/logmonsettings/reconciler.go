@@ -68,7 +68,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.dk.Status.KubernetesClusterMEID == "" {
-		log.Info("LogMonitoring settings are not yet available, which are needed to use logmonitoring settings, will requeue")
+		log.Info("kubernetesClusterMEID is not set, which is needed for logmonitoring settings, will requeue")
 
 		return daemonset.KubernetesSettingsNotAvailableError
 	}
