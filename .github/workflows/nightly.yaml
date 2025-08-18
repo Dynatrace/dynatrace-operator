@@ -92,7 +92,6 @@ jobs:
     needs: [prepare, build-push, signing]
     environment: Release
     permissions:
-      contents: write
       id-token: write
     runs-on: ubuntu-latest
     steps:
