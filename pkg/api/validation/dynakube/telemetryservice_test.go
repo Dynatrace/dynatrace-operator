@@ -321,7 +321,7 @@ func TestImages(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:          testApiUrl,
+					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			})
@@ -332,7 +332,7 @@ func TestImages(t *testing.T) {
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
-					APIURL:          testApiUrl,
+					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
