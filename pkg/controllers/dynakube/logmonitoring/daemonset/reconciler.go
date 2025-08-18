@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
@@ -58,17 +57,13 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	hasAllScopes := r.hasReadScope() && r.hasWriteScope()
-
-	if hasAllScopes && !r.isMEConfigured() {
+	if !r.isMEConfigured() {
 		log.Info("Kubernetes settings are not yet available and both settings.write and settings.read token scopes are available, will requeue")
 
 		return KubernetesSettingsNotAvailableError
 	}
 
-	useMetadata := r.isMEConfigured() && hasAllScopes
-
-	ds, err := r.generateDaemonSet(useMetadata)
+	ds, err := r.generateDaemonSet()
 	if err != nil {
 		return err
 	}
@@ -88,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) generateDaemonSet(useMetadata bool) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	tenantUUID, err := r.dk.TenantUUID()
 	if err != nil {
 		return nil, err
@@ -99,7 +94,7 @@ func (r *Reconciler) generateDaemonSet(useMetadata bool) (*appsv1.DaemonSet, err
 	maxUnavailable := intstr.FromInt(r.dk.FF().GetOneAgentMaxUnavailable())
 
 	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
-		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID, useMetadata)),
+		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
 		daemonset.SetAllAnnotations(nil, r.getAnnotations()),
 		daemonset.SetServiceAccount(serviceAccountName),
@@ -126,14 +121,6 @@ func (r *Reconciler) generateDaemonSet(useMetadata bool) (*appsv1.DaemonSet, err
 	}
 
 	return ds, nil
-}
-
-func (r *Reconciler) hasReadScope() bool {
-	return conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead)
-}
-
-func (r *Reconciler) hasWriteScope() bool {
-	return conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite)
 }
 
 func (r *Reconciler) isMEConfigured() bool {

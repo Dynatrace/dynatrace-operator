@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 )
 
-func getInitArgs(dk dynakube.DynaKube, useMetadata bool) []string {
+func getInitArgs(dk dynakube.DynaKube) []string {
 	baseArgs := []string{
 		fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv),
 		fmt.Sprintf("-p k8s.cluster.uid=$(%s)", clusterUIDEnv),
@@ -21,7 +21,7 @@ func getInitArgs(dk dynakube.DynaKube, useMetadata bool) []string {
 		"-l " + dtLogVolumeMountPath,
 	}
 
-	if useMetadata {
+	if dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != "" {
 		baseArgs = append(baseArgs, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 	}
 
