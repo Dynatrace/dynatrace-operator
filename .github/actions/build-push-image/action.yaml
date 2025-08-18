@@ -56,7 +56,6 @@ runs:
         flavor: |
           suffix=${{ inputs.suffix }}
         labels: |
-          ${{ inputs.labels }}
           # default retention policy
           quay.expires-after=10d
           # releases and snapshots of the main branch should never expire
