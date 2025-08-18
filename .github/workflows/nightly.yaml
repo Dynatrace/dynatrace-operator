@@ -91,34 +91,9 @@ jobs:
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
-  run-preflight:
-    name: Run preflight
-    environment: Release
-    needs: [ prepare, build-push]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Login to Registry
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
-        with:
-          registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Run preflight
-        uses: ./.github/actions/preflight
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.DOCKER_REGISTRY }}
-          repository: ${{ env.DOCKER_REPOSITORY }}
-          report-name: "preflight.json"
-          redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
-          pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
-          should-submit: "true"
-
   release:
     name: Create release
-    needs: [prepare, build-push, signing, run-preflight]
+    needs: [prepare, build-push, signing]
     environment: Release
     permissions:
       contents: write
