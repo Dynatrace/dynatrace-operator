@@ -147,9 +147,9 @@ func TestGetInitContainer(t *testing.T) {
 		require.NotEmpty(t, initContainer)
 
 		assert.NotEmpty(t, initContainer.Args)
-		assert.Len(t, initContainer.Args, expectedBaseInitArgsLen-1)
+		assert.Len(t, initContainer.Args, expectedBaseInitArgsLenWithoutMEID)
 		assert.NotEmpty(t, initContainer.Env)
-		assert.Len(t, initContainer.Env, expectedBaseInitEnvLen-1)
+		assert.Len(t, initContainer.Env, expectedBaseInitEnvLenWithoutMEID)
 	})
 }
 

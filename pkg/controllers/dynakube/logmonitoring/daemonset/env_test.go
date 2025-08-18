@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	expectedBaseInitEnvLen = 8
-	expectedBaseEnvLen     = 4
+	expectedBaseInitEnvLen            = 8
+	expectedBaseInitEnvLenWithoutMEID = 7
+	expectedBaseEnvLen                = 4
 )
 
 func TestGetInitEnvs(t *testing.T) {
@@ -35,15 +36,14 @@ func TestGetInitEnvs(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		dk.Status.KubeSystemUUID = "test-cluster-uuid"
-		dk.Status.KubernetesClusterMEID = ""
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
 		envs := getInitEnvs(dk)
 
-		assert.Len(t, envs, expectedBaseInitEnvLen-1)
+		assert.Len(t, envs, expectedBaseInitArgsLenWithoutMEID)
 
 		for _, env := range envs {
-			if env.Name == "DT_ENTITY_KUBERNETES_CLUSTER" {
+			if env.Name == entityEnv {
 				require.Empty(t, env.Value)
 			}
 		}
