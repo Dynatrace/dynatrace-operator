@@ -94,6 +94,8 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
+    env:
+      HELM_PACKAGE_VERSION: 0.0.0-${{ needs.prepare.outputs.version_without_prefix }}
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -104,7 +106,7 @@ jobs:
       - name: Build helm packages
         uses: ./.github/actions/build-helm
         with:
-          version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
+          version_without_prefix: ${{ env.HELM_PACKAGE_VERSION }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           secring: ${{ secrets.HELM_SECRING }}
           passphrase: ${{ secrets.HELM_PASSPHRASE }}
@@ -123,6 +125,6 @@ jobs:
         uses: ./.github/actions/upload-helm
         with:
           version: ${{ needs.prepare.outputs.version }}
-          version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
+          version-without-prefix: ${{ env.HELM_PACKAGE_VERSION }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
