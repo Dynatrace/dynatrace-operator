@@ -89,6 +89,7 @@ func TestReconcile(t *testing.T) {
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, daemonset)
 	})
+
 	t.Run("Only runs when required, and cleans up condition + secret", func(t *testing.T) {
 		dk := createDynakube(false)
 
@@ -282,6 +283,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		assert.Equal(t, daemonset.Spec.Template.Spec.Tolerations, customTolerations)
 	})
+
 	t.Run("respect custom nodeselector", func(t *testing.T) {
 		customNodeSelector := map[string]string{
 			"some.nodeSelector.key": "true",
@@ -298,6 +300,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		assert.Equal(t, daemonset.Spec.Template.Spec.NodeSelector, customNodeSelector)
 	})
+
 	t.Run("generate a daemonset with no kubernetes cluster name set in env and arg section if no MEID and all scopes set", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Status.KubernetesClusterMEID = ""
@@ -320,6 +323,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		require.False(t, found)
 	})
+
 	t.Run("both scopes set, MEID missing - wait, DS not created", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Status.KubernetesClusterMEID = ""
@@ -338,6 +342,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		require.Error(t, err)
 		require.ErrorContains(t, err, "not found")
 	})
+
 	t.Run("both scopes set AND MEID set, check args and envs of DS", func(t *testing.T) {
 		dk := createDynakube(true)
 		setScopes(dk, true, true)

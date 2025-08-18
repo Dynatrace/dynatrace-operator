@@ -30,6 +30,7 @@ func TestGetInitEnvs(t *testing.T) {
 			hasValueOrFieldPath(t, env)
 		}
 	})
+
 	t.Run("get base init envs without MEID but all scopes set", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"

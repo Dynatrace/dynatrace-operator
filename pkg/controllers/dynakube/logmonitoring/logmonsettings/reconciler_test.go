@@ -36,6 +36,7 @@ func TestScopes(t *testing.T) {
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
 		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	})
+
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
@@ -57,6 +58,7 @@ func TestScopes(t *testing.T) {
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
 		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	})
+
 	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
@@ -75,6 +77,7 @@ func TestScopes(t *testing.T) {
 		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
 		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	})
+
 	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.
