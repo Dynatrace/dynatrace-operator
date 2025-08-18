@@ -40,7 +40,7 @@ func TestGetInitEnvs(t *testing.T) {
 
 		envs := getInitEnvs(dk)
 
-		assert.Len(t, envs, expectedBaseInitArgsLenWithoutMEID)
+		assert.Len(t, envs, expectedBaseInitEnvLenWithoutMEID)
 
 		for _, env := range envs {
 			if env.Name == entityEnv {
