@@ -135,8 +135,43 @@ spec:
     - statsd
 
     # Optional: Name of secret holding a TLS certificate to secure the telemetry ingest endpoints.
+    #
     tlsRefName: my-tls-secret
 
     # Optional: Name of the telemetry ingest service that your applications should use.
     # This will result in the service name telemetry-ingest.dynatrace.svc
+    #
     serviceName: telemetry-ingest
+
+  templates:
+    otelCollector:
+      # Optional: Configure the image for the OTel Collector pods.
+      imageRef:
+        repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
+        tag: <tag>
+
+      # Optional: Add custom labels to OTel Collector pods.
+      #
+      # labels:
+      #   custom: label
+
+      # Optional: Add custom annotations to OTel Collector pods.
+      #
+      # annotations:
+      #   custom: annotation
+
+      # Optional: Number of replicas for the OTel Collector pods.
+      #
+      # replicas: 1
+
+      # Optional: Tolerations to include with the OTel Collector deployment.
+      #
+      # tolerations: {}
+
+      # Optional: Resource settings for OTel collector container.
+      #
+      # resources: {}
+
+      # Optional: Add TopologySpreadConstraints to the OTel Collector pods
+      #
+      # topologySpreadConstraints: []
