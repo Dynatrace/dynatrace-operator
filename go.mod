@@ -20,8 +20,8 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/component v1.37.0
 	go.opentelemetry.io/collector/config/configtls v1.38.0
-	go.opentelemetry.io/collector/confmap v1.37.0
-	go.opentelemetry.io/collector/pipeline v0.131.0
+	go.opentelemetry.io/collector/confmap v1.38.0
+	go.opentelemetry.io/collector/pipeline v1.38.0
 	go.opentelemetry.io/collector/service v0.131.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
@@ -31,8 +31,8 @@ require (
 	golang.org/x/sys v0.35.0
 	google.golang.org/grpc v1.74.2
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.26.3
-	istio.io/client-go v1.26.3
+	istio.io/api v1.27.0
+	istio.io/client-go v1.27.0
 	k8s.io/api v0.33.4
 	k8s.io/apiextensions-apiserver v0.33.4
 	k8s.io/apimachinery v0.33.4
@@ -123,7 +123,7 @@ require (
 	go.opentelemetry.io/collector/extension v1.37.0 // indirect
 	go.opentelemetry.io/collector/extension/extensioncapabilities v0.131.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.131.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.37.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.38.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.131.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.131.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.37.0 // indirect

@@ -28,7 +28,9 @@ func TestTokenCreation(t *testing.T) {
 
 		dk := createDynaKube(true)
 
-		err := ensureKSPMSecret(ctx, clt, clt, &dk)
+		r := NewReconciler(clt, clt, &dk)
+
+		err := r.ensureKSPMSecret(ctx)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -45,7 +47,9 @@ func TestTokenCreation(t *testing.T) {
 
 		dk := createDynaKube(true)
 
-		err := ensureKSPMSecret(ctx, clt, clt, &dk)
+		r := NewReconciler(clt, clt, &dk)
+
+		err := r.ensureKSPMSecret(ctx)
 		require.Error(t, err)
 		assert.Equal(t, conditions.KubeAPIErrorReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
 	})
@@ -65,11 +69,7 @@ func TestTokenCreation(t *testing.T) {
 		}
 		clt := dtfake.NewClient(objs...)
 
-		reconciler := &Reconciler{
-			client:    clt,
-			apiReader: clt,
-			dk:        &dk,
-		}
+		reconciler := NewReconciler(clt, clt, &dk)
 
 		err := reconciler.Reconcile(ctx)
 		require.NoError(t, err)

@@ -41,6 +41,9 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 
 	t.Run("should copy all labels and annotations defined without override", func(t *testing.T) {
 		request := createTestMutationRequest(nil, nil)
+		request.Pod.Annotations = map[string]string{
+			dynakube.MetadataPrefix + "copyofannotations": "do-not-overwrite",
+		}
 		request.Namespace.Labels = map[string]string{
 			dynakube.MetadataPrefix + "nocopyoflabels":   "nocopyoflabels",
 			dynakube.MetadataPrefix + "copyifruleexists": "copyifruleexists",
@@ -72,9 +75,6 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 				Target: "dt.does-not-exist-in-namespace",
 			},
 		}
-		request.Pod.Annotations = map[string]string{
-			dynakube.MetadataPrefix + "copyofannotations": "do-not-overwrite",
-		}
 
 		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 5)
@@ -91,6 +91,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		require.NoError(t, json.Unmarshal([]byte(request.Pod.Annotations[dynakube.MetadataAnnotation]), &actualMetadataJSON))
 
 		expectedMetadataJSON := map[string]string{
+			"copyofannotations":   "do-not-overwrite",
 			"dt.copyifruleexists": "copyifruleexists",
 			"dt.test-annotation":  "test-value",
 			"test-label":          "test-value",
@@ -151,6 +152,39 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"dt.test-label":      "test-label-value",
 			dynakube.GetEmptyTargetEnrichmentKey(string(dynakube.EnrichmentAnnotationRule), "test4"): "test-annotation-value4",
 			dynakube.GetEmptyTargetEnrichmentKey(string(dynakube.EnrichmentLabelRule), "test2"):      "test-label-value2",
+		}
+		require.Equal(t, expectedMetadataJSON, actualMetadataJSON)
+	})
+
+	t.Run("should copy all annotations without rules", func(t *testing.T) {
+		request := createTestMutationRequest(nil, nil)
+
+		request.Pod.Annotations = map[string]string{
+			dynakube.MetadataPrefix + "someannotation": "do-not-overwrite",
+		}
+
+		request.Namespace.Annotations = map[string]string{
+			dynakube.MetadataPrefix + "someannotation":    "somevalue",
+			dynakube.MetadataPrefix + "anotherannotation": "othervalue",
+			"test-annotation": "test-value",
+		}
+
+		annotations := copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+
+		require.Len(t, annotations, 2)
+		require.Len(t, request.Pod.Annotations, 3)
+
+		require.Equal(t, "do-not-overwrite", request.Pod.Annotations[dynakube.MetadataPrefix+"someannotation"])
+
+		require.Equal(t, "othervalue", request.Pod.Annotations[dynakube.MetadataPrefix+"anotherannotation"])
+
+		var actualMetadataJSON map[string]string
+
+		require.NoError(t, json.Unmarshal([]byte(request.Pod.Annotations[dynakube.MetadataAnnotation]), &actualMetadataJSON))
+
+		expectedMetadataJSON := map[string]string{
+			"someannotation":    "do-not-overwrite",
+			"anotherannotation": "othervalue",
 		}
 		require.Equal(t, expectedMetadataJSON, actualMetadataJSON)
 	})

@@ -31,7 +31,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 
-		r := NewReconciler(nil, dk, "", &value.Source{})
+		r := NewReconciler(nil, nil, dk, "", &value.Source{})
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
@@ -52,7 +52,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, dk, testOwner, nil)
+		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, nil)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, dk, testOwner, &valueSource)
+		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, &valueSource)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				DataKey: []byte(testValue),
 			},
 		})
-		r := NewReconciler(fakeClient, dk, testOwner, &valueSource)
+		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, &valueSource)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, dk, testOwner, &valueSource)
+		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, &valueSource)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, dk, testOwner, &valueSource)
+		r := NewReconciler(fakeClient, fakeClient, dk, testOwner, &valueSource)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)

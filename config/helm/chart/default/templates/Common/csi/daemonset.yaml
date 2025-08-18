@@ -125,7 +125,7 @@ spec:
         {{- end }}
         ports:
         - containerPort: 8080
-          name: metrics
+          name: server-metrics
         resources:
           {{- include "csidriver.server.resources" . | nindent 10 }}
         securityContext:
@@ -199,7 +199,7 @@ spec:
         ports:
           - name: livez
             containerPort: 10090
-          - name: metrics
+          - name: prov-metrics
             containerPort: 8090
         resources:
           {{- include "csidriver.provisioner.resources" . | nindent 10 }}
