@@ -1,7 +1,6 @@
 package logmonsettings
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -16,7 +15,7 @@ import (
 )
 
 func TestScopes(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
@@ -93,7 +92,7 @@ func TestScopes(t *testing.T) {
 
 		setScopes(dk, false, true)
 
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		mockClient.AssertNotCalled(t, "GetSettingsForLogModule", mock.Anything, mock.Anything)
@@ -102,7 +101,7 @@ func TestScopes(t *testing.T) {
 }
 
 func TestCheckLogMonitoringSettings(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("error fetching log monitoring settings", func(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)

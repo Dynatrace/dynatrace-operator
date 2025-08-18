@@ -31,7 +31,6 @@ func TestGetInitArgs(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		dk.Status.KubernetesClusterMEID = "test-me-id"
-		dk.Status.KubernetesClusterName = "test-cluster-name"
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Args: []string{
 				"customArg1",

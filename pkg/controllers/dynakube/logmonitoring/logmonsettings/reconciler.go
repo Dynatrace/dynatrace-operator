@@ -84,12 +84,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	log.Info("start reconciling log monitoring settings")
 
-	var (
-		err                   error
-		logMonitoringSettings dtclient.GetLogMonSettingsResponse
-	)
-
-	logMonitoringSettings, err = r.dtc.GetSettingsForLogModule(ctx, r.dk.Status.KubernetesClusterMEID)
+	logMonitoringSettings, err := r.dtc.GetSettingsForLogModule(ctx, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		setLogMonitoringSettingError(r.dk.Conditions(), ConditionType, err.Error())
 

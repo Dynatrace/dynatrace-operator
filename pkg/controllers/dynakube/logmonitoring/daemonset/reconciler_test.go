@@ -13,6 +13,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Only clean up if not standalone", func(t *testing.T) {
 		dk := createDynakube(true)
@@ -78,7 +79,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(context.Background())
+		err = reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -122,7 +123,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := NewReconciler(boomClient,
 			boomClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
@@ -140,7 +141,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 
 		require.Error(t, err)
 		require.EqualError(t, err, KubernetesSettingsNotAvailableError.Error())
@@ -304,7 +305,6 @@ func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("generate a daemonset with no kubernetes cluster name set in env and arg section if no MEID and all scopes set", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Status.KubernetesClusterMEID = ""
-		dk.Status.KubernetesClusterName = ""
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
@@ -314,31 +314,23 @@ func TestGenerateDaemonSet(t *testing.T) {
 		init := daemonset.Spec.Template.Spec.InitContainers[0]
 		require.NotContains(t, init.Args, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 
-		found := false
-		for _, e := range init.Env {
-			if e.Name == entityEnv && e.Value == dk.Status.KubernetesClusterMEID {
-				found = true
-			}
-		}
-
-		require.False(t, found)
+		require.Nil(t, env.FindEnvVar(init.Env, entityEnv))
 	})
 
 	t.Run("both scopes set, MEID missing - wait, DS not created", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Status.KubernetesClusterMEID = ""
-		dk.Status.KubernetesClusterName = ""
 		setScopes(dk, true, true)
 
 		mockK8sClient := fake.NewClient()
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.Error(t, err)
 		require.ErrorContains(t, err, "missing information about the kubernetes monitored-entity")
 
 		var ds appsv1.DaemonSet
-		err = mockK8sClient.Get(context.Background(), types.NamespacedName{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace}, &ds)
+		err = mockK8sClient.Get(t.Context(), types.NamespacedName{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace}, &ds)
 		require.Error(t, err)
 		require.ErrorContains(t, err, "not found")
 	})
@@ -350,27 +342,21 @@ func TestGenerateDaemonSet(t *testing.T) {
 		mockK8sClient := fake.NewClient()
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var ds appsv1.DaemonSet
 
-		err = mockK8sClient.Get(context.Background(), types.NamespacedName{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace}, &ds)
+		err = mockK8sClient.Get(t.Context(), types.NamespacedName{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace}, &ds)
 		require.NoError(t, err)
 
 		initContainer := ds.Spec.Template.Spec.InitContainers[0]
 
 		require.Contains(t, initContainer.Args, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 
-		found := false
-		for _, env := range initContainer.Env {
-			if env.Name == entityEnv && env.Value == dk.Status.KubernetesClusterMEID {
-				found = true
-
-				break
-			}
-		}
-		require.True(t, found)
+		envVar := env.FindEnvVar(initContainer.Env, entityEnv)
+		require.NotNil(t, envVar)
+		require.Equal(t, dk.Status.KubernetesClusterMEID, envVar.Value)
 	})
 }
 

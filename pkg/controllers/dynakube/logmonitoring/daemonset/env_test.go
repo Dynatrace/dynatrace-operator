@@ -36,7 +36,6 @@ func TestGetInitEnvs(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		dk.Status.KubeSystemUUID = "test-cluster-uuid"
-		dk.Status.KubernetesClusterName = "test-cluster-name"
 
 		envs := getInitEnvs(dk)
 
