@@ -106,15 +106,6 @@ jobs:
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
-      - name: Generate K8s manifests
-        shell: bash
-        env:
-          CHART_VERSION: "0.0.0-${{ needs.prepare.outputs.version }}"
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: |
-          make manifests/crd/release
-          make manifests/kubernetes IMAGE="${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}" TAG="${VERSION}@${{needs.build-push.outputs.digest}}"
-          cp config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/gke-autopilot.yaml
       - name: Build helm packages
         uses: ./.github/actions/build-helm
         with:
