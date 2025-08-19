@@ -66,19 +66,20 @@ func getInitEnvs(dk dynakube.DynaKube) []corev1.EnvVar {
 			Value: dk.Status.KubeSystemUUID,
 		},
 		{
-			Name:  clusterNameEnv,
-			Value: dk.Status.KubernetesClusterName,
-		},
-		{
 			Name:  basePodNameEnv,
 			Value: dk.LogMonitoring().GetDaemonSetName(),
 		},
 	}
 
-	if dk.Status.KubernetesClusterMEID != "" {
+	if dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != "" {
 		envs = append(envs, corev1.EnvVar{
 			Name:  entityEnv,
 			Value: dk.Status.KubernetesClusterMEID,
+		})
+
+		envs = append(envs, corev1.EnvVar{
+			Name:  clusterNameEnv,
+			Value: dk.Status.KubernetesClusterName,
 		})
 	}
 

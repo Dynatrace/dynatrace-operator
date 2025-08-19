@@ -8,7 +8,6 @@ import (
 
 func getInitArgs(dk dynakube.DynaKube) []string {
 	baseArgs := []string{
-		fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv),
 		fmt.Sprintf("-p k8s.cluster.uid=$(%s)", clusterUIDEnv),
 		fmt.Sprintf("-p k8s.node.name=$(%s)", nodeNameEnv),
 		fmt.Sprintf("-c k8s_fullpodname $(%s)", podNameEnv),
@@ -21,7 +20,8 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		"-l " + dtLogVolumeMountPath,
 	}
 
-	if dk.Status.KubernetesClusterMEID != "" {
+	if dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != "" {
+		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv))
 		baseArgs = append(baseArgs, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 	}
 

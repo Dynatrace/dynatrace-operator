@@ -11,7 +11,7 @@ import (
 
 const (
 	expectedBaseInitEnvLen            = 8
-	expectedBaseInitEnvLenWithoutMEID = 7
+	expectedBaseInitEnvLenWithoutMEID = 6
 	expectedBaseEnvLen                = 4
 )
 
