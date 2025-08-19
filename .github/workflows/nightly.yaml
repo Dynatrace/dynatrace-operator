@@ -4,6 +4,7 @@ on:
   schedule:
     # every work day at 00:00 UTC
     - cron: 0 0 * * 1-5
+  workflow_dispatch:
 
 env:
   DOCKER_REGISTRY: quay.io

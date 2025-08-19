@@ -1,5 +1,8 @@
 #!/bin/bash
 
+GITHUB_REF_NAME="main"
+GITHUB_EVENT_NAME="schedule"
+
 create_docker_image_tag() {
   if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
     echo "snapshot-${GITHUB_HEAD_REF//[^a-zA-Z0-9_-]/-}"; return
