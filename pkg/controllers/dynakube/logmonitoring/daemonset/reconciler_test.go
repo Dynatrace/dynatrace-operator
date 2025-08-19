@@ -320,7 +320,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("both scopes set, MEID missing - wait, DS not created", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Status.KubernetesClusterMEID = ""
-		setScopes(dk, true, true)
+		setReadScope(t, dk)
+		setWriteScope(t, dk)
 
 		mockK8sClient := fake.NewClient()
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
@@ -337,7 +338,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 	t.Run("both scopes set AND MEID set, check args and envs of DS", func(t *testing.T) {
 		dk := createDynakube(true)
-		setScopes(dk, true, true)
+		setReadScope(t, dk)
+		setWriteScope(t, dk)
 
 		mockK8sClient := fake.NewClient()
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
@@ -408,15 +410,12 @@ func createBOOMK8sClient() client.Client {
 	return boomClient
 }
 
-func setScopes(dk *dynakube.DynaKube, read, write bool) {
-	set := func(t string, ok bool) {
-		if ok {
-			meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: t, Status: metav1.ConditionTrue})
-		} else {
-			meta.RemoveStatusCondition(dk.Conditions(), t)
-		}
-	}
+func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
+	t.Helper()
+	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: dtclient.ConditionTypeAPITokenSettingsRead, Status: metav1.ConditionTrue})
+}
 
-	set(dtclient.ConditionTypeAPITokenSettingsRead, read)
-	set(dtclient.ConditionTypeAPITokenSettingsWrite, write)
+func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
+	t.Helper()
+	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: dtclient.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
 }

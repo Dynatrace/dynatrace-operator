@@ -27,7 +27,8 @@ func TestScopes(t *testing.T) {
 		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
 		r := &reconciler{dk: dk, dtc: mockClient}
 
-		setScopes(dk, true, true)
+		setReadScope(t, dk)
+		setWriteScope(t, dk)
 
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
@@ -49,7 +50,8 @@ func TestScopes(t *testing.T) {
 		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
 		r := &reconciler{dk: dk, dtc: mockClient}
 
-		setScopes(dk, true, true)
+		setReadScope(t, dk)
+		setWriteScope(t, dk)
 
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
@@ -66,7 +68,7 @@ func TestScopes(t *testing.T) {
 		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
 		r := &reconciler{dk: dk, dtc: mockClient}
 
-		setScopes(dk, true, false)
+		setReadScope(t, dk)
 
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
@@ -90,7 +92,7 @@ func TestScopes(t *testing.T) {
 
 		r := &reconciler{dk: dk, dtc: mockClient}
 
-		setScopes(dk, false, true)
+		setWriteScope(t, dk)
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -212,15 +214,12 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 }
 
-func setScopes(dk *dynakube.DynaKube, read, write bool) {
-	set := func(t string, ok bool) {
-		if ok {
-			meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: t, Status: metav1.ConditionTrue})
-		} else {
-			meta.RemoveStatusCondition(dk.Conditions(), t)
-		}
-	}
+func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
+	t.Helper()
+	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: dtclient.ConditionTypeAPITokenSettingsRead, Status: metav1.ConditionTrue})
+}
 
-	set(dtclient.ConditionTypeAPITokenSettingsRead, read)
-	set(dtclient.ConditionTypeAPITokenSettingsWrite, write)
+func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
+	t.Helper()
+	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: dtclient.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
 }
