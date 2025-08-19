@@ -246,10 +246,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 }
 
 func buildAppLabels(dkName string) *labels.AppLabels {
-	// TODO: when version is available
-	version := ""
-
-	return labels.NewAppLabels(labels.OtelCComponentLabel, dkName, labels.OtelCComponentLabel, version)
+	return labels.NewAppLabels(labels.OtelCComponentLabel, dkName, labels.OtelCComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {
