@@ -3,6 +3,8 @@ package daemonset
 import (
 	"context"
 
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -57,8 +59,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	if !r.isMEConfigured() {
-		log.Info("Kubernetes settings are not yet available and both settings.write and settings.read token scopes are available, will requeue")
+	if !r.isMEConfigured() && conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
+		log.Info("Kubernetes settings are not yet available and settings.read token scope is available, will requeue")
 
 		return KubernetesSettingsNotAvailableError
 	}

@@ -132,9 +132,11 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 
-	t.Run("requeues when all scopes are there and no clusterMEID set", func(t *testing.T) {
+	t.Run("requeues when read scope is there and no clusterMEID set", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Status.KubernetesClusterMEID = ""
+
+		setReadScope(t, dk)
 
 		mockK8sClient := fake.NewClient()
 
