@@ -71,6 +71,7 @@ runs:
           type=raw,value=snapshot,enable=${{ github.ref_name == 'main' && github.event_name != 'schedule' }}
           # nightly builds
           type=raw,value=nightly-${{ steps.set-build-date.outputs.date }}-${{ github.sha }},enable=${{ github.event_name == 'schedule' }}
+          type=raw,value=nightly,enable=${{ github.event_name == 'schedule' }}
           # tags
           type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
           # everything else
