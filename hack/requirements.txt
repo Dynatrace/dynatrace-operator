@@ -1,4 +1,4 @@
 argparse==1.4.0
 pyyaml==6.0.2
 json5==0.9.28
-ruamel.yaml==0.18.14
+ruamel.yaml==0.18.15
