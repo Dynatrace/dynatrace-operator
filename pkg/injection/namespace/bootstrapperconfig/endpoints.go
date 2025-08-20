@@ -9,7 +9,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -46,7 +45,7 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
-	tokens, err := k8ssecret.Query(s.client, s.apiReader, log).Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
+	tokens, err := s.secrets.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 

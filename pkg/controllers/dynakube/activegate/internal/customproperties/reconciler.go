@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,18 +31,18 @@ const (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	client                    client.Client
 	customPropertiesSource    *value.Source
 	dk                        *dynakube.DynaKube
 	customPropertiesOwnerName string
+	secrets                   k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) *Reconciler {
 	return &Reconciler{
-		client:                    clt,
 		dk:                        dk,
 		customPropertiesSource:    customPropertiesSource,
 		customPropertiesOwnerName: customPropertiesOwnerName,
+		secrets:                   k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -52,9 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil
 		}
 
-		query := secret.Query(r.client, r.client, log)
-
-		err := query.Delete(ctx,
+		err := r.secrets.Delete(ctx,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.buildCustomPropertiesName(r.dk.Name),
@@ -75,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	customPropertiesSecret, err := secret.Build(r.dk,
+	customPropertiesSecret, err := k8ssecret.Build(r.dk,
 		r.buildCustomPropertiesName(r.dk.Name),
 		map[string][]byte{
 			DataKey: data,
@@ -85,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	_, err = secret.Query(r.client, r.client, log).WithOwner(r.dk).CreateOrUpdate(ctx, customPropertiesSecret) // TODO: pass in an apiReader instead of the client 2 times
+	_, err = r.secrets.WithOwner(r.dk).CreateOrUpdate(ctx, customPropertiesSecret)
 	if err != nil {
 		return err
 	}
@@ -103,9 +101,7 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context) ([]byte, er
 		if r.customPropertiesSource.Value != "" {
 			value = r.customPropertiesSource.Value
 		} else if r.customPropertiesSource.ValueFrom != "" {
-			query := secret.Query(r.client, r.client, log)
-
-			customPropertiesSecret, err := query.Get(ctx, types.NamespacedName{
+			customPropertiesSecret, err := r.secrets.Get(ctx, types.NamespacedName{
 				Name:      r.customPropertiesSource.ValueFrom,
 				Namespace: r.dk.Namespace})
 			if err != nil {
