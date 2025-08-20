@@ -21,8 +21,7 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 	}
 
 	if dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != "" {
-		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv))
-		baseArgs = append(baseArgs, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
+		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv), fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 	}
 
 	return append(baseArgs, dk.LogMonitoring().Template().Args...)

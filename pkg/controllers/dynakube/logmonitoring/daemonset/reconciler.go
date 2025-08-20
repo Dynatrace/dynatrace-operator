@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if !r.isMEConfigured() && conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
-		log.Info("Kubernetes settings are not yet available and settings.read token scope is available, will requeue")
+		log.Info("Kubernetes settings are not yet available and 'settings.read' token scope is available, will requeue")
 
 		return KubernetesSettingsNotAvailableError
 	}

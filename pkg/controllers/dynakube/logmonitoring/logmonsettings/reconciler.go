@@ -50,11 +50,11 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	var missingScopes []string
 	if !hasReadScope {
-		missingScopes = append(missingScopes, "settings.read")
+		missingScopes = append(missingScopes, dtclient.TokenScopeSettingsRead)
 	}
 
 	if !hasWriteScope {
-		missingScopes = append(missingScopes, "settings.write")
+		missingScopes = append(missingScopes, dtclient.TokenScopeSettingsWrite)
 	}
 
 	if len(missingScopes) > 0 {
