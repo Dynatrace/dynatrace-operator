@@ -80,6 +80,9 @@ func TestGetInitContainer(t *testing.T) {
 
 	t.Run("get main container", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
+		dk.Status.KubernetesClusterMEID = "test-me-id"
+		dk.Status.KubernetesClusterName = "test-cluster-name"
+
 		initContainer := getInitContainer(dk, tenantUUID)
 
 		require.NotEmpty(t, initContainer)
@@ -113,6 +116,7 @@ func TestGetInitContainer(t *testing.T) {
 		assert.NotEmpty(t, initContainer.Image)
 		assert.Equal(t, expectedRepo+":"+expectedTag, initContainer.Image)
 	})
+
 	t.Run("resources are respected", func(t *testing.T) {
 		requests := corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -135,6 +139,18 @@ func TestGetInitContainer(t *testing.T) {
 		assert.NotEmpty(t, initContainer.Resources)
 		assert.Equal(t, requests, initContainer.Resources.Requests)
 		assert.Equal(t, limits, initContainer.Resources.Limits)
+	})
+
+	t.Run("get main container without the use of metadata", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		initContainer := getInitContainer(dk, tenantUUID)
+
+		require.NotEmpty(t, initContainer)
+
+		assert.NotEmpty(t, initContainer.Args)
+		assert.Len(t, initContainer.Args, expectedBaseInitArgsLenWithoutMEID)
+		assert.NotEmpty(t, initContainer.Env)
+		assert.Len(t, initContainer.Env, expectedBaseInitEnvLenWithoutMEID)
 	})
 }
 

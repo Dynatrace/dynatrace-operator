@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	expectedBaseInitEnvLen = 8
-	expectedBaseEnvLen     = 4
+	expectedBaseInitEnvLen            = 8
+	expectedBaseInitEnvLenWithoutMEID = 6
+	expectedBaseEnvLen                = 4
 )
 
 func TestGetInitEnvs(t *testing.T) {
@@ -28,6 +29,22 @@ func TestGetInitEnvs(t *testing.T) {
 
 		for _, env := range envs {
 			hasValueOrFieldPath(t, env)
+		}
+	})
+
+	t.Run("get base init envs without MEID but all scopes set", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		dk.Name = "dk-name-test"
+		dk.Status.KubeSystemUUID = "test-cluster-uuid"
+
+		envs := getInitEnvs(dk)
+
+		assert.Len(t, envs, expectedBaseInitEnvLenWithoutMEID)
+
+		for _, env := range envs {
+			if env.Name == entityEnv {
+				require.Empty(t, env.Value)
+			}
 		}
 	})
 }
