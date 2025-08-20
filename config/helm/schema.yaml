@@ -15,12 +15,13 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.6.1
+  publishedVersion: 1.6.2
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v1.6.1 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Moves the `/tmp/dynatrace`\
-      \ logmon host-path to `/var/opt/dynatrace` by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/5082\n\
-      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.6.0...v1.6.1"
+      \ at v1.6.2 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Fix metadataEnrichment\
+      \ not adding prefixed pod annotations to enrichment files by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/5238\n\
+      * Temporarily fix GCR deployer image step by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/5246\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.6.1...v1.6.2"
     releaseTypes:
     - Feature
     recommended: true
