@@ -6,11 +6,22 @@ import (
 )
 
 const (
-	settingsExistReason = "LogMonSettingsExist"
-	settingsErrorReason = "LogMonSettingsError"
+	settingsExistReason   = "LogMonSettingsExist"
+	settingsErrorReason   = "LogMonSettingsError"
+	settingsCreatedReason = "LogMonSettingsCreated"
 
 	ConditionType = "LogMonitoringSettings"
 )
+
+func setLogMonitoringSettingCreated(conditions *[]metav1.Condition, conditionType string) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  settingsCreatedReason,
+		Message: "LogMonitoring settings have been created.",
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
 
 func setLogMonitoringSettingExists(conditions *[]metav1.Condition, conditionType string) {
 	condition := metav1.Condition{

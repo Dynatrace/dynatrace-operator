@@ -157,10 +157,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 }
 
 func buildAppLabels(dynakubeName string) *labels.AppLabels {
-	// TODO: when version is available
-	version := "0.0.0"
-
-	return labels.NewAppLabels(labels.ExtensionComponentLabel, dynakubeName, labels.ExtensionComponentLabel, version)
+	return labels.NewAppLabels(labels.ExtensionComponentLabel, dynakubeName, labels.ExtensionComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {

@@ -62,7 +62,6 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 
 func (r *reconciler) buildService() (*corev1.Service, error) {
 	coreLabels := labels.NewCoreLabels(r.dk.Name, labels.ExtensionComponentLabel)
-	// TODO: add proper version later on
 	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
 
 	svcPorts := []corev1.ServicePort{

@@ -121,7 +121,6 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 
 func (r *Reconciler) buildService() (*corev1.Service, error) {
 	coreLabels := labels.NewCoreLabels(r.dk.Name, labels.OtelCComponentLabel)
-	// TODO: add proper version later on
 	appLabels := labels.NewAppLabels(labels.OtelCComponentLabel, r.dk.Name, labels.OtelCComponentLabel, "")
 
 	return service.Build(r.dk,

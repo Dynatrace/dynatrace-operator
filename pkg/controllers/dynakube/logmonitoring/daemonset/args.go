@@ -8,10 +8,8 @@ import (
 
 func getInitArgs(dk dynakube.DynaKube) []string {
 	baseArgs := []string{
-		fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv),
 		fmt.Sprintf("-p k8s.cluster.uid=$(%s)", clusterUIDEnv),
 		fmt.Sprintf("-p k8s.node.name=$(%s)", nodeNameEnv),
-		fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv),
 		fmt.Sprintf("-c k8s_fullpodname $(%s)", podNameEnv),
 		fmt.Sprintf("-c k8s_poduid $(%s)", podUIDEnv),
 		fmt.Sprintf("-c k8s_basepodname $(%s)", basePodNameEnv),
@@ -20,6 +18,10 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		fmt.Sprintf("-c k8s_cluster_id $(%s)", clusterUIDEnv),
 		"-c k8s_containername " + containerName,
 		"-l " + dtLogVolumeMountPath,
+	}
+
+	if dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != "" {
+		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv), fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 	}
 
 	return append(baseArgs, dk.LogMonitoring().Template().Args...)
