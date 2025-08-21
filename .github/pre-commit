@@ -21,7 +21,7 @@ if [[ ${STAGED_GO_FILES} == "" ]]; then
     exit 0
 fi
 
-make go/golangci
+make go/lint
 res=${?}
 if [[ ${res} -ne 0 ]]; then
     echo "Linting failed"
