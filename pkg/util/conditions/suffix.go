@@ -13,10 +13,6 @@ func appendCreatedSuffix(name string) string {
 	return fmt.Sprintf("%s %s", name, createdSuffix)
 }
 
-func appendUpdatedSuffix(name string) string {
-	return fmt.Sprintf("%s %s", name, updatedSuffix)
-}
-
 func appendCreatedOrUpdatedSuffix(name string) string {
 	return fmt.Sprintf("%s %s", name, createdOrUpdatedSuffix)
 }
