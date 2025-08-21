@@ -94,7 +94,7 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context) error {
 		return errors.WithStack(err)
 	}
 
-	created, err := r.secrets.CreateOrUpdate(ctx, secret)
+	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret", "name", secret.Name)
 		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, errors.WithMessage(err, "failed to create or update secret"))
@@ -102,11 +102,7 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to create or update secret")
 	}
 
-	if created {
-		conditions.SetSecretCreated(r.dk.Conditions(), PullSecretConditionType, secret.Name)
-	}
-
-	conditions.SetSecretUpdated(r.dk.Conditions(), PullSecretConditionType, secret.Name)
+	conditions.SetSecretCreated(r.dk.Conditions(), PullSecretConditionType, secret.Name)
 
 	return nil
 }
