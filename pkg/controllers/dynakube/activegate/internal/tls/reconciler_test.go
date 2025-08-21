@@ -12,11 +12,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -37,8 +36,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		agTLSSecret := corev1.Secret{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetTLSSecretName(), Namespace: r.dk.Namespace}, &agTLSSecret)
+		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
+			Namespace: r.dk.Namespace,
+			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+		})
 
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -64,8 +65,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		agTLSSecret := corev1.Secret{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetTLSSecretName(), Namespace: r.dk.Namespace}, &agTLSSecret)
+		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
+			Namespace: r.dk.Namespace,
+			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+		})
 
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -93,8 +96,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		agTLSSecret := corev1.Secret{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetTLSSecretName(), Namespace: r.dk.Namespace}, &agTLSSecret)
+		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
+			Namespace: r.dk.Namespace,
+			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+		})
 
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -119,8 +124,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		agTLSSecret := corev1.Secret{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dk.ActiveGate().GetTLSSecretName(), Namespace: r.dk.Namespace}, &agTLSSecret)
+		agTLSSecret, err := r.secrets.Get(context.Background(), types.NamespacedName{
+			Namespace: r.dk.Namespace,
+			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+		})
 
 		require.NoError(t, err)
 

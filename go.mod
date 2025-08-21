@@ -21,7 +21,7 @@ require (
 	go.opentelemetry.io/collector/component v1.37.0
 	go.opentelemetry.io/collector/config/configtls v1.38.0
 	go.opentelemetry.io/collector/confmap v1.38.0
-	go.opentelemetry.io/collector/pipeline v0.131.0
+	go.opentelemetry.io/collector/pipeline v1.38.0
 	go.opentelemetry.io/collector/service v0.131.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
@@ -29,10 +29,10 @@ require (
 	golang.org/x/net v0.43.0
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sys v0.35.0
-	google.golang.org/grpc v1.74.2
+	google.golang.org/grpc v1.75.0
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.26.3
-	istio.io/client-go v1.26.3
+	istio.io/api v1.27.0
+	istio.io/client-go v1.27.0
 	k8s.io/api v0.33.4
 	k8s.io/apiextensions-apiserver v0.33.4
 	k8s.io/apimachinery v0.33.4
@@ -169,8 +169,8 @@ require (
 	golang.org/x/time v0.11.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

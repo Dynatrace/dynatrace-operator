@@ -173,9 +173,9 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 }
 
 func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string) (string, error) {
-	query := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client, log)
 
-	tlsSecret, err := query.Get(ctx, types.NamespacedName{
+	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      secretName,
 		Namespace: r.dk.Namespace,
 	})
@@ -246,10 +246,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 }
 
 func buildAppLabels(dkName string) *labels.AppLabels {
-	// TODO: when version is available
-	version := "0.0.0"
-
-	return labels.NewAppLabels(labels.OtelCComponentLabel, dkName, labels.OtelCComponentLabel, version)
+	return labels.NewAppLabels(labels.OtelCComponentLabel, dkName, labels.OtelCComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {

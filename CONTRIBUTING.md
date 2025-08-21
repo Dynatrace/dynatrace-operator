@@ -18,10 +18,50 @@ Make sure all the following are true when creating a pull-request:
 - The [coding style guide](doc/coding-style-guide.md) was followed when creating the change.
 - The PR has a meaningful title [guidelines](https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#use-imperative-mood-in-your-commit-message-subject).
 - The PR is labeled accordingly with a **single** label.
+- The PR has a link to a Jira ticket that requested the change. (If it exists)
 - Unit tests have been updated/added.
 - Relevant documentation has been updated/added.
   - [ARCHITECTURE.md](https://github.com/Dynatrace/dynatrace-operator/blob/main/ARCHITECTURE.md)
   - [Other docs](https://github.com/Dynatrace/dynatrace-operator/blob/main/doc)
+
+### Bug fixes
+
+There are 2 types of bugfixes, where the process differs.
+
+But a general rule:
+
+- Always add/update unittest when doing a bugfix, to make sure it doesn't happen again.
+
+#### Bugfix for bugs in production
+
+1. Must be fixed first on the (release) branch where it will be first released. On this PR use the `bug` label.
+2. Cherry picked to `main` afterwards. On this PR use the `cherrypick` label.
+
+##### Reasoning
+
+We have the labels, but using them inconsistently makes them useless.
+
+#### Bugfix for bugs in main (ie.: not released), example: for new features
+
+If the change broke the e2e test run or is a "recent" change:
+
+1. The initial PR introducing the (buggy) feature must be **reverted**.
+2. (re)Implement feature with the fix in it. The bugfix must be in separate commits in the PR, at the end, these commits should have the bugfix ticket in their description.
+
+> "recent" ~ Happened within the same week/sprint or just use common sense. 😅
+
+If the bug flew under the radar, and got discovered later:
+
+1. Create a PR with the fix
+2. In the description of the PR, mention the original change that introduced the bug.
+3. Link the related Jira bug ticket to the original implementation Jira ticket.
+
+##### Reasoning
+
+- We must aim to have `main` to be in a correct state by end of day. So that we do not (re)test known to be buggy state.
+- Using `revert` quickly can quickly unblock others and allow the proper fix to be not rushed due to time pressure.
+- Cherry-picking 1 commit is easier than cherry-picking 2 commits where the 2nd commit is the bugfix for the 1st commit, but you have several unrelated commits between them.
+- Linking related changes is always nicer for tracking, and helps with cherry-picks for cases were using `revert` would have been an overkill.
 
 ## Quick start
 

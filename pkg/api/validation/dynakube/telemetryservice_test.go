@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
@@ -308,6 +309,38 @@ func TestForbiddenSuffix(t *testing.T) {
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						ServiceName: "test-webhook",
+					},
+				},
+			})
+	})
+}
+
+func TestImages(t *testing.T) {
+	t.Run("otel collector image missing", func(t *testing.T) {
+		assertAllowedWithWarnings(t, 1,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{},
+				},
+			})
+	})
+
+	t.Run("otel collector image present", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
 					},
 				},
 			})

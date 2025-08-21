@@ -136,9 +136,9 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 		templateAnnotations = r.dk.Spec.Templates.ExtensionExecutionController.Annotations
 	}
 
-	query := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client, log)
 
-	tlsSecret, err := query.Get(ctx, types.NamespacedName{
+	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      r.dk.Extensions().GetTLSSecretName(),
 		Namespace: r.dk.Namespace,
 	})
@@ -157,10 +157,7 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 }
 
 func buildAppLabels(dynakubeName string) *labels.AppLabels {
-	// TODO: when version is available
-	version := "0.0.0"
-
-	return labels.NewAppLabels(labels.ExtensionComponentLabel, dynakubeName, labels.ExtensionComponentLabel, version)
+	return labels.NewAppLabels(labels.ExtensionComponentLabel, dynakubeName, labels.ExtensionComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {

@@ -19,62 +19,58 @@ import (
 )
 
 type Reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-	dk        *dynakube.DynaKube
+	dk      *dynakube.DynaKube
+	secrets k8ssecret.QueryObject
 }
 
 type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler
 
 func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
 	return &Reconciler{
-		client:    client,
-		dk:        dk,
-		apiReader: apiReader,
+		dk:      dk,
+		secrets: k8ssecret.Query(client, apiReader, log),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.dk.KSPM().IsEnabled() {
-		return ensureKSPMSecret(ctx, r.client, r.apiReader, r.dk)
+		return r.ensureKSPMSecret(ctx)
 	}
 
-	return removeKSPMSecret(ctx, r.client, r.apiReader, r.dk)
+	return r.removeKSPMSecret(ctx)
 }
 
-func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
-	query := k8ssecret.Query(client, apiReader, log)
-
-	_, err := query.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
+func (r *Reconciler) ensureKSPMSecret(ctx context.Context) error {
+	_, err := r.secrets.Get(ctx, types.NamespacedName{Name: r.dk.KSPM().GetTokenSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new token for kspm")
 
-		secretConfig, err := generateKSPMTokenSecret(dk.KSPM().GetTokenSecretName(), dk)
+		secretConfig, err := generateKSPMTokenSecret(r.dk.KSPM().GetTokenSecretName(), r.dk)
 		if err != nil {
-			conditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
+			conditions.SetSecretGenFailed(r.dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
 
 		tokenHash, err := hasher.GenerateHash(secretConfig.Data)
 		if err != nil {
-			conditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
+			conditions.SetSecretGenFailed(r.dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
 
-		err = query.Create(ctx, secretConfig)
+		err = r.secrets.Create(ctx, secretConfig)
 		if err != nil {
 			log.Info("could not create secret for kspm token", "name", secretConfig.Name)
-			conditions.SetKubeAPIError(dk.Conditions(), kspmConditionType, err)
+			conditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
 
-		dk.KSPM().TokenSecretHash = tokenHash
-		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
+		r.dk.KSPM().TokenSecretHash = tokenHash
+		conditions.SetSecretCreated(r.dk.Conditions(), kspmConditionType, r.dk.KSPM().GetTokenSecretName())
 	} else if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), kspmConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
 
 		return err
 	}
@@ -82,22 +78,20 @@ func ensureKSPMSecret(ctx context.Context, client client.Client, apiReader clien
 	return nil
 }
 
-func removeKSPMSecret(ctx context.Context, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) error {
-	if meta.FindStatusCondition(*dk.Conditions(), kspmConditionType) == nil {
+func (r *Reconciler) removeKSPMSecret(ctx context.Context) error {
+	if meta.FindStatusCondition(*r.dk.Conditions(), kspmConditionType) == nil {
 		return nil // no condition == nothing is there to clean up
 	}
 
-	query := k8ssecret.Query(client, apiReader, log)
-
-	err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}})
+	err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetTokenSecretName(), Namespace: r.dk.Namespace}})
 	if err != nil {
-		log.Info("could not delete kspm token", "name", dk.KSPM().GetTokenSecretName())
+		log.Info("could not delete kspm token", "name", r.dk.KSPM().GetTokenSecretName())
 
 		return err
 	}
 
-	dk.KSPM().TokenSecretHash = ""
-	meta.RemoveStatusCondition(dk.Conditions(), kspmConditionType)
+	r.dk.KSPM().TokenSecretHash = ""
+	meta.RemoveStatusCondition(r.dk.Conditions(), kspmConditionType)
 
 	return nil
 }

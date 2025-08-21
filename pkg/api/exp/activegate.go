@@ -1,12 +1,13 @@
 package exp
 
 const (
-	// Deprecated: AGDisableUpdatesKey use AnnotationFeatureActiveGateUpdates instead.
+	// Deprecated: Auto-update is enabled unless version or image is defined.
 	AGDisableUpdatesKey = FFPrefix + "disable-activegate-updates"
 	// Deprecated: Use NoProxy instead.
 	AGIgnoreProxyKey = FFPrefix + "activegate-ignore-proxy"
+	// Deprecated: Auto-update is enabled unless version or image is defined.
+	AGUpdatesKey = FFPrefix + "activegate-updates"
 
-	AGUpdatesKey                              = FFPrefix + "activegate-updates"
 	AGAppArmorKey                             = FFPrefix + "activegate-apparmor"
 	AGAutomaticK8sAPIMonitoringKey            = FFPrefix + "automatic-kubernetes-api-monitoring"
 	AGAutomaticK8sAPIMonitoringClusterNameKey = FFPrefix + "automatic-kubernetes-api-monitoring-cluster-name"

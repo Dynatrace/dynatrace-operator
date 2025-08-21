@@ -21,12 +21,10 @@ import (
 )
 
 type reconciler struct {
-	client       client.Client
-	apiReader    client.Reader
 	dtc          dtclient.Client
 	timeProvider *timeprovider.Provider
-
-	dk *dynakube.DynaKube
+	dk           *dynakube.DynaKube
+	secrets      k8ssecret.QueryObject
 }
 
 type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
@@ -35,11 +33,10 @@ var _ ReconcilerBuilder = NewReconciler
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
-		client:       clt,
-		apiReader:    apiReader,
 		dk:           dk,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
+		secrets:      k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -50,9 +47,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		r.dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{}
-		query := k8ssecret.Query(r.client, r.apiReader, log)
 
-		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}})
+		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up ActiveGate tenant-secret")
 		}
@@ -74,7 +70,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}
 
 	if !conditions.IsOutdated(r.timeProvider, r.dk, activeGateConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.apiReader, secretNamespacedName, log)
+		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
@@ -131,9 +127,7 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 		return errors.WithStack(err)
 	}
 
-	query := k8ssecret.Query(r.client, r.apiReader, log)
-
-	_, err = query.CreateOrUpdate(ctx, secret)
+	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
 		conditions.SetKubeAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
