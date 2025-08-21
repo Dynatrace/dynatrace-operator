@@ -130,3 +130,4 @@ jobs:
           version-without-prefix: ${{ env.HELM_PACKAGE_VERSION }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+          upload-nightly: 'true'
