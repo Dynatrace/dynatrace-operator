@@ -97,7 +97,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		err := r.Reconcile(context.Background())
 		require.Error(t, err)
-		assert.Equal(t, "failed to create or update secret: failed to create secret test-name-pull-secret: fake error", err.Error())
+		assert.Equal(t, "failed to create or update secret: fake error", err.Error())
 	})
 	t.Run("Create does not reconcile with custom pull secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{

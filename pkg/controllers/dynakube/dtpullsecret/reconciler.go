@@ -2,12 +2,11 @@ package dtpullsecret
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -21,20 +20,18 @@ const (
 )
 
 type Reconciler struct {
-	client       client.Client
-	apiReader    client.Reader
 	dk           *dynakube.DynaKube
 	tokens       token.Tokens
 	timeprovider *timeprovider.Provider
+	secrets      k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
-		client:       clt,
-		apiReader:    apiReader,
 		dk:           dk,
 		tokens:       tokens,
 		timeprovider: timeprovider.New(),
+		secrets:      k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -44,12 +41,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		err := r.deletePullSecretIfExists(ctx)
-		if err != nil {
-			log.Error(err, "failed to clean-up pull secret")
-		}
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), PullSecretConditionType)
 
-		meta.RemoveStatusCondition(r.dk.Conditions(), PullSecretConditionType)
+		secret, _ := k8ssecret.Build(r.dk, extendWithPullSecretSuffix(r.dk.Name), nil)
+
+		_ = r.deleteSecret(ctx, secret)
 
 		return nil
 	}
@@ -69,97 +65,50 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
+func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
+	log.Info("deleting pull secret", "name", secret.Name)
+
+	err := r.secrets.Delete(ctx, secret)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
+
+		return errors.WithMessagef(err, "failed to delete secret %s", secret.Name)
+	}
+
+	return nil
+}
+
 func (r *Reconciler) reconcilePullSecret(ctx context.Context) error {
 	pullSecretData, err := r.GenerateData()
 	if err != nil {
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}
 
-	pullSecret, err := r.createPullSecretIfNotExists(ctx, pullSecretData)
+	secret, err := k8ssecret.Build(r.dk,
+		extendWithPullSecretSuffix(r.dk.Name), pullSecretData,
+		k8ssecret.SetType(corev1.SecretTypeDockerConfigJson),
+	)
 	if err != nil {
+		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
+
+		return errors.WithStack(err)
+	}
+
+	created, err := r.secrets.CreateOrUpdate(ctx, secret)
+	if err != nil {
+		log.Info("could not create or update secret", "name", secret.Name)
+		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, errors.WithMessage(err, "failed to create or update secret"))
+
 		return errors.WithMessage(err, "failed to create or update secret")
 	}
 
-	return r.updatePullSecretIfOutdated(ctx, pullSecret, pullSecretData)
-}
-
-func (r *Reconciler) createPullSecretIfNotExists(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	var config corev1.Secret
-
-	err := r.apiReader.Get(ctx, client.ObjectKey{Name: extendWithPullSecretSuffix(r.dk.Name), Namespace: r.dk.Namespace}, &config)
-	if k8serrors.IsNotFound(err) {
-		log.Info("creating pull secret")
-
-		return r.createPullSecret(ctx, pullSecretData)
+	if created {
+		conditions.SetSecretCreated(r.dk.Conditions(), PullSecretConditionType, secret.Name)
 	}
 
-	return &config, err
-}
-
-func (r *Reconciler) deletePullSecretIfExists(ctx context.Context) error {
-	var config corev1.Secret
-
-	err := r.apiReader.Get(ctx, client.ObjectKey{Name: extendWithPullSecretSuffix(r.dk.Name), Namespace: r.dk.Namespace}, &config)
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-
-	log.Info("deleting pull secret")
-
-	err = r.client.Delete(ctx, &config)
-	if err != nil {
-		return errors.WithMessage(err, "failed to delete pull secret")
-	}
+	conditions.SetSecretUpdated(r.dk.Conditions(), PullSecretConditionType, secret.Name)
 
 	return nil
-}
-
-func (r *Reconciler) updatePullSecretIfOutdated(ctx context.Context, pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
-	if !isPullSecretEqual(pullSecret, desiredPullSecretData) {
-		return r.updatePullSecret(ctx, pullSecret, desiredPullSecretData)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	pullSecret, err := secret.Build(r.dk,
-		extendWithPullSecretSuffix(r.dk.Name),
-		pullSecretData,
-		secret.SetType(corev1.SecretTypeDockerConfigJson))
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	err = r.client.Create(ctx, pullSecret)
-	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
-
-		return nil, errors.WithMessagef(err, "failed to create secret %s", extendWithPullSecretSuffix(r.dk.Name))
-	}
-
-	conditions.SetSecretCreated(r.dk.Conditions(), PullSecretConditionType, pullSecret.Name)
-
-	return pullSecret, nil
-}
-
-func (r *Reconciler) updatePullSecret(ctx context.Context, pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
-	log.Info("updating secret", "name", pullSecret.Name)
-
-	pullSecret.Data = desiredPullSecretData
-	if err := r.client.Update(ctx, pullSecret); err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
-
-		return errors.WithMessagef(err, "failed to update secret %s", pullSecret.Name)
-	}
-
-	conditions.SetSecretUpdated(r.dk.Conditions(), PullSecretConditionType, pullSecret.Name)
-
-	return nil
-}
-
-func isPullSecretEqual(currentSecret *corev1.Secret, desired map[string][]byte) bool {
-	return reflect.DeepEqual(desired, currentSecret.Data)
 }
 
 func extendWithPullSecretSuffix(name string) string {
