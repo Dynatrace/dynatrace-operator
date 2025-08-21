@@ -330,8 +330,6 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 }
 
 func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
-	t.Skip("skipping test, as it has inconsistent behavior, will be investigated/fixed in DAQ-12605")
-
 	builder := features.New("codemodules-with-proxy-custom-ca-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
