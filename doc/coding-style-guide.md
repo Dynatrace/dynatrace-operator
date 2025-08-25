@@ -133,7 +133,7 @@ General rules to follow:
 - This package is used by other packages that would like to mount the `Secret/ConfigMap`
   - Using the `GetName`, to reference the `Secret/ConfigMap` in a Volume or Env
   - Using the "public `const` for each key" to what to part of the `Secret/ConfigMap` to use. (use `Items` instead of `SubPath`)
-  - Using the `HashAnnotationKey` to put the hashed content of the `Secret/ConfigMap` (from the `DynaKube`'s `status`) into the `template.metadata.annotations` of the component, IF it needs to be restarted when the `Secret/ConfigMap`.
+  - Using the `HashAnnotationKey` to put the hashed content of the `Secret/ConfigMap` (from the `DynaKube`'s `status`) into the `template.metadata.annotations` of the component, IF it needs to be restarted when the `Secret/ConfigMap` changes.
 
 Reasoning for these rules:
 
