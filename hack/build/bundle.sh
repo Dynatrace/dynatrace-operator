@@ -67,7 +67,7 @@ grep -v '# Labels for testing.' "./config/olm/${PLATFORM}/bundle-${VERSION}.Dock
 mv "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output" "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 if [ "${PLATFORM}" = "openshift" ]; then
   # shellcheck disable=SC2129
-	echo 'LABEL com.redhat.openshift.versions="v4.10"' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
+	echo 'LABEL com.redhat.openshift.versions="v4.12"' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	echo 'LABEL com.redhat.delivery.operator.bundle=true' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	echo 'LABEL com.redhat.delivery.backport=true' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	sed 's/\bkubectl\b/oc/g' "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml" > "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml.output"
