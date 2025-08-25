@@ -35,6 +35,8 @@ Check if default image or imageref is used
     	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" .Chart.AppVersion }}
     {{- else if eq (include "dynatrace-operator.platform" .) "azure-marketplace" -}}
         {{- printf "%s/%s@%s" .Values.global.azure.images.operator.registry .Values.global.azure.images.operator.image .Values.global.azure.images.operator.digest }}
+    {{- else if hasPrefix "0.0.0-nightly-" .Chart.AppVersion -}}
+        {{- printf "%s:%s" "quay.io/dynatrace/dynatrace-operator" (.Chart.AppVersion | replace "0.0.0-" "") }}
 	{{- else -}}
 		{{- printf "%s:v%s" "public.ecr.aws/dynatrace/dynatrace-operator" .Chart.AppVersion }}
 	{{- end -}}

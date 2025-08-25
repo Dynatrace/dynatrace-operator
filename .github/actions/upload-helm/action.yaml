@@ -29,6 +29,14 @@ inputs:
   cosign-password:
     description: Password used to encrypt the private key
     required: true
+  upload-nightly:
+    description: Whether a nightly helm package should be uploaded
+    required: false
+    default: 'false'
+  mutable-nightly-tag:
+    description: Image tag pointing to the mutable (latest) nightly build
+    required: false
+    default: '0.0.0-nightly-chart'
 
 runs:
   using: "composite"
@@ -40,9 +48,31 @@ runs:
         hack/build/ci/push-helm-chart.sh \
         "./helm-pkg/dynatrace-operator-${{ inputs.version-without-prefix }}.tgz" \
         "oci://${{ inputs.registry-url }}/${{ inputs.registry-namespace }}"
+  - name: Install ORAS
+    uses: oras-project/setup-oras@8d34698a59f5ffe24821f0b48ab62a3de8b64b20 # v1.2.3
+  - name: Upload nightly helm package to OCI registry
+    id: push-nightly-helm-to-OCI
+    if: ${{ inputs.upload-nightly == 'true' }}
+    env:
+      HELM_CONFIG_FILE: ${{ runner.temp }}/config.json
+      IMAGE_VERSION: ${{ inputs.version }}
+      MUTABLE_NIGHTLY_TAG: ${{ inputs.mutable-nightly-tag }}
+      PATH_TO_HELM_CHART: helm-pkg/dynatrace-operator-${{ inputs.version-without-prefix }}.tgz
+      REGISTRY_URL: ${{ inputs.registry-url }}/${{ inputs.registry-namespace }}
+      REPOSITORY_NAME: ${{ inputs.helm-repository-name }}
+    shell: bash
+    run: |
+      hack/build/ci/push-nightly-helm-chart.sh
   - name: Sign OCI package with cosign
     uses: ./.github/actions/sign-image
     with:
       image: "${{ inputs.image-base-url }}/${{ inputs.registry-namespace }}/${{ inputs.helm-repository-name }}:${{ inputs.version }}@${{ steps.push-helm-to-OCI.outputs.digest }}"
+      signing-key: ${{ inputs.cosign-private-key }}
+      signing-password: ${{ inputs.cosign-password }}
+  - name: Sign nightly OCI package with cosign
+    if: ${{ inputs.upload-nightly == 'true' }}
+    uses: ./.github/actions/sign-image
+    with:
+      image: "${{ inputs.image-base-url }}/${{ inputs.registry-namespace }}/${{ inputs.helm-repository-name }}:${{ inputs.mutable-nightly-tag }}@${{ steps.push-nightly-helm-to-OCI.outputs.digest }}"
       signing-key: ${{ inputs.cosign-private-key }}
       signing-password: ${{ inputs.cosign-password }}

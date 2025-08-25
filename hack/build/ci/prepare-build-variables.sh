@@ -3,6 +3,8 @@
 create_docker_image_tag() {
   if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
     echo "snapshot-${GITHUB_HEAD_REF//[^a-zA-Z0-9_-]/-}"; return
+  elif [[ "${GITHUB_EVENT_NAME}" == "schedule" ]]; then # nightly builds
+    echo "nightly-$(date --iso-8601)"; return
   fi
 
   if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
