@@ -116,6 +116,32 @@ Important characteristics:
   - The cleanup is "invisible" for the caller of the `Reconciler`, so its up to the `Reconciler` to decide if it needs to clean up or setup/update.
     - Example: `DynakubeController` should just call the `ActiveGateReconciler.Reconcile` function, and not worry about if it will create(i.e.: setup) a `StatefulSet` or delete(i.e.: cleanup) the no longer necessary one.
 
+## Secret/ConfigMap handling
+
+A significant role of the Operator is to create/update or just pass along Secrets/ConfigMaps to components it manages.
+
+The main problem that needs to be solved is: If a `Secret/ConfigMap` changes, that warrants the restart of a component that uses it, how do we go about this?
+
+General rules to follow:
+
+- Each `Secret/ConfigMap` we manage should have it's own package, that contain:
+  - The func to determine the name of the `Secret/ConfigMap`. (example: `GetName`)
+  - The "reconcile" logic
+    - This should be also responsible for calculating a hash from the content of the `Secret/ConfigMap`, and storing this value in the `status` of the `DynaKube`
+  - A unique annotation key ( public `const`) (example: `HashAnnotationKey`)
+  - A public `const` for each key used inside the `data` of the `Secret/ConfigMap`.
+- This package is used by other packages that would like to mount the `Secret/ConfigMap`
+  - Using the `GetName`, to reference the `Secret/ConfigMap` in a Volume or Env
+  - Using the "public `const` for each key" to what to part of the `Secret/ConfigMap` to use. (use `Items` instead of `SubPath`)
+  - Using the `HashAnnotationKey` to put the hashed content of the `Secret/ConfigMap` (from the `DynaKube`'s `status`) into the `template.metadata.annotations` of the component, IF it needs to be restarted when the `Secret/ConfigMap`.
+
+Reasoning for these rules:
+
+- As of writing this, we have 15+ `Secrets/ConfigMaps` that we manage and provide to 4+ components. (some components need more, some less)
+  - Putting all of this within the `api` package, when we already tend to have a package for each `Secret/ConfigMap` for "reconciling" is just breaking the "single-place-of-truth" for no good reason.
+  - Fetching and recalculating the hash for each component where a `Secret/ConfigMap` is used would be fine if we only had a few of them, but we have 15+.
+    - Why not use the cache? -> Using the built-in cache of the `Client` had caused problems in the past (the cache was not up to date), which could lead to inconsistency.
+
 ## Errors
 
 ### Do's
