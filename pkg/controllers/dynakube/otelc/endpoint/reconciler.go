@@ -42,7 +42,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		configMap, _ := k8sconfigmap.Build(r.dk,
 			consts.OtlpAPIEndpointConfigMapName,
 			nil,
-			k8sconfigmap.SetLabels(k8slabels.NewCoreLabels(r.dk.Name, k8slabels.OtelCComponentLabel).BuildLabels()),
 		)
 
 		_ = r.deleteConfigMap(ctx, configMap)
