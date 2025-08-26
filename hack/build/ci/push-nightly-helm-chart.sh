@@ -11,7 +11,7 @@ url=$(yq .home "${DEFAULT_CHART_CONFIG_FILE}")
 
 yq ".appVersion=env(IMAGE_VERSION), .version=env(IMAGE_VERSION)" \
   "${DEFAULT_CHART_CONFIG_FILE}" -o json > "${HELM_CONFIG_FILE}"
-output=$(oras push "${REGISTRY_URL}/${REPOSITORY_NAME}:${MUTABLE_NIGHTLY_TAG}" \
+output=$(oras push "${REGISTRY_URL}/${REPOSITORY_NAME}:0.0.0-${IMAGE_VERSION}" \
   "${PATH_TO_HELM_CHART}:application/vnd.cncf.helm.chart.content.v1.tar+gzip" \
   --annotation "org.opencontainers.image.authors=${authors}" \
   --annotation "org.opencontainers.image.description=${description}" \
