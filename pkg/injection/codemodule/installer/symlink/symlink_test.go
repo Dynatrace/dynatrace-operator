@@ -1,6 +1,7 @@
 package symlink
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -32,5 +33,28 @@ func TestFindVersionFromFileSystem(t *testing.T) {
 		version, err := findVersionFromFileSystem(fs, testPath)
 		require.NoError(t, err)
 		assert.Empty(t, version)
+	})
+}
+
+func TestRemove(t *testing.T) {
+	testPath := "/test/1.239.14.20220325-164521"
+
+	t.Run("removes if present -> no error", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		err := fs.MkdirAll(testPath, 0755)
+		require.NoError(t, err)
+
+		err = Remove(fs, testPath)
+		require.NoError(t, err)
+
+		info, err := fs.Stat(testPath)
+		require.Nil(t, info)
+		require.ErrorIs(t, err, os.ErrNotExist)
+	})
+	t.Run("silence error if not present", func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+
+		err := Remove(fs, testPath)
+		require.NoError(t, err)
 	})
 }
