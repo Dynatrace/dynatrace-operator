@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -16,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 )
 
@@ -37,7 +35,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		assert.Equal(t, bootstrapper.Use, initContainer.Args[0])
 		assert.Equal(t, dtwebhook.InstallContainerName, initContainer.Name)
 		assert.Equal(t, initContainer.Image, wh.webhookPodImage)
-		assert.Empty(t, initContainer.Resources)
+		assert.NotEmpty(t, initContainer.Resources)
 
 		require.NotNil(t, initContainer.SecurityContext.AllowPrivilegeEscalation)
 		assert.False(t, *initContainer.SecurityContext.AllowPrivilegeEscalation)
@@ -195,40 +193,4 @@ func TestAddInitContainerToPod(t *testing.T) {
 		assert.True(t, mounts.IsPathIn(initContainer.VolumeMounts, volumes.InitConfigMountPath))
 		assert.True(t, mounts.IsPathIn(initContainer.VolumeMounts, volumes.InitInputMountPath))
 	})
-}
-
-func TestInitContainerResources(t *testing.T) {
-	testResourceRequirements := corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("100Mi"),
-		}}
-
-	t.Run("should return nothing per default", func(t *testing.T) {
-		dk := getTestDynakube()
-
-		initResources := initContainerResources(*dk)
-
-		require.Empty(t, initResources)
-	})
-
-	t.Run("should return custom if set in dynakube", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.OneAgent = getAppMonSpec(&testResourceRequirements)
-
-		initResources := initContainerResources(*dk)
-
-		require.NotNil(t, initResources)
-		assert.Equal(t, testResourceRequirements, initResources)
-	})
-}
-
-func getAppMonSpec(initResources *corev1.ResourceRequirements) oneagent.Spec {
-	return oneagent.Spec{
-		ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{
-				InitResources:    initResources,
-				CodeModulesImage: customImage,
-			}},
-	}
 }

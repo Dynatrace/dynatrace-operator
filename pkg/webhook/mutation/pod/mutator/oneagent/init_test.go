@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +29,9 @@ func TestMutateInitContainer(t *testing.T) {
 			bootstrapper.Use,
 		},
 		Image: "webhook-image",
+		Resources: corev1.ResourceRequirements{
+			Requests: resources.NewResourceList("30m", "30Mi"), // add some defaults
+		},
 	}
 
 	t.Run("csi-scenario", func(t *testing.T) {
@@ -62,6 +66,7 @@ func TestMutateInitContainer(t *testing.T) {
 		assert.NotEmpty(t, request.InstallContainer.Args)
 		assert.Subset(t, request.InstallContainer.Args, initContainerBase.Args)
 		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+		assert.NotEmpty(t, request.InstallContainer.Resources) // does not touch default
 	})
 
 	t.Run("zip-scenario", func(t *testing.T) {
@@ -102,6 +107,8 @@ func TestMutateInitContainer(t *testing.T) {
 		assert.Contains(t, request.InstallContainer.Args, fmt.Sprintf("--%s=%s", bootstrapper.FlavorFlag, flavor))
 		assert.Contains(t, request.InstallContainer.Args, fmt.Sprintf("--%s=%s", bootstrapper.TargetVersionFlag, version))
 		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+
+		assert.Empty(t, request.InstallContainer.Resources) // removes default, as they wouldn't work
 	})
 
 	t.Run("node-image-pull-scenario", func(t *testing.T) {
@@ -139,6 +146,69 @@ func TestMutateInitContainer(t *testing.T) {
 		assert.NotEmpty(t, request.InstallContainer.Args)
 		assert.NotSubset(t, request.InstallContainer.Args, initContainerBase.Args)
 		assert.Equal(t, image, request.InstallContainer.Image)
+
+		assert.Empty(t, request.InstallContainer.Resources) // removes default, as they wouldn't work
+	})
+
+	t.Run("zip-scenario -> custom init-resources", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		flavor := "musl"
+		version := "1.2.3"
+		dk := dynakube.DynaKube{}
+		dk.Name = "zip-scenario"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
+			Requests: resources.NewResourceList("40m", "40Mi"),
+		}
+		dk.Status.CodeModules.Version = version
+		pod := &corev1.Pod{}
+		pod.Annotations = map[string]string{
+			AnnotationFlavor: flavor,
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
+	})
+
+	t.Run("node-image-pull-scenario -> custom init-resources", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		image := "myimage.io:latest"
+		dk := dynakube.DynaKube{}
+		dk.Name = "node-image-pull-scenario"
+		dk.Annotations = map[string]string{
+			exp.OANodeImagePullKey: "true",
+		}
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
+			Requests: resources.NewResourceList("40m", "40Mi"),
+		}
+		dk.Status.CodeModules.ImageID = image
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
 	})
 }
 
