@@ -34,6 +34,44 @@ func TestMutateInitContainer(t *testing.T) {
 		},
 	}
 
+	t.Run("csi-scenario -> custom init-resources", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+
+		dk := dynakube.DynaKube{}
+		dk.Name = "csi-scenario"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
+			Requests: resources.NewResourceList("40m", "40Mi"),
+		}
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		csiVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NoError(t, err)
+		require.NotNil(t, csiVolume.CSI)
+		require.NotNil(t, csiVolume.CSI.ReadOnly)
+		require.True(t, *csiVolume.CSI.ReadOnly)
+
+		csiMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		require.NoError(t, err)
+		require.True(t, csiMount.ReadOnly)
+
+		assert.NotEmpty(t, request.InstallContainer.Args)
+		assert.Subset(t, request.InstallContainer.Args, initContainerBase.Args)
+		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
+	})
+
 	t.Run("csi-scenario", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 

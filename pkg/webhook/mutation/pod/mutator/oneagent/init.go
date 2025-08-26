@@ -22,6 +22,11 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String())
 		// in case of CSI, the CSI volume itself is already always readonly, so the mount should always be readonly, the init-container should just read from it
 		addInitBinMount(mutationRequest.InstallContainer, true)
+
+		customInitResources := mutationRequest.DynaKube.OneAgent().GetInitResources()
+		if customInitResources != nil {
+			mutationRequest.InstallContainer.Resources = *customInitResources
+		}
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
 		addEmptyDirBinVolume(mutationRequest.Pod)
