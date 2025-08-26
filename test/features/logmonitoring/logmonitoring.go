@@ -95,6 +95,9 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	builder := features.New("logmonitoring-with-optional-scopes")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
+	if secretConfig.APITokenNoSettings == "" {
+		t.Skip("skipping test. no token with missing settings scopes provided")
+	}
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
