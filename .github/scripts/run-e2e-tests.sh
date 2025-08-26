@@ -26,6 +26,7 @@ cat << EOF > single-tenant.yaml
 tenantUid: $TENANT1_NAME
 apiUrl: https://$TENANT1_NAME.dev.dynatracelabs.com/api
 apiToken: $TENANT1_APITOKEN
+apiTokenNoSettings: $TENANT1_APITOKEN_NOSETTINGS
 dataIngestToken: $TENANT1_DATAINGESTTOKEN
 EOF
 

@@ -20,6 +20,9 @@ inputs:
   tenant1-apitoken:
     description: The API token of Tenant 1
     required: true
+  tenant1-apitoken-nosettings:
+    description: The API token of Tenant 1 without settings scope
+    required: false
   tenant1-dataingesttoken:
     description: The data ingest token of Tenant 1
     required: true
@@ -101,6 +104,7 @@ runs:
         TARGET_IMAGE: ${{ inputs.target-image }}
         TENANT1_NAME: ${{ inputs.tenant1-name }}
         TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
+        TENANT1_APITOKEN_NOSETTINGS: ${{ inputs.tenant1-apitoken-nosettings }}
         TENANT1_DATAINGESTTOKEN: ${{ inputs.tenant1-dataingesttoken }}
         TENANT1_OAUTH_CLIENT_ID: ${{ inputs.tenant1-oauth-client-id }}
         TENANT1_OAUTH_SECRET: ${{ inputs.tenant1-oauth-secret }}
