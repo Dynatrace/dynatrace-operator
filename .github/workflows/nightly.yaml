@@ -123,12 +123,8 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Upload and sign helm package
-        uses: ./.github/actions/upload-helm
+        uses: ./.github/actions/upload-nightly-helm
         with:
-          image-base-url: ${{ env.DOCKER_REGISTRY }}
-          registry-url: ${{ env.DOCKER_REGISTRY }}
           version: ${{ needs.prepare.outputs.version }}
-          version-without-prefix: ${{ env.HELM_PACKAGE_VERSION }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-          upload-nightly: 'true'
