@@ -1,0 +1,64 @@
+name: Upload nightly helm package
+description: Upload the nightly helm package
+inputs:
+  registry-url:
+    description: URL for the OCI registry
+    required: false
+    default: quay.io
+  registry-namespace:
+    description: Repository in the OCI registry
+    required: false
+    default: dynatrace
+  helm-repository-name:
+    description: Repository used in the OCI registry
+    required: false
+    default: dynatrace-operator
+  version:
+    description: The version of the helm package to upload
+    required: true
+  cosign-private-key:
+    description: Private key used to sign the helm package
+    required: true
+  cosign-password:
+    description: Password used to encrypt the private key
+    required: true
+  image-tag-prefix:
+    description: Used for prefixing the Helm chart tag (required by Helm)
+    required: false
+    default: "0.0.0-"
+  mutable-nightly-tag:
+    description: Image tag pointing to the mutable (latest) nightly build
+    required: false
+    default: 'nightly-chart'
+
+runs:
+  using: "composite"
+  steps:
+  - name: Install ORAS
+    uses: oras-project/setup-oras@8d34698a59f5ffe24821f0b48ab62a3de8b64b20 # v1.2.3
+  - name: Upload nightly helm package to OCI registry
+    id: push-helm-chart-to-registry
+    env:
+      HELM_CONFIG_FILE: ${{ runner.temp }}/config.json
+      IMAGE_VERSION: ${{ inputs.version }}
+      PATH_TO_HELM_CHART: helm-pkg/dynatrace-operator-${{ inputs.image-tag-prefix }}${{ inputs.version }}.tgz
+      REGISTRY_URL: ${{ inputs.registry-url }}/${{ inputs.registry-namespace }}
+      REPOSITORY_NAME: ${{ inputs.helm-repository-name }}
+    shell: bash
+    run: |
+      hack/build/ci/push-nightly-helm-chart.sh
+  - name: Sign OCI package with cosign
+    uses: ./.github/actions/sign-image
+    with:
+      image: "${{ inputs.registry-url }}/${{ inputs.registry-namespace }}/${{ inputs.helm-repository-name }}:${{ inputs.image-tag-prefix }}${{ inputs.version }}@${{ steps.push-helm-chart-to-registry.outputs.digest }}"
+      signing-key: ${{ inputs.cosign-private-key }}
+      signing-password: ${{ inputs.cosign-password }}
+  - name: Create mutable nightly tag
+    env:
+      MANIFEST_DIGEST: ${{ steps.push-helm-chart-to-registry.outputs.digest }}
+      MUTABLE_NIGHTLY_TAG: ${{ inputs.image-tag-prefix }}${{ inputs.mutable-nightly-tag }}
+      REGISTRY_URL: ${{ inputs.registry-url }}/${{ inputs.registry-namespace }}
+      REPOSITORY_NAME: ${{ inputs.helm-repository-name }}
+    shell: bash
+    run: |
+      oras tag "${REGISTRY_URL}/${REPOSITORY_NAME}@${MANIFEST_DIGEST}" "${MUTABLE_NIGHTLY_TAG}"

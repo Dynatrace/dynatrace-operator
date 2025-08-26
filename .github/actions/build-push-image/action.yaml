@@ -56,15 +56,22 @@ runs:
         flavor: |
           suffix=${{ inputs.suffix }}
         labels: |
-          ${{ inputs.labels }}
-          quay.expires-after=${{ (github.ref_type != 'tag' && !startsWith(github.ref_name, 'release-') && github.ref_name != 'main') && '10d' || '' }}
+          # default retention policy
+          quay.expires-after=10d
+          # releases and snapshots of the main branch should never expire
+          ${{ ((github.ref_type == 'tag' && startsWith(github.ref_name, 'release-')) || github.ref_name == 'main') && 'quay.expires-after=' }}
+          # retention policy for nightly builds
+          ${{ github.event_name == 'schedule' && 'quay.expires-after=14d' }}
           vcs-ref=${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           build-date=${{ steps.set-build-date.outputs.date }}
         tags: |
           # PRs
           type=raw,value=snapshot-${{ github.head_ref }},enable=${{ github.event_name == 'pull_request' }}
-          # main branches
-          type=raw,value=snapshot,enable=${{ github.ref_name == 'main' }}
+          # main branches (not including nightly builds)
+          type=raw,value=snapshot,enable=${{ github.ref_name == 'main' && github.event_name != 'schedule' }}
+          # nightly builds
+          type=raw,value=nightly-${{ steps.set-build-date.outputs.date }},enable=${{ github.event_name == 'schedule' }}
+          type=raw,value=nightly,enable=${{ github.event_name == 'schedule' }}
           # tags
           type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
           # everything else
