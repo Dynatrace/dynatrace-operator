@@ -77,5 +77,21 @@ func (req *BaseRequest) NewContainers(isInjected func(corev1.Container) bool) (n
 		newContainers = append(newContainers, container)
 	}
 
-	return
+	for i := range req.Pod.Spec.InitContainers {
+		container := &req.Pod.Spec.InitContainers[i]
+
+		if container.RestartPolicy != nil && *container.RestartPolicy == corev1.ContainerRestartPolicyAlways {
+			if IsContainerExcludedFromInjection(req.DynaKube.Annotations, req.Pod.Annotations, container.Name) {
+				continue
+			}
+
+			if isInjected(*container) {
+				continue
+			}
+
+			newContainers = append(newContainers, container)
+		}
+	}
+
+	return newContainers
 }
