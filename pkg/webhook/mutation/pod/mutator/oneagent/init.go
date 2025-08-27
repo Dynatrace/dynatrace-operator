@@ -95,7 +95,17 @@ func HasPodGroupSet(ctx *corev1.PodSecurityContext) bool {
 }
 
 func IsNonRoot(ctx *corev1.SecurityContext) bool {
-	return ctx != nil &&
-		(ctx.RunAsUser != nil && *ctx.RunAsUser != RootUserGroup) &&
-		(ctx.RunAsGroup != nil && *ctx.RunAsGroup != RootUserGroup)
+	if ctx == nil {
+		return true
+	}
+
+	if ctx.RunAsUser != nil && *ctx.RunAsUser != RootUser {
+		return true
+	}
+
+	if ctx.RunAsGroup != nil && *ctx.RunAsGroup != RootGroup {
+		return true
+	}
+
+	return false
 }
