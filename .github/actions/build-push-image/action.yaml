@@ -68,7 +68,7 @@ runs:
           # tags
           type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
           # everything else
-          type=raw,value=snapshot-${{ github.ref_name }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
+          type=push,value=snapshot-${{ github.ref_name }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
         annotations: |
           ${{ inputs.annotation }}
           version=${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
