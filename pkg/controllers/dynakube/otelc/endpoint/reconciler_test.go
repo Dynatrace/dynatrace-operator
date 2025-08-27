@@ -46,7 +46,7 @@ func TestConfigMapCreation(t *testing.T) {
 
 		r := NewReconciler(clt, clt, &dk)
 
-		err = r.ensureOtlpAPIEndpointConfigMap(ctx)
+		err = r.reconcileConfigMap(ctx)
 		require.NoError(t, err)
 
 		var apiEndpointConfigMap corev1.ConfigMap
@@ -57,7 +57,7 @@ func TestConfigMapCreation(t *testing.T) {
 		assert.Equal(t, conditions.ConfigMapCreatedOrUpdatedReason, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType).Reason)
 	})
 
-	t.Run("removes secret if exists but we don't need it", func(t *testing.T) {
+	t.Run("removes config map if exists but we don't need it", func(t *testing.T) {
 		dk := createDynaKube(false)
 		conditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.OtlpAPIEndpointConfigMapName)
 
@@ -84,30 +84,30 @@ func TestConfigMapCreation(t *testing.T) {
 	})
 }
 
-func TestEndpoint(t *testing.T) {
+func Test_generateData(t *testing.T) {
 	tests := []struct {
-		name             string
-		apiURL           string
-		expectedEndpoint string
-		inClusterAg      bool
+		name         string
+		apiURL       string
+		expectedData map[string]string
+		inClusterAg  bool
 	}{
 		{
-			name:             "in-cluster ActiveGate",
-			apiURL:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
-			inClusterAg:      true,
-			expectedEndpoint: fmt.Sprintf("https://test-dk-activegate.test-namespace.svc/e/%s/api/v2/otlp", testTenantUUID),
+			name:         "in-cluster ActiveGate",
+			apiURL:       fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
+			inClusterAg:  true,
+			expectedData: map[string]string{"DT_ENDPOINT": fmt.Sprintf("https://test-dk-activegate.test-namespace.svc/e/%s/api/v2/otlp", testTenantUUID)},
 		},
 		{
-			name:             "public ActiveGate",
-			apiURL:           fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
-			inClusterAg:      false,
-			expectedEndpoint: fmt.Sprintf("https://%s.dev.dynatracelabs.com/api/v2/otlp", testTenantUUID),
+			name:         "public ActiveGate",
+			apiURL:       fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
+			inClusterAg:  false,
+			expectedData: map[string]string{"DT_ENDPOINT": fmt.Sprintf("https://%s.dev.dynatracelabs.com/api/v2/otlp", testTenantUUID)},
 		},
 		{
-			name:             "managed ActiveGate",
-			apiURL:           "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api",
-			inClusterAg:      false,
-			expectedEndpoint: "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api/v2/otlp",
+			name:         "managed ActiveGate",
+			apiURL:       "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api",
+			inClusterAg:  false,
+			expectedData: map[string]string{"DT_ENDPOINT": "https://dynatrace.foobar.com/e/abcdefgh-1234-5678-9abc-deadbeef/api/v2/otlp"},
 		},
 	}
 
@@ -134,9 +134,9 @@ func TestEndpoint(t *testing.T) {
 			clt := schemeFake.NewClient(objs...)
 			r := NewReconciler(clt, clt, &dk)
 
-			endpoint, err := r.getDtEndpoint()
+			data, err := r.generateData()
 			require.NoError(t, err)
-			assert.Equal(t, tt.expectedEndpoint, endpoint)
+			assert.Equal(t, tt.expectedData, data)
 		})
 	}
 }
