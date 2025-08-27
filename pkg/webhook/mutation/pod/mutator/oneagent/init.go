@@ -86,24 +86,24 @@ func getTechnology(pod corev1.Pod, dk dynakube.DynaKube) string {
 	return maputils.GetField(pod.Annotations, AnnotationTechnologies, dk.FF().GetNodeImagePullTechnology())
 }
 
-func HasPodUserSet(ctx *corev1.PodSecurityContext) bool {
-	return ctx != nil && ctx.RunAsUser != nil
+func HasPodUserSet(psc *corev1.PodSecurityContext) bool {
+	return psc != nil && psc.RunAsUser != nil
 }
 
-func HasPodGroupSet(ctx *corev1.PodSecurityContext) bool {
-	return ctx != nil && ctx.RunAsGroup != nil
+func HasPodGroupSet(psc *corev1.PodSecurityContext) bool {
+	return psc != nil && psc.RunAsGroup != nil
 }
 
-func IsNonRoot(ctx *corev1.SecurityContext) bool {
-	if ctx == nil {
+func IsNonRoot(sc *corev1.SecurityContext) bool {
+	if sc == nil {
 		return true
 	}
 
-	if ctx.RunAsUser != nil && *ctx.RunAsUser != RootUser {
+	if sc.RunAsUser != nil && *sc.RunAsUser != RootUser {
 		return true
 	}
 
-	if ctx.RunAsGroup != nil && *ctx.RunAsGroup != RootGroup {
+	if sc.RunAsGroup != nil && *sc.RunAsGroup != RootGroup {
 		return true
 	}
 
