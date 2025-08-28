@@ -122,6 +122,28 @@ tests:
       - contains:
           path: rules
           content:
+            apiGroups:
+              - discovery.k8s.io
+            resources:
+              - endpointslices
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+              apiGroups:
+              - autoscaling
+              resources:
+              - horizontalpodautoscalers
+              verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
             nonResourceURLs:
               - /metrics
               - /version
