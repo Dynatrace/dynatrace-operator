@@ -101,8 +101,8 @@ func TestCreateInitContainerBase(t *testing.T) {
 		dk := getTestDynakube()
 		pod := getTestPod()
 		pod.Spec.SecurityContext = &corev1.PodSecurityContext{}
-		pod.Spec.SecurityContext.RunAsUser = ptr.To(oacommon.RootUserGroup)
-		pod.Spec.SecurityContext.RunAsGroup = ptr.To(oacommon.RootUserGroup)
+		pod.Spec.SecurityContext.RunAsUser = ptr.To(oacommon.RootGroup)
+		pod.Spec.SecurityContext.RunAsGroup = ptr.To(oacommon.RootGroup)
 
 		initContainer := wh.createInitContainerBase(pod, *dk)
 
@@ -110,10 +110,10 @@ func TestCreateInitContainerBase(t *testing.T) {
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsUser)
-		assert.Equal(t, oacommon.RootUserGroup, *initContainer.SecurityContext.RunAsUser)
+		assert.Equal(t, oacommon.RootGroup, *initContainer.SecurityContext.RunAsUser)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsGroup)
-		assert.Equal(t, oacommon.RootUserGroup, *initContainer.SecurityContext.RunAsGroup)
+		assert.Equal(t, oacommon.RootGroup, *initContainer.SecurityContext.RunAsGroup)
 	})
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
 		dk := getTestDynakube()
