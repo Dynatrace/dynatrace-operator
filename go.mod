@@ -18,7 +18,7 @@ require (
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.11.1
-	go.opentelemetry.io/collector/component v1.37.0
+	go.opentelemetry.io/collector/component v1.39.0
 	go.opentelemetry.io/collector/config/configtls v1.39.0
 	go.opentelemetry.io/collector/confmap v1.39.0
 	go.opentelemetry.io/collector/pipeline v1.39.0
@@ -125,8 +125,8 @@ require (
 	go.opentelemetry.io/collector/extension/extensiontest v0.131.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.39.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.131.0 // indirect
-	go.opentelemetry.io/collector/internal/telemetry v0.131.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.37.0 // indirect
+	go.opentelemetry.io/collector/internal/telemetry v0.133.0 // indirect
+	go.opentelemetry.io/collector/pdata v1.39.0 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.131.0 // indirect
 	go.opentelemetry.io/collector/pdata/testdata v0.131.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.131.0 // indirect
@@ -171,7 +171,7 @@ require (
 	gonum.org/v1/gonum v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.7 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/component-base v0.33.4 // indirect
