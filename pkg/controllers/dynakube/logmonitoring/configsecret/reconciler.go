@@ -24,6 +24,7 @@ const (
 	tenantTokenKey  = "TenantToken"
 	hostIDSourceKey = "HostIdSource"
 	serverKey       = "Server"
+	networkZoneKey  = "Location"
 )
 
 type Reconciler struct {
@@ -126,6 +127,10 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		tenantKey:       tenantUUID,
 		tenantTokenKey:  tenantToken,
 		hostIDSourceKey: "k8s-node-name",
+	}
+
+	if r.dk.Spec.NetworkZone != "" {
+		deploymentConfigContent[networkZoneKey] = r.dk.Spec.NetworkZone
 	}
 
 	var content strings.Builder
