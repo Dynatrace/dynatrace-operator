@@ -80,13 +80,9 @@ func TestIstio_codemodules_with_proxy_and_auto_ag_cert(t *testing.T) {
 }
 
 func TestIstio_codemodules_with_proxy_custom_ca_ag_cert(t *testing.T) {
-	t.Skip("skipping test, as it has inconsistent behavior, will be investigated/fixed in DAQ-12605")
-
-	testEnv.Test(t, codemodules.WithProxyCAAndAGCert(t, proxy.ProxySpec))
+	testEnv.Test(t, codemodules.WithProxyCAAndAGCert(t, proxy.HTTPSProxySpec))
 }
 
 func TestIstio_codemodules_with_proxy_custom_ca_auto_ag_cert(t *testing.T) {
-	t.Skip("skipping test, as it has inconsistent behavior, will be investigated/fixed in DAQ-12605")
-
-	testEnv.Test(t, codemodules.WithProxyCAAndAutomaticAGCert(t, proxy.ProxySpec))
+	testEnv.Test(t, codemodules.WithProxyCAAndAutomaticAGCert(t, proxy.HTTPSProxySpec))
 }
