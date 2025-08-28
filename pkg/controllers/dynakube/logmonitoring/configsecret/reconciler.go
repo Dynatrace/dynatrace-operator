@@ -3,8 +3,10 @@ package configsecret
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -19,6 +21,9 @@ import (
 
 const (
 	logMonitoringSecretSuffix = "-logmonitoring-config"
+
+	TokenHashAnnotationKey   = api.InternalFlagPrefix + "tenant-token-hash"
+	NetworkZoneAnnotationKey = api.InternalFlagPrefix + "network-zone"
 
 	tenantKey       = "Tenant"
 	tenantTokenKey  = "TenantToken"
@@ -146,4 +151,21 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 
 func GetSecretName(dkName string) string {
 	return dkName + logMonitoringSecretSuffix
+}
+
+// AddAnnotations adds the key-values to the provided map for values within the secret that may change,
+// and should cause the user of the secret to be restarted, if they don't read the config during runtime.
+// Can't use a single hash for the config, as part of the secret (endpoints) changes too often.
+func AddAnnotations(source map[string]string, dk dynakube.DynaKube) map[string]string {
+	annotation := map[string]string{}
+	if source != nil {
+		annotation = maps.Clone(source)
+	}
+
+	annotation[TokenHashAnnotationKey] = dk.OneAgent().ConnectionInfoStatus.TenantTokenHash
+	if dk.Spec.NetworkZone != "" {
+		annotation[NetworkZoneAnnotationKey] = dk.Spec.NetworkZone
+	}
+
+	return annotation
 }
