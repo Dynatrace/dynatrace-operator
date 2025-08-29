@@ -89,7 +89,7 @@ func NewReconciler(clt client.Client, //nolint
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	// If AG is not and was not cleaned up due to being previously enabled
+	// If AG is not used or was not cleaned up due to being previously enabled
 	// Split the `if` for better logging.
 	if !r.dk.ActiveGate().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), statefulset.ActiveGateStatefulSetConditionType) == nil {
