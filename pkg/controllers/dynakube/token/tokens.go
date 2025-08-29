@@ -3,11 +3,11 @@ package token
 import (
 	"context"
 	"errors"
+	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type Tokens map[string]*Token
@@ -50,9 +50,9 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) ([]string, error) {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) (map[string]bool, error) {
 	collectedScopeErrors := make([]error, 0)
-	collectedMissingOptionalScopes := sets.NewString()
+	collectedMissingOptionalScopes := map[string]bool{}
 
 	for _, token := range tokens {
 		missingOptionalScopes, scopeError := token.verifyScopes(ctx, dtClient, dk)
@@ -60,10 +60,10 @@ func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client,
 			collectedScopeErrors = append(collectedScopeErrors, scopeError)
 		}
 
-		collectedMissingOptionalScopes.Insert(missingOptionalScopes...)
+		maps.Insert(collectedMissingOptionalScopes, maps.All(missingOptionalScopes))
 	}
 
-	return collectedMissingOptionalScopes.List(), concatErrors(collectedScopeErrors)
+	return collectedMissingOptionalScopes, concatErrors(collectedScopeErrors)
 }
 
 func (tokens Tokens) VerifyValues() error {

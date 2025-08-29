@@ -25,16 +25,18 @@ func (feature *Feature) CollectMissingRequiredScopes(availableScopes []string) [
 	return missingScopes
 }
 
-func (feature *Feature) CollectMissingOptionalScopes(availableScopes []string) []string {
-	missingScopes := make([]string, 0)
+func (feature *Feature) CollectOptionalScopes(availableScopes []string) map[string]bool {
+	optionalScopes := map[string]bool{}
 
-	for _, optionalScope := range feature.OptionalScopes {
-		if !slices.Contains(availableScopes, optionalScope) {
-			missingScopes = append(missingScopes, optionalScope)
+	for _, scope := range feature.OptionalScopes {
+		if !slices.Contains(availableScopes, scope) {
+			optionalScopes[scope] = false
+		} else {
+			optionalScopes[scope] = true
 		}
 	}
 
-	return missingScopes
+	return optionalScopes
 }
 
 func getFeaturesForAPIToken(paasTokenExists bool) []Feature {

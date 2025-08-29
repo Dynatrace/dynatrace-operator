@@ -2,12 +2,12 @@ package token
 
 import (
 	"context"
+	"maps"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type Token struct {
@@ -28,9 +28,9 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) ([]string, error) {
+func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) (map[string]bool, error) {
 	if len(token.Features) == 0 {
-		return nil, nil
+		return map[string]bool{}, nil
 	}
 
 	scopes, err := dtClient.GetTokenScopes(ctx, token.Value)
@@ -40,13 +40,13 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 
 	err = token.verifyRequiredScopes(scopes, dk)
 
-	missingOptionalScopes := token.collectMissingOptionalScopes(scopes, dk)
+	optionalScopes := token.collectOptionalScopes(scopes, dk)
 
-	if len(missingOptionalScopes) > 0 {
-		log.Info("some optional scopes are missing", "missing scopes", missingOptionalScopes, "token", token.Type)
+	if len(optionalScopes) > 0 {
+		log.Info("some optional scopes are missing", "missing scopes", optionalScopes, "token", token.Type)
 	}
 
-	return missingOptionalScopes, err
+	return optionalScopes, err
 }
 
 func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakube.DynaKube) error {
@@ -71,16 +71,16 @@ func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakub
 	return nil
 }
 
-func (token *Token) collectMissingOptionalScopes(scopes dtclient.TokenScopes, dk dynakube.DynaKube) []string {
-	missingScopes := sets.NewString()
+func (token *Token) collectOptionalScopes(availableScopes dtclient.TokenScopes, dk dynakube.DynaKube) map[string]bool {
+	optionalScopes := map[string]bool{}
 
 	for _, feature := range token.Features {
 		if feature.IsEnabled(dk) {
-			missingScopes.Insert(feature.CollectMissingOptionalScopes(scopes)...)
+			maps.Insert(optionalScopes, maps.All(feature.CollectOptionalScopes(availableScopes)))
 		}
 	}
 
-	return missingScopes.List()
+	return optionalScopes
 }
 
 func (token *Token) verifyValue() error {

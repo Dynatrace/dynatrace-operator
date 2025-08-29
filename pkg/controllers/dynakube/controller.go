@@ -4,7 +4,6 @@ import (
 	"context"
 	goerrors "errors"
 	"os"
-	"slices"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -465,7 +464,7 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 
 	tokens := controller.tokens.AddFeatureScopesToTokens()
 
-	missingOptionalScopes, err := tokens.VerifyScopes(ctx, dynatraceClient, *dk)
+	optionalScopes, err := tokens.VerifyScopes(ctx, dynatraceClient, *dk)
 	if err != nil {
 		return err
 	}
@@ -474,17 +473,21 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 
 	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
 
-	controller.updateOptionalScopesConditions(&dk.Status, missingOptionalScopes)
+	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
 
 	return nil
 }
 
-func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, missingOptionalScopes []string) {
+func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, optionalScopes map[string]bool) {
 	for scope, conditionType := range dtclient.OptionalScopes {
-		if slices.Contains(missingOptionalScopes, scope) {
-			conditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
-		} else {
+		available, ok := optionalScopes[scope]
+		switch {
+		case !ok:
+			_ = meta.RemoveStatusCondition(&dkStatus.Conditions, conditionType)
+		case available:
 			conditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
+		case !available:
+			conditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
 		}
 	}
 }
