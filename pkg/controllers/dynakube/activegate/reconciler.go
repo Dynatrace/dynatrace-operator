@@ -89,6 +89,20 @@ func NewReconciler(clt client.Client, //nolint
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	// If AG is not used or was not cleaned up due to being previously enabled
+	// Split the `if` for better logging.
+	if !r.dk.ActiveGate().IsEnabled() {
+		if meta.FindStatusCondition(*r.dk.Conditions(), statefulset.ActiveGateStatefulSetConditionType) == nil {
+			log.Info("activeGate not enabled, skipping")
+
+			return nil
+		}
+
+		// didn't want to use "defer" for the condition removal, that would be change the behavior bit much for a bug fix
+		// the sub reconcilers are either nice enough to not fail during cleanup or not
+		log.Info("activeGate was disabled, starting cleanup")
+	}
+
 	err := r.connectionReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
