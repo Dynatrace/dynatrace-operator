@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -236,6 +237,19 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.Equal(t, customPolicy, daemonset.Spec.Template.Spec.DNSPolicy)
 	})
 
+	t.Run("networkzone is in the template annotations, so if config changes, redeploy happens", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.NetworkZone = "my-networkzone"
+
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		require.Len(t, daemonset.Spec.Template.Annotations, 2)
+		assert.Equal(t, dk.Spec.NetworkZone, daemonset.Spec.Template.Annotations[configsecret.NetworkZoneAnnotationKey])
+	})
+
 	t.Run("respect priority class", func(t *testing.T) {
 		customClass := "custom-class"
 
@@ -383,7 +397,8 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			OneAgent: oneagent.Status{
 				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID: "test-uuid",
+						TenantUUID:      "test-uuid",
+						TenantTokenHash: "somehash",
 					},
 				},
 			},

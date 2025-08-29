@@ -72,6 +72,7 @@ func TestReconcile(t *testing.T) {
 		require.NotEmpty(t, oldTransitionTime)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		reconciler.dk.Spec.NetworkZone = "test-zone"
 
 		err = reconciler.Reconcile(context.Background())
 
@@ -132,6 +133,10 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 		tenantKey + "=" + tenantUUID,
 		tenantTokenKey + "=" + tokenValue,
 		hostIDSourceKey + "=k8s-node-name",
+	}
+
+	if dk.Spec.NetworkZone != "" {
+		expectedLines = append(expectedLines, networkZoneKey+"="+dk.Spec.NetworkZone)
 	}
 
 	split := strings.Split(strings.Trim(string(deploymentConfig), "\n"), "\n")
