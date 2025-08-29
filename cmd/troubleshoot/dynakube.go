@@ -130,13 +130,21 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
 	}
 
-	var missingOptionalScopes []string
+	var optionalScopes map[string]bool
 
-	if missingOptionalScopes, err = tokens.VerifyScopes(ctx, dtc, *dk); err != nil {
+	if optionalScopes, err = tokens.VerifyScopes(ctx, dtc, *dk); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.Tokens())
 	}
 
-	if len(missingOptionalScopes) > 0 {
+	missingOptionalScopes := []string{}
+
+	for scope, isAvailable := range optionalScopes {
+		if !isAvailable {
+			missingOptionalScopes = append(missingOptionalScopes, scope)
+		}
+	}
+
+	if len(optionalScopes) > 0 {
 		logInfof(log, "token scopes are valid however some optional scopes are missing so some features may not work: %s", strings.Join(missingOptionalScopes, ", "))
 	} else {
 		logInfof(log, "token scopes are valid")

@@ -6,39 +6,50 @@ import (
 )
 
 const (
-	settingsExistReason   = "LogMonSettingsExist"
-	settingsErrorReason   = "LogMonSettingsError"
-	settingsCreatedReason = "LogMonSettingsCreated"
+	alreadyExistReason = "AlreadyExist"
+	skippedReason      = "Skipped"
+	errorReason        = "Error"
+	createdReason      = "Created"
 
 	ConditionType = "LogMonitoringSettings"
 )
 
-func setLogMonitoringSettingCreated(conditions *[]metav1.Condition, conditionType string) {
+func setCreatedCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
-		Type:    conditionType,
+		Type:    ConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  settingsCreatedReason,
+		Reason:  createdReason,
 		Message: "LogMonitoring settings have been created.",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setLogMonitoringSettingExists(conditions *[]metav1.Condition, conditionType string) {
+func setAlreadyExistsCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
-		Type:    conditionType,
+		Type:    ConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  settingsExistReason,
+		Reason:  alreadyExistReason,
 		Message: "LogMonitoring settings already exist, will not create new ones.",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setLogMonitoringSettingError(conditions *[]metav1.Condition, conditionType, message string) {
+func setErrorCondition(conditions *[]metav1.Condition, message string) {
 	condition := metav1.Condition{
-		Type:    conditionType,
+		Type:    ConditionType,
 		Status:  metav1.ConditionFalse,
-		Reason:  settingsErrorReason,
-		Message: "LogMonitoring settings could not be created: " + message,
+		Reason:  errorReason,
+		Message: "LogMonitoring settings creation was skipped: " + message,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func setSkippedCondition(conditions *[]metav1.Condition, message string) {
+	condition := metav1.Condition{
+		Type:    ConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  skippedReason,
+		Message: "LogMonitoring settings creation was skipped: " + message,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

@@ -71,7 +71,7 @@ func getInitEnvs(dk dynakube.DynaKube) []corev1.EnvVar {
 		},
 	}
 
-	if dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != "" {
+	if isMEConfigured(dk) {
 		envs = append(envs, corev1.EnvVar{
 			Name:  entityEnv,
 			Value: dk.Status.KubernetesClusterMEID,

@@ -7,14 +7,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestScopes(t *testing.T) {
+func TestReconcile(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
@@ -33,8 +35,7 @@ func TestScopes(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
-		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+		verifyCondition(t, dk, alreadyExistReason)
 	})
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
@@ -56,8 +57,7 @@ func TestScopes(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
-		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+		verifyCondition(t, dk, createdReason)
 	})
 
 	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
@@ -73,8 +73,7 @@ func TestScopes(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		mockClient.AssertNotCalled(t, "GetSettingsForLogModule", ctx, "meid")
-		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+		verifyCondition(t, dk, conditions.OptionalScopeMissingReason)
 	})
 
 	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
@@ -97,8 +96,7 @@ func TestScopes(t *testing.T) {
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		mockClient.AssertNotCalled(t, "GetSettingsForLogModule", mock.Anything, mock.Anything)
-		mockClient.AssertNotCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
+		verifyCondition(t, dk, conditions.OptionalScopeMissingReason)
 	})
 }
 
@@ -125,7 +123,26 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when fetching settings")
 
-		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
+		verifyCondition(t, dk, errorReason)
+	})
+
+	t.Run("KubernetesClusterMEID is missing -> skip", func(t *testing.T) {
+		mockClient := dtclientmock.NewClient(t)
+		dk := &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "",
+			},
+		}
+
+		r := &reconciler{
+			dk:  dk,
+			dtc: mockClient,
+		}
+
+		err := r.checkLogMonitoringSettings(ctx)
+		require.NoError(t, err)
+
+		verifyCondition(t, dk, skippedReason)
 	})
 
 	t.Run("log monitoring settings already exist", func(t *testing.T) {
@@ -147,7 +164,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 		err := r.checkLogMonitoringSettings(ctx)
 		require.NoError(t, err)
 
-		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
+		verifyCondition(t, dk, alreadyExistReason)
 	})
 
 	t.Run("create log monitoring settings", func(t *testing.T) {
@@ -177,8 +194,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 		err := r.checkLogMonitoringSettings(ctx)
 		require.NoError(t, err)
 
-		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
-		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
+		verifyCondition(t, dk, createdReason)
 	})
 
 	t.Run("error creating log monitoring settings", func(t *testing.T) {
@@ -209,8 +225,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when creating")
 
-		mockClient.AssertCalled(t, "GetSettingsForLogModule", ctx, "meid")
-		mockClient.AssertCalled(t, "CreateLogMonitoringSetting", ctx, "meid", "cluster-name", mock.Anything)
+		verifyCondition(t, dk, errorReason)
 	})
 }
 
@@ -222,4 +237,13 @@ func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
 func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
 	t.Helper()
 	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: dtclient.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
+}
+
+func verifyCondition(t *testing.T, dk *dynakube.DynaKube, expectedReason string) {
+	t.Helper()
+
+	c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+
+	require.NotNil(t, c)
+	assert.Equal(t, expectedReason, c.Reason)
 }

@@ -3,7 +3,7 @@ package token
 import (
 	"context"
 	"errors"
-	"slices"
+	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -50,27 +50,20 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) ([]string, error) {
-	scopeErrors := make([]error, 0)
-	collectedMissingOptionalScopes := make([]string, 0)
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient dtclient.Client, dk dynakube.DynaKube) (map[string]bool, error) {
+	collectedScopeErrors := make([]error, 0)
+	collectedMissingOptionalScopes := map[string]bool{}
 
 	for _, token := range tokens {
-		missingOptionalScopes, err := token.verifyScopes(ctx, dtClient, dk)
-		if err != nil {
-			scopeErrors = append(scopeErrors, err)
+		missingOptionalScopes, scopeError := token.verifyScopes(ctx, dtClient, dk)
+		if scopeError != nil {
+			collectedScopeErrors = append(collectedScopeErrors, scopeError)
 		}
 
-		collectedMissingOptionalScopes = append(collectedMissingOptionalScopes, missingOptionalScopes...)
+		maps.Insert(collectedMissingOptionalScopes, maps.All(missingOptionalScopes))
 	}
 
-	if len(scopeErrors) > 0 {
-		return nil, concatErrors(scopeErrors)
-	}
-
-	slices.Sort(collectedMissingOptionalScopes)
-	collectedMissingOptionalScopes = slices.Compact(collectedMissingOptionalScopes)
-
-	return collectedMissingOptionalScopes, nil
+	return collectedMissingOptionalScopes, concatErrors(collectedScopeErrors)
 }
 
 func (tokens Tokens) VerifyValues() error {
@@ -83,14 +76,14 @@ func (tokens Tokens) VerifyValues() error {
 		}
 	}
 
-	if len(valueErrors) > 0 {
-		return concatErrors(valueErrors)
-	}
-
-	return nil
+	return concatErrors(valueErrors)
 }
 
 func concatErrors(errs []error) error {
+	if len(errs) == 0 {
+		return nil
+	}
+
 	concatenatedError := ""
 	apiStatus := dynatraceapi.NoError
 

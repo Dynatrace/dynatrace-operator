@@ -20,7 +20,7 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 		"-l " + dtLogVolumeMountPath,
 	}
 
-	if dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != "" {
+	if isMEConfigured(dk) {
 		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv), fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 	}
 
