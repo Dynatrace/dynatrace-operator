@@ -146,6 +146,7 @@ func (flc fsLogCollector) findLogFilesRecursively(podName string, podNamespace s
 	zipFilePath := BuildZipFilePath(podName, "ls.txt")
 
 	var buf bytes.Buffer
+
 	tee := io.TeeReader(stdOut, &buf)
 
 	err = flc.supportArchive.addFile(zipFilePath, tee)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ import (
 )
 
 func TestExtensionExecutionControllerImage(t *testing.T) {
-	t.Run(`the image specified`, func(t *testing.T) {
+	t.Run("the image specified", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
@@ -26,9 +27,9 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
-					Extensions: &dynakube.ExtensionsSpec{},
+					Extensions: &extensions.Spec{},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
@@ -39,21 +40,21 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			})
 	})
 
-	t.Run(`missing tag`, func(t *testing.T) {
+	t.Run("missing tag", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorExtensionExecutionControllerImageNotSpecified},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &dynakube.ExtensionsSpec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 							},
@@ -63,21 +64,21 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			})
 	})
 
-	t.Run(`missing repository`, func(t *testing.T) {
+	t.Run("missing repository", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorExtensionExecutionControllerImageNotSpecified},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &dynakube.ExtensionsSpec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Tag: "b",
 							},
@@ -87,14 +88,14 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 			})
 	})
 
-	t.Run(`image not specified`, func(t *testing.T) {
+	t.Run("image not specified", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorExtensionExecutionControllerImageNotSpecified},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &dynakube.ExtensionsSpec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -106,20 +107,20 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 }
 
 func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
-	t.Run(`EphemeralVolume disabled and PVC specified`, func(t *testing.T) {
+	t.Run("EphemeralVolume disabled and PVC specified", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &dynakube.ExtensionsSpec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
@@ -131,20 +132,20 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				},
 			})
 	})
-	t.Run(`EphemeralVolume enabled and no PVC specified`, func(t *testing.T) {
+	t.Run("EphemeralVolume enabled and no PVC specified", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &dynakube.ExtensionsSpec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
@@ -155,21 +156,21 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				},
 			})
 	})
-	t.Run(`EphemeralVolume enabled and PVC specified`, func(t *testing.T) {
+	t.Run("EphemeralVolume enabled and PVC specified", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorExtensionExecutionControllerInvalidPVCConfiguration},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &dynakube.ExtensionsSpec{},
+					Extensions: &extensions.Spec{},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
 					Templates: dynakube.TemplatesSpec{
-						ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
 								Repository: "a",
 								Tag:        "b",
@@ -205,9 +206,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     testAPIURL,
-			Extensions: &dynakube.ExtensionsSpec{},
+			Extensions: &extensions.Spec{},
 			Templates: dynakube.TemplatesSpec{
-				ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: imgRef,
 				},
 			},
@@ -223,9 +224,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     "https://f.q.d.n/123",
-				Extensions: &dynakube.ExtensionsSpec{},
+				Extensions: &extensions.Spec{},
 				Templates: dynakube.TemplatesSpec{
-					ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
 						ImageRef: imgRef,
 					},
 				},
@@ -242,9 +243,9 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     testAPIURL,
-				Extensions: &dynakube.ExtensionsSpec{},
+				Extensions: &extensions.Spec{},
 				Templates: dynakube.TemplatesSpec{
-					ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
 						ImageRef: imgRef,
 					},
 				},
@@ -269,7 +270,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 				APIURL:     testAPIURL,
 				Extensions: nil,
 				Templates: dynakube.TemplatesSpec{
-					ExtensionExecutionController: dynakube.ExtensionExecutionControllerSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
 						ImageRef: imgRef,
 					},
 				},

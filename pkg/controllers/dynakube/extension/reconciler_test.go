@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -50,7 +51,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), secretConditionType, dk.ExtensionsTokenSecretName())
+		conditions.SetSecretCreated(dk.Conditions(), secretConditionType, dk.Extensions().GetTokenSecretName())
 
 		// mock secret
 		secretToken, _ := dttoken.New(eecConsts.TokenSecretValuePrefix)
@@ -84,7 +85,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Extension secret is generated when Prometheus is enabled", func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
+		dk.Spec.Extensions = &extensions.Spec{}
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
@@ -104,11 +105,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(*dk.Conditions(), secretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, dk.ExtensionsTokenSecretName()+" created", condition.Message)
+		assert.Equal(t, dk.Extensions().GetTokenSecretName()+" created", condition.Message)
 	})
-	t.Run(`Extension SecretCreated failure condition is set when error`, func(t *testing.T) {
+	t.Run("Extension SecretCreated failure condition is set when error", func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
+		dk.Spec.Extensions = &extensions.Spec{}
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader, dk)
@@ -126,17 +127,17 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("Create service when extensions are enabled with minimal setup", func(t *testing.T) {
 		dk := createDynakube()
-		dk.Spec.Extensions = &dynakube.ExtensionsSpec{}
+		dk.Spec.Extensions = &extensions.Spec{}
 
 		mockK8sClient := fake.NewClient(dk)
 
-		r := &reconciler{client: mockK8sClient, apiReader: mockK8sClient, dk: dk, timeProvider: timeprovider.New()}
+		r := NewReconciler(mockK8sClient, mockK8sClient, dk)
 		err := r.Reconcile(context.Background())
 
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsServiceName(), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
 		require.NoError(t, err)
 		assert.NotNil(t, svc)
 
@@ -161,7 +162,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.ExtensionsServiceName(), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})

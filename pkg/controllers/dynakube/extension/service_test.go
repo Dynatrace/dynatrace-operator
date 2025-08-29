@@ -12,7 +12,7 @@ import (
 )
 
 func TestReconciler_prepareService(t *testing.T) {
-	t.Run(`Check labels from service`, func(t *testing.T) {
+	t.Run("Check labels from service", func(t *testing.T) {
 		dk := createDynakube()
 
 		fakeClient := fake.NewClient()
@@ -35,8 +35,8 @@ func TestReconciler_prepareService(t *testing.T) {
 }
 
 func TestFQDNNameGeneration(t *testing.T) {
-	t.Run(`Check FQDN name generation`, func(t *testing.T) {
+	t.Run("Check FQDN name generation", func(t *testing.T) {
 		dk := createDynakube()
-		assert.Equal(t, "test-name-extensions-controller.test-namespace", dk.ExtensionsServiceNameFQDN())
+		assert.Equal(t, "test-name-extensions-controller.test-namespace", dk.Extensions().GetServiceNameFQDN())
 	})
 }

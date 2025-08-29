@@ -30,6 +30,7 @@ type SecretGenerator struct {
 	dtClient     dtclient.Client
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
+	secrets      k8ssecret.QueryObject
 }
 
 func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient dtclient.Client) *SecretGenerator {
@@ -38,6 +39,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 		dtClient:     dtClient,
 		apiReader:    apiReader,
 		timeProvider: timeprovider.New(),
+		secrets:      k8ssecret.Query(client, apiReader, log),
 	}
 }
 
@@ -65,7 +67,6 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		}
 
 		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, nsList, dk, data)
-
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -84,7 +85,6 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 		// Create the certs secret for all namespaces
 		err := s.createSecretForNSlist(ctx, consts.BootstrapperInitCertsSecretName, CertsConditionType, nsList, dk, certs)
-
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -110,7 +110,7 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 		return err
 	}
 
-	err = k8ssecret.Query(s.client, s.apiReader, log).CreateOrUpdateForNamespaces(ctx, secret, nsList)
+	err = s.secrets.CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
@@ -149,12 +149,14 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 		nsList = append(nsList, ns.Name)
 	}
 
-	err := k8ssecret.Query(client, apiReader, log).DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
+	secrets := k8ssecret.Query(client, apiReader, log)
+
+	err := secrets.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	if err != nil {
 		log.Error(err, "failed to delete the source bootstrapper-config secret", "name", GetSourceConfigSecretName(dk.Name))
 	}
 
-	return k8ssecret.Query(client, apiReader, log).DeleteForNamespaces(ctx, consts.BootstrapperInitSecretName, nsList)
+	return secrets.DeleteForNamespaces(ctx, consts.BootstrapperInitSecretName, nsList)
 }
 
 func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
@@ -165,27 +167,30 @@ func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Re
 		nsList = append(nsList, ns.Name)
 	}
 
-	err := k8ssecret.Query(client, apiReader, log).DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
+	secrets := k8ssecret.Query(client, apiReader, log)
+
+	err := secrets.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
 	if err != nil {
 		log.Error(err, "failed to delete the source bootstrapper-certs secret", "name", GetSourceCertsSecretName(dk.Name))
 	}
 
-	return k8ssecret.Query(client, apiReader, log).DeleteForNamespaces(ctx, consts.BootstrapperInitCertsSecretName, nsList)
+	return secrets.DeleteForNamespaces(ctx, consts.BootstrapperInitCertsSecretName, nsList)
 }
 
 // generate gets the necessary info the create the init secret data
 func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
-	// TODO: Add small check if not node-image-pull during [DAQ-7415] Unify webhook pod injection
-	if dk.OneAgent().IsAppInjectionNeeded() {
+	if dk.OneAgent().IsAppInjectionNeeded() && !dk.FF().IsNodeImagePull() {
 		downloadConfigBytes, err := s.prepareDownloadConfig(ctx, dk)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
 		data[download.InputFileName] = downloadConfigBytes
+	}
 
+	if dk.OneAgent().IsAppInjectionNeeded() {
 		pmcSecret, err := s.preparePMC(ctx, dk)
 		if err != nil {
 			return nil, errors.WithStack(err)

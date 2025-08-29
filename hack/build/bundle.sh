@@ -30,6 +30,11 @@ SDK_PARAMS=(
 --extra-service-accounts dynatrace-dynakube-oneagent
 --extra-service-accounts dynatrace-kubernetes-monitoring
 --extra-service-accounts dynatrace-activegate
+--extra-service-accounts dynatrace-opentelemetry-collector
+--extra-service-accounts dynatrace-edgeconnect
+--extra-service-accounts dynatrace-extensions-controller
+--extra-service-accounts dynatrace-logmonitoring
+--extra-service-accounts dynatrace-node-config-collector
 )
 
 if [ -n "${BUNDLE_CHANNELS}" ]; then
@@ -62,12 +67,13 @@ grep -v '# Labels for testing.' "./config/olm/${PLATFORM}/bundle-${VERSION}.Dock
 mv "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output" "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 if [ "${PLATFORM}" = "openshift" ]; then
   # shellcheck disable=SC2129
-	echo 'LABEL com.redhat.openshift.versions="v4.9-"' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
+	echo 'LABEL com.redhat.openshift.versions="v4.10"' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	echo 'LABEL com.redhat.delivery.operator.bundle=true' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	echo 'LABEL com.redhat.delivery.backport=true' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	sed 's/\bkubectl\b/oc/g' "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml" > "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml.output"
 	mv "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml.output" "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml"
-	echo '  com.redhat.openshift.versions: v4.9-' >> "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml"
+        # allow installation on v4.10 and beyond
+	echo '  com.redhat.openshift.versions: v4.10' >> "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml"
 fi
 grep -v 'scorecard' "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml" > "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml.output"
 grep -v '  # Annotations for testing.' "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml.output" > "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml"

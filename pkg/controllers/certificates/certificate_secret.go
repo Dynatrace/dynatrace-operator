@@ -33,8 +33,8 @@ func newCertificateSecret(deployment *appsv1.Deployment) *certificateSecret {
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	query := k8ssecret.Query(nil, apiReader, log)
-	secret, err := query.Get(ctx, types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
+	secrets := k8ssecret.Query(nil, apiReader, log)
+	secret, err := secrets.Get(ctx, types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
 
 	switch {
 	case k8serrors.IsNotFound(err):
@@ -64,9 +64,9 @@ func (certSecret *certificateSecret) isRecent() bool {
 		return false
 	case !reflect.DeepEqual(certSecret.certificates.Data, certSecret.secret.Data):
 		return false
+	default:
+		return true
 	}
-
-	return true
 }
 
 func (certSecret *certificateSecret) validateCertificates(namespace string) error {

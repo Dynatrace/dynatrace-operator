@@ -2,6 +2,7 @@ package logmonsettings
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
@@ -39,11 +40,35 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if !r.dk.LogMonitoring().IsEnabled() {
-		meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
+		_ = meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
 
 		return nil
-	} else if r.dk.Status.KubernetesClusterMEID == "" {
-		log.Info("Kubernetes settings are not yet available, which are needed for LogMonitoring, will requeue")
+	}
+
+	hasReadScope := conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead)
+	hasWriteScope := conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite)
+
+	var missingScopes []string
+	if !hasReadScope {
+		missingScopes = append(missingScopes, dtclient.TokenScopeSettingsRead)
+	}
+
+	if !hasWriteScope {
+		missingScopes = append(missingScopes, dtclient.TokenScopeSettingsWrite)
+	}
+
+	if len(missingScopes) > 0 {
+		message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing log monitoring setting and/or safely create new one."
+		setLogMonitoringSettingError(r.dk.Conditions(), ConditionType, message)
+		log.Info(message)
+
+		return nil
+	} else {
+		log.Info("LogMonitoring settings are available, proceeding with reconciliation")
+	}
+
+	if r.dk.Status.KubernetesClusterMEID == "" {
+		log.Info("kubernetesClusterMEID is not set, which is needed for logmonitoring settings, will requeue")
 
 		return daemonset.KubernetesSettingsNotAvailableError
 	}
@@ -80,14 +105,14 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	}
 
 	objectID, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
-
 	if err != nil {
 		setLogMonitoringSettingError(r.dk.Conditions(), ConditionType, err.Error())
 
 		return err
 	}
 
-	log.Info("logmonitoring setting created", "settings", objectID)
+	setLogMonitoringSettingCreated(r.dk.Conditions(), ConditionType)
+	log.Info("log monitoring setting created", "settings", objectID)
 
 	return nil
 }

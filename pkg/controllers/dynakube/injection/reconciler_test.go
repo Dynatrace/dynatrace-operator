@@ -2,11 +2,9 @@ package injection
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -17,9 +15,8 @@ import (
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
@@ -110,6 +107,7 @@ func TestReconciler(t *testing.T) {
 				},
 			},
 		}
+		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 		clt := fake.NewClientWithIndex(
 			clientNotInjectedNamespace(testNamespace, testDynakube),
 			clientNotInjectedNamespace(testNamespace2, testDynakube2),
@@ -128,17 +126,15 @@ func TestReconciler(t *testing.T) {
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
-		fakeReconciler := createGenericReconcilerMock(t)
-		rec.(*Reconciler).monitoredEntitiesReconciler = fakeReconciler
+		fakeReconciler := createReconcilerMock(t)
+		rec.(*Reconciler).k8sEntityReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assertSecretFound(t, clt, dk.OneAgent().GetTenantSecret(), dk.Namespace)
-		assertSecretFound(t, clt, consts.AgentInitSecretName, testNamespace)
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
-		assertSecretFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)
-		assertSecretNotFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace2)
+		assertSecretFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
+		assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, testNamespace2)
 
 		_, err = istioClient.GetServiceEntry(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
@@ -167,10 +163,10 @@ func TestReconciler(t *testing.T) {
 		clt := fake.NewClientWithIndex(
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientInjectedNamespace(testNamespace2, testDynakube2),
-			clientSecret(consts.EnrichmentEndpointSecretName, testNamespace, nil),
-			clientSecret(consts.EnrichmentEndpointSecretName, testNamespace2, nil),
-			clientSecret(consts.AgentInitSecretName, testNamespace, nil),
-			clientSecret(consts.AgentInitSecretName, testNamespace2, nil),
+			clientSecret(consts.BootstrapperInitSecretName, testNamespace, nil),
+			clientSecret(consts.BootstrapperInitSecretName, testNamespace2, nil),
+			clientSecret(consts.BootstrapperInitCertsSecretName, testNamespace, nil),
+			clientSecret(consts.BootstrapperInitCertsSecretName, testNamespace2, nil),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
@@ -181,18 +177,17 @@ func TestReconciler(t *testing.T) {
 		istioClient := setupIstioClientWithObjects(dk)
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
-		fakeReconciler := createGenericReconcilerMock(t)
-		rec.(*Reconciler).monitoredEntitiesReconciler = fakeReconciler
+		fakeReconciler := createUncalledReconcilerMock(t)
+		rec.(*Reconciler).k8sEntityReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		assertSecretNotFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)
-		assertSecretFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace2)
+		assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
+		assertSecretFound(t, clt, consts.BootstrapperInitSecretName, testNamespace2)
+		assertSecretNotFound(t, clt, consts.BootstrapperInitCertsSecretName, testNamespace)
+		assertSecretFound(t, clt, consts.BootstrapperInitCertsSecretName, testNamespace2)
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), metaDataEnrichmentConditionType))
-
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace)
-		assertSecretFound(t, clt, consts.AgentInitSecretName, testNamespace2)
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType))
 
 		obj, err := istioClient.GetServiceEntry(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
@@ -218,7 +213,7 @@ func TestReconciler(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 	})
-	t.Run(`failure is logged in condition`, func(t *testing.T) {
+	t.Run("failure is logged in condition", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -246,14 +241,13 @@ func TestReconciler(t *testing.T) {
 		})
 
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
-		fakeReconciler := createGenericReconcilerMock(t)
+		fakeReconciler := createUncalledReconcilerMock(t)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
 		rec := NewReconciler(boomClient, boomClient, nil, istioClient, dk).(*Reconciler)
 		rec.connectionInfoReconciler = fakeReconciler
-		rec.pmcSecretreconciler = fakeReconciler
 		rec.versionReconciler = fakeVersionReconciler
-		rec.monitoredEntitiesReconciler = fakeReconciler
+		rec.k8sEntityReconciler = fakeReconciler
 
 		err := rec.Reconcile(context.Background())
 		require.Error(t, err)
@@ -270,10 +264,9 @@ func TestRemoveAppInjection(t *testing.T) {
 		CloudNativeFullStack: nil,
 	})
 	rec.versionReconciler = createVersionReconcilerMock(t)
-	rec.connectionInfoReconciler = createGenericReconcilerMock(t)
-	rec.pmcSecretreconciler = createGenericReconcilerMock(t)
-	rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
-	rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
+	rec.connectionInfoReconciler = createUncalledReconcilerMock(t)
+	rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
+	rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
 
@@ -293,156 +286,89 @@ func TestRemoveAppInjection(t *testing.T) {
 	assert.Equal(t, testDynakube2, namespace.Labels[dtwebhook.InjectionInstanceLabel])
 	assert.Nil(t, namespace.Annotations)
 
-	assertSecretNotFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)
-	assertSecretFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace2)
+	assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
+	assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, testNamespace2)
 }
 
 func TestSetupOneAgentInjection(t *testing.T) {
-	t.Run(`no injection - ClassicFullStack`, func(t *testing.T) {
+	t.Run("no injection - ClassicFullStack", func(t *testing.T) {
 		clt := clientNoInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			ClassicFullStack: &oneagent.HostInjectSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
-		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
+		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
-
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace)
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
 	})
 
-	t.Run(`no injection - HostMonitoring`, func(t *testing.T) {
+	t.Run("no injection - HostMonitoring", func(t *testing.T) {
 		clt := clientNoInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			HostMonitoring: &oneagent.HostInjectSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
-		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
+		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
-
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace)
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
 	})
 
-	t.Run(`injection - ApplicationMonitoring`, func(t *testing.T) {
+	t.Run("injection - ApplicationMonitoring", func(t *testing.T) {
 		clt := clientOneAgentInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
-		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
+		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
-
-		var secret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.AgentInitSecretName, Namespace: testNamespace}, &secret)
-		require.NoError(t, err)
-
-		var config startup.SecretConfig
-		err = json.Unmarshal(secret.Data["config"], &config)
-		require.NoError(t, err)
-		assert.Equal(t, testAPIToken, config.APIToken)
-		assert.Equal(t, testPaasToken, config.PaasToken)
-
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
 	})
 
-	t.Run(`injection - CloudNativeFullStack`, func(t *testing.T) {
+	t.Run("injection - CloudNativeFullStack", func(t *testing.T) {
 		clt := clientOneAgentInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
 		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
-		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
+		rec.connectionInfoReconciler = createReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 
 		err := rec.setupOneAgentInjection(context.Background())
 		require.NoError(t, err)
-
-		var secret corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.AgentInitSecretName, Namespace: testNamespace}, &secret)
-		require.NoError(t, err)
-
-		var config startup.SecretConfig
-		err = json.Unmarshal(secret.Data["config"], &config)
-		require.NoError(t, err)
-		assert.Equal(t, testAPIToken, config.APIToken)
-		assert.Equal(t, testPaasToken, config.PaasToken)
-
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace2)
-	})
-
-	t.Run(`no injection - ClassicFullStack`, func(t *testing.T) {
-		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
-
-		clt := clientBootstrapperConfigInjection()
-		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
-			ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
-		})
-
-		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
-
-		rec.dynatraceClient = dtClient
-
-		rec.dk.Annotations = make(map[string]string)
-		rec.dk.Annotations[exp.OANodeImagePullKey] = "true"
-		rec.versionReconciler = createVersionReconcilerMock(t)
-		rec.connectionInfoReconciler = createGenericReconcilerMock(t)
-		rec.pmcSecretreconciler = createGenericReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
-
-		err := rec.setupOneAgentInjection(context.Background())
-		require.NoError(t, err)
-
-		assertSecretNotFound(t, clt, consts.AgentInitSecretName, testNamespace)
-		assertSecretFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
 	})
 }
 
 func TestSetupEnrichmentInjection(t *testing.T) {
-	t.Run(`no enrichment injection`, func(t *testing.T) {
+	t.Run("no enrichment injection", func(t *testing.T) {
 		clt := clientNoInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
-		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
+		rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
+		rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		err := rec.setupEnrichmentInjection(context.Background())
 		require.NoError(t, err)
-
-		assertSecretNotFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)
-		assertSecretNotFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace2)
 	})
 
-	t.Run(`enrichment injection`, func(t *testing.T) {
+	t.Run("enrichment injection", func(t *testing.T) {
 		clt := clientEnrichmentInjection()
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
-		rec.enrichmentRulesReconciler = createGenericReconcilerMock(t)
-		rec.monitoredEntitiesReconciler = createGenericReconcilerMock(t)
+		rec.enrichmentRulesReconciler = createReconcilerMock(t)
+		rec.k8sEntityReconciler = createReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
 
 		err := rec.setupEnrichmentInjection(context.Background())
 		require.NoError(t, err)
-
-		assertSecretFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace)
-		assertSecretNotFound(t, clt, consts.EnrichmentEndpointSecretName, testNamespace2)
 	})
 }
 
@@ -455,6 +381,9 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "url",
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+			},
 		},
 	}
 
@@ -472,64 +401,14 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		"tenant-token": []byte("token"),
 	})
 
-	t.Run("default 1 == no node-image-pull + csi enabled => only init-secret", func(t *testing.T) {
+	t.Run("create new secret", func(t *testing.T) {
 		dk := dkBase.DeepCopy()
 
 		clt := fake.NewClientWithIndex(
 			tokenSecret,
 			dk,
 			namespaces[0], namespaces[1],
-		)
-		r := Reconciler{client: clt, apiReader: clt, dk: dk}
-
-		err := r.generateCorrectInitSecret(ctx)
-		require.NoError(t, err)
-
-		for _, ns := range namespaces {
-			assertSecretFound(t, clt, consts.AgentInitSecretName, ns.Name)
-			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
-		}
-
-		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
-	})
-
-	t.Run("default 2 == no node-image-pull + no csi enabled => only init-secret", func(t *testing.T) {
-		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
-
-		dk := dkBase.DeepCopy()
-
-		clt := fake.NewClientWithIndex(
-			tokenSecret,
-			dk,
-			namespaces[0], namespaces[1],
-		)
-		r := Reconciler{client: clt, apiReader: clt, dk: dk}
-
-		err := r.generateCorrectInitSecret(ctx)
-		require.NoError(t, err)
-
-		for _, ns := range namespaces {
-			assertSecretFound(t, clt, consts.AgentInitSecretName, ns.Name)
-			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
-		}
-
-		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
-	})
-
-	t.Run("node-image-pull + csi enabled => both init-secret and bootstrapper-secret", func(t *testing.T) {
-		dk := dkBase.DeepCopy()
-		dk.Annotations = map[string]string{
-			exp.OANodeImagePullKey: "true",
-		}
-		dk.Spec.OneAgent = oneagent.Spec{
-			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-		}
-
-		clt := fake.NewClientWithIndex(
-			tokenSecret,
 			tenantSecret,
-			dk,
-			namespaces[0], namespaces[1],
 		)
 
 		dtClient := dtclientmock.NewClient(t)
@@ -537,45 +416,10 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
-		err := r.generateCorrectInitSecret(ctx)
+		err := r.generateInitSecret(ctx)
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {
-			assertSecretFound(t, clt, consts.AgentInitSecretName, ns.Name)
-			assertSecretFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
-		}
-
-		assertSecretFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
-	})
-
-	t.Run("node-image-pull + csi not enabled => only bootstrapper-secret", func(t *testing.T) {
-		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
-
-		dk := dkBase.DeepCopy()
-		dk.Annotations = map[string]string{
-			exp.OANodeImagePullKey: "true",
-		}
-		dk.Spec.OneAgent = oneagent.Spec{
-			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-		}
-
-		clt := fake.NewClientWithIndex(
-			tokenSecret,
-			tenantSecret,
-			dk,
-			namespaces[0], namespaces[1],
-		)
-
-		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
-
-		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
-
-		err := r.generateCorrectInitSecret(ctx)
-		require.NoError(t, err)
-
-		for _, ns := range namespaces {
-			assertSecretNotFound(t, clt, consts.AgentInitSecretName, ns.Name)
 			assertSecretFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
@@ -603,8 +447,6 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 		setCodeModulesInjectionCreatedCondition(dk.Conditions())
 
 		clt := fake.NewClientWithIndex(
-			clientSecret(consts.AgentInitSecretName, namespaces[0].Name, nil),
-			clientSecret(consts.AgentInitSecretName, namespaces[1].Name, nil),
 			clientSecret(consts.BootstrapperInitSecretName, namespaces[0].Name, nil),
 			clientSecret(consts.BootstrapperInitSecretName, namespaces[1].Name, nil),
 			clientSecret(bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace, nil),
@@ -613,10 +455,9 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 		)
 		r := Reconciler{client: clt, apiReader: clt, dk: dk}
 
-		r.cleanupOneAgentInjection(ctx)
+		r.cleanup(ctx)
 
 		for _, ns := range namespaces {
-			assertSecretNotFound(t, clt, consts.AgentInitSecretName, ns.Name)
 			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
@@ -655,8 +496,6 @@ func clientRemoveAppInjection() client.Client {
 	return fake.NewClientWithIndex(
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientInjectedNamespace(testNamespace2, testDynakube2),
-		clientSecret(consts.EnrichmentEndpointSecretName, testNamespace, nil),
-		clientSecret(consts.EnrichmentEndpointSecretName, testNamespace2, nil),
 	)
 }
 
@@ -674,19 +513,6 @@ func clientOneAgentInjection() client.Client {
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 			dtclient.APIToken:  []byte(testAPIToken),
 			dtclient.PaasToken: []byte(testPaasToken),
-		}),
-	)
-}
-
-func clientBootstrapperConfigInjection() client.Client {
-	return fake.NewClientWithIndex(
-		clientInjectedNamespace(testNamespace, testDynakube),
-		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			dtclient.APIToken:  []byte(testAPIToken),
-			dtclient.PaasToken: []byte(testPaasToken),
-		}),
-		clientSecret("test-dynakube-oneagent-tenant-secret", testNamespaceDynatrace, map[string][]byte{
-			"tenant-token": []byte(testTenantToken),
 		}),
 	)
 }
@@ -792,7 +618,15 @@ func assertSecretNotFound(t *testing.T, clt client.Client, secretName string, se
 	assert.True(t, k8serrors.IsNotFound(err), "%s.%s secret, unexpected error: %s", secretName, secretNamespace, err)
 }
 
-func createGenericReconcilerMock(t *testing.T) controllers.Reconciler {
+func createReconcilerMock(t *testing.T) controllers.Reconciler {
+	connectionInfoReconciler := controllermock.NewReconciler(t)
+	connectionInfoReconciler.On("Reconcile",
+		mock.AnythingOfType("context.backgroundCtx")).Return(nil)
+
+	return connectionInfoReconciler
+}
+
+func createUncalledReconcilerMock(t *testing.T) controllers.Reconciler {
 	connectionInfoReconciler := controllermock.NewReconciler(t)
 	connectionInfoReconciler.On("Reconcile",
 		mock.AnythingOfType("context.backgroundCtx")).Return(nil).Maybe()

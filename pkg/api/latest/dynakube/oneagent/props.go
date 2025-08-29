@@ -16,7 +16,7 @@ const (
 	OneAgentConnectionInfoConfigMapSuffix = "-oneagent-connection-info"
 	PodNameOsAgent                        = "oneagent"
 	DefaultOneAgentImageRegistrySubPath   = "/linux/oneagent"
-	storageVolumeDefaultHostPath          = "/var/opt/dynatrace"
+	StorageVolumeDefaultHostPath          = "/var/opt/dynatrace"
 )
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
@@ -128,9 +128,9 @@ func (oa *OneAgent) GetNamespaceSelector() *metav1.LabelSelector {
 		return &oa.CloudNativeFullStack.NamespaceSelector
 	case oa.IsApplicationMonitoringMode():
 		return &oa.ApplicationMonitoring.NamespaceSelector
+	default:
+		return nil
 	}
-
-	return nil
 }
 
 func (oa *OneAgent) GetSecCompProfile() string {
@@ -154,9 +154,9 @@ func (oa *OneAgent) GetNodeSelector(fallbackNodeSelector map[string]string) map[
 		return oa.HostMonitoring.NodeSelector
 	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.NodeSelector
+	default:
+		return fallbackNodeSelector
 	}
-
-	return fallbackNodeSelector
 }
 
 // GetImage provides the image reference set in Status for the OneAgent.
@@ -181,9 +181,9 @@ func (oa *OneAgent) GetCustomVersion() string {
 		return oa.ApplicationMonitoring.Version
 	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.Version
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 // GetCustomImage provides the image reference for the OneAgent provided in the Spec.
@@ -195,9 +195,9 @@ func (oa *OneAgent) GetCustomImage() string {
 		return oa.HostMonitoring.Image
 	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.Image
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 // GetDefaultImage provides the image reference for the OneAgent from tenant registry.
@@ -232,9 +232,9 @@ func (oa *OneAgent) GetArguments() []string {
 		return oa.ClassicFullStack.Args
 	case oa.IsHostMonitoringMode() && oa.HostMonitoring.Args != nil:
 		return oa.HostMonitoring.Args
+	default:
+		return []string{}
 	}
-
-	return []string{}
 }
 
 func (oa *OneAgent) GetHostGroupAsParam() string {
@@ -275,9 +275,9 @@ func (oa *OneAgent) GetEnvironment() []corev1.EnvVar {
 		return oa.ClassicFullStack.Env
 	case oa.IsHostMonitoringMode():
 		return oa.HostMonitoring.Env
+	default:
+		return []corev1.EnvVar{}
 	}
-
-	return []corev1.EnvVar{}
 }
 
 func (oa *OneAgent) GetEndpoints() string {
@@ -335,7 +335,7 @@ func (oa *OneAgent) GetHostPath() string {
 			return oa.CloudNativeFullStack.StorageHostPath
 		}
 
-		return storageVolumeDefaultHostPath
+		return StorageVolumeDefaultHostPath
 	}
 
 	if oa.IsHostMonitoringMode() {
@@ -343,7 +343,7 @@ func (oa *OneAgent) GetHostPath() string {
 			return oa.HostMonitoring.StorageHostPath
 		}
 
-		return storageVolumeDefaultHostPath
+		return StorageVolumeDefaultHostPath
 	}
 
 	return ""

@@ -7,7 +7,7 @@ on:
     - cron: 0 3 * * 1,3,5
 
 env:
-  branch: release-1.6
+  branch: release-1.7
 
 permissions:
   checks: write
@@ -36,6 +36,8 @@ jobs:
             platform: k8s
           - version: 1-33
             platform: k8s
+          - version: 1-34
+            platform: k8s
           - version: 4-12
             platform: ocp
           - version: 4-13
@@ -54,10 +56,14 @@ jobs:
     runs-on:
       - self-hosted
       - operator-e2e
+    outputs:
+      cluster_creation_failed: ${{ steps.cluster_creation_status.outputs.cluster_creation_failed }}
+      test_failed: ${{ steps.cluster_creation_status.outputs.test_failed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Run e2e test
+        id: run_e2e_test
         uses: ./.github/actions/run-e2e
         with:
           flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
@@ -73,6 +79,17 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine cluster status
+        id: cluster_creation_status
+        if: failure()
+        run: |
+          echo "cluster_status=${{ steps.run_e2e_test.outputs.cluster_status }}"
+          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+            echo "cluster_creation_failed=true" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "test_failed=true" >> $GITHUB_OUTPUT
 
   notify-failure:
     name: Notify failure in Slack
@@ -81,12 +98,20 @@ jobs:
     if: ${{ failure() || cancelled() }}
     runs-on: ubuntu-latest
     steps:
+      - name: Set Slack message
+        id: set_slack_message
+        run: |
+          if [ "${{ needs.run-matrix.outputs.cluster_creation_failed }}" = "true" ] && [ "${{ needs.run-matrix.outputs.test_failed }}" != "true" ]; then
+            echo "SLACK_MESSAGE=:large_yellow_circle: Cluster creation issues: Some E2E ondemand tests were skipped on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
+          else
+            echo "SLACK_MESSAGE=:red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
+          fi
       - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # v2.1.0
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: webhook-trigger
           payload-templated: true
           payload: |
-            "message": ":red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            "message": "${{ env.SLACK_MESSAGE }}"
             "run_id": "${{ github.run_id }}"

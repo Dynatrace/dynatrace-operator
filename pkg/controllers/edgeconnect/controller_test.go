@@ -147,7 +147,7 @@ func TestReconcile(t *testing.T) {
 		expectedTimestamp := controller.timeProvider.Now().Truncate(time.Second)
 		assert.Equal(t, expectedTimestamp, ec.Status.UpdatedTimestamp.Time)
 	})
-	t.Run(`Reconciles phase change correctly`, func(t *testing.T) {
+	t.Run("Reconciles phase change correctly", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -182,7 +182,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, controller.client.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, ec))
 		assert.Equal(t, status.Running, ec.Status.DeploymentPhase)
 	})
-	t.Run(`Reconciles doesn't fail if edgeconnectClient not found`, func(t *testing.T) {
+	t.Run("Reconciles doesn't fail if edgeconnectClient not found", func(t *testing.T) {
 		controller := createFakeClientAndReconciler(t, nil)
 
 		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -191,7 +191,7 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 	})
-	t.Run(`Reconciles custom CA provided`, func(t *testing.T) {
+	t.Run("Reconciles custom CA provided", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -223,7 +223,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretCreated`, func(t *testing.T) {
+	t.Run("SecretConfigConditionType is set SecretCreated", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -259,7 +259,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, ec.Name+"-"+consts.EdgeConnectSecretSuffix+" created", condition.Message)
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretGenFailed failed to get clientSecret`, func(t *testing.T) {
+	t.Run("SecretConfigConditionType is set SecretGenFailed failed to get clientSecret", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -290,7 +290,7 @@ func TestReconcile(t *testing.T) {
 		assert.Contains(t, condition.Message, "Failed to generate secret: failed to get clientSecret")
 	})
 
-	t.Run(`SecretConfigConditionType is set SecretGenFailed failed`, func(t *testing.T) {
+	t.Run("SecretConfigConditionType is set SecretGenFailed failed", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -317,6 +317,7 @@ func TestReconcile(t *testing.T) {
 			},
 		})
 		controller.apiReader = boomClient
+		controller.secrets = k8ssecret.Query(controller.client, controller.apiReader, log)
 
 		err := controller.reconcileEdgeConnectRegular(context.Background(), ec)
 		require.Error(t, err)
@@ -801,6 +802,7 @@ func createFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, ob
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: mockEdgeConnectClientBuilder,
+		secrets:                  k8ssecret.Query(fakeClient, fakeClient, log),
 	}
 
 	return controller
@@ -831,6 +833,7 @@ func createFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.E
 		timeProvider:             timeprovider.New(),
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: builder,
+		secrets:                  k8ssecret.Query(fakeClient, fakeClient, log),
 	}
 
 	return controller
@@ -1043,6 +1046,41 @@ func TestController_createOrUpdateConnectionSetting(t *testing.T) {
 		edgeConnectClient.On("GetConnectionSettings").Return(nil, errors.New("something went wrong"))
 		err := controller.createOrUpdateConnectionSetting(edgeConnectClient, createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns), "")
 		require.Error(t, err)
+	})
+}
+
+func TestController_newEdgeConnectClient(t *testing.T) {
+	t.Run("New Edge Connect Client with scopes including k8s automation extra scopes", func(t *testing.T) {
+		ec := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
+		ecClient := newEdgeConnectClient()
+		require.NotNil(t, ecClient)
+		actualClient, err := ecClient(context.Background(), ec, oauthCredentialsType{clientID: "fake", clientSecret: "fake"})
+		require.NoError(t, err)
+		require.NotNil(t, actualClient)
+		assert.Equal(t, []string{"app-engine:edge-connects:read", "app-engine:edge-connects:write", "app-engine:edge-connects:delete", "oauth2:clients:manage", "settings:objects:read", "settings:objects:write"}, actualClient.GetScopes())
+	})
+
+	t.Run("New Edge Connect Client with min scopes and without k8s automation", func(t *testing.T) {
+		ec := &edgeconnect.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnect.EdgeConnectSpec{
+				APIServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnect.OAuthSpec{
+					ClientSecret: testName + "client",
+					Provisioner:  true,
+				},
+				HostPatterns: []string{},
+			},
+		}
+		ecClient := newEdgeConnectClient()
+		require.NotNil(t, ecClient)
+		actualClient, err := ecClient(context.Background(), ec, oauthCredentialsType{clientID: "fake", clientSecret: "fake"})
+		require.NoError(t, err)
+		require.NotNil(t, actualClient)
+		assert.Equal(t, []string{"app-engine:edge-connects:read", "app-engine:edge-connects:write", "app-engine:edge-connects:delete", "oauth2:clients:manage"}, actualClient.GetScopes())
 	})
 }
 

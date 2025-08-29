@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Prepare build parameters
         id: prep
         run: |
@@ -42,23 +42,15 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Setup Golang
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
-        with:
-          go-version-file: "${{ github.workspace }}/go.mod"
-      - name: Prepare SBOM # Needs setup-go, uses a binary installed via `go install`
-        id: sbom
-        run: |
-          make release/gen-sbom/fips
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Login to Docker
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
@@ -69,13 +61,12 @@ jobs:
       - name: Build ${{ matrix.platform }} image
         uses: ./.github/actions/build-push-image
         env:
-            ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
-            DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}-${{ matrix.image-postfix }}
+            ECR_IMAGE: public.ecr.aws/${{ secrets.ECR_REPOSITORY }}
+            DOCKER_IMAGE: docker.io/${{ secrets.DOCKERHUB_REPOSITORY }}
         with:
           platforms: ${{ matrix.platform }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          tags: ${{ env.DOCKER_IMAGE }},${{ env.ECR_IMAGE }}
-          annotation: "version=${{ needs.prepare.outputs.version }}"
+          images: ${{ env.DOCKER_IMAGE }},${{ env.ECR_IMAGE }}
+          suffix: ${{ matrix.image-postfix }}
           dockerfile: ./fips.Dockerfile
 
   index:
@@ -97,15 +88,15 @@ jobs:
             repository: ECR_REPOSITORY
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Login to Docker
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
           aws-region: us-east-1
@@ -128,7 +119,7 @@ jobs:
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
-        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # 0.31.0
+        uses: aquasecurity/trivy-action@f9424c10c36e288d5fa79bd3dfd1aeb2d6eae808 # 0.33.0
         with:
           image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.image-index.outputs.digest }}
           format: 'cyclonedx'

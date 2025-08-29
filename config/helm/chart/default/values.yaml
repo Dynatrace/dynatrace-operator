@@ -27,6 +27,9 @@ imageRef:
 customPullSecret: ""
 installCRD: true
 
+# turns on the debug logs for all Operator components (operator/webhook/csi), does not include components that are deployed by the Operator
+debugLogs: false
+
 operator:
   nodeSelector: {}
   tolerations: []
@@ -154,6 +157,13 @@ csidriver:
       limits:
         cpu: 50m
         memory: 100Mi
+    livenessProbe:
+      enabled: true
+      failureThreshold: 5
+      initialDelaySeconds: 15
+      periodSeconds: 15
+      successThreshold: 1
+      timeoutSeconds: 10
   provisioner:
     securityContext:
       runAsUser: 0
@@ -184,7 +194,7 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
-    builtIn: false
+    builtIn: true
   livenessprobe:
     securityContext:
       runAsUser: 0
@@ -201,7 +211,7 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
-    builtIn: false
+    builtIn: true
   job:
     securityContext:
       runAsUser: 0

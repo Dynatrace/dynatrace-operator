@@ -36,7 +36,6 @@ var (
 		NoAPIURL,
 		IsInvalidAPIURL,
 		IsThirdGenAPIUrl,
-		disabledCSIForReadonlyCSIVolume,
 		invalidActiveGateCapabilities,
 		duplicateActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
@@ -70,6 +69,7 @@ var (
 		missingActiveGateMemoryLimit,
 		unsupportedOneAgentImage,
 		conflictingHostGroupSettings,
+		deprecatedAutoUpdate,
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,
@@ -77,6 +77,7 @@ var (
 		kspmWithoutK8SMonitoring,
 		noMappedHostPaths,
 		extensionsWithoutK8SMonitoring,
+		missingOtelCollectorImage,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

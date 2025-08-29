@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	DataIngestTokenMissing string = "DataIngestTokenMissing"
+	DataIngestTokenMissing = "DataIngestTokenMissing"
 )
 
 func SetDataIngestTokenMissing(conditions *[]metav1.Condition, conditionType string, msg string) {

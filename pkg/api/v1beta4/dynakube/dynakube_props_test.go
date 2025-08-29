@@ -30,14 +30,14 @@ func TestTokens(t *testing.T) {
 	testName := "test-name"
 	testValue := "test-value"
 
-	t.Run(`GetTokensName returns custom token name`, func(t *testing.T) {
+	t.Run("GetTokensName returns custom token name", func(t *testing.T) {
 		dk := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testName},
 			Spec:       DynaKubeSpec{Tokens: testValue},
 		}
 		assert.Equal(t, dk.Tokens(), testValue)
 	})
-	t.Run(`GetTokensName uses instance name as default value`, func(t *testing.T) {
+	t.Run("GetTokensName uses instance name as default value", func(t *testing.T) {
 		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testName}}
 		assert.Equal(t, dk.Tokens(), testName)
 	})

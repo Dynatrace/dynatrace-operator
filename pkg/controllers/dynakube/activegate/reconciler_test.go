@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -50,7 +51,7 @@ var (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run(`Create works with minimal setup`, func(t *testing.T) {
+	t.Run("Create works with minimal setup", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -61,7 +62,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
-	t.Run(`Pull secret reconciler is called even if ActiveGate disabled`, func(t *testing.T) {
+	t.Run("Pull secret reconciler is called even if ActiveGate disabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -92,7 +93,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.True(t, k8serrors.IsNotFound(err))
 		require.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtpullsecret.PullSecretConditionType))
 	})
-	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
+	t.Run("Create AG capability (creation and deletion)", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -120,6 +121,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 
+		var secret corev1.Secret
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: r.dk.ActiveGate().GetTLSSecretName(), Namespace: testNamespace}, &secret)
+		require.NoError(t, err)
+
 		// remove AG from spec
 		dk.Spec.ActiveGate = activegate.Spec{}
 		r.connectionReconciler = createGenericReconcilerMock(t)
@@ -129,6 +134,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: r.dk.ActiveGate().GetTLSSecretName(), Namespace: testNamespace}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Reconcile DynaKube without Proxy after a DynaKube with proxy must not interfere with the second DKs Proxy Secret", func(t *testing.T) { // TODO: This is not a unit test, it tests the functionality of another package, it should use a mock for that
@@ -196,7 +204,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = noProxyReconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
-	t.Run(`Reconciles Kubernetes Monitoring`, func(t *testing.T) {
+	t.Run("Reconciles Kubernetes Monitoring", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -272,7 +280,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Extensions: &dynakube.ExtensionsSpec{},
+				Extensions: &extensions.Spec{},
 			},
 		}
 
@@ -303,7 +311,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
-				Extensions: &dynakube.ExtensionsSpec{},
+				Extensions: &extensions.Spec{},
 			},
 		}
 
@@ -334,7 +342,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: &dynakube.ExtensionsSpec{},
+				Extensions: &extensions.Spec{},
 			},
 		}
 
@@ -365,7 +373,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: &dynakube.ExtensionsSpec{},
+				Extensions: &extensions.Spec{},
 			},
 		}
 
@@ -530,7 +538,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		},
 	}
 
-	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
+	t.Run("create activegate ConfigMap", func(t *testing.T) {
 		fakeReconciler := controllermock.NewReconciler(t)
 		fakeReconciler.On("Reconcile", mock.Anything).Return(nil)
 

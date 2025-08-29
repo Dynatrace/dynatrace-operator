@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,7 +23,9 @@ const (
 )
 
 func TestBuildDynatraceClient(t *testing.T) {
-	t.Run(`BuildDynatraceClient works with minimal setup`, func(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("BuildDynatraceClient works with minimal setup", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -39,17 +42,17 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dynatraceClientBuilder.Build()
+		dtc, err := dynatraceClientBuilder.Build(ctx)
 
 		require.NoError(t, err)
 		assert.NotNil(t, dtc)
 	})
-	t.Run(`BuildDynatraceClient handles nil instance`, func(t *testing.T) {
-		dtc, err := builder{}.Build()
+	t.Run("BuildDynatraceClient handles nil instance", func(t *testing.T) {
+		dtc, err := builder{}.Build(ctx)
 		assert.Nil(t, dtc)
 		require.Error(t, err)
 	})
-	t.Run(`BuildDynatraceClient handles invalid token secret`, func(t *testing.T) {
+	t.Run("BuildDynatraceClient handles invalid token secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -68,7 +71,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			dk: *dk,
 		}
 
-		dtc, err := dynatraceClientBuilder.Build()
+		dtc, err := dynatraceClientBuilder.Build(ctx)
 
 		assert.Nil(t, dtc)
 		require.Error(t, err)
@@ -77,12 +80,12 @@ func TestBuildDynatraceClient(t *testing.T) {
 			apiReader: fakeClient,
 			dk:        *dk,
 		}
-		dtc, err = dynatraceClientBuilder.Build()
+		dtc, err = dynatraceClientBuilder.Build(ctx)
 
 		assert.Nil(t, dtc)
 		require.Error(t, err)
 	})
-	t.Run(`BuildDynatraceClient handles missing proxy secret`, func(t *testing.T) {
+	t.Run("BuildDynatraceClient handles missing proxy secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -101,12 +104,12 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dynatraceClientBuilder.Build()
+		dtc, err := dynatraceClientBuilder.Build(ctx)
 
 		require.Error(t, err)
 		assert.Nil(t, dtc)
 	})
-	t.Run(`BuildDynatraceClient handles missing trusted certificate config map`, func(t *testing.T) {
+	t.Run("BuildDynatraceClient handles missing trusted certificate config map", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -125,7 +128,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			dk: *dk,
 		}
-		dtc, err := dtf.Build()
+		dtc, err := dtf.Build(ctx)
 
 		require.Error(t, err)
 		assert.Nil(t, dtc)

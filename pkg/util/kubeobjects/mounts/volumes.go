@@ -17,9 +17,9 @@ func GetByName(mounts []corev1.VolumeMount, volumeName string) (*corev1.VolumeMo
 	)
 }
 
-func IsIn(mounts []corev1.VolumeMount, volumeName string) bool {
+func IsPathIn(mounts []corev1.VolumeMount, path string) bool {
 	for _, vm := range mounts {
-		if vm.Name == volumeName {
+		if vm.MountPath == path {
 			return true
 		}
 	}
@@ -27,9 +27,9 @@ func IsIn(mounts []corev1.VolumeMount, volumeName string) bool {
 	return false
 }
 
-func IsPathIn(mounts []corev1.VolumeMount, path string) bool {
-	for _, vm := range mounts {
-		if vm.MountPath == path {
+func IsIn(mounts []corev1.VolumeMount, volumeName string) bool {
+	for _, m := range mounts {
+		if m.Name == volumeName {
 			return true
 		}
 	}

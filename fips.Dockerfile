@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/oss/go/microsoft/golang:1.24.4-fips-bookworm@sha256:f2be68324d233e84a8ca1c247983e2f0428e66e19778fae789a0f7e3b8fff1a3 AS operator-build
+FROM mcr.microsoft.com/oss/go/microsoft/golang:1.25.0-fips-bookworm@sha256:a447152dc3f2825e475305f91047e1fd3e2510565394e7f17e0c245e257b9dc5 AS operator-build
 
 ENV GOEXPERIMENT=systemcrypto
 
@@ -14,18 +14,25 @@ RUN go mod download -x
 
 COPY pkg ./pkg
 COPY cmd ./cmd
+COPY .git /.git
 
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
+ARG TARGETARCH
+ARG TARGETOS
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     CGO_ENABLED=1 GOFIPS=1 \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
+# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
+RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.9.0
+RUN CGO_ENABLED=1 cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
+
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM registry.access.redhat.com/ubi9-micro:9.6-1750858477@sha256:c2f11c487861612f877e624f092d991aa271cb2c1a5a001a95007a3ea8761140 AS base
-FROM registry.access.redhat.com/ubi9:9.6-1750786174@sha256:7a4818cdb8e0461d75d4bdfa42a355d3725bcc8cc0cc5d467021119d5962ce6b AS dependency
+FROM registry.access.redhat.com/ubi9-micro:9.6-1754467928@sha256:f5c5213d2969b7b11a6666fc4b849d56b48d9d7979b60a37bb853dff0255c14b AS base
+FROM registry.access.redhat.com/ubi9:9.6-1755678605@sha256:b68c21b2dd3e72abcf2f8dcfc77580e4030564d1243bfcb7cd64ccc5aa3e0a25 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
@@ -81,6 +88,9 @@ COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.16.0@sha256:88092d10090
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
+
+# operator sbom
+COPY --from=operator-build ./app/build/_output/bin/dynatrace-operator-bin-sbom.cdx.json ./dynatrace-operator-bin-sbom.cdx.json
 
 # custom scripts
 COPY hack/build/bin /usr/local/bin

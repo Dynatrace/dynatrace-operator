@@ -9,9 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/common/events"
-	podv1 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v1"
-	podv2 "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/v2"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +26,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
 
-	webhookPod, err := pod.Get(context.Background(), apiReader, webhookPodName, webhookNamespace)
+	webhookPod, err := pod.Get(ctx, apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
 		return err
 	}
@@ -48,27 +48,50 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 		return errors.WithStack(err)
 	}
 
-	webhookPodImage, err := getWebhookContainerImage(*webhookPod)
+	wh, err := newWebhook(
+		kubeClient,
+		metaClient,
+		apiReader,
+		eventRecorder,
+		admission.NewDecoder(mgr.GetScheme()),
+		*webhookPod,
+		isOpenShift,
+	)
 	if err != nil {
 		return err
 	}
 
-	clusterID, err := getClusterID(ctx, apiReader)
-	if err != nil {
-		return err
-	}
-
-	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: &webhook{
-		v1:               podv1.NewInjector(apiReader, kubeClient, metaClient, eventRecorder, clusterID, webhookPodImage, webhookNamespace),
-		v2:               podv2.NewInjector(kubeClient, apiReader, metaClient, eventRecorder, isOpenShift),
-		apiReader:        apiReader,
-		webhookNamespace: webhookNamespace,
-		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
-		decoder:          admission.NewDecoder(mgr.GetScheme()),
-	}})
+	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: wh})
 	log.Info("registered /inject endpoint")
 
 	return nil
+}
+
+func newWebhook( //nolint:revive
+	kubeClient,
+	metaClient client.Client,
+	apiReader client.Reader,
+	eventRecorder events.EventRecorder,
+	decoder admission.Decoder,
+	webhookPod corev1.Pod,
+	isOpenshift bool) (*webhook, error) {
+	webhookPodImage, err := getWebhookContainerImage(webhookPod)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhook{
+		oaMutator:        oneagent.NewMutator(),
+		metaMutator:      metadata.NewMutator(metaClient),
+		kubeClient:       kubeClient,
+		apiReader:        apiReader,
+		recorder:         eventRecorder,
+		isOpenShift:      isOpenshift,
+		webhookNamespace: webhookPod.Namespace,
+		webhookPodImage:  webhookPodImage,
+		deployedViaOLM:   kubesystem.IsDeployedViaOlm(webhookPod),
+		decoder:          decoder,
+	}, nil
 }
 
 func registerLivezEndpoint(mgr manager.Manager) {
@@ -87,14 +110,4 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 	log.Info("got webhook's image", "image", webhookContainer.Image)
 
 	return webhookContainer.Image, nil
-}
-
-func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) {
-	if clusterUID, err := kubesystem.GetUID(ctx, apiReader); err != nil {
-		return "", errors.WithStack(err)
-	} else {
-		log.Info("got cluster UID", "clusterUID", clusterUID)
-
-		return string(clusterUID), nil
-	}
 }

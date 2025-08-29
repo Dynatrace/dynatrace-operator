@@ -19,18 +19,9 @@ STAGED_GO_FILES=$(git diff --cached --name-only -- '*.go')
 if [[ ${STAGED_GO_FILES} == "" ]]; then
     echo "No Go Files to Update"
     exit 0
-## otherwise we can do stuff with these changed go files
-else
-    for file in ${STAGED_GO_FILES}; do
-        make LINT_TARGET="${file}" go/format
-        ## add any potential changes from our formatting to the
-        ## commit
-        git add "${file}"
-    done
 fi
 
-
-make go/golangci
+make go/lint
 res=${?}
 if [[ ${res} -ne 0 ]]; then
     echo "Linting failed"

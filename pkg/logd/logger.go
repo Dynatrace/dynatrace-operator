@@ -83,3 +83,12 @@ func (l Logger) WithValues(keysAndValues ...any) Logger {
 func (l *Logger) debugLog(message string, keysAndValues ...any) {
 	l.Logger.V(debugLogLevelElevation).Info(message, keysAndValues...)
 }
+
+// Write is for implementing the io.Writer interface,
+// this is meant to be used to pipe (using `log.SetOutput`) the logs from the stdlib's log library which we do not use directly
+// this workaround is necessary because the Webhook starts an http.Server, where we can't set the logger directly.
+func (l *Logger) Write(p []byte) (n int, err error) {
+	l.debugLog("stdlib log", "msg", string(p))
+
+	return len(p), nil
+}

@@ -22,8 +22,8 @@ const (
 )
 
 func TestCerts(t *testing.T) {
-	t.Run(`get trusted certificate authorities`, trustedCAsTester)
-	t.Run(`get no tls certificates`, activeGateTlsNoCertificateTester)
+	t.Run("get trusted certificate authorities", trustedCAsTester)
+	t.Run("get no tls certificates", activeGateTlsNoCertificateTester)
 	activeGateTLSCertificate(t)
 }
 

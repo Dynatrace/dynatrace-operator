@@ -23,7 +23,7 @@ func TestReconcile(t *testing.T) {
 		passMonitoredEntity := createPassingMonitoredEntityReconciler(t, dk)
 		r := Reconciler{
 			dk:                               dk,
-			monitoredEntitiesReconciler:      passMonitoredEntity,
+			k8sEntityReconciler:              passMonitoredEntity,
 			oneAgentConnectionInfoReconciler: failOAConnectionInfo,
 		}
 
@@ -41,7 +41,7 @@ func TestReconcile(t *testing.T) {
 		passMonitoredEntity := createPassingMonitoredEntityReconciler(t, dk)
 		r := Reconciler{
 			dk:                               dk,
-			monitoredEntitiesReconciler:      passMonitoredEntity,
+			k8sEntityReconciler:              passMonitoredEntity,
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           failConfigSecret,
 		}
@@ -73,7 +73,7 @@ func TestReconcile(t *testing.T) {
 		passMonitoredEntity := createPassingMonitoredEntityReconciler(t, dk)
 		r := Reconciler{
 			dk:                               dk,
-			monitoredEntitiesReconciler:      passMonitoredEntity,
+			k8sEntityReconciler:              passMonitoredEntity,
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           passConfigSecret,
 			daemonsetReconciler:              passDaemonSet,

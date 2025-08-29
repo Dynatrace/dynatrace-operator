@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
@@ -46,8 +47,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		query := daemonset.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogMonitoring().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 
+		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogMonitoring().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up LogMonitoring config-secret")
 		}
@@ -57,8 +58,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	if !r.isMEConfigured() {
-		log.Info("Kubernetes settings are not yet available, which are needed for LogMonitoring, will requeue")
+	if !r.isMEConfigured() && conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
+		log.Info("Kubernetes settings are not yet available and 'settings.read' token scope is available, will requeue")
 
 		return KubernetesSettingsNotAvailableError
 	}

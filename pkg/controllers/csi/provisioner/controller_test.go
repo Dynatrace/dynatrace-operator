@@ -2,10 +2,7 @@ package csiprovisioner
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -16,12 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/processmoduleconfigsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
@@ -76,11 +71,10 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with version => url installer used, no error", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
-		prov := createProvisioner(t, dk, createToken(t, dk), createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk, createToken(t, dk))
 		installer := createSuccessfulInstaller(t)
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, installer)
 		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
-		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -105,10 +99,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with image => image installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createSuccessfulInstaller(t)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, installer)
-		createPMCSourceFile(t, prov, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -121,10 +114,25 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with job => job installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createSuccessfulInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
-		createPMCSourceFile(t, prov, dk)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
+	})
+
+	t.Run("dynakube with job + custom-pull-secret => job installer used, dtclient not created, no error", func(t *testing.T) {
+		dk := createDynaKubeWithJobFF(t)
+		dk.Spec.CustomPullSecret = "test-ps"
+		prov := createProvisioner(t, dk)
+		installer := createSuccessfulInstaller(t)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, dk.Spec.CustomPullSecret)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -137,10 +145,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with job => job installer used, back-off when not ready, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createNotReadyInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
-		createPMCSourceFile(t, prov, dk)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -153,10 +160,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube with job => job installer used, with error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
-		prov := createProvisioner(t, dk, createPMCSecret(t, dk))
+		prov := createProvisioner(t, dk)
 		installer := createFailingInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer)
-		createPMCSourceFile(t, prov, dk)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
@@ -337,10 +343,16 @@ func mockImageInstallerBuilder(t *testing.T, mockedInstaller *installermock.Inst
 	}
 }
 
-func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) jobInstallerBuilder {
+func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer, pullSecret string) jobInstallerBuilder {
 	t.Helper()
 
-	return func(_ context.Context, _ afero.Fs, _ *job.Properties) installer.Installer {
+	return func(_ context.Context, _ afero.Fs, props *job.Properties) installer.Installer {
+		if pullSecret != "" {
+			assert.Contains(t, props.PullSecrets, pullSecret)
+		} else {
+			assert.Empty(t, props.PullSecrets)
+		}
+
 		return mockedInstaller
 	}
 }
@@ -359,56 +371,10 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 	}
 }
 
-func createPMCSecret(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
-	t.Helper()
-
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.GetName() + processmoduleconfigsecret.SecretSuffix,
-			Namespace: dk.Namespace,
-		},
-		Data: map[string][]byte{
-			processmoduleconfigsecret.SecretKeyProcessModuleConfig: getPMC(t),
-		},
-	}
-}
-
-func createPMCSourceFile(t *testing.T, prov OneAgentProvisioner, dk *dynakube.DynaKube) {
-	t.Helper()
-
-	targetDir := prov.getTargetDir(*dk)
-
-	pmcPath := filepath.Join(targetDir, processmoduleconfig.RuxitAgentProcPath)
-	pmcDir := filepath.Dir(pmcPath)
-	require.NoError(t, prov.fs.MkdirAll(pmcDir, os.ModePerm))
-
-	pmcFile, err := prov.fs.OpenFile(pmcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
-	require.NoError(t, err)
-	_, err = pmcFile.Write(getPMC(t))
-	require.NoError(t, err)
-}
-
-func getPMC(t *testing.T) []byte {
-	t.Helper()
-
-	pmc := dtclient.ProcessModuleConfig{
-		Revision: 0,
-		Properties: []dtclient.ProcessModuleProperty{
-			{Section: "test-section", Key: "test-key", Value: "test-value"},
-		},
-	}
-
-	pmcJSON, err := json.Marshal(pmc)
-	require.NoError(t, err)
-
-	return pmcJSON
-}
-
 func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("Build", mock.Anything).Return(nil, errors.New("BOOM"))
@@ -420,7 +386,6 @@ func mockSuccessfulDtClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.On("SetContext", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
 	mockDtcBuilder.On("Build", mock.Anything).Return(dtclientmock.NewClient(t), nil)

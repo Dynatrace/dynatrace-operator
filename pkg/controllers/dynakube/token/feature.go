@@ -10,6 +10,7 @@ type Feature struct {
 	IsEnabled      func(dk dynakube.DynaKube) bool
 	Name           string
 	RequiredScopes []string
+	OptionalScopes []string
 }
 
 func (feature *Feature) IsScopeMissing(scopes []string) (bool, []string) {
@@ -24,12 +25,23 @@ func (feature *Feature) IsScopeMissing(scopes []string) (bool, []string) {
 	return len(missingScopes) > 0, missingScopes
 }
 
+func (feature *Feature) IsOptionalScopeMissing(scopes []string) (bool, []string) {
+	missingScopes := make([]string, 0)
+
+	for _, optionalScope := range feature.OptionalScopes {
+		if !slices.Contains(scopes, optionalScope) {
+			missingScopes = append(missingScopes, optionalScope)
+		}
+	}
+
+	return len(missingScopes) > 0, missingScopes
+}
+
 func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 	return []Feature{
 		{
 			Name: "Kubernetes API Monitoring",
-			RequiredScopes: []string{
-				dtclient.TokenScopeEntitiesRead,
+			OptionalScopes: []string{
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
@@ -49,6 +61,13 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			RequiredScopes: []string{dtclient.TokenScopeInstallerDownload},
 			IsEnabled: func(_ dynakube.DynaKube) bool {
 				return !paasTokenExists
+			},
+		},
+		{
+			Name:           "MetadataEnrichment Rules",
+			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.MetadataEnrichmentEnabled() || dk.FF().IsNodeImagePull()
 			},
 		},
 	}

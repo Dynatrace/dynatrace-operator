@@ -1,25 +1,24 @@
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-kustomize_version=v5.7.0
+kustomize_version=v5.7.1
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.18.0
 # renovate depName=github.com/golangci/golangci-lint/v2
-golang_ci_cmd_version=v2.2.1
+golang_ci_cmd_version=v2.4.0
 # renovate depName=github.com/daixiang0/gci
-gci_version=v0.13.6
+gci_version=v0.13.7
 # renovate depName=golang.org/x/tools
-golang_tools_version=v0.34.0
+golang_tools_version=v0.36.0
 # renovate depName=github.com/vektra/mockery
-mockery_version=v3.5.0
+mockery_version=v3.5.3
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 markdownlint_cli_version=v0.45.0
 # renovate depName=github.com/helm-unittest/helm-unittest
-helmunittest_version=v0.8.2
+helmunittest_version=v1.0.0
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 cyclonedx_gomod_version=v1.9.0
 
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
-# ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
-ENVTEST_K8S_VERSION = 1.32 # TODO: change it when env test list add it and cotroller-runtime lib updated
+ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -42,9 +41,7 @@ CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 ## Install go linters
 prerequisites/go-linting: prerequisites/go-deadcode
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(golang_ci_cmd_version)
-	go install github.com/daixiang0/gci@$(gci_version)
 	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
-	go install github.com/bombsimon/wsl/v4/cmd...@master
 	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
 
 ## Install go deadcode

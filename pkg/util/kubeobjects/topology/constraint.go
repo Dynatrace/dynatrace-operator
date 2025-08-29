@@ -7,6 +7,8 @@ import (
 )
 
 func MaxOnePerNode(appLabels *labels.AppLabels) []corev1.TopologySpreadConstraint {
+	nodeInclusionPolicyHonor := corev1.NodeInclusionPolicyHonor
+
 	return []corev1.TopologySpreadConstraint{
 		{
 			MaxSkew:           1,
@@ -18,6 +20,7 @@ func MaxOnePerNode(appLabels *labels.AppLabels) []corev1.TopologySpreadConstrain
 			MaxSkew:           1,
 			TopologyKey:       "kubernetes.io/hostname",
 			WhenUnsatisfiable: "DoNotSchedule",
+			NodeTaintsPolicy:  &nodeInclusionPolicyHonor,
 			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
 	}

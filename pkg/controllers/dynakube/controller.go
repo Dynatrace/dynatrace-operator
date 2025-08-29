@@ -4,6 +4,7 @@ import (
 	"context"
 	goerrors "errors"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -26,14 +27,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -163,8 +167,8 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 			Namespace: dkNamespace,
 		},
 	}
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
 
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)
 	if k8serrors.IsNotFound(err) {
 		namespaces, err := mapper.GetNamespacesForDynakube(ctx, controller.apiReader, dkName)
 		if err != nil {
@@ -299,11 +303,17 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	controller.tokens = tokens
 
 	dynatraceClientBuilder := controller.dynatraceClientBuilder.
-		SetContext(ctx).
 		SetDynakube(*dk).
 		SetTokens(tokens)
 
-	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dk.Status)
+	dynatraceClient, err := dynatraceClientBuilder.Build(ctx)
+	if err != nil {
+		controller.setConditionTokenError(dk, err)
+
+		return nil, err
+	}
+
+	err = controller.verifyTokens(ctx, dynatraceClient, dk)
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
@@ -427,4 +437,63 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dk)
 
 	return &dkMapper
+}
+
+func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+	err := controller.tokens.VerifyValues()
+	if err != nil {
+		return err
+	}
+
+	err = controller.verifyTokenScopes(ctx, dynatraceClient, dk)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
+		log.Info(dynakube.GetCacheValidMessage(
+			"token verification",
+			dk.Status.DynatraceAPI.LastTokenScopeRequest,
+			dk.APIRequestThreshold()))
+
+		return lastErrorFromCondition(&dk.Status)
+	}
+
+	tokens := controller.tokens.AddFeatureScopesToTokens()
+
+	missingOptionalScopes, err := tokens.VerifyScopes(ctx, dynatraceClient, *dk)
+	if err != nil {
+		return err
+	}
+
+	log.Info("token verified")
+
+	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
+
+	controller.updateOptionalScopesConditions(&dk.Status, missingOptionalScopes)
+
+	return nil
+}
+
+func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.DynaKubeStatus, missingOptionalScopes []string) {
+	for scope, conditionType := range dtclient.OptionalScopes {
+		if slices.Contains(missingOptionalScopes, scope) {
+			conditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
+		} else {
+			conditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
+		}
+	}
+}
+
+func lastErrorFromCondition(dkStatus *dynakube.DynaKubeStatus) error {
+	oldCondition := meta.FindStatusCondition(dkStatus.Conditions, dynakube.TokenConditionType)
+	if oldCondition != nil && oldCondition.Reason != dynakube.ReasonTokenReady {
+		return errors.New(oldCondition.Message)
+	}
+
+	return nil
 }

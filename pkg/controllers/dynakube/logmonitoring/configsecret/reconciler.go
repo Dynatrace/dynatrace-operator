@@ -27,18 +27,18 @@ const (
 )
 
 type Reconciler struct {
-	client    client.Client
 	apiReader client.Reader
 	dk        *dynakube.DynaKube
+	secrets   k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client,
 	apiReader client.Reader,
 	dk *dynakube.DynaKube) *Reconciler {
 	return &Reconciler{
-		client:    clt,
 		apiReader: apiReader,
 		dk:        dk,
+		secrets:   k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -48,9 +48,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		query := k8ssecret.Query(r.client, r.apiReader, log)
-		err := query.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: GetSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
-
+		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: GetSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up LogMonitoring config-secret")
 		}
@@ -64,14 +62,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileSecret(ctx context.Context) error {
-	query := k8ssecret.Query(r.client, r.apiReader, log)
-
 	newSecret, err := r.prepareSecret(ctx)
 	if err != nil {
 		return err
 	}
 
-	changed, err := query.CreateOrUpdate(ctx, newSecret)
+	changed, err := r.secrets.CreateOrUpdate(ctx, newSecret)
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 

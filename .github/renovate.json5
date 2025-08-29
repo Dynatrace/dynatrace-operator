@@ -9,11 +9,16 @@
   digest: {
     enabled: false,
   },
+  timezone: "Europe/Vienna",
+  schedule: [
+    "* 0-7,20-23 * * 1-5",
+    "* * * * 0,6",
+  ],
   baseBranches: [
     "$default",
-    "release-1.4",
     "release-1.5",
     "release-1.6",
+    "release-1.7",
   ],
   enabledManagers: [
     "regex",
@@ -31,6 +36,8 @@
   regexManagers: [
     {
       fileMatch: [
+        "(^|/|\\.)fips.Dockerfile$",
+        "(^|/|\\.)Dockerfile$",
         "(^|/|\\.)prerequisites.mk$",
         "(^|/|\\.)third-party-licenses.sh$",
       ],
@@ -62,9 +69,9 @@
     {
       matchBaseBranches: [
         "$default",
-        "release-1.4",
         "release-1.5",
         "release-1.6",
+        "release-1.7",
       ],
       matchUpdateTypes: [
         "major",
@@ -168,6 +175,13 @@
         "sigs.k8s.io/e2e-framework",
       ],
       enabled: false,
+    },
+    {
+      matchPackageNames: [
+        "redhat-openshift-ecosystem/openshift-preflight",
+      ],
+      allowedVersions: "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
+      enabled: true,
     },
   ],
   platformAutomerge: true,

@@ -42,6 +42,7 @@ func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile a
 
 func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpFile afero.File) error {
 	log.Info("downloading specific OneAgent package", "version", installer.props.TargetVersion)
+
 	err := installer.dtc.GetAgent(ctx,
 		installer.props.Os,
 		installer.props.Type,
@@ -52,7 +53,6 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 		installer.props.SkipMetadata,
 		tmpFile,
 	)
-
 	if err != nil {
 		availableVersions, getVersionsError := installer.dtc.GetAgentVersions(ctx,
 			installer.props.Os,

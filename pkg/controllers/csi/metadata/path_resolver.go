@@ -4,8 +4,9 @@ import (
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 )
+
+var ruxitAgentProcPath = filepath.Join("agent", "conf", "ruxitagentproc.conf")
 
 type PathResolver struct {
 	RootDir string
@@ -57,14 +58,6 @@ func (pr PathResolver) AgentTempUnzipDir() string {
 
 func (pr PathResolver) AgentConfigDir(dynakubeName string) string {
 	return filepath.Join(pr.DynaKubeDir(dynakubeName), dtcsi.SharedAgentConfigDir)
-}
-
-func (pr PathResolver) AgentSharedRuxitAgentProcConf(dynakubeName string) string {
-	return filepath.Join(pr.AgentConfigDir(dynakubeName), processmoduleconfig.RuxitAgentProcPath)
-}
-
-func (pr PathResolver) OverlayVarRuxitAgentProcConf(volumeID string) string {
-	return filepath.Join(pr.AppMountVarDir(volumeID), processmoduleconfig.RuxitAgentProcPath)
 }
 
 func (pr PathResolver) OverlayVarPodInfo(volumeID string) string {
@@ -147,5 +140,5 @@ func (pr PathResolver) OldAgentConfigDir(tenantUUID string, dynakubeName string)
 
 // Deprecated kept for future migration/cleanup
 func (pr PathResolver) OldAgentSharedRuxitAgentProcConf(tenantUUID, dynakubeName string) string {
-	return filepath.Join(pr.OldAgentConfigDir(tenantUUID, dynakubeName), processmoduleconfig.RuxitAgentProcPath)
+	return filepath.Join(pr.OldAgentConfigDir(tenantUUID, dynakubeName), ruxitAgentProcPath)
 }

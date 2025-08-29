@@ -8,7 +8,6 @@ import (
 const (
 	CSIMaxFailedMountAttemptsKey = FFPrefix + "max-csi-mount-attempts"
 	CSIMaxMountTimeoutKey        = FFPrefix + "max-csi-mount-timeout"
-	CSIReadOnlyVolumeKey         = FFPrefix + "injection-readonly-volume"
 )
 
 const (
@@ -49,8 +48,4 @@ func MountAttemptsToTimeout(maxAttempts int) string {
 	delay := time.Duration(math.Exp2(float64(maxAttempts))) * baseDelay
 
 	return delay.String()
-}
-
-func (ff *FeatureFlags) IsCSIVolumeReadOnly() bool {
-	return ff.getBoolWithDefault(CSIReadOnlyVolumeKey, false)
 }

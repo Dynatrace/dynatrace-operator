@@ -7,11 +7,16 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	MetricsURLSecretField   = "DT_METRICS_INGEST_URL"
+	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
+	configFile              = "endpoint.properties"
 )
 
 func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
@@ -22,13 +27,13 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 
 	endpointPropertiesBuilder := strings.Builder{}
 
-	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsURLSecretField, fields[dtingestendpoint.MetricsURLSecretField])); err != nil {
+	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsURLSecretField, fields[MetricsURLSecretField])); err != nil {
 		conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		return "", errors.WithStack(err)
 	}
 
-	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", dtingestendpoint.MetricsTokenSecretField, fields[dtingestendpoint.MetricsTokenSecretField])); err != nil {
+	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsTokenSecretField, fields[MetricsTokenSecretField])); err != nil {
 		conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		return "", errors.WithStack(err)
@@ -40,7 +45,7 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dynakube.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
-	tokens, err := k8ssecret.Query(s.client, s.apiReader, log).Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
+	tokens, err := s.secrets.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
@@ -48,16 +53,42 @@ func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dyn
 	}
 
 	if token, ok := tokens.Data[dtclient.DataIngestToken]; ok {
-		fields[dtingestendpoint.MetricsTokenSecretField] = string(token)
+		fields[MetricsTokenSecretField] = string(token)
 	} else {
 		log.Info("data ingest token not found in secret", "dk", dk.Name)
 	}
 
-	if ingestURL, err := dtingestendpoint.IngestURLFor(dk); err != nil {
+	if ingestURL, err := ingestURLFor(dk); err != nil {
 		return nil, err
 	} else {
-		fields[dtingestendpoint.MetricsURLSecretField] = ingestURL
+		fields[MetricsURLSecretField] = ingestURL
 	}
 
 	return fields, nil
+}
+
+func ingestURLFor(dk *dynakube.DynaKube) (string, error) {
+	switch {
+	case dk.ActiveGate().IsMetricsIngestEnabled():
+		return metricsIngestURLForClusterActiveGate(dk)
+	case len(dk.Spec.APIURL) > 0:
+		return metricsIngestURLForDynatraceActiveGate(dk)
+	default:
+		return "", errors.New("failed to create metadata-enrichment endpoint, DynaKube.spec.apiUrl is empty")
+	}
+}
+
+func metricsIngestURLForDynatraceActiveGate(dk *dynakube.DynaKube) (string, error) {
+	return dk.Spec.APIURL + "/v2/metrics/ingest", nil
+}
+
+func metricsIngestURLForClusterActiveGate(dk *dynakube.DynaKube) (string, error) {
+	tenant, err := dk.TenantUUID()
+	if err != nil {
+		return "", err
+	}
+
+	serviceName := capability.BuildServiceName(dk.Name)
+
+	return fmt.Sprintf("http://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
 }

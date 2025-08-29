@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +23,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		createDynakubeWithAppInject("appMonitoring-2", convertToLabelSelector(matchLabels)),
 	}
 
-	t.Run(`Match to unlabeled namespace`, func(t *testing.T) {
+	t.Run("Match to unlabeled namespace", func(t *testing.T) {
 		namespace := createNamespace("test-namespace", nil)
 		clt := fake.NewClient(dks[0], dks[1])
 		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)

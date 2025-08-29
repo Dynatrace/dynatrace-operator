@@ -148,7 +148,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				},
 				transport: transport,
 			},
-			args: args{targetDir: consts.AgentBinDirMount},
+			args: args{targetDir: consts.AgentInitBinDirMount},
 			want: true, wantErr: require.NoError,
 		},
 	}

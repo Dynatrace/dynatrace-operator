@@ -50,7 +50,7 @@ func (c component) getImage(dk *dynakube.DynaKube) (string, bool) {
 		}
 
 		return dk.ActiveGate().GetImage(), false
+	default:
+		return "", false
 	}
-
-	return "", false
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
-	if !r.dk.IsExtensionsEnabled() {
+	if !r.dk.Extensions().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
 			return nil
 		}
@@ -27,7 +27,6 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 		}
 
 		err = service.Query(r.client, r.apiReader, log).Delete(ctx, svc)
-
 		if err != nil {
 			log.Error(err, "failed to clean up extension service")
 
@@ -56,19 +55,18 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.ExtensionsServiceName())
+	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.Extensions().GetServiceName())
 
 	return nil
 }
 
 func (r *reconciler) buildService() (*corev1.Service, error) {
 	coreLabels := labels.NewCoreLabels(r.dk.Name, labels.ExtensionComponentLabel)
-	// TODO: add proper version later on
 	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
 
 	svcPorts := []corev1.ServicePort{
 		{
-			Name:       r.dk.ExtensionsPortName(),
+			Name:       r.dk.Extensions().GetPortName(),
 			Port:       consts.OtelCollectorComPort,
 			Protocol:   corev1.ProtocolTCP,
 			TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsCollectorTargetPortName},
@@ -76,7 +74,7 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 	}
 
 	return service.Build(r.dk,
-		r.dk.ExtensionsServiceName(),
+		r.dk.Extensions().GetServiceName(),
 		appLabels.BuildMatchLabels(),
 		svcPorts,
 		service.SetLabels(coreLabels.BuildLabels()),

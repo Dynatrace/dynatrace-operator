@@ -194,7 +194,7 @@ tests:
                 name: server
                 ports:
                   - containerPort: 8080
-                    name: metrics
+                    name: server-metrics
                 resources:
                   limits:
                     cpu: 50m
@@ -287,7 +287,7 @@ tests:
                   - containerPort: 10090
                     name: livez
                   - containerPort: 8090
-                    name: metrics
+                    name: prov-metrics
                 resources:
                   requests:
                     cpu: 300m
@@ -312,10 +312,9 @@ tests:
                     name: mountpoint-dir
                     readOnly: true
               - args:
+                  - "csi-node-driver-registrar"
                   - "--csi-address=/csi/csi.sock"
                   - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-                command:
-                  - csi-node-driver-registrar
                 env:
                   - name: DRIVER_REG_SOCK_PATH
                     value: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
@@ -344,11 +343,10 @@ tests:
                   - mountPath: "/registration"
                     name: registration-dir
               - args:
+                  - "livenessprobe"
                   - "--csi-address=/csi/csi.sock"
                   - "--health-port=9808"
                   - "--probe-timeout=9s"
-                command:
-                  - livenessprobe
                 image: image-name
                 imagePullPolicy: Always
                 name: liveness-probe
@@ -396,31 +394,96 @@ tests:
                   type: DirectoryOrCreate
                 name: mountpoint-dir
 
+  - it: should use correct values for livenessprobe for server provided by the operator
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.server.livenessProbe.failureThreshold: 2
+      csidriver.server.livenessProbe.initialDelaySeconds: 2
+      csidriver.server.livenessProbe.periodSeconds: 2
+      csidriver.server.livenessProbe.successThreshold: 2
+      csidriver.server.livenessProbe.timeoutSeconds: 2
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            failureThreshold: 2
+            httpGet:
+              path: /healthz
+              port: 9808
+              scheme: HTTP
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            successThreshold: 2
+            timeoutSeconds: 2
+
+  - it: should not use livenessProbe when it's disabled
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+      csidriver.server.livenessProbe.enabled: false
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].livenessProbe
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 3
+      - notContains:
+          path: spec.template.spec.containers
+          content:
+            name: liveness-probe
+          count: 1
+          any: true
+
+  - it: should have LOG_LEVEL=debug if debugLogs=true
+    set:
+      debugLogs: true
+      csidriver.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOG_LEVEL
+            value: "debug"
+          count: 1
+          any: true
+      - contains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: LOG_LEVEL
+            value: "debug"
+          count: 1
+          any: true
+
   - it: should use livenessprobe and csi-node-driver-registrar commands provided by the operator if they are preferred
     set:
       platform: kubernetes
       image: image-name
       csidriver.enabled: true
-      csidriver.livenessprobe.builtIn: true
-      csidriver.registrar.builtIn: true
+      csidriver.livenessprobe.builtIn: false
+      csidriver.registrar.builtIn: false
     asserts:
       - equal:
           path: spec.template.spec.containers[2].args
           value:
-          - "csi-node-driver-registrar"
           - "--csi-address=/csi/csi.sock"
           - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-      - isNull:
+      - equal:
           path: spec.template.spec.containers[2].command
+          value:
+            - csi-node-driver-registrar
       - equal:
           path: spec.template.spec.containers[3].args
           value:
-            - "livenessprobe"
             - "--csi-address=/csi/csi.sock"
             - "--health-port=9808"
             - "--probe-timeout=9s"
-      - isNull:
+      - equal:
           path: spec.template.spec.containers[3].command
+          value:
+          - livenessprobe
 
   - it: should have default updateStrategy
     set:

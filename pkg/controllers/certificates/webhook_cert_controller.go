@@ -59,7 +59,7 @@ type WebhookCertificateController struct {
 	namespace     string
 }
 
-func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint:revive
+func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)
 

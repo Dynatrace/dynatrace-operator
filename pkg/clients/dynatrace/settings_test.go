@@ -2,6 +2,7 @@ package dynatrace
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,14 +18,65 @@ const (
 	testScope    = "test-scope"
 )
 
-func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
+func TestDynatraceClient_GetK8sClusterME(t *testing.T) {
+	mockK8sSettingsAPI := func(status int, expectedEntity K8sClusterME) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+
+			if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
+				writeError(w, http.StatusUnauthorized)
+			}
+
+			if r.Method != http.MethodGet {
+				writeError(w, http.StatusMethodNotAllowed)
+			}
+
+			switch r.URL.Path {
+			case "/v2/settings/objects":
+				if status != http.StatusOK {
+					writeError(w, status)
+
+					return
+				}
+
+				getResponse := getSettingsForKubeSystemUUIDResponse{
+					TotalCount: 0,
+					PageSize:   50,
+				}
+
+				if expectedEntity.ID != "" {
+					getResponse.Settings = []kubernetesSetting{
+						{
+							EntityID: expectedEntity.ID,
+							Value: kubernetesSettingValue{
+								Label: expectedEntity.Name,
+							},
+						},
+					}
+					getResponse.TotalCount = 1
+				}
+
+				getResponseBytes, err := json.Marshal(getResponse)
+				if err != nil {
+					return
+				}
+
+				w.WriteHeader(http.StatusOK)
+				w.Write(getResponseBytes)
+
+			default:
+				writeError(w, http.StatusBadRequest)
+			}
+		}
+	}
+
 	ctx := context.Background()
 
-	t.Run("monitored entities for this uuid exist", func(t *testing.T) {
+	t.Run("k8s entity for this uuid exist", func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntitiesForTesting()
+		expected := createKubernetesClusterEntityForTesting()
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createEntitiesMockParams(expected, http.StatusOK)))
+		dynatraceServer := httptest.NewServer(mockK8sSettingsAPI(http.StatusOK, expected))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -33,20 +85,19 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetMonitoredEntitiesForKubeSystemUUID(ctx, testUID)
+		actual, err := dtc.GetK8sClusterME(ctx, testUID)
 
 		// assert
 		require.NotNil(t, actual)
 		require.NoError(t, err)
-		assert.Len(t, actual, 2)
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("no monitored entities for this uuid exist", func(t *testing.T) {
+	t.Run("no k8s entity for this uuid exist", func(t *testing.T) {
 		// arrange
-		expected := []MonitoredEntity{}
+		expected := K8sClusterME{}
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createEntitiesMockParams(expected, http.StatusOK)))
+		dynatraceServer := httptest.NewServer(mockK8sSettingsAPI(http.StatusOK, expected))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -55,20 +106,16 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetMonitoredEntitiesForKubeSystemUUID(ctx, testUID)
+		actual, err := dtc.GetK8sClusterME(ctx, testUID)
 
 		// assert
-		require.NotNil(t, actual)
 		require.NoError(t, err)
 		assert.Empty(t, actual)
-		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("no monitored entities found because no kube-system uuid is provided", func(t *testing.T) {
+	t.Run("no k8s entity + no API call if no kube-system uuid is provided", func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntitiesForTesting()
-
-		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createEntitiesMockParams(expected, http.StatusBadRequest)))
+		dynatraceServer := httptest.NewServer(http.NotFoundHandler())
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -77,19 +124,16 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetMonitoredEntitiesForKubeSystemUUID(ctx, "")
+		actual, err := dtc.GetK8sClusterME(ctx, "")
 
 		// assert
-		require.Nil(t, actual)
 		require.Error(t, err)
 		assert.Empty(t, actual)
 	})
 
 	t.Run("no monitored entities found because of an api error", func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntitiesForTesting()
-
-		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createEntitiesMockParams(expected, http.StatusBadRequest)))
+		dynatraceServer := httptest.NewServer(mockK8sSettingsAPI(http.StatusInternalServerError, K8sClusterME{}))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -98,10 +142,9 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetMonitoredEntitiesForKubeSystemUUID(ctx, testUID)
+		actual, err := dtc.GetK8sClusterME(ctx, testUID)
 
 		// assert
-		require.Nil(t, actual)
 		require.Error(t, err)
 		assert.Empty(t, actual)
 	})
@@ -110,10 +153,10 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run(`settings for the given monitored entities exist`, func(t *testing.T) {
+	t.Run("settings for the given monitored entities exist", func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntitiesForTesting()
-		totalCount := 2
+		expected := createKubernetesClusterEntityForTesting()
+		totalCount := 1
 
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(totalCount, "", http.StatusOK)))
 		defer dynatraceServer.Close()
@@ -124,18 +167,17 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &expected[0], KubernetesSettingsSchemaID)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, expected, KubernetesSettingsSchemaID)
 
 		// assert
 		require.NoError(t, err)
 		require.NotNil(t, actual)
 		assert.Positive(t, actual.TotalCount)
-		assert.Len(t, expected, actual.TotalCount)
 	})
 
-	t.Run(`no settings for the given monitored entities exist`, func(t *testing.T) {
+	t.Run("no settings for the given monitored entities exist", func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntitiesForTesting()
+		expected := createKubernetesClusterEntityForTesting()
 		totalCount := 0
 
 		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(totalCount, "", http.StatusOK)))
@@ -147,7 +189,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &expected[0], KubernetesSettingsSchemaID)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, expected, KubernetesSettingsSchemaID)
 
 		// assert
 		require.NoError(t, err)
@@ -155,7 +197,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		assert.Less(t, actual.TotalCount, 1)
 	})
 
-	t.Run(`no settings for an empty list of monitored entities exist`, func(t *testing.T) {
+	t.Run("no settings for an empty list of monitored entities exist", func(t *testing.T) {
 		// it is immaterial what we put here since no http call is executed when the list of
 		// monitored entities is empty, therefore also no settings will be returned
 		totalCount := 999
@@ -169,7 +211,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, nil, KubernetesSettingsSchemaID)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, K8sClusterME{}, KubernetesSettingsSchemaID)
 
 		// assert
 		require.NoError(t, err)
@@ -177,9 +219,9 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		assert.Empty(t, actual.TotalCount)
 	})
 
-	t.Run(`no settings found for because of an api error`, func(t *testing.T) {
+	t.Run("no settings found for because of an api error", func(t *testing.T) {
 		// arrange
-		entities := createMonitoredEntitiesForTesting()
+		k8sEntity := createKubernetesClusterEntityForTesting()
 		// it is immaterial what we put here since the http request is producing an error
 		totalCount := 999
 
@@ -192,7 +234,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, &entities[0], KubernetesSettingsSchemaID)
+		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, KubernetesSettingsSchemaID)
 
 		// assert
 		require.Error(t, err)
@@ -200,9 +242,8 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 	})
 }
 
-func createMonitoredEntitiesForTesting() []MonitoredEntity {
-	return []MonitoredEntity{
-		{EntityID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085},
-		{EntityID: "KUBERNETES_CLUSTER-119C75CCDA94799F", DisplayName: "operator test entity 2", LastSeenTms: 1639034988126},
+func createKubernetesClusterEntityForTesting() K8sClusterME {
+	return K8sClusterME{
+		ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1",
 	}
 }

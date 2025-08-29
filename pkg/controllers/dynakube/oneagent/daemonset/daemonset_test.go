@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +28,7 @@ const (
 )
 
 func TestUseImmutableImage(t *testing.T) {
-	t.Run(`use image from status`, func(t *testing.T) {
+	t.Run("use image from status", func(t *testing.T) {
 		imageID := "my.repo.com/image:my-tag"
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -156,7 +156,7 @@ func TestCustomPullSecret(t *testing.T) {
 }
 
 func TestResources(t *testing.T) {
-	t.Run(`minimal cpu request of 100mC is set if no resources specified`, func(t *testing.T) {
+	t.Run("minimal cpu request of 100mC is set if no resources specified", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
@@ -176,7 +176,7 @@ func TestResources(t *testing.T) {
 		hasMinimumCPURequest := resource.NewScaledQuantity(1, -1).Equal(*podSpecs.Containers[0].Resources.Requests.Cpu())
 		assert.True(t, hasMinimumCPURequest)
 	})
-	t.Run(`resource requests and limits set`, func(t *testing.T) {
+	t.Run("resource requests and limits set", func(t *testing.T) {
 		cpuRequest := resource.NewScaledQuantity(2, -1)
 		cpuLimit := resource.NewScaledQuantity(3, -1)
 		memoryRequest := resource.NewScaledQuantity(1, 3)
@@ -255,7 +255,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 		assert.Equal(t, defaultSecurityContextCapabilities(), securityContext.Capabilities)
 	})
-	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
+	t.Run("User and group id set when read only mode is enabled", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
@@ -340,7 +340,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.True(t, *securityContext.ReadOnlyRootFilesystem)
 	})
 
-	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
+	t.Run("privileged security context when feature flag is enabled", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
@@ -371,7 +371,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
 
-	t.Run(`privileged security context when feature flag is enabled for classic fullstack`, func(t *testing.T) {
+	t.Run("privileged security context when feature flag is enabled for classic fullstack", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
@@ -402,7 +402,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
 
-	t.Run(`localhost seccomp profile when feature flag is enabled`, func(t *testing.T) {
+	t.Run("localhost seccomp profile when feature flag is enabled", func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{},
@@ -433,7 +433,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Equal(t, customSecCompProfile, *securityContext.SeccompProfile.LocalhostProfile)
 	})
 
-	t.Run(`localhost seccomp profile disabled if privileged security context enabled`, func(t *testing.T) {
+	t.Run("localhost seccomp profile disabled if privileged security context enabled", func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
 		dk := dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

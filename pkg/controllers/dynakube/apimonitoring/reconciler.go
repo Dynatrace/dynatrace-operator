@@ -6,30 +6,43 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/monitoredentities"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
 )
 
 type Reconciler struct {
 	dtc dtclient.Client
 
-	monitoredEntitiesReconciler controllers.Reconciler
-	dk                          *dynakube.DynaKube
-	clusterLabel                string
+	k8sEntityReconciler controllers.Reconciler
+	dk                  *dynakube.DynaKube
+	clusterLabel        string
 }
 
 type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler
 
 func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler {
 	return &Reconciler{
-		dtc:                         dtc,
-		dk:                          dk,
-		clusterLabel:                clusterLabel,
-		monitoredEntitiesReconciler: monitoredentities.NewReconciler(dtc, dk),
+		dtc:                 dtc,
+		dk:                  dk,
+		clusterLabel:        clusterLabel,
+		k8sEntityReconciler: k8sentity.NewReconciler(dtc, dk),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	if !conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
+		log.Info("api token missing optional scope, skipping reconciliation", "scope", dtclient.TokenScopeSettingsRead)
+
+		return nil
+	}
+
+	if !conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite) {
+		log.Info("api token missing optional scope, skipping reconciliation", "scope", dtclient.TokenScopeSettingsWrite)
+
+		return nil
+	}
+
 	objectID, err := r.createObjectIDIfNotExists(ctx)
 	if err != nil {
 		return err
@@ -49,27 +62,27 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
-	err := r.monitoredEntitiesReconciler.Reconcile(ctx)
+	err := r.k8sEntityReconciler.Reconcile(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	var monitoredEntity *dtclient.MonitoredEntity
+	var k8sEntity dtclient.K8sClusterME
 
 	if r.dk.Status.KubernetesClusterMEID != "" {
-		monitoredEntity = &dtclient.MonitoredEntity{
-			EntityID: r.dk.Status.KubernetesClusterMEID,
+		k8sEntity = dtclient.K8sClusterME{
+			ID: r.dk.Status.KubernetesClusterMEID,
 		}
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.KubernetesSettingsSchemaID)
+	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.KubernetesSettingsSchemaID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
 
 	if settings.TotalCount > 0 {
-		_, err = r.handleKubernetesAppEnabled(ctx, monitoredEntity)
+		_, err = r.handleKubernetesAppEnabled(ctx, k8sEntity)
 		if err != nil {
 			return "", err
 		}
@@ -85,7 +98,7 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 	if r.dk.Status.KubernetesClusterMEID == "" {
 		// the CreateOrUpdateKubernetesSetting call will create the ME(monitored-entity) if no scope was given (scope == entity-id), this happens on the "first run"
 		// so we have to run the entity reconciler AGAIN to set it in the status.
-		err := r.monitoredEntitiesReconciler.Reconcile(ctx)
+		err := r.k8sEntityReconciler.Reconcile(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -94,15 +107,15 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 	return objectID, nil
 }
 
-func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, monitoredEntity *dtclient.MonitoredEntity) (string, error) {
+func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity dtclient.K8sClusterME) (string, error) {
 	if r.dk.FF().IsK8sAppEnabled() {
-		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, monitoredEntity, dtclient.AppTransitionSchemaID)
+		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.AppTransitionSchemaID)
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")
 		}
 
 		if appSettings.TotalCount == 0 {
-			meID := monitoredEntity.EntityID
+			meID := k8sEntity.ID
 			if meID != "" {
 				transitionSchemaObjectID, err := r.dtc.CreateOrUpdateKubernetesAppSetting(ctx, meID)
 				if err != nil {

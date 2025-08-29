@@ -6,23 +6,18 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
-
-// old init container name, we need it for an upgrade scenario.
-// more details about rename https://github.com/Dynatrace/dynatrace-operator/pull/4025
-const oldInstallContainerName = "install-oneagent"
 
 func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp *sample.App) {
 	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp))
@@ -34,9 +29,6 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 
 		pods := sampleApp.GetPods(ctx, t, resources)
 		require.NotEmpty(t, pods.Items)
-
-		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
-		require.NoError(t, err)
 
 		for _, podItem := range pods.Items {
 			if podItem.DeletionTimestamp != nil {
@@ -50,7 +42,7 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 			var oneAgentInstallInitContainer *corev1.Container
 
 			for _, initContainer := range podItem.Spec.InitContainers {
-				if initContainer.Name == oldInstallContainerName || initContainer.Name == webhook.InstallContainerName {
+				if initContainer.Name == webhook.InstallContainerName {
 					oneAgentInstallInitContainer = &initContainer // loop breaks after assignment, memory aliasing is not a problem
 
 					break
@@ -58,16 +50,16 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 			}
 			require.NotNil(t, oneAgentInstallInitContainer, "init container not found in '%s' pod", podItem.Name)
 
-			logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
-				Container: oneAgentInstallInitContainer.Name,
-			}).Stream(ctx)
+			if !sampleApp.CanInitError() {
+				assert.Contains(t, oneAgentInstallInitContainer.Args, "--"+cmd.SuppressErrorsFlag, "errors may be suppressed, further checks are not useful")
 
-			require.NoError(t, err)
-			logs.AssertContains(t, logStream, "init completed")
+				continue
+			}
 
-			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/opt/dynatrace/oneagent-paas/log/php/"))
+			assert.NotContains(t, oneAgentInstallInitContainer.Args, "--"+cmd.SuppressErrorsFlag, "in the tests the init-container should have no errors suppressed")
+
+			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
 			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifNotEmptyCommand...)
-
 			require.NoError(t, err)
 
 			stdOut := executionResult.StdOut.String()

@@ -9,7 +9,7 @@ import (
 )
 
 func TestConflictingNamespaceSelector(t *testing.T) {
-	t.Run(`valid dynakube specs`, func(t *testing.T) {
+	t.Run("valid dynakube specs", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -41,7 +41,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				},
 			}, &dummyNamespace, &dummyNamespace2)
 	})
-	t.Run(`invalid dynakube specs`, func(t *testing.T) {
+	t.Run("invalid dynakube specs", func(t *testing.T) {
 		assertDenied(t,
 			[]string{errorConflictingNamespaceSelector},
 			&dynakube.DynaKube{

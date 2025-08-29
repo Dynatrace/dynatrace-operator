@@ -39,8 +39,8 @@ func New(prefix string) (*Token, error) {
 // generate base32 encoded random string using base32.StdEncoding
 func generateRandom(size int) (string, error) {
 	b := make([]byte, size)
-	_, err := rand.Read(b)
 
+	_, err := rand.Read(b)
 	if err != nil {
 		return "", err
 	}

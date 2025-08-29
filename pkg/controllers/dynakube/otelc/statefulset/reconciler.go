@@ -46,7 +46,7 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.IsExtensionsEnabled() || r.dk.TelemetryIngest().IsEnabled() {
+	if r.dk.Extensions().IsEnabled() || r.dk.TelemetryIngest().IsEnabled() {
 		return r.createOrUpdateStatefulset(ctx)
 	} else { // do cleanup or
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
@@ -62,7 +62,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
-
 		if err != nil {
 			log.Error(err, "failed to clean up "+r.dk.OtelCollectorStatefulsetName()+" statufulset")
 
@@ -111,7 +110,6 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
 	)
-
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
@@ -140,12 +138,12 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
 	templateAnnotations := map[string]string{}
 
-	if r.dk.IsExtensionsEnabled() {
+	if r.dk.Extensions().IsEnabled() {
 		if r.dk.Spec.Templates.OpenTelemetryCollector.Annotations != nil {
 			templateAnnotations = r.dk.Spec.Templates.OpenTelemetryCollector.Annotations
 		}
 
-		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.ExtensionsTLSSecretName())
+		tlsSecretHash, err := r.calculateSecretHash(ctx, r.dk.Extensions().GetTLSSecretName())
 		if err != nil {
 			return nil, err
 		}
@@ -175,9 +173,9 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 }
 
 func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string) (string, error) {
-	query := k8ssecret.Query(r.client, r.client, log)
+	secrets := k8ssecret.Query(r.client, r.client, log)
 
-	tlsSecret, err := query.Get(ctx, types.NamespacedName{
+	tlsSecret, err := secrets.Get(ctx, types.NamespacedName{
 		Name:      secretName,
 		Namespace: r.dk.Namespace,
 	})
@@ -248,10 +246,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 }
 
 func buildAppLabels(dkName string) *labels.AppLabels {
-	// TODO: when version is available
-	version := "0.0.0"
-
-	return labels.NewAppLabels(labels.OtelCComponentLabel, dkName, labels.OtelCComponentLabel, version)
+	return labels.NewAppLabels(labels.OtelCComponentLabel, dkName, labels.OtelCComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {

@@ -39,7 +39,7 @@ func createTestDynakube(spec *dynakube.DynaKubeSpec) *dynakube.DynaKube {
 func TestReconcile(t *testing.T) {
 	clusterID := "test"
 
-	t.Run(`don't create anything, if no mode is configured`, func(t *testing.T) {
+	t.Run("don't create anything, if no mode is configured", func(t *testing.T) {
 		dk := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(fakeClient, fakeClient, *dk, clusterID)
@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
 		require.Error(t, err)
 	})
-	t.Run(`delete configmap, if no mode is configured`, func(t *testing.T) {
+	t.Run("delete configmap, if no mode is configured", func(t *testing.T) {
 		dk := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().WithObjects(
 			&corev1.ConfigMap{
@@ -69,7 +69,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run(`create configmap with 1 key, if only oneagent is needed`, func(t *testing.T) {
+	t.Run("create configmap with 1 key, if only oneagent is needed", func(t *testing.T) {
 		dk := createTestDynakube(
 			&dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -89,7 +89,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotEmpty(t, actualConfigMap.Data[OneAgentMetadataKey])
 	})
 
-	t.Run(`create configmap with 1 key, if only activegate is needed`, func(t *testing.T) {
+	t.Run("create configmap with 1 key, if only activegate is needed", func(t *testing.T) {
 		dk := createTestDynakube(
 			&dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -110,7 +110,7 @@ func TestReconcile(t *testing.T) {
 		require.NotEmpty(t, actualConfigMap.Data)
 		assert.NotEmpty(t, actualConfigMap.Data[ActiveGateMetadataKey])
 	})
-	t.Run(`create configmap with 2 keys, if both oneagent and activegate is needed`, func(t *testing.T) {
+	t.Run("create configmap with 2 keys, if both oneagent and activegate is needed", func(t *testing.T) {
 		dk := createTestDynakube(
 			&dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{

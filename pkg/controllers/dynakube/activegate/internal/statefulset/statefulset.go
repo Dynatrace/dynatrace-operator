@@ -61,6 +61,7 @@ func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*a
 
 func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	var sts appsv1.StatefulSet
+
 	sts.Kind = "StatefulSet"
 	sts.APIVersion = "apps/v1"
 	sts.ObjectMeta = statefulSetBuilder.getBaseObjectMeta()
@@ -188,6 +189,7 @@ func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityC
 
 func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
 	appLabels := statefulSetBuilder.buildAppLabels()
+	nodeInclusionPolicyHonor := corev1.NodeInclusionPolicyHonor
 
 	return []corev1.TopologySpreadConstraint{
 		{
@@ -200,6 +202,7 @@ func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.Topology
 			MaxSkew:           1,
 			TopologyKey:       "kubernetes.io/hostname",
 			WhenUnsatisfiable: "DoNotSchedule",
+			NodeTaintsPolicy:  &nodeInclusionPolicyHonor,
 			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
 	}

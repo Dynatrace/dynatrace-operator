@@ -70,7 +70,7 @@ func NewReconciler(clt client.Client, //nolint
 	pullSecretReconciler := dtpullsecret.NewReconciler(clt, apiReader, dk, tokens)
 
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *value.Source) controllers.Reconciler {
-		return customproperties.NewReconciler(clt, dk, customPropertiesOwnerName, customPropertiesSource)
+		return customproperties.NewReconciler(clt, apiReader, dk, customPropertiesOwnerName, customPropertiesSource)
 	}
 
 	return &Reconciler{
@@ -193,6 +193,13 @@ func (r *Reconciler) deleteCapability(ctx context.Context) error {
 	}
 
 	if err := r.deleteService(ctx); err != nil {
+		return err
+	}
+
+	// we must run tls reconciler to ensure that the TLS secret is deleted
+	// TODO: consider to not mix two different patterns
+	tlsSecretReconciler := tls.NewReconciler(r.client, r.apiReader, r.dk)
+	if err := tlsSecretReconciler.Reconcile(ctx); err != nil {
 		return err
 	}
 

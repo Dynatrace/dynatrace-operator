@@ -15,6 +15,7 @@ limitations under the License.
 package main
 
 import (
+	stdLog "log"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
@@ -24,7 +25,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/csi/registrar"
 	csiServer "github.com/Dynatrace/dynatrace-operator/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/cmd/operator"
-	"github.com/Dynatrace/dynatrace-operator/cmd/standalone"
 	startupProbe "github.com/Dynatrace/dynatrace-operator/cmd/startupprobe"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/cmd/supportarchive"
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
@@ -54,13 +54,13 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 
 func main() {
 	ctrl.SetLogger(log.Logger)
+	stdLog.SetOutput(&log)
 
 	cmd := newRootCommand()
 
 	cmd.AddCommand(
 		webhook.New(),
 		operator.New(),
-		standalone.NewStandaloneCommand(),
 		troubleshoot.New(),
 		supportArchive.New(),
 		startupProbe.New(),
