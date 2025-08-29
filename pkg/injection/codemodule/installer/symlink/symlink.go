@@ -2,6 +2,7 @@ package symlink
 
 import (
 	iofs "io/fs"
+	"os"
 	"path/filepath"
 	"regexp"
 
@@ -59,12 +60,10 @@ func Create(fs afero.Fs, targetDir, symlinkDir string) error {
 }
 
 func Remove(fs afero.Fs, symlinkPath string) error {
-	if info, _ := fs.Stat(symlinkPath); info != nil {
-		log.Info("symlink to directory exists, removing it to ensure proper reinstallation or reconfiguration", "directory", symlinkPath)
+	if err := fs.Remove(symlinkPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Info("failed to remove symlink", "path", symlinkPath)
 
-		if err := fs.Remove(symlinkPath); err != nil {
-			return err
-		}
+		return err
 	}
 
 	return nil
