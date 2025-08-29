@@ -22,6 +22,11 @@ import (
 
 const (
 	testPaasToken = "test-paas-token"
+	testName      = "test-name"
+	testNamespace = "test-namespace"
+	testKey       = "test-key"
+	testValue     = "test-value"
+
 )
 
 type errorClient struct {
