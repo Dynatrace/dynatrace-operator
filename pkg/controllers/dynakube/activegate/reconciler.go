@@ -89,6 +89,11 @@ func NewReconciler(clt client.Client, //nolint
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	if !r.dk.ActiveGate().IsEnabled() && meta.FindStatusCondition(*r.dk.Conditions(), statefulset.ActiveGateStatefulSetConditionType) == nil {
+		// If AG is not and was not cleaned up due to being previously enabled
+		return nil
+	}
+
 	err := r.connectionReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
