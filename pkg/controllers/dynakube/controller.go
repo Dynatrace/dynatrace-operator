@@ -482,7 +482,7 @@ func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.
 	for scope, conditionType := range dtclient.OptionalScopes {
 		available, ok := optionalScopes[scope]
 		switch {
-		case !ok:
+		case !ok: // no enabled feature uses the `scope` -> doesn't need to be in the status
 			_ = meta.RemoveStatusCondition(&dkStatus.Conditions, conditionType)
 		case available:
 			conditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
