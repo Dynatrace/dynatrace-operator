@@ -91,8 +91,12 @@ func TestNoCSI_node_image_pull_with_no_csi(t *testing.T) {
 	testEnv.Test(t, bootstrapper.NoCSI(t))
 }
 
-func TestNoCSI_logmonitoring_components_rollout(t *testing.T) {
+func TestNoCSI_logmonitoring(t *testing.T) {
 	testEnv.Test(t, logmonitoring.Feature(t))
+}
+
+func TestNoCSI_logmonitoring_with_optional_scopes(t *testing.T) {
+	testEnv.Test(t, logmonitoring.WithOptionalScopes(t))
 }
 
 func TestNoCSI_host_monitoring_without_csi(t *testing.T) {

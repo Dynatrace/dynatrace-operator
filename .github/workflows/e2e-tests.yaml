@@ -35,6 +35,7 @@ jobs:
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
@@ -69,6 +70,7 @@ jobs:
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
@@ -103,6 +105,7 @@ jobs:
           target-image: format('{0}-fips', (${{ github.event.inputs.target || 'main' }}))
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}

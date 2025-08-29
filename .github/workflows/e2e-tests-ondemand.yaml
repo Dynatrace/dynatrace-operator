@@ -73,6 +73,7 @@ jobs:
           target-branch: ${{ env.branch }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
           tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
