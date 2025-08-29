@@ -2,12 +2,12 @@ package token
 
 import (
 	"context"
-	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type Token struct {
@@ -40,7 +40,7 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 
 	err = token.verifyRequiredScopes(scopes, dk)
 
-	missingOptionalScopes := token.verifyOptionalScopes(scopes, dk)
+	missingOptionalScopes := token.collectMissingOptionalScopes(scopes, dk)
 
 	if len(missingOptionalScopes) > 0 {
 		log.Info("some optional scopes are missing", "missing scopes", missingOptionalScopes, "token", token.Type)
@@ -54,8 +54,8 @@ func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakub
 
 	for _, feature := range token.Features {
 		if feature.IsEnabled(dk) {
-			isMissing, missingScopes := feature.IsScopeMissing(scopes)
-			if isMissing {
+			missingScopes := feature.CollectMissingRequiredScopes(scopes)
+			if len(missingScopes) > 0 {
 				collectedErrors = append(collectedErrors,
 					errors.Errorf("feature '%s' is missing scope '%s'",
 						feature.Name,
@@ -71,21 +71,16 @@ func (token *Token) verifyRequiredScopes(scopes dtclient.TokenScopes, dk dynakub
 	return nil
 }
 
-func (token *Token) verifyOptionalScopes(scopes dtclient.TokenScopes, dk dynakube.DynaKube) []string {
-	collectedMissingOptionalScopes := make([]string, 0)
+func (token *Token) collectMissingOptionalScopes(scopes dtclient.TokenScopes, dk dynakube.DynaKube) []string {
+	missingScopes := sets.NewString()
 
 	for _, feature := range token.Features {
 		if feature.IsEnabled(dk) {
-			isMissing, missingScopes := feature.IsOptionalScopeMissing(scopes)
-			if isMissing {
-				collectedMissingOptionalScopes = append(collectedMissingOptionalScopes, missingScopes...)
-			}
+			missingScopes.Insert(feature.CollectMissingOptionalScopes(scopes)...)
 		}
 	}
 
-	slices.Sort(collectedMissingOptionalScopes)
-
-	return slices.Compact(collectedMissingOptionalScopes)
+	return missingScopes.List()
 }
 
 func (token *Token) verifyValue() error {

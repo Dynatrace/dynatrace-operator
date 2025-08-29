@@ -16,8 +16,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 				return true
 			},
 		}
-		missing, scopes := feature.IsScopeMissing([]string{"scope1", "scope2"})
-		assert.False(t, missing)
+		scopes := feature.CollectMissingRequiredScopes([]string{"scope1", "scope2"})
 		assert.Empty(t, scopes)
 	})
 
@@ -29,8 +28,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 				return true
 			},
 		}
-		missing, scopes := feature.IsScopeMissing([]string{"scope1"})
-		assert.True(t, missing)
+		scopes := feature.CollectMissingRequiredScopes([]string{"scope1"})
 		assert.Equal(t, []string{"scope2"}, scopes)
 	})
 
@@ -42,8 +40,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 				return true
 			},
 		}
-		missing, scopes := feature.IsScopeMissing([]string{})
-		assert.True(t, missing)
+		scopes := feature.CollectMissingRequiredScopes([]string{})
 		assert.Equal(t, []string{"scope1", "scope2"}, scopes)
 	})
 
@@ -55,8 +52,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 				return true
 			},
 		}
-		missing, scopes := feature.IsOptionalScopeMissing([]string{"scope1", "scope2"})
-		assert.False(t, missing)
+		scopes := feature.CollectMissingOptionalScopes([]string{"scope1", "scope2"})
 		assert.Empty(t, scopes)
 	})
 
@@ -68,8 +64,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 				return true
 			},
 		}
-		missing, scopes := feature.IsOptionalScopeMissing([]string{"scope1"})
-		assert.True(t, missing)
+		scopes := feature.CollectMissingOptionalScopes([]string{"scope1"})
 		assert.Equal(t, []string{"scope2"}, scopes)
 	})
 
@@ -81,8 +76,7 @@ func TestFeature_IsScopeMissing(t *testing.T) {
 				return true
 			},
 		}
-		missing, scopes := feature.IsOptionalScopeMissing([]string{})
-		assert.True(t, missing)
+		scopes := feature.CollectMissingOptionalScopes([]string{})
 		assert.Equal(t, []string{"scope1", "scope2"}, scopes)
 	})
 }

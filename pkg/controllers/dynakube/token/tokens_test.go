@@ -76,7 +76,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Download Installer' is missing scope 'InstallerDownload']")
@@ -91,7 +91,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Len(t, tokens.PaasToken().Features, 1)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -104,7 +104,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -122,7 +122,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
@@ -140,7 +140,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 1)
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'Data Ingest' is missing scope 'metrics.ingest']")
@@ -155,7 +155,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 1)
 		assert.NoError(t, err)
@@ -360,7 +360,7 @@ func assertOptionalScopes(t *testing.T, fakeClient dtclient.Client, dk dynakube.
 		tokens = tokens.AddFeatureScopesToTokens()
 		missingOptionalScopes, err := tokens.VerifyScopes(context.Background(), fakeClient, dk)
 
-		assert.Len(t, tokens.APIToken().Features, 4, tokenValue)
+		assert.Len(t, tokens.APIToken().Features, 6, tokenValue)
 		assert.Equal(t, scopes, missingOptionalScopes, tokenValue)
 		assert.NoError(t, err, tokenValue)
 	}
@@ -410,6 +410,10 @@ func TestConcatErrors(t *testing.T) {
 
 	testCases := []concatErrorsTestCase{
 		{
+			name:              "no errors -> no error",
+			encounteredErrors: []error{},
+		},
+		{
 			name: "string errors",
 			encounteredErrors: []error{
 				stringError1,
@@ -456,7 +460,12 @@ func TestConcatErrors(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			err := concatErrors(testCase.encounteredErrors)
-			require.EqualError(t, err, testCase.message)
+
+			if len(testCase.encounteredErrors) == 0 {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, testCase.message)
+			}
 		})
 	}
 }

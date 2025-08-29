@@ -13,28 +13,28 @@ type Feature struct {
 	OptionalScopes []string
 }
 
-func (feature *Feature) IsScopeMissing(scopes []string) (bool, []string) {
+func (feature *Feature) CollectMissingRequiredScopes(availableScopes []string) []string {
 	missingScopes := make([]string, 0)
 
 	for _, requiredScope := range feature.RequiredScopes {
-		if !slices.Contains(scopes, requiredScope) {
+		if !slices.Contains(availableScopes, requiredScope) {
 			missingScopes = append(missingScopes, requiredScope)
 		}
 	}
 
-	return len(missingScopes) > 0, missingScopes
+	return missingScopes
 }
 
-func (feature *Feature) IsOptionalScopeMissing(scopes []string) (bool, []string) {
+func (feature *Feature) CollectMissingOptionalScopes(availableScopes []string) []string {
 	missingScopes := make([]string, 0)
 
 	for _, optionalScope := range feature.OptionalScopes {
-		if !slices.Contains(scopes, optionalScope) {
+		if !slices.Contains(availableScopes, optionalScope) {
 			missingScopes = append(missingScopes, optionalScope)
 		}
 	}
 
-	return len(missingScopes) > 0, missingScopes
+	return missingScopes
 }
 
 func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
@@ -47,6 +47,24 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.ActiveGate().IsKubernetesMonitoringEnabled() &&
 					dk.FF().IsAutomaticK8sAPIMonitoring()
+			},
+		},
+		{
+			Name: "LogMonitoring",
+			OptionalScopes: []string{
+				dtclient.TokenScopeSettingsRead,
+				dtclient.TokenScopeSettingsWrite},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.LogMonitoring().IsEnabled()
+			},
+		},
+		{
+			Name: "CodeModule Injection",
+			OptionalScopes: []string{
+				dtclient.TokenScopeSettingsRead,
+			},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.OneAgent().IsAppInjectionNeeded() // also covers node-image pull
 			},
 		},
 		{
@@ -67,7 +85,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			Name:           "MetadataEnrichment Rules",
 			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.MetadataEnrichmentEnabled() || dk.FF().IsNodeImagePull()
+				return dk.MetadataEnrichmentEnabled()
 			},
 		},
 	}
