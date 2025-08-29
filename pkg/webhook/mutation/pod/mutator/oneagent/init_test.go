@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestMutateInitContainer(t *testing.T) {
@@ -302,4 +303,52 @@ func TestGetTechnology(t *testing.T) {
 			assert.Equal(t, test.expected, getTechnology(pod, dk))
 		})
 	}
+}
+
+func Test_isNonRoot(t *testing.T) {
+	t.Run("root user", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(0)),
+			RunAsGroup: ptr.To(int64(0)),
+		}
+		assert.False(t, IsNonRoot(ctx))
+	})
+	t.Run("non-root user", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(1000)),
+			RunAsGroup: ptr.To(int64(1000)),
+		}
+		assert.True(t, IsNonRoot(ctx))
+	})
+	t.Run("root user and nil group (OCP case)", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(0)),
+			RunAsGroup: nil,
+		}
+		assert.False(t, IsNonRoot(ctx))
+	})
+	t.Run("non-root user and nil group (OCP case)", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(1000)),
+			RunAsGroup: nil,
+		}
+		assert.True(t, IsNonRoot(ctx))
+	})
+	t.Run("nil user and root group (edge case)", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  nil,
+			RunAsGroup: ptr.To(int64(0)),
+		}
+		assert.False(t, IsNonRoot(ctx))
+	})
+	t.Run("nil user and non-root group (edge case)", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  nil,
+			RunAsGroup: ptr.To(int64(1000)),
+		}
+		assert.True(t, IsNonRoot(ctx))
+	})
+	t.Run("nil context", func(t *testing.T) {
+		assert.True(t, IsNonRoot(nil))
+	})
 }

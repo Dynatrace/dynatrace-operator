@@ -48,9 +48,10 @@ const (
 	ReleaseStageEnv        = "DT_RELEASE_STAGE"
 	ReleaseBuildVersionEnv = "DT_RELEASE_BUILD_VERSION"
 
-	DefaultUser   int64 = 1001
-	DefaultGroup  int64 = 1001
-	RootUserGroup int64 = 0
+	DefaultUser  int64 = 1001
+	DefaultGroup int64 = 1001
+	RootUser     int64 = 0
+	RootGroup    int64 = 0
 
 	// DtStorageEnv is a temporary env we set on the containers injected with the OneAgent to control where it stores logs and such.
 	// This should be replaced by the `storage` property in the ruxitagentproc.conf
