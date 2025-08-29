@@ -26,7 +26,6 @@ const (
 	testNamespace = "test-namespace"
 	testKey       = "test-key"
 	testValue     = "test-value"
-
 )
 
 type errorClient struct {
