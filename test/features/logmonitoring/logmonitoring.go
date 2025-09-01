@@ -105,7 +105,6 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 		componentDynakube.WithLogMonitoring(),
 		componentDynakube.WithLogMonitoringImageRefSpec(consts.LogMonitoringImageRepo, consts.LogMonitoringImageTag),
 		componentDynakube.WithActiveGate(),
-		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
 
 	isOpenshift, err := platform.NewResolver().IsOpenshift()
@@ -117,19 +116,6 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	}
 
 	testDynakube := *componentDynakube.New(options...)
-
-	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificate))
-	require.NoError(t, err)
-
-	agP12, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
-	require.NoError(t, err)
-
-	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,
-		map[string][]byte{
-			dynakube.TLSCertKey:                    agCrt,
-			consts.AgCertificateAndPrivateKeyField: agP12,
-		})
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
@@ -151,8 +137,6 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
-
-	builder.WithTeardown("deleted ag secret", secret.Delete(agSecret))
 
 	return builder.Feature()
 }
