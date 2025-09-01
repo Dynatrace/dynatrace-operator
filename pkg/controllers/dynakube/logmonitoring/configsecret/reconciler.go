@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -24,10 +25,14 @@ const (
 
 	TokenHashAnnotationKey   = api.InternalFlagPrefix + "tenant-token-hash"
 	NetworkZoneAnnotationKey = api.InternalFlagPrefix + "network-zone"
+	ProxyHashAnnotationKey   = api.InternalFlagPrefix + "proxy-hash"
+	NoProxyAnnotationKey     = api.InternalFlagPrefix + "no-proxy"
 
 	tenantKey       = "Tenant"
 	tenantTokenKey  = "TenantToken"
 	hostIDSourceKey = "HostIdSource"
+	proxyKey        = "Proxy"
+	noProxyKey      = "noProxy"
 	serverKey       = "Server"
 	networkZoneKey  = "Location"
 )
@@ -134,6 +139,22 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		hostIDSourceKey: "k8s-node-name",
 	}
 
+	if r.dk.HasProxy() {
+		proxyURL, err := r.dk.Proxy(ctx, r.apiReader)
+		if err != nil {
+			conditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
+
+			return nil, err
+		}
+
+		deploymentConfigContent[proxyKey] = proxyURL
+	}
+
+	noProxy := createNoProxyValue(*r.dk)
+	if noProxy != "" {
+		deploymentConfigContent[noProxyKey] = noProxy
+	}
+
 	if r.dk.Spec.NetworkZone != "" {
 		deploymentConfigContent[networkZoneKey] = r.dk.Spec.NetworkZone
 	}
@@ -147,6 +168,23 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 	}
 
 	return map[string][]byte{DeploymentConfigFilename: []byte(content.String())}, nil
+}
+
+func createNoProxyValue(dk dynakube.DynaKube) string {
+	sources := []string{
+		dk.FF().GetNoProxy(),
+		capability.BuildHostEntries(dk),
+	}
+
+	noProxies := []string{}
+
+	for _, source := range sources {
+		if strings.TrimSpace(source) != "" {
+			noProxies = append(noProxies, source)
+		}
+	}
+
+	return strings.Join(noProxies, ",")
 }
 
 func GetSecretName(dkName string) string {
@@ -163,8 +201,18 @@ func AddAnnotations(source map[string]string, dk dynakube.DynaKube) map[string]s
 	}
 
 	annotation[TokenHashAnnotationKey] = dk.OneAgent().ConnectionInfoStatus.TenantTokenHash
+
 	if dk.Spec.NetworkZone != "" {
 		annotation[NetworkZoneAnnotationKey] = dk.Spec.NetworkZone
+	}
+
+	if dk.HasProxy() {
+		annotation[ProxyHashAnnotationKey] = dk.Status.ProxyURLHash
+	}
+
+	noProxy := createNoProxyValue(dk)
+	if noProxy != "" {
+		annotation[NoProxyAnnotationKey] = noProxy
 	}
 
 	return annotation

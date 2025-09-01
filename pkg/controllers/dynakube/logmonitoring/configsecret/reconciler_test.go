@@ -6,11 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
@@ -72,7 +75,38 @@ func TestReconcile(t *testing.T) {
 		require.NotEmpty(t, oldTransitionTime)
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+
+		err = reconciler.Reconcile(context.Background())
+
+		require.NoError(t, err)
+		checkSecretForValue(t, mockK8sClient, dk)
+	})
+
+	t.Run("Create and update works with no-proxy/proxy/network-zone", func(t *testing.T) {
+		dk := createDynakube(true)
+
+		mockK8sClient := createK8sClientWithOneAgentTenantSecret(dk, tokenValue)
+
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, dk)
+		err := reconciler.Reconcile(ctx)
+		require.NoError(t, err)
+
+		checkSecretForValue(t, mockK8sClient, dk)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), LmcConditionType)
+		require.NotNil(t, condition)
+		oldTransitionTime := condition.LastTransitionTime
+		require.NotEmpty(t, oldTransitionTime)
+		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		reconciler.dk.Spec.NetworkZone = "test-zone"
+		reconciler.dk.Spec.Proxy = &value.Source{
+			Value: "test-proxy",
+		}
+		reconciler.dk.Annotations = map[string]string{
+			exp.NoProxyKey: "test-no-proxy",
+		}
 
 		err = reconciler.Reconcile(context.Background())
 
@@ -137,6 +171,16 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 
 	if dk.Spec.NetworkZone != "" {
 		expectedLines = append(expectedLines, networkZoneKey+"="+dk.Spec.NetworkZone)
+	}
+
+	if dk.HasProxy() {
+		proxyURL, err := dk.Proxy(t.Context(), k8sClient)
+		require.NoError(t, err)
+		expectedLines = append(expectedLines, proxyKey+"="+proxyURL)
+	}
+
+	if createNoProxyValue(*dk) != "" {
+		expectedLines = append(expectedLines, noProxyKey+"="+createNoProxyValue(*dk))
 	}
 
 	split := strings.Split(strings.Trim(string(deploymentConfig), "\n"), "\n")
@@ -221,4 +265,136 @@ func createK8sClientWithConfigSecret() client.Client {
 	)
 
 	return mockK8sClient
+}
+
+func TestAddAnnotations(t *testing.T) {
+	type testCase struct {
+		title       string
+		annotations map[string]string
+		dk          dynakube.DynaKube
+		expectedOut map[string]string
+	}
+
+	cases := []testCase{
+		{
+			title: "nil map doesn't break it",
+			dk: dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+							ConnectionInfo: communication.ConnectionInfo{
+								TenantTokenHash: "hash",
+							},
+						},
+					},
+				},
+			},
+			annotations: nil,
+			expectedOut: map[string]string{
+				TokenHashAnnotationKey: "hash",
+			},
+		},
+		{
+			title: "existing annotations are untouched",
+			dk: dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+							ConnectionInfo: communication.ConnectionInfo{
+								TenantTokenHash: "hash",
+							},
+						},
+					},
+				},
+			},
+			annotations: map[string]string{
+				"other": "annotation",
+			},
+			expectedOut: map[string]string{
+				"other":                "annotation",
+				TokenHashAnnotationKey: "hash",
+			},
+		},
+		{
+			title: "network-zone respected",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					NetworkZone: "test-zone",
+				},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+							ConnectionInfo: communication.ConnectionInfo{
+								TenantTokenHash: "hash",
+							},
+						},
+					},
+				},
+			},
+			annotations: map[string]string{},
+			expectedOut: map[string]string{
+				TokenHashAnnotationKey:   "hash",
+				NetworkZoneAnnotationKey: "test-zone",
+			},
+		},
+		{
+			title: "proxy respected",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					Proxy: &value.Source{Value: "doesn't matter"},
+				},
+				Status: dynakube.DynaKubeStatus{
+					ProxyURLHash: "proxy-hash",
+					OneAgent: oneagent.Status{
+						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+							ConnectionInfo: communication.ConnectionInfo{
+								TenantTokenHash: "hash",
+							},
+						},
+					},
+				},
+			},
+			annotations: map[string]string{},
+			expectedOut: map[string]string{
+				TokenHashAnnotationKey: "hash",
+				ProxyHashAnnotationKey: "proxy-hash",
+			},
+		},
+		{
+			title: "no-proxy respected",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						exp.NoProxyKey: "no-proxy",
+					},
+				},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+							ConnectionInfo: communication.ConnectionInfo{
+								TenantTokenHash: "hash",
+							},
+						},
+					},
+					ActiveGate: activegate.Status{
+						ServiceIPs: []string{"1.1.1.1", "2.2.2.2"},
+					},
+				},
+			},
+			annotations: map[string]string{},
+			expectedOut: map[string]string{
+				TokenHashAnnotationKey: "hash",
+				NoProxyAnnotationKey:   "no-proxy,1.1.1.1,2.2.2.2",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			out := AddAnnotations(c.annotations, c.dk)
+
+			require.NotEqual(t, c.annotations, out)
+			assert.Equal(t, c.expectedOut, out)
+		})
+	}
 }
