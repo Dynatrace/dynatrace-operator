@@ -21,10 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	customImage = "custom-image"
-)
-
 func TestHandleImpl(t *testing.T) {
 	initSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
