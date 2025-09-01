@@ -22,12 +22,19 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String())
 		// in case of CSI, the CSI volume itself is already always readonly, so the mount should always be readonly, the init-container should just read from it
 		addInitBinMount(mutationRequest.InstallContainer, true)
+
+		customInitResources := mutationRequest.DynaKube.OneAgent().GetInitResources()
+		if customInitResources != nil {
+			mutationRequest.InstallContainer.Resources = *customInitResources
+		}
 	} else {
 		log.Info("configuring init-container with emptyDir bin volume", "name", mutationRequest.PodName())
 		addEmptyDirBinVolume(mutationRequest.Pod)
 		// in case of no CSI, the the emptyDir can't be readonly for the init-container, as it first has to download/move the agent into it
 		addInitBinMount(mutationRequest.InstallContainer, false)
 
+		// in case of no CSI, the default init resources will not work, so we must overwrite them to the custom ones from `spec.oneAgent.<mode>.initResources`, or unset them
+		mutationRequest.InstallContainer.Resources = initContainerResources(mutationRequest.DynaKube)
 		if mutationRequest.DynaKube.FF().IsNodeImagePull() {
 			log.Info("configuring init-container with self-extracting image", "name", mutationRequest.PodName())
 			// The first element would be the "bootstrap" subcommand, which is not needed in case of self-extracting image
@@ -49,6 +56,15 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 	}
 
 	return addInitArgs(*mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath)
+}
+
+func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
+	customInitResources := dk.OneAgent().GetInitResources()
+	if customInitResources != nil {
+		return *customInitResources
+	}
+
+	return corev1.ResourceRequirements{}
 }
 
 func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) error {
