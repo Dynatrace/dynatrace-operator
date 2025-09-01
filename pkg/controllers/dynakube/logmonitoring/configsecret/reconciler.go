@@ -59,6 +59,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil // no condition == nothing is there to clean up
 		}
 
+		log.Info("cleaning up the LogMonitoring config-secret")
+
 		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: GetSecretName(r.dk.Name), Namespace: r.dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up LogMonitoring config-secret")
@@ -106,6 +108,8 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		k8ssecret.SetLabels(coreLabels),
 	)
 	if err != nil {
+		log.Info("failed to build the final secret")
+
 		conditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
@@ -120,6 +124,8 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		Namespace: r.dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
+		log.Info("failed to get the oneagent-tenant secret")
+
 		conditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
@@ -127,6 +133,8 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 
 	tenantUUID, err := r.dk.TenantUUID()
 	if err != nil {
+		log.Info("failed to determine the tenantUUID")
+
 		conditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
@@ -142,7 +150,9 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 	if r.dk.HasProxy() {
 		proxyURL, err := r.dk.Proxy(ctx, r.apiReader)
 		if err != nil {
-			conditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
+			log.Info("failed get the proxy value")
+
+			conditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 
 			return nil, err
 		}
