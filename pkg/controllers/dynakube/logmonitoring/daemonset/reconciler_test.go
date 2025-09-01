@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -63,8 +62,38 @@ func TestReconcile(t *testing.T) {
 		require.Nil(t, condition)
 	})
 
-	t.Run("Create and update works with minimal setup", func(t *testing.T) {
+	t.Run("Create and update works with ME set", func(t *testing.T) {
 		dk := createDynakube(true)
+
+		mockK8sClient := fake.NewClient()
+
+		reconciler := NewReconciler(mockK8sClient,
+			mockK8sClient, dk)
+		err := reconciler.Reconcile(ctx)
+		require.NoError(t, err)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, condition)
+		oldTransitionTime := condition.LastTransitionTime
+		require.NotEmpty(t, oldTransitionTime)
+		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+
+		err = reconciler.Reconcile(t.Context())
+		require.NoError(t, err)
+
+		var daemonset appsv1.DaemonSet
+		err = mockK8sClient.Get(ctx, types.NamespacedName{
+			Name:      dk.LogMonitoring().GetDaemonSetName(),
+			Namespace: dk.Namespace,
+		}, &daemonset)
+		require.False(t, k8serrors.IsNotFound(err))
+		assert.NotEmpty(t, daemonset)
+	})
+
+	t.Run("Create and update works with ME not set", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Status.KubernetesClusterMEID = ""
 
 		mockK8sClient := fake.NewClient()
 
@@ -131,23 +160,6 @@ func TestReconcile(t *testing.T) {
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-	})
-
-	t.Run("requeues when read scope is there and no clusterMEID set", func(t *testing.T) {
-		dk := createDynakube(true)
-		dk.Status.KubernetesClusterMEID = ""
-
-		setReadScope(t, dk)
-
-		mockK8sClient := fake.NewClient()
-
-		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-
-		err := reconciler.Reconcile(t.Context())
-
-		require.Error(t, err)
-		require.EqualError(t, err, KubernetesSettingsNotAvailableError.Error())
 	})
 }
 
@@ -332,50 +344,6 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		require.Nil(t, env.FindEnvVar(init.Env, entityEnv))
 	})
-
-	t.Run("both scopes set, MEID missing - wait, DS not created", func(t *testing.T) {
-		dk := createDynakube(true)
-		dk.Status.KubernetesClusterMEID = ""
-		setReadScope(t, dk)
-		setWriteScope(t, dk)
-
-		mockK8sClient := fake.NewClient()
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-
-		err := reconciler.Reconcile(t.Context())
-		require.Error(t, err)
-		require.ErrorContains(t, err, "missing information about the kubernetes monitored-entity")
-
-		var ds appsv1.DaemonSet
-		err = mockK8sClient.Get(t.Context(), types.NamespacedName{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace}, &ds)
-		require.Error(t, err)
-		require.ErrorContains(t, err, "not found")
-	})
-
-	t.Run("both scopes set AND MEID set, check args and envs of DS", func(t *testing.T) {
-		dk := createDynakube(true)
-		setReadScope(t, dk)
-		setWriteScope(t, dk)
-
-		mockK8sClient := fake.NewClient()
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-
-		err := reconciler.Reconcile(t.Context())
-		require.NoError(t, err)
-
-		var ds appsv1.DaemonSet
-
-		err = mockK8sClient.Get(t.Context(), types.NamespacedName{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace}, &ds)
-		require.NoError(t, err)
-
-		initContainer := ds.Spec.Template.Spec.InitContainers[0]
-
-		require.Contains(t, initContainer.Args, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
-
-		envVar := env.FindEnvVar(initContainer.Env, entityEnv)
-		require.NotNil(t, envVar)
-		require.Equal(t, dk.Status.KubernetesClusterMEID, envVar.Value)
-	})
 }
 
 func createDynakube(isEnabled bool) *dynakube.DynaKube {
@@ -425,14 +393,4 @@ func createBOOMK8sClient() client.Client {
 	})
 
 	return boomClient
-}
-
-func setReadScope(t *testing.T, dk *dynakube.DynaKube) {
-	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: dtclient.ConditionTypeAPITokenSettingsRead, Status: metav1.ConditionTrue})
-}
-
-func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
-	t.Helper()
-	meta.SetStatusCondition(dk.Conditions(), metav1.Condition{Type: dtclient.ConditionTypeAPITokenSettingsWrite, Status: metav1.ConditionTrue})
 }

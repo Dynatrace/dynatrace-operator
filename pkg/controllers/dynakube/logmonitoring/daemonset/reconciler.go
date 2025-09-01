@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
@@ -56,12 +55,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
 
 		return nil // clean-up shouldn't cause a failure
-	}
-
-	if !r.isMEConfigured() && conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
-		log.Info("Kubernetes settings are not yet available and 'settings.read' token scope is available, will requeue")
-
-		return KubernetesSettingsNotAvailableError
 	}
 
 	ds, err := r.generateDaemonSet()
@@ -124,6 +117,6 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	return ds, nil
 }
 
-func (r *Reconciler) isMEConfigured() bool {
-	return r.dk.Status.KubernetesClusterMEID != "" && r.dk.Status.KubernetesClusterName != ""
+func isMEConfigured(dk dynakube.DynaKube) bool {
+	return dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != ""
 }
