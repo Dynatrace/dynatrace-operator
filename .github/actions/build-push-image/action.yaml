@@ -74,8 +74,8 @@ runs:
           type=raw,value=nightly,enable=${{ github.event_name == 'schedule' }}
           # tags
           type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
-          # everything else
-          type=raw,value=snapshot-${{ github.ref_name }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
+          # all other branches including 'release-*' branches except 'main'
+          type=raw,value=${{ steps.prep.outputs.docker_image_tag_without_prefix }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
         annotations: |
           ${{ inputs.annotation }}
           version=${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}

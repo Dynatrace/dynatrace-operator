@@ -14,11 +14,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 func TestMutateInitContainer(t *testing.T) {
@@ -28,7 +30,48 @@ func TestMutateInitContainer(t *testing.T) {
 			bootstrapper.Use,
 		},
 		Image: "webhook-image",
+		Resources: corev1.ResourceRequirements{
+			Requests: resources.NewResourceList("30m", "30Mi"), // add some defaults
+		},
 	}
+
+	t.Run("csi-scenario -> custom init-resources", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+
+		dk := dynakube.DynaKube{}
+		dk.Name = "csi-scenario"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
+			Requests: resources.NewResourceList("40m", "40Mi"),
+		}
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		csiVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		require.NoError(t, err)
+		require.NotNil(t, csiVolume.CSI)
+		require.NotNil(t, csiVolume.CSI.ReadOnly)
+		require.True(t, *csiVolume.CSI.ReadOnly)
+
+		csiMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		require.NoError(t, err)
+		require.True(t, csiMount.ReadOnly)
+
+		assert.NotEmpty(t, request.InstallContainer.Args)
+		assert.Subset(t, request.InstallContainer.Args, initContainerBase.Args)
+		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
+	})
 
 	t.Run("csi-scenario", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
@@ -62,6 +105,7 @@ func TestMutateInitContainer(t *testing.T) {
 		assert.NotEmpty(t, request.InstallContainer.Args)
 		assert.Subset(t, request.InstallContainer.Args, initContainerBase.Args)
 		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+		assert.NotEmpty(t, request.InstallContainer.Resources) // does not touch default
 	})
 
 	t.Run("zip-scenario", func(t *testing.T) {
@@ -102,6 +146,8 @@ func TestMutateInitContainer(t *testing.T) {
 		assert.Contains(t, request.InstallContainer.Args, fmt.Sprintf("--%s=%s", bootstrapper.FlavorFlag, flavor))
 		assert.Contains(t, request.InstallContainer.Args, fmt.Sprintf("--%s=%s", bootstrapper.TargetVersionFlag, version))
 		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+
+		assert.Empty(t, request.InstallContainer.Resources) // removes default, as they wouldn't work
 	})
 
 	t.Run("node-image-pull-scenario", func(t *testing.T) {
@@ -139,6 +185,69 @@ func TestMutateInitContainer(t *testing.T) {
 		assert.NotEmpty(t, request.InstallContainer.Args)
 		assert.NotSubset(t, request.InstallContainer.Args, initContainerBase.Args)
 		assert.Equal(t, image, request.InstallContainer.Image)
+
+		assert.Empty(t, request.InstallContainer.Resources) // removes default, as they wouldn't work
+	})
+
+	t.Run("zip-scenario -> custom init-resources", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		flavor := "musl"
+		version := "1.2.3"
+		dk := dynakube.DynaKube{}
+		dk.Name = "zip-scenario"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
+			Requests: resources.NewResourceList("40m", "40Mi"),
+		}
+		dk.Status.CodeModules.Version = version
+		pod := &corev1.Pod{}
+		pod.Annotations = map[string]string{
+			AnnotationFlavor: flavor,
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
+	})
+
+	t.Run("node-image-pull-scenario -> custom init-resources", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		image := "myimage.io:latest"
+		dk := dynakube.DynaKube{}
+		dk.Name = "node-image-pull-scenario"
+		dk.Annotations = map[string]string{
+			exp.OANodeImagePullKey: "true",
+		}
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
+			Requests: resources.NewResourceList("40m", "40Mi"),
+		}
+		dk.Status.CodeModules.ImageID = image
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
 	})
 }
 
@@ -302,4 +411,52 @@ func TestGetTechnology(t *testing.T) {
 			assert.Equal(t, test.expected, getTechnology(pod, dk))
 		})
 	}
+}
+
+func Test_isNonRoot(t *testing.T) {
+	t.Run("root user", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(0)),
+			RunAsGroup: ptr.To(int64(0)),
+		}
+		assert.False(t, IsNonRoot(ctx))
+	})
+	t.Run("non-root user", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(1000)),
+			RunAsGroup: ptr.To(int64(1000)),
+		}
+		assert.True(t, IsNonRoot(ctx))
+	})
+	t.Run("root user and nil group (OCP case)", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(0)),
+			RunAsGroup: nil,
+		}
+		assert.False(t, IsNonRoot(ctx))
+	})
+	t.Run("non-root user and nil group (OCP case)", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(1000)),
+			RunAsGroup: nil,
+		}
+		assert.True(t, IsNonRoot(ctx))
+	})
+	t.Run("nil user and root group (edge case)", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  nil,
+			RunAsGroup: ptr.To(int64(0)),
+		}
+		assert.False(t, IsNonRoot(ctx))
+	})
+	t.Run("nil user and non-root group (edge case)", func(t *testing.T) {
+		ctx := &corev1.SecurityContext{
+			RunAsUser:  nil,
+			RunAsGroup: ptr.To(int64(1000)),
+		}
+		assert.True(t, IsNonRoot(ctx))
+	})
+	t.Run("nil context", func(t *testing.T) {
+		assert.True(t, IsNonRoot(nil))
+	})
 }
