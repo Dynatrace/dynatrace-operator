@@ -126,14 +126,26 @@ General rules to follow:
 
 - Each `Secret/ConfigMap` we manage should have it's own package, that contain:
   - The func to determine the name of the `Secret/ConfigMap`. (example: `GetName`)
+  - A `const` for each key used inside the `data` of the `Secret/ConfigMap`.
+    - Make them `public` if they will be used via `Items` when mounting it.
+  - Unique annotation keys ( public `const`) for keeping track of `Secret/ConfigMap` changes (example: `TokenHashAnnotationKey`)
+    - An annotation can be for storing a hash of the whole `Secret/ConfigMap` or part of it. Make this clear in the name of the annotation.
+      - For not confidential values it is ok to use `GenerateHash`
+      - For confidential values `GenerateSecureHash` should be used
+    - An annotation can be for storing the exact value from the `DynaKube`, makes sense for simple, confidential data. (example: `networkZone`)
+  - A func to add all the relevant annotations to the provided map. (example: `AddAnnotations`)
+    - There can be multiple annotation for `Secret/ConfigMap`, or just 1.
+      - It makes sense to have multiple for the cases where you don't want to cause a restart if part of the `Secret/ConfigMap` changes.
+         Example: The communication endpoints of the OneAgent changes overtime, the OneAgent handles it on its own so that shouldn't cause a restart.
+      - It makes sense to have 1 if any change to the `Secret/ConfigMap` should cause a restart.
   - The "reconcile" logic
-    - This should be also responsible for calculating a hash from the content of the `Secret/ConfigMap`, and storing this value in the `status` of the `DynaKube`
-  - A unique annotation key ( public `const`) (example: `HashAnnotationKey`)
-  - A public `const` for each key used inside the `data` of the `Secret/ConfigMap`.
+    - If a unique hash will be calculated for this Secret, then the "reconcile logic" should calc/set/unset this as it is necessary.
+      - Should be set/stored in the `Status` of the `DynaKube` so it can be reused, instead of recalculated from other reconcilers.
+
 - This package is used by other packages that would like to mount the `Secret/ConfigMap`
   - Using the `GetName`, to reference the `Secret/ConfigMap` in a Volume or Env
   - Using the "public `const` for each key" to what to part of the `Secret/ConfigMap` to use. (use `Items` instead of `SubPath`)
-  - Using the `HashAnnotationKey` to put the hashed content of the `Secret/ConfigMap` (from the `DynaKube`'s `status`) into the `template.metadata.annotations` of the component, IF it needs to be restarted when the `Secret/ConfigMap` changes.
+  - Using the `AddAnnotation` to put the hashed content of the `Secret/ConfigMap` (from the `DynaKube`'s `status`) into the `template.metadata.annotations` of the component, **IF** it needs to be restarted when the `Secret/ConfigMap` changes.
 
 Reasoning for these rules:
 
@@ -141,6 +153,76 @@ Reasoning for these rules:
   - Putting all of this within the `api` package, when we already tend to have a package for each `Secret/ConfigMap` for "reconciling" is just breaking the "single-place-of-truth" for no good reason.
   - Fetching and recalculating the hash for each component where a `Secret/ConfigMap` is used would be fine if we only had a few of them, but we have 15+.
     - Why not use the cache? -> Using the built-in cache of the `Client` had caused problems in the past (the cache was not up to date), which could lead to inconsistency.
+
+### Example
+
+Do this:
+
+```go
+package configsecret
+
+// import (...)
+
+const (
+  logMonitoringSecretSuffix = "-logmonitoring-config"
+
+  TokenHashAnnotationKey   = api.InternalFlagPrefix + "tenant-token-hash"
+  NetworkZoneAnnotationKey = api.InternalFlagPrefix + "network-zone"
+
+  tenantKey       = "Tenant"
+  tenantTokenKey  = "TenantToken"
+  hostIDSourceKey = "HostIdSource"
+  serverKey       = "Server"
+  networkZoneKey  = "Location"
+)
+
+// type Reconciler struct { ... }
+// func NewReconciler(...) {...}
+// func (r *Reconciler) Reconcile(ctx context.Context) error {...}
+
+func GetSecretName(dkName string) string {
+  return dkName + logMonitoringSecretSuffix
+}
+
+func AddAnnotations(source map[string]string, dk dynakube.DynaKube) map[string]string {
+  annotation := map[string]string{}
+  if source != nil {
+   annotation = maps.Clone(source)
+  }
+
+  annotation[TokenHashAnnotationKey] = dk.OneAgent().ConnectionInfoStatus.TenantTokenHash
+  if dk.Spec.NetworkZone != "" {
+   annotation[NetworkZoneAnnotationKey] = dk.Spec.NetworkZone
+  }
+
+  return annotation
+}
+
+```
+
+Not this:
+
+```go
+package oneagent
+
+// import (...)
+
+const (
+  OneAgentTenantSecretSuffix            = "-oneagent-tenant-secret"
+  OneAgentConnectionInfoConfigMapSuffix = "-oneagent-connection-info"
+// ...
+)
+
+func (oa *OneAgent) GetTenantSecret() string {
+  return oa.name + OneAgentTenantSecretSuffix
+}
+
+func (oa *OneAgent) GetConnectionInfoConfigMapName() string {
+  return oa.name + OneAgentConnectionInfoConfigMapSuffix
+}
+
+// ...
+```
 
 ## Errors
 
