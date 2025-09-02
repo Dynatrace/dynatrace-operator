@@ -152,7 +152,10 @@ test/e2e/extensions: manifests/crd/helm
 
 ## Runs LogMonitoring related e2e tests
 test/e2e/logmonitoring: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "logmonitoring_components_rollout" -args $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "logmonitoring.*" -args $(SKIPCLEANUP)
+
+test/e2e/logmonitoring/optionalscopes: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "logmonitoring_with_optional_scopes.*" -args $(SKIPCLEANUP)
 
 ## Runs Host Monitoring without CSI e2e test only
 test/e2e/hostmonitoring/withoutcsi: manifests/crd/helm

@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -26,11 +27,10 @@ func ToFeatureFunc(envFunc env.Func, isFatal bool) features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		var err error
 		ctx, err = envFunc(ctx, c)
-		if err != nil {
-			if isFatal {
-				t.Fatal(err.Error())
-			}
+		if isFatal {
 			require.NoError(t, err)
+		} else {
+			assert.NoError(t, err)
 		}
 
 		return ctx
