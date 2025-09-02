@@ -2,6 +2,8 @@ package host
 
 import (
 	"context"
+	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -15,19 +17,19 @@ import (
 
 func TestPublishVolume(t *testing.T) {
 	ctx := context.Background()
-	path := metadata.PathResolver{}
+	pathResolver := metadata.PathResolver{}
 
 	t.Run("happy path", func(t *testing.T) {
 		fs := getTestFs(t)
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
-		pub := NewPublisher(fs, mounter, path)
+		pub := NewPublisher(fs, mounter, pathResolver)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		expectedHostDir := path.OsAgentDir(volumeCfg.DynakubeName)
+		expectedHostDir := pathResolver.OsAgentDir(volumeCfg.DynakubeName)
 		hostDirExists, _ := fs.IsDir(expectedHostDir)
 		assert.True(t, hostDirExists)
 		// mounter.IsMountPoint can't be used as it uses os.Stat
@@ -42,11 +44,45 @@ func TestPublishVolume(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
 
-		pub := NewPublisher(fs, mounter, path)
+		pub := NewPublisher(fs, mounter, pathResolver)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.Error(t, err)
 		require.Nil(t, resp)
+	})
+
+	t.Run("handles dangling fs path", func(t *testing.T) {
+		base := t.TempDir()
+		pathResolver := metadata.PathResolver{RootDir: base}
+
+		fs := afero.Afero{Fs: afero.NewOsFs()}
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		volumeCfg := getTestVolumeConfig(t)
+
+		// Create dir to be symlinked
+		oldDir := pathResolver.OldOsAgentDir(volumeCfg.DynakubeName)
+		require.NoError(t, os.MkdirAll(oldDir, os.ModePerm))
+
+		// Create symlink to dir
+		newDir := pathResolver.OsAgentDir(volumeCfg.DynakubeName)
+		require.NoError(t, os.MkdirAll(path.Dir(newDir), os.ModePerm))
+		require.NoError(t, os.Symlink(oldDir, newDir))
+
+		// Remove dir where the symlink was pointing to -> create dangling symlink
+		require.NoError(t, os.Remove(oldDir))
+
+		_, err := fs.Stat(newDir)
+		require.Error(t, err)
+
+		pub := NewPublisher(fs, mounter, pathResolver)
+
+		resp, err := pub.PublishVolume(ctx, &volumeCfg)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		info, err := fs.Stat(newDir)
+		require.NoError(t, err)
+		require.NotNil(t, info)
 	})
 }
 
@@ -77,4 +113,53 @@ func getTestVolumeConfig(t *testing.T) csivolumes.VolumeConfig {
 		DynakubeName: "test-dk",
 		RetryTimeout: time.Microsecond, // doesn't matter
 	}
+}
+
+func Test_cleanupDanglingSymlink(t *testing.T) {
+	t.Run("removes dangling symlink", func(t *testing.T) {
+		base := t.TempDir()
+
+		// Create dir to be symlinked
+		missingDir := path.Join(base, "dir")
+		require.NoError(t, os.MkdirAll(missingDir, os.ModePerm))
+
+		// Create symlink to dir
+		danglingLink := path.Join(base, "link")
+		require.NoError(t, os.Symlink(missingDir, danglingLink))
+
+		// Remove dir where the symlink was pointing to -> create dangling symlink
+		require.NoError(t, os.Remove(missingDir))
+
+		entries, err := os.ReadDir(base)
+		require.NoError(t, err)
+		require.Len(t, entries, 1) // check that only the link is there
+
+		cleanupDanglingSymlink(danglingLink)
+
+		entries, err = os.ReadDir(base)
+		require.NoError(t, err)
+		require.Empty(t, entries)
+	})
+
+	t.Run("leaves intact symlink", func(t *testing.T) {
+		base := t.TempDir()
+
+		// Create dir to be symlinked
+		dir := path.Join(base, "dir")
+		require.NoError(t, os.MkdirAll(dir, os.ModePerm))
+
+		// Create symlink to dir
+		link := path.Join(base, "link")
+		require.NoError(t, os.Symlink(dir, link))
+
+		entries, err := os.ReadDir(base)
+		require.NoError(t, err)
+		require.Len(t, entries, 2) // check that only the link is there
+
+		cleanupDanglingSymlink(link)
+
+		entries, err = os.ReadDir(base)
+		require.NoError(t, err)
+		require.Len(t, entries, 2) // check that only the link is there
+	})
 }
