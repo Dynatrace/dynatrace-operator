@@ -1,12 +1,12 @@
 package token
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -37,46 +37,55 @@ func getAllScopesForDataIngest() dtclient.TokenScopes {
 	}
 }
 
-const (
-	fakeTokenNoPermissions                       = "no-permissions"
-	fakeTokenAllAPITokenPermissions              = "all-permissions"
-	fakeTokenAllAPITokenPermissionsIncludingPaaS = "all-permissions-including-paas"
-	fakeTokenPaas                                = "paas-token"
-	fakeTokenAllDataIngestPermissions            = "all-data-ingest-permissions"
-)
-
-func createFakeClient(t *testing.T) *dtclientmock.Client {
-	fakeClient := dtclientmock.NewClient(t)
-
-	tokenScopes := []struct {
-		token  string
-		scopes dtclient.TokenScopes
-	}{
-		{fakeTokenNoPermissions, dtclient.TokenScopes{}},
-		{fakeTokenAllAPITokenPermissions, getAllScopesForAPIToken()},
-		{fakeTokenAllAPITokenPermissionsIncludingPaaS, append(getAllScopesForAPIToken(), getAllScopesForPaaSToken()...)},
-		{fakeTokenPaas, getAllScopesForPaaSToken()},
-		{fakeTokenAllDataIngestPermissions, getAllScopesForDataIngest()},
-	}
-
-	for _, tokenScope := range tokenScopes {
-		fakeClient.On("GetTokenScopes", mock.Anything, tokenScope.token).
-			Return(tokenScope.scopes, nil).Maybe()
-	}
-
-	return fakeClient
-}
-
 func TestTokens(t *testing.T) {
+	const (
+		fakeTokenNoPermissions                       = "no-permissions"
+		fakeTokenAllAPITokenPermissions              = "all-permissions"
+		fakeTokenAllAPITokenPermissionsIncludingPaaS = "all-permissions-including-paas"
+		fakeTokenPaas                                = "paas-token"
+		fakeTokenAllDataIngestPermissions            = "all-data-ingest-permissions"
+	)
+
+	createFakeClient := func(t *testing.T) *dtclientmock.Client {
+		fakeClient := dtclientmock.NewClient(t)
+
+		tokenScopes := []struct {
+			token  string
+			scopes dtclient.TokenScopes
+		}{
+			{fakeTokenNoPermissions, dtclient.TokenScopes{}},
+			{fakeTokenAllAPITokenPermissions, getAllScopesForAPIToken()},
+			{fakeTokenAllAPITokenPermissionsIncludingPaaS, append(getAllScopesForAPIToken(), getAllScopesForPaaSToken()...)},
+			{fakeTokenPaas, getAllScopesForPaaSToken()},
+			{fakeTokenAllDataIngestPermissions, getAllScopesForDataIngest()},
+		}
+
+		for _, tokenScope := range tokenScopes {
+			fakeClient.On("GetTokenScopes", mock.Anything, tokenScope.token).
+				Return(tokenScope.scopes, nil).Maybe()
+		}
+
+		return fakeClient
+	}
+
+	enableKubernetesMonitoringAndMetricsIngest := func(dk *dynakube.DynaKube) *dynakube.DynaKube {
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
+			activegate.KubeMonCapability.DisplayName,
+			activegate.MetricsIngestCapability.DisplayName,
+		}
+
+		return dk
+	}
+
 	t.Run("empty dynakube, all permissions in api token, but paas => should fail", func(t *testing.T) {
 		apiToken := newToken(dtclient.APIToken, fakeTokenAllAPITokenPermissions)
 		tokens := Tokens{
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Download Installer' is missing scope 'InstallerDownload']")
@@ -89,9 +98,9 @@ func TestTokens(t *testing.T) {
 			dtclient.PaasToken: &paasToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Len(t, tokens.PaasToken().Features, 1)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -102,9 +111,9 @@ func TestTokens(t *testing.T) {
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -120,9 +129,9 @@ func TestTokens(t *testing.T) {
 			dtclient.APIToken: &apiToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
@@ -138,9 +147,9 @@ func TestTokens(t *testing.T) {
 			dtclient.DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 1)
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'Data Ingest' is missing scope 'metrics.ingest']")
@@ -153,226 +162,211 @@ func TestTokens(t *testing.T) {
 			dtclient.DataIngestToken: &dataingestToken,
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(context.Background(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 4)
+		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 1)
 		assert.NoError(t, err)
 	})
 }
 
-func TestOptionalTokens(t *testing.T) {
-	t.Run("optional scope is missing - kubernetes-monitoring enabled", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
+func TestTokens_VerifyScopes(t *testing.T) {
+	type testCase struct {
+		title            string
+		dk               dynakube.DynaKube
+		availableScopes  dtclient.TokenScopes
+		expectedOptional map[string]bool
+		shouldError      bool
+	}
+
+	cases := []testCase{
+		{
+			title: "kubernetes-monitoring enabled - all scopes present",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
+					},
 				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
+				Spec: dynakube.DynaKubeSpec{
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
 					},
 				},
 			},
-		}
-
-		apiTokenNoMissingScopes := "api-token-value1"
-		apiTokenMissingSettingsRead := "api-token-value2"
-		apiTokenMissingSettingsWrite := "api-token-value3"
-		apiTokenMissingSettingsReadWrite := "api-token-value4"
-
-		fakeClient := dtclientmock.NewClient(t)
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeSettingsRead,
-			dtclient.TokenScopeSettingsWrite,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingSettingsRead).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeSettingsWrite,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingSettingsWrite).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeSettingsRead,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingSettingsReadWrite).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-
-		missingScopes := map[string][]string{
-			apiTokenNoMissingScopes: {},
-			apiTokenMissingSettingsRead: {
-				dtclient.TokenScopeSettingsRead,
-			},
-			apiTokenMissingSettingsWrite: {
-				dtclient.TokenScopeSettingsWrite,
-			},
-			apiTokenMissingSettingsReadWrite: {
+			availableScopes: dtclient.TokenScopes{
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite,
+				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+				dtclient.TokenScopeActiveGateTokenCreate,
 			},
-		}
-
-		assertOptionalScopes(t, fakeClient, dk, missingScopes)
-	})
-	t.Run("optional scope is missing - metadataEnrichment enabled", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				MetadataEnrichment: dynakube.MetadataEnrichment{
-					Enabled: ptr.To(true),
-				},
+			expectedOptional: map[string]bool{
+				dtclient.TokenScopeSettingsRead:  true,
+				dtclient.TokenScopeSettingsWrite: true,
 			},
-		}
-
-		apiTokenNoMissingScopes := "api-token-value1"
-		apiTokenMissingSettingsRead := "api-token-value2"
-
-		fakeClient := dtclientmock.NewClient(t)
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeSettingsRead,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingSettingsRead).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-
-		missingScopes := map[string][]string{
-			apiTokenNoMissingScopes: {},
-			apiTokenMissingSettingsRead: {
-				dtclient.TokenScopeSettingsRead,
-			},
-		}
-
-		assertOptionalScopes(t, fakeClient, dk, missingScopes)
-	})
-	t.Run("optional scope is missing - node-pull-image enabled", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					"feature.dynatrace.com/node-image-pull": "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{},
-		}
-
-		apiTokenNoMissingScopes := "api-token-value1"
-		apiTokenMissingSettingsRead := "api-token-value2"
-
-		fakeClient := dtclientmock.NewClient(t)
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeSettingsRead,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingSettingsRead).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-
-		missingScopes := map[string][]string{
-			apiTokenNoMissingScopes: {},
-			apiTokenMissingSettingsRead: {
-				dtclient.TokenScopeSettingsRead,
-			},
-		}
-
-		assertOptionalScopes(t, fakeClient, dk, missingScopes)
-	})
-	t.Run("optional scope is missing - kubernetes-monitoring and metadataEnrichment enabled", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
+			shouldError: false,
+		},
+		{
+			title: "kubernetes-monitoring enabled - required scopes missing",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
 					},
 				},
-				MetadataEnrichment: dynakube.MetadataEnrichment{
-					Enabled: ptr.To(true),
+				Spec: dynakube.DynaKubeSpec{
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
 				},
 			},
-		}
-
-		apiTokenNoMissingScopes := "api-token-value1"
-		apiTokenMissingSettingsRead := "api-token-value2"
-		apiTokenMissingSettingsWrite := "api-token-value3"
-		apiTokenMissingSettingsReadWrite := "api-token-value4"
-
-		fakeClient := dtclientmock.NewClient(t)
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeSettingsRead,
-			dtclient.TokenScopeSettingsWrite,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingSettingsRead).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeSettingsWrite,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingSettingsWrite).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeSettingsRead,
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-		fakeClient.On("GetTokenScopes", mock.Anything, apiTokenMissingSettingsReadWrite).Return(dtclient.TokenScopes{
-			dtclient.TokenScopeInstallerDownload,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil).Maybe()
-
-		missingScopes := map[string][]string{
-			apiTokenNoMissingScopes: {},
-			apiTokenMissingSettingsRead: {
-				dtclient.TokenScopeSettingsRead,
-			},
-			apiTokenMissingSettingsWrite: {
-				dtclient.TokenScopeSettingsWrite,
-			},
-			apiTokenMissingSettingsReadWrite: {
+			availableScopes: dtclient.TokenScopes{
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite,
+				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-		}
-
-		assertOptionalScopes(t, fakeClient, dk, missingScopes)
-	})
-}
-
-func assertOptionalScopes(t *testing.T, fakeClient dtclient.Client, dk dynakube.DynaKube, missingScopes map[string][]string) {
-	for tokenValue, scopes := range missingScopes {
-		apiToken := newToken(dtclient.APIToken, tokenValue)
-		tokens := Tokens{
-			dtclient.APIToken: &apiToken,
-		}
-		tokens = tokens.AddFeatureScopesToTokens()
-		missingOptionalScopes, err := tokens.VerifyScopes(context.Background(), fakeClient, dk)
-
-		assert.Len(t, tokens.APIToken().Features, 4, tokenValue)
-		assert.Equal(t, scopes, missingOptionalScopes, tokenValue)
-		assert.NoError(t, err, tokenValue)
+			expectedOptional: map[string]bool{
+				dtclient.TokenScopeSettingsRead:  true,
+				dtclient.TokenScopeSettingsWrite: true,
+			},
+			shouldError: true,
+		},
+		{
+			title: "kubernetes-monitoring enabled - optional scopes missing",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+				},
+			},
+			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeActiveGateTokenCreate,
+				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			},
+			expectedOptional: map[string]bool{
+				dtclient.TokenScopeSettingsRead:  false,
+				dtclient.TokenScopeSettingsWrite: false,
+			},
+			shouldError: false,
+		},
+		{
+			title: "metadataEnrichment - all scopes present",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					MetadataEnrichment: dynakube.MetadataEnrichment{
+						Enabled: ptr.To(true),
+					},
+				},
+			},
+			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeSettingsRead,
+				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			},
+			expectedOptional: map[string]bool{
+				dtclient.TokenScopeSettingsRead: true,
+			},
+			shouldError: false,
+		},
+		{
+			title: "metadataEnrichment - required scopes missing", // TODO: related to the other TODOS, this test is a bit "incorrect", as metadataEnrichment doesn't really have required scopes
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					MetadataEnrichment: dynakube.MetadataEnrichment{
+						Enabled: ptr.To(true),
+					},
+				},
+			},
+			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeSettingsRead,
+			},
+			expectedOptional: map[string]bool{
+				dtclient.TokenScopeSettingsRead: true,
+			},
+			shouldError: true,
+		},
+		{
+			title: "metadataEnrichment - optional scopes missing",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					MetadataEnrichment: dynakube.MetadataEnrichment{
+						Enabled: ptr.To(true),
+					},
+				},
+			},
+			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			},
+			expectedOptional: map[string]bool{
+				dtclient.TokenScopeSettingsRead: false,
+			},
+			shouldError: false,
+		},
+		{
+			title: "logMonitoring enabled - optional scopes present",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					LogMonitoring: &logmonitoring.Spec{},
+				},
+			},
+			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeSettingsRead,
+				dtclient.TokenScopeSettingsWrite,
+				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			},
+			expectedOptional: map[string]bool{
+				dtclient.TokenScopeSettingsRead:  true,
+				dtclient.TokenScopeSettingsWrite: true,
+			},
+			shouldError: false,
+		},
+		{
+			title: "logMonitoring enabled - optional scopes missing",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					LogMonitoring: &logmonitoring.Spec{},
+				},
+			},
+			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
+			},
+			expectedOptional: map[string]bool{
+				dtclient.TokenScopeSettingsRead:  false,
+				dtclient.TokenScopeSettingsWrite: false,
+			},
+			shouldError: false,
+		},
 	}
-}
 
-func enableKubernetesMonitoringAndMetricsIngest(dk *dynakube.DynaKube) *dynakube.DynaKube {
-	dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
-		activegate.KubeMonCapability.DisplayName,
-		activegate.MetricsIngestCapability.DisplayName,
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			tokenValue := "test-token"
+			fakeClient := dtclientmock.NewClient(t)
+			fakeClient.On("GetTokenScopes", mock.Anything, tokenValue).Return(c.availableScopes, nil)
+
+			apiToken := newToken(dtclient.APIToken, tokenValue)
+			tokens := Tokens{
+				dtclient.APIToken: &apiToken,
+			}
+			tokens = tokens.AddFeatureScopesToTokens()
+			optionalScopes, err := tokens.VerifyScopes(t.Context(), fakeClient, c.dk)
+
+			assert.Equal(t, c.expectedOptional, optionalScopes)
+			assert.Equal(t, c.shouldError, err != nil)
+		})
 	}
-
-	return dk
 }
 
 func TestTokens_VerifyValues(t *testing.T) {
@@ -409,6 +403,10 @@ func TestConcatErrors(t *testing.T) {
 	}
 
 	testCases := []concatErrorsTestCase{
+		{
+			name:              "no errors -> no error",
+			encounteredErrors: []error{},
+		},
 		{
 			name: "string errors",
 			encounteredErrors: []error{
@@ -456,7 +454,12 @@ func TestConcatErrors(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			err := concatErrors(testCase.encounteredErrors)
-			require.EqualError(t, err, testCase.message)
+
+			if len(testCase.encounteredErrors) == 0 {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, testCase.message)
+			}
 		})
 	}
 }
