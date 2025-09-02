@@ -154,12 +154,12 @@ func Test_cleanupDanglingSymlink(t *testing.T) {
 
 		entries, err := os.ReadDir(base)
 		require.NoError(t, err)
-		require.Len(t, entries, 2) // check that only the link is there
+		require.Len(t, entries, 2) // check that both the link and dir are there
 
 		cleanupDanglingSymlink(link)
 
 		entries, err = os.ReadDir(base)
 		require.NoError(t, err)
-		require.Len(t, entries, 2) // check that only the link is there
+		require.Len(t, entries, 2) // check that both the link and dir are there
 	})
 }
