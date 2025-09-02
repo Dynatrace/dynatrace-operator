@@ -7,9 +7,11 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	lmdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
@@ -28,6 +30,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -36,6 +40,7 @@ func Feature(t *testing.T) features.Feature {
 	builder := features.New("logmonitoring-components-rollout")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
+	secretConfig.APITokenNoSettings = "" // Always use more privileged token
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -75,13 +80,63 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("log agent started", daemonset.WaitForDaemonset(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
-	builder.Assess("log monitoring conditions", checkConditions(testDynakube.Name, testDynakube.Namespace))
+	builder.Assess("log monitoring conditions", checkConditions(testDynakube.Name, testDynakube.Namespace, true))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	builder.WithTeardown("deleted ag secret", secret.Delete(agSecret))
+
+	return builder.Feature()
+}
+
+func WithOptionalScopes(t *testing.T) features.Feature {
+	builder := features.New("logmonitoring-with-optional-scopes")
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+	if secretConfig.APITokenNoSettings == "" {
+		t.Skip("skipping test. no token with missing settings scopes provided")
+	}
+
+	options := []componentDynakube.Option{
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+		componentDynakube.WithLogMonitoring(),
+		componentDynakube.WithLogMonitoringImageRefSpec(consts.LogMonitoringImageRepo, consts.LogMonitoringImageTag),
+		componentDynakube.WithActiveGate(),
+	}
+
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+	if isOpenshift {
+		options = append(options, componentDynakube.WithAnnotations(map[string]string{
+			exp.OAPrivilegedKey: "true",
+		}))
+	}
+
+	testDynakube := *componentDynakube.New(options...)
+
+	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+
+	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
+
+	builder.Assess("log agent started", daemonset.WaitForDaemonset(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+
+	builder.Assess("log monitoring conditions with disabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, false))
+
+	secretConfig.APITokenNoSettings = ""
+	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig, testDynakube.Name, testDynakube.Namespace))
+
+	builder.Assess("trigger reconcile", triggerDaemonSetReconcile(testDynakube))
+
+	builder.Assess("log agent restarted", daemonset.WaitForDaemonset(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+
+	builder.Assess("log monitoring conditions with enabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, true))
+
+	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -100,7 +155,7 @@ func checkActiveGateContainer(dk *dynakube.DynaKube) features.Func {
 	}
 }
 
-func checkConditions(name string, namespace string) features.Func {
+func checkConditions(name string, namespace string, scopesEnabled bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		dk := &dynakube.DynaKube{}
 		err := envConfig.Client().Resources().Get(ctx, name, namespace, dk)
@@ -116,10 +171,43 @@ func checkConditions(name string, namespace string) features.Func {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
 
-		condition = meta.FindStatusCondition(*dk.Conditions(), logmonsettings.ConditionType)
-		if condition != nil {
-			assert.NotEqual(t, metav1.ConditionFalse, condition.Status)
+		if scopesEnabled {
+			assert.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, logmonsettings.ConditionType))
+		} else {
+			assert.True(t, meta.IsStatusConditionFalse(dk.Status.Conditions, logmonsettings.ConditionType))
 		}
+
+		for _, conditionType := range dtclient.OptionalScopes {
+			hasScope := conditions.IsOptionalScopeAvailable(dk, conditionType)
+			assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", conditionType, scopesEnabled)
+		}
+
+		return ctx
+	}
+}
+
+func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		logMonitoring := daemonset.NewQuery(ctx, resources, client.ObjectKey{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace})
+
+		logMonDaemonSet, err := logMonitoring.Get()
+		require.NoError(t, err)
+		prevGeneration := logMonDaemonSet.Generation
+
+		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, &dk))
+		// Force reconciliation by simulating the passage of time
+		dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Time{}
+		meta.RemoveStatusCondition(&dk.Status.Conditions, "MonitoredEntity")
+		require.NoError(t, resources.UpdateStatus(ctx, &dk))
+
+		// Verify that the operator picked up the update
+		err = wait.For(func(ctx context.Context) (bool, error) {
+			logMonDaemonSet, err := logMonitoring.Get()
+
+			return logMonDaemonSet.Status.ObservedGeneration != prevGeneration, err
+		}, wait.WithTimeout(1*time.Minute))
+		require.NoError(t, err)
 
 		return ctx
 	}
