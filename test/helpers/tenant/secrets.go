@@ -30,10 +30,11 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUID       string `yaml:"tenantUid"`
-	APIURL          string `yaml:"apiUrl"`
-	APIToken        string `yaml:"apiToken"`
-	DataIngestToken string `yaml:"dataIngestToken"`
+	TenantUID          string `yaml:"tenantUid"`
+	APIURL             string `yaml:"apiUrl"`
+	APIToken           string `yaml:"apiToken"`
+	DataIngestToken    string `yaml:"dataIngestToken"`
+	APITokenNoSettings string `yaml:"apiTokenNoSettings"`
 }
 
 type EdgeConnectSecret struct {
@@ -108,13 +109,21 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 
 func CreateTenantSecret(secretConfig Secret, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		apiToken := secretConfig.APIToken
+		if secretConfig.APITokenNoSettings != "" {
+			apiToken = secretConfig.APITokenNoSettings
+		}
+
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
+				Labels: map[string]string{
+					"type": "tenant",
+				},
 			},
 			Data: map[string][]byte{
-				"apiToken": []byte(secretConfig.APIToken),
+				"apiToken": []byte(apiToken),
 			},
 		}
 
