@@ -428,7 +428,7 @@ So here are some basic guidelines:
 
 ## Code Review
 
-[Common guidelines](https://github.com/golang/go/wiki/CodeReview)
+[Common guidelines](https://go.dev/wiki/CodeReviewComments)
 
 - (🧑‍🤝‍🧑) 2 approvals per PR is preferred
 - (✅) Resolving a comment is the duty of the commenter. (after the comment was addressed)
