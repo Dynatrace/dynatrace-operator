@@ -35,7 +35,7 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 	}
 }
 
-func (r *Reconciler) GenerateData() (map[string][]byte, error) {
+func (r *Reconciler) generateData() (map[string][]byte, error) {
 	var registryToken string
 
 	registry, err := getImageRegistryFromAPIURL(r.dk.Spec.APIURL)
