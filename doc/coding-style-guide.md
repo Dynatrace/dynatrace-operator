@@ -35,6 +35,7 @@
 - Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
 - Run the linters locally before opening a PR, it will save you time.
   - There is a pre-commit hook that you can configure via `make prerequisites/setup-pre-commit`
+- Avoid using the `path` package for operations on filesystem paths.
 
 ## Function Parameter and Return-Value Order
 
