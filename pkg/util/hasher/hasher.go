@@ -18,8 +18,8 @@ const AnnotationHash = api.InternalFlagPrefix + "template-hash"
 // GenerateHash creates a hash from the provided input.
 // This hash is meant to be used for simplifying detecting differences between 2 objects.
 // Uses uses FNV-1 hashing, should be used hashing not sensitive data.
-func GenerateHash(ds any) (string, error) {
-	data, err := json.Marshal(ds)
+func GenerateHash(input any) (string, error) {
+	data, err := json.Marshal(input)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -37,8 +37,8 @@ func GenerateHash(ds any) (string, error) {
 // GenerateSecureHash creates a hash from the provided input.
 // This hash is meant to be used for simplifying detecting differences between 2 values.
 // Uses uses SHA256 hashing, can be used for hashing sensitive data.
-func GenerateSecureHash(ds any) (string, error) {
-	data, err := json.Marshal(ds)
+func GenerateSecureHash(input any) (string, error) {
+	data, err := json.Marshal(input)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
