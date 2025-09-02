@@ -101,7 +101,7 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) 
 		return nil, err
 	}
 
-	dk.Status.ProxyURLHash, err = hasher.GenerateHash(proxyURL)
+	dk.Status.ProxyURLHash, err = hasher.GenerateSecureHash(proxyURL)
 	if err != nil {
 		return nil, err
 	}

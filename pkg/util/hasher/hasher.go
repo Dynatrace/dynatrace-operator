@@ -1,6 +1,8 @@
 package hasher
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"hash/fnv"
 	"reflect"
@@ -13,6 +15,9 @@ import (
 
 const AnnotationHash = api.InternalFlagPrefix + "template-hash"
 
+// GenerateHash creates a hash from the provided input.
+// This hash is meant to be used for simplifying detecting differences between 2 objects.
+// Uses uses FNV-1 hashing, should be used hashing not sensitive data.
 func GenerateHash(ds any) (string, error) {
 	data, err := json.Marshal(ds)
 	if err != nil {
@@ -27,6 +32,21 @@ func GenerateHash(ds any) (string, error) {
 	}
 
 	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
+}
+
+// GenerateSecureHash creates a hash from the provided input.
+// This hash is meant to be used for simplifying detecting differences between 2 values.
+// Uses uses SHA256 hashing, can be used for hashing sensitive data.
+func GenerateSecureHash(ds any) (string, error) {
+	data, err := json.Marshal(ds)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	hasher := sha256.New()
+	hasher.Write(data)
+
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 func IsDifferent(a, b any) (bool, error) {
