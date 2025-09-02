@@ -2,7 +2,6 @@ package symlink
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
@@ -48,7 +47,7 @@ func TestRemove(t *testing.T) {
 		err = Remove(fs, testPath)
 		require.NoError(t, err)
 
-		entries, err := afero.Afero{Fs: fs}.ReadDir(path.Dir(testPath))
+		entries, err := afero.Afero{Fs: fs}.ReadDir(filepath.Dir(testPath))
 		require.NoError(t, err)
 		require.Empty(t, entries)
 	})
@@ -64,11 +63,11 @@ func TestRemove(t *testing.T) {
 		fs := afero.NewOsFs()
 
 		// Create dir to be symlinked
-		missingDir := path.Join(base, "dir")
+		missingDir := filepath.Join(base, "dir")
 		require.NoError(t, os.MkdirAll(missingDir, os.ModePerm))
 
 		// Create symlink to dir
-		danglingLink := path.Join(base, "link")
+		danglingLink := filepath.Join(base, "link")
 		require.NoError(t, os.Symlink(missingDir, danglingLink))
 
 		// Remove dir where the symlink was pointing to -> create dangling symlink

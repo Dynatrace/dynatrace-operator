@@ -5,7 +5,7 @@ package oneagent
 import (
 	"bytes"
 	"context"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	uninstallOneAgentDaemonSetPath = path.Join(project.TestDataDir(), "oneagent/uninstall-oneagent.yaml")
+	uninstallOneAgentDaemonSetPath = filepath.Join(project.TestDataDir(), "oneagent/uninstall-oneagent.yaml")
 )
 
 func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level, testDynakube dynakube.DynaKube) {
