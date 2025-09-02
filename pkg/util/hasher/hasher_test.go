@@ -113,6 +113,7 @@ func TestGenerateSecureHash(t *testing.T) {
 			initialHash, err := GenerateSecureHash(c.in)
 			require.NoError(t, err)
 			require.NotEmpty(t, initialHash)
+			assert.Len(t, initialHash, 16)
 
 			rerunHash, err := GenerateSecureHash(c.in)
 			require.NoError(t, err)

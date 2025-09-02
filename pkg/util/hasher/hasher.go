@@ -46,7 +46,7 @@ func GenerateSecureHash(input any) (string, error) {
 	hasher := sha256.New()
 	hasher.Write(data)
 
-	return hex.EncodeToString(hasher.Sum(nil)), nil
+	return hex.EncodeToString(hasher.Sum(nil))[:16], nil
 }
 
 func IsDifferent(a, b any) (bool, error) {
