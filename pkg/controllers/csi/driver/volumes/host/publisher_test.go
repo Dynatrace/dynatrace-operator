@@ -3,7 +3,7 @@ package host
 import (
 	"context"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -65,7 +65,7 @@ func TestPublishVolume(t *testing.T) {
 
 		// Create symlink to dir
 		newDir := pathResolver.OsAgentDir(volumeCfg.DynakubeName)
-		require.NoError(t, os.MkdirAll(path.Dir(newDir), os.ModePerm))
+		require.NoError(t, os.MkdirAll(filepath.Dir(newDir), os.ModePerm))
 		require.NoError(t, os.Symlink(oldDir, newDir))
 
 		// Remove dir where the symlink was pointing to -> create dangling symlink
@@ -120,11 +120,11 @@ func Test_cleanupDanglingSymlink(t *testing.T) {
 		base := t.TempDir()
 
 		// Create dir to be symlinked
-		missingDir := path.Join(base, "dir")
+		missingDir := filepath.Join(base, "dir")
 		require.NoError(t, os.MkdirAll(missingDir, os.ModePerm))
 
 		// Create symlink to dir
-		danglingLink := path.Join(base, "link")
+		danglingLink := filepath.Join(base, "link")
 		require.NoError(t, os.Symlink(missingDir, danglingLink))
 
 		// Remove dir where the symlink was pointing to -> create dangling symlink
@@ -145,11 +145,11 @@ func Test_cleanupDanglingSymlink(t *testing.T) {
 		base := t.TempDir()
 
 		// Create dir to be symlinked
-		dir := path.Join(base, "dir")
+		dir := filepath.Join(base, "dir")
 		require.NoError(t, os.MkdirAll(dir, os.ModePerm))
 
 		// Create symlink to dir
-		link := path.Join(base, "link")
+		link := filepath.Join(base, "link")
 		require.NoError(t, os.Symlink(dir, link))
 
 		entries, err := os.ReadDir(base)
