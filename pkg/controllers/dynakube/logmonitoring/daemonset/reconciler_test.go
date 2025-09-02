@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -260,6 +262,35 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		require.Len(t, daemonset.Spec.Template.Annotations, 2)
 		assert.Equal(t, dk.Spec.NetworkZone, daemonset.Spec.Template.Annotations[configsecret.NetworkZoneAnnotationKey])
+	})
+
+	t.Run("proxy is in the template annotations, so if config changes, redeploy happens", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.Proxy = &value.Source{Value: "unknown"}
+		dk.Status.ProxyURLHash = "proxy-hash"
+
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		require.Len(t, daemonset.Spec.Template.Annotations, 2)
+		assert.Equal(t, dk.Status.ProxyURLHash, daemonset.Spec.Template.Annotations[configsecret.ProxyHashAnnotationKey])
+	})
+
+	t.Run("no-proxy is in the template annotations, so if config changes, redeploy happens", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Annotations = map[string]string{
+			exp.NoProxyKey: "no-proxy",
+		}
+
+		reconciler := NewReconciler(nil, fake.NewClient(), dk)
+		daemonset, err := reconciler.generateDaemonSet()
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		require.Len(t, daemonset.Spec.Template.Annotations, 2)
+		assert.Equal(t, "no-proxy", daemonset.Spec.Template.Annotations[configsecret.NoProxyAnnotationKey])
 	})
 
 	t.Run("respect priority class", func(t *testing.T) {

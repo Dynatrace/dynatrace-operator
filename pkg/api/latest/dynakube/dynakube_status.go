@@ -41,6 +41,11 @@ type DynaKubeStatus struct { //nolint:revive
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
+	// ProxyURLHash is the hashed value of what is in spec.proxy.
+	// Used for setting it as an annotation value for components that use the proxy.
+	// This annotation will cause the component to be restarted if the proxy changes.
+	ProxyURLHash string `json:"proxyURLHash,omitempty"`
+
 	// Observed state of Dynatrace API
 	DynatraceAPI DynatraceAPIStatus `json:"dynatraceApi,omitempty"`
 
