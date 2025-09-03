@@ -7942,6 +7942,8 @@ spec:
                 type: object
               phase:
                 type: string
+              proxyURLHash:
+                type: string
               updatedTimestamp:
                 format: date-time
                 type: string
