@@ -4,7 +4,7 @@ package tenant
 
 import (
 	"context"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/project"
@@ -20,9 +20,9 @@ import (
 )
 
 var (
-	defaultSingleTenant      = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
-	defaultMultiTenant       = path.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
-	defaultEdgeConnectTenant = path.Join(project.TestDataDir(), "secrets/edgeconnect-tenant.yaml")
+	defaultSingleTenant      = filepath.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
+	defaultMultiTenant       = filepath.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
+	defaultEdgeConnectTenant = filepath.Join(project.TestDataDir(), "secrets/edgeconnect-tenant.yaml")
 )
 
 type Secrets struct {

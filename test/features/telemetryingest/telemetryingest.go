@@ -5,7 +5,7 @@ package telemetryingest
 import (
 	"context"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -408,12 +408,12 @@ func waitForShutdown(name string, namespace string) features.Func {
 }
 
 func createAgTLSSecret(namespace string) (corev1.Secret, error) {
-	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificate))
+	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	if err != nil {
 		return corev1.Secret{}, err
 	}
 
-	agP12, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
+	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	if err != nil {
 		return corev1.Secret{}, err
 	}

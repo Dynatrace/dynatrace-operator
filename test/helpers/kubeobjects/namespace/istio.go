@@ -4,7 +4,7 @@ package namespace
 
 import (
 	"context"
-	"path"
+	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
@@ -19,7 +19,7 @@ const (
 	InjectionEnabledValue = "enabled"
 )
 
-var networkAttachmentPath = path.Join(project.TestDataDir(), "network/ocp-istio-cni.yaml")
+var networkAttachmentPath = filepath.Join(project.TestDataDir(), "network/ocp-istio-cni.yaml")
 
 func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {

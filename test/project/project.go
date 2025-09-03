@@ -4,7 +4,7 @@ package project
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 )
 
 var rootDir string
@@ -14,7 +14,7 @@ func RootDir() string {
 }
 
 func TestDataDir() string {
-	return path.Join(rootDir, "test", "testdata")
+	return filepath.Join(rootDir, "test", "testdata")
 }
 
 func init() {
@@ -26,13 +26,13 @@ func init() {
 	}
 
 	for dir != "" {
-		goModPath := path.Join(dir, "go.mod")
+		goModPath := filepath.Join(dir, "go.mod")
 		if _, err := os.Stat(goModPath); err == nil {
 			rootDir = dir
 
 			return
 		}
 
-		dir = path.Dir(dir)
+		dir = filepath.Dir(dir)
 	}
 }
