@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -95,10 +95,10 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))
 	builder.Assess("deploy NOT injected namespace", namespace.Create(*namespace.New(testAppNameNotInjected)))
 
-	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificate))
+	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	require.NoError(t, err)
 
-	agP12, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
+	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	require.NoError(t, err)
 
 	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,

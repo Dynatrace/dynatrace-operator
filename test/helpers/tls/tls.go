@@ -4,7 +4,7 @@ package tls
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 
 	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
@@ -13,12 +13,12 @@ import (
 )
 
 func CreateTestdataTLSSecret(namespace string, name string, keyFile string, crtFile string) (corev1.Secret, error) {
-	tlsCrt, err := os.ReadFile(path.Join(project.TestDataDir(), crtFile))
+	tlsCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), crtFile))
 	if err != nil {
 		return corev1.Secret{}, err
 	}
 
-	tlsKey, err := os.ReadFile(path.Join(project.TestDataDir(), keyFile))
+	tlsKey, err := os.ReadFile(filepath.Join(project.TestDataDir(), keyFile))
 	if err != nil {
 		return corev1.Secret{}, err
 	}

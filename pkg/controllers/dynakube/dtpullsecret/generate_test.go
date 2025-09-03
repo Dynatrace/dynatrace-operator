@@ -56,7 +56,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 
-	data, err := r.GenerateData()
+	data, err := r.generateData()
 
 	require.NoError(t, err)
 	assert.NotNil(t, data)
