@@ -3,7 +3,6 @@ package image
 import (
 	"context"
 	"encoding/base64"
-	"path"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -76,7 +75,7 @@ func (installer *Installer) pullOCIimage(image containerv1.Image, imageName stri
 
 	// ref.String() is consistent with what the user gave, ref.Name() could add some prefix depending on the situation.
 	// It doesn't really matter here as it's only for a temporary dir, but it's still better be consistent.
-	imageCachePath := path.Join(imageCacheDir, base64.StdEncoding.EncodeToString([]byte(ref.String())))
+	imageCachePath := filepath.Join(imageCacheDir, base64.StdEncoding.EncodeToString([]byte(ref.String())))
 	if err := crane.SaveOCI(image, imageCachePath); err != nil {
 		log.Info("saving v1.Image img as an OCI Image Layout at path", imageCacheDir, err)
 

@@ -4,7 +4,7 @@ package tenant
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -20,13 +20,13 @@ func TestNewFromConfig(t *testing.T) {
 
 	require.NoError(t, err)
 
-	secretsPath := path.Join(workingDir, "..", "testdata", "Secrets")
+	secretsPath := filepath.Join(workingDir, "..", "testdata", "Secrets")
 	require.NoError(t, fs.MkdirAll(secretsPath, 0655))
 
-	require.NoError(t, afero.WriteFile(fs, path.Join(secretsPath, "Secrets-test.yaml"),
+	require.NoError(t, afero.WriteFile(fs, filepath.Join(secretsPath, "Secrets-test.yaml"),
 		[]byte(testSecretFileContent), 0755))
 
-	tenantSecrets, err := newFromConfig(fs, path.Join(secretsPath, "Secrets-test.yaml"))
+	tenantSecrets, err := newFromConfig(fs, filepath.Join(secretsPath, "Secrets-test.yaml"))
 
 	require.NoError(t, err)
 	assert.Equal(t, "apiUrl", tenantSecrets.APIURL)

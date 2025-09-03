@@ -5,7 +5,7 @@ package sample
 import (
 	"context"
 	"fmt"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -37,10 +37,10 @@ import (
 
 var (
 	defaultNameTemplate        = "sample-%s"
-	podTemplatePath            = path.Join(project.TestDataDir(), "sample-app/pod-base.yaml")
-	serviceAccountTemplatePath = path.Join(project.TestDataDir(), "sample-app/serviceaccount.yaml")
-	clusterRolePath            = path.Join(project.TestDataDir(), "sample-app/clusterrole.yaml")
-	bindingPath                = path.Join(project.TestDataDir(), "sample-app/binding.yaml")
+	podTemplatePath            = filepath.Join(project.TestDataDir(), "sample-app/pod-base.yaml")
+	serviceAccountTemplatePath = filepath.Join(project.TestDataDir(), "sample-app/serviceaccount.yaml")
+	clusterRolePath            = filepath.Join(project.TestDataDir(), "sample-app/clusterrole.yaml")
+	bindingPath                = filepath.Join(project.TestDataDir(), "sample-app/binding.yaml")
 )
 
 type App struct {

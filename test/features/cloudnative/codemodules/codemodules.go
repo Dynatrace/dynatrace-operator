@@ -7,7 +7,7 @@ import (
 	"context"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -227,9 +227,9 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 
 	// Add ActiveGate TLS secret
 	// public certificate for OneAgents
-	agCrt, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificate))
+	agCrt, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificate))
 	// public certificate and private key for ActiveGate server
-	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
+	agP12, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
 	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
 			dynakube.TLSCertKey:             agCrt,
@@ -355,9 +355,9 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 
 	// Add ActiveGate TLS secret
 	// public certificate for OneAgents
-	agCrt, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificate))
+	agCrt, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificate))
 	// public certificate and private key for ActiveGate server
-	agP12, _ := os.ReadFile(path.Join(project.TestDataDir(), agCertificateAndPrivateKey))
+	agP12, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
 	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
 			dynakube.TLSCertKey:             agCrt,
