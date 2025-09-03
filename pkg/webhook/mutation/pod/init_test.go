@@ -194,3 +194,63 @@ func TestAddInitContainerToPod(t *testing.T) {
 		assert.True(t, mounts.IsPathIn(initContainer.VolumeMounts, volumes.InitInputMountPath))
 	})
 }
+
+func Test_combineSecurityContexts(t *testing.T) {
+	type testCase struct {
+		title       string
+		podSc       corev1.PodSecurityContext
+		containerSc corev1.SecurityContext
+		expectedOut corev1.SecurityContext
+	}
+
+	cases := []testCase{
+		{
+			title:       "root pod user",
+			podSc:       corev1.PodSecurityContext{RunAsUser: ptr.To(int64(0))},
+			containerSc: corev1.SecurityContext{},
+			expectedOut: corev1.SecurityContext{RunAsUser: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+		},
+		{
+			title:       "root pod group",
+			podSc:       corev1.PodSecurityContext{RunAsGroup: ptr.To(int64(0))},
+			containerSc: corev1.SecurityContext{},
+			expectedOut: corev1.SecurityContext{RunAsGroup: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+		},
+		{
+			title:       "non-root pod user",
+			podSc:       corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10))},
+			containerSc: corev1.SecurityContext{},
+			expectedOut: corev1.SecurityContext{RunAsUser: ptr.To(int64(10)), RunAsNonRoot: ptr.To(true)},
+		},
+		{
+			title:       "non-root pod group",
+			podSc:       corev1.PodSecurityContext{RunAsGroup: ptr.To(int64(10))},
+			containerSc: corev1.SecurityContext{},
+			expectedOut: corev1.SecurityContext{RunAsGroup: ptr.To(int64(10)), RunAsNonRoot: ptr.To(true)},
+		},
+		{
+			title:       "default",
+			podSc:       corev1.PodSecurityContext{},
+			containerSc: corev1.SecurityContext{},
+			expectedOut: corev1.SecurityContext{RunAsNonRoot: ptr.To(true)},
+		},
+		{
+			title:       "non-root user + root group", // does this even make sense?
+			podSc:       corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0))},
+			containerSc: corev1.SecurityContext{RunAsUser: ptr.To(int64(55)), RunAsGroup: ptr.To(int64(55))},
+			expectedOut: corev1.SecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			pod := corev1.Pod{}
+			pod.Spec.SecurityContext = &c.podSc
+
+			out := combineSecurityContexts(c.containerSc, pod)
+			require.NotNil(t, out)
+
+			assert.Equal(t, c.expectedOut, *out)
+		})
+	}
+}

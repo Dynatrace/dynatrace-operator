@@ -115,13 +115,8 @@ func IsNonRoot(sc *corev1.SecurityContext) bool {
 		return true
 	}
 
-	if sc.RunAsUser != nil && *sc.RunAsUser != RootUser {
-		return true
-	}
+	notRootUser := sc.RunAsUser == nil || *sc.RunAsUser != RootUser
+	notRootGroup := sc.RunAsGroup == nil || *sc.RunAsGroup != RootGroup
 
-	if sc.RunAsGroup != nil && *sc.RunAsGroup != RootGroup {
-		return true
-	}
-
-	return false
+	return notRootGroup && notRootUser
 }

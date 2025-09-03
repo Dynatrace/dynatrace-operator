@@ -415,46 +415,46 @@ func TestGetTechnology(t *testing.T) {
 
 func Test_isNonRoot(t *testing.T) {
 	t.Run("root user", func(t *testing.T) {
-		ctx := &corev1.SecurityContext{
+		sc := &corev1.SecurityContext{
 			RunAsUser:  ptr.To(int64(0)),
 			RunAsGroup: ptr.To(int64(0)),
 		}
-		assert.False(t, IsNonRoot(ctx))
+		assert.False(t, IsNonRoot(sc))
 	})
 	t.Run("non-root user", func(t *testing.T) {
-		ctx := &corev1.SecurityContext{
+		sc := &corev1.SecurityContext{
 			RunAsUser:  ptr.To(int64(1000)),
 			RunAsGroup: ptr.To(int64(1000)),
 		}
-		assert.True(t, IsNonRoot(ctx))
+		assert.True(t, IsNonRoot(sc))
 	})
 	t.Run("root user and nil group (OCP case)", func(t *testing.T) {
-		ctx := &corev1.SecurityContext{
+		sc := &corev1.SecurityContext{
 			RunAsUser:  ptr.To(int64(0)),
 			RunAsGroup: nil,
 		}
-		assert.False(t, IsNonRoot(ctx))
+		assert.False(t, IsNonRoot(sc))
 	})
 	t.Run("non-root user and nil group (OCP case)", func(t *testing.T) {
-		ctx := &corev1.SecurityContext{
+		sc := &corev1.SecurityContext{
 			RunAsUser:  ptr.To(int64(1000)),
 			RunAsGroup: nil,
 		}
-		assert.True(t, IsNonRoot(ctx))
+		assert.True(t, IsNonRoot(sc))
 	})
 	t.Run("nil user and root group (edge case)", func(t *testing.T) {
-		ctx := &corev1.SecurityContext{
+		sc := &corev1.SecurityContext{
 			RunAsUser:  nil,
 			RunAsGroup: ptr.To(int64(0)),
 		}
-		assert.False(t, IsNonRoot(ctx))
+		assert.False(t, IsNonRoot(sc))
 	})
 	t.Run("nil user and non-root group (edge case)", func(t *testing.T) {
-		ctx := &corev1.SecurityContext{
+		sc := &corev1.SecurityContext{
 			RunAsUser:  nil,
 			RunAsGroup: ptr.To(int64(1000)),
 		}
-		assert.True(t, IsNonRoot(ctx))
+		assert.True(t, IsNonRoot(sc))
 	})
 	t.Run("nil context", func(t *testing.T) {
 		assert.True(t, IsNonRoot(nil))
