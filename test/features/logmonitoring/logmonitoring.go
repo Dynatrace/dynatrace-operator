@@ -172,9 +172,9 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
 
 		if scopesEnabled {
-			assert.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, logmonsettings.ConditionType))
+			ctx = componentDynakube.WaitForCondition(*dk, logmonsettings.ConditionType, metav1.ConditionTrue)(ctx, t, envConfig)
 		} else {
-			assert.True(t, meta.IsStatusConditionFalse(dk.Status.Conditions, logmonsettings.ConditionType))
+			ctx = componentDynakube.WaitForCondition(*dk, logmonsettings.ConditionType, metav1.ConditionFalse)(ctx, t, envConfig)
 		}
 
 		for _, conditionType := range dtclient.OptionalScopes {

@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -120,6 +121,30 @@ func WaitForPhasePreviousVersion(dk prevDynakube.DynaKube, phase status.Deployme
 		}), wait.WithTimeout(timeout))
 
 		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func WaitForCondition(dk dynakube.DynaKube, conditionType string, conditionStatus metav1.ConditionStatus) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		var cond *metav1.Condition
+
+		const timeout = 5 * time.Minute
+		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
+			dynakube, isDynakube := object.(*dynakube.DynaKube)
+
+			if isDynakube {
+				cond = meta.FindStatusCondition(dynakube.Status.Conditions, conditionType)
+
+				return cond != nil && cond.Status == conditionStatus
+			}
+
+			return false
+		}), wait.WithTimeout(timeout))
+
+		require.NoError(t, err, "last condition state: %#v", cond)
 
 		return ctx
 	}
