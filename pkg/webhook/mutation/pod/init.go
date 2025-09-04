@@ -85,19 +85,31 @@ func securityContextForInitContainer(pod *corev1.Pod, dk dynakube.DynaKube, isOp
 
 	return combineSecurityContexts(initSecurityCtx, *pod)
 }
-
 func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
+	containerSecurityCtx := &corev1.SecurityContext{}
+	if len(pod.Spec.Containers) > 0 {
+		containerSecurityCtx = pod.Spec.Containers[0].SecurityContext
+	}
+
 	podSecurityCtx := pod.Spec.SecurityContext
 
-	if oacommon.HasPodUserSet(podSecurityCtx) {
+	if hasPodUserSet(podSecurityCtx) {
 		baseSecurityCtx.RunAsUser = podSecurityCtx.RunAsUser
 	}
 
-	if oacommon.HasPodGroupSet(podSecurityCtx) {
+	if hasPodGroupSet(podSecurityCtx) {
 		baseSecurityCtx.RunAsGroup = podSecurityCtx.RunAsGroup
 	}
 
-	baseSecurityCtx.RunAsNonRoot = ptr.To(oacommon.IsNonRoot(&baseSecurityCtx))
+	if hasContainerUserSet(containerSecurityCtx) {
+		baseSecurityCtx.RunAsUser = containerSecurityCtx.RunAsUser
+	}
+
+	if hasContainerGroupSet(containerSecurityCtx) {
+		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
+	}
+
+	baseSecurityCtx.RunAsNonRoot = ptr.To(isNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
 }
@@ -106,4 +118,32 @@ func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
 	if dk.FF().HasInitSeccomp() {
 		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
 	}
+}
+
+func hasContainerUserSet(ctx *corev1.SecurityContext) bool {
+	return ctx != nil && ctx.RunAsUser != nil
+}
+
+func hasContainerGroupSet(ctx *corev1.SecurityContext) bool {
+	return ctx != nil && ctx.RunAsGroup != nil
+}
+
+func hasPodUserSet(psc *corev1.PodSecurityContext) bool {
+	return psc != nil && psc.RunAsUser != nil
+}
+
+func hasPodGroupSet(psc *corev1.PodSecurityContext) bool {
+	return psc != nil && psc.RunAsGroup != nil
+}
+
+func isNonRoot(sc *corev1.SecurityContext) bool {
+	if sc == nil {
+		return true
+	}
+
+	if sc.RunAsUser != nil { // user takes precedence over group
+		return *sc.RunAsUser != RootUser
+	}
+
+	return sc.RunAsGroup == nil || *sc.RunAsGroup != RootGroup // if group is root, but no user is set, we are still "running as root"
 }
