@@ -435,6 +435,13 @@ func Test_isNonRoot(t *testing.T) {
 		}
 		assert.False(t, IsNonRoot(sc))
 	})
+	t.Run("root user and non-root group", func(t *testing.T) {
+		sc := &corev1.SecurityContext{
+			RunAsUser:  ptr.To(int64(0)),
+			RunAsGroup: ptr.To(int64(1000)),
+		}
+		assert.False(t, IsNonRoot(sc))
+	})
 	t.Run("non-root user and nil group (OCP case)", func(t *testing.T) {
 		sc := &corev1.SecurityContext{
 			RunAsUser:  ptr.To(int64(1000)),

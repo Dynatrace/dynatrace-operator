@@ -115,8 +115,9 @@ func IsNonRoot(sc *corev1.SecurityContext) bool {
 		return true
 	}
 
-	notRootUser := sc.RunAsUser == nil || *sc.RunAsUser != RootUser
-	notRootGroup := sc.RunAsGroup == nil || *sc.RunAsGroup != RootGroup
+	if sc.RunAsUser != nil { // user takes precedence over group
+		return *sc.RunAsUser != RootUser
+	}
 
-	return notRootGroup && notRootUser
+	return sc.RunAsGroup == nil || *sc.RunAsGroup != RootGroup // if group is root, but no user is set, we are still "running as root"
 }

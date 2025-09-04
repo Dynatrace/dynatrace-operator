@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -15,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
 
@@ -235,10 +237,10 @@ func Test_combineSecurityContexts(t *testing.T) {
 			expectedOut: corev1.SecurityContext{RunAsNonRoot: ptr.To(true)},
 		},
 		{
-			title:       "non-root user + root group", // does this even make sense?
+			title:       "non-root user + root group",
 			podSc:       corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0))},
 			containerSc: corev1.SecurityContext{RunAsUser: ptr.To(int64(55)), RunAsGroup: ptr.To(int64(55))},
-			expectedOut: corev1.SecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0)), RunAsNonRoot: ptr.To(false)},
+			expectedOut: corev1.SecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0)), RunAsNonRoot: ptr.To(true)}, // user takes precedence
 		},
 	}
 
@@ -248,6 +250,180 @@ func Test_combineSecurityContexts(t *testing.T) {
 			pod.Spec.SecurityContext = &c.podSc
 
 			out := combineSecurityContexts(c.containerSc, pod)
+			require.NotNil(t, out)
+
+			assert.Equal(t, c.expectedOut, *out)
+		})
+	}
+}
+
+func Test_securityContextForInitContainer(t *testing.T) {
+	type testCase struct {
+		title       string
+		dk          dynakube.DynaKube
+		isOpenShift bool
+		podSc       corev1.PodSecurityContext
+		expectedOut corev1.SecurityContext
+	}
+
+	cases := []testCase{
+		{
+			title:       "root pod user",
+			dk:          dynakube.DynaKube{},
+			isOpenShift: false,
+			podSc:       corev1.PodSecurityContext{RunAsUser: ptr.To(int64(0))},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsUser:    ptr.To(int64(0)),
+				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsNonRoot: ptr.To(false),
+			},
+		},
+		{
+			title:       "root pod group",
+			dk:          dynakube.DynaKube{},
+			isOpenShift: false,
+			podSc:       corev1.PodSecurityContext{RunAsGroup: ptr.To(int64(0))},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsUser:    ptr.To(oacommon.DefaultGroup), // user takes precedence
+				RunAsGroup:   ptr.To(int64(0)),
+				RunAsNonRoot: ptr.To(true),
+			},
+		},
+		{
+			title: "non-root pod user",
+			podSc: corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10))},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsUser:    ptr.To(int64(10)),
+				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsNonRoot: ptr.To(true),
+			},
+		},
+		{
+			title:       "non-root pod group",
+			dk:          dynakube.DynaKube{},
+			isOpenShift: false,
+			podSc:       corev1.PodSecurityContext{RunAsGroup: ptr.To(int64(10))},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsUser:    ptr.To(oacommon.DefaultGroup),
+				RunAsGroup:   ptr.To(int64(10)),
+				RunAsNonRoot: ptr.To(true),
+			},
+		},
+		{
+			title:       "default",
+			dk:          dynakube.DynaKube{},
+			isOpenShift: false,
+			podSc:       corev1.PodSecurityContext{},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsUser:    ptr.To(oacommon.DefaultGroup),
+				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsNonRoot: ptr.To(true),
+			},
+		},
+		{
+			title: "non-root user + root group", // does this even make sense?
+			podSc: corev1.PodSecurityContext{RunAsUser: ptr.To(int64(10)), RunAsGroup: ptr.To(int64(0))},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsUser:    ptr.To(int64(10)), // user takes precedence
+				RunAsGroup:   ptr.To(int64(0)),
+				RunAsNonRoot: ptr.To(true),
+			},
+		},
+		{
+			title:       "ocp case",
+			dk:          dynakube.DynaKube{},
+			isOpenShift: true,
+			podSc:       corev1.PodSecurityContext{},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsNonRoot: ptr.To(true),
+			},
+		},
+		{
+			title: "init seccomp ff",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "true"}},
+			},
+			isOpenShift: true,
+			podSc:       corev1.PodSecurityContext{},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsGroup:     ptr.To(oacommon.DefaultGroup),
+				RunAsNonRoot:   ptr.To(true),
+				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			pod := corev1.Pod{}
+			pod.Spec.SecurityContext = &c.podSc
+
+			out := securityContextForInitContainer(&pod, c.dk, c.isOpenShift)
 			require.NotNil(t, out)
 
 			assert.Equal(t, c.expectedOut, *out)
