@@ -356,6 +356,14 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			fakeClient := dtclientmock.NewClient(t)
 			fakeClient.On("GetTokenScopes", mock.Anything, tokenValue).Return(c.availableScopes, nil)
 
+			// Example how to mock the new client if needed in the future
+			//tMock := tokenMock.NewClient(t)
+			//tMock.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(token.TokenScopes{"sldkfj", "slkdfjlkj"}, nil).Maybe()
+			//client := &dtclient4.Client{
+			//	TokenClient: tMock,
+			//}
+			//client.Token().GetTokenScopes(nil, "sldkf")
+
 			apiToken := newToken(dtclient.APIToken, tokenValue)
 			tokens := Tokens{
 				dtclient.APIToken: &apiToken,
