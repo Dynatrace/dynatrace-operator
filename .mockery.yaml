@@ -72,3 +72,13 @@ packages:
       dir: "test/mocks/{{.SrcPackagePath}}"
     interfaces:
       IdentityServer:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace4/core:
+    interfaces:
+      RequestBuilder:
+      ApiClient:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace4/settings:
+    interfaces:
+      Client:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace4/token:
+    interfaces:
+      Client:
