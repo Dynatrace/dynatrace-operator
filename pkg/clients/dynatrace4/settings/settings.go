@@ -9,13 +9,13 @@ import (
 )
 
 type client struct {
-	apiClient core.ApiClient
+	apiClient core.APIClient
 }
 
 var _ Client = (*client)(nil)
 
 // NewClient creates a new Settings API client
-func NewClient(apiClient core.ApiClient) Client {
+func NewClient(apiClient core.APIClient) Client {
 	return &client{
 		apiClient: apiClient,
 	}
@@ -85,14 +85,15 @@ func (dtc *client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (
 			filterQueryParam:       fmt.Sprintf("value.clusterId='%s'", kubeSystemUUID),
 		}).
 		Execute(&response)
-
 	if err != nil {
 		log.Info("request for kubernetes setting exists failed")
+
 		return K8sClusterME{}, err
 	}
 
 	if len(response.Settings) == 0 {
 		log.Info("no kubernetes settings object according to API", "resp", response)
+
 		return K8sClusterME{}, nil
 	}
 
@@ -119,14 +120,15 @@ func (dtc *client) GetK8sClusterMEDeleteThisMethod(ctx context.Context, kubeSyst
 			filterQueryParam:       fmt.Sprintf("value.clusterId='%s'", kubeSystemUUID),
 		}).
 		Execute(&response)
-
 	if err != nil {
 		log.Info("request for kubernetes setting exists failed")
+
 		return K8sClusterME{}, err
 	}
 
 	if len(response.Settings) == 0 {
 		log.Info("no kubernetes settings object according to API", "resp", response)
+
 		return K8sClusterME{}, nil
 	}
 
@@ -151,9 +153,9 @@ func (dtc *client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredE
 			scopesQueryParam:       monitoredEntity.ID,
 		}).
 		Execute(&response)
-
 	if err != nil {
 		log.Info("failed to retrieve MEs")
+
 		return GetSettingsResponse{}, err
 	}
 
@@ -175,9 +177,9 @@ func (dtc *client) GetSettingsForLogModule(ctx context.Context, monitoredEntity 
 			scopesQueryParam:       monitoredEntity,
 		}).
 		Execute(&response)
-
 	if err != nil {
 		log.Info("failed to retrieve logmonitoring settings")
+
 		return GetLogMonSettingsResponse{}, err
 	}
 

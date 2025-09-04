@@ -8,6 +8,7 @@ import (
 	coreMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace4/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetK8sClusterME(t *testing.T) {
@@ -29,7 +30,7 @@ func TestGetK8sClusterME(t *testing.T) {
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, K8sClusterME{ID: "entity-1", Name: "label-1"}, me)
 	})
 
@@ -43,7 +44,7 @@ func TestGetK8sClusterME(t *testing.T) {
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, K8sClusterME{}, me)
 	})
 
@@ -51,7 +52,7 @@ func TestGetK8sClusterME(t *testing.T) {
 		apiClient := coreMock.NewApiClient(t)
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, K8sClusterME{}, me)
 	})
 
@@ -69,7 +70,7 @@ func TestGetK8sClusterME(t *testing.T) {
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, K8sClusterME{}, me)
 	})
 }
@@ -91,7 +92,7 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{ID: "entity-1"}, "schema-1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, GetSettingsResponse{TotalCount: 2}, resp)
 	})
 
@@ -99,7 +100,7 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 		apiClient := coreMock.NewApiClient(t)
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{}, "schema-1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, GetSettingsResponse{TotalCount: 0}, resp)
 	})
 }
@@ -121,7 +122,7 @@ func TestGetSettingsForLogModule(t *testing.T) {
 
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForLogModule(ctx, "entity-1")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, GetLogMonSettingsResponse{TotalCount: 3}, resp)
 	})
 
@@ -129,7 +130,7 @@ func TestGetSettingsForLogModule(t *testing.T) {
 		apiClient := coreMock.NewApiClient(t)
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForLogModule(ctx, "")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, GetLogMonSettingsResponse{TotalCount: 0}, resp)
 	})
 }

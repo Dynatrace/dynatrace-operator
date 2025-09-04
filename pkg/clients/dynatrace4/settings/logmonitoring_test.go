@@ -8,6 +8,7 @@ import (
 	coreMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace4/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateLogMonitoringSetting(t *testing.T) {
@@ -28,7 +29,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 
 		client := &client{apiClient: apiClient}
 		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "obj-123", objectID)
 	})
 
@@ -43,7 +44,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 
 		client := &client{apiClient: apiClient}
 		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Empty(t, objectID)
 	})
 
@@ -62,7 +63,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 
 		client := &client{apiClient: apiClient}
 		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Empty(t, objectID)
 	})
 }

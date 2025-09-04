@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -18,7 +19,8 @@ func TestHandleErrorResponse_SingleServerError(t *testing.T) {
 	rb := &requestBuilder{}
 	resp := newTestResponse(400, `{"error":{"code":400,"message":"bad request"}}`)
 	err := rb.handleErrorResponse(resp, []byte(`{"error":{"code":400,"message":"bad request"}}`))
-	httpErr, ok := err.(*HTTPError)
+	httpErr := &HTTPError{}
+	ok := errors.As(err, &httpErr)
 	if !ok || httpErr.SingleError == nil || httpErr.SingleError.Code != 400 {
 		t.Fatalf("Expected single server error, got %+v", err)
 	}
@@ -31,7 +33,8 @@ func TestHandleErrorResponse_MultipleServerErrors(t *testing.T) {
 	rb := &requestBuilder{}
 	resp := newTestResponse(400, `[{"error":{"code":400,"message":"bad1"}},{"error":{"code":400,"message":"bad2"}}]`)
 	err := rb.handleErrorResponse(resp, []byte(`[{"error":{"code":400,"message":"bad1"}},{"error":{"code":400,"message":"bad2"}}]`))
-	httpErr, ok := err.(*HTTPError)
+	httpErr := &HTTPError{}
+	ok := errors.As(err, &httpErr)
 	if !ok || len(httpErr.ServerErrors) != 2 {
 		t.Fatalf("Expected multiple server errors, got %+v", err)
 	}
@@ -42,17 +45,20 @@ func TestHandleErrorResponse_MultipleServerErrors(t *testing.T) {
 }
 
 func TestHandleErrorResponse_GenericHTTPError(t *testing.T) {
-	rb := &requestBuilder{}
+	rb := &requestBuilder{
+		path: "/test",
+	}
 	resp := newTestResponse(500, "not-json")
 	err := rb.handleErrorResponse(resp, []byte("not-json"))
-	httpErr, ok := err.(*HTTPError)
+	httpErr := &HTTPError{}
+	ok := errors.As(err, &httpErr)
 	if !ok {
 		t.Fatalf("Expected HTTPError, got %+v", err)
 	}
 	if httpErr.SingleError != nil || len(httpErr.ServerErrors) != 0 {
 		t.Errorf("Expected no server errors, got %+v", httpErr)
 	}
-	want := "HTTP 500: HTTP 500: not-json"
+	want := "HTTP request (/test) failed 500"
 	if got := httpErr.Error(); got != want {
 		t.Errorf("Unexpected error string: %s", got)
 	}

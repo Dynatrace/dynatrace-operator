@@ -47,14 +47,6 @@ func (dynatraceClientBuilder builder) SetTokens(tokens token.Tokens) Builder {
 	return dynatraceClientBuilder
 }
 
-func (dynatraceClientBuilder builder) getTokens() token.Tokens {
-	if dynatraceClientBuilder.tokens == nil {
-		dynatraceClientBuilder.tokens = token.Tokens{}
-	}
-
-	return dynatraceClientBuilder.tokens
-}
-
 // appendTrustedCerts adds trusted certificates to the TLS configuration
 func (dynatraceClientBuilder builder) appendTrustedCerts(ctx context.Context, tlsConfig *tls.Config, trustedCAs string, namespace string) error {
 	if trustedCAs == "" {
@@ -91,7 +83,9 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dtclient4.Cli
 	var tokens token.Tokens
 	if dynatraceClientBuilder.tokens == nil {
 		tokenReader := token.NewReader(dynatraceClientBuilder.apiReader, &dynatraceClientBuilder.dk)
+
 		var err error
+
 		tokens, err = tokenReader.ReadTokens(ctx)
 		if err != nil {
 			return nil, errors.WithStack(err)
@@ -142,6 +136,7 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dtclient4.Cli
 
 	// Configure proxy settings and HTTP client
 	var httpClient *http.Client
+
 	if dynatraceClientBuilder.dk.HasProxy() {
 		proxyURL, err := dynatraceClientBuilder.dk.Proxy(ctx, dynatraceClientBuilder.apiReader)
 		if err != nil {
@@ -157,6 +152,7 @@ func (dynatraceClientBuilder builder) Build(ctx context.Context) (*dtclient4.Cli
 			if err != nil {
 				return nil, fmt.Errorf("invalid proxy URL: %w", err)
 			}
+
 			transport.Proxy = http.ProxyURL(parsedProxyURL)
 		}
 

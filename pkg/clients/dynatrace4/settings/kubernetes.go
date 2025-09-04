@@ -91,7 +91,6 @@ func (dtc *client) performCreateOrUpdateKubernetesSetting(ctx context.Context, b
 		WithQueryParam("validateOnly", "false").
 		WithJSONBody(body).
 		Execute(&response)
-
 	if err != nil {
 		return "", errors.WithMessage(err, "error making post request to dynatrace api")
 	}

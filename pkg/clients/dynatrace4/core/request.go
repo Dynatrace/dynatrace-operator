@@ -29,13 +29,13 @@ type RequestBuilder interface {
 
 // requestBuilder provides a fluent interface for building and executing HTTP requests
 type requestBuilder struct {
+	ctx         context.Context
+	queryParams map[string]string
 	config      CommonConfig
 	method      string
 	path        string
-	queryParams map[string]string
-	body        []byte
 	tokenType   TokenType
-	ctx         context.Context
+	body        []byte
 }
 
 // NewRequest creates a new RequestBuilder instance
@@ -50,24 +50,28 @@ func NewRequest(config CommonConfig) RequestBuilder {
 // WithContext sets the context for the request
 func (rb *requestBuilder) WithContext(ctx context.Context) RequestBuilder {
 	rb.ctx = ctx
+
 	return rb
 }
 
 // WithMethod sets the HTTP method for the request
 func (rb *requestBuilder) WithMethod(method string) RequestBuilder {
 	rb.method = method
+
 	return rb
 }
 
 // WithPath sets the path for the request
 func (rb *requestBuilder) WithPath(path string) RequestBuilder {
 	rb.path = path
+
 	return rb
 }
 
 // WithQueryParam adds a query parameter to the request
 func (rb *requestBuilder) WithQueryParam(key, value string) RequestBuilder {
 	rb.queryParams[key] = value
+
 	return rb
 }
 
@@ -76,6 +80,7 @@ func (rb *requestBuilder) WithQueryParams(params map[string]string) RequestBuild
 	for key, value := range params {
 		rb.queryParams[key] = value
 	}
+
 	return rb
 }
 
@@ -90,24 +95,28 @@ func (rb *requestBuilder) WithJSONBody(body interface{}) RequestBuilder {
 			rb.body = bodyBytes
 		}
 	}
+
 	return rb
 }
 
 // WithRawBody sets the request body as raw bytes
 func (rb *requestBuilder) WithRawBody(body []byte) RequestBuilder {
 	rb.body = body
+
 	return rb
 }
 
 // WithTokenType sets the token type to use for authentication
 func (rb *requestBuilder) WithTokenType(tokenType TokenType) RequestBuilder {
 	rb.tokenType = tokenType
+
 	return rb
 }
 
 // WithPaasToken sets the token type to PaaS
 func (rb *requestBuilder) WithPaasToken() RequestBuilder {
 	rb.tokenType = TokenTypePaaS
+
 	return rb
 }
 
@@ -225,21 +234,21 @@ func (rb *requestBuilder) handleResponse(resp *http.Response, target interface{}
 }
 
 // GET creates a GET request builder
-func (config CommonConfig) GET(path string) RequestBuilder {
-	return NewRequest(config).WithMethod(http.MethodGet).WithPath(path)
+func (c CommonConfig) GET(path string) RequestBuilder {
+	return NewRequest(c).WithMethod(http.MethodGet).WithPath(path)
 }
 
 // POST creates a POST request builder
-func (config CommonConfig) POST(path string) RequestBuilder {
-	return NewRequest(config).WithMethod(http.MethodPost).WithPath(path)
+func (c CommonConfig) POST(path string) RequestBuilder {
+	return NewRequest(c).WithMethod(http.MethodPost).WithPath(path)
 }
 
 // PUT creates a PUT request builder
-func (config CommonConfig) PUT(path string) RequestBuilder {
-	return NewRequest(config).WithMethod(http.MethodPut).WithPath(path)
+func (c CommonConfig) PUT(path string) RequestBuilder {
+	return NewRequest(c).WithMethod(http.MethodPut).WithPath(path)
 }
 
 // DELETE creates a DELETE request builder
-func (config CommonConfig) DELETE(path string) RequestBuilder {
-	return NewRequest(config).WithMethod(http.MethodDelete).WithPath(path)
+func (c CommonConfig) DELETE(path string) RequestBuilder {
+	return NewRequest(c).WithMethod(http.MethodDelete).WithPath(path)
 }
