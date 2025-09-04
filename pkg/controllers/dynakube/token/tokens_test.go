@@ -103,7 +103,7 @@ func TestTokens(t *testing.T) {
 		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Len(t, tokens.PaasToken().Features, 1)
 		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("empty dynakube, all permissions in api token => should work", func(t *testing.T) {
 		apiToken := newToken(dtclient.APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
@@ -116,7 +116,7 @@ func TestTokens(t *testing.T) {
 		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("activegate enabled dynakube, no permissions in api token => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
@@ -167,7 +167,7 @@ func TestTokens(t *testing.T) {
 		assert.Len(t, tokens.APIToken().Features, 6)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 
@@ -357,12 +357,12 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			fakeClient.On("GetTokenScopes", mock.Anything, tokenValue).Return(c.availableScopes, nil)
 
 			// Example how to mock the new client if needed in the future
-			//tMock := tokenMock.NewClient(t)
-			//tMock.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(token.TokenScopes{"sldkfj", "slkdfjlkj"}, nil).Maybe()
-			//client := &dtclient4.Client{
+			// tMock := tokenMock.NewClient(t)
+			// tMock.On("GetTokenScopes", mock.Anything, apiTokenNoMissingScopes).Return(token.TokenScopes{"sldkfj", "slkdfjlkj"}, nil).Maybe()
+			// client := &dtclient4.Client{
 			//	TokenClient: tMock,
-			//}
-			//client.Token().GetTokenScopes(nil, "sldkf")
+			// }
+			// client.Token().GetTokenScopes(nil, "sldkf")
 
 			apiToken := newToken(dtclient.APIToken, tokenValue)
 			tokens := Tokens{

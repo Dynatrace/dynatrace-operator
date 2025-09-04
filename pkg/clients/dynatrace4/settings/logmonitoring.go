@@ -48,7 +48,7 @@ func (dtc *client) CreateLogMonitoringSetting(ctx context.Context, scope, cluste
 	return objectID, nil
 }
 
-func (dtc *client) performCreateLogMonSetting(ctx context.Context, body []posLogMonSettingsBody) (string, error) { //nolint:dupl
+func (dtc *client) performCreateLogMonSetting(ctx context.Context, body []posLogMonSettingsBody) (string, error) {
 	var response []postSettingsResponse
 
 	err := dtc.apiClient.POST(ObjectsPath).

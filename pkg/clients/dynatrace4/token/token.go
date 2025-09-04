@@ -7,13 +7,13 @@ import (
 )
 
 type client struct {
-	apiClient core.ApiClient
+	apiClient core.APIClient
 }
 
 var _ Client = (*client)(nil)
 
 // NewClient creates a new Token API client
-func NewClient(apiClient core.ApiClient) Client {
+func NewClient(apiClient core.APIClient) Client {
 	return &client{
 		apiClient: apiClient,
 	}
@@ -34,7 +34,7 @@ func (c *client) GetTokenScopes(ctx context.Context, token string) (TokenScopes,
 		Scopes []string `json:"scopes"`
 	}
 
-	err := c.apiClient.POST(ApiTokenPath).
+	err := c.apiClient.POST(APITokenPath).
 		WithContext(ctx).
 		WithJSONBody(body).
 		Execute(&resp)

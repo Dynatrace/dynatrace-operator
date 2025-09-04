@@ -8,6 +8,7 @@ import (
 	coreMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace4/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetTokenScopes(t *testing.T) {
@@ -31,7 +32,7 @@ func TestGetTokenScopes(t *testing.T) {
 
 		client := &client{apiClient: apiClient}
 		scopes, err := client.GetTokenScopes(ctx, "sometoken")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, TokenScopes(expectedScopes), scopes)
 	})
 
@@ -45,7 +46,7 @@ func TestGetTokenScopes(t *testing.T) {
 
 		client := &client{apiClient: apiClient}
 		scopes, err := client.GetTokenScopes(ctx, "sometoken")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, scopes)
 	})
 
@@ -53,7 +54,7 @@ func TestGetTokenScopes(t *testing.T) {
 		apiClient := coreMock.NewApiClient(t)
 		client := &client{apiClient: apiClient}
 		scopes, err := client.GetTokenScopes(ctx, "")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Nil(t, scopes)
 	})
 
@@ -73,7 +74,7 @@ func TestGetTokenScopes(t *testing.T) {
 
 		client := &client{apiClient: apiClient}
 		scopes, err := client.GetTokenScopes(ctx, "sometoken")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, scopes)
 	})
 }

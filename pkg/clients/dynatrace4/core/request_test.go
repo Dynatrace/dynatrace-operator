@@ -13,10 +13,9 @@ import (
 	"testing"
 )
 
-type testTokenType string
-
 func newTestConfig(base string) CommonConfig {
 	u, _ := url.Parse(base)
+
 	return CommonConfig{
 		BaseURL:         u,
 		HTTPClient:      http.DefaultClient,
@@ -194,7 +193,7 @@ func TestRequestBuilder_setHeaders(t *testing.T) {
 	config := newTestConfig("http://localhost")
 	rb := NewRequest(config).(*requestBuilder)
 	rb.method = http.MethodPost
-	req, _ := http.NewRequest("POST", "http://localhost", nil)
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost", nil)
 	rb.setHeaders(req)
 	if req.Header.Get("Authorization") == "" {
 		t.Errorf("setHeaders did not set Authorization")
@@ -211,7 +210,7 @@ func TestRequestBuilder_handleResponse_UnmarshalError(t *testing.T) {
 	config := newTestConfig("http://localhost")
 	rb := NewRequest(config).(*requestBuilder)
 	resp := &http.Response{
-		StatusCode: 200,
+		StatusCode: http.StatusOK,
 		Body:       io.NopCloser(bytes.NewReader([]byte("not-json"))),
 	}
 	target := struct{ Foo string }{}

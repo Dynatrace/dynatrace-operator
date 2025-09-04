@@ -13,11 +13,24 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace4/token"
 )
 
+const (
+	PaasToken       = "paasToken"
+	APIToken        = "apiToken"
+	DataIngestToken = "dataIngestToken"
+)
+
 // Client is the main Dynatrace API client that provides access to all API groups
 type Client struct {
-	baseURL    *url.URL
-	httpClient *http.Client
-	userAgent  string
+
+	// API clients for different groups
+	// activeGateClient *activegate.Client
+	// agentClient      *agent.Client
+	// imagesClient     *images.Client
+	SettingsClient settings.Client
+	TokenClient    token.Client
+	baseURL        *url.URL
+	httpClient     *http.Client
+	userAgent      string
 
 	// API tokens
 	apiToken        string
@@ -27,28 +40,21 @@ type Client struct {
 	// Additional configuration
 	networkZone string
 	hostGroup   string
-
-	// API clients for different groups
-	//activeGateClient *activegate.Client
-	//agentClient      *agent.Client
-	//imagesClient     *images.Client
-	SettingsClient settings.Client
-	TokenClient    token.Client
 }
 
 // Config holds the client configuration
 type Config struct {
+	HTTPClient      *http.Client
+	TLSConfig       *tls.Config
 	BaseURL         string
 	APIToken        string
 	PaasToken       string
 	DataIngestToken string
 	UserAgent       string
-	HTTPClient      *http.Client
-	TLSConfig       *tls.Config
-	Timeout         time.Duration
 	Proxy           string
 	NetworkZone     string
 	HostGroup       string
+	Timeout         time.Duration
 }
 
 // Option is a functional option for configuring the client
@@ -163,6 +169,7 @@ func NewClient(baseURL string, options ...Option) (*Client, error) {
 			if err != nil {
 				return nil, fmt.Errorf("invalid proxy URL: %w", err)
 			}
+
 			transport.Proxy = http.ProxyURL(proxyURL)
 		}
 

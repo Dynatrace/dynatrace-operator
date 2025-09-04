@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	coreMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace4/core"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace4/core"
+	coreMock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace4/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetRulesSetting(t *testing.T) {
@@ -38,7 +38,7 @@ func TestGetRulesSetting(t *testing.T) {
 
 		client := NewClient(apiClient)
 		rules, err := client.GetRulesSettings(ctx, "kube-system-uuid", "ENVIRONMENT_ID")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, rules)
 		assert.Equal(t, buildSampleResponse(), rules)
 	})
@@ -47,7 +47,7 @@ func TestGetRulesSetting(t *testing.T) {
 		apiClient := coreMock.NewApiClient(t)
 		client := NewClient(apiClient)
 		rules, err := client.GetRulesSettings(ctx, "", "test-entityID")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, GetRulesSettingsResponse{}, rules)
 	})
 
@@ -71,7 +71,7 @@ func TestGetRulesSetting(t *testing.T) {
 
 		client := NewClient(apiClient)
 		rules, err := client.GetRulesSettings(ctx, "kube-system-uuid", "")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, rules)
 		assert.Equal(t, buildSampleResponse(), rules)
 	})
@@ -98,7 +98,7 @@ func TestGetRulesSetting(t *testing.T) {
 
 		client := NewClient(apiClient)
 		rules, err := client.GetRulesSettings(ctx, "kube-system-uuid", "")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, rules)
 	})
 }

@@ -52,6 +52,7 @@ func (rb *requestBuilder) handleErrorResponse(resp *http.Response, body []byte) 
 
 	if err := json.Unmarshal(body, &singleError); err == nil && singleError.Error.Code != 0 {
 		httpErr.SingleError = &singleError.Error
+
 		return httpErr
 	}
 
@@ -65,6 +66,7 @@ func (rb *requestBuilder) handleErrorResponse(resp *http.Response, body []byte) 
 		for i, errItem := range errorArray {
 			httpErr.ServerErrors[i] = errItem.ErrorMessage
 		}
+
 		return httpErr
 	}
 
@@ -74,23 +76,26 @@ func (rb *requestBuilder) handleErrorResponse(resp *http.Response, body []byte) 
 
 // HTTPError represents an HTTP error that includes status code, response body, and parsed server errors
 type HTTPError struct {
-	StatusCode   int           `json:"statusCode"`
+	SingleError  *ServerError  `json:"singleError,omitempty"`
 	Body         string        `json:"body"`
 	Message      string        `json:"message"`
 	ServerErrors []ServerError `json:"serverErrors,omitempty"`
-	SingleError  *ServerError  `json:"singleError,omitempty"`
+	StatusCode   int           `json:"statusCode"`
 }
 
 func (e *HTTPError) Error() string {
 	if len(e.ServerErrors) > 0 {
 		// Multiple server errors
 		var combinedMsg string
+
 		for i, serverErr := range e.ServerErrors {
 			if i > 0 {
 				combinedMsg += "; "
 			}
+
 			combinedMsg += serverErr.Error()
 		}
+
 		return fmt.Sprintf("HTTP %d: %s", e.StatusCode, combinedMsg)
 	}
 

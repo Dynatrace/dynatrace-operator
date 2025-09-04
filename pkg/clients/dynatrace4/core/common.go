@@ -1,14 +1,14 @@
 package core
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"net/url"
 	"path"
 )
 
-// ApiClient defines the behavior required from a config provider and is mockable.
-type ApiClient interface {
+// APIClient defines the behavior required from a config provider and is mockable.
+type APIClient interface {
 	GET(path string) RequestBuilder
 	POST(path string) RequestBuilder
 	PUT(path string) RequestBuilder
@@ -50,7 +50,7 @@ func (c *CommonConfig) GetToken(tokenType TokenType) string {
 
 func (c *CommonConfig) BuildURL(subPath string, queryParams map[string]string) (*url.URL, error) {
 	if c.BaseURL == nil {
-		return nil, fmt.Errorf("base URL is not set")
+		return nil, errors.New("base URL is not set")
 	}
 
 	u := *c.BaseURL
@@ -62,6 +62,7 @@ func (c *CommonConfig) BuildURL(subPath string, queryParams map[string]string) (
 		for key, value := range queryParams {
 			q.Set(key, value)
 		}
+
 		u.RawQuery = q.Encode()
 	}
 
