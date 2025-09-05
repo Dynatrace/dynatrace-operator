@@ -117,6 +117,113 @@ Important characteristics:
   - The cleanup is "invisible" for the caller of the `Reconciler`, so its up to the `Reconciler` to decide if it needs to clean up or setup/update.
     - Example: `DynakubeController` should just call the `ActiveGateReconciler.Reconcile` function, and not worry about if it will create(i.e.: setup) a `StatefulSet` or delete(i.e.: cleanup) the no longer necessary one.
 
+## Secret/ConfigMap handling
+
+A significant role of the Operator is to create/update or just pass along Secrets/ConfigMaps to components it manages.
+
+The main problem that needs to be solved is: If a `Secret/ConfigMap` changes, that warrants the restart of a component that uses it, how do we go about this?
+
+General rules to follow:
+
+- Each `Secret/ConfigMap` we manage should have it's own package, that contain:
+  - The func to determine the name of the `Secret/ConfigMap`. (example: `GetName`)
+  - A `const` for each key used inside the `data` of the `Secret/ConfigMap`.
+    - Make them `public` if they will be used via `Items` when mounting it.
+  - Unique annotation keys ( public `const`) for keeping track of `Secret/ConfigMap` changes (example: `TokenHashAnnotationKey`)
+    - An annotation can be for storing a hash of the whole `Secret/ConfigMap` or part of it. Make this clear in the name of the annotation.
+      - For not confidential values it is ok to use `GenerateHash`
+      - For confidential values `GenerateSecureHash` should be used
+    - An annotation can be for storing the exact value from the `DynaKube`, makes sense for simple, non-confidential data. (example: `networkZone`)
+  - A func to add all the relevant annotations to the provided map. (example: `AddAnnotations`)
+    - There can be multiple annotation for `Secret/ConfigMap`, or just 1.
+      - It makes sense to have multiple for the cases where you don't want to cause a restart if part of the `Secret/ConfigMap` changes.
+         Example: The communication endpoints of the OneAgent changes overtime, the OneAgent handles it on its own so that shouldn't cause a restart.
+      - It makes sense to have 1 if any change to the `Secret/ConfigMap` should cause a restart.
+        - Be mindful, if something is later added to such `Secret/ConfigMap`, having a single hash for the whole will cause everything using it to restart after an Operator update.
+      - It is recommended to have 1 hash for all the "required" parts of the `Secret/ConfigMap`, and individual ones for the "optional" parts.
+        - The "optional" parts will always be a value directly from the `DynaKube` or something referenced from the `DynaKube`, in either case there should already be a raw value or hash ready to be used.
+  - The "reconcile" logic
+    - If a unique hash will be calculated for this Secret, then the "reconcile logic" should calc/set/unset this as it is necessary.
+      - Should be set/stored in the `Status` of the `DynaKube` so it can be reused, instead of recalculated from other reconcilers.
+
+- This package is used by other packages that would like to mount the `Secret/ConfigMap`
+  - Using the `GetName`, to reference the `Secret/ConfigMap` in a Volume or Env
+  - Using the "public `const` for each key" to what to part of the `Secret/ConfigMap` to use. (use `Items` instead of `SubPath`)
+  - Using the `AddAnnotation` to put the hashed content of the `Secret/ConfigMap` (from the `DynaKube`'s `status`) into the `template.metadata.annotations` of the component, **IF** it needs to be restarted when the `Secret/ConfigMap` changes.
+
+Reasoning for these rules:
+
+- As of writing this, we have 15+ `Secrets/ConfigMaps` that we manage and provide to 4+ components. (some components need more, some less)
+  - Putting all of this within the `api` package, when we already tend to have a package for each `Secret/ConfigMap` for "reconciling" is just breaking the "single-place-of-truth" for no good reason.
+  - Fetching and recalculating the hash for each component where a `Secret/ConfigMap` is used would be fine if we only had a few of them, but we have 15+.
+    - Why not use the cache? -> Using the built-in cache of the `Client` had caused problems in the past (the cache was not up to date), which could lead to inconsistency.
+
+### Example
+
+Do this:
+
+```go
+package configsecret
+
+// import (...)
+
+const (
+  logMonitoringSecretSuffix = "-logmonitoring-config"
+
+  TokenHashAnnotationKey   = api.InternalFlagPrefix + "tenant-token-hash"
+  NetworkZoneAnnotationKey = api.InternalFlagPrefix + "network-zone"
+
+  //...
+)
+
+// type Reconciler struct { ... }
+// func NewReconciler(...) {...}
+// func (r *Reconciler) Reconcile(ctx context.Context) error {...}
+
+func GetSecretName(dkName string) string {
+  return dkName + logMonitoringSecretSuffix
+}
+
+func AddAnnotations(source map[string]string, dk dynakube.DynaKube) map[string]string {
+  annotation := map[string]string{}
+  if source != nil {
+   annotation = maps.Clone(source)
+  }
+
+  annotation[TokenHashAnnotationKey] = dk.OneAgent().ConnectionInfoStatus.TenantTokenHash
+  if dk.Spec.NetworkZone != "" {
+   annotation[NetworkZoneAnnotationKey] = dk.Spec.NetworkZone
+  }
+
+  return annotation
+}
+
+```
+
+Not this:
+
+```go
+package oneagent
+
+// import (...)
+
+const (
+  OneAgentTenantSecretSuffix            = "-oneagent-tenant-secret"
+  OneAgentConnectionInfoConfigMapSuffix = "-oneagent-connection-info"
+// ...
+)
+
+func (oa *OneAgent) GetTenantSecret() string {
+  return oa.name + OneAgentTenantSecretSuffix
+}
+
+func (oa *OneAgent) GetConnectionInfoConfigMapName() string {
+  return oa.name + OneAgentConnectionInfoConfigMapSuffix
+}
+
+// ...
+```
+
 ## Errors
 
 ### Do's
