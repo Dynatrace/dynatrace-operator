@@ -1,0 +1,25 @@
+{{- if (and .Values.rbac.extensions.database.create .Values.rbac.extensions.create)}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name:  dynatrace-database-extensions
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name:  dynatrace-database-extensions
+  namespace: {{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-extensions-controller
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name:  dynatrace-database-extensions
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}
