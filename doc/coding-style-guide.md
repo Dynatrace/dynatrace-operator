@@ -172,11 +172,7 @@ const (
   TokenHashAnnotationKey   = api.InternalFlagPrefix + "tenant-token-hash"
   NetworkZoneAnnotationKey = api.InternalFlagPrefix + "network-zone"
 
-  tenantKey       = "Tenant"
-  tenantTokenKey  = "TenantToken"
-  hostIDSourceKey = "HostIdSource"
-  serverKey       = "Server"
-  networkZoneKey  = "Location"
+  //...
 )
 
 // type Reconciler struct { ... }
