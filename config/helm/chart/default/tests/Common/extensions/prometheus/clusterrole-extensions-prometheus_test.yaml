@@ -1,6 +1,6 @@
 suite: test clusterrole for the dynatrace OpenTelemetry collector
 templates:
-  - Common/extensions/clusterole-extensions-prometheus.yaml
+  - Common/extensions/prometheus/clusterole-extensions-prometheus.yaml
 tests:
   - it: ClusterRole and ClusterRoleBinding exists
     asserts:
@@ -91,9 +91,16 @@ tests:
       - isNotEmpty:
           path: metadata.labels
 
-  - it: shouldn't exist if turned off
+  - it: shouldn't exist if extensions are turned off
     set:
       rbac.extensions.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if prometheus extensions are turned off
+    set:
+      rbac.extensions.prometheus.create: false
     asserts:
       - hasDocuments:
           count: 0

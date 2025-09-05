@@ -238,6 +238,10 @@ rbac:
   extensions:
     create: true
     annotations: {}
+    prometheus: 
+      create: true
+    database:
+      create: true
   telemetryIngest:
     create: true
     annotations: {}

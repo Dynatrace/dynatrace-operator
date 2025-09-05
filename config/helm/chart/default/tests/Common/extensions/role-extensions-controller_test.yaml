@@ -7,7 +7,7 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: Role should exist with for openshift
+  - it: Role should exist for openshift
     documentIndex: 0
     set:
       platform: openshift
@@ -30,7 +30,7 @@ tests:
               - securitycontextconstraints
             verbs:
               - use
-  - it: RoleBinding should exist with for openshift
+  - it: RoleBinding should exist for openshift
     documentIndex: 1
     set:
       platform: openshift
