@@ -144,7 +144,7 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 		}
 	}
 
-	if len(optionalScopes) > 0 {
+	if len(missingOptionalScopes) > 0 {
 		logInfof(log, "token scopes are valid however some optional scopes are missing so some features may not work: %s", strings.Join(missingOptionalScopes, ", "))
 	} else {
 		logInfof(log, "token scopes are valid")
