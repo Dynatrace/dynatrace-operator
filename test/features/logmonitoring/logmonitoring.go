@@ -197,8 +197,9 @@ func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 
 		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, &dk))
 		// Force reconciliation by simulating the passage of time
-		dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Time{}
-		meta.RemoveStatusCondition(&dk.Status.Conditions, "MonitoredEntity")
+		dk.Status.DynatraceAPI.LastTokenScopeRequest.Time = dk.Status.DynatraceAPI.LastTokenScopeRequest.Add(-2 * dk.APIRequestThreshold())
+		expireLastTransitionTime(&dk, "MonitoredEntity")
+		expireLastTransitionTime(&dk, logmonsettings.ConditionType)
 		require.NoError(t, resources.UpdateStatus(ctx, &dk))
 
 		// Verify that the operator picked up the update
@@ -211,4 +212,13 @@ func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 
 		return ctx
 	}
+}
+
+func expireLastTransitionTime(dk *dynakube.DynaKube, conditionType string) {
+	cond := meta.FindStatusCondition(dk.Status.Conditions, conditionType)
+	if cond == nil {
+		return
+	}
+	cond.LastTransitionTime.Time = cond.LastTransitionTime.Add(-2 * dk.APIRequestThreshold())
+	meta.SetStatusCondition(&dk.Status.Conditions, *cond)
 }

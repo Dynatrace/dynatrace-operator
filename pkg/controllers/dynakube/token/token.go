@@ -42,8 +42,16 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient dtclient.Client, 
 
 	optionalScopes := token.collectOptionalScopes(scopes, dk)
 
-	if len(optionalScopes) > 0 {
-		log.Info("some optional scopes are missing", "missing scopes", optionalScopes, "token", token.Type)
+	missingOptionalScopes := []string{}
+
+	for scope, isAvailable := range optionalScopes {
+		if !isAvailable {
+			missingOptionalScopes = append(missingOptionalScopes, scope)
+		}
+	}
+
+	if len(missingOptionalScopes) > 0 {
+		log.Info("some optional scopes are missing", "missing scopes", missingOptionalScopes, "token", token.Type)
 	}
 
 	return optionalScopes, err
