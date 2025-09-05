@@ -132,12 +132,15 @@ General rules to follow:
     - An annotation can be for storing a hash of the whole `Secret/ConfigMap` or part of it. Make this clear in the name of the annotation.
       - For not confidential values it is ok to use `GenerateHash`
       - For confidential values `GenerateSecureHash` should be used
-    - An annotation can be for storing the exact value from the `DynaKube`, makes sense for simple, confidential data. (example: `networkZone`)
+    - An annotation can be for storing the exact value from the `DynaKube`, makes sense for simple, non-confidential data. (example: `networkZone`)
   - A func to add all the relevant annotations to the provided map. (example: `AddAnnotations`)
     - There can be multiple annotation for `Secret/ConfigMap`, or just 1.
       - It makes sense to have multiple for the cases where you don't want to cause a restart if part of the `Secret/ConfigMap` changes.
          Example: The communication endpoints of the OneAgent changes overtime, the OneAgent handles it on its own so that shouldn't cause a restart.
       - It makes sense to have 1 if any change to the `Secret/ConfigMap` should cause a restart.
+        - Be mindful, if something is later added to such `Secret/ConfigMap`, having a single hash for the whole will cause everything using it to restart after an Operator update.
+      - It is recommended to have 1 hash for all the "required" parts of the `Secret/ConfigMap`, and individual ones for the "optional" parts.
+        - The "optional" parts will always be a value directly from the `DynaKube` or something referenced from the `DynaKube`, in either case there should already be a raw value or hash ready to be used.
   - The "reconcile" logic
     - If a unique hash will be calculated for this Secret, then the "reconcile logic" should calc/set/unset this as it is necessary.
       - Should be set/stored in the `Status` of the `DynaKube` so it can be reused, instead of recalculated from other reconcilers.
