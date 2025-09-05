@@ -101,27 +101,3 @@ func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.Dy
 func getTechnology(pod corev1.Pod, dk dynakube.DynaKube) string {
 	return maputils.GetField(pod.Annotations, AnnotationTechnologies, dk.FF().GetNodeImagePullTechnology())
 }
-
-func HasPodUserSet(psc *corev1.PodSecurityContext) bool {
-	return psc != nil && psc.RunAsUser != nil
-}
-
-func HasPodGroupSet(psc *corev1.PodSecurityContext) bool {
-	return psc != nil && psc.RunAsGroup != nil
-}
-
-func IsNonRoot(sc *corev1.SecurityContext) bool {
-	if sc == nil {
-		return true
-	}
-
-	if sc.RunAsUser != nil && *sc.RunAsUser != RootUser {
-		return true
-	}
-
-	if sc.RunAsGroup != nil && *sc.RunAsGroup != RootGroup {
-		return true
-	}
-
-	return false
-}

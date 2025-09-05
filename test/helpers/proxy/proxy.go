@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
-	"path"
 	"path/filepath"
 	"testing"
 
@@ -47,12 +46,12 @@ const (
 )
 
 var (
-	dynatraceNetworkPolicy = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
+	dynatraceNetworkPolicy = filepath.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
 
-	proxyDeploymentPath                      = path.Join(project.TestDataDir(), "network/proxy.yaml")
-	proxyWithCustomCADeploymentPath          = path.Join(project.TestDataDir(), "network/proxy-ssl.yaml")
-	proxyNamespaceWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network/proxy-ssl-namespace.yaml")
-	proxySCCPath                             = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
+	proxyDeploymentPath                      = filepath.Join(project.TestDataDir(), "network/proxy.yaml")
+	proxyWithCustomCADeploymentPath          = filepath.Join(project.TestDataDir(), "network/proxy-ssl.yaml")
+	proxyNamespaceWithCustomCADeploymentPath = filepath.Join(project.TestDataDir(), "network/proxy-ssl-namespace.yaml")
+	proxySCCPath                             = filepath.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
 	ProxySpec = &value.Source{
 		Value: "http://squid.proxy.svc.cluster.local:3128",

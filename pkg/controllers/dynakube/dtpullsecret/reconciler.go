@@ -79,7 +79,7 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) er
 }
 
 func (r *Reconciler) reconcilePullSecret(ctx context.Context) error {
-	pullSecretData, err := r.GenerateData()
+	pullSecretData, err := r.generateData()
 	if err != nil {
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -83,6 +84,8 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dk *dynakube.DynaKube) e
 
 func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	if !dk.HasProxy() {
+		dk.Status.ProxyURLHash = ""
+
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
 		return map[string][]byte{
 			hostField:     []byte(""),
@@ -94,6 +97,11 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dk *dynakube.DynaKube) 
 	}
 
 	proxyURL, err := dk.Proxy(ctx, r.apiReader)
+	if err != nil {
+		return nil, err
+	}
+
+	dk.Status.ProxyURLHash, err = hasher.GenerateSecureHash(proxyURL)
 	if err != nil {
 		return nil, err
 	}

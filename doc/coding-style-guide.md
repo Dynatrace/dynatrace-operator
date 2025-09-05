@@ -35,6 +35,7 @@
 - Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
 - Run the linters locally before opening a PR, it will save you time.
   - There is a pre-commit hook that you can configure via `make prerequisites/setup-pre-commit`
+- Avoid using the `path` package for operations on filesystem paths. Use "path/filepath" package.
 
 ## Function Parameter and Return-Value Order
 
@@ -534,7 +535,7 @@ So here are some basic guidelines:
 
 ## Code Review
 
-[Common guidelines](https://github.com/golang/go/wiki/CodeReview)
+[Common guidelines](https://go.dev/wiki/CodeReviewComments)
 
 - (🧑‍🤝‍🧑) 2 approvals per PR is preferred
 - (✅) Resolving a comment is the duty of the commenter. (after the comment was addressed)

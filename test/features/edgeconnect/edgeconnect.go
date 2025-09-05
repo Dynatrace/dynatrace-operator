@@ -5,7 +5,7 @@ package edgeconnect
 import (
 	"context"
 	"fmt"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -107,7 +107,7 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 }
 
 var (
-	customServiceAccount = path.Join(project.TestDataDir(), "edgeconnect/custom-service-account.yaml")
+	customServiceAccount = filepath.Join(project.TestDataDir(), "edgeconnect/custom-service-account.yaml")
 )
 
 func AutomationModeFeature(t *testing.T) features.Feature {

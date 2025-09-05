@@ -5,7 +5,7 @@ package logmonitoring
 import (
 	"context"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -61,10 +61,10 @@ func Feature(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	agCrt, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificate))
+	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	require.NoError(t, err)
 
-	agP12, err := os.ReadFile(path.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
+	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	require.NoError(t, err)
 
 	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,

@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	csiNetworkPolicy = path.Join(project.TestDataDir(), "network/csi-denial.yaml")
+	csiNetworkPolicy = filepath.Join(project.TestDataDir(), "network/csi-denial.yaml")
 )
 
 // Prerequisites: istio service mesh
