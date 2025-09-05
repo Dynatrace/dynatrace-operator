@@ -54,7 +54,14 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 func (pub *Publisher) mountStorageVolume(volumeCfg *csivolumes.VolumeConfig) error {
 	oaStorageDir := pub.path.OsAgentDir(volumeCfg.DynakubeName)
 
-	err := pub.fs.MkdirAll(oaStorageDir, os.ModePerm)
+	err := cleanupDanglingSymlink(oaStorageDir)
+	if err != nil {
+		log.Info("failed to cleanup dangling symlink", "path", oaStorageDir)
+
+		return err
+	}
+
+	err = pub.fs.MkdirAll(oaStorageDir, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
 		return err
 	}
@@ -71,6 +78,20 @@ func (pub *Publisher) mountStorageVolume(volumeCfg *csivolumes.VolumeConfig) err
 		log.Info("failed to mount directory for osagent-storage mount", "directory", oaStorageDir)
 
 		return err
+	}
+
+	return nil
+}
+
+func cleanupDanglingSymlink(hostDir string) error {
+	linkInfo, err := os.Lstat(hostDir)
+	if err == nil && linkInfo.Mode()&os.ModeSymlink != 0 {
+		_, err := os.Stat(hostDir)
+		if os.IsNotExist(err) {
+			log.Debug("found dangling symlink", "path", hostDir)
+
+			return os.Remove(hostDir)
+		}
 	}
 
 	return nil
