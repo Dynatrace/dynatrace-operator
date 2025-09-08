@@ -26,6 +26,7 @@ var (
 )
 
 type Server struct {
+	registerapi.UnimplementedRegistrationServer
 	driverName             string
 	csiAddress             string
 	endpoint               string
@@ -116,8 +117,8 @@ func (s Server) GetInfo(_ context.Context, req *registerapi.InfoRequest) (*regis
 func (s Server) NotifyRegistrationStatus(_ context.Context, status *registerapi.RegistrationStatus) (*registerapi.RegistrationStatusResponse, error) {
 	log.Info("received NotifyRegistrationStatus", "status", status)
 
-	if !status.PluginRegistered {
-		log.Error(errors.New("plugin registration failed"), "plugin registration failed", "error", status.Error)
+	if !status.GetPluginRegistered() {
+		log.Error(errors.New("plugin registration failed"), "plugin registration failed", "error", status.GetError())
 	}
 
 	return &registerapi.RegistrationStatusResponse{}, nil
