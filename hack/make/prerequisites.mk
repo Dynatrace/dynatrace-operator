@@ -1,7 +1,7 @@
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
 kustomize_version=v5.7.1
 #renovate depName=sigs.k8s.io/controller-tools/cmd
-controller_gen_version=v0.18.0
+controller_gen_version=v0.19.0
 # renovate depName=github.com/golangci/golangci-lint/v2
 golang_ci_cmd_version=v2.4.0
 # renovate depName=github.com/daixiang0/gci
@@ -18,7 +18,9 @@ helmunittest_version=v1.0.0
 cyclonedx_gomod_version=v1.9.0
 
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
-ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
+#ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
+# 1.34 does not work yet, see [DAQ-13500]
+ENVTEST_K8S_VERSION = 1.33
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))

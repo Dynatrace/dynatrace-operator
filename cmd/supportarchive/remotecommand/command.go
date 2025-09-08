@@ -35,7 +35,7 @@ func (r DefaultExecutor) Exec(ctx context.Context, config *rest.Config, podName 
 		return nil, nil, errors.WithStack(err)
 	}
 
-	restClient, err := apiutil.RESTClientForGVK(gvk, false, config, serializer.NewCodecFactory(sch), httpClient)
+	restClient, err := apiutil.RESTClientForGVK(gvk, false, false, config, serializer.NewCodecFactory(sch), httpClient)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
