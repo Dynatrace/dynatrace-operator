@@ -81,8 +81,11 @@ func TestAddPodAttributes(t *testing.T) {
 			InstallContainer: &initContainer,
 		}
 
-		err := addPodAttributes(&request)
-		require.NoError(t, err)
+		require.NotPanics(t, func() {
+			// podattr.Attributes.ToMap can currently never fail.
+			// Catch regression of this early.
+			addPodAttributes(&request)
+		})
 		require.Equal(t, *expectedPod, *request.Pod)
 
 		validateAttributes(t, request)
