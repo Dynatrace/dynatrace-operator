@@ -54,7 +54,7 @@ runs:
       with:
         images: ${{ inputs.images }}
         flavor: |
-          suffix=${{ inputs.suffix }}
+          suffix=${{ inputs.suffix != '' && format('-{0}', inputs.suffix) || '' }}
         labels: |
           ${{ inputs.labels }}
           quay.expires-after=${{ (github.ref_type != 'tag' && !startsWith(github.ref_name, 'release-') && github.ref_name != 'main') && '10d' || '' }}
@@ -90,4 +90,3 @@ runs:
           ${{ steps.meta.outputs.labels }}
         annotations: |
           ${{ steps.meta.outputs.annotations }}
-
