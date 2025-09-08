@@ -1,4 +1,4 @@
-name: test-suffix.yaml
+name: Test suffix in tag
 
 on:
   workflow_dispatch:
@@ -22,4 +22,5 @@ jobs:
           images: example/test-image
 
       - name: Show generated tags
-        run: echo "Generated tags: ${{ steps.meta.outputs.tags }}"
+        run: |
+          echo "Generated tags: ${{ steps.meta.outputs.tags }}"
