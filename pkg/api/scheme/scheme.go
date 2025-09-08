@@ -17,7 +17,7 @@ limitations under the License.
 package scheme
 
 import (
-	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -32,6 +32,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
