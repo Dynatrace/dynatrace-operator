@@ -66,23 +66,19 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	setInjectedAnnotation(request.Pod)
 	setWorkloadAnnotations(request.Pod, workloadInfo)
 
-	args := podattrToArgs(attributes)
+	args, err := podattr.ToArgs(attributes)
+	if err != nil {
+		// This should only happen when there is a memory error or other critical bug in the stdlib json package.
+		log.Error(err, "failed to convert attributes. this should never happen!")
+
+		return err
+	}
 
 	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
 
 	turnOnMetadataEnrichment(request)
 
 	return nil
-}
-
-func podattrToArgs(attrs podattr.Attributes) []string {
-	args, err := podattr.ToArgs(attrs)
-	if err != nil {
-		// TODO(avorima): Return error when it's possible to create invalid Attributes.
-		panic(err)
-	}
-
-	return args
 }
 
 func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {

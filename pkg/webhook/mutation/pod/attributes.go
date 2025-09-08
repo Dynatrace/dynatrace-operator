@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func addPodAttributes(request *dtwebhook.MutationRequest) {
+func addPodAttributes(request *dtwebhook.MutationRequest) error {
 	attrs := podattr.Attributes{
 		PodInfo: podattr.PodInfo{
 			PodName:       createEnvVarRef(K8sPodNameEnv),
@@ -37,19 +37,14 @@ func addPodAttributes(request *dtwebhook.MutationRequest) {
 
 	request.InstallContainer.Env = append(request.InstallContainer.Env, envs...)
 
-	args := podattrToArgs(attrs)
-
-	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
-}
-
-func podattrToArgs(attrs podattr.Attributes) []string {
 	args, err := podattr.ToArgs(attrs)
 	if err != nil {
-		// TODO(avorima): Return error when it's possible to create invalid Attributes.
-		panic(err)
+		return err
 	}
 
-	return args
+	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
+
+	return nil
 }
 
 func createEnvVarRef(envName string) string {

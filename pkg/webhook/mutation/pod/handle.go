@@ -97,7 +97,12 @@ func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest)
 			return false, err
 		}
 
-		addPodAttributes(mutationRequest)
+		err = addPodAttributes(mutationRequest)
+		if err != nil {
+			log.Info("failed to add pod attributes to init-container")
+
+			return false, err
+		}
 
 		addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 		wh.recorder.SendPodInjectEvent()
