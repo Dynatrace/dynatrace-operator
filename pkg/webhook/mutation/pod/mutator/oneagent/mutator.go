@@ -121,4 +121,14 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	}
 
 	pod.Annotations[AnnotationInjected] = "true"
+	delete(pod.Annotations, AnnotationReason)
+}
+
+func setNotInjectedAnnotation(pod *corev1.Pod, reason string) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+
+	pod.Annotations[AnnotationInjected] = "false"
+	pod.Annotations[AnnotationReason] = reason
 }

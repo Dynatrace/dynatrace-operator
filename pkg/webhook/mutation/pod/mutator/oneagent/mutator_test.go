@@ -439,3 +439,38 @@ func createTestMutationRequestWithInjectedContainers() *dtwebhook.MutationReques
 
 	return request
 }
+
+func Test_setInjectedAnnotation(t *testing.T) {
+	t.Run("should add annotation to nil map", func(t *testing.T) {
+		mut := NewMutator()
+		request := createTestMutationRequestWithInjectedContainers()
+
+		require.False(t, mut.IsInjected(request.BaseRequest))
+		setInjectedAnnotation(request.Pod)
+		require.Len(t, request.Pod.Annotations, 1)
+		require.True(t, mut.IsInjected(request.BaseRequest))
+	})
+
+	t.Run("should remove reason from map", func(t *testing.T) {
+		mut := NewMutator()
+		request := createTestMutationRequestWithInjectedContainers()
+		setNotInjectedAnnotation(request.Pod, "test")
+
+		require.False(t, mut.IsInjected(request.BaseRequest))
+		setInjectedAnnotation(request.Pod)
+		require.Len(t, request.Pod.Annotations, 1)
+		require.True(t, mut.IsInjected(request.BaseRequest))
+	})
+}
+
+func Test_setNotInjectedAnnotation(t *testing.T) {
+	t.Run("should add annotations to nil map", func(t *testing.T) {
+		mut := NewMutator()
+		request := createTestMutationRequestWithoutInjectedContainers()
+
+		require.False(t, mut.IsInjected(request.BaseRequest))
+		setNotInjectedAnnotation(request.Pod, "test")
+		require.Len(t, request.Pod.Annotations, 2)
+		require.False(t, mut.IsInjected(request.BaseRequest))
+	})
+}
