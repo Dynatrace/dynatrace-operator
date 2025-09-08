@@ -187,6 +187,7 @@ github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9dec
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
 go.opentelemetry.io/collector v0.134.0 h1:mpej5Qaf3/VcH6P8kCGSul797LXmQs8qgGcOhu3ejmw=
+go.opentelemetry.io/collector v0.134.0/go.mod h1:EK52EogbrVj096Xhcm+vHA7XjlAfUTnjgg26yBzRBgQ=
 go.opentelemetry.io/collector/client v1.40.0 h1:vNtkmRnyeIQClqu8+tTP5/+0SNrlWIGWmbowOd/RT8Q=
 go.opentelemetry.io/collector/client v1.40.0/go.mod h1:lMrBRCeEGrkyXiHzihFGoAaZkoXTDYhCyzA4HklqI3I=
 go.opentelemetry.io/collector/component v1.40.0 h1:cQmwke3IdBGpfnIMmCzk1OMnnkFa5qMtNaIIVQBjXaI=
@@ -277,6 +278,8 @@ go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.6
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.60.0/go.mod h1:rg+RlpR5dKwaS95IyyZqj5Wd4E13lk/msnTS0Xl9lJM=
 go.opentelemetry.io/contrib/otelconf v0.17.0 h1:Yh9uifPSe8yiksLshMbeAXGm/ZRmo7LD7Di+/yd1L5w=
 go.opentelemetry.io/contrib/otelconf v0.17.0/go.mod h1:8dHKS6uMiZlvmrA7MGUtb4HwnX+ukdF5iS3p2UPKvLE=
+go.opentelemetry.io/contrib/propagators/b3 v1.36.0 h1:xrAb/G80z/l5JL6XlmUMSD1i6W8vXkWrLfmkD3w/zZo=
+go.opentelemetry.io/contrib/propagators/b3 v1.36.0/go.mod h1:UREJtqioFu5awNaCR8aEx7MfJROFlAWb6lPaJFbHaG0=
 go.opentelemetry.io/otel v1.37.0 h1:9zhNfelUvx0KBfu/gb+ZgeAfAgtWrfHJZcAqFC228wQ=
 go.opentelemetry.io/otel v1.37.0/go.mod h1:ehE/umFRLnuLa/vSccNq9oS1ErUlkkK71gMcN34UG8I=
 go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.13.0 h1:z6lNIajgEBVtQZHjfw2hAccPEBDs+nx58VemmXWa2ec=
