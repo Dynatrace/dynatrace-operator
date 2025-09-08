@@ -1,6 +1,6 @@
 #!/bin/bash
 #renovate depName=github.com/google/go-licenses
-golang_licenses_version=v1.6.0
+golang_licenses_version=v2.0.1
 
 # get licenses if no cache exists
 if ! [ -d ./third_party_licenses ]; then
