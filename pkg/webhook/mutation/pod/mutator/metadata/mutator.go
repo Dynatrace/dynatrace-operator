@@ -66,16 +66,23 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	setInjectedAnnotation(request.Pod)
 	setWorkloadAnnotations(request.Pod, workloadInfo)
 
-	args, err := podattr.ToArgs(attributes)
-	if err != nil {
-		return err
-	}
+	args := podattrToArgs(attributes)
 
 	request.InstallContainer.Args = append(request.InstallContainer.Args, args...)
 
 	turnOnMetadataEnrichment(request)
 
 	return nil
+}
+
+func podattrToArgs(attrs podattr.Attributes) []string {
+	args, err := podattr.ToArgs(attrs)
+	if err != nil {
+		// TODO(avorima): Return error when it's possible to create invalid Attributes.
+		panic(err)
+	}
+
+	return args
 }
 
 func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
@@ -107,6 +114,16 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	}
 
 	pod.Annotations[AnnotationInjected] = "true"
+	delete(pod.Annotations, AnnotationReason)
+}
+
+func setNotInjectedAnnotation(pod *corev1.Pod, reason string) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+
+	pod.Annotations[AnnotationInjected] = "false"
+	pod.Annotations[AnnotationReason] = reason
 }
 
 func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {

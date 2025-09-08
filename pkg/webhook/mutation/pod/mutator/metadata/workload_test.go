@@ -228,6 +228,29 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 	})
+
+	t.Run("should add annotation if owner lookup failed", func(t *testing.T) {
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       "Deployment",
+						Name:       "test",
+						Controller: ptr.To(true),
+					},
+				},
+				Name:      resourceName,
+				Namespace: namespaceName,
+			},
+		}
+		client := createFailK8sClient(t)
+		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		require.Error(t, err)
+		assert.Nil(t, workloadInfo)
+		assert.Len(t, pod.Annotations, 2)
+		assert.Contains(t, pod.Annotations, AnnotationReason)
+	})
 }
 
 func createFailK8sClient(t *testing.T) client.Client {
