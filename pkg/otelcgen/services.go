@@ -31,7 +31,7 @@ var (
 // based on "go.opentelemetry.io/collector/service.Config
 type ServiceConfig struct {
 	// Telemetry is the configuration for collector's own telemetry.
-	Telemetry otelconftelemetry.Config  `mapstructure:"telemetry,omitempty"`
+	Telemetry otelconftelemetry.Config `mapstructure:"telemetry,omitempty"`
 
 	// Pipelines are the set of data pipelines configured for the service.
 	Pipelines pipelines.Config `mapstructure:"pipelines"`
