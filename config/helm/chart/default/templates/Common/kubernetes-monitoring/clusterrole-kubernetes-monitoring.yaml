@@ -100,6 +100,22 @@ rules:
       - list
       - watch
       - get
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - list
+      - watch
+      - get
   - nonResourceURLs:
       - /metrics
       - /version
