@@ -28,18 +28,23 @@ const (
 )
 
 func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
-	Create(builder, level, secretConfig, dk)
+	Create(builder, level, secretConfig.APIToken, secretConfig.DataIngestToken, dk)
+	VerifyStartup(builder, level, dk)
+}
+
+func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
+	Create(builder, level, secretConfig.APITokenNoSettings, secretConfig.DataIngestToken, dk)
 	VerifyStartup(builder, level, dk)
 }
 
 func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDk prevDynakube.DynaKube) {
-	CreatePreviousVersion(builder, level, secretConfig, prevDk)
+	CreatePreviousVersion(builder, level, secretConfig.APIToken, secretConfig.DataIngestToken, prevDk)
 	VerifyStartupPreviousVersion(builder, level, prevDk)
 }
 
-func Create(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, testDynakube dynakube.DynaKube) {
-	if secretConfig != nil {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(*secretConfig, testDynakube.Name, testDynakube.Namespace))
+func Create(builder *features.FeatureBuilder, level features.Level, apiToken string, dataIngestToken string, testDynakube dynakube.DynaKube) {
+	if apiToken != "" || dataIngestToken != "" {
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, testDynakube.Name, testDynakube.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
@@ -51,9 +56,9 @@ func Update(builder *features.FeatureBuilder, level features.Level, testDynakube
 	builder.WithStep("dynakube updated", level, update(testDynakube))
 }
 
-func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDk prevDynakube.DynaKube) {
-	if secretConfig != nil {
-		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(*secretConfig, prevDk.Name, prevDk.Namespace))
+func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, apiToken string, dataIngestToken string, prevDk prevDynakube.DynaKube) {
+	if apiToken != "" || dataIngestToken != "" {
+		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, prevDk.Name, prevDk.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", prevDk.Name),
