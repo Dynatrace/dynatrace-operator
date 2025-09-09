@@ -409,10 +409,11 @@ spec:
         name: ""
         version: v1
       specDescriptors:
-      - description: Dynatrace `apiUrl`, including the `/api` path at the end. - For
-          SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID. - For Managed, change
-          the `apiUrl` address. For instructions on how to determine the environment
-          ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
+      - description: |-
+          Dynatrace `apiUrl`, including the `/api` path at the end.
+          - For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+          - For Managed, change the `apiUrl` address.
+          For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
         displayName: API URL
         path: apiUrl
         x-descriptors:
@@ -423,33 +424,35 @@ spec:
         path: tokens
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Set custom proxy settings either directly or from a secret with
-          the field `proxy`. Applies to Dynatrace Operator, ActiveGate, and OneAgents.
+      - description: |-
+          Set custom proxy settings either directly or from a secret with the field `proxy`.
+          Applies to Dynatrace Operator, ActiveGate, and OneAgents.
         displayName: Proxy
         path: proxy
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Disable certificate check for the connection between Dynatrace
-          Operator and the Dynatrace Cluster. Set to `true` if you want to skip certification
-          validation checks.
+      - description: |-
+          Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
+          Set to `true` if you want to skip certification validation checks.
         displayName: Skip Certificate Check
         path: skipCertCheck
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Specify the name of the group to which you want to assign the
-          host. This method is preferred over the now obsolete `--set-host-group`
-          argument. If both settings are used, this field takes precedence over the
-          `--set-host-group` argument.
+      - description: |-
+          Specify the name of the group to which you want to assign the host.
+          This method is preferred over the now obsolete `--set-host-group` argument.
+          If both settings are used, this field takes precedence over the `--set-host-group` argument.
         displayName: Host Group
         path: oneAgent.hostGroup
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Adds custom RootCAs from a configmap. The key to the data must
-          be `certs`. This applies to both the Dynatrace Operator and the OneAgent.
-          Doesn't apply to ActiveGate.
+      - description: |-
+          Adds custom RootCAs from a configmap.
+          The key to the data must be `certs`.
+          This applies to both the Dynatrace Operator and the OneAgent. Doesn't apply to ActiveGate.
         displayName: Trusted CAs
         path: trustedCAs
         x-descriptors:
@@ -461,9 +464,9 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Defines a custom pull secret in case you use a private registry
-          when pulling images from the Dynatrace environment. To define a custom pull
-          secret and learn about the expected behavior, see Configure customPullSecret
+      - description: |-
+          Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
+          To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
           (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
         displayName: Custom PullSecret
         path: customPullSecret
@@ -475,9 +478,8 @@ spec:
         path: dynatraceApiRequestThreshold
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: When enabled, and if Istio is installed in the Kubernetes environment,
-          Dynatrace Operator will create the corresponding VirtualService and ServiceEntry
-          objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
+      - description: |-
+          When enabled, and if Istio is installed in the Kubernetes environment, Dynatrace Operator will create the corresponding VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
           Disabled by default.
         displayName: Enable Istio automatic management
         path: enableIstio
@@ -496,9 +498,10 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'The name of a secret containing ActiveGate TLS cert+key and
-          password. If not set, self-signed certificate is used. `server.p12`: certificate+key
-          pair in pkcs12 format `password`: passphrase to read server.p12'
+      - description: |-
+          The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
+          `server.p12`: certificate+key pair in pkcs12 format
+          `password`: passphrase to read server.p12
         displayName: TlsSecretName
         path: activeGate.tlsSecretName
         x-descriptors:
@@ -567,48 +570,52 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Disables automatic restarts of OneAgent pods in case a new version
-          is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+      - description: |-
+          Deprecated: This field will be removed in a future release.
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
           Enabled by default.
         displayName: Automatically update Agent
         path: oneAgent.classicFullStack.autoUpdate
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Disables automatic restarts of OneAgent pods in case a new version
-          is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+      - description: |-
+          Deprecated: This field will be removed in a future release.
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
           Enabled by default.
         displayName: Automatically update Agent
         path: oneAgent.cloudNativeFullStack.autoUpdate
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Disables automatic restarts of OneAgent pods in case a new version
-          is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+      - description: |-
+          Deprecated: This field will be removed in a future release.
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
           Enabled by default.
         displayName: Automatically update Agent
         path: oneAgent.hostMonitoring.autoUpdate
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Define resources requests and limits for the initContainer. For
-          details, see Managing resources for containers (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
+      - description: |-
+          Define resources requests and limits for the initContainer. For details, see Managing resources for containers
+          (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
         displayName: Resource Requirements
         path: oneAgent.applicationMonitoring.initResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Define resources requests and limits for the initContainer. For
-          details, see Managing resources for containers (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
+      - description: |-
+          Define resources requests and limits for the initContainer. For details, see Managing resources for containers
+          (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
         displayName: Resource Requirements
         path: oneAgent.cloudNativeFullStack.initResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Applicable only for applicationMonitoring or cloudNativeFullStack
-          configuration types. The namespaces where you want Dynatrace Operator to
-          inject. For more information, see Configure monitoring for namespaces and
-          pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+      - description: |-
+          Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
+          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
         displayName: Namespace Selector
         path: oneAgent.applicationMonitoring.namespaceSelector
         x-descriptors:
@@ -625,10 +632,9 @@ spec:
         path: oneAgent.classicFullStack.secCompProfile
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
-      - description: Applicable only for applicationMonitoring or cloudNativeFullStack
-          configuration types. The namespaces where you want Dynatrace Operator to
-          inject. For more information, see Configure monitoring for namespaces and
-          pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+      - description: |-
+          Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
+          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
         displayName: Namespace Selector
         path: oneAgent.cloudNativeFullStack.namespaceSelector
         x-descriptors:
@@ -678,51 +684,54 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Resource settings for OneAgent container. Consumption of the
-          OneAgent heavily depends on the workload to monitor. You can use the default
-          settings in the CR. - `resource.requests` shows the values needed to run
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          - `resource.requests` shows the values needed to run
           - `resource.limits` shows the maximum limits for the pod
         displayName: Resource Requirements
         path: oneAgent.classicFullStack.oneAgentResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Resource settings for OneAgent container. Consumption of the
-          OneAgent heavily depends on the workload to monitor. You can use the default
-          settings in the CR. - `resource.requests` shows the values needed to run
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          - `resource.requests` shows the values needed to run
           - `resource.limits` shows the maximum limits for the pod
         displayName: Resource Requirements
         path: oneAgent.cloudNativeFullStack.oneAgentResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Resource settings for OneAgent container. Consumption of the
-          OneAgent heavily depends on the workload to monitor. You can use the default
-          settings in the CR. - `resource.requests` shows the values needed to run
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          - `resource.requests` shows the values needed to run
           - `resource.limits` shows the maximum limits for the pod
         displayName: Resource Requirements
         path: oneAgent.hostMonitoring.oneAgentResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Set additional arguments to the OneAgent installer. For available
-          options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
           For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
         displayName: OneAgent installer arguments
         path: oneAgent.classicFullStack.args
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Set additional arguments to the OneAgent installer. For available
-          options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
           For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
         displayName: OneAgent installer arguments
         path: oneAgent.cloudNativeFullStack.args
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Set additional arguments to the OneAgent installer. For available
-          options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
           For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
         displayName: OneAgent installer arguments
         path: oneAgent.hostMonitoring.args
@@ -747,29 +756,33 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Assign a priority class to the ActiveGate pods. By default, no
-          class is set. For details, see Pod Priority and Preemption. (https://dt-url.net/n8437bl)
+      - description: |-
+          Assign a priority class to the ActiveGate pods. By default, no class is set.
+          For details, see Pod Priority and Preemption. (https://dt-url.net/n8437bl)
         displayName: Priority Class name
         path: activeGate.priorityClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: Assign a priority class to the OneAgent pods. By default, no
-          class is set. For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
         displayName: Priority Class name
         path: oneAgent.classicFullStack.priorityClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: Assign a priority class to the OneAgent pods. By default, no
-          class is set. For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
         displayName: Priority Class name
         path: oneAgent.cloudNativeFullStack.priorityClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: Assign a priority class to the OneAgent pods. By default, no
-          class is set. For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
         displayName: Priority Class name
         path: oneAgent.hostMonitoring.priorityClassName
         x-descriptors:
@@ -882,8 +895,9 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Resource settings for ActiveGate container. Consumption of the
-          ActiveGate heavily depends on the workload to monitor. Adjust values accordingly.
+      - description: |-
+          Resource settings for ActiveGate container.
+          Consumption of the ActiveGate heavily depends on the workload to monitor. Adjust values accordingly.
         displayName: Resource Requirements
         path: activeGate.resources
         x-descriptors:
@@ -925,7 +939,7 @@ spec:
         path: activeGate
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Enables MetadataEnrichment, `true` by default.
+      - description: Enables MetadataEnrichment, `false` by default.
         displayName: MetaDataEnrichment
         path: metadataEnrichment.enabled
         x-descriptors:
@@ -935,9 +949,9 @@ spec:
         path: metadataEnrichment.namespaceSelector
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
-      - description: General configuration about OneAgent instances. You can't enable
-          more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring,
-          or applicationMonitoring).
+      - description: |-
+          General configuration about OneAgent instances.
+          You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
         displayName: OneAgent
         path: oneAgent
         x-descriptors:
@@ -958,10 +972,9 @@ spec:
         name: ""
         version: v1
       specDescriptors:
-      - description: Dynatrace apiUrl, including the /api path at the end. For SaaS,
-          set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the
-          apiUrl address. For instructions on how to determine the environment ID
-          and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
+      - description: |-
+          Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
+          For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
         displayName: API URL
         path: apiUrl
         x-descriptors:
@@ -972,16 +985,17 @@ spec:
         path: tokens
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: 'Set custom proxy settings either directly or from a secret with
-          the field proxy. Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.'
+      - description: |-
+          Set custom proxy settings either directly or from a secret with the field proxy.
+          Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
         displayName: Proxy
         path: proxy
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Disable certificate check for the connection between Dynatrace
-          Operator and the Dynatrace Cluster. Set to true if you want to skip certification
-          validation checks.
+      - description: |-
+          Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
+          Set to true if you want to skip certification validation checks.
         displayName: Skip Certificate Check
         path: skipCertCheck
         x-descriptors:
@@ -993,9 +1007,9 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Adds custom RootCAs from a configmap. Put the certificate under
-          certs within your configmap. Note: Applies to Dynatrace Operator, OneAgent
-          and ActiveGate.'
+      - description: |-
+          Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.
+          Note: Applies to Dynatrace Operator, OneAgent and ActiveGate.
         displayName: Trusted CAs
         path: trustedCAs
         x-descriptors:
@@ -1007,18 +1021,18 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Defines a custom pull secret in case you use a private registry
-          when pulling images from the Dynatrace environment. To define a custom pull
-          secret and learn about the expected behavior, see Configure customPullSecret
+      - description: |-
+          Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
+          To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
           (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
         displayName: Custom PullSecret
         path: customPullSecret
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: When enabled, and if Istio is installed on the Kubernetes environment,
-          Dynatrace Operator will create the corresponding VirtualService and ServiceEntry
-          objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
+      - description: |-
+          When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding
+          VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
           Disabled by default.
         displayName: Enable Istio automatic management
         path: enableIstio
@@ -1039,9 +1053,10 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'The name of a secret containing ActiveGate TLS cert+key and
-          password. If not set, self-signed certificate is used. server.p12: certificate+key
-          pair in pkcs12 format password: passphrase to read server.p12'
+      - description: |-
+          The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
+          server.p12: certificate+key pair in pkcs12 format
+          password: passphrase to read server.p12
         displayName: TlsSecretName
         path: activeGate.tlsSecretName
         x-descriptors:
@@ -1118,48 +1133,52 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Disables automatic restarts of OneAgent pods in case a new version
-          is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+      - description: |-
+          Deprecated: This field will be removed in a future release.
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
           Enabled by default.
         displayName: Automatically update Agent
         path: oneAgent.classicFullStack.autoUpdate
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Disables automatic restarts of OneAgent pods in case a new version
-          is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+      - description: |-
+          Deprecated: This field will be removed in a future release.
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
           Enabled by default.
         displayName: Automatically update Agent
         path: oneAgent.cloudNativeFullStack.autoUpdate
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Disables automatic restarts of OneAgent pods in case a new version
-          is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
+      - description: |-
+          Deprecated: This field will be removed in a future release.
+          Disables automatic restarts of OneAgent pods in case a new version is available (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#disable-auto).
           Enabled by default.
         displayName: Automatically update Agent
         path: oneAgent.hostMonitoring.autoUpdate
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Define resources requests and limits for the initContainer. For
-          details, see Managing resources for containers (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
+      - description: |-
+          Define resources requests and limits for the initContainer. For details, see Managing resources for containers
+          (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
         displayName: Resource Requirements
         path: oneAgent.applicationMonitoring.initResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Define resources requests and limits for the initContainer. For
-          details, see Managing resources for containers (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
+      - description: |-
+          Define resources requests and limits for the initContainer. For details, see Managing resources for containers
+          (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
         displayName: Resource Requirements
         path: oneAgent.cloudNativeFullStack.initResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Applicable only for applicationMonitoring or cloudNativeFullStack
-          configuration types. The namespaces where you want Dynatrace Operator to
-          inject. For more information, see Configure monitoring for namespaces and
-          pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+      - description: |-
+          Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
+          For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
         displayName: Namespace Selector
         path: namespaceSelector
         x-descriptors:
@@ -1203,51 +1222,51 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Resource settings for OneAgent container. Consumption of the
-          OneAgent heavily depends on the workload to monitor. You can use the default
-          settings in the CR. Note: resource.requests shows the values needed to run;
-          resource.limits shows the maximum limits for the pod.'
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
         displayName: Resource Requirements
         path: oneAgent.classicFullStack.oneAgentResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: 'Resource settings for OneAgent container. Consumption of the
-          OneAgent heavily depends on the workload to monitor. You can use the default
-          settings in the CR. Note: resource.requests shows the values needed to run;
-          resource.limits shows the maximum limits for the pod.'
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
         displayName: Resource Requirements
         path: oneAgent.cloudNativeFullStack.oneAgentResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: 'Resource settings for OneAgent container. Consumption of the
-          OneAgent heavily depends on the workload to monitor. You can use the default
-          settings in the CR. Note: resource.requests shows the values needed to run;
-          resource.limits shows the maximum limits for the pod.'
+      - description: |-
+          Resource settings for OneAgent container. Consumption of the OneAgent heavily depends on the workload to monitor. You can use the default settings in the CR.
+          Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
         displayName: Resource Requirements
         path: oneAgent.hostMonitoring.oneAgentResources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Set additional arguments to the OneAgent installer. For available
-          options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
           For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
         displayName: OneAgent installer arguments
         path: oneAgent.classicFullStack.args
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Set additional arguments to the OneAgent installer. For available
-          options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
           For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
         displayName: OneAgent installer arguments
         path: oneAgent.cloudNativeFullStack.args
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Set additional arguments to the OneAgent installer. For available
-          options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
+      - description: |-
+          Set additional arguments to the OneAgent installer.
+          For available options, see Linux custom installation (https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent/installation-and-operation/linux/installation/customize-oneagent-installation-on-linux).
           For the list of limitations, see Limitations (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/docker/set-up-dynatrace-oneagent-as-docker-container#limitations).
         displayName: OneAgent installer arguments
         path: oneAgent.hostMonitoring.args
@@ -1272,30 +1291,33 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: If specified, indicates the pod's priority. Name must be defined
-          by creating a PriorityClass object with that name. If not specified the
-          setting will be removed from the StatefulSet.
+      - description: |-
+          If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
+          name. If not specified the setting will be removed from the StatefulSet.
         displayName: Priority Class name
         path: activeGate.priorityClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: Assign a priority class to the OneAgent pods. By default, no
-          class is set. For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
         displayName: Priority Class name
         path: oneAgent.classicFullStack.priorityClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: Assign a priority class to the OneAgent pods. By default, no
-          class is set. For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
         displayName: Priority Class name
         path: oneAgent.cloudNativeFullStack.priorityClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: Assign a priority class to the OneAgent pods. By default, no
-          class is set. For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
+      - description: |-
+          Assign a priority class to the OneAgent pods. By default, no class is set.
+          For details, see Pod Priority and Preemption (https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).
         displayName: Priority Class name
         path: oneAgent.hostMonitoring.priorityClassName
         x-descriptors:
@@ -1574,9 +1596,9 @@ spec:
         path: activeGate
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: General configuration about OneAgent instances. You can't enable
-          more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring,
-          or applicationMonitoring).
+      - description: |-
+          General configuration about OneAgent instances.
+          You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
         displayName: OneAgent
         path: oneAgent
         x-descriptors:
