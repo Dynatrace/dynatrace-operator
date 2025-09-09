@@ -1,10 +1,15 @@
 package integrationtests
 
 import (
+	"context"
+	"crypto/tls"
+	"fmt"
 	"go/build"
+	"net"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
@@ -14,10 +19,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/projectpath"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
@@ -52,6 +62,101 @@ func SetupTestEnvironment(t *testing.T) client.Client {
 	clt, err := client.New(cfg, client.Options{})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	return clt
+}
+
+func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookInstallOptions, webhookSetup func(ctrl.Manager) error) client.Client {
+	// specify test environment configuration
+	testEnv = &envtest.Environment{
+		Scheme:                scheme.Scheme,
+		CRDDirectoryPaths:     []string{filepath.Join(projectpath.Root, "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: true,
+		WebhookInstallOptions: webhookOptions,
+	}
+
+	// Retrieve the first found binary directory to allow running tests from IDEs
+	if getFirstFoundEnvTestBinaryDir() != "" {
+		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
+	}
+
+	// TODO: refactor and reuse from e2e tests or another place
+	if err := addScheme(testEnv); err != nil {
+		t.Fatal(err, "setup scheme")
+	}
+
+	// start test environment
+	cfg, err := testEnv.Start()
+	if err != nil {
+		t.Fatal(err, "start environment")
+	}
+
+	t.Cleanup(func() {
+		err := testEnv.Stop()
+		if err != nil {
+			// test is already ending, no need to explicitly fail test
+			t.Error(err, "stop env")
+		}
+	})
+
+	clt, err := client.New(cfg, client.Options{})
+	if err != nil {
+		t.Fatal(err, "new client")
+	}
+
+	// start webhook server using Manager.
+	webhookInstallOptions := &testEnv.WebhookInstallOptions
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme.Scheme,
+		Logger: logd.Get().WithName("manager").V(0),
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host:    webhookInstallOptions.LocalServingHost,
+			Port:    webhookInstallOptions.LocalServingPort,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
+	})
+	if err != nil {
+		t.Fatal(err, "new manager")
+	}
+
+	if err := webhookSetup(mgr); err != nil {
+		t.Fatal(err, "webhook setup")
+	}
+
+	// this code is adapted from the ginkgo/gomega boilerplate that kubebuilder generates
+
+	go func() {
+		if err := mgr.Start(t.Context()); err != nil {
+			// don't call t.Fatal in a goroutine
+			t.Error(err, "run manager")
+		}
+	}()
+
+	// wait for the webhook server to get ready.
+	dialer := &net.Dialer{Timeout: time.Second}
+	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
+
+	waitCh := make(chan struct{})
+	defer close(waitCh)
+
+	err = wait.PollUntilContextTimeout(
+		t.Context(),
+		10*time.Millisecond, 1*time.Second, // gomega defaults
+		false,
+		func(ctx context.Context) (bool, error) {
+			conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true}) //nolint:gosec
+			if err != nil {
+				return false, err
+			}
+
+			return true, conn.Close()
+		},
+	)
+	if err != nil {
+		t.Fatal(err, "wait for webhook")
 	}
 
 	return clt
