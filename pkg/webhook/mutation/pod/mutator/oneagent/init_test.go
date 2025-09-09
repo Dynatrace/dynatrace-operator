@@ -299,9 +299,7 @@ func TestAddInitArgs(t *testing.T) {
 		initContainer := corev1.Container{}
 
 		err := addInitArgs(&pod, &initContainer, dk, installPath)
-		require.Error(t, err)
-		assert.Len(t, pod.Annotations, 2)
-		assert.Contains(t, pod.Annotations, AnnotationReason)
+		require.ErrorAs(t, err, new(webhook.MutatorError))
 	})
 	t.Run("cloudnative + tech from dk -> common args + cloudnative args + tech arg", func(t *testing.T) {
 		tenantUUID := "my-tenant-123"

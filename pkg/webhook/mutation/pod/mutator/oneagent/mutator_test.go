@@ -454,7 +454,7 @@ func Test_setInjectedAnnotation(t *testing.T) {
 	t.Run("should remove reason from map", func(t *testing.T) {
 		mut := NewMutator()
 		request := createTestMutationRequestWithInjectedContainers()
-		setNotInjectedAnnotation(request.Pod, "test")
+		setNotInjectedAnnotationFunc("test")(request.Pod)
 
 		require.False(t, mut.IsInjected(request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
@@ -463,13 +463,13 @@ func Test_setInjectedAnnotation(t *testing.T) {
 	})
 }
 
-func Test_setNotInjectedAnnotation(t *testing.T) {
+func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 	t.Run("should add annotations to nil map", func(t *testing.T) {
 		mut := NewMutator()
 		request := createTestMutationRequestWithoutInjectedContainers()
 
 		require.False(t, mut.IsInjected(request.BaseRequest))
-		setNotInjectedAnnotation(request.Pod, "test")
+		setNotInjectedAnnotationFunc("test")(request.Pod)
 		require.Len(t, request.Pod.Annotations, 2)
 		require.False(t, mut.IsInjected(request.BaseRequest))
 	})

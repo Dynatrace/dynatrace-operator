@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -245,11 +246,8 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 		client := createFailK8sClient(t)
-		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
-		require.Error(t, err)
-		assert.Nil(t, workloadInfo)
-		assert.Len(t, pod.Annotations, 2)
-		assert.Contains(t, pod.Annotations, AnnotationReason)
+		_, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		require.ErrorAs(t, err, new(dtwebhook.MutatorError))
 	})
 }
 

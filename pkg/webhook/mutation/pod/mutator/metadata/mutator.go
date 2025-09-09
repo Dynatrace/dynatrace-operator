@@ -68,9 +68,6 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 
 	args, err := podattr.ToArgs(attributes)
 	if err != nil {
-		// This should only happen when there is a memory error or other critical bug in the stdlib json package.
-		log.Error(err, "failed to convert attributes. this should never happen!")
-
 		return err
 	}
 
@@ -113,13 +110,15 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	delete(pod.Annotations, AnnotationReason)
 }
 
-func setNotInjectedAnnotation(pod *corev1.Pod, reason string) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
+func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
 
-	pod.Annotations[AnnotationInjected] = "false"
-	pod.Annotations[AnnotationReason] = reason
+		pod.Annotations[AnnotationInjected] = "false"
+		pod.Annotations[AnnotationReason] = reason
+	}
 }
 
 func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {

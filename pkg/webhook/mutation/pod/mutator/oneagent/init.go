@@ -79,9 +79,10 @@ func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.D
 
 		tenantUUID, err := dk.TenantUUID()
 		if err != nil {
-			setNotInjectedAnnotation(pod, MissingTenantUUIDReason)
-
-			return err
+			return dtwebhook.MutatorError{
+				Err:      err,
+				Annotate: setNotInjectedAnnotationFunc(MissingTenantUUIDReason),
+			}
 		}
 
 		args = append(args, arg.Arg{Name: configure.IsFullstackFlag}, arg.Arg{Name: configure.TenantFlag, Value: tenantUUID})
