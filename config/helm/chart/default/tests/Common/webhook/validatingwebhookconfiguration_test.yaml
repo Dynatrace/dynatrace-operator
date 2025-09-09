@@ -127,6 +127,27 @@ tests:
                 service:
                   name: dynatrace-webhook
                   namespace: NAMESPACE
+                  path: /validate-dynatrace-com-v1beta6-dynakube
+              rules:
+                - operations:
+                    - CREATE
+                    - UPDATE
+                  apiGroups:
+                    - dynatrace.com
+                  apiVersions:
+                    - v1beta6
+                  resources:
+                    - dynakubes
+              name: v1beta6.dynakube.webhook.dynatrace.com
+              timeoutSeconds: 10
+              sideEffects: None
+              matchPolicy: Exact
+            - admissionReviewVersions:
+                - v1
+              clientConfig:
+                service:
+                  name: dynatrace-webhook
+                  namespace: NAMESPACE
                   path: /validate-dynatrace-com-v1alpha1-edgeconnect
               rules:
                 - operations:

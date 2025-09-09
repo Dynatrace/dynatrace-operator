@@ -303,6 +303,7 @@ linters:
       - pkg/api/v1beta2/dynakube
       - pkg/api/v1beta3/dynakube
       - pkg/api/v1beta4/dynakube
+      - pkg/api/v1beta5/dynakube
       - third_party$
       - builtin$
       - examples$

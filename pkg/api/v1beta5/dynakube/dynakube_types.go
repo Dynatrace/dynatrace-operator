@@ -1,17 +1,17 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
-// +versionName=v1beta6
+// +versionName=v1beta5
 package dynakube
 
 import (
-	v1beta6 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -43,7 +43,6 @@ const (
 
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
-// +kubebuilder:storageversion
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace,shortName={dk,dks}
@@ -177,5 +176,5 @@ type DynaKubeList struct { //nolint:revive
 }
 
 func init() {
-	v1beta6.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
+	v1beta5.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }

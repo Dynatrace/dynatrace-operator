@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/projectpath"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,6 +95,11 @@ func getFirstFoundEnvTestBinaryDir() string {
 
 func addScheme(testEnv *envtest.Environment) error {
 	err := latest.AddToScheme(testEnv.Scheme)
+	if err != nil {
+		return err
+	}
+
+	err = v1beta5.AddToScheme(testEnv.Scheme)
 	if err != nil {
 		return err
 	}
