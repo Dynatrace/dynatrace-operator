@@ -41,6 +41,7 @@ type webhook struct {
 	recorder    events.EventRecorder
 	metaMutator dtwebhook.Mutator
 	oaMutator   dtwebhook.Mutator
+	otlpMutator dtwebhook.Mutator
 
 	decoder admission.Decoder
 
@@ -79,6 +80,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	wh.recorder.Setup(mutationRequest)
 
+	// TODO check if we need separate endpoint for otlp injection
 	err = wh.handle(mutationRequest)
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)

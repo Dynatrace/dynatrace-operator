@@ -91,6 +91,13 @@ func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest)
 		mutated = true
 	}
 
+	// TODO move otlp injection into separate webhook implementation
+	err := wh.otlpMutator.Mutate(mutationRequest)
+	if err != nil {
+		return false, err
+	}
+	mutated = true
+
 	if mutated {
 		_, err := addContainerAttributes(mutationRequest)
 		if err != nil {

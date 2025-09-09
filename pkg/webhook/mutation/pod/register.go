@@ -2,6 +2,7 @@ package pod
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/otlp"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
@@ -63,6 +64,9 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 
 	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: wh})
 	log.Info("registered /inject endpoint")
+	// TODO potentially create a separate webhook handler for otlp
+	//mgr.GetWebhookServer().Register("/otlp", &webhooks.Admission{Handler: wh})
+	//log.Info("registered /otlp endpoint")
 
 	return nil
 }
@@ -83,6 +87,7 @@ func newWebhook( //nolint:revive
 	return &webhook{
 		oaMutator:        oneagent.NewMutator(),
 		metaMutator:      metadata.NewMutator(metaClient),
+		otlpMutator:      otlp.NewMutator(),
 		kubeClient:       kubeClient,
 		apiReader:        apiReader,
 		recorder:         eventRecorder,
