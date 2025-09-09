@@ -54,6 +54,8 @@ func (OTLPMutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 }
 
 func (OTLPMutator) IsInjected(request *dtwebhook.BaseRequest) bool {
+	// TODO the check for already present env vars is also done in the Mutate() implementation, so I'm not sure we need this check here as well.
+	// Maybe a check for an annotation indicating that the OTLP vars have already been injected might be better here.
 	otlpEndpointEnvVars := []string{envVarOtlpExporterEndpoint, envVarOtlpTraceEndpoint, envVarOtlpMetricsEndpoint, envVarOtlpLogsEndpoint}
 	// if any of the OTEL_EXPORTER_* variables are already set in all containers, return false, as we do not want to overwrite them
 	// TODO check if also initContainers should be considered
