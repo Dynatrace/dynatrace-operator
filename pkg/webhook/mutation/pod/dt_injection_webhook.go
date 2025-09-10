@@ -9,10 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -25,7 +23,7 @@ const (
 func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, isOpenShift bool) error {
 	podName := os.Getenv(env.PodName)
 	if podName == "" {
-		log.Info("no Pod name set for webhook container")
+		log.Info("no Pod name set for dtInjectionWebhook container")
 	}
 
 	if err := registerInjectEndpoint(ctx, mgr, ns, podName, isOpenShift); err != nil {
@@ -37,61 +35,37 @@ func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, is
 	return nil
 }
 
-type webhook struct {
-	recorder    events.EventRecorder
+type dtInjectionWebhook struct {
+	webhookBase
 	metaMutator dtwebhook.Mutator
 	oaMutator   dtwebhook.Mutator
-	otlpMutator dtwebhook.Mutator
 
-	decoder admission.Decoder
+	webhookPodImage string
+	isOpenShift     bool
 
-	kubeClient client.Client
-	apiReader  client.Reader
-
-	webhookPodImage  string
-	webhookNamespace string
-	isOpenShift      bool
-
-	deployedViaOLM bool
+	handleFunc func(admission.Request) admission.Response
 }
 
-func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
+func (wh *dtInjectionWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	emptyPatch := admission.Patched("")
 
-	mutationRequest, err := wh.createMutationRequestBase(ctx, request)
-	if err != nil {
-		emptyPatch.Result.Message = fmt.Sprintf("unable to inject into pod (err=%s)", err.Error())
-		log.Error(err, "building mutation request base encountered an error")
-
-		return emptyPatch
-	}
-
+	mutationRequest := wh.preparePodMutationRequest(ctx, &emptyPatch, request)
 	if mutationRequest == nil {
-		emptyPatch.Result.Message = "injection into pod not required"
-
 		return emptyPatch
 	}
-
-	podName := mutationRequest.PodName()
-
-	if !mutationRequired(mutationRequest) || wh.isOcDebugPod(mutationRequest.Pod) {
-		return emptyPatch
-	}
-
-	wh.recorder.Setup(mutationRequest)
 
 	// TODO check if we need separate endpoint for otlp injection
-	err = wh.handle(mutationRequest)
+	err := wh.handle(mutationRequest)
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
 
-	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
+	log.Info("injection finished for pod", "podName", mutationRequest.PodName(), "namespace", request.Namespace)
 
 	return createResponseForPod(mutationRequest.Pod, request)
 }
 
-func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
+func MutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 	if mutationRequest == nil {
 		return false
 	}
@@ -104,18 +78,6 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 	}
 
 	return enabledOnPod && enabledOnContainers
-}
-
-func (wh *webhook) isOcDebugPod(pod *corev1.Pod) bool {
-	annotations := []string{ocDebugAnnotationsContainer, ocDebugAnnotationsResource}
-
-	for _, annotation := range annotations {
-		if _, ok := pod.Annotations[annotation]; !ok {
-			return false
-		}
-	}
-
-	return true
 }
 
 // createResponseForPod tries to format pod as json

@@ -14,7 +14,7 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func (wh *webhook) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+func (wh *dtInjectionWebhook) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
 	args := []arg.Arg{
 		{
 			Name:  configure.ConfigFolderFlag,
