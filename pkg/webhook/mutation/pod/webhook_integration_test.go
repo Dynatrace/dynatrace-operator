@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
@@ -18,7 +19,6 @@ import (
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	metadatamutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	oneagentmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -129,9 +129,11 @@ func TestWebhook(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        "dynakube",
-				Namespace:   testNamespace,
-				Annotations: map[string]string{},
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -142,7 +144,6 @@ func TestWebhook(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				// needed to skip ahead to metadata-enrichment mutator
 				OneAgent: oneagent.Status{
 					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 						ConnectionInfo: communication.ConnectionInfo{
@@ -154,10 +155,7 @@ func TestWebhook(t *testing.T) {
 		}
 		createDynaKube(t, clt, dk)
 
-		pod := createPodFromTemplate(t, clt, func(pod *corev1.Pod) {
-			pod.Annotations[oneagentmutator.AnnotationInject] = "true" // metadata needs this as well
-			pod.Annotations[metadatamutator.AnnotationInject] = "true"
-		})
+		pod := createPodFromTemplate(t, clt, nil)
 
 		assert.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
 		assert.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
@@ -167,9 +165,8 @@ func TestWebhook(t *testing.T) {
 	t.Run("oneagent mutator failure", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        "dynakube",
-				Namespace:   testNamespace,
-				Annotations: map[string]string{},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -189,33 +186,18 @@ func TestWebhook(t *testing.T) {
 	t.Run("metadata mutator failure", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        "dynakube",
-				Namespace:   testNamespace,
-				Annotations: map[string]string{},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-				},
 				MetadataEnrichment: dynakube.MetadataEnrichment{
 					Enabled: ptr.To(true),
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				// needed to skip ahead to metadata-enrichment mutator
-				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-						ConnectionInfo: communication.ConnectionInfo{
-							TenantUUID: uuid.NewString(),
-						},
-					},
 				},
 			},
 		}
 		createDynaKube(t, clt, dk)
 
 		pod := createPodFromTemplate(t, clt, func(pod *corev1.Pod) {
-			pod.Annotations[oneagentmutator.AnnotationInject] = "true" // metadata needs this as well
 			pod.Annotations[metadatamutator.AnnotationInject] = "true"
 			pod.OwnerReferences = []metav1.OwnerReference{
 				{
@@ -234,7 +216,7 @@ func TestWebhook(t *testing.T) {
 
 func createPodFromTemplate(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *corev1.Pod {
 	t.Helper()
-	podTemplatePath := filepath.Join(project.TestDataDir(), "sample-app/pod-base.yaml")
+	podTemplatePath := filepath.Join("testdata", "pod.yaml")
 	podTemplateData, err := os.ReadFile(podTemplatePath)
 	require.NoError(t, err)
 
@@ -246,16 +228,6 @@ func createPodFromTemplate(t *testing.T, clt client.Client, mutateFn func(*corev
 	}
 	if mutateFn != nil {
 		mutateFn(pod)
-	}
-
-	if pod.Spec.ServiceAccountName != "" {
-		err := clt.Create(t.Context(), &corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      pod.Spec.ServiceAccountName,
-				Namespace: pod.Namespace,
-			},
-		})
-		require.NoError(t, client.IgnoreAlreadyExists(err))
 	}
 
 	createObject(t, clt, pod)
