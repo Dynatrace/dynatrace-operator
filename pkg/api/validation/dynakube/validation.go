@@ -9,6 +9,7 @@ import (
 	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube" //nolint:staticcheck
 	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -168,27 +169,32 @@ func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
 	switch v := obj.(type) {
 	case *dynakube.DynaKube:
 		dk = v
+	case *v1beta5.DynaKube:
+		err = v.ConvertTo(dk)
+		if err != nil {
+			return dk, err
+		}
 	case *v1beta4.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	case *v1beta3.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	case *v1beta2.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	case *v1beta1.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	}
 
-	return
+	return dk, err
 }
