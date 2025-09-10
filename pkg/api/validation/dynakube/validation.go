@@ -172,29 +172,29 @@ func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
 	case *v1beta5.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	case *v1beta4.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	case *v1beta3.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	case *v1beta2.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	case *v1beta1.DynaKube:
 		err = v.ConvertTo(dk)
 		if err != nil {
-			return
+			return dk, err
 		}
 	}
 
-	return
+	return dk, err
 }
