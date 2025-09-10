@@ -113,6 +113,7 @@ func (OTLPMutator) Mutate(request *dtwebhook.MutationRequest) error {
 			}
 		}
 		// TODO use secret specifically for otlp
+		// TODO the creation of this secret via the SecretGenerator used by the Dynakube reconciler can take quite some time (~5mins when tested locally), due to the reconciliation interval
 		addEnvVarSecretRef(&request.Pod.Spec.Containers[i], envVarDtApiToken, consts.OtlpIngestTokenSecretName, dynatrace.DataIngestToken)
 
 		injectOtlpTraceEnvVars(&request.Pod.Spec.Containers[i], apiURL, injectCert)
