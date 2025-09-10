@@ -117,7 +117,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.InstallWithoutSettingsScopes(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
 
@@ -125,8 +125,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	builder.Assess("log monitoring conditions with disabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, false))
 
-	secretConfig.APITokenNoSettings = ""
-	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig, testDynakube.Name, testDynakube.Namespace))
+	builder.Assess("update token secret", tenant.CreateTenantSecret(secretConfig.APIToken, secretConfig.DataIngestToken, testDynakube.Name, testDynakube.Namespace))
 
 	builder.Assess("trigger reconcile", triggerDaemonSetReconcile(testDynakube))
 
