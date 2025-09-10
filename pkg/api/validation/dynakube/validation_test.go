@@ -3,6 +3,10 @@ package validation
 import (
 	"context"
 	"fmt"
+	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
+	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -166,6 +170,65 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					},
 				},
 			}, &dummyNamespace, &dummyNamespace2)
+	})
+}
+
+func Test_getDynakube(t *testing.T) {
+	t.Run("v1beta5 to latest", func(t *testing.T) {
+		v1beta5Dk := &v1beta5.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: v1beta5.DynaKubeSpec{
+				APIURL: testAPIURL,
+			},
+		}
+
+		dk, err := getDynakube(v1beta5Dk)
+		require.NoError(t, err)
+
+		assert.Equal(t, v1beta5Dk.Name, dk.Name)
+		assert.Equal(t, v1beta5Dk.Namespace, dk.Namespace)
+		assert.Equal(t, v1beta5Dk.Spec.APIURL, dk.Spec.APIURL)
+	})
+
+	t.Run("v1beta4 to latest", func(t *testing.T) {
+		v1beta4Dk := &v1beta4.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: v1beta4.DynaKubeSpec{
+				APIURL: testAPIURL,
+			},
+		}
+
+		dk, err := getDynakube(v1beta4Dk)
+		require.NoError(t, err)
+
+		assert.Equal(t, v1beta4Dk.Name, dk.Name)
+		assert.Equal(t, v1beta4Dk.Namespace, dk.Namespace)
+		assert.Equal(t, v1beta4Dk.Spec.APIURL, dk.Spec.APIURL)
+	})
+
+	t.Run("v1beta3 to latest", func(t *testing.T) {
+		v1beta3Dk := &v1beta3.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: v1beta3.DynaKubeSpec{
+				APIURL: testAPIURL,
+			},
+		}
+
+		dk, err := getDynakube(v1beta3Dk)
+		require.NoError(t, err)
+
+		assert.Equal(t, v1beta3Dk.Name, dk.Name)
+		assert.Equal(t, v1beta3Dk.Namespace, dk.Namespace)
+		assert.Equal(t, v1beta3Dk.Spec.APIURL, dk.Spec.APIURL)
 	})
 }
 
