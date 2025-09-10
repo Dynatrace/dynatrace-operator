@@ -184,7 +184,7 @@ func getTestWebhookPod(t *testing.T) corev1.Pod {
 
 	return corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dtInjectionWebhook",
+			Name:      "test-webhook",
 			Namespace: "test-namespace",
 		},
 		Spec: corev1.PodSpec{
@@ -198,14 +198,14 @@ func getTestWebhookPod(t *testing.T) corev1.Pod {
 	}
 }
 
-func createTestWebhook(t *testing.T, oaMut, metaMut podwebhook.Mutator, objects ...client.Object) *dtInjectionWebhook {
+func createTestWebhook(t *testing.T, oaMut, metaMut podwebhook.Mutator, objects ...client.Object) *webhook {
 	t.Helper()
 
 	decoder := admission.NewDecoder(scheme.Scheme)
 
 	fakeClient := fake.NewClient(objects...)
 
-	wh, err := newDtInjectionWebhook(fakeClient, fakeClient, fakeClient,
+	wh, err := newWebhook(fakeClient, fakeClient, fakeClient,
 		events.NewRecorder(record.NewFakeRecorder(10)), decoder, getTestWebhookPod(t), false)
 
 	require.NoError(t, err)

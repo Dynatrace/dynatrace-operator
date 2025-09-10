@@ -2,6 +2,7 @@ package pod
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
@@ -11,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func (wh *webhookBase) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
+func (wh *webhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
 	pod, err := getPodFromRequest(request, wh.decoder)
 	if err != nil {
 		return nil, err
@@ -77,7 +78,7 @@ func getDynakubeName(namespace corev1.Namespace) (string, error) {
 	return dynakubeName, nil
 }
 
-func (wh *webhookBase) getDynakube(ctx context.Context, dynakubeName string) (*dynakube.DynaKube, error) {
+func (wh *webhook) getDynakube(ctx context.Context, dynakubeName string) (*dynakube.DynaKube, error) {
 	var dk dynakube.DynaKube
 
 	err := wh.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: wh.webhookNamespace}, &dk)
