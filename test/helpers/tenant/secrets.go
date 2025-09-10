@@ -107,7 +107,7 @@ func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
 	return result
 }
 
-func CreateTenantSecret(apiToken string, dataIngestToken string, name, namespace string) features.Func {
+func CreateTenantSecret(apiToken, dataIngestToken, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{

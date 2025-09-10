@@ -42,7 +42,7 @@ func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Lev
 	VerifyStartupPreviousVersion(builder, level, prevDk)
 }
 
-func Create(builder *features.FeatureBuilder, level features.Level, apiToken string, dataIngestToken string, testDynakube dynakube.DynaKube) {
+func Create(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken string, testDynakube dynakube.DynaKube) {
 	if apiToken != "" || dataIngestToken != "" {
 		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, testDynakube.Name, testDynakube.Namespace))
 	}
@@ -56,7 +56,7 @@ func Update(builder *features.FeatureBuilder, level features.Level, testDynakube
 	builder.WithStep("dynakube updated", level, update(testDynakube))
 }
 
-func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, apiToken string, dataIngestToken string, prevDk prevDynakube.DynaKube) {
+func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, apiToken, dataIngestToken string, prevDk prevDynakube.DynaKube) {
 	if apiToken != "" || dataIngestToken != "" {
 		builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(apiToken, dataIngestToken, prevDk.Name, prevDk.Namespace))
 	}
