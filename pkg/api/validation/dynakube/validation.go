@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"errors"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	v1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
 	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
