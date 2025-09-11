@@ -10,6 +10,16 @@ on:
         description: 'Target branch to run E2E tests over'
         required: true
         default: 'main'
+      install_via_helm:
+        description: 'Install the operator via Helm chart'
+        required: true
+        default: false
+        type: boolean
+      use_helm_chart_tag:
+        description: 'Helm chart tag used for installation (only if install_via_helm is true)'
+        required: false
+        default: '0.0.0-nightly-chart'
+        type: string
 
 permissions:
   checks: write
@@ -32,6 +42,8 @@ jobs:
         with:
           flc-namespace: dto-daily
           flc-environment: dto-k8s-latest-flc
+          install-via-helm: ${{ github.event.inputs.install_via_helm }}
+          use-helm-chart-tag: ${{ github.event.inputs.use_helm_chart_tag }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
@@ -67,6 +79,8 @@ jobs:
         with:
           flc-namespace: dto-daily
           flc-environment: dto-ocp-latest-flc
+          install-via-helm: ${{ github.event.inputs.install_via_helm }}
+          use-helm-chart-tag: ${{ github.event.inputs.use_helm_chart_tag }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
@@ -102,6 +116,8 @@ jobs:
         with:
           flc-namespace: dto-ocp-ondemand
           flc-environment: dto-ocp-fips
+          install-via-helm: ${{ github.event.inputs.install_via_helm }}
+          use-helm-chart-tag: ${{ github.event.inputs.use_helm_chart_tag }}
           target-image: format('{0}-fips', (${{ github.event.inputs.target || 'main' }}))
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}

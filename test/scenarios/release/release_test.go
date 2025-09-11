@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
-		operator.InstallViaHelm(releaseTag, true, operator.DefaultNamespace), // TODO: add logic to get releaseTag in a dynamic way instead of hard coding it
+		operator.InstallViaHelm(operator.AwsRegistryURL, releaseTag, true, operator.DefaultNamespace), // TODO: add logic to get releaseTag in a dynamic way instead of hard coding it
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {

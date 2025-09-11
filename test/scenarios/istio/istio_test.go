@@ -4,6 +4,7 @@ package istio
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -17,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -34,11 +36,21 @@ func TestMain(m *testing.M) {
 	nsWithoutIstio := *namespace.New(operator.DefaultNamespace)
 	testEnv.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnv.BeforeEachTest(istio.AssertIstiodDeployment())
-	testEnv.Setup(
-		helpers.SetScheme,
-		namespace.CreateForEnv(nsWithIstio),
-		operator.InstallViaMake(true),
-	)
+
+	if scenarios.InstallViaHelm() {
+		testEnv.Setup(
+			helpers.SetScheme,
+			namespace.CreateForEnv(nsWithIstio),
+			operator.InstallViaHelm(operator.QuayRegistryURL, os.Getenv(scenarios.HelmChartTagEnvVar), true, operator.DefaultNamespace),
+		)
+	} else {
+		testEnv.Setup(
+			helpers.SetScheme,
+			namespace.CreateForEnv(nsWithIstio),
+			operator.InstallViaMake(true),
+		)
+	}
+
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(true))
