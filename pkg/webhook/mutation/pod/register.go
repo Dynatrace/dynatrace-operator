@@ -21,7 +21,7 @@ import (
 )
 
 func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, webhookPodName string, isOpenShift bool) error {
-	eventRecorder := events.NewRecorder(mgr.GetEventRecorderFor("dynatrace-webhook"))
+	eventRecorder := events.NewRecorder(mgr.GetEventRecorderFor("dynatrace-dtInjectionWebhook"))
 	kubeConfig := mgr.GetConfig()
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
@@ -39,7 +39,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 	if apmExists {
 		eventRecorder.SendOneAgentAPMWarningEvent(webhookPod)
 
-		return errors.New("OneAgentAPM object detected - the Dynatrace webhook will not inject until the deprecated OneAgent Operator has been fully uninstalled")
+		return errors.New("OneAgentAPM object detected - the Dynatrace dtInjectionWebhook will not inject until the deprecated OneAgent Operator has been fully uninstalled")
 	}
 
 	// the injected podMutator.client doesn't have permissions to Get(sth) from a different namespace
@@ -48,7 +48,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 		return errors.WithStack(err)
 	}
 
-	wh, err := newWebhook(
+	dtWh, err := newDtInjectionWebhook(
 		kubeClient,
 		metaClient,
 		apiReader,
@@ -61,36 +61,49 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 		return err
 	}
 
-	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: wh})
+	mgr.GetWebhookServer().Register("/inject", &webhooks.Admission{Handler: dtWh})
 	log.Info("registered /inject endpoint")
+
+	otlpWh := newOtlpInjectionWebhook(
+		kubeClient,
+		apiReader,
+		eventRecorder,
+		admission.NewDecoder(mgr.GetScheme()),
+		*webhookPod,
+	)
+
+	mgr.GetWebhookServer().Register("/otlp", &webhooks.Admission{Handler: otlpWh})
+	log.Info("registered /otlp endpoint")
 
 	return nil
 }
 
-func newWebhook( //nolint:revive
+func newDtInjectionWebhook( //nolint:revive
 	kubeClient,
 	metaClient client.Client,
 	apiReader client.Reader,
 	eventRecorder events.EventRecorder,
 	decoder admission.Decoder,
 	webhookPod corev1.Pod,
-	isOpenshift bool) (*webhook, error) {
+	isOpenshift bool) (*dtInjectionWebhook, error) {
 	webhookPodImage, err := getWebhookContainerImage(webhookPod)
 	if err != nil {
 		return nil, err
 	}
 
-	return &webhook{
-		oaMutator:        oneagent.NewMutator(),
-		metaMutator:      metadata.NewMutator(metaClient),
-		kubeClient:       kubeClient,
-		apiReader:        apiReader,
-		recorder:         eventRecorder,
-		isOpenShift:      isOpenshift,
-		webhookNamespace: webhookPod.Namespace,
-		webhookPodImage:  webhookPodImage,
-		deployedViaOLM:   kubesystem.IsDeployedViaOlm(webhookPod),
-		decoder:          decoder,
+	return &dtInjectionWebhook{
+		webhookBase: webhookBase{
+			kubeClient:       kubeClient,
+			decoder:          decoder,
+			apiReader:        apiReader,
+			webhookNamespace: webhookPod.Namespace,
+			deployedViaOLM:   kubesystem.IsDeployedViaOlm(webhookPod),
+			recorder:         eventRecorder,
+		},
+		oaMutator:       oneagent.NewMutator(),
+		metaMutator:     metadata.NewMutator(metaClient),
+		isOpenShift:     isOpenshift,
+		webhookPodImage: webhookPodImage,
 	}, nil
 }
 
@@ -107,7 +120,7 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 		return "", errors.WithStack(err)
 	}
 
-	log.Info("got webhook's image", "image", webhookContainer.Image)
+	log.Info("got dtInjectionWebhook's image", "image", webhookContainer.Image)
 
 	return webhookContainer.Image, nil
 }

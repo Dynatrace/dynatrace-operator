@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
@@ -70,6 +71,21 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
+		// TODO check if this can be refactored to be cleaner
+		// here we extract the token again from the 'endpoint.properties', which includes both the DT_METRICS_INGEST_URL and DT_METRICS_INGEST_API_TOKEN in a single string,
+		// while for the OTLP env vars we need the ingest token as a separate key within the secret.
+		// This way we do not have to look up the secret containing the token in the dynatrace namespace again (i.e. less kubernetes API calls),
+		// but this is also not ideal, as the extractApiToken relies on the endpoint.properties to be in a certain format.
+		// Ideally, we can refactor this to retrieve the endpoint and token at the beginning and then generate the content for the secrets,
+		// as they are required by the bootstrapper and the otlp env vars, respectively.
+		apiToken := extractApiToken(data)
+		if len(apiToken) > 0 {
+			err = s.createSecretForNSlist(ctx, consts.OtlpIngestTokenSecretName, ConfigConditionType, nsList, dk, extractApiToken(data))
+		}
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
 
 	certs, err := s.generateCerts(ctx, dk)
@@ -88,9 +104,35 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		if err != nil {
 			return errors.WithStack(err)
 		}
+
+		// create cert secret for otlp configuration
+		// TODO is the creation of the OTLP related secrets tied to the same preconditions as the creation of the bootstrap secrets?
+		// TODO should we decouple the OTLP secret creation to be independent of any errors during the creation of the other secrets?
+		err = s.createSecretForNSlist(ctx, consts.OtlpIngestCertsSecretName, CertsConditionType, nsList, dk, certs)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
 
 	return nil
+}
+
+func extractApiToken(data map[string][]byte) map[string][]byte {
+	result := map[string][]byte{}
+	endpointInfo, ok := data[endpoint.InputFileName]
+	if !ok {
+		return result
+	}
+	split := strings.Split(string(endpointInfo), "\n")
+	for _, line := range split {
+		if strings.HasPrefix(line, MetricsTokenSecretField) {
+			lineSplit := strings.Split(line, "=")
+			if len(lineSplit) == 2 {
+				data[dtclient.DataIngestToken] = []byte(lineSplit[1])
+			}
+		}
+	}
+	return result
 }
 
 func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-limit
