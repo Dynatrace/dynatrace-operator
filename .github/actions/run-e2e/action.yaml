@@ -14,9 +14,6 @@ inputs:
   target-image:
     description: Target image to run E2E tests over
     required: false
-  install-via-helm:
-    description: Whether to install the operator via Helm chart
-    required: true
   use-helm-chart-tag:
     description: Helm chart tag used for installation
     required: false
@@ -106,7 +103,6 @@ runs:
       env:
         FLC_NAMESPACE: ${{ inputs.flc-namespace }}
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
-        INSTALL_VIA_HELM: ${{ inputs.install-via-helm }}
         USE_HELM_CHART_TAG: ${{ inputs.use-helm-chart-tag }}
         TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
         TARGET_IMAGE: ${{ inputs.target-image }}

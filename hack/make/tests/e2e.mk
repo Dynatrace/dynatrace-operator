@@ -1,23 +1,20 @@
-GOTESTCMD:=INSTALL_VIA_HELM_CHART=$(INSTALL_VIA_HELM_CHART) USE_HELM_CHART_TAG=$(USE_HELM_CHART_TAG) go test
+GOTESTCMD:=USE_HELM_CHART_TAG=$(USE_HELM_CHART_TAG) go test
 
 ## Start a test and save the result to an xml file
 test/e2e/%/publish:
 	@make \
-	INSTALL_VIA_HELM_CHART=$(INSTALL_VIA_HELM_CHART) \
 	USE_HELM_CHART_TAG=$(USE_HELM_CHART_TAG) \
 	GOTESTCMD='gotestsum --format standard-verbose --junitfile results/$(notdir $(@D)).xml --' $(@D)
 
 ## Start a test and skip TEARDOWN steps if it fails
 test/e2e/%/debug:
 	@make \
-	INSTALL_VIA_HELM_CHART=$(INSTALL_VIA_HELM_CHART) \
 	USE_HELM_CHART_TAG=$(USE_HELM_CHART_TAG) \
 	SKIPCLEANUP="--fail-fast" $(@D)
 
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \
-	INSTALL_VIA_HELM_CHART=$(INSTALL_VIA_HELM_CHART) \
 	USE_HELM_CHART_TAG=$(USE_HELM_CHART_TAG) \
 	make test/e2e/standard  || RC=1; \
 	make test/e2e/no-csi || RC=1; \
