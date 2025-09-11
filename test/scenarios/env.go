@@ -7,9 +7,5 @@ import "os"
 const HelmChartTagEnvVar = "USE_HELM_CHART_TAG"
 
 func InstallViaHelm() bool {
-	if os.Getenv(HelmChartTagEnvVar) != "" {
-		return true
-	}
-
-	return false
+	return os.Getenv(HelmChartTagEnvVar) != ""
 }
