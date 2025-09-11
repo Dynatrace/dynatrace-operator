@@ -4,9 +4,6 @@ inputs:
   version_without_prefix:
     description: The version of the operator that should be deployed without the leading 'v' character
     required: true
-  github-token:
-    description: Token used to fetch the current helm version
-    required: true
   secring:
     description: Contains the private key that is used to sign the helm packages
     required: true
@@ -25,7 +22,6 @@ runs:
       with:
         # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
         version: v3.17.3
-        token: ${{ inputs.github-token }}
     - name: Generate helm-package
       shell: bash
       run: hack/build/ci/generate-helm-package.sh "${{ inputs.secring }}" "${{ inputs.passphrase }}" "${{ inputs.output-dir }}" "${{ inputs.version_without_prefix }}"

@@ -44,9 +44,6 @@ inputs:
   tenant2-dataingesttoken:
     description: The data ingest token of Tenant 2
     required: true
-  github-token:
-    description: The GitHub token
-    required: true
 outputs:
   cluster_status:
     description: Status of the cluster creation ['skipped'|'success']
@@ -74,7 +71,6 @@ runs:
       with:
         # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
         version: v3.17.3
-        token: ${{ inputs.github-token }}
     - name: Install gotestsum
       shell: bash
       run: go install gotest.tools/gotestsum@latest

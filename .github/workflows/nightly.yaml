@@ -107,7 +107,6 @@ jobs:
         uses: ./.github/actions/build-helm
         with:
           version_without_prefix: ${{ env.HELM_PACKAGE_VERSION }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           secring: ${{ secrets.HELM_SECRING }}
           passphrase: ${{ secrets.HELM_PASSPHRASE }}
           output-dir: "./helm-pkg"
