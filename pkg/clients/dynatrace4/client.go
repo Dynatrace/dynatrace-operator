@@ -198,7 +198,7 @@ func NewClient(baseURL string, options ...Option) (*Client, error) {
 
 // initAPIClients initializes all the API group clients
 func (c *Client) initAPIClients() {
-	commonConfig := core.CommonConfig{
+	CoreClient := core.CoreClient{
 		BaseURL:         c.baseURL,
 		HTTPClient:      c.httpClient,
 		UserAgent:       c.userAgent,
@@ -209,11 +209,11 @@ func (c *Client) initAPIClients() {
 		HostGroup:       c.hostGroup,
 	}
 
-	// c.activeGateClient = activegate.NewClient(commonConfig)
-	// c.agentClient = agent.NewClient(commonConfig)
-	// c.imagesClient = images.NewClient(commonConfig)
-	c.SettingsClient = settings.NewClient(commonConfig)
-	c.TokenClient = token.NewClient(commonConfig)
+	// c.activeGateClient = activegate.NewClient(CoreClient)
+	// c.agentClient = agent.NewClient(CoreClient)
+	// c.imagesClient = images.NewClient(CoreClient)
+	c.SettingsClient = settings.NewClient(CoreClient)
+	c.TokenClient = token.NewClient(CoreClient)
 }
 
 // // ActiveGate returns the ActiveGate API client

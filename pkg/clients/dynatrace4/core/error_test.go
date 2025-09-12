@@ -16,7 +16,7 @@ func newTestResponse(status int, body string) *http.Response {
 }
 
 func TestHandleErrorResponse_SingleServerError(t *testing.T) {
-	rb := &requestBuilder{}
+	rb := &CoreClient{}
 	resp := newTestResponse(400, `{"error":{"code":400,"message":"bad request"}}`)
 	err := rb.handleErrorResponse(resp, []byte(`{"error":{"code":400,"message":"bad request"}}`))
 	httpErr := &HTTPError{}
@@ -30,7 +30,7 @@ func TestHandleErrorResponse_SingleServerError(t *testing.T) {
 }
 
 func TestHandleErrorResponse_MultipleServerErrors(t *testing.T) {
-	rb := &requestBuilder{}
+	rb := &CoreClient{}
 	resp := newTestResponse(400, `[{"error":{"code":400,"message":"bad1"}},{"error":{"code":400,"message":"bad2"}}]`)
 	err := rb.handleErrorResponse(resp, []byte(`[{"error":{"code":400,"message":"bad1"}},{"error":{"code":400,"message":"bad2"}}]`))
 	httpErr := &HTTPError{}
@@ -45,7 +45,7 @@ func TestHandleErrorResponse_MultipleServerErrors(t *testing.T) {
 }
 
 func TestHandleErrorResponse_GenericHTTPError(t *testing.T) {
-	rb := &requestBuilder{
+	rb := &CoreClient{
 		path: "/test",
 	}
 	resp := newTestResponse(500, "not-json")

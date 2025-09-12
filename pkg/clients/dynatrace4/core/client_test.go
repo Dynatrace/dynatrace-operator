@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"testing"
 )
 
-func newTestConfig(base string) CommonConfig {
+func newTestConfig(base string) CoreClient {
 	u, _ := url.Parse(base)
 
-	return CommonConfig{
+	return CoreClient{
 		BaseURL:         u,
 		HTTPClient:      http.DefaultClient,
 		UserAgent:       "test-agent",
@@ -25,21 +26,21 @@ func newTestConfig(base string) CommonConfig {
 }
 
 func TestRequestBuilder_BuilderMethods(t *testing.T) {
-	config := newTestConfig("http://localhost")
-	rb := newRequest(t.Context(), config).(*requestBuilder)
+	config := newTestConfig("http://localhost").newRequest(t.Context())
+	rb := config.GET(t.Context(), "/test").(*CoreClient)
 
 	method := "POST"
-	if rb.WithMethod(method).(*requestBuilder).method != method {
+	if rb.withMethod(method).(*CoreClient).method != method {
 		t.Errorf("WithMethod failed")
 	}
 
 	path := "/test"
-	if rb.WithPath(path).(*requestBuilder).path != path {
+	if rb.WithPath(path).(*CoreClient).path != path {
 		t.Errorf("WithPath failed")
 	}
 
 	key, value := "foo", "bar"
-	if rb.WithQueryParam(key, value).(*requestBuilder).queryParams[key] != value {
+	if rb.WithQueryParam(key, value).(*CoreClient).queryParams[key] != value {
 		t.Errorf("WithQueryParam failed")
 	}
 
@@ -85,7 +86,7 @@ func TestRequestBuilder_Execute_Success(t *testing.T) {
 	defer server.Close()
 
 	u, _ := url.Parse(server.URL)
-	config := CommonConfig{
+	config := CoreClient{
 		BaseURL:    u,
 		HTTPClient: server.Client(),
 		UserAgent:  "test-agent",
@@ -93,10 +94,7 @@ func TestRequestBuilder_Execute_Success(t *testing.T) {
 	}
 
 	target := struct{ Foo string }{}
-	err := newRequest(t.Context(), config).
-		WithMethod("GET").
-		WithPath("").
-		Execute(&target)
+	err := config.GET(t.Context(), "").Execute(&target)
 	if err != nil {
 		t.Fatalf("Execute failed: %v", err)
 	}
@@ -114,17 +112,14 @@ func TestRequestBuilder_ExecuteRaw_Success(t *testing.T) {
 	defer server.Close()
 
 	u, _ := url.Parse(server.URL)
-	config := CommonConfig{
+	config := CoreClient{
 		BaseURL:    u,
 		HTTPClient: server.Client(),
 		UserAgent:  "test-agent",
 		APIToken:   "api-token",
 	}
 
-	body, err := newRequest(t.Context(), config).
-		WithMethod("GET").
-		WithPath("").
-		ExecuteRaw()
+	body, err := config.GET(t.Context(), "").ExecuteRaw()
 	if err != nil {
 		t.Fatalf("ExecuteRaw failed: %v", err)
 	}
@@ -141,7 +136,7 @@ func TestRequestBuilder_Execute_Error(t *testing.T) {
 	defer server.Close()
 
 	u, _ := url.Parse(server.URL)
-	config := CommonConfig{
+	config := CoreClient{
 		BaseURL:    u,
 		HTTPClient: server.Client(),
 		UserAgent:  "test-agent",
@@ -149,7 +144,7 @@ func TestRequestBuilder_Execute_Error(t *testing.T) {
 	}
 
 	target := struct{}{}
-	err := newRequest(t.Context(), config).WithMethod("GET").WithPath("").Execute(&target)
+	err := config.GET(t.Context(), "").Execute(&target)
 	if err == nil {
 		t.Fatalf("Expected error, got nil")
 	}
@@ -166,14 +161,14 @@ func TestRequestBuilder_ExecuteRaw_Error(t *testing.T) {
 	defer server.Close()
 
 	u, _ := url.Parse(server.URL)
-	config := CommonConfig{
+	config := CoreClient{
 		BaseURL:    u,
 		HTTPClient: server.Client(),
 		UserAgent:  "test-agent",
 		APIToken:   "api-token",
 	}
 
-	_, err := newRequest(t.Context(), config).WithMethod("GET").WithPath("").ExecuteRaw()
+	_, err := config.GET(t.Context(), "").ExecuteRaw()
 	if err == nil {
 		t.Fatalf("Expected error, got nil")
 	}
@@ -181,8 +176,7 @@ func TestRequestBuilder_ExecuteRaw_Error(t *testing.T) {
 
 func TestRequestBuilder_setHeaders(t *testing.T) {
 	config := newTestConfig("http://localhost")
-	rb := newRequest(t.Context(), config).(*requestBuilder)
-	rb.method = http.MethodPost
+	rb := config.POST(t.Context(), "").(*CoreClient)
 	req, _ := http.NewRequest(http.MethodPost, "http://localhost", nil)
 	rb.setHeaders(req)
 	if req.Header.Get("Authorization") == "" {
@@ -198,7 +192,7 @@ func TestRequestBuilder_setHeaders(t *testing.T) {
 
 func TestRequestBuilder_handleResponse_UnmarshalError(t *testing.T) {
 	config := newTestConfig("http://localhost")
-	rb := newRequest(t.Context(), config).(*requestBuilder)
+	rb := config.GET(t.Context(), "").(*CoreClient)
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
 		Body:       io.NopCloser(bytes.NewReader([]byte("not-json"))),
@@ -207,5 +201,21 @@ func TestRequestBuilder_handleResponse_UnmarshalError(t *testing.T) {
 	err := rb.handleResponse(resp, &target)
 	if err == nil {
 		t.Errorf("Expected unmarshal error, got nil")
+	}
+}
+
+func TestCoreClient_GET_POST_PUT_DELETE(t *testing.T) {
+	config := newTestConfig("http://localhost")
+	if reflect.TypeOf(config.GET(t.Context(), "/foo")).String() != "*core.CoreClient" {
+		t.Errorf("GET did not return *core.CoreClient, got: %s", reflect.TypeOf(config.GET(t.Context(), "/foo")).String())
+	}
+	if reflect.TypeOf(config.POST(t.Context(), "/foo")).String() != "*core.CoreClient" {
+		t.Errorf("POST did not return *core.CoreClient, got: %s", reflect.TypeOf(config.POST(t.Context(), "/foo")).String())
+	}
+	if reflect.TypeOf(config.PUT(t.Context(), "/foo")).String() != "*core.CoreClient" {
+		t.Errorf("PUT did not return *core.CoreClient, got: %s", reflect.TypeOf(config.PUT(t.Context(), "/foo")).String())
+	}
+	if reflect.TypeOf(config.DELETE(t.Context(), "/foo")).String() != "*core.CoreClient" {
+		t.Errorf("DELETE did not return *core.CoreClient, got: %s", reflect.TypeOf(config.DELETE(t.Context(), "/foo")).String())
 	}
 }

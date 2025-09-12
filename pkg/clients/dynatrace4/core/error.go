@@ -38,11 +38,11 @@ func (e ServerError) Error() string {
 }
 
 // handleErrorResponse processes error responses from the API
-func (rb *requestBuilder) handleErrorResponse(resp *http.Response, body []byte) error {
+func (c *CoreClient) handleErrorResponse(resp *http.Response, body []byte) error {
 	httpErr := &HTTPError{
 		StatusCode: resp.StatusCode,
 		Body:       string(body),
-		Message:    fmt.Sprintf("HTTP request (%s) failed %d", rb.path, resp.StatusCode),
+		Message:    fmt.Sprintf("HTTP request (%s) failed %d", c.path, resp.StatusCode),
 	}
 
 	// Try to parse as a single server error first
