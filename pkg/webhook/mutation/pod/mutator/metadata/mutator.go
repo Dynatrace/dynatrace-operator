@@ -107,6 +107,18 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	}
 
 	pod.Annotations[AnnotationInjected] = "true"
+	delete(pod.Annotations, AnnotationReason)
+}
+
+func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+
+		pod.Annotations[AnnotationInjected] = "false"
+		pod.Annotations[AnnotationReason] = reason
+	}
 }
 
 func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {

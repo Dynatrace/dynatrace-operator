@@ -55,7 +55,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	}
 
-	return addInitArgs(*mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath)
+	return addInitArgs(mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath)
 }
 
 func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
@@ -67,7 +67,7 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{}
 }
 
-func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) error {
+func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) error {
 	args := []arg.Arg{
 		{Name: cmd.SourceFolderFlag, Value: AgentCodeModuleSource},
 		{Name: cmd.TargetFolderFlag, Value: consts.AgentInitBinDirMount},
@@ -79,13 +79,16 @@ func addInitArgs(pod corev1.Pod, initContainer *corev1.Container, dk dynakube.Dy
 
 		tenantUUID, err := dk.TenantUUID()
 		if err != nil {
-			return err
+			return dtwebhook.MutatorError{
+				Err:      err,
+				Annotate: setNotInjectedAnnotationFunc(MissingTenantUUIDReason),
+			}
 		}
 
 		args = append(args, arg.Arg{Name: configure.IsFullstackFlag}, arg.Arg{Name: configure.TenantFlag, Value: tenantUUID})
 	}
 
-	if technology := getTechnology(pod, dk); technology != "" {
+	if technology := getTechnology(*pod, dk); technology != "" {
 		args = append(args, arg.Arg{Name: move.TechnologyFlag, Value: technology})
 	}
 

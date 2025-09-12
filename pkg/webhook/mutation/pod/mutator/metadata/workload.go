@@ -52,7 +52,10 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 
 	rootOwner, err := findRootOwner(ctx, clt, podPartialMetadata) // default owner of the pod is the pod itself
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, dtwebhook.MutatorError{
+			Err:      errors.WithStack(err),
+			Annotate: setNotInjectedAnnotationFunc(OwnerLookupFailedReason),
+		}
 	}
 
 	return newWorkloadInfo(rootOwner), nil

@@ -48,5 +48,5 @@ spec:
   securityContext:
     runAsUser: 0
     runAsGroup: 0
-  serviceAccount: e2e-samples
+  serviceAccountName: e2e-samples
   terminationGracePeriodSeconds: 30

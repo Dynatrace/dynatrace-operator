@@ -1,14 +1,11 @@
 package maputil
 
 import (
+	"maps"
 	"strconv"
 )
 
 func GetField(values map[string]string, key string, defaultValue string) string {
-	if values == nil {
-		return defaultValue
-	}
-
 	if x := values[key]; x != "" {
 		return x
 	}
@@ -17,10 +14,6 @@ func GetField(values map[string]string, key string, defaultValue string) string 
 }
 
 func GetFieldBool(values map[string]string, key string, defaultValue bool) bool {
-	if values == nil {
-		return defaultValue
-	}
-
 	if x := values[key]; x != "" {
 		parsed, err := strconv.ParseBool(x)
 		if err == nil {
@@ -31,13 +24,11 @@ func GetFieldBool(values map[string]string, key string, defaultValue bool) bool 
 	return defaultValue
 }
 
-func MergeMap(maps ...map[string]string) map[string]string {
+func MergeMap(inputs ...map[string]string) map[string]string {
 	res := map[string]string{}
 
-	for _, m := range maps {
-		for k, v := range m {
-			res[k] = v
-		}
+	for _, m := range inputs {
+		maps.Copy(res, m)
 	}
 
 	return res

@@ -7,6 +7,9 @@ const (
 	// AnnotationMetadataEnrichmentInject can be set at pod level to enable/disable metadata-enrichment injection.
 	AnnotationInject   = AnnotationPrefix + ".dynatrace.com/inject"
 	AnnotationInjected = AnnotationPrefix + ".dynatrace.com/injected"
+	AnnotationReason   = AnnotationPrefix + ".dynatrace.com/reason"
+
+	OwnerLookupFailedReason = "OwnerLookupFailed"
 
 	// AnnotationWorkloadKind is added to any injected pods when the metadata-enrichment feature is enabled
 	AnnotationWorkloadKind = "metadata.dynatrace.com/k8s.workload.kind"

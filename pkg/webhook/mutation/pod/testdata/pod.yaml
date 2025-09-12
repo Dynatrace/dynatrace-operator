@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: pod-inject-test
+  name: pod-inject-test
+spec:
+  restartPolicy: Always
+  containers:
+    - name: app
+      image: docker.io/myapp:1.2.3
+      imagePullPolicy: Always
+      resources:
+        requests:
+          memory: 64Mi
+        limits:
+          memory: 128Mi

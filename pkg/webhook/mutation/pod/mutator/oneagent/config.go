@@ -15,6 +15,9 @@ const (
 	// AnnotationOneAgentInject can be set at pod level to enable/disable OneAgent injection.
 	AnnotationInject   = AnnotationPrefix + ".dynatrace.com/inject"
 	AnnotationInjected = AnnotationPrefix + ".dynatrace.com/injected"
+	AnnotationReason   = AnnotationPrefix + ".dynatrace.com/reason"
+
+	MissingTenantUUIDReason = "MissingTenantUUID"
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.
@@ -31,8 +34,8 @@ const (
 	// This annotation ONLY takes affect if `node-image-pull` feature-flag is set on the DynaKube.
 	AnnotationVolumeType = AnnotationPrefix + ".dynatrace.com/volume-type"
 
-	// AnnotationOneAgenBinResource is used to specify the volume size for EmptyDir for oneagent-bin.
-	AnnotationOneAgenBinResource = volumes.AnnotationResourcePrefix + "oneagent-bin"
+	// AnnotationOneAgentBinResource is used to specify the volume size for EmptyDir for oneagent-bin.
+	AnnotationOneAgentBinResource = volumes.AnnotationResourcePrefix + "oneagent-bin"
 
 	// DefaultInstallPath is the default directory to install the app-only OneAgent package.
 	DefaultInstallPath = "/opt/dynatrace/oneagent-paas"

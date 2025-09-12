@@ -51,10 +51,10 @@ func addEmptyDirBinVolume(pod *corev1.Pod) {
 
 	emptyDirVS := corev1.EmptyDirVolumeSource{}
 
-	if r, ok := pod.Annotations[AnnotationOneAgenBinResource]; ok && r != "" {
+	if r, ok := pod.Annotations[AnnotationOneAgentBinResource]; ok && r != "" {
 		sizeLimit, err := resource.ParseQuantity(r)
 		if err != nil {
-			log.Error(err, "failed to parse quantity from annotation "+AnnotationOneAgenBinResource, "value", r)
+			log.Error(err, "failed to parse quantity from annotation "+AnnotationOneAgentBinResource, "value", r)
 		} else {
 			emptyDirVS = corev1.EmptyDirVolumeSource{
 				SizeLimit: &sizeLimit,
