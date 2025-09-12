@@ -109,7 +109,7 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
-		Logger: logd.Get().WithName("manager").V(0),
+		Logger: logd.Get().WithName("manager").Logger,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Host:    webhookInstallOptions.LocalServingHost,
 			Port:    webhookInstallOptions.LocalServingPort,
