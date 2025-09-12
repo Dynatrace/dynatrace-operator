@@ -195,59 +195,6 @@ func (_c *RequestBuilder_WithJSONBody_Call) RunAndReturn(run func(body interface
 	return _c
 }
 
-// WithMethod provides a mock function for the type RequestBuilder
-func (_mock *RequestBuilder) WithMethod(method string) core.RequestBuilder {
-	ret := _mock.Called(method)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithMethod")
-	}
-
-	var r0 core.RequestBuilder
-	if returnFunc, ok := ret.Get(0).(func(string) core.RequestBuilder); ok {
-		r0 = returnFunc(method)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.RequestBuilder)
-		}
-	}
-	return r0
-}
-
-// RequestBuilder_WithMethod_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithMethod'
-type RequestBuilder_WithMethod_Call struct {
-	*mock.Call
-}
-
-// WithMethod is a helper method to define mock.On call
-//   - method string
-func (_e *RequestBuilder_Expecter) WithMethod(method interface{}) *RequestBuilder_WithMethod_Call {
-	return &RequestBuilder_WithMethod_Call{Call: _e.mock.On("WithMethod", method)}
-}
-
-func (_c *RequestBuilder_WithMethod_Call) Run(run func(method string)) *RequestBuilder_WithMethod_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
-		if args[0] != nil {
-			arg0 = args[0].(string)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *RequestBuilder_WithMethod_Call) Return(requestBuilder core.RequestBuilder) *RequestBuilder_WithMethod_Call {
-	_c.Call.Return(requestBuilder)
-	return _c
-}
-
-func (_c *RequestBuilder_WithMethod_Call) RunAndReturn(run func(method string) core.RequestBuilder) *RequestBuilder_WithMethod_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // WithPaasToken provides a mock function for the type RequestBuilder
 func (_mock *RequestBuilder) WithPaasToken() core.RequestBuilder {
 	ret := _mock.Called()
@@ -343,65 +290,6 @@ func (_c *RequestBuilder_WithPath_Call) Return(requestBuilder core.RequestBuilde
 }
 
 func (_c *RequestBuilder_WithPath_Call) RunAndReturn(run func(path string) core.RequestBuilder) *RequestBuilder_WithPath_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// WithQueryParam provides a mock function for the type RequestBuilder
-func (_mock *RequestBuilder) WithQueryParam(key string, value string) core.RequestBuilder {
-	ret := _mock.Called(key, value)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithQueryParam")
-	}
-
-	var r0 core.RequestBuilder
-	if returnFunc, ok := ret.Get(0).(func(string, string) core.RequestBuilder); ok {
-		r0 = returnFunc(key, value)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.RequestBuilder)
-		}
-	}
-	return r0
-}
-
-// RequestBuilder_WithQueryParam_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithQueryParam'
-type RequestBuilder_WithQueryParam_Call struct {
-	*mock.Call
-}
-
-// WithQueryParam is a helper method to define mock.On call
-//   - key string
-//   - value string
-func (_e *RequestBuilder_Expecter) WithQueryParam(key interface{}, value interface{}) *RequestBuilder_WithQueryParam_Call {
-	return &RequestBuilder_WithQueryParam_Call{Call: _e.mock.On("WithQueryParam", key, value)}
-}
-
-func (_c *RequestBuilder_WithQueryParam_Call) Run(run func(key string, value string)) *RequestBuilder_WithQueryParam_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
-		if args[0] != nil {
-			arg0 = args[0].(string)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *RequestBuilder_WithQueryParam_Call) Return(requestBuilder core.RequestBuilder) *RequestBuilder_WithQueryParam_Call {
-	_c.Call.Return(requestBuilder)
-	return _c
-}
-
-func (_c *RequestBuilder_WithQueryParam_Call) RunAndReturn(run func(key string, value string) core.RequestBuilder) *RequestBuilder_WithQueryParam_Call {
 	_c.Call.Return(run)
 	return _c
 }

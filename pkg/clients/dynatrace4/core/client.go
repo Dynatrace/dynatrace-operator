@@ -27,7 +27,6 @@ type APIClient interface {
 // RequestBuilder provides a fluent interface for building and executing HTTP requests
 type RequestBuilder interface {
 	WithPath(path string) RequestBuilder
-	WithQueryParam(key, value string) RequestBuilder
 	WithQueryParams(params map[string]string) RequestBuilder
 	WithJSONBody(body interface{}) RequestBuilder
 	WithRawBody(body []byte) RequestBuilder
@@ -147,17 +146,6 @@ func (c *CoreClient) withMethod(method string) RequestBuilder {
 // WithPath sets the path for the request
 func (c *CoreClient) WithPath(path string) RequestBuilder {
 	c.path = path
-
-	return c
-}
-
-// WithQueryParam adds a query parameter to the request
-func (c *CoreClient) WithQueryParam(key, value string) RequestBuilder {
-	if c.queryParams == nil {
-		c.queryParams = make(map[string]string)
-	}
-
-	c.queryParams[key] = value
 
 	return c
 }

@@ -39,11 +39,6 @@ func TestRequestBuilder_BuilderMethods(t *testing.T) {
 		t.Errorf("WithPath failed")
 	}
 
-	key, value := "foo", "bar"
-	if rb.WithQueryParam(key, value).(*CoreClient).queryParams[key] != value {
-		t.Errorf("WithQueryParam failed")
-	}
-
 	params := map[string]string{"a": "1", "b": "2"}
 	rb.WithQueryParams(params)
 	for k, v := range params {

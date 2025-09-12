@@ -19,7 +19,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.MatchedBy(func(arg interface{}) bool {
 			bodies, ok := arg.([]postKubernetesSettingsBody)
 
@@ -41,7 +41,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	t.Run("error from API", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Return(errors.New("api error"))
 		apiClient.On("POST", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
@@ -55,7 +55,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	t.Run("fallback to v1 on 404", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 
 		// First call: v3 body
 		requestBuilder.On("WithJSONBody", mock.MatchedBy(func(arg interface{}) bool {
@@ -100,7 +100,7 @@ func TestCreateOrUpdateKubernetesAppSetting(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*[]postSettingsResponse); ok {
@@ -118,7 +118,7 @@ func TestCreateOrUpdateKubernetesAppSetting(t *testing.T) {
 	t.Run("error from API", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Return(errors.New("api error"))
 		apiClient.On("POST", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
@@ -136,7 +136,7 @@ func TestPerformCreateOrUpdateKubernetesSetting(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*[]postSettingsResponse); ok {
@@ -154,7 +154,7 @@ func TestPerformCreateOrUpdateKubernetesSetting(t *testing.T) {
 	t.Run("error from API", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Return(errors.New("api error"))
 		apiClient.On("POST", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
@@ -168,7 +168,7 @@ func TestPerformCreateOrUpdateKubernetesSetting(t *testing.T) {
 	t.Run("not exactly one entry", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*[]postSettingsResponse); ok {

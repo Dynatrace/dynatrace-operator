@@ -52,7 +52,9 @@ func (dtc *client) performCreateLogMonSetting(ctx context.Context, body []posLog
 	var response []postSettingsResponse
 
 	err := dtc.apiClient.POST(ctx, ObjectsPath).
-		WithQueryParam(validateOnlyQueryParam, "false").
+		WithQueryParams(map[string]string{
+			validateOnlyQueryParam: "false",
+		}).
 		WithJSONBody(body).
 		Execute(&response)
 	if err != nil {

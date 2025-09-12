@@ -17,7 +17,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*[]postSettingsResponse); ok {
@@ -35,7 +35,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	t.Run("error from API", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Return(errors.New("api error"))
 		apiClient.On("POST", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
@@ -49,7 +49,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	t.Run("response not exactly one entry", func(t *testing.T) {
 		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
+		requestBuilder.On("WithQueryParams", map[string]string{"validateOnly": "false"}).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*[]postSettingsResponse); ok {
