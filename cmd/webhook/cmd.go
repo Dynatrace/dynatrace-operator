@@ -12,6 +12,7 @@ import (
 	dynakubev1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
 	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -171,6 +172,11 @@ func setupDynakubeValidation(webhookManager manager.Manager) error {
 	}
 
 	err = dynakubev1beta4.SetupWebhookWithManager(webhookManager, dkValidator)
+	if err != nil {
+		return err
+	}
+
+	err = dynakubev1beta5.SetupWebhookWithManager(webhookManager, dkValidator)
 	if err != nil {
 		return err
 	}

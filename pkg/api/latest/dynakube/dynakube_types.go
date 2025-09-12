@@ -1,10 +1,10 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
-// +versionName=v1beta5
+// +versionName=v1beta6
 package dynakube
 
 import (
-	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
+	v1beta6 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
@@ -177,5 +177,5 @@ type DynaKubeList struct { //nolint:revive
 }
 
 func init() {
-	v1beta5.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
+	v1beta6.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }

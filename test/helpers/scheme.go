@@ -5,7 +5,7 @@ package helpers
 import (
 	"context"
 
-	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -18,11 +18,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
+	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
 func SetScheme(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 	err := latest.AddToScheme(envConfig.Client().Resources().GetScheme())
+	if err != nil {
+		return ctx, err
+	}
+	err = v1beta5.AddToScheme(envConfig.Client().Resources().GetScheme())
 	if err != nil {
 		return ctx, err
 	}
