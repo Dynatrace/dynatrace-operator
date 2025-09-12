@@ -19,13 +19,18 @@ const (
 	DataIngestToken = "dataIngestToken"
 )
 
-// Client is the main Dynatrace API client that provides access to all API groups
-type Client struct {
+type DtClient interface {
+	Settings() settings.Client
+	Token() token.Client
+}
+
+// dtClient is the main Dynatrace API dtClient that provides access to all API groups
+type dtClient struct {
 
 	// API clients for different groups
-	// activeGateClient *activegate.Client
-	// agentClient      *agent.Client
-	// imagesClient     *images.Client
+	// activeGateClient *activegate.dtClient
+	// agentClient      *agent.dtClient
+	// imagesClient     *images.dtClient
 	SettingsClient settings.Client
 	TokenClient    token.Client
 	baseURL        *url.URL
@@ -42,7 +47,7 @@ type Client struct {
 	hostGroup   string
 }
 
-// Config holds the client configuration
+// Config holds the dtClient configuration
 type Config struct {
 	HTTPClient      *http.Client
 	TLSConfig       *tls.Config
@@ -57,7 +62,7 @@ type Config struct {
 	Timeout         time.Duration
 }
 
-// Option is a functional option for configuring the client
+// Option is a functional option for configuring the dtClient
 type Option func(*Config)
 
 // WithAPIToken sets the API token
@@ -88,7 +93,7 @@ func WithUserAgent(userAgent string) Option {
 	}
 }
 
-// WithHTTPClient sets a custom HTTP client
+// WithHTTPClient sets a custom HTTP dtClient
 func WithHTTPClient(httpClient *http.Client) Option {
 	return func(c *Config) {
 		c.HTTPClient = httpClient
@@ -130,8 +135,8 @@ func WithHostGroup(hostGroup string) Option {
 	}
 }
 
-// NewClient creates a new Dynatrace API client
-func NewClient(baseURL string, options ...Option) (*Client, error) {
+// newClient creates a new Dynatrace API dtClient
+func newClient(baseURL string, options ...Option) (DtClient, error) {
 	config := &Config{
 		BaseURL:   baseURL,
 		UserAgent: "dynatrace-operator/2.0",
@@ -154,7 +159,7 @@ func NewClient(baseURL string, options ...Option) (*Client, error) {
 		parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/") + "/api"
 	}
 
-	// Create HTTP client if not provided
+	// Create HTTP dtClient if not provided
 	var httpClient *http.Client
 	if config.HTTPClient != nil {
 		httpClient = config.HTTPClient
@@ -179,7 +184,7 @@ func NewClient(baseURL string, options ...Option) (*Client, error) {
 		}
 	}
 
-	client := &Client{
+	client := &dtClient{
 		baseURL:         parsedURL,
 		httpClient:      httpClient,
 		userAgent:       config.UserAgent,
@@ -197,7 +202,7 @@ func NewClient(baseURL string, options ...Option) (*Client, error) {
 }
 
 // initAPIClients initializes all the API group clients
-func (c *Client) initAPIClients() {
+func (c *dtClient) initAPIClients() {
 	CoreClient := core.CoreClient{
 		BaseURL:         c.baseURL,
 		HTTPClient:      c.httpClient,
@@ -216,59 +221,37 @@ func (c *Client) initAPIClients() {
 	c.TokenClient = token.NewClient(CoreClient)
 }
 
-// // ActiveGate returns the ActiveGate API client
-// func (c *Client) ActiveGate() *activegate.Client {
+// // ActiveGate returns the ActiveGate API dtClient
+// func (c *dtClient) ActiveGate() *activegate.dtClient {
 // 	return c.activeGateClient
 // }
 
-// // Agent returns the OneAgent API client
-// func (c *Client) Agent() *agent.Client {
+// // Agent returns the OneAgent API dtClient
+// func (c *dtClient) Agent() *agent.dtClient {
 // 	return c.agentClient
 // }
 
-// // Images returns the Images API client
-// func (c *Client) Images() *images.Client {
+// // Images returns the Images API dtClient
+// func (c *dtClient) Images() *images.dtClient {
 // 	return c.imagesClient
 // }
 
-// Settings returns the Settings API client
-func (c *Client) Settings() settings.Client {
+// Settings returns the Settings API dtClient
+func (c *dtClient) Settings() settings.Client {
 	return c.SettingsClient
 }
 
-// Token returns the Token API client
-func (c *Client) Token() token.Client {
+// Token returns the Token API dtClient
+func (c *dtClient) Token() token.Client {
 	return c.TokenClient
 }
 
-// BaseURL returns the base URL of the client
-func (c *Client) BaseURL() *url.URL {
+// BaseURL returns the base URL of the dtClient
+func (c *dtClient) BaseURL() *url.URL {
 	return c.baseURL
 }
 
-// HTTPClient returns the underlying HTTP client
-func (c *Client) HTTPClient() *http.Client {
+// HTTPClient returns the underlying HTTP dtClient
+func (c *dtClient) HTTPClient() *http.Client {
 	return c.httpClient
 }
-
-// // DoRequest performs an HTTP request with proper authentication
-// func (c *Client) DoRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
-// 	return c.DoRequestWithToken(ctx, method, path, body, c.apiToken)
-// }
-
-// // DoRequestWithToken performs an HTTP request with a specific token
-// func (c *Client) DoRequestWithToken(ctx context.Context, method, path string, body interface{}, token string) (*http.Response, error) {
-// 	fullURL := c.baseURL.ResolveReference(&url.URL{Path: path})
-
-// 	req, err := http.NewRequestWithContext(ctx, method, fullURL.String(), nil)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to create request: %w", err)
-// 	}
-
-// 	// Set headers
-// 	req.Header.Set("User-Agent", c.userAgent)
-// 	req.Header.Set("Authorization", "Api-Token "+token)
-// 	req.Header.Set("Content-Type", "application/json")
-
-// 	return c.httpClient.Do(req)
-// }

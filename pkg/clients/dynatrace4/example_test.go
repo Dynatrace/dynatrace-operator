@@ -16,7 +16,7 @@ func TestDynatraceClient(t *testing.T) {
 	paasToken := "DT_PAAS_TOKEN_PLACEHOLDER"
 	dataIngestToken := "DT_DATA_INGEST_TOKEN_PLACEHOLDER"
 
-	client, err := NewClient(
+	client, err := newClient(
 		baseURL,
 		WithAPIToken(apiToken),
 		WithPaasToken(paasToken),
@@ -38,7 +38,7 @@ func TestDynatraceClient(t *testing.T) {
 	t.Run("GetTokenScopes but with a mock", func(t *testing.T) {
 		tMock := tokenMock.NewClient(t)
 		tMock.On("GetTokenScopes", t.Context(), apiToken).Return(token.TokenScopes{"sldkfj", "slkdfjlkj"}, nil)
-		client := &Client{
+		client := &dtClient{
 			TokenClient: tMock,
 		}
 
