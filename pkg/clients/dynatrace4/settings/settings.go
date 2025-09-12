@@ -75,8 +75,7 @@ func (dtc *client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (
 
 	var response getSettingsForKubeSystemUUIDResponse
 
-	err := dtc.apiClient.GET(ObjectsPath).
-		WithContext(ctx).
+	err := dtc.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
 			validateOnlyQueryParam: trueQueryParamValue,
 			pageSizeQueryParam:     entitiesPageSize,
@@ -110,8 +109,7 @@ func (dtc *client) GetK8sClusterMEDeleteThisMethod(ctx context.Context, kubeSyst
 
 	var response getSettingsForKubeSystemUUIDResponse
 
-	err := dtc.apiClient.GET(ObjectsPath).
-		WithContext(ctx).
+	err := dtc.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
 			validateOnlyQueryParam: trueQueryParamValue,
 			pageSizeQueryParam:     entitiesPageSize,
@@ -145,8 +143,7 @@ func (dtc *client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredE
 
 	var response GetSettingsResponse
 
-	err := dtc.apiClient.GET(ObjectsPath).
-		WithContext(ctx).
+	err := dtc.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
 			validateOnlyQueryParam: trueQueryParamValue,
 			schemaIDsQueryParam:    schemaID,
@@ -169,8 +166,7 @@ func (dtc *client) GetSettingsForLogModule(ctx context.Context, monitoredEntity 
 
 	var response GetLogMonSettingsResponse
 
-	err := dtc.apiClient.GET(ObjectsPath).
-		WithContext(ctx).
+	err := dtc.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
 			validateOnlyQueryParam: trueQueryParamValue,
 			schemaIDsQueryParam:    logMonitoringSettingsSchemaID,

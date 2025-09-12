@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -9,10 +10,10 @@ import (
 
 // APIClient defines the behavior required from a config provider and is mockable.
 type APIClient interface {
-	GET(path string) RequestBuilder
-	POST(path string) RequestBuilder
-	PUT(path string) RequestBuilder
-	DELETE(path string) RequestBuilder
+	GET(ctx context.Context, path string) RequestBuilder
+	POST(ctx context.Context, path string) RequestBuilder
+	PUT(ctx context.Context, path string) RequestBuilder
+	DELETE(ctx context.Context, path string) RequestBuilder
 }
 
 // CommonConfig holds shared configuration for all API clients
@@ -37,7 +38,7 @@ const (
 )
 
 // GetToken returns the appropriate token based on the token type
-func (c *CommonConfig) GetToken(tokenType TokenType) string {
+func (c CommonConfig) GetToken(tokenType TokenType) string {
 	switch tokenType {
 	case TokenTypePaaS:
 		return c.PaasToken
@@ -48,7 +49,7 @@ func (c *CommonConfig) GetToken(tokenType TokenType) string {
 	}
 }
 
-func (c *CommonConfig) BuildURL(subPath string, queryParams map[string]string) (*url.URL, error) {
+func (c CommonConfig) BuildURL(subPath string, queryParams map[string]string) (*url.URL, error) {
 	if c.BaseURL == nil {
 		return nil, errors.New("base URL is not set")
 	}
@@ -67,6 +68,26 @@ func (c *CommonConfig) BuildURL(subPath string, queryParams map[string]string) (
 	}
 
 	return &u, nil
+}
+
+// GET creates a GET request builder
+func (c CommonConfig) GET(ctx context.Context, path string) RequestBuilder {
+	return newRequest(ctx, c).WithMethod(http.MethodGet).WithPath(path)
+}
+
+// POST creates a POST request builder
+func (c CommonConfig) POST(ctx context.Context, path string) RequestBuilder {
+	return newRequest(ctx, c).WithMethod(http.MethodPost).WithPath(path)
+}
+
+// PUT creates a PUT request builder
+func (c CommonConfig) PUT(ctx context.Context, path string) RequestBuilder {
+	return newRequest(ctx, c).WithMethod(http.MethodPut).WithPath(path)
+}
+
+// DELETE creates a DELETE request builder
+func (c CommonConfig) DELETE(ctx context.Context, path string) RequestBuilder {
+	return newRequest(ctx, c).WithMethod(http.MethodDelete).WithPath(path)
 }
 
 // CommunicationHost represents a communication endpoint

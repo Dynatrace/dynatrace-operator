@@ -5,8 +5,6 @@
 package mocks
 
 import (
-	"context"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace4/core"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -140,59 +138,6 @@ func (_c *RequestBuilder_ExecuteRaw_Call) Return(bytes []byte, err error) *Reque
 }
 
 func (_c *RequestBuilder_ExecuteRaw_Call) RunAndReturn(run func() ([]byte, error)) *RequestBuilder_ExecuteRaw_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// WithContext provides a mock function for the type RequestBuilder
-func (_mock *RequestBuilder) WithContext(ctx context.Context) core.RequestBuilder {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithContext")
-	}
-
-	var r0 core.RequestBuilder
-	if returnFunc, ok := ret.Get(0).(func(context.Context) core.RequestBuilder); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.RequestBuilder)
-		}
-	}
-	return r0
-}
-
-// RequestBuilder_WithContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithContext'
-type RequestBuilder_WithContext_Call struct {
-	*mock.Call
-}
-
-// WithContext is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *RequestBuilder_Expecter) WithContext(ctx interface{}) *RequestBuilder_WithContext_Call {
-	return &RequestBuilder_WithContext_Call{Call: _e.mock.On("WithContext", ctx)}
-}
-
-func (_c *RequestBuilder_WithContext_Call) Run(run func(ctx context.Context)) *RequestBuilder_WithContext_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *RequestBuilder_WithContext_Call) Return(requestBuilder core.RequestBuilder) *RequestBuilder_WithContext_Call {
-	_c.Call.Return(requestBuilder)
-	return _c
-}
-
-func (_c *RequestBuilder_WithContext_Call) RunAndReturn(run func(ctx context.Context) core.RequestBuilder) *RequestBuilder_WithContext_Call {
 	_c.Call.Return(run)
 	return _c
 }

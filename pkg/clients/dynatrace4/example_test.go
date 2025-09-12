@@ -72,5 +72,4 @@ func TestDynatraceClient(t *testing.T) {
 			t.Logf("K8s cluster metadata: %v", clusterSettings)
 		}
 	})
-
 }

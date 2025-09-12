@@ -51,8 +51,7 @@ func (dtc *client) CreateLogMonitoringSetting(ctx context.Context, scope, cluste
 func (dtc *client) performCreateLogMonSetting(ctx context.Context, body []posLogMonSettingsBody) (string, error) {
 	var response []postSettingsResponse
 
-	err := dtc.apiClient.POST(ObjectsPath).
-		WithContext(ctx).
+	err := dtc.apiClient.POST(ctx, ObjectsPath).
 		WithQueryParam(validateOnlyQueryParam, "false").
 		WithJSONBody(body).
 		Execute(&response)

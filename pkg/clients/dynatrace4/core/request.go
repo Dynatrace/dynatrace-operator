@@ -14,7 +14,6 @@ import (
 const APITokenHeader = "Api-Token "
 
 type RequestBuilder interface {
-	WithContext(ctx context.Context) RequestBuilder
 	WithMethod(method string) RequestBuilder
 	WithPath(path string) RequestBuilder
 	WithQueryParam(key, value string) RequestBuilder
@@ -38,20 +37,14 @@ type requestBuilder struct {
 	body        []byte
 }
 
-// NewRequest creates a new RequestBuilder instance
-func NewRequest(config CommonConfig) RequestBuilder {
+// newRequest creates a new RequestBuilder instance
+func newRequest(ctx context.Context, config CommonConfig) RequestBuilder {
 	return &requestBuilder{
+		ctx:         ctx,
 		config:      config,
 		queryParams: make(map[string]string),
 		tokenType:   TokenTypeAPI,
 	}
-}
-
-// WithContext sets the context for the request
-func (rb *requestBuilder) WithContext(ctx context.Context) RequestBuilder {
-	rb.ctx = ctx
-
-	return rb
 }
 
 // WithMethod sets the HTTP method for the request
@@ -231,24 +224,4 @@ func (rb *requestBuilder) handleResponse(resp *http.Response, target interface{}
 	}
 
 	return nil
-}
-
-// GET creates a GET request builder
-func (c CommonConfig) GET(path string) RequestBuilder {
-	return NewRequest(c).WithMethod(http.MethodGet).WithPath(path)
-}
-
-// POST creates a POST request builder
-func (c CommonConfig) POST(path string) RequestBuilder {
-	return NewRequest(c).WithMethod(http.MethodPost).WithPath(path)
-}
-
-// PUT creates a PUT request builder
-func (c CommonConfig) PUT(path string) RequestBuilder {
-	return NewRequest(c).WithMethod(http.MethodPut).WithPath(path)
-}
-
-// DELETE creates a DELETE request builder
-func (c CommonConfig) DELETE(path string) RequestBuilder {
-	return NewRequest(c).WithMethod(http.MethodDelete).WithPath(path)
 }

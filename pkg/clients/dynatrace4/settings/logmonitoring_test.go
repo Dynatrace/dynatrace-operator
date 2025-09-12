@@ -15,9 +15,8 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
@@ -25,7 +24,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 				*target = []postSettingsResponse{{ObjectID: "obj-123"}}
 			}
 		}).Return(nil)
-		apiClient.On("POST", "/v2/settings/objects").Return(requestBuilder)
+		apiClient.On("POST", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
 
 		client := &client{apiClient: apiClient}
 		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
@@ -34,13 +33,12 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Return(errors.New("api error"))
-		apiClient.On("POST", "/v2/settings/objects").Return(requestBuilder)
+		apiClient.On("POST", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
 
 		client := &client{apiClient: apiClient}
 		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
@@ -49,9 +47,8 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 	})
 
 	t.Run("response not exactly one entry", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParam", "validateOnly", "false").Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
@@ -59,7 +56,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 				*target = []postSettingsResponse{} // empty response
 			}
 		}).Return(nil)
-		apiClient.On("POST", "/v2/settings/objects").Return(requestBuilder)
+		apiClient.On("POST", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
 
 		client := &client{apiClient: apiClient}
 		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)

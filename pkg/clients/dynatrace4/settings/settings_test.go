@@ -15,9 +15,8 @@ func TestGetK8sClusterME(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParams", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*getSettingsForKubeSystemUUIDResponse); ok {
@@ -26,7 +25,7 @@ func TestGetK8sClusterME(t *testing.T) {
 				}
 			}
 		}).Return(nil)
-		apiClient.On("GET", "/v2/settings/objects").Return(requestBuilder)
+		apiClient.On("GET", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")
@@ -35,12 +34,11 @@ func TestGetK8sClusterME(t *testing.T) {
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParams", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Return(errors.New("api error"))
-		apiClient.On("GET", "/v2/settings/objects").Return(requestBuilder)
+		apiClient.On("GET", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")
@@ -49,7 +47,7 @@ func TestGetK8sClusterME(t *testing.T) {
 	})
 
 	t.Run("empty kubeSystemUUID", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "")
 		require.Error(t, err)
@@ -57,16 +55,15 @@ func TestGetK8sClusterME(t *testing.T) {
 	})
 
 	t.Run("no settings returned", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParams", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*getSettingsForKubeSystemUUIDResponse); ok {
 				*target = getSettingsForKubeSystemUUIDResponse{Settings: []kubernetesSetting{}}
 			}
 		}).Return(nil)
-		apiClient.On("GET", "/v2/settings/objects").Return(requestBuilder)
+		apiClient.On("GET", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
 
 		client := NewClient(apiClient)
 		me, err := client.GetK8sClusterME(ctx, "uuid-1")
@@ -79,16 +76,15 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParams", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*GetSettingsResponse); ok {
 				*target = GetSettingsResponse{TotalCount: 2}
 			}
 		}).Return(nil)
-		apiClient.On("GET", "/v2/settings/objects").Return(requestBuilder)
+		apiClient.On("GET", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
 
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{ID: "entity-1"}, "schema-1")
@@ -97,7 +93,7 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 	})
 
 	t.Run("empty monitoredEntity.ID", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{}, "schema-1")
 		require.NoError(t, err)
@@ -109,16 +105,15 @@ func TestGetSettingsForLogModule(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParams", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*GetLogMonSettingsResponse); ok {
 				*target = GetLogMonSettingsResponse{TotalCount: 3}
 			}
 		}).Return(nil)
-		apiClient.On("GET", "/v2/settings/objects").Return(requestBuilder)
+		apiClient.On("GET", mock.Anything, "/v2/settings/objects").Return(requestBuilder)
 
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForLogModule(ctx, "entity-1")
@@ -127,7 +122,7 @@ func TestGetSettingsForLogModule(t *testing.T) {
 	})
 
 	t.Run("empty monitoredEntity", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForLogModule(ctx, "")
 		require.NoError(t, err)

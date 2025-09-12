@@ -2,14 +2,12 @@ package core
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"testing"
 )
 
@@ -28,58 +26,52 @@ func newTestConfig(base string) CommonConfig {
 
 func TestRequestBuilder_BuilderMethods(t *testing.T) {
 	config := newTestConfig("http://localhost")
-	rb := NewRequest(config).(*requestBuilder)
-	ctx := context.Background()
-
-	rb2 := rb.WithContext(ctx).(*requestBuilder)
-	if rb2.ctx != ctx {
-		t.Errorf("WithContext failed")
-	}
+	rb := newRequest(t.Context(), config).(*requestBuilder)
 
 	method := "POST"
-	if rb2.WithMethod(method).(*requestBuilder).method != method {
+	if rb.WithMethod(method).(*requestBuilder).method != method {
 		t.Errorf("WithMethod failed")
 	}
 
 	path := "/test"
-	if rb2.WithPath(path).(*requestBuilder).path != path {
+	if rb.WithPath(path).(*requestBuilder).path != path {
 		t.Errorf("WithPath failed")
 	}
 
 	key, value := "foo", "bar"
-	if rb2.WithQueryParam(key, value).(*requestBuilder).queryParams[key] != value {
+	if rb.WithQueryParam(key, value).(*requestBuilder).queryParams[key] != value {
 		t.Errorf("WithQueryParam failed")
 	}
 
 	params := map[string]string{"a": "1", "b": "2"}
-	rb2.WithQueryParams(params)
+	rb.WithQueryParams(params)
 	for k, v := range params {
-		if rb2.queryParams[k] != v {
+		if rb.queryParams[k] != v {
 			t.Errorf("WithQueryParams failed for %s", k)
 		}
 	}
 
 	body := map[string]string{"x": "y"}
-	rb2.WithJSONBody(body)
+	rb.WithJSONBody(body)
 	var out map[string]string
-	json.Unmarshal(rb2.body, &out)
+	json.Unmarshal(rb.body, &out)
 	if out["x"] != "y" {
 		t.Errorf("WithJSONBody failed")
 	}
 
 	raw := []byte("raw-body")
-	rb2.WithRawBody(raw)
-	if !bytes.Equal(rb2.body, raw) {
+	rb.WithRawBody(raw)
+	if !bytes.Equal(rb.body, raw) {
 		t.Errorf("WithRawBody failed")
 	}
 
-	rb2.WithTokenType(TokenTypePaaS)
-	if rb2.tokenType != TokenTypePaaS {
+	rb.WithTokenType(TokenTypePaaS)
+	if rb.tokenType != TokenTypePaaS {
 		t.Errorf("WithTokenType failed")
 	}
 
-	rb2.WithPaasToken()
-	if rb2.tokenType != TokenTypePaaS {
+	rb.WithPaasToken()
+	if rb.tokenType != TokenTypePaaS {
 		t.Errorf("WithPaasToken failed")
 	}
 }
@@ -101,8 +93,7 @@ func TestRequestBuilder_Execute_Success(t *testing.T) {
 	}
 
 	target := struct{ Foo string }{}
-	err := NewRequest(config).
-		WithContext(context.Background()).
+	err := newRequest(t.Context(), config).
 		WithMethod("GET").
 		WithPath("").
 		Execute(&target)
@@ -130,8 +121,7 @@ func TestRequestBuilder_ExecuteRaw_Success(t *testing.T) {
 		APIToken:   "api-token",
 	}
 
-	body, err := NewRequest(config).
-		WithContext(context.Background()).
+	body, err := newRequest(t.Context(), config).
 		WithMethod("GET").
 		WithPath("").
 		ExecuteRaw()
@@ -159,7 +149,7 @@ func TestRequestBuilder_Execute_Error(t *testing.T) {
 	}
 
 	target := struct{}{}
-	err := NewRequest(config).WithMethod("GET").WithPath("").Execute(&target)
+	err := newRequest(t.Context(), config).WithMethod("GET").WithPath("").Execute(&target)
 	if err == nil {
 		t.Fatalf("Expected error, got nil")
 	}
@@ -183,7 +173,7 @@ func TestRequestBuilder_ExecuteRaw_Error(t *testing.T) {
 		APIToken:   "api-token",
 	}
 
-	_, err := NewRequest(config).WithMethod("GET").WithPath("").ExecuteRaw()
+	_, err := newRequest(t.Context(), config).WithMethod("GET").WithPath("").ExecuteRaw()
 	if err == nil {
 		t.Fatalf("Expected error, got nil")
 	}
@@ -191,7 +181,7 @@ func TestRequestBuilder_ExecuteRaw_Error(t *testing.T) {
 
 func TestRequestBuilder_setHeaders(t *testing.T) {
 	config := newTestConfig("http://localhost")
-	rb := NewRequest(config).(*requestBuilder)
+	rb := newRequest(t.Context(), config).(*requestBuilder)
 	rb.method = http.MethodPost
 	req, _ := http.NewRequest(http.MethodPost, "http://localhost", nil)
 	rb.setHeaders(req)
@@ -208,7 +198,7 @@ func TestRequestBuilder_setHeaders(t *testing.T) {
 
 func TestRequestBuilder_handleResponse_UnmarshalError(t *testing.T) {
 	config := newTestConfig("http://localhost")
-	rb := NewRequest(config).(*requestBuilder)
+	rb := newRequest(t.Context(), config).(*requestBuilder)
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
 		Body:       io.NopCloser(bytes.NewReader([]byte("not-json"))),
@@ -217,21 +207,5 @@ func TestRequestBuilder_handleResponse_UnmarshalError(t *testing.T) {
 	err := rb.handleResponse(resp, &target)
 	if err == nil {
 		t.Errorf("Expected unmarshal error, got nil")
-	}
-}
-
-func TestCommonConfig_GET_POST_PUT_DELETE(t *testing.T) {
-	config := newTestConfig("http://localhost")
-	if reflect.TypeOf(config.GET("/foo")).String() != "*core.requestBuilder" {
-		t.Errorf("GET did not return requestBuilder")
-	}
-	if reflect.TypeOf(config.POST("/foo")).String() != "*core.requestBuilder" {
-		t.Errorf("POST did not return requestBuilder")
-	}
-	if reflect.TypeOf(config.PUT("/foo")).String() != "*core.requestBuilder" {
-		t.Errorf("PUT did not return requestBuilder")
-	}
-	if reflect.TypeOf(config.DELETE("/foo")).String() != "*core.requestBuilder" {
-		t.Errorf("DELETE did not return requestBuilder")
 	}
 }

@@ -302,8 +302,8 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	controller.tokens = tokens
 
 	dynatraceClientBuilder := controller.dynatraceClientBuilder. // TODO, use the new client builder
-		SetDynakube(*dk).
-		SetTokens(tokens)
+									SetDynakube(*dk).
+									SetTokens(tokens)
 
 	dynatraceClient, err := dynatraceClientBuilder.Build(ctx)
 	if err != nil {

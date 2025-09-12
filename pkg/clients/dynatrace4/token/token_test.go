@@ -15,10 +15,9 @@ func TestGetTokenScopes(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("happy path", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
 		expectedScopes := []string{"scope1", "scope2"}
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			// Use type assertion to the anonymous struct type
@@ -28,7 +27,7 @@ func TestGetTokenScopes(t *testing.T) {
 				target.Scopes = expectedScopes
 			}
 		}).Return(nil)
-		apiClient.On("POST", mock.Anything).Return(requestBuilder)
+		apiClient.On("POST", mock.Anything, mock.Anything).Return(requestBuilder)
 
 		client := &client{apiClient: apiClient}
 		scopes, err := client.GetTokenScopes(ctx, "sometoken")
@@ -37,12 +36,11 @@ func TestGetTokenScopes(t *testing.T) {
 	})
 
 	t.Run("error from API", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Return(errors.New("api error"))
-		apiClient.On("POST", mock.Anything).Return(requestBuilder)
+		apiClient.On("POST", mock.Anything, mock.Anything).Return(requestBuilder)
 
 		client := &client{apiClient: apiClient}
 		scopes, err := client.GetTokenScopes(ctx, "sometoken")
@@ -51,7 +49,7 @@ func TestGetTokenScopes(t *testing.T) {
 	})
 
 	t.Run("empty token", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		client := &client{apiClient: apiClient}
 		scopes, err := client.GetTokenScopes(ctx, "")
 		require.NoError(t, err)
@@ -59,9 +57,8 @@ func TestGetTokenScopes(t *testing.T) {
 	})
 
 	t.Run("empty scopes returned", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithJSONBody", mock.Anything).Return(requestBuilder)
 		requestBuilder.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
 			if target, ok := args[0].(*struct {
@@ -70,7 +67,7 @@ func TestGetTokenScopes(t *testing.T) {
 				target.Scopes = []string{}
 			}
 		}).Return(nil)
-		apiClient.On("POST", mock.Anything).Return(requestBuilder)
+		apiClient.On("POST", mock.Anything, mock.Anything).Return(requestBuilder)
 
 		client := &client{apiClient: apiClient}
 		scopes, err := client.GetTokenScopes(ctx, "sometoken")

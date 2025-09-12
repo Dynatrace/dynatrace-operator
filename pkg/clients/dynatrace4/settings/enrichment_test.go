@@ -18,10 +18,9 @@ func TestGetRulesSetting(t *testing.T) {
 	// Just test that query parameters are set correctly and the response/error is handled as expected.
 
 	t.Run("get rules", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
 		// Verify that the required query parameters are set correctly
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParams", map[string]string{
 			"validateOnly": "true",
 			"schemaIds":    "builtin:kubernetes.generic.metadata.enrichment",
@@ -34,7 +33,7 @@ func TestGetRulesSetting(t *testing.T) {
 				*target = buildSampleResponse()
 			}
 		}).Return(nil)
-		apiClient.On("GET", "/v2/settings/effectiveValues").Return(requestBuilder)
+		apiClient.On("GET", mock.Anything, "/v2/settings/effectiveValues").Return(requestBuilder)
 
 		client := NewClient(apiClient)
 		rules, err := client.GetRulesSettings(ctx, "kube-system-uuid", "ENVIRONMENT_ID")
@@ -44,7 +43,7 @@ func TestGetRulesSetting(t *testing.T) {
 	})
 
 	t.Run("no kubesystem-uuid -> error", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		client := NewClient(apiClient)
 		rules, err := client.GetRulesSettings(ctx, "", "test-entityID")
 		require.Error(t, err)
@@ -52,10 +51,9 @@ func TestGetRulesSetting(t *testing.T) {
 	})
 
 	t.Run("no monitored-entities, use environment scope -> return not-empty, no error", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
 		// Should use globalScope ("environment") for scope
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParams", map[string]string{
 			"validateOnly": "true",
 			"schemaIds":    "builtin:kubernetes.generic.metadata.enrichment",
@@ -67,7 +65,7 @@ func TestGetRulesSetting(t *testing.T) {
 				*target = buildSampleResponse()
 			}
 		}).Return(nil)
-		apiClient.On("GET", "/v2/settings/effectiveValues").Return(requestBuilder)
+		apiClient.On("GET", mock.Anything, "/v2/settings/effectiveValues").Return(requestBuilder)
 
 		client := NewClient(apiClient)
 		rules, err := client.GetRulesSettings(ctx, "kube-system-uuid", "")
@@ -77,11 +75,10 @@ func TestGetRulesSetting(t *testing.T) {
 	})
 
 	t.Run("enrichment settings schema not available", func(t *testing.T) {
-		apiClient := coreMock.NewApiClient(t)
+		apiClient := coreMock.NewAPIClient(t)
 		requestBuilder := coreMock.NewRequestBuilder(t)
 
 		// Simulate a 404 error with the schema ID in the response body
-		requestBuilder.On("WithContext", ctx).Return(requestBuilder)
 		requestBuilder.On("WithQueryParams", map[string]string{
 			"validateOnly": "true",
 			"schemaIds":    "builtin:kubernetes.generic.metadata.enrichment",
@@ -94,7 +91,7 @@ func TestGetRulesSetting(t *testing.T) {
 		}
 		requestBuilder.On("Execute", mock.Anything).Return(httpErr)
 
-		apiClient.On("GET", "/v2/settings/effectiveValues").Return(requestBuilder)
+		apiClient.On("GET", mock.Anything, "/v2/settings/effectiveValues").Return(requestBuilder)
 
 		client := NewClient(apiClient)
 		rules, err := client.GetRulesSettings(ctx, "kube-system-uuid", "")

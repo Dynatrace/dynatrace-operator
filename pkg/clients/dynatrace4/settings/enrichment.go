@@ -42,8 +42,7 @@ func (dtc *client) GetRulesSettings(ctx context.Context, kubeSystemUUID string, 
 
 	var response GetRulesSettingsResponse
 
-	err := dtc.apiClient.GET(EffectiveValuesPath).
-		WithContext(ctx).
+	err := dtc.apiClient.GET(ctx, EffectiveValuesPath).
 		WithQueryParams(map[string]string{
 			validateOnlyQueryParam: trueQueryParamValue,
 			schemaIDsQueryParam:    MetadataEnrichmentSettingsSchemaID,

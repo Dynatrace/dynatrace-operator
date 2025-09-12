@@ -86,8 +86,7 @@ func (dtc *client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope
 func (dtc *client) performCreateOrUpdateKubernetesSetting(ctx context.Context, body []postKubernetesSettingsBody) (string, error) {
 	var response []postSettingsResponse
 
-	err := dtc.apiClient.POST(ObjectsPath).
-		WithContext(ctx).
+	err := dtc.apiClient.POST(ctx, ObjectsPath).
 		WithQueryParam("validateOnly", "false").
 		WithJSONBody(body).
 		Execute(&response)

@@ -34,8 +34,7 @@ func (c *client) GetTokenScopes(ctx context.Context, token string) (TokenScopes,
 		Scopes []string `json:"scopes"`
 	}
 
-	err := c.apiClient.POST(APITokenPath).
-		WithContext(ctx).
+	err := c.apiClient.POST(ctx, APITokenPath).
 		WithJSONBody(body).
 		Execute(&resp)
 	if err != nil {
