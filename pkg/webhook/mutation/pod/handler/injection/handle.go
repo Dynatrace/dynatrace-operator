@@ -2,6 +2,7 @@ package injection
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
@@ -25,7 +26,7 @@ type Handler struct {
 	isOpenShift     bool
 }
 
-func New(
+func New( //nolint:revive
 	kubeClient client.Client,
 	apiReader client.Reader,
 	recorder events.EventRecorder,
