@@ -57,6 +57,16 @@ func (wh *webhook) handle(mutationRequest *dtwebhook.MutationRequest) error {
 	return nil
 }
 
+func (wh *webhook) handleOtlp(mutationRequest *dtwebhook.MutationRequest) error {
+	err := wh.otlpMutator.Mutate(mutationRequest)
+	if err != nil {
+		log.Error(err, "failed to inject OTLP config", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+		return err
+	}
+	log.Info("OTLP injection finished for pod", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+	return nil
+}
+
 func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 	installContainer := container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
 	if installContainer != nil {
@@ -90,13 +100,6 @@ func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest)
 
 		mutated = true
 	}
-
-	// TODO move otlp injection into separate webhook implementation
-	err := wh.otlpMutator.Mutate(mutationRequest)
-	if err != nil {
-		return false, err
-	}
-	mutated = true
 
 	if mutated {
 		_, err := addContainerAttributes(mutationRequest)

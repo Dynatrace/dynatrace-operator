@@ -86,6 +86,11 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
 
+	err = wh.handleOtlp(mutationRequest)
+	if err != nil {
+		return silentErrorResponse(mutationRequest.Pod, err)
+	}
+
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
 	return createResponseForPod(mutationRequest.Pod, request)

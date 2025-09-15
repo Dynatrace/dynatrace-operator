@@ -396,6 +396,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
+	// TODO add the otlp secret reconciler here, pass token from controller.token, so we do not have to retrieve the token again
+
 	log.Info("start reconciling OneAgent")
 
 	err = controller.oneAgentReconcilerBuilder(
