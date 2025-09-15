@@ -1,4 +1,4 @@
-package pod
+package injection
 
 import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
@@ -15,7 +15,7 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func (wh *webhook) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
 	args := []arg.Arg{
 		{
 			Name:  configure.ConfigFolderFlag,
@@ -33,9 +33,9 @@ func (wh *webhook) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube
 
 	initContainer := &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
-		Image:           wh.webhookPodImage,
+		Image:           h.webhookPodImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		SecurityContext: securityContextForInitContainer(pod, dk, wh.isOpenShift),
+		SecurityContext: securityContextForInitContainer(pod, dk, h.isOpenShift),
 		Resources:       defaultInitContainerResources(),
 		Args:            []string{bootstrapper.Use},
 	}

@@ -1,6 +1,11 @@
-package pod
+package injection
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
+	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
@@ -20,8 +25,17 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+const (
+	testWebhookImage        = "test-wh-image"
+	testNamespaceName       = "test-namespace"
+	testClusterID           = "test-cluster-id"
+	testPodName             = "test-pod"
+	testDynakubeName        = "test-dynakube"
+	testUser          int64 = 420
+)
+
 func TestCreateInitContainerBase(t *testing.T) {
-	wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t))
+	wh := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
 
 	t.Run("should create the init container with set container sec ctx but without user and group", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -179,6 +193,22 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
 	})
+}
+
+func createTestHandler(oaMut, metaMut dtwebhook.Mutator, objects ...client.Object) *Handler {
+	fakeClient := fake.NewClient(objects...)
+
+	handler := New(
+		fakeClient,
+		fakeClient,
+		events.NewRecorder(record.NewFakeRecorder(10)),
+		testWebhookImage,
+		false,
+		metaMut,
+		oaMut,
+	)
+
+	return handler
 }
 
 func TestAddInitContainerToPod(t *testing.T) {
@@ -533,4 +563,67 @@ func Test_isNonRoot(t *testing.T) {
 	t.Run("nil context", func(t *testing.T) {
 		assert.True(t, isNonRoot(nil))
 	})
+}
+
+func getTestDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		ObjectMeta: getTestDynakubeMeta(),
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: getCloudNativeSpec(),
+		},
+	}
+}
+
+func getTestDynakubeMeta() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      testDynakubeName,
+		Namespace: testNamespaceName,
+	}
+}
+
+func getCloudNativeSpec() oneagent.Spec {
+	return oneagent.Spec{
+		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+			AppInjectionSpec: oneagent.AppInjectionSpec{},
+		},
+	}
+}
+
+func getTestPod() *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testPodName,
+			Namespace: testNamespaceName,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:            "container",
+					Image:           "alpine",
+					SecurityContext: getTestSecurityContext(),
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:  "init-container",
+					Image: "alpine",
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTestSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		RunAsUser:  ptr.To(testUser),
+		RunAsGroup: ptr.To(testUser),
+	}
 }

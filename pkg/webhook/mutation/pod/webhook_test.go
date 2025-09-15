@@ -2,6 +2,7 @@ package pod
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -210,8 +211,15 @@ func createTestWebhook(t *testing.T, oaMut, metaMut podwebhook.Mutator, objects 
 
 	require.NoError(t, err)
 
-	wh.oaMutator = oaMut
-	wh.metaMutator = metaMut
+	wh.injectionHandler = injection.New(
+		fakeClient,
+		fakeClient,
+		wh.recorder,
+		wh.webhookPodImage,
+		false,
+		metaMut,
+		oaMut,
+	)
 
 	return wh
 }

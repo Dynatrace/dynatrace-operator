@@ -2,6 +2,9 @@ package pod
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
@@ -10,8 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -81,8 +82,15 @@ func newWebhook( //nolint:revive
 	}
 
 	return &webhook{
-		oaMutator:        oneagent.NewMutator(),
-		metaMutator:      metadata.NewMutator(metaClient),
+		injectionHandler: injection.New(
+			kubeClient,
+			apiReader,
+			eventRecorder,
+			webhookPodImage,
+			isOpenshift,
+			metadata.NewMutator(metaClient),
+			oneagent.NewMutator(),
+		),
 		kubeClient:       kubeClient,
 		apiReader:        apiReader,
 		recorder:         eventRecorder,

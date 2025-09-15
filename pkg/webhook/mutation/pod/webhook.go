@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -15,6 +17,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+var (
+	log = logd.Get().WithName("pod-mutation")
 )
 
 const (
@@ -38,9 +44,9 @@ func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, is
 }
 
 type webhook struct {
-	recorder    events.EventRecorder
-	metaMutator dtwebhook.Mutator
-	oaMutator   dtwebhook.Mutator
+	recorder events.EventRecorder
+
+	injectionHandler handler.Handler
 
 	decoder admission.Decoder
 
@@ -79,7 +85,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	wh.recorder.Setup(mutationRequest)
 
-	err = wh.handle(mutationRequest)
+	err = wh.injectionHandler.Handle(mutationRequest)
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
