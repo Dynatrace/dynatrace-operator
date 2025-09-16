@@ -105,7 +105,7 @@ func TestWebhook(t *testing.T) {
 					Containers: []corev1.Container{
 						{
 							Name:  dtwebhook.WebhookContainerName,
-							Image: "webhook:1.0.0",
+							Image: "dummy-webhook-img:1.0.0",
 						},
 					},
 				},

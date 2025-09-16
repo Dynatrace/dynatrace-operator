@@ -35,23 +35,9 @@ var (
 )
 
 func SetupTestEnvironment(t *testing.T) client.Client {
-	// specify test environment configuration
-	testEnv = &envtest.Environment{
-		Scheme:                   scheme.Scheme,
-		CRDDirectoryPaths:        []string{filepath.Join(projectpath.Root, "config", "crd", "bases")},
-		ErrorIfCRDPathMissing:    true,
-		AttachControlPlaneOutput: true,
-	}
+	setupBaseTestEnv(t)
 
-	// Retrieve the first found binary directory to allow running tests from IDEs
-	if getFirstFoundEnvTestBinaryDir() != "" {
-		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
-	}
-
-	// TODO: refactor and reuse from e2e tests or another place
-	if err := addScheme(testEnv); err != nil {
-		t.Fatal(err)
-	}
+	testEnv.AttachControlPlaneOutput = true
 
 	// start test environment
 	cfg, err := testEnv.Start()
@@ -68,23 +54,9 @@ func SetupTestEnvironment(t *testing.T) client.Client {
 }
 
 func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookInstallOptions, webhookSetup func(ctrl.Manager) error) client.Client {
-	// specify test environment configuration
-	testEnv = &envtest.Environment{
-		Scheme:                scheme.Scheme,
-		CRDDirectoryPaths:     []string{filepath.Join(projectpath.Root, "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
-		WebhookInstallOptions: webhookOptions,
-	}
+	setupBaseTestEnv(t)
 
-	// Retrieve the first found binary directory to allow running tests from IDEs
-	if getFirstFoundEnvTestBinaryDir() != "" {
-		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
-	}
-
-	// TODO: refactor and reuse from e2e tests or another place
-	if err := addScheme(testEnv); err != nil {
-		t.Fatal(err, "setup scheme")
-	}
+	testEnv.WebhookInstallOptions = webhookOptions
 
 	// start test environment
 	cfg, err := testEnv.Start()
@@ -160,6 +132,27 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 	}
 
 	return clt
+}
+
+func setupBaseTestEnv(t *testing.T) {
+	t.Helper()
+
+	// specify test environment configuration
+	testEnv = &envtest.Environment{
+		Scheme:                scheme.Scheme,
+		CRDDirectoryPaths:     []string{filepath.Join(projectpath.Root, "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: true,
+	}
+
+	// Retrieve the first found binary directory to allow running tests from IDEs
+	if getFirstFoundEnvTestBinaryDir() != "" {
+		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
+	}
+
+	// TODO: refactor and reuse from e2e tests or another place
+	if err := addScheme(testEnv); err != nil {
+		t.Fatal(err)
+	}
 }
 
 // getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
