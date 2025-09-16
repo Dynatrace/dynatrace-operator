@@ -149,7 +149,6 @@ func setupBaseTestEnv(t *testing.T) {
 		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
 	}
 
-	// TODO: refactor and reuse from e2e tests or another place
 	if err := addScheme(testEnv); err != nil {
 		t.Fatal(err)
 	}
