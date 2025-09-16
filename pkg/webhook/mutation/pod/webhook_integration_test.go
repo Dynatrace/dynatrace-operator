@@ -2,8 +2,6 @@ package pod_test
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -26,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -155,7 +152,7 @@ func TestWebhook(t *testing.T) {
 		}
 		createDynaKube(t, clt, dk)
 
-		pod := createPodFromTemplate(t, clt, nil)
+		pod := createPod(t, clt, nil)
 
 		assert.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
 		assert.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
@@ -176,7 +173,7 @@ func TestWebhook(t *testing.T) {
 		}
 		createDynaKube(t, clt, dk)
 
-		pod := createPodFromTemplate(t, clt, func(pod *corev1.Pod) {
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations[oneagentmutator.AnnotationInject] = "true"
 		})
 
@@ -197,7 +194,7 @@ func TestWebhook(t *testing.T) {
 		}
 		createDynaKube(t, clt, dk)
 
-		pod := createPodFromTemplate(t, clt, func(pod *corev1.Pod) {
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations[metadatamutator.AnnotationInject] = "true"
 			pod.OwnerReferences = []metav1.OwnerReference{
 				{
@@ -214,18 +211,27 @@ func TestWebhook(t *testing.T) {
 	})
 }
 
-func createPodFromTemplate(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *corev1.Pod {
+func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *corev1.Pod {
 	t.Helper()
-	podTemplatePath := filepath.Join("testdata", "pod.yaml")
-	podTemplateData, err := os.ReadFile(podTemplatePath)
-	require.NoError(t, err)
 
-	pod := &corev1.Pod{}
-	require.NoError(t, yaml.Unmarshal(podTemplateData, pod))
-	pod.Namespace = testNamespace
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "pod-inject-test",
+			Namespace:   testNamespace,
+			Annotations: map[string]string{},
+		},
+		Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyAlways,
+			Containers: []corev1.Container{
+				{
+					Name:            "app",
+					Image:           "docker.io/myapp:1.2.3",
+					ImagePullPolicy: corev1.PullAlways,
+				},
+			},
+		},
 	}
+
 	if mutateFn != nil {
 		mutateFn(pod)
 	}
