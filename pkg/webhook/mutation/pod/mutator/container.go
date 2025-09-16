@@ -7,8 +7,8 @@ import (
 func checkInjectionAnnotation(annotations map[string]string, name string) bool {
 	for key, value := range annotations {
 		if strings.HasPrefix(key, AnnotationContainerInjection) {
-			keySplit := strings.Split(key, "/")
-			if len(keySplit) == 2 && keySplit[1] == name {
+			_, path, hasPath := strings.Cut(key, "/")
+			if hasPath && path == name {
 				return value == "false"
 			}
 		}

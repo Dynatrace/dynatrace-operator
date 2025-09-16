@@ -265,7 +265,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath)
 		require.NoError(t, err)
 
 		assert.ElementsMatch(t, commonArgs, initContainer.Args)
@@ -279,7 +279,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath)
 		require.NoError(t, err)
 
 		expectedArgs := []string{
@@ -298,8 +298,8 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(pod, &initContainer, dk, installPath)
-		require.Error(t, err)
+		err := addInitArgs(&pod, &initContainer, dk, installPath)
+		require.ErrorAs(t, err, new(webhook.MutatorError))
 	})
 	t.Run("cloudnative + tech from dk -> common args + cloudnative args + tech arg", func(t *testing.T) {
 		tenantUUID := "my-tenant-123"
@@ -314,7 +314,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath)
 		require.NoError(t, err)
 
 		expectedArgs := []string{
@@ -338,7 +338,7 @@ func TestAddInitArgs(t *testing.T) {
 
 		initContainer := corev1.Container{}
 
-		err := addInitArgs(pod, &initContainer, dk, installPath)
+		err := addInitArgs(&pod, &initContainer, dk, installPath)
 		require.NoError(t, err)
 
 		expectedArgs := []string{
