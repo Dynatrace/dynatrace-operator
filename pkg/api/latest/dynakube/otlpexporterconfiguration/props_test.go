@@ -17,8 +17,9 @@ limitations under the License.
 package otlpexporterconfiguration
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSpec_IsOverrideEnabled(t *testing.T) {
