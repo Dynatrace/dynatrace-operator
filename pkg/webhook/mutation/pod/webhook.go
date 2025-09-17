@@ -47,6 +47,7 @@ type webhook struct {
 	recorder events.EventRecorder
 
 	injectionHandler handler.Handler
+	otlpHandler      handler.Handler
 
 	decoder admission.Decoder
 
@@ -86,6 +87,11 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 	wh.recorder.Setup(mutationRequest)
 
 	err = wh.injectionHandler.Handle(mutationRequest)
+	if err != nil {
+		return silentErrorResponse(mutationRequest.Pod, err)
+	}
+
+	err = wh.otlpHandler.Handle(mutationRequest)
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}

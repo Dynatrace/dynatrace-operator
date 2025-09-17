@@ -1,4 +1,4 @@
-package otlp
+package exporter
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -6,27 +6,31 @@ import (
 )
 
 var (
-	log = logd.Get().WithName("otlp-pod-mutation")
+	log = logd.Get().WithName("otlp-exporter-pod-mutation")
 )
 
-type EnvVarMutator struct{}
+type Mutator struct{}
 
-func (EnvVarMutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
+func New() dtwebhook.Mutator {
+	return &Mutator{}
+}
+
+func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
 	log.Debug("checking of OTLP env var injection is enabled")
 	return false
 }
 
-func (EnvVarMutator) IsInjected(request *dtwebhook.BaseRequest) bool {
+func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
 	log.Debug("checking of OTLP env vars have already been injected")
 	return false
 }
 
-func (EnvVarMutator) Mutate(request *dtwebhook.MutationRequest) error {
+func (Mutator) Mutate(_ *dtwebhook.MutationRequest) error {
 	log.Debug("injecting OTLP env vars")
 	return nil
 }
 
-func (EnvVarMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+func (Mutator) Reinvoke(_ *dtwebhook.ReinvocationRequest) bool {
 	log.Debug("reinvocation of OTLP env vars mutator")
 	return false
 }
