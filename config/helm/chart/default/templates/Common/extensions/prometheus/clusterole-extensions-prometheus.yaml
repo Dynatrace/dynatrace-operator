@@ -1,4 +1,4 @@
-{{- if .Values.rbac.extensions.create }}
+{{- if (and .Values.rbac.extensions.prometheus.create .Values.rbac.extensions.create)}}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
