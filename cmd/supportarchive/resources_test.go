@@ -321,9 +321,9 @@ func getResourceLists() []*metav1.APIResourceList {
 		},
 	}
 	dk := metav1.APIResourceList{
-		GroupVersion: crdNameSuffix + "/" + "v1beta2",
+		GroupVersion: crdNameSuffix + "/" + "v1beta6",
 		APIResources: []metav1.APIResource{
-			{Version: "v1beta2", Group: crdNameSuffix, Name: "dynakubes", Namespaced: true, Kind: "DynaKube"},
+			{Version: "v1beta6", Group: crdNameSuffix, Name: "dynakubes", Namespaced: true, Kind: "DynaKube"},
 		},
 	}
 	ec := metav1.APIResourceList{
