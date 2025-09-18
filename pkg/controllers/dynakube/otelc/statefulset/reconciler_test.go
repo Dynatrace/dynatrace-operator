@@ -360,7 +360,7 @@ func getTestDynakubeWithExtensions() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{},
+			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
 			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
 	}

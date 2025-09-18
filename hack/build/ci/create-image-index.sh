@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ -z "$1" ]; then
   echo "Usage: $0 <image_name> [architectures (comma-separated, default: amd64,arm64)]"
   exit 1

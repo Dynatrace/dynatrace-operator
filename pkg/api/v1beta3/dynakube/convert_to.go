@@ -72,7 +72,9 @@ func (src *DynaKube) toKspmSpec(dst *dynakubelatest.DynaKube) {
 
 func (src *DynaKube) toExtensionsSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.Extensions != nil {
-		dst.Spec.Extensions = &extensionslatest.Spec{}
+		dst.Spec.Extensions = &extensionslatest.Spec{
+			PrometheusSpec: &extensionslatest.PrometheusSpec{},
+		}
 	}
 }
 
