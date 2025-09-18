@@ -115,7 +115,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	if in.Extensions != nil {
 		in, out := &in.Extensions, &out.Extensions
 		*out = new(extensions.Spec)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.TelemetryIngest != nil {
 		in, out := &in.TelemetryIngest, &out.TelemetryIngest
