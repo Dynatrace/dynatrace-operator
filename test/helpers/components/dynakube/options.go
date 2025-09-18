@@ -178,7 +178,7 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.Applicati
 func WithExtensionsEnabledSpec(promEnabled bool) Option {
 	return func(dk *dynakube.DynaKube) {
 		if promEnabled {
-			dk.Spec.Extensions = &extensions.Spec{}
+			dk.Spec.Extensions = &extensions.Spec{&extensions.PrometheusSpec{}}
 			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
 		} else {
 			dk.Spec.Extensions = nil
@@ -192,12 +192,6 @@ func WithExtensionsEECImageRefSpec(repo, tag string) Option {
 			Repository: repo,
 			Tag:        tag,
 		}
-	}
-}
-
-func WithCustomPullSecret(secretName string) Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.CustomPullSecret = secretName
 	}
 }
 
