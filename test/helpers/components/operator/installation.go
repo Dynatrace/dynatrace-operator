@@ -19,8 +19,7 @@ import (
 )
 
 const (
-	AwsRegistryURL  = "oci://public.ecr.aws/dynatrace/dynatrace-operator"
-	QuayRegistryURL = "oci://quay.io/dynatrace/dynatrace-operator"
+	helmRegistryURL = "oci://public.ecr.aws/dynatrace/dynatrace-operator"
 )
 
 func InstallViaMake(withCSI bool) env.Func {
@@ -111,7 +110,7 @@ func installViaHelm(releaseTag string, withCsi bool, namespace string) error {
 
 	return manager.RunUpgrade(helm.WithNamespace(namespace),
 		helm.WithReleaseName("dynatrace-operator"),
-		helm.WithArgs(AwsRegistryURL),
+		helm.WithArgs(helmRegistryURL),
 		helm.WithVersion(releaseTag),
 		helm.WithArgs("--create-namespace"),
 		helm.WithArgs("--install"),

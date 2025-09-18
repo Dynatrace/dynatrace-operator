@@ -34,13 +34,11 @@ func TestMain(m *testing.M) {
 	nsWithoutIstio := *namespace.New(operator.DefaultNamespace)
 	testEnv.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnv.BeforeEachTest(istio.AssertIstiodDeployment())
-
 	testEnv.Setup(
 		helpers.SetScheme,
 		namespace.CreateForEnv(nsWithIstio),
 		operator.InstallViaMake(true),
 	)
-
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(true))

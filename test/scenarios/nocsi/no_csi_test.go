@@ -32,12 +32,10 @@ var (
 func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
-
 	testEnv.Setup(
 		helpers.SetScheme,
 		operator.InstallViaMake(false),
 	)
-
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(false))
