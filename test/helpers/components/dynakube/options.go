@@ -195,12 +195,6 @@ func WithExtensionsEECImageRefSpec(repo, tag string) Option {
 	}
 }
 
-func WithCustomPullSecret(secretName string) Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.CustomPullSecret = secretName
-	}
-}
-
 func WithLogMonitoring() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.LogMonitoring = &logmonitoring.Spec{}
