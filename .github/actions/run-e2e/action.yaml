@@ -14,8 +14,8 @@ inputs:
   target-image:
     description: Target image to run E2E tests over
     required: false
-  use-helm-chart-tag:
-    description: Helm chart tag used for installation
+  helm-chart:
+    description: Helm chart used for installation
     required: false
   tenant1-name:
     description: The name of Tenant 1
@@ -103,7 +103,7 @@ runs:
       env:
         FLC_NAMESPACE: ${{ inputs.flc-namespace }}
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
-        USE_HELM_CHART_TAG: ${{ inputs.use-helm-chart-tag }}
+        HELM_CHART: ${{ inputs.helm-chart }}
         TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
         TARGET_IMAGE: ${{ inputs.target-image }}
         TENANT1_NAME: ${{ inputs.tenant1-name }}
