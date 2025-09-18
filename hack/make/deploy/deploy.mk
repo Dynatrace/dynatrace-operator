@@ -11,7 +11,7 @@ deploy/fips:
 	@make IMAGE_URI="$(IMAGE_URI)"-fips $(@D)
 
 ## Deploy the operator with csi-driver
-deploy: 
+deploy: manifests/crd/helm
 	helm upgrade dynatrace-operator $(HELM_CHART) \
 			--install \
 			--namespace dynatrace \
