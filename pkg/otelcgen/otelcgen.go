@@ -42,6 +42,12 @@ type ServerConfig struct {
 	Endpoint string `mapstructure:"endpoint"`
 }
 
+type DebugExporter struct {
+	Verbosity          string `mapstructure:"verbosity"`
+	SamplingInitial    int    `mapstructure:"sampling_initial"`
+	SamplingThereafter int    `mapstructure:"sampling_thereafter"`
+}
+
 type Protocol string
 
 type Protocols []Protocol
@@ -89,6 +95,10 @@ type Config struct {
 	protocols Protocols
 
 	includeSystemCACertsPool bool
+
+	debugExporterVerbosity          string
+	debugExporterSamplingInitial    int
+	debugExporterSamplingThereafter int
 }
 
 type Option func(c *Config) error
@@ -193,6 +203,16 @@ func WithExporters() Option {
 		exporters := c.buildExporters()
 
 		c.Exporters = exporters
+
+		return nil
+	}
+}
+
+func WithDebugExporter(verbosity string, samplingInitial, samplingThereafter int) Option {
+	return func(c *Config) error {
+		c.debugExporterVerbosity = verbosity
+		c.debugExporterSamplingInitial = samplingInitial
+		c.debugExporterSamplingThereafter = samplingThereafter
 
 		return nil
 	}

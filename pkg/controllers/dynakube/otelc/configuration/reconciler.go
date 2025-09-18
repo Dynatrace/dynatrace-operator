@@ -125,6 +125,16 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithServices(),
 	)
 
+	if r.dk.FF().IsOtelDebugExporterEnabled() {
+		options = append(options, otelcgen.WithDebugExporter(
+			r.dk.FF().GetOtelDebugExporterVerbosity(),
+			r.dk.FF().GetOtelDebugExporterSamplingInitial(),
+			r.dk.FF().GetOtelDebugExporterSamplingThereafter(),
+		))
+	}
+
+	r.dk.FF()
+
 	config, err := otelcgen.NewConfig(myPodIP, r.dk.TelemetryIngest().GetProtocols(), options...)
 	if err != nil {
 		return nil, err

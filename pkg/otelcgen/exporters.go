@@ -7,6 +7,7 @@ import (
 
 var (
 	otlphttp = component.MustNewID("otlphttp")
+	debug    = component.MustNewID("debug")
 )
 
 func (c *Config) buildExporters() map[component.ID]component.Config {
@@ -32,5 +33,14 @@ func (c *Config) buildExporters() map[component.ID]component.Config {
 
 	return map[component.ID]component.Config{
 		otlphttp: serverConfig,
+		debug:    c.buildDebugExporter(),
+	}
+}
+
+func (c *Config) buildDebugExporter() *DebugExporter {
+	return &DebugExporter{
+		Verbosity:          "detailed",
+		SamplingInitial:    5,
+		SamplingThereafter: 200,
 	}
 }
