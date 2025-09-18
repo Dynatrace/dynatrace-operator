@@ -54,7 +54,8 @@ runs:
       with:
         images: ${{ inputs.images }}
         flavor: |
-          suffix=${{ inputs.suffix }}
+          # prepend suffixes (like "fips") with a dash
+          suffix=${{ inputs.suffix != '' && format('-{0}', inputs.suffix) || '' }}
         labels: |
           # default retention policy
           quay.expires-after=10d
