@@ -9422,6 +9422,46 @@ spec:
                         type: string
                     type: object
                 type: object
+              otlpExporterConfiguration:
+                properties:
+                  namespaceSelector:
+                    properties:
+                      matchExpressions:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            operator:
+                              type: string
+                            values:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  overrideEnvVars:
+                    type: boolean
+                  signals:
+                    properties:
+                      logs:
+                        type: object
+                      metrics:
+                        type: object
+                      traces:
+                        type: object
+                    type: object
+                type: object
               proxy:
                 properties:
                   value:
