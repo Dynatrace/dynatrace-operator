@@ -36,9 +36,9 @@ func InstallViaMake(withCSI bool) env.Func {
 	}
 }
 
-func InstallViaHelm(registryURL string, releaseTag string, withCSI bool, namespace string) env.Func {
+func InstallViaHelm(releaseTag string, withCSI bool, namespace string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		err := installViaHelm(registryURL, releaseTag, withCSI, namespace)
+		err := installViaHelm(releaseTag, withCSI, namespace)
 		if err != nil {
 			return ctx, err
 		}
@@ -101,7 +101,7 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	return err
 }
 
-func installViaHelm(registryURL string, releaseTag string, withCsi bool, namespace string) error {
+func installViaHelm(releaseTag string, withCsi bool, namespace string) error {
 	manager := helm.New("''")
 
 	_platform, err := platform.NewResolver().GetPlatform()
@@ -111,7 +111,7 @@ func installViaHelm(registryURL string, releaseTag string, withCsi bool, namespa
 
 	return manager.RunUpgrade(helm.WithNamespace(namespace),
 		helm.WithReleaseName("dynatrace-operator"),
-		helm.WithArgs(registryURL),
+		helm.WithArgs(AwsRegistryURL),
 		helm.WithVersion(releaseTag),
 		helm.WithArgs("--create-namespace"),
 		helm.WithArgs("--install"),

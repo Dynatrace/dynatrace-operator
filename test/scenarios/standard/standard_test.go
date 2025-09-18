@@ -4,7 +4,6 @@ package standard
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/bootstrapper"
@@ -19,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -33,17 +31,10 @@ func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 
-	if scenarios.InstallViaHelm() {
-		testEnv.Setup(
-			helpers.SetScheme,
-			operator.InstallViaHelm(operator.QuayRegistryURL, os.Getenv(scenarios.HelmChartTagEnvVar), true, operator.DefaultNamespace),
-		)
-	} else {
-		testEnv.Setup(
-			helpers.SetScheme,
-			operator.InstallViaMake(true),
-		)
-	}
+	testEnv.Setup(
+		helpers.SetScheme,
+		operator.InstallViaMake(true),
+	)
 
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
