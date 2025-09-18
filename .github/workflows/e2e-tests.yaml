@@ -11,9 +11,9 @@ on:
         required: true
         default: 'main'
       helm-chart:
-        description: 'Helm chart tag used for installation'
+        description: 'Helm chart used for installation'
         required: false
-        default: '0.0.0-nightly-chart'
+        default: 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart'
         type: string
 
 permissions:
