@@ -8,6 +8,23 @@ import (
 	"github.com/pkg/errors"
 )
 
+func (dtc *dynatraceClient) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
+	if len(ip) == 0 {
+		return "", errors.New("ip is invalid")
+	}
+
+	hostInfo, err := dtc.getHostInfoForIP(ctx, ip)
+	if err != nil {
+		return "", err
+	}
+
+	if hostInfo.entityID == "" {
+		return "", errors.New("entity id not set for host")
+	}
+
+	return hostInfo.entityID, nil
+}
+
 // TODO: the `arch` params should be removed and instead always the "github.com/Dynatrace/dynatrace-operator/pkg/arch" should be used
 
 // GetLatestAgent gets the latest agent package for the given OS and installer type.

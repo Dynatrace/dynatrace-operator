@@ -57,6 +57,10 @@ func (dtc *dynatraceClient) getEntitiesUrl() string {
 	return dtc.url + "/v2/entities"
 }
 
+func (dtc *dynatraceClient) getHostsUrl() string {
+	return dtc.url + "/v1/entity/infrastructure/hosts?includeDetails=false"
+}
+
 func (dtc *dynatraceClient) getSettingsUrl(validate bool) string {
 	validationQuery := ""
 	if !validate {
@@ -77,6 +81,10 @@ func (dtc *dynatraceClient) getEffectiveSettingsUrl(validate bool) string {
 
 func (dtc *dynatraceClient) getProcessModuleConfigUrl() string {
 	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
+}
+
+func (dtc *dynatraceClient) getEventsUrl() string {
+	return dtc.url + "/v1/events"
 }
 
 func (dtc *dynatraceClient) getTokensLookupUrl() string {
