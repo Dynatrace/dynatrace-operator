@@ -40,7 +40,7 @@ func TestGetNoProxy(t *testing.T) {
 	}
 }
 
-func TestIsHostAvailabilityDetectionEnable(t *testing.T) {
+func TestIsHostAvailabilityDetectionEnabled(t *testing.T) {
 	type testCase struct {
 		title string
 		in    string
