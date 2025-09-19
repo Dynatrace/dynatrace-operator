@@ -218,7 +218,7 @@ tests:
       operator.hostAvailabilityDetection: false
     asserts:
       - contains:
-          path: spec.template.containers[0].env
+          path: spec.template.spec.containers[0].env
           content:
             name: DT_HOST_AVAILABILITY_DETECTION
             value: "false"
