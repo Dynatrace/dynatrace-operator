@@ -38,7 +38,7 @@ jobs:
           flc-namespace: dto-daily
           flc-environment: dto-k8s-latest-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
-          target-branch: ${{ github.event.inputs.target || 'main'}}
+          target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
@@ -74,7 +74,7 @@ jobs:
           flc-namespace: dto-daily
           flc-environment: dto-ocp-latest-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
-          target-branch: ${{ github.event.inputs.target || 'main'}}
+          target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
