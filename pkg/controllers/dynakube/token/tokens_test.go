@@ -86,7 +86,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 6)
+		assert.Len(t, tokens.APIToken().Features, 7)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Download Installer' is missing scope 'InstallerDownload']")
@@ -101,7 +101,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 6)
+		assert.Len(t, tokens.APIToken().Features, 7)
 		assert.Len(t, tokens.PaasToken().Features, 1)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -114,7 +114,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 6)
+		assert.Len(t, tokens.APIToken().Features, 7)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -132,10 +132,10 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 6)
+		assert.Len(t, tokens.APIToken().Features, 7)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Access problem and event feed, metrics, and topology' is missing scope 'DataExport' feature 'Kubernetes API Monitoring' is missing scope 'entities.read, settings.read, settings.write' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
+		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Access problem and event feed, metrics, and topology' is missing scope 'DataExport' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("data ingest enabled => dataingest token missing rights => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
@@ -150,7 +150,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 6)
+		assert.Len(t, tokens.APIToken().Features, 7)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 1)
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'Data Ingest' is missing scope 'metrics.ingest']")
@@ -165,7 +165,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 6)
+		assert.Len(t, tokens.APIToken().Features, 7)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 1)
 		assert.NoError(t, err)
@@ -199,6 +199,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				},
 			},
 			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite,
 				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
@@ -227,6 +228,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				},
 			},
 			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite,
 				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
@@ -254,6 +256,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				},
 			},
 			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeActiveGateTokenCreate,
 				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
@@ -273,6 +276,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				},
 			},
 			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
@@ -291,6 +295,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				},
 			},
 			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeSettingsRead,
 			},
 			expectedOptional: map[string]bool{
@@ -308,6 +313,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				},
 			},
 			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
 			expectedOptional: map[string]bool{
@@ -323,6 +329,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				},
 			},
 			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeSettingsRead,
 				dtclient.TokenScopeSettingsWrite,
 				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
@@ -341,6 +348,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				},
 			},
 			availableScopes: dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
 			expectedOptional: map[string]bool{

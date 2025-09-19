@@ -42,13 +42,13 @@ func (dtc *dynatraceClient) SendEvent(ctx context.Context, eventData *EventData)
 		return errors.WithStack(err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, dtc.getEventsURL(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return errors.WithMessage(err, "error initializing http request")
 	}
 
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", ApiTokenHeader+dtc.apiToken)
+	req.Header.Add("Authorization", APITokenHeader+dtc.apiToken)
 
 	response, err := dtc.httpClient.Do(req)
 	if err != nil {

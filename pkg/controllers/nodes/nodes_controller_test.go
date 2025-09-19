@@ -25,7 +25,7 @@ import (
 
 const (
 	testNamespace = "dynatrace"
-	testApiToken  = "test-api-token"
+	testAPIToken  = "test-api-token"
 )
 
 var testCacheKey = client.ObjectKey{Name: cacheName, Namespace: testNamespace}
@@ -52,7 +52,7 @@ func TestReconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.ApiToken: []byte(testApiToken),
+					dtclient.APIToken: []byte(testAPIToken),
 				},
 			},
 		)
@@ -233,11 +233,11 @@ func (builder mockDynatraceClientBuilder) SetTokens(token.Tokens) dynatraceclien
 	return builder
 }
 
-func (builder mockDynatraceClientBuilder) LastApiProbeTimestamp() *metav1.Time {
+func (builder mockDynatraceClientBuilder) LastAPIProbeTimestamp() *metav1.Time {
 	return nil
 }
 
-func (builder mockDynatraceClientBuilder) Build() (dtclient.Client, error) {
+func (builder mockDynatraceClientBuilder) Build(ctx context.Context) (dtclient.Client, error) {
 	return builder.dynatraceClient, nil
 }
 
@@ -309,7 +309,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.ApiToken: []byte(testApiToken),
+				dtclient.APIToken: []byte(testAPIToken),
 			},
 		},
 		&corev1.Secret{
@@ -318,7 +318,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.ApiToken: []byte(testApiToken),
+				dtclient.APIToken: []byte(testAPIToken),
 			},
 		})
 }

@@ -312,11 +312,11 @@ func (r requiredFiles) getRequiredConfigMapFiles() []string {
 			r.dk.Namespace,
 			"configmap",
 			"dynatrace-node-cache",
-			support_archive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension))
 
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
-			support_archive.ManifestsDirectoryName,
+			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"configmap",
 			"kube-root-ca.crt",

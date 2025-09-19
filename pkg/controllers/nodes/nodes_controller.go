@@ -63,7 +63,7 @@ func NewController(mgr manager.Manager) *Controller {
 }
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
-	nodeName := request.NamespacedName.Name
+	nodeName := request.Name
 	dk, err := controller.determineDynakubeForNode(nodeName)
 
 	log.Info("reconciling node name", "node", nodeName)
@@ -285,7 +285,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	dynatraceClient, err := controller.dynatraceClientBuilder.
 		SetDynakube(*dk).
 		SetTokens(tokens).
-		Build()
+		Build(ctx)
 	if err != nil {
 		return err
 	}

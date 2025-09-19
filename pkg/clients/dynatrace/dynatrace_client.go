@@ -232,7 +232,7 @@ func (dtc *dynatraceClient) getHostInfoForIP(ctx context.Context, ip string) (*h
 }
 
 func (dtc *dynatraceClient) buildHostCache(ctx context.Context) error {
-	resp, err := dtc.makeRequest(ctx, dtc.getHostsUrl(), dynatraceApiToken)
+	resp, err := dtc.makeRequest(ctx, dtc.getHostsURL(), dynatraceAPIToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}

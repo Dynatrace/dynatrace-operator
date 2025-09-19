@@ -53,10 +53,6 @@ func (dtc *dynatraceClient) getActiveGateConnectionInfoURL() string {
 	return dtc.url + "/v1/deployment/installer/gateway/connectioninfo"
 }
 
-func (dtc *dynatraceClient) getEntitiesURL() string {
-	return dtc.url + "/v2/entities"
-}
-
 func (dtc *dynatraceClient) getHostsURL() string {
 	return dtc.url + "/v1/entity/infrastructure/hosts?includeDetails=false"
 }
