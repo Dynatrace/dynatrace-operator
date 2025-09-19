@@ -37,7 +37,7 @@ var (
 func TestMakeRequest(t *testing.T) {
 	ctx := context.Background()
 
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
+	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
 	defer dynatraceServer.Close()
 
 	dc := &dynatraceClient{
@@ -69,7 +69,7 @@ func TestMakeRequest(t *testing.T) {
 func TestGetResponseOrServerError(t *testing.T) {
 	ctx := context.Background()
 
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
+	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
 	defer dynatraceServer.Close()
 
 	dc := &dynatraceClient{
@@ -141,6 +141,40 @@ func TestGetResponseOrServerError(t *testing.T) {
 	})
 }
 
+func TestBuildHostCache(t *testing.T) {
+	ctx := context.Background()
+
+	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
+	defer dynatraceServer.Close()
+
+	dc := &dynatraceClient{
+		url:       dynatraceServer.URL,
+		paasToken: paasToken,
+		now:       time.Unix(1521540000, 0),
+
+		hostCache:  make(map[string]hostInfo),
+		httpClient: http.DefaultClient,
+	}
+
+	require.NotNil(t, dc)
+	t.Run("sad path", func(t *testing.T) {
+		dc.apiToken = ""
+		err := dc.buildHostCache(ctx)
+		require.Error(t, err, "error querying dynatrace server")
+		assert.Empty(t, dc.hostCache)
+	})
+	t.Run("happy path", func(t *testing.T) {
+		dc.apiToken = apiToken
+		err := dc.buildHostCache(ctx)
+		require.NoError(t, err)
+		assert.NotEmpty(t, dc.hostCache)
+		assert.ObjectsAreEqual(dc.hostCache, map[string]hostInfo{
+			"10.11.12.13": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
+			"192.168.0.1": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
+		})
+	})
+}
+
 func TestServerError(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		se := &ServerError{Code: 401, Message: "Unauthorized"}
@@ -161,7 +195,7 @@ func TestServerError(t *testing.T) {
 }
 
 func TestDynatraceClientWithServer(t *testing.T) {
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
+	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
 	defer dynatraceServer.Close()
 
 	skipCert := SkipCertificateValidation(true)
@@ -181,19 +215,19 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	testServerErrors(t)
 }
 
-func dynatraceServerHandler() http.HandlerFunc {
+func dynatraceServerHandler(t *testing.T) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
 			writeError(w, http.StatusUnauthorized)
 		} else {
-			handleRequest(r, w)
+			handleRequest(t, r, w)
 		}
 	}
 }
 
-func handleRequest(request *http.Request, writer http.ResponseWriter) {
+func handleRequest(t *testing.T, request *http.Request, writer http.ResponseWriter) {
 	latestAgentVersion := fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo", OsUnix, InstallerTypePaaS)
 	latestActiveGateVersion := fmt.Sprintf("/v1/deployment/installer/gateway/%s/latest/metainfo", OsUnix)
 	agentVersions := fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", OsUnix, InstallerTypePaaS)

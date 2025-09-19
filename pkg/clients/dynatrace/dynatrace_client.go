@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
@@ -53,7 +56,8 @@ type tokenType int
 const (
 	dynatraceApiToken tokenType = iota
 	dynatracePaaSToken
-	installerUrlToken // in this case we don't care about the token
+	installerUrlToken     // in this case we don't care about the token
+	defaultMaxResponseLen = 1000
 )
 
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
@@ -115,7 +119,7 @@ func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]by
 
 	if response.StatusCode != http.StatusOK &&
 		response.StatusCode != http.StatusCreated {
-		return responseData, dtc.handleErrorResponseFromAPI(responseData, response.StatusCode)
+		return responseData, dtc.handleErrorResponseFromAPI(responseData, response.StatusCode, response.Header)
 	}
 
 	return responseData, nil
@@ -162,7 +166,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(ctx context.Context, url string
 	return hex.EncodeToString(hash.Sum(nil)), err
 }
 
-func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int) error {
+func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int, headers http.Header) error {
 	se := serverErrorResponse{}
 
 	contentType := "unknown"

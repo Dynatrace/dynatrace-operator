@@ -155,6 +155,7 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		apiToken:  apiToken,
 		paasToken: paasToken,
 
+		hostCache: make(map[string]hostInfo),
 		httpClient: &http.Client{
 			Transport: http.DefaultTransport.(*http.Transport).Clone(),
 			Timeout:   15 * time.Minute,

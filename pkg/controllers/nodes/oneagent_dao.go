@@ -3,7 +3,7 @@ package nodes
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

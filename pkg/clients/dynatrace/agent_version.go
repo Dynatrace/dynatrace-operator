@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-
 func (dtc *dynatraceClient) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
 	if len(ip) == 0 {
 		return "", errors.New("ip is invalid")
@@ -25,7 +24,6 @@ func (dtc *dynatraceClient) GetEntityIDForIP(ctx context.Context, ip string) (st
 
 	return hostInfo.entityID, nil
 }
-
 
 // TODO: the `arch` params should be removed and instead always the "github.com/Dynatrace/dynatrace-operator/pkg/arch" should be used
 
