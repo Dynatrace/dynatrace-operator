@@ -33,6 +33,7 @@ operator:
   labels: {}
   annotations: {}
   apparmor: false
+  hostAvailabilityDetection: true
   securityContext:
     privileged: false
     allowPrivilegeEscalation: false

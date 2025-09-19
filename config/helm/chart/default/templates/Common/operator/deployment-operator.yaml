@@ -67,6 +67,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{- if .Values.operator.hostAvailabilityDetection }}
+            - name: DT_HOST_AVAILABILITY_DETECTION
+              value: "true"
+            {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12}}
           ports:
             - containerPort: 10080

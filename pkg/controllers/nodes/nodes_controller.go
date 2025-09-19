@@ -66,13 +66,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	nodeName := request.NamespacedName.Name
 	dk, err := controller.determineDynakubeForNode(nodeName)
 
-	if dk != nil && !dk.FF().IsHostAvailabilityDetectionEnabled() {
-		// feature flag is disabled, skipping reconciliation
-		log.Info("skipping reconciling node name due to host availability detection feature flag being disabled", "node", nodeName)
-
-		return reconcile.Result{}, nil
-	}
-
 	log.Info("reconciling node name", "node", nodeName)
 
 	if err != nil {

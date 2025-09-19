@@ -3,6 +3,8 @@ package token
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"golang.org/x/exp/slices"
 )
 
@@ -30,7 +32,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			Name:           "Access problem and event feed, metrics, and topology",
 			RequiredScopes: []string{dtclient.TokenScopeDataExport},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.FF().IsHostAvailabilityDetectionEnabled()
+				return envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, true)
 			},
 		},
 		{
