@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,12 +9,16 @@ import (
 
 func TestGetControllerAddFuncs(t *testing.T) {
 	t.Run("without OLM", func(t *testing.T) {
+		t.Setenv(consts.HostAvailabilityDetectionEnvVar, "true")
+
 		funcs := getControllerAddFuncs(false)
 
 		assert.Len(t, funcs, 4) // dk, ec, nodes, certs
 	})
 
 	t.Run("with OLM", func(t *testing.T) {
+		t.Setenv(consts.HostAvailabilityDetectionEnvVar, "true")
+
 		funcs := getControllerAddFuncs(true)
 
 		assert.Len(t, funcs, 3) // dk, ec, nodes
