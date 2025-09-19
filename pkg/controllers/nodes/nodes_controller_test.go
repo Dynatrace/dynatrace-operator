@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -40,9 +39,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(
 			node,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace, Annotations: map[string]string{
-					exp.HostAvailabilityDetection: "true",
-				}},
+				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						Instances: map[string]oneagent.Instance{node.Name: {IPAddress: "1.2.3.4"}},
@@ -291,7 +288,7 @@ func createDefaultFakeClient() client.Client {
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
 		&dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace, Annotations: map[string]string{exp.HostAvailabilityDetection: "true"}},
+			ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
 					Instances: map[string]oneagent.Instance{"node1": {IPAddress: "1.2.3.4"}},
@@ -299,7 +296,7 @@ func createDefaultFakeClient() client.Client {
 			},
 		},
 		&dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent2", Namespace: testNamespace, Annotations: map[string]string{exp.HostAvailabilityDetection: "true"}},
+			ObjectMeta: metav1.ObjectMeta{Name: "oneagent2", Namespace: testNamespace},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
 					Instances: map[string]oneagent.Instance{"node2": {IPAddress: "5.6.7.8"}},

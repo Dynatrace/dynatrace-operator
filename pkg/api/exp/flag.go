@@ -50,7 +50,7 @@ func (ff *FeatureFlags) IsPublicRegistry() bool {
 }
 
 func (ff *FeatureFlags) IsHostAvailabilityDetectionEnabled() bool {
-	return ff.getBoolWithDefault(HostAvailabilityDetection, false)
+	return ff.getBoolWithDefault(HostAvailabilityDetection, true)
 }
 
 // Deprecated: Do not use "disable" feature flags.
