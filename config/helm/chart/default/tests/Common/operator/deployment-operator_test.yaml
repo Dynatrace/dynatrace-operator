@@ -86,8 +86,6 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: DT_HOST_AVAILABILITY_DETECTION
-                    value: "true"
                   - name: modules.json
                     value: |
                       {
@@ -214,15 +212,16 @@ tests:
           value:
             test-key: test-value
 
-  - it: should NOT have env var DT_HOST_AVAILABILITY_DETECTION if disabled
+  - it: should have env var DT_HOST_AVAILABILITY_DETECTION if disabled
     set:
       platform: kubernetes
       operator.hostAvailabilityDetection: false
     asserts:
-      - notContains:
+      - contains:
           path: spec.template.containers[0].env
           content:
             name: DT_HOST_AVAILABILITY_DETECTION
+            value: "false"
 
   - it: should not have imagePullSecrets defined in spec
     set:
@@ -279,8 +278,6 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: DT_HOST_AVAILABILITY_DETECTION
-                    value: "true"
                   - name: modules.json
                     value: |
                       {
