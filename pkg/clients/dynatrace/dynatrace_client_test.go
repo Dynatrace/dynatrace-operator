@@ -222,12 +222,12 @@ func dynatraceServerHandler(t *testing.T) http.HandlerFunc {
 		if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
 			writeError(w, http.StatusUnauthorized)
 		} else {
-			handleRequest(t, r, w)
+			handleRequest(r, w)
 		}
 	}
 }
 
-func handleRequest(t *testing.T, request *http.Request, writer http.ResponseWriter) {
+func handleRequest(request *http.Request, writer http.ResponseWriter) {
 	latestAgentVersion := fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo", OsUnix, InstallerTypePaaS)
 	latestActiveGateVersion := fmt.Sprintf("/v1/deployment/installer/gateway/%s/latest/metainfo", OsUnix)
 	agentVersions := fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", OsUnix, InstallerTypePaaS)

@@ -11,6 +11,8 @@ const (
 	PublicRegistryKey = FFPrefix + "public-registry"
 	NoProxyKey        = FFPrefix + "no-proxy"
 
+	HostAvailabilityDetection = FFPrefix + "host-availability-detection"
+
 	// Deprecated: Dedicated field since v1beta2.
 	ApiRequestThresholdKey = FFPrefix + "dynatrace-api-request-threshold"
 
@@ -45,6 +47,10 @@ func (ff *FeatureFlags) GetNoProxy() string {
 
 func (ff *FeatureFlags) IsPublicRegistry() bool {
 	return ff.getBoolWithDefault(PublicRegistryKey, false)
+}
+
+func (ff *FeatureFlags) IsHostAvailabilityDetectionEnabled() bool {
+	return ff.getBoolWithDefault(HostAvailabilityDetection, false)
 }
 
 // Deprecated: Do not use "disable" feature flags.

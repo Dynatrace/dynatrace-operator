@@ -62,9 +62,16 @@ func NewController(mgr manager.Manager) *Controller {
 	}
 }
 
-func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
 	nodeName := request.NamespacedName.Name
 	dk, err := controller.determineDynakubeForNode(nodeName)
+
+	if dk != nil && !dk.FF().IsHostAvailabilityDetectionEnabled() {
+		// feature flag is disabled, skipping reconciliation
+		log.Info("skipping reconciling node name due to FF flag", "node", nodeName)
+
+		return reconcile.Result{}, nil
+	}
 
 	log.Info("reconciling node name", "node", nodeName)
 

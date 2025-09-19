@@ -53,7 +53,6 @@ const (
 	versionsResponse       = `{ "availableVersions": [ "1.123.1", "1.123.2", "1.123.3", "1.123.4" ] }`
 )
 
-
 func TestGetEntityIDForIP(t *testing.T) {
 	ctx := context.Background()
 

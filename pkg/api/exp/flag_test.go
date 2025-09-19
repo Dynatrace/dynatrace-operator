@@ -40,6 +40,39 @@ func TestGetNoProxy(t *testing.T) {
 	}
 }
 
+func TestIsHostAvailabilityDetectionEnable(t *testing.T) {
+	type testCase struct {
+		title string
+		in    string
+		out   string
+	}
+
+	cases := []testCase{
+		{
+			title: "default",
+			in:    "",
+			out:   "",
+		},
+		{
+			title: "overrule",
+			in:    "my.infra.ca,my.infra.io",
+			out:   "my.infra.ca,my.infra.io",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			ff := FeatureFlags{annotations: map[string]string{
+				NoProxyKey: c.in,
+			}}
+
+			out := ff.GetNoProxy()
+
+			assert.Equal(t, c.out, out)
+		})
+	}
+}
+
 func TestGetApiRequestThreshold(t *testing.T) {
 	type testCase struct {
 		title string
