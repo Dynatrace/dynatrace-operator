@@ -30,7 +30,7 @@ func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 		edgeconnect.Add,
 	}
 
-	if envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, true) {
+	if envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, false) {
 		funcs = append(funcs, nodes.Add)
 	}
 

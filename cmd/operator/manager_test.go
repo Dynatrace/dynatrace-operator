@@ -18,4 +18,10 @@ func TestGetControllerAddFuncs(t *testing.T) {
 
 		assert.Len(t, funcs, 3) // dk, ec, nodes
 	})
+
+	t.Run("without HostAvailabilityDetectionEnvVar", func(t *testing.T) {
+		funcs := getControllerAddFuncs(true)
+
+		assert.Len(t, funcs, 2) // dk, ec
+	})
 }

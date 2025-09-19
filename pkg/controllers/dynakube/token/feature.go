@@ -32,7 +32,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			Name:           "Access problem and event feed, metrics, and topology",
 			RequiredScopes: []string{dtclient.TokenScopeDataExport},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, true)
+				return envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, false)
 			},
 		},
 		{
