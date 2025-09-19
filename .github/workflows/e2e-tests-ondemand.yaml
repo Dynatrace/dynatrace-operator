@@ -7,7 +7,7 @@ on:
     - cron: 0 3 * * 1,3,5
 
 env:
-  branch: release-1.7
+  branch: release-1.6
 
 permissions:
   checks: write
