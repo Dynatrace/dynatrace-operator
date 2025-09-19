@@ -68,7 +68,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	if dk != nil && !dk.FF().IsHostAvailabilityDetectionEnabled() {
 		// feature flag is disabled, skipping reconciliation
-		log.Info("skipping reconciling node name due to FF flag", "node", nodeName)
+		log.Info("skipping reconciling node name due to host availability detection feature flag being disabled", "node", nodeName)
 
 		return reconcile.Result{}, nil
 	}
