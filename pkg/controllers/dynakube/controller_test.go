@@ -296,6 +296,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 
 		mockedDtc := dtclientmock.NewClient(t)
 		mockedDtc.On("GetTokenScopes", mock.Anything, "this is a token").Return(dtclient.TokenScopes{
+			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
@@ -441,6 +442,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	fakeClient := fake.NewClient(baseDk, createAPISecret())
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
+		dtclient.TokenScopeDataExport,
 		dtclient.TokenScopeSettingsRead,
 		dtclient.TokenScopeSettingsWrite,
 		dtclient.TokenScopeInstallerDownload,
@@ -709,6 +711,7 @@ func TestTokenConditions(t *testing.T) {
 		})
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
+			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
@@ -916,6 +919,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
 
 		controller := createFakeControllerAndClients(t, dtclient.TokenScopes{
+			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
@@ -936,6 +940,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
 
 		controller := createFakeControllerAndClients(t, dtclient.TokenScopes{
+			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
@@ -956,6 +961,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
 
 		controller := createFakeControllerAndClients(t, dtclient.TokenScopes{
+			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeInstallerDownload,
 			dtclient.TokenScopeActiveGateTokenCreate,
 		})
