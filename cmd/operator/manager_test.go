@@ -1,9 +1,9 @@
 package operator
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/stretchr/testify/assert"
 )
 
