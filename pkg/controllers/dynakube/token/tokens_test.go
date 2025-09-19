@@ -17,6 +17,7 @@ import (
 
 func getAllScopesForAPIToken() dtclient.TokenScopes {
 	return []string{
+		dtclient.TokenScopeDataExport,
 		dtclient.TokenScopeEntitiesRead,
 		dtclient.TokenScopeSettingsRead,
 		dtclient.TokenScopeSettingsWrite,

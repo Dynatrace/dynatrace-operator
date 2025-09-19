@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
 	"os"
 	"strconv"
 	"time"
@@ -24,6 +25,7 @@ type controllerSetupFunc func(manager.Manager, string) error
 func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 	funcs := []controllerSetupFunc{
 		dynakube.Add,
+		nodes.Add,
 		edgeconnect.Add,
 	}
 
