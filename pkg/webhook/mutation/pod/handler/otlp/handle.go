@@ -23,6 +23,7 @@ func New(
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	if !shouldInject(mutationRequest) {
 		log.Debug("OTLP injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+
 		return nil
 	}
 
@@ -43,6 +44,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	}
 
 	log.Debug("OTLP injection finished", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+
 	return nil
 }
 

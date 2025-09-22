@@ -186,7 +186,6 @@ func TestHandle(t *testing.T) {
 		assert.Empty(t, resp.Patches)
 
 		assert.True(t, annotated)
-
 	})
 }
 

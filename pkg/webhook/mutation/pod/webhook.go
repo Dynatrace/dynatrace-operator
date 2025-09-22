@@ -95,12 +95,14 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 		if !errors.As(err, injectionMutErr) {
 			return silentErrorResponse(mutationRequest.Pod, err)
 		}
+
 		mutErr = injectionMutErr
 	} else if err := wh.otlpHandler.Handle(mutationRequest); err != nil {
 		otlpMutErr := new(dtwebhook.MutatorError)
 		if !errors.As(err, otlpMutErr) {
 			return silentErrorResponse(mutationRequest.Pod, err)
 		}
+
 		mutErr = otlpMutErr
 	}
 

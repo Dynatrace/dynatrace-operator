@@ -35,5 +35,6 @@ func (Mutator) Mutate(_ *dtwebhook.MutationRequest) error {
 
 func (Mutator) Reinvoke(_ *dtwebhook.ReinvocationRequest) bool {
 	log.Debug("reinvocation of OTLP resource attribute mutator")
+
 	return false
 }
