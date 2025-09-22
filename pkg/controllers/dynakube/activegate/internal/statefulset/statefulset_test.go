@@ -73,9 +73,9 @@ func TestGetBaseObjectMeta(t *testing.T) {
 
 	t.Run("creating object meta", func(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		objectMeta := builder.getBaseObjectMeta()
+		objectMeta := stsBuilder.getBaseObjectMeta()
 
 		require.NotEmpty(t, objectMeta)
 		assert.Contains(t, objectMeta.Name, dk.Name)
@@ -84,8 +84,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 	})
 	t.Run("default annotations", func(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := stsBuilder.CreateStatefulSet(nil)
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
@@ -98,8 +98,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Status.ActiveGate.Source = status.TenantRegistryVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := stsBuilder.CreateStatefulSet(nil)
 		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
 			{
 				MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -123,8 +123,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Status.ActiveGate.Source = status.CustomImageVersionSource
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := stsBuilder.CreateStatefulSet(nil)
 		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
 			{
 				MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -149,8 +149,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 			"test": "test",
 		}
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, _ := stsBuilder.CreateStatefulSet(nil)
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
@@ -167,9 +167,9 @@ func TestGetBaseSpec(t *testing.T) {
 
 	t.Run("creating base statefulset spec", func(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		stsSpec := builder.getBaseSpec()
+		stsSpec := stsBuilder.getBaseSpec()
 
 		require.NotEmpty(t, stsSpec)
 		assert.Equal(t, &testReplicas, stsSpec.Replicas)
@@ -183,13 +183,13 @@ func TestAddLabels(t *testing.T) {
 	t.Run("adds labels", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
+		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, stsBuilder.dynakube.Name, consts.MultiActiveGateName, "")
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
-		builder.addLabels(&sts)
+		stsBuilder.addLabels(&sts)
 
 		require.NotEmpty(t, sts.Labels)
 		assert.Equal(t, expectedLabels, sts.Labels)
@@ -203,13 +203,13 @@ func TestAddLabels(t *testing.T) {
 			"test": "test",
 		}
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
+		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, stsBuilder.dynakube.Name, consts.MultiActiveGateName, "")
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 
-		builder.addLabels(&sts)
+		stsBuilder.addLabels(&sts)
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
 		assert.Equal(t, expectedTemplateLabels, sts.Spec.Template.Labels)
@@ -220,10 +220,10 @@ func TestAddTemplateSpec(t *testing.T) {
 	t.Run("adds template spec", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		stsBuilder.addTemplateSpec(&sts)
 		spec := sts.Spec.Template.Spec
 
 		assert.NotEmpty(t, spec.Containers)
@@ -236,10 +236,10 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.KubeMonCapability.DisplayName)
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		stsBuilder.addTemplateSpec(&sts)
 		spec := sts.Spec.Template.Spec
 		assert.Contains(t, spec.ServiceAccountName, dk.ActiveGate().GetServiceAccountName())
 	})
@@ -252,10 +252,10 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk.Spec.ActiveGate.NodeSelector = testNodeSelector
 
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		stsBuilder.addTemplateSpec(&sts)
 		spec := sts.Spec.Template.Spec
 
 		assert.Equal(t, testNodeSelector, spec.NodeSelector)
@@ -272,10 +272,10 @@ func TestAddTemplateSpec(t *testing.T) {
 		}
 		dk.Spec.ActiveGate.Tolerations = testTolerations
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		stsBuilder.addTemplateSpec(&sts)
 		spec := sts.Spec.Template.Spec
 
 		for _, toleration := range testTolerations {
@@ -287,10 +287,10 @@ func TestAddTemplateSpec(t *testing.T) {
 		testDNSPolicy := "test"
 		dk.Spec.ActiveGate.DNSPolicy = corev1.DNSPolicy(testDNSPolicy)
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		stsBuilder.addTemplateSpec(&sts)
 		spec := sts.Spec.Template.Spec
 		assert.Equal(t, corev1.DNSPolicy(testDNSPolicy), spec.DNSPolicy)
 	})
@@ -299,10 +299,10 @@ func TestAddTemplateSpec(t *testing.T) {
 		testPriorityClass := "test"
 		dk.Spec.ActiveGate.PriorityClassName = testPriorityClass
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		stsBuilder.addTemplateSpec(&sts)
 		spec := sts.Spec.Template.Spec
 
 		assert.Equal(t, testPriorityClass, spec.PriorityClassName)
@@ -311,11 +311,11 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk := getTestDynakube()
 
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, err := stsBuilder.CreateStatefulSet(nil)
 		require.NoError(t, err)
 
-		assert.Equal(t, builder.defaultTopologyConstraints(), sts.Spec.Template.Spec.TopologySpreadConstraints)
+		assert.Equal(t, stsBuilder.defaultTopologyConstraints(), sts.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 	t.Run("set topologyConstraint", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -326,20 +326,36 @@ func TestAddTemplateSpec(t *testing.T) {
 		}
 		dk.Spec.ActiveGate.TopologySpreadConstraints = testTopologyConstraint
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, err := stsBuilder.CreateStatefulSet(nil)
 		require.NoError(t, err)
 
 		assert.Equal(t, testTopologyConstraint, sts.Spec.Template.Spec.TopologySpreadConstraints)
 	})
-	t.Run("default readinessProbe timeout is 2s", func(t *testing.T) {
+	t.Run("readinessProbe settings", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts, err := builder.CreateStatefulSet(nil)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, err := stsBuilder.CreateStatefulSet(nil)
 		require.NoError(t, err)
 
+		assert.Equal(t, int32(90), sts.Spec.Template.Spec.Containers[0].ReadinessProbe.InitialDelaySeconds)
+		assert.Equal(t, int32(15), sts.Spec.Template.Spec.Containers[0].ReadinessProbe.PeriodSeconds)
+		assert.Equal(t, int32(3), sts.Spec.Template.Spec.Containers[0].ReadinessProbe.FailureThreshold)
 		assert.Equal(t, int32(2), sts.Spec.Template.Spec.Containers[0].ReadinessProbe.TimeoutSeconds)
+	})
+	t.Run("livenessProbe settings", func(t *testing.T) {
+		dk := getTestDynakube()
+		multiCapability := capability.NewMultiCapability(&dk)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts, err := stsBuilder.CreateStatefulSet(nil)
+		require.NoError(t, err)
+
+		assert.Equal(t, int32(90), sts.Spec.Template.Spec.Containers[0].LivenessProbe.InitialDelaySeconds)
+		assert.Equal(t, int32(30), sts.Spec.Template.Spec.Containers[0].LivenessProbe.PeriodSeconds)
+		assert.Equal(t, int32(2), sts.Spec.Template.Spec.Containers[0].LivenessProbe.FailureThreshold)
+		assert.Equal(t, int32(1), sts.Spec.Template.Spec.Containers[0].LivenessProbe.TimeoutSeconds)
+		assert.Equal(t, int32(1), sts.Spec.Template.Spec.Containers[0].LivenessProbe.SuccessThreshold)
 	})
 }
 
@@ -347,9 +363,9 @@ func TestBuildBaseContainer(t *testing.T) {
 	t.Run("build container", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		containers := builder.buildBaseContainer()
+		containers := stsBuilder.buildBaseContainer()
 
 		require.Len(t, containers, 1)
 		container := containers[0]
@@ -364,9 +380,9 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("build envs", func(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		envs := builder.buildCommonEnvs()
+		envs := stsBuilder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
 		capEnv := env.FindEnvVar(envs, consts.EnvDtCapabilities)
@@ -409,14 +425,14 @@ func TestBuildCommonEnvs(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.Env = testEnvs
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		envs := builder.buildCommonEnvs()
+		envs := stsBuilder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
 
-		for _, env := range testEnvs {
-			require.Contains(t, envs, env)
+		for _, testEnv := range testEnvs {
+			require.Contains(t, envs, testEnv)
 		}
 
 		idx := slices.IndexFunc(envs, func(env corev1.EnvVar) bool {
@@ -430,9 +446,9 @@ func TestBuildCommonEnvs(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.Group = testGroup
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		envs := builder.buildCommonEnvs()
+		envs := stsBuilder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
 		groupEnv := env.FindEnvVar(envs, consts.EnvDtGroup)
@@ -447,9 +463,9 @@ func TestBuildCommonEnvs(t *testing.T) {
 		agutil.SwitchCapability(&dk, activegate.MetricsIngestCapability, true)
 
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		envs := builder.buildCommonEnvs()
+		envs := stsBuilder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
 		dtHTTPPortEnv := env.FindEnvVar(envs, consts.EnvDtHTTPPort)
@@ -462,9 +478,9 @@ func TestBuildCommonEnvs(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.NetworkZone = testNetworkZone
 		multiCapability := capability.NewMultiCapability(&dk)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		stsBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 
-		envs := builder.buildCommonEnvs()
+		envs := stsBuilder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
 		zoneEnv := env.FindEnvVar(envs, consts.EnvDtNetworkZone)
