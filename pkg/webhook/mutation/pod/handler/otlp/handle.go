@@ -27,6 +27,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	}
 
 	log.Debug("OTLP injection enabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+
 	if h.envVarMutator.IsEnabled(mutationRequest.BaseRequest) {
 		err := h.envVarMutator.Mutate(mutationRequest)
 		if err != nil {

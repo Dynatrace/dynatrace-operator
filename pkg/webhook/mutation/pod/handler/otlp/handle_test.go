@@ -1,6 +1,7 @@
 package otlp
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -33,7 +34,7 @@ func TestHandler_Handle(t *testing.T) {
 		request := createTestMutationRequest(t, dk)
 
 		err := h.Handle(request)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		mockEnvVarMutator.AssertNotCalled(t, "Mutate")
 		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
@@ -50,7 +51,7 @@ func TestHandler_Handle(t *testing.T) {
 		request.Pod.Annotations[mutator.AnnotationDynatraceInject] = "false"
 
 		err := h.Handle(request)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		mockEnvVarMutator.AssertNotCalled(t, "Mutate")
 		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")

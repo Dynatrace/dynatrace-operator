@@ -19,8 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"gomodules.xyz/jsonpatch/v2"
-	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -183,17 +181,12 @@ func TestHandle(t *testing.T) {
 
 		resp := wh.Handle(ctx, *request)
 		require.NotNil(t, resp)
+		assert.True(t, resp.Allowed)
+		// make sure no changes have been made to the pod due to the error returned by the handler
+		assert.Empty(t, resp.Patches)
 
 		assert.True(t, annotated)
 
-		expected := admission.Response{
-			// make sure no changes have been made to the pod due to the error returned by the handler
-			Patches: make([]jsonpatch.JsonPatchOperation, 0),
-			AdmissionResponse: admissionv1.AdmissionResponse{
-				Allowed: true,
-			},
-		}
-		assert.Equal(t, expected, resp)
 	})
 }
 
