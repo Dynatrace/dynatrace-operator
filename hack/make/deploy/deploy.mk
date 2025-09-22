@@ -1,6 +1,7 @@
 ENABLE_CSI ?= true
 DEBUG_LOGS ?= true
 PLATFORM ?= "kubernetes"
+HELM_CHART ?= config/helm/chart/default
 
 ## Deploy the operator without the csi-driver
 deploy/no-csi:
@@ -11,7 +12,7 @@ deploy/fips:
 
 ## Deploy the operator with csi-driver
 deploy: manifests/crd/helm
-	helm upgrade dynatrace-operator config/helm/chart/default \
+	helm upgrade dynatrace-operator $(HELM_CHART) \
 			--install \
 			--namespace dynatrace \
 			--create-namespace \

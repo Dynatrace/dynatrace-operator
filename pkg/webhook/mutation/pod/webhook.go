@@ -89,20 +89,20 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	originalPod := mutationRequest.Pod.DeepCopy()
 
+	var mutErr *dtwebhook.MutatorError
 	if err := wh.injectionHandler.Handle(mutationRequest); err != nil {
-		mutErr := new(dtwebhook.MutatorError)
+		mutErr = new(dtwebhook.MutatorError)
 		if !errors.As(err, mutErr) {
 			return silentErrorResponse(mutationRequest.Pod, err)
 		}
-
-		mutationRequest.Pod = originalPod // prevent partial modifications
-		mutErr.SetAnnotations(mutationRequest.Pod)
 	} else if err := wh.otlpHandler.Handle(mutationRequest); err != nil {
-		mutErr := new(dtwebhook.MutatorError)
+		mutErr = new(dtwebhook.MutatorError)
 		if !errors.As(err, mutErr) {
 			return silentErrorResponse(mutationRequest.Pod, err)
 		}
+	}
 
+	if mutErr != nil {
 		mutationRequest.Pod = originalPod // prevent partial modifications
 		mutErr.SetAnnotations(mutationRequest.Pod)
 	}

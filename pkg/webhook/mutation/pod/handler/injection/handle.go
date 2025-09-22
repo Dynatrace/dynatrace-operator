@@ -36,13 +36,13 @@ func New( //nolint:revive
 	oaMutator dtwebhook.Mutator,
 ) *Handler {
 	return &Handler{
-		recorder:        recorder,
-		metaMutator:     metaMutator,
-		oaMutator:       oaMutator,
 		kubeClient:      kubeClient,
 		apiReader:       apiReader,
+		recorder:        recorder,
 		webhookPodImage: webhookPodImage,
 		isOpenShift:     isOpenShift,
+		metaMutator:     metaMutator,
+		oaMutator:       oaMutator,
 	}
 }
 
