@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -167,7 +168,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 func compareMovedFields(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 	assert.Equal(t, oldDk.FF().GetAPIRequestThreshold(), newDk.APIRequestThreshold())
 	assert.Equal(t, oldDk.FF().GetOneAgentSecCompProfile(), newDk.OneAgent().GetSecCompProfile())
-	assert.Equal(t, !oldDk.FF().DisableMetadataEnrichment(), newDk.MetadataEnrichmentEnabled())
+	assert.Equal(t, !oldDk.FF().DisableMetadataEnrichment(), newDk.MetadataEnrichment().IsEnabled())
 	assert.Equal(t, *oldDk.NamespaceSelector(), newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
 	if oldDk.FF().GetCSIMaxFailedMountAttempts() != exp.DefaultCSIMaxFailedMountAttempts {
@@ -302,7 +303,7 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			DynatraceAPIRequestThreshold: ptr.To(uint16(42)),
-			MetadataEnrichment: dynakube.MetadataEnrichment{
+			MetadataEnrichment: metadataenrichment.Spec{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
 			},

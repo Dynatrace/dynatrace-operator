@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -154,7 +155,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakube.DynaKube) {
 		assert.Equal(t, oldDk.OneAgentNamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
 	}
 
-	assert.Equal(t, oldDk.MetadataEnrichmentEnabled(), newDk.MetadataEnrichmentEnabled())
+	assert.Equal(t, oldDk.MetadataEnrichmentEnabled(), newDk.MetadataEnrichment().IsEnabled())
 	assert.Equal(t, oldDk.Spec.MetadataEnrichment.NamespaceSelector, newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
 	if oldDk.Spec.Proxy != nil || newDk.Spec.Proxy != nil { // necessary so we don't explode with nil pointer when not set
@@ -294,7 +295,7 @@ func getNewDynakubeBase() dynakube.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			DynatraceAPIRequestThreshold: ptr.To(uint16(42)),
-			MetadataEnrichment: dynakube.MetadataEnrichment{
+			MetadataEnrichment: metadataenrichment.Spec{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
 			},

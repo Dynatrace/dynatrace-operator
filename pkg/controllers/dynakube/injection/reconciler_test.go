@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -97,7 +98,7 @@ func TestReconciler(t *testing.T) {
 						},
 					},
 				},
-				MetadataEnrichment: dynakube.MetadataEnrichment{
+				MetadataEnrichment: metadataenrichment.Spec{
 					Enabled: ptr.To(true),
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{

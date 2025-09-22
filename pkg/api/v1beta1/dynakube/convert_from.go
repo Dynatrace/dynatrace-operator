@@ -92,7 +92,7 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakube.DynaKube) {
 }
 
 func (dst *DynaKube) fromMovedFields(src *dynakube.DynaKube) error {
-	dst.Annotations[exp.InjectionMetadataEnrichmentKey] = strconv.FormatBool(src.MetadataEnrichmentEnabled())
+	dst.Annotations[exp.InjectionMetadataEnrichmentKey] = strconv.FormatBool(src.MetadataEnrichment().IsEnabled())
 	dst.Annotations[exp.APIRequestThresholdKey] = strconv.FormatInt(int64(src.GetDynatraceAPIRequestThreshold()), 10)
 	dst.Annotations[exp.OASecCompProfileKey] = src.OneAgent().GetSecCompProfile()
 

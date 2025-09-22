@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -104,10 +105,10 @@ func (src *DynaKube) toActiveGateSpec(dst *dynakube.DynaKube) {
 func (src *DynaKube) toMovedFields(dst *dynakube.DynaKube) error {
 	if src.Annotations[exp.InjectionMetadataEnrichmentKey] == "false" ||
 		!src.NeedAppInjection() {
-		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: ptr.To(false)}
+		dst.Spec.MetadataEnrichment = metadataenrichment.Spec{Enabled: ptr.To(false)}
 		delete(dst.Annotations, exp.InjectionMetadataEnrichmentKey)
 	} else {
-		dst.Spec.MetadataEnrichment = dynakube.MetadataEnrichment{Enabled: ptr.To(true)}
+		dst.Spec.MetadataEnrichment = metadataenrichment.Spec{Enabled: ptr.To(true)}
 		delete(dst.Annotations, exp.InjectionMetadataEnrichmentKey)
 	}
 

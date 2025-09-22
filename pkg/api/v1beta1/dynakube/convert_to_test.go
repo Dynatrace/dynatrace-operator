@@ -36,7 +36,7 @@ func TestConvertTo(t *testing.T) {
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring)
 		compareMovedFields(t, from, to)
-		assert.False(t, to.MetadataEnrichmentEnabled())
+		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
 	t.Run("migrate classic-fullstack from v1beta1 to v1beta2", func(t *testing.T) {
@@ -49,7 +49,7 @@ func TestConvertTo(t *testing.T) {
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack)
 		compareMovedFields(t, from, to)
-		assert.False(t, to.MetadataEnrichmentEnabled())
+		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
 	t.Run("migrate cloud-native from v1beta1 to v1beta2", func(t *testing.T) {
@@ -84,7 +84,7 @@ func TestConvertTo(t *testing.T) {
 		from.ConvertTo(&to)
 
 		compareActiveGateSpec(t, from.Spec.ActiveGate, to.Spec.ActiveGate)
-		assert.False(t, to.MetadataEnrichmentEnabled())
+		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
 	t.Run("migrate status from v1beta2 to v1beta1", func(t *testing.T) {

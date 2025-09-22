@@ -172,6 +172,6 @@ func fromAppInjectSpec(src oneagent.AppInjectionSpec) *AppInjectionSpec {
 }
 
 func (dst *DynaKube) fromMetadataEnrichment(src *dynakube.DynaKube) {
-	dst.Spec.MetadataEnrichment.Enabled = src.MetadataEnrichmentEnabled()
+	dst.Spec.MetadataEnrichment.Enabled = src.MetadataEnrichment().IsEnabled()
 	dst.Spec.MetadataEnrichment.NamespaceSelector = src.Spec.MetadataEnrichment.NamespaceSelector
 }
