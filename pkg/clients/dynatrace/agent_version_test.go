@@ -3,9 +3,11 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/spf13/afero"
@@ -50,6 +52,78 @@ const (
 	versionedAgentResponse = `zip-content-1.2.3`
 	versionsResponse       = `{ "availableVersions": [ "1.123.1", "1.123.2", "1.123.3", "1.123.4" ] }`
 )
+
+func TestGetEntityIDForIP(t *testing.T) {
+	ctx := context.Background()
+
+	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{}, "")
+	defer dynatraceServer.Close()
+
+	dtc := dynatraceClient{
+		apiToken:   apiToken,
+		paasToken:  paasToken,
+		httpClient: dynatraceServer.Client(),
+		url:        dynatraceServer.URL,
+	}
+	require.NoError(t, dtc.setHostCacheFromResponse([]byte(
+		fmt.Sprintf(`[
+	{
+		"entityId": "HOST-42",
+		"displayName": "A",
+		"firstSeenTimestamp": 1589940921731,
+		"lastSeenTimestamp": %v,
+		"ipAddresses": [
+			"1.1.1.1"
+		],
+		"monitoringMode": "FULL_STACK",
+		"networkZoneId": "default",
+		"agentVersion": {
+			"major": 1,
+			"minor": 195,
+			"revision": 0,
+			"timestamp": "20200515-045253",
+			"sourceRevision": ""
+		}
+	}
+]`, time.Now().UTC().Unix()*1000))))
+
+	id, err := dtc.GetEntityIDForIP(ctx, "1.1.1.1")
+	require.NoError(t, err)
+	assert.NotEmpty(t, id)
+	assert.Equal(t, "HOST-42", id)
+
+	id, err = dtc.GetEntityIDForIP(ctx, "2.2.2.2")
+
+	require.Error(t, err)
+	assert.Empty(t, id)
+
+	require.NoError(t, dtc.setHostCacheFromResponse([]byte(
+		fmt.Sprintf(`[
+	{
+		"entityId": "",
+		"displayName": "A",
+		"firstSeenTimestamp": 1589940921731,
+		"lastSeenTimestamp": %v,
+		"ipAddresses": [
+			"1.1.1.1"
+		],
+		"monitoringMode": "FULL_STACK",
+		"networkZoneId": "default",
+		"agentVersion": {
+			"major": 1,
+			"minor": 195,
+			"revision": 0,
+			"timestamp": "20200515-045253",
+			"sourceRevision": ""
+		}
+	}
+]`, time.Now().UTC().Unix()*1000))))
+
+	id, err = dtc.GetEntityIDForIP(ctx, "1.1.1.1")
+
+	require.Error(t, err)
+	assert.Empty(t, id)
+}
 
 func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client) {
 	ctx := context.Background()
