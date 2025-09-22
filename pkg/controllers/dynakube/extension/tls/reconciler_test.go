@@ -168,7 +168,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{},
+			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: image.Ref{

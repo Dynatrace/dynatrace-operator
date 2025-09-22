@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
 	podwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -210,8 +211,15 @@ func createTestWebhook(t *testing.T, oaMut, metaMut podwebhook.Mutator, objects 
 
 	require.NoError(t, err)
 
-	wh.oaMutator = oaMut
-	wh.metaMutator = metaMut
+	wh.injectionHandler = injection.New(
+		fakeClient,
+		fakeClient,
+		wh.recorder,
+		wh.webhookPodImage,
+		false,
+		metaMut,
+		oaMut,
+	)
 
 	return wh
 }

@@ -8741,6 +8741,9 @@ spec:
               enableIstio:
                 type: boolean
               extensions:
+                properties:
+                  prometheus:
+                    type: object
                 type: object
               kspm:
                 properties:

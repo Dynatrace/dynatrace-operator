@@ -1,4 +1,4 @@
-package pod
+package injection
 
 import (
 	"fmt"
@@ -7,29 +7,62 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (wh *webhook) handle(mutationRequest *dtwebhook.MutationRequest) error {
-	wh.recorder.Setup(mutationRequest)
+type Handler struct {
+	recorder    events.EventRecorder
+	metaMutator dtwebhook.Mutator
+	oaMutator   dtwebhook.Mutator
 
-	if !wh.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitSecretName) {
+	kubeClient client.Client
+	apiReader  client.Reader
+
+	webhookPodImage string
+	isOpenShift     bool
+}
+
+func New( //nolint:revive
+	kubeClient client.Client,
+	apiReader client.Reader,
+	recorder events.EventRecorder,
+	webhookPodImage string,
+	isOpenShift bool,
+	metaMutator,
+	oaMutator dtwebhook.Mutator,
+) *Handler {
+	return &Handler{
+		kubeClient:      kubeClient,
+		apiReader:       apiReader,
+		recorder:        recorder,
+		webhookPodImage: webhookPodImage,
+		isOpenShift:     isOpenShift,
+		metaMutator:     metaMutator,
+		oaMutator:       oaMutator,
+	}
+}
+
+func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
+	h.recorder.Setup(mutationRequest)
+
+	if !h.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitSecretName) {
 		return nil
 	}
 
 	if mutationRequest.DynaKube.IsAGCertificateNeeded() || mutationRequest.DynaKube.Spec.TrustedCAs != "" {
-		if !wh.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceCertsSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitCertsSecretName) {
+		if !h.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceCertsSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitCertsSecretName) {
 			return nil
 		}
 	}
 
-	if wh.isInjected(mutationRequest) {
-		if wh.handlePodReinvocation(mutationRequest) {
+	if h.isInjected(mutationRequest) {
+		if h.handlePodReinvocation(mutationRequest) {
 			log.Info("reinvocation policy applied", "podName", mutationRequest.PodName())
-			wh.recorder.SendPodUpdateEvent()
+			h.recorder.SendPodUpdateEvent()
 
 			return nil
 		}
@@ -38,7 +71,7 @@ func (wh *webhook) handle(mutationRequest *dtwebhook.MutationRequest) error {
 
 		return nil
 	} else {
-		mutated, err := wh.handlePodMutation(mutationRequest)
+		mutated, err := h.handlePodMutation(mutationRequest)
 		if err != nil {
 			return err
 		}
@@ -57,7 +90,7 @@ func (wh *webhook) handle(mutationRequest *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
+func (h *Handler) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 	installContainer := container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
 	if installContainer != nil {
 		log.Info("Dynatrace init-container already present, skipping mutation, doing reinvocation", "containerName", dtwebhook.InstallContainerName)
@@ -68,13 +101,13 @@ func (wh *webhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 	return false
 }
 
-func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
-	mutationRequest.InstallContainer = wh.createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
+func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
+	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
 
 	var mutated bool
 
-	if wh.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
-		err := wh.oaMutator.Mutate(mutationRequest)
+	if h.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
+		err := h.oaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
 		}
@@ -82,8 +115,8 @@ func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest)
 		mutated = true
 	}
 
-	if wh.metaMutator.IsEnabled(mutationRequest.BaseRequest) {
-		err := wh.metaMutator.Mutate(mutationRequest)
+	if h.metaMutator.IsEnabled(mutationRequest.BaseRequest) {
+		err := h.metaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
 		}
@@ -105,13 +138,13 @@ func (wh *webhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest)
 		}
 
 		addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
-		wh.recorder.SendPodInjectEvent()
+		h.recorder.SendPodInjectEvent()
 	}
 
 	return mutated, nil
 }
 
-func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
+func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
 	mutationRequest.InstallContainer = container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
 
 	// metadata enrichment does not need to be reinvoked, addContainerAttributes() does what is needed
@@ -123,15 +156,15 @@ func (wh *webhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequ
 	}
 
 	var oaUpdated bool
-	if wh.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
-		oaUpdated = wh.oaMutator.Reinvoke(mutationRequest.ToReinvocationRequest())
+	if h.oaMutator.IsEnabled(mutationRequest.BaseRequest) {
+		oaUpdated = h.oaMutator.Reinvoke(mutationRequest.ToReinvocationRequest())
 	}
 
 	return hasNewContainers || oaUpdated
 }
 
-func (wh *webhook) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
-	err := wh.replicateSecret(mutationRequest, sourceSecretName, targetSecretName)
+func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
+	err := h.replicateSecret(mutationRequest, sourceSecretName, targetSecretName)
 	if k8serrors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("unable to copy source of %s as it is not available, injection not possible", sourceSecretName), "pod", mutationRequest.PodName())
 
@@ -151,16 +184,16 @@ func (wh *webhook) isInputSecretPresent(mutationRequest *dtwebhook.MutationReque
 	return true
 }
 
-func (wh *webhook) replicateSecret(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) error {
+func (h *Handler) replicateSecret(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) error {
 	var initSecret corev1.Secret
 
 	secretObjectKey := client.ObjectKey{Name: targetSecretName, Namespace: mutationRequest.Namespace.Name}
 
-	err := wh.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
+	err := h.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
 	if k8serrors.IsNotFound(err) {
 		log.Info(targetSecretName+" is not available, trying to replicate", "pod", mutationRequest.PodName())
 
-		return bootstrapperconfig.Replicate(mutationRequest.Context, mutationRequest.DynaKube, secret.Query(wh.kubeClient, wh.apiReader, log), sourceSecretName, targetSecretName, mutationRequest.Namespace.Name)
+		return bootstrapperconfig.Replicate(mutationRequest.Context, mutationRequest.DynaKube, secret.Query(h.kubeClient, h.apiReader, log), sourceSecretName, targetSecretName, mutationRequest.Namespace.Name)
 	}
 
 	return nil

@@ -8,7 +8,6 @@
 |`customPullSecret`||-|string|
 |`dynatraceApiRequestThreshold`||-|integer|
 |`enableIstio`||-|boolean|
-|`extensions`||-|object|
 |`networkZone`||-|string|
 |`proxy`||-|object|
 |`skipCertCheck`||-|boolean|
@@ -48,6 +47,12 @@
 |`tolerations`||-|array|
 |`topologySpreadConstraints`||-|array|
 |`useEphemeralVolume`||-|boolean|
+
+### .spec.extensions
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`prometheus`||-|object|
 
 ### .spec.logMonitoring
 

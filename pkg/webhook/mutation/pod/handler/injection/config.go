@@ -1,11 +1,11 @@
-package pod
+package injection
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
 var (
-	log = logd.Get().WithName("pod-mutation")
+	log = logd.Get().WithName("pod-mutation-injection")
 )
 
 const (
