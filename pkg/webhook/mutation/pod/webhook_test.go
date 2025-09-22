@@ -163,7 +163,7 @@ func TestHandle(t *testing.T) {
 		otlpHandler := handlermock.NewHandler(t)
 
 		annotated := false
-		otlpHandler.On("Handle", mock.Anything).Return(&podwebhook.MutatorError{
+		otlpHandler.On("Handle", mock.Anything).Return(podwebhook.MutatorError{
 			Err: errors.New("err"),
 			Annotate: func(_ *corev1.Pod) {
 				annotated = true

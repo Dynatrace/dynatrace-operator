@@ -91,13 +91,17 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	var mutErr *dtwebhook.MutatorError
 	if err := wh.injectionHandler.Handle(mutationRequest); err != nil {
-		if !errors.As(err, &mutErr) {
+		injectionMutErr := new(dtwebhook.MutatorError)
+		if !errors.As(err, injectionMutErr) {
 			return silentErrorResponse(mutationRequest.Pod, err)
 		}
+		mutErr = injectionMutErr
 	} else if err := wh.otlpHandler.Handle(mutationRequest); err != nil {
-		if !errors.As(err, &mutErr) {
+		otlpMutErr := new(dtwebhook.MutatorError)
+		if !errors.As(err, otlpMutErr) {
 			return silentErrorResponse(mutationRequest.Pod, err)
 		}
+		mutErr = otlpMutErr
 	}
 
 	if mutErr != nil {
