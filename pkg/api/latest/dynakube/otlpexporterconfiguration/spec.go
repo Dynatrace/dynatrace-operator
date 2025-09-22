@@ -19,6 +19,7 @@ package otlpexporterconfiguration
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 // +kubebuilder:object:generate=true
+
 type Spec struct {
 	// The namespaces where you want Dynatrace Operator to inject OTLP exporter configuration.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
@@ -38,20 +39,20 @@ type Spec struct {
 type SignalConfiguration struct {
 	// Enables the automatic OTLP exporter configuration for Metrics
 	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
-	Metrics *MetricsConfiguration `json:"metrics,omitempty"`
+	Metrics *MetricsSignal `json:"metrics,omitempty"`
 	// Enables the automatic OTLP exporter configuration for Traces
 	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
-	Traces *TracesConfiguration `json:"traces,omitempty"`
+	Traces *TracesSignal `json:"traces,omitempty"`
 	// Enables the automatic OTLP exporter configuration for Logs
 	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
-	Logs *LogsConfiguration `json:"logs,omitempty"`
+	Logs *LogsSignal `json:"logs,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
-type MetricsConfiguration struct{}
+type MetricsSignal struct{}
 
 // +kubebuilder:object:generate=true
-type TracesConfiguration struct{}
+type TracesSignal struct{}
 
 // +kubebuilder:object:generate=true
-type LogsConfiguration struct{}
+type LogsSignal struct{}

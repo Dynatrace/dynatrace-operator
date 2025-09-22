@@ -55,7 +55,7 @@ func TestSpec_IsMetricsEnabled(t *testing.T) {
 	t.Run("metrics enabled", func(t *testing.T) {
 		s := Spec{
 			Signals: SignalConfiguration{
-				Metrics: &MetricsConfiguration{},
+				Metrics: &MetricsSignal{},
 			},
 		}
 
@@ -72,7 +72,7 @@ func TestSpec_IsTracesEnabled(t *testing.T) {
 	t.Run("traces enabled", func(t *testing.T) {
 		s := Spec{
 			Signals: SignalConfiguration{
-				Traces: &TracesConfiguration{},
+				Traces: &TracesSignal{},
 			},
 		}
 
@@ -89,7 +89,7 @@ func TestSpec_IsLogsEnabled(t *testing.T) {
 	t.Run("traces enabled", func(t *testing.T) {
 		s := Spec{
 			Signals: SignalConfiguration{
-				Logs: &LogsConfiguration{},
+				Logs: &LogsSignal{},
 			},
 		}
 

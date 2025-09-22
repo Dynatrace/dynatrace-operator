@@ -100,7 +100,7 @@ type DynaKubeSpec struct { //nolint:revive
 	TelemetryIngest *telemetryingest.Spec `json:"telemetryIngest,omitempty"`
 
 	// Configuration for OTLP Exporter Configuration
-	// kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OTLP Exporter Configuration",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	OTLPExporterConfiguration *otlpexporterconfiguration.Spec `json:"otlpExporterConfiguration,omitempty"`
 
