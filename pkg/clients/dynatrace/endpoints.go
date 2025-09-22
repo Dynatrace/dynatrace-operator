@@ -53,6 +53,10 @@ func (dtc *dynatraceClient) getActiveGateConnectionInfoURL() string {
 	return dtc.url + "/v1/deployment/installer/gateway/connectioninfo"
 }
 
+func (dtc *dynatraceClient) getHostsURL() string {
+	return dtc.url + "/v1/entity/infrastructure/hosts?includeDetails=false"
+}
+
 func (dtc *dynatraceClient) getSettingsURL(validate bool) string {
 	validationQuery := ""
 	if !validate {
@@ -73,6 +77,10 @@ func (dtc *dynatraceClient) getEffectiveSettingsURL(validate bool) string {
 
 func (dtc *dynatraceClient) getProcessModuleConfigURL() string {
 	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
+}
+
+func (dtc *dynatraceClient) getEventsURL() string {
+	return dtc.url + "/v1/events"
 }
 
 func (dtc *dynatraceClient) getTokensLookupURL() string {
