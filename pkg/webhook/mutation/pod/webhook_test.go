@@ -2,6 +2,11 @@ package pod
 
 import (
 	"context"
+	"errors"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler"
+	"github.com/stretchr/testify/mock"
+	"gomodules.xyz/jsonpatch/v2"
+	admissionv1 "k8s.io/api/admission/v1"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -12,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
 	podwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	handlermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/handler"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,10 +40,7 @@ func TestHandle(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("can't get NS ==> no inject, err in message", func(t *testing.T) {
-		wh := createTestWebhook(t,
-			webhookmock.NewMutator(t),
-			webhookmock.NewMutator(t),
-		)
+		wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t), handlermock.NewHandler(t))
 
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
 
@@ -49,11 +52,7 @@ func TestHandle(t *testing.T) {
 	})
 
 	t.Run("can't get DK ==> no inject, err in message", func(t *testing.T) {
-		wh := createTestWebhook(t,
-			webhookmock.NewMutator(t),
-			webhookmock.NewMutator(t),
-			getTestNamespace(),
-		)
+		wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t), handlermock.NewHandler(t), getTestNamespace())
 
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
 
@@ -67,11 +66,7 @@ func TestHandle(t *testing.T) {
 	t.Run("DK name missing from NS but OLM ==> no inject, no err in message", func(t *testing.T) {
 		ns := getTestNamespace()
 		ns.Labels = map[string]string{}
-		wh := createTestWebhook(t,
-			webhookmock.NewMutator(t),
-			webhookmock.NewMutator(t),
-			ns,
-		)
+		wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t), handlermock.NewHandler(t), ns)
 		wh.deployedViaOLM = true
 
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
@@ -86,11 +81,7 @@ func TestHandle(t *testing.T) {
 	t.Run("DK name missing from NS ==> no inject, err in message", func(t *testing.T) {
 		ns := getTestNamespace()
 		ns.Labels = map[string]string{}
-		wh := createTestWebhook(t,
-			webhookmock.NewMutator(t),
-			webhookmock.NewMutator(t),
-			ns,
-		)
+		wh := createTestWebhook(t, webhookmock.NewMutator(t), webhookmock.NewMutator(t), handlermock.NewHandler(t), ns)
 
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
 
@@ -105,6 +96,7 @@ func TestHandle(t *testing.T) {
 		wh := createTestWebhook(t,
 			webhookmock.NewMutator(t),
 			webhookmock.NewMutator(t),
+			handlermock.NewHandler(t),
 			getTestNamespace(),
 			getTestDynakube(),
 		)
@@ -121,6 +113,7 @@ func TestHandle(t *testing.T) {
 		wh := createTestWebhook(t,
 			webhookmock.NewMutator(t),
 			webhookmock.NewMutator(t),
+			handlermock.NewHandler(t),
 			getTestNamespace(),
 			getTestDynakube(),
 		)
@@ -137,6 +130,7 @@ func TestHandle(t *testing.T) {
 		wh := createTestWebhook(t,
 			webhookmock.NewMutator(t),
 			webhookmock.NewMutator(t),
+			handlermock.NewHandler(t),
 			getTestNamespace(),
 			getTestDynakube(),
 		)
@@ -147,6 +141,59 @@ func TestHandle(t *testing.T) {
 		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.Equal(t, admission.Patched(""), resp)
+	})
+	t.Run("Arbitrary Error in OTLP handler ==> revert all modifications and include message", func(t *testing.T) {
+		otlpHandler := handlermock.NewHandler(t)
+
+		otlpHandler.On("Handle", mock.Anything).Return(errors.New("err"))
+		wh := createTestWebhook(t,
+			webhookmock.NewMutator(t),
+			webhookmock.NewMutator(t),
+			otlpHandler,
+			getTestNamespace(),
+			getTestDynakube(),
+		)
+
+		request := createTestAdmissionRequest(getTestPod())
+
+		resp := wh.Handle(ctx, *request)
+		require.NotNil(t, resp)
+		assert.True(t, resp.Allowed)
+		assert.Equal(t, admission.Patched("Failed to inject into pod: test-pod because err"), resp)
+	})
+	t.Run("MutatorError in OTLP handler ==> revert all modifications", func(t *testing.T) {
+		otlpHandler := handlermock.NewHandler(t)
+
+		annotated := false
+		otlpHandler.On("Handle", mock.Anything).Return(&podwebhook.MutatorError{
+			Err: errors.New("err"),
+			Annotate: func(_ *corev1.Pod) {
+				annotated = true
+			},
+		})
+		wh := createTestWebhook(t,
+			webhookmock.NewMutator(t),
+			webhookmock.NewMutator(t),
+			otlpHandler,
+			getTestNamespace(),
+			getTestDynakube(),
+		)
+
+		request := createTestAdmissionRequest(getTestPod())
+
+		resp := wh.Handle(ctx, *request)
+		require.NotNil(t, resp)
+
+		assert.True(t, annotated)
+
+		expected := admission.Response{
+			// make sure no changes have been made to the pod due to the error returned by the handler
+			Patches: make([]jsonpatch.JsonPatchOperation, 0),
+			AdmissionResponse: admissionv1.AdmissionResponse{
+				Allowed: true,
+			},
+		}
+		assert.Equal(t, expected, resp)
 	})
 }
 
@@ -199,7 +246,7 @@ func getTestWebhookPod(t *testing.T) corev1.Pod {
 	}
 }
 
-func createTestWebhook(t *testing.T, oaMut, metaMut podwebhook.Mutator, objects ...client.Object) *webhook {
+func createTestWebhook(t *testing.T, oaMut, metaMut podwebhook.Mutator, otlpHandler handler.Handler, objects ...client.Object) *webhook {
 	t.Helper()
 
 	decoder := admission.NewDecoder(scheme.Scheme)
@@ -220,6 +267,8 @@ func createTestWebhook(t *testing.T, oaMut, metaMut podwebhook.Mutator, objects 
 		metaMut,
 		oaMut,
 	)
+
+	wh.otlpHandler = otlpHandler
 
 	return wh
 }

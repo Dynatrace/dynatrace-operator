@@ -41,7 +41,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	log.Info("OTLP injection finished", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+	log.Debug("OTLP injection finished", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 	return nil
 }
 
