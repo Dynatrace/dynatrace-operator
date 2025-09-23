@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	corev1 "k8s.io/api/core/v1"
@@ -115,11 +116,16 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	if in.Extensions != nil {
 		in, out := &in.Extensions, &out.Extensions
 		*out = new(extensions.Spec)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.TelemetryIngest != nil {
 		in, out := &in.TelemetryIngest, &out.TelemetryIngest
 		*out = new(telemetryingest.Spec)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.OTLPExporterConfiguration != nil {
+		in, out := &in.OTLPExporterConfiguration, &out.OTLPExporterConfiguration
+		*out = new(otlpexporterconfiguration.Spec)
 		(*in).DeepCopyInto(*out)
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)

@@ -67,6 +67,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: DT_HOST_AVAILABILITY_DETECTION
+              value: "{{ .Values.operator.hostAvailabilityDetection }}"
             {{- if .Values.debugLogs }}
             - name: LOG_LEVEL
               value: "debug"

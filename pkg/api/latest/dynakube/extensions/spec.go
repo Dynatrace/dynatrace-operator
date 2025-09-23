@@ -14,9 +14,12 @@ type Extensions struct {
 }
 
 // +kubebuilder:object:generate=true
-
 type Spec struct {
+	PrometheusSpec *PrometheusSpec `json:"prometheus,omitempty"`
 }
+
+// +kubebuilder:object:generate=true
+type PrometheusSpec struct{}
 
 // +kubebuilder:object:generate=true
 
