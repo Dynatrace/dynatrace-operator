@@ -18,11 +18,11 @@ func GetEmptyTargetEnrichmentKey(metadataType, key string) string {
 	return namespaceKeyPrefix + strings.ToLower(metadataType) + "." + key
 }
 
-func (m *MetadataEnrichment) IsEnabled() bool {
-	return m.Enabled != nil && *m.Enabled
+func (enrichment *MetadataEnrichment) IsEnabled() bool {
+	return enrichment.Enabled != nil && *enrichment.Enabled
 }
 
-func (m *MetadataEnrichment) GetNamespaceSelector() *v1.LabelSelector {
+func (enrichment *MetadataEnrichment) GetNamespaceSelector() *v1.LabelSelector {
 	// return &dk.Spec.MetadataEnrichment.NamespaceSelector
-	return &m.NamespaceSelector
+	return &enrichment.NamespaceSelector
 }
