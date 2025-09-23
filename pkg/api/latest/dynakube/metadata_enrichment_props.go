@@ -4,6 +4,7 @@ import "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadata
 
 func (dk *DynaKube) MetadataEnrichment() *metadataenrichment.MetadataEnrichment {
 	return &metadataenrichment.MetadataEnrichment{
-		Spec: &dk.Spec.MetadataEnrichment,
+		Spec:   &dk.Spec.MetadataEnrichment,
+		Status: &dk.Status.MetadataEnrichment,
 	}
 }
