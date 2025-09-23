@@ -5,9 +5,7 @@ import (
 	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	v1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube" //nolint:staticcheck
-	v1beta2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2/dynakube" //nolint:staticcheck
-	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube" //nolint:staticcheck
+	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
 	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -180,16 +178,6 @@ func getDynakube(obj runtime.Object) (*dynakube.DynaKube, error) {
 			return dk, err
 		}
 	case *v1beta3.DynaKube:
-		err := v.ConvertTo(dk)
-		if err != nil {
-			return dk, err
-		}
-	case *v1beta2.DynaKube:
-		err := v.ConvertTo(dk)
-		if err != nil {
-			return dk, err
-		}
-	case *v1beta1.DynaKube:
 		err := v.ConvertTo(dk)
 		if err != nil {
 			return dk, err
