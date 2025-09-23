@@ -16,13 +16,13 @@ func New() dtwebhook.Mutator {
 }
 
 func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
-	log.Debug("checking of OTLP env var injection is enabled")
+	log.Debug("checking if OTLP env var injection is enabled")
 
 	return false
 }
 
 func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
-	log.Debug("checking of OTLP env vars have already been injected")
+	log.Debug("checking if OTLP env vars have already been injected")
 
 	return false
 }
