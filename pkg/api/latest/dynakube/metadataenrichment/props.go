@@ -23,6 +23,5 @@ func (enrichment *MetadataEnrichment) IsEnabled() bool {
 }
 
 func (enrichment *MetadataEnrichment) GetNamespaceSelector() *v1.LabelSelector {
-	// return &dk.Spec.MetadataEnrichment.NamespaceSelector
 	return &enrichment.NamespaceSelector
 }
