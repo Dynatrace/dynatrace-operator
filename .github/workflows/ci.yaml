@@ -257,6 +257,19 @@ jobs:
         with:
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
+  kind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: engineerd/setup-kind@v0.6.0
+        with:
+          version: "v0.24.0"
+      - name: Testing
+        run: |
+          kubectl cluster-info
+          kubectl version
+          kubectl get pods -n kube-system
 
   run-preflight:
     name: Run preflight on quay.io without submitting results when merging to main
