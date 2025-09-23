@@ -24,8 +24,6 @@ jobs:
       max-parallel: 4
       matrix:
         include:
-          - version: 1-27
-            platform: k8s
           - version: 1-28
             platform: k8s
           - version: 1-29
