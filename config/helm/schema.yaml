@@ -15,13 +15,9 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.6.2
+  publishedVersion: 1.6.3
   publishedVersionMetadata:
-    releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v1.6.2 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Fix metadataEnrichment\
-      \ not adding prefixed pod annotations to enrichment files by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/5238\n\
-      * Temporarily fix GCR deployer image step by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/5246\n\
-      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.6.1...v1.6.2"
+    releaseNote: 'null'
     releaseTypes:
     - Feature
     recommended: true
