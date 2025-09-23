@@ -16,13 +16,13 @@ func New() dtwebhook.Mutator {
 }
 
 func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
-	log.Debug("checking of OTLP resource attributes injection is enabled")
+	log.Debug("checking if OTLP resource attributes injection is enabled")
 
 	return false
 }
 
 func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
-	log.Debug("checking of OTLP resource attributes have already been injected")
+	log.Debug("checking if OTLP resource attributes have already been injected")
 
 	return false
 }

@@ -3,6 +3,7 @@ package otlp
 import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	otlpexporter "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
 )
 
 type Handler struct {
@@ -50,7 +51,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 
 func shouldInject(request *dtwebhook.MutationRequest) bool {
 	// first, check if otlp injection is enabled explicitly on pod
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationOTLPInjectionEnabled, false)
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, otlpexporter.AnnotationInject, false)
 
 	if !enabledOnPod {
 		// if not enabled explicitly, check general injection setting via 'dynatrace.com/inject' annotation
