@@ -273,7 +273,7 @@ jobs:
           kubectl cluster-info
           kubectl version
           kubectl get pods -n kube-system
-          go test -tags e2e -v ./test/scenarios/kind
+          IMG=asdasd go test -tags e2e -v ./test/scenarios/kind
 
   run-preflight:
     name: Run preflight on quay.io without submitting results when merging to main
