@@ -1,15 +1,16 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
-// +versionName=v1beta5
+// +versionName=v1beta6
 package dynakube
 
 import (
-	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
+	v1beta6 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,6 +99,11 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	TelemetryIngest *telemetryingest.Spec `json:"telemetryIngest,omitempty"`
 
+	// Configuration for OTLP Exporter Configuration
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OTLP Exporter Configuration",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	OTLPExporterConfiguration *otlpexporterconfiguration.Spec `json:"otlpExporterConfiguration,omitempty"`
+
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
@@ -177,5 +183,5 @@ type DynaKubeList struct { //nolint:revive
 }
 
 func init() {
-	v1beta5.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
+	v1beta6.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }

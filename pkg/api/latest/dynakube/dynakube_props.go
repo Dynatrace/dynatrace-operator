@@ -23,7 +23,7 @@ const (
 	DefaultMinRequestThresholdMinutes = 15
 )
 
-var log = logd.Get().WithName("dynakube-v1beta5")
+var log = logd.Get().WithName("dynakube-v1beta6")
 
 func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations)

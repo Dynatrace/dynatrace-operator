@@ -24,48 +24,6 @@ webhooks:
       service:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
-        path: /validate-dynatrace-com-v1beta1-dynakube
-    rules:
-      - operations:
-          - CREATE
-          - UPDATE
-        apiGroups:
-          - dynatrace.com
-        apiVersions:
-          - v1beta1
-        resources:
-          - dynakubes
-    name: v1beta1.dynakube.webhook.dynatrace.com
-    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
-    sideEffects: None
-    matchPolicy: Exact
-  - admissionReviewVersions:
-      - v1
-    clientConfig:
-      service:
-        name: dynatrace-webhook
-        namespace: {{ .Release.Namespace }}
-        path: /validate-dynatrace-com-v1beta2-dynakube
-    rules:
-      - operations:
-          - CREATE
-          - UPDATE
-        apiGroups:
-          - dynatrace.com
-        apiVersions:
-          - v1beta2
-        resources:
-          - dynakubes
-    name: v1beta2.dynakube.webhook.dynatrace.com
-    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
-    sideEffects: None
-    matchPolicy: Exact
-  - admissionReviewVersions:
-      - v1
-    clientConfig:
-      service:
-        name: dynatrace-webhook
-        namespace: {{ .Release.Namespace }}
         path: /validate-dynatrace-com-v1beta3-dynakube
     rules:
       - operations:
@@ -120,6 +78,27 @@ webhooks:
         resources:
           - dynakubes
     name: v1beta5.dynakube.webhook.dynatrace.com
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
+    sideEffects: None
+    matchPolicy: Exact
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate-dynatrace-com-v1beta6-dynakube
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1beta6
+        resources:
+          - dynakubes
+    name: v1beta6.dynakube.webhook.dynatrace.com
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
     matchPolicy: Exact

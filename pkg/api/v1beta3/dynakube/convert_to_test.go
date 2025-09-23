@@ -134,6 +134,7 @@ func TestConvertTo(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.NotNil(t, to.Spec.Extensions)
+		assert.NotNil(t, to.Spec.Extensions.PrometheusSpec)
 		compareBase(t, from, to)
 	})
 

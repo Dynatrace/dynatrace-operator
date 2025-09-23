@@ -1,0 +1,106 @@
+suite: test clusterrole for the dynatrace OpenTelemetry collector
+templates:
+  - Common/extensions/prometheus/clusterole-extensions-prometheus.yaml
+tests:
+  - it: ClusterRole and ClusterRoleBinding exists
+    asserts:
+    - hasDocuments:
+        count: 2
+
+  - it: ClusterRole has correct permissions for Prometheus scraping
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-extensions-prometheus
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: rules
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - pods
+              - namespaces
+              - endpoints
+              - services
+              - nodes
+              - nodes/metrics
+            verbs:
+              - get
+              - watch
+              - list
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps
+            resources:
+              - deployments
+              - daemonsets
+              - replicasets
+              - statefulsets
+            verbs:
+              - get
+              - list
+              - watch
+      - contains:
+          path: rules
+          content:
+            nonResourceURLs:
+              - /metrics
+              - /metrics/cadvisor
+            verbs:
+              - get
+  - it: ClusterRole should exist with extra permissions for openshift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-extensions-prometheus
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+  - it: ClusterRoleBinding exists
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-extensions-prometheus
+      - isNotEmpty:
+          path: metadata.labels
+
+  - it: shouldn't exist if extensions are turned off
+    set:
+      rbac.extensions.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if prometheus extensions are turned off
+    set:
+      rbac.extensions.prometheus.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

@@ -175,6 +175,10 @@ linters:
           disabled: true
         - name: file-header
           disabled: true
+        - name: package-directory-mismatch # TODO: might make sense to reenable it if we do a bigger refactor of packages
+          disabled: true
+        - name: unsecure-url-scheme
+          disabled: true
         - name: max-public-structs
           disabled: true
         - name: argument-limit
@@ -303,6 +307,7 @@ linters:
       - pkg/api/v1beta2/dynakube
       - pkg/api/v1beta3/dynakube
       - pkg/api/v1beta4/dynakube
+      - pkg/api/v1beta5/dynakube
       - third_party$
       - builtin$
       - examples$

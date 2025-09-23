@@ -70,7 +70,6 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithCloudNativeSpec(&oneagent.CloudNativeFullStackSpec{}),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
-		dynakubeComponents.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 		dynakubeComponents.WithExtensionsEnabledSpec(true),
 		dynakubeComponents.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
 	)

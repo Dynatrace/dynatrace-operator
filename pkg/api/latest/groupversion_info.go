@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1beta5 contains API Schema definitions for the dynatrace v1beta5 API group
+// Package v1beta6 contains API Schema definitions for the dynatrace v1beta6 API group
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
 package latest
@@ -24,7 +24,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects.
-	GroupVersion = schema.GroupVersion{Group: "dynatrace.com", Version: "v1beta5"}
+	GroupVersion = schema.GroupVersion{Group: "dynatrace.com", Version: "v1beta6"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

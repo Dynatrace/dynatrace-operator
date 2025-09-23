@@ -3,18 +3,25 @@ package pod
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+var (
+	log = logd.Get().WithName("pod-mutation")
 )
 
 const (
@@ -38,9 +45,9 @@ func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, is
 }
 
 type webhook struct {
-	recorder    events.EventRecorder
-	metaMutator dtwebhook.Mutator
-	oaMutator   dtwebhook.Mutator
+	recorder events.EventRecorder
+
+	injectionHandler handler.Handler
 
 	decoder admission.Decoder
 
@@ -79,9 +86,15 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	wh.recorder.Setup(mutationRequest)
 
-	err = wh.handle(mutationRequest)
-	if err != nil {
-		return silentErrorResponse(mutationRequest.Pod, err)
+	originalPod := mutationRequest.Pod.DeepCopy()
+	if err := wh.injectionHandler.Handle(mutationRequest); err != nil {
+		mutErr := new(dtwebhook.MutatorError)
+		if !errors.As(err, mutErr) {
+			return silentErrorResponse(mutationRequest.Pod, err)
+		}
+
+		mutationRequest.Pod = originalPod // prevent partial modifications
+		mutErr.SetAnnotations(mutationRequest.Pod)
 	}
 
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)

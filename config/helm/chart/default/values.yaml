@@ -36,6 +36,7 @@ operator:
   labels: {}
   annotations: {}
   apparmor: false
+  hostAvailabilityDetection: true
   securityContext:
     privileged: false
     allowPrivilegeEscalation: false
@@ -238,6 +239,10 @@ rbac:
   extensions:
     create: true
     annotations: {}
+    prometheus: 
+      create: true
+    database:
+      create: true
   telemetryIngest:
     create: true
     annotations: {}

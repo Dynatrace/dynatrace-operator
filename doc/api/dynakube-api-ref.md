@@ -8,7 +8,6 @@
 |`customPullSecret`||-|string|
 |`dynatraceApiRequestThreshold`||-|integer|
 |`enableIstio`||-|boolean|
-|`extensions`||-|object|
 |`networkZone`||-|string|
 |`proxy`||-|object|
 |`skipCertCheck`||-|boolean|
@@ -48,6 +47,12 @@
 |`tolerations`||-|array|
 |`topologySpreadConstraints`||-|array|
 |`useEphemeralVolume`||-|boolean|
+
+### .spec.extensions
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`prometheus`||-|object|
 
 ### .spec.logMonitoring
 
@@ -134,6 +139,13 @@
 |`tolerations`||-|array|
 |`version`||-|string|
 
+### .spec.otlpExporterConfiguration
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`namespaceSelector`||-|object|
+|`overrideEnvVars`||-|boolean|
+
 ### .spec.oneAgent.cloudNativeFullStack
 
 |Parameter|Description|Default value|Data type|
@@ -191,6 +203,14 @@
 |:-|:-|:-|:-|
 |`repository`||-|string|
 |`tag`||-|string|
+
+### .spec.otlpExporterConfiguration.signals
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`logs`||-|object|
+|`metrics`||-|object|
+|`traces`||-|object|
 
 ### .spec.templates.extensionExecutionController
 
