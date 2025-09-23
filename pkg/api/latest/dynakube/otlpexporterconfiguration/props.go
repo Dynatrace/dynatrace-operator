@@ -14,24 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package dynakube
+package otlpexporterconfiguration
 
-import (
-	"testing"
+func (s *Spec) IsOverrideEnabled() bool {
+	return s.OverrideEnvVars != nil && *s.OverrideEnvVars
+}
 
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
+func (s *Spec) IsMetricsEnabled() bool {
+	return s.Signals.Metrics != nil
+}
 
-const (
-	testName = "test-name"
-)
+func (s *Spec) IsTracesEnabled() bool {
+	return s.Signals.Traces != nil
+}
 
-func TestOneAgentDaemonsetName(t *testing.T) {
-	dk := &DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testName,
-		},
-	}
-	assert.Equal(t, "test-name-oneagent", dk.OneAgentDaemonsetName())
+func (s *Spec) IsLogsEnabled() bool {
+	return s.Signals.Logs != nil
 }
