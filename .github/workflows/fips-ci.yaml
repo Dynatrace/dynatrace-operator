@@ -19,7 +19,7 @@ env:
 jobs:
   detect-changes:
     name: Detect Changes
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       go_changed: ${{ steps.go-files.outputs.any_changed }}
       docker_changed: ${{ steps.dockerfile.outputs.any_changed }}
@@ -70,7 +70,7 @@ jobs:
 
   prepare:
     name: Prepare properties
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -118,7 +118,7 @@ jobs:
     name: Create image-index
     needs: [detect-changes, prepare, build-images]
     if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
