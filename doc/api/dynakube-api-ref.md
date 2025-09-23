@@ -139,6 +139,13 @@
 |`tolerations`||-|array|
 |`version`||-|string|
 
+### .spec.otlpExporterConfiguration
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`namespaceSelector`||-|object|
+|`overrideEnvVars`||-|boolean|
+
 ### .spec.oneAgent.cloudNativeFullStack
 
 |Parameter|Description|Default value|Data type|
@@ -196,6 +203,14 @@
 |:-|:-|:-|:-|
 |`repository`||-|string|
 |`tag`||-|string|
+
+### .spec.otlpExporterConfiguration.signals
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`logs`||-|object|
+|`metrics`||-|object|
+|`traces`||-|object|
 
 ### .spec.templates.extensionExecutionController
 
