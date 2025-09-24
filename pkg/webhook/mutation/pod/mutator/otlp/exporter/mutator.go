@@ -8,6 +8,8 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"slices"
 )
 
@@ -21,62 +23,90 @@ func New() dtwebhook.Mutator {
 	return &Mutator{}
 }
 
-func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
-	log.Debug("checking if OTLP env var injection is enabled")
+func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
+	log.Debug("checking if OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	//TODO implement when structure for OTLP enrichment config in Dynakube has been defined.
+	otlpExporterSpec := request.DynaKube.Spec.OTLPExporterConfiguration
 
-	return false
+	if otlpExporterSpec == nil {
+		log.Debug("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
+		return false
+	}
+
+	// first, check if otlp injection is enabled explicitly on pod
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject, false)
+
+	if !enabledOnPod {
+		// if not enabled explicitly, check general injection setting via 'dynatrace.com/inject' annotation
+		enabledOnPod = maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, request.DynaKube.FF().IsAutomaticInjection())
+	}
+
+	namespaceEnabled := true
+
+	if otlpExporterSpec.NamespaceSelector.Size() > 0 {
+		selector, _ := metav1.LabelSelectorAsSelector(&otlpExporterSpec.NamespaceSelector)
+
+		namespaceEnabled = selector.Matches(labels.Set(request.Namespace.Labels))
+	}
+
+	return enabledOnPod && namespaceEnabled
 }
 
-func (Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
+func (m Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 	log.Debug("checking if OTLP env vars have already been injected")
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
 func (Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	log.Debug("injecting OTLP env vars")
+	otlpExporterConfig := request.DynaKube.Spec.OTLPExporterConfiguration
+
+	if otlpExporterConfig == nil {
+		log.Debug(
+			"no OTLP exporter configuration set, will not inject OTLP exporter env vars",
+			"podName", request.PodName(),
+			"namespace", request.Namespace.Name,
+		)
+		return nil
+	}
+
+	log.Debug("injecting OTLP env vars", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	apiURL, err := getIngestEndpoint(&request.DynaKube)
 	if err != nil {
 		return fmt.Errorf("could not acquire ingest endpoint: %w", err)
 	}
 
+	override := otlpExporterConfig.IsOverrideEnabled()
+
 	for i := range request.Pod.Spec.Containers {
-		if dtwebhook.IsContainerExcludedFromInjection(
-			request.DynaKube.Annotations,
-			request.Pod.Annotations,
-			request.Pod.Spec.Containers[i].Name,
-		) {
+		c := &request.Pod.Spec.Containers[i]
+
+		if shouldSkipContainer(*request, *c, override) {
 			continue
 		}
 
-		envVarsToCheck := []string{OTLPExporterEndpointEnv,
-			OTLPExporterHeadersEnv,
-			OTLPExporterCertificateEnv,
-			OTLPExporterProtocolEnv,
+		if otlpExporterConfig.IsTracesEnabled() {
+			injectTraceEnvVars(c, apiURL, override)
 		}
 
-		otlpEnvVarAlreadySet := false
-		for _, envVar := range envVarsToCheck {
-			if isEnvVarSet(request.Pod.Spec.Containers[i].Env, envVar) {
-				otlpEnvVarAlreadySet = true
-				break
-			}
+		if otlpExporterConfig.IsMetricsEnabled() {
+			injectMetricsEnvVars(c, apiURL, override)
 		}
 
-		if otlpEnvVarAlreadySet {
-			continue
+		if otlpExporterConfig.IsLogsEnabled() {
+			injectLogsEnvVars(c, apiURL, override)
 		}
-
-		injectTraceEnvVars(&request.Pod.Spec.Containers[i], apiURL)
-		injectMetricsEnvVars(&request.Pod.Spec.Containers[i], apiURL)
-		injectLogsEnvVars(&request.Pod.Spec.Containers[i], apiURL)
 	}
 	return nil
 }
 
-func injectTraceEnvVars(c *corev1.Container, apiURL string) {
+func (m Mutator) Reinvoke(_ *dtwebhook.ReinvocationRequest) bool {
+	log.Debug("reinvocation of OTLP env vars mutator")
+
+	return false
+}
+
+func injectTraceEnvVars(c *corev1.Container, apiURL string, override bool) {
 	// check if any environment variable related to the otlp trace exporter is already set.
 	// If yes, do not set any related env var to not change any customer specific settings
 
@@ -87,9 +117,11 @@ func injectTraceEnvVars(c *corev1.Container, apiURL string) {
 		OTLPTraceProtocolEnv,
 	}
 
-	for _, envVar := range envVarsToCheck {
-		if isEnvVarSet(c.Env, envVar) {
-			return
+	if !override {
+		for _, envVar := range envVarsToCheck {
+			if isEnvVarSet(c.Env, envVar) {
+				return
+			}
 		}
 	}
 
@@ -97,7 +129,7 @@ func injectTraceEnvVars(c *corev1.Container, apiURL string) {
 	addEnvVarLiteralValue(c, OTLPTraceProtocolEnv, "http/protobuf")
 }
 
-func injectMetricsEnvVars(c *corev1.Container, apiURL string) {
+func injectMetricsEnvVars(c *corev1.Container, apiURL string, override bool) {
 	// check if any environment variable related to the otlp trace exporter is already set.
 	// If yes, do not set any related env var to not change any customer specific settings
 
@@ -108,9 +140,11 @@ func injectMetricsEnvVars(c *corev1.Container, apiURL string) {
 		OTLPMetricsProtocolEnv,
 	}
 
-	for _, envVar := range envVarsToCheck {
-		if isEnvVarSet(c.Env, envVar) {
-			return
+	if !override {
+		for _, envVar := range envVarsToCheck {
+			if isEnvVarSet(c.Env, envVar) {
+				return
+			}
 		}
 	}
 
@@ -118,7 +152,7 @@ func injectMetricsEnvVars(c *corev1.Container, apiURL string) {
 	addEnvVarLiteralValue(c, OTLPMetricsProtocolEnv, "http/protobuf")
 }
 
-func injectLogsEnvVars(c *corev1.Container, apiURL string) {
+func injectLogsEnvVars(c *corev1.Container, apiURL string, override bool) {
 	// check if any environment variable related to the otlp trace exporter is already set.
 	// If yes, do not set any related env var to not change any customer specific settings
 
@@ -129,13 +163,15 @@ func injectLogsEnvVars(c *corev1.Container, apiURL string) {
 		OTLPLogsProtocolEnv,
 	}
 
-	for _, envVar := range envVarsToCheck {
-		if isEnvVarSet(c.Env, envVar) {
-			return
+	if !override {
+		for _, envVar := range envVarsToCheck {
+			if isEnvVarSet(c.Env, envVar) {
+				return
+			}
 		}
 	}
 
-	addEnvVarLiteralValue(c, OTLPLogsEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "metrics"))
+	addEnvVarLiteralValue(c, OTLPLogsEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "logs"))
 	addEnvVarLiteralValue(c, OTLPLogsProtocolEnv, "http/protobuf")
 }
 
@@ -168,16 +204,55 @@ func getIngestEndpoint(dk *dynakube.DynaKube) (string, error) {
 	return dtEndpoint, nil
 }
 
-func (Mutator) Reinvoke(_ *dtwebhook.ReinvocationRequest) bool {
-	log.Debug("reinvocation of OTLP env vars mutator")
-
-	return false
-}
-
 func isEnvVarSet(env []corev1.EnvVar, envVar string) bool {
 	for _, e := range env {
 		if e.Name == envVar {
 			// do not set the env var if it is already present
+			return true
+		}
+	}
+
+	return false
+}
+
+func shouldSkipContainer(request dtwebhook.MutationRequest, c corev1.Container, override bool) bool {
+	if dtwebhook.IsContainerExcludedFromInjection(
+		request.DynaKube.Annotations,
+		request.Pod.Annotations,
+		c.Name,
+	) {
+		return true
+	}
+
+	if override {
+		return false
+	}
+
+	envVarsToCheck := []string{
+		// general exporter env var
+		OTLPExporterEndpointEnv,
+		OTLPExporterHeadersEnv,
+		OTLPExporterCertificateEnv,
+		OTLPExporterProtocolEnv,
+		// traces exporter env var
+		OTLPTraceEndpointEnv,
+		OTLPTraceHeadersEnv,
+		OTLPTraceCertificateEnv,
+		OTLPTraceProtocolEnv,
+		// metrics exporter env var
+		OTLPMetricsEndpointEnv,
+		OTLPMetricsHeadersEnv,
+		OTLPMetricsCertificateEnv,
+		OTLPMetricsProtocolEnv,
+		// logs exporter env var
+		OTLPLogsEndpointEnv,
+		OTLPLogsHeadersEnv,
+		OTLPLogsCertificateEnv,
+		OTLPLogsProtocolEnv,
+	}
+
+	for _, envVar := range envVarsToCheck {
+		if isEnvVarSet(c.Env, envVar) {
 			return true
 		}
 	}

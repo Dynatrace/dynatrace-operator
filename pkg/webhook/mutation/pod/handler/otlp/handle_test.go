@@ -1,11 +1,12 @@
 package otlp
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -22,9 +23,12 @@ const (
 )
 
 func TestHandler_Handle(t *testing.T) {
-	t.Run("auto-injection disabled via DynaKube annotations", func(t *testing.T) {
+	t.Run("do not call mutators if not enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(false)
+		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(false)
 
 		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
 
@@ -39,32 +43,51 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.AssertNotCalled(t, "Mutate")
 		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
 	})
-	t.Run("auto-injection disabled on pod", func(t *testing.T) {
+	t.Run("call mutators if enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
+
+		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
+		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
 
 		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
 
 		dk := getTestDynakube()
 		request := createTestMutationRequest(t, dk)
 
-		request.Pod.Annotations[mutator.AnnotationDynatraceInject] = "false"
+		err := h.Handle(request)
+		assert.NoError(t, err)
+	})
+	t.Run("return error if exporter env var mutator returns error", func(t *testing.T) {
+		mockEnvVarMutator := webhookmock.NewMutator(t)
+		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
+
+		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
+
+		dk := getTestDynakube()
+		request := createTestMutationRequest(t, dk)
 
 		err := h.Handle(request)
-		require.NoError(t, err)
+		assert.Error(t, err)
 
-		mockEnvVarMutator.AssertNotCalled(t, "Mutate")
+		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled")
 		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
 	})
-	t.Run("auto-injection enabled via 'feature.dynatrace.com/automatic-injection' default feature flag value", func(t *testing.T) {
+	t.Run("return error is resource attributes mutator returns an error", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
-
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
-		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
+
+		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
 
 		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
 
@@ -72,27 +95,7 @@ func TestHandler_Handle(t *testing.T) {
 		request := createTestMutationRequest(t, dk)
 
 		err := h.Handle(request)
-		assert.NoError(t, err)
-	})
-	t.Run("auto-injection enabled via 'otlp-exporter-configuration.dynatrace.com/inject' annotation on pod", func(t *testing.T) {
-		mockEnvVarMutator := webhookmock.NewMutator(t)
-		mockResourceAttributeMutator := webhookmock.NewMutator(t)
-
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
-
-		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
-		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
-
-		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
-
-		dk := getTestDynakube()
-		request := createTestMutationRequest(t, dk)
-
-		request.Pod.Annotations[AnnotationOTLPInjectionEnabled] = "true"
-
-		err := h.Handle(request)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -119,7 +122,7 @@ func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OneAgent: getCloudNativeSpec(),
+			OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{},
 		},
 	}
 }
@@ -129,14 +132,6 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 		Name:        testDynakubeName,
 		Namespace:   testNamespaceName,
 		Annotations: map[string]string{},
-	}
-}
-
-func getCloudNativeSpec() oneagent.Spec {
-	return oneagent.Spec{
-		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{},
-		},
 	}
 }
 
