@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"slices"
 )
 
 var (
@@ -176,15 +175,14 @@ func injectLogsEnvVars(c *corev1.Container, apiURL string, override bool) {
 }
 
 func addEnvVarLiteralValue(c *corev1.Container, name string, value string) {
-	contains := slices.ContainsFunc(c.Env, func(env corev1.EnvVar) bool {
-		if env.Name == name {
-			return true
+	for i := range c.Env {
+		if c.Env[i].Name == name {
+			c.Env[i].Value = value
+			return
 		}
-		return false
-	})
-	if !contains {
-		c.Env = append(c.Env, corev1.EnvVar{Name: name, Value: value})
 	}
+
+	c.Env = append(c.Env, corev1.EnvVar{Name: name, Value: value})
 }
 
 func getIngestEndpoint(dk *dynakube.DynaKube) (string, error) {

@@ -29,7 +29,6 @@ func TestMutator_IsEnabled(t *testing.T) {
 		m := Mutator{}
 
 		require.False(t, m.IsEnabled(request.BaseRequest))
-
 	})
 	t.Run("auto-injection disabled on pod", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -414,6 +413,116 @@ func TestMutator_Mutate(t *testing.T) {
 		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 	t.Run("specific otlp exporter user defined env vars present, override disabled, do not add specific OTLP exporter env vars", func(t *testing.T) {
+		m := Mutator{}
+
+		request := createTestMutationRequest(t, getTestDynakube())
+
+		request.DynaKube.Spec.APIURL = "http://my-cluster/api"
+		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlpexporterconfiguration.SignalConfiguration{
+			Metrics: &otlpexporterconfiguration.MetricsSignal{},
+		}
+
+		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
+			{
+				Name:  OTLPTraceEndpointEnv,
+				Value: "http://user-endpoint/api/v2/otlp/traces",
+			},
+			{
+				Name:  OTLPTraceProtocolEnv,
+				Value: "grpc",
+			},
+		}
+
+		err := m.Mutate(request)
+
+		require.NoError(t, err)
+
+		containerEnvVars := request.Pod.Spec.Containers[0].Env
+
+		// verify user defined env vars are kept as they are
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPTraceEndpointEnv,
+			Value: "http://user-endpoint/api/v2/otlp/traces",
+		})
+
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPTraceProtocolEnv,
+			Value: "grpc",
+		})
+
+		// verify metrics exporter env vars are not added
+		assert.False(t, isEnvVarSet(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, isEnvVarSet(containerEnvVars, OTLPMetricsProtocolEnv))
+
+		// verify logs exporter env vars are not added
+		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsProtocolEnv))
+	})
+	t.Run("specific otlp exporter user defined env vars present, override enabled, add other specific OTLP exporter env vars", func(t *testing.T) {
+		m := Mutator{}
+
+		request := createTestMutationRequest(t, getTestDynakube())
+
+		override := true
+
+		request.DynaKube.Spec.APIURL = "http://my-cluster/api"
+		request.DynaKube.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override
+		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlpexporterconfiguration.SignalConfiguration{
+			Metrics: &otlpexporterconfiguration.MetricsSignal{},
+		}
+
+		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
+			{
+				Name:  OTLPTraceEndpointEnv,
+				Value: "http://user-endpoint/api/v2/otlp/traces",
+			},
+			{
+				Name:  OTLPTraceProtocolEnv,
+				Value: "grpc",
+			},
+			{
+				Name:  OTLPMetricsEndpointEnv,
+				Value: "http://user-endpoint/api/v2/otlp/metrics",
+			},
+			{
+				Name:  OTLPMetricsProtocolEnv,
+				Value: "grpc",
+			},
+		}
+
+		err := m.Mutate(request)
+
+		require.NoError(t, err)
+
+		containerEnvVars := request.Pod.Spec.Containers[0].Env
+
+		// verify user defined env vars are kept as they are
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPTraceEndpointEnv,
+			Value: "http://user-endpoint/api/v2/otlp/traces",
+		})
+
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPTraceProtocolEnv,
+			Value: "grpc",
+		})
+
+		// verify metrics exporter env vars are added
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPMetricsEndpointEnv,
+			Value: "http://my-cluster/api/v2/otlp/metrics",
+		})
+
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPMetricsProtocolEnv,
+			Value: "http/protobuf",
+		})
+
+		// verify logs exporter env vars are not added
+		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsProtocolEnv))
+	})
+	t.Run("one specific otlp exporter user defined env vars present, override disabled, do not add other specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
 
 		request := createTestMutationRequest(t, getTestDynakube())
