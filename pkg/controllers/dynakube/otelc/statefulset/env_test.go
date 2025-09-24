@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -331,7 +331,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 	}
 }
 
-func getWorkload(t *testing.T, dk *dynakube.DynaKube) *v1.StatefulSet {
+func getWorkload(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	dataIngestToken := getTokens(dk.Name, dk.Namespace)
 	configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 
