@@ -6,6 +6,7 @@ import (
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	metadataenrichmentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/extensions"
@@ -210,11 +211,11 @@ func (src *DynaKube) toStatus(dst *dynakubelatest.DynaKube) {
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.MetadataEnrichment.Rules = make([]dynakubelatest.EnrichmentRule, 0)
+	dst.Status.MetadataEnrichment.Rules = make([]metadataenrichmentlatest.EnrichmentRule, 0)
 	for _, rule := range src.Status.MetadataEnrichment.Rules {
 		dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
-			dynakubelatest.EnrichmentRule{
-				Type:   dynakubelatest.EnrichmentRuleType(rule.Type),
+			metadataenrichmentlatest.EnrichmentRule{
+				Type:   metadataenrichmentlatest.EnrichmentRuleType(rule.Type),
 				Source: rule.Source,
 				Target: rule.Target,
 			})

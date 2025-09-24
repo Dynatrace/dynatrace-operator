@@ -82,7 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return goerrors.Join(setupErrors...)
 	}
 
-	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichmentEnabled() {
+	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichment().IsEnabled() {
 		defer r.cleanup(ctx)
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx)
@@ -188,7 +188,7 @@ func (r *Reconciler) setupEnrichmentInjection(ctx context.Context) error {
 		return err
 	}
 
-	if !r.dk.MetadataEnrichmentEnabled() {
+	if !r.dk.MetadataEnrichment().IsEnabled() {
 		return nil
 	}
 

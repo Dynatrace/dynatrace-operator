@@ -1,13 +1,10 @@
 package dynakube
 
-import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
+import "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 
-func (dk *DynaKube) MetadataEnrichmentEnabled() bool {
-	return dk.Spec.MetadataEnrichment.Enabled != nil && *dk.Spec.MetadataEnrichment.Enabled
-}
-
-func (dk *DynaKube) MetadataEnrichmentNamespaceSelector() *metav1.LabelSelector {
-	return &dk.Spec.MetadataEnrichment.NamespaceSelector
+func (dk *DynaKube) MetadataEnrichment() *metadataenrichment.MetadataEnrichment {
+	return &metadataenrichment.MetadataEnrichment{
+		Spec:   &dk.Spec.MetadataEnrichment,
+		Status: &dk.Status.MetadataEnrichment,
+	}
 }
