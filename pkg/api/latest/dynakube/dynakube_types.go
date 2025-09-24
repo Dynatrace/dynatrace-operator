@@ -171,6 +171,8 @@ type TemplatesSpec struct {
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
+	// +kubebuilder:validation:Optional
+	DatabaseExecutor extensions.DatabaseExecutor `json:"databaseExecutor,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

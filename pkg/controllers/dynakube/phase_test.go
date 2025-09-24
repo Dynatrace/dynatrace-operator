@@ -168,7 +168,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 		},
 	}
 
@@ -219,7 +219,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 		},
 	}
 
@@ -392,7 +392,7 @@ func TestDynakubePhaseChanges(t *testing.T) {
 
 			Kspm: &kspm.Spec{},
 
-			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 		},
 	}
 

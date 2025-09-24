@@ -27,7 +27,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 							activegate.KubeMonCapability.DisplayName,
 						},
 					},
-					Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extensions.ExecutionControllerSpec{
 							ImageRef: image.Ref{
@@ -47,7 +47,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -71,7 +71,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -95,7 +95,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -113,7 +113,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -138,7 +138,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -163,7 +163,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
@@ -206,7 +206,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     testAPIURL,
-			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: imgRef,
@@ -224,7 +224,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     "https://f.q.d.n/123",
-				Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extensions.ExecutionControllerSpec{
 						ImageRef: imgRef,
@@ -243,7 +243,7 @@ func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     testAPIURL,
-				Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extensions.ExecutionControllerSpec{
 						ImageRef: imgRef,

@@ -56,7 +56,7 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     apiURL,
-			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: image.Ref{
