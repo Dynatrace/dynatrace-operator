@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
@@ -26,7 +26,7 @@ type RuleItem struct {
 }
 
 type RulesResponseValue struct {
-	Rules []dynakube.EnrichmentRule `json:"rules"`
+	Rules []metadataenrichment.EnrichmentRule `json:"rules"`
 }
 
 func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID string, entityID string) (GetRulesSettingsResponse, error) {

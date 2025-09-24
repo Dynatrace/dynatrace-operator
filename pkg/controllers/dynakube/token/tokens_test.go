@@ -7,7 +7,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+  "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -335,7 +336,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			title: "metadataEnrichment - all scopes present",
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
-					MetadataEnrichment: dynakube.MetadataEnrichment{
+					MetadataEnrichment: metadataenrichment.Spec{
 						Enabled: ptr.To(true),
 					},
 				},
@@ -354,7 +355,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			title: "metadataEnrichment - required scopes missing", // TODO: related to the other TODOS, this test is a bit "incorrect", as metadataEnrichment doesn't really have required scopes
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
-					MetadataEnrichment: dynakube.MetadataEnrichment{
+					MetadataEnrichment: metadataenrichment.Spec{
 						Enabled: ptr.To(true),
 					},
 				},
@@ -372,7 +373,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			title: "metadataEnrichment - optional scopes missing",
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
-					MetadataEnrichment: dynakube.MetadataEnrichment{
+					MetadataEnrichment: metadataenrichment.Spec{
 						Enabled: ptr.To(true),
 					},
 				},
