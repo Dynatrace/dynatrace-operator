@@ -13,6 +13,7 @@ permissions:
   contents: read
 
 env:
+  BRANCH: ${{ github.head_ref || github.ref_name }}
   DOCKER_REGISTRY: quay.io
   DOCKER_REPOSITORY: dynatrace/dynatrace-operator
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x

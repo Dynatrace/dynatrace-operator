@@ -46,11 +46,18 @@ runs:
       id: set-build-date
       run: |
         echo "date=$(date --iso-8601)" >> $GITHUB_OUTPUT
+    - name: Sanitize GitHub ref name
+      shell: bash
+      id: sanitize-github-ref-name
+      run: |
+        ref_name=$(hack/build/ci/sanitize-branch-name.sh "${GITHUB_REF_NAME}")
+        echo "ref_name=${ref_name}" >> $GITHUB_OUTPUT
     - name: Docker metadata
       uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
       id: meta
       env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ contains(inputs.platforms, ',') && 'manifest,index' || 'manifest' }}
+          SANITIZED_REF_NAME: ${{ steps.sanitize-github-ref-name.outputs.ref_name }}
       with:
         images: ${{ inputs.images }}
         flavor: |
@@ -76,7 +83,7 @@ runs:
           # tags
           type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
           # all other branches including 'release-*' branches except 'main'
-          type=raw,value=${{ steps.prep.outputs.docker_image_tag_without_prefix }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
+          type=raw,value=snapshot-${{ env.SANITIZED_REF_NAME }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
         annotations: |
           ${{ inputs.annotation }}
           version=${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
