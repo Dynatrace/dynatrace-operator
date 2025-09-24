@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -25,13 +26,13 @@ func copyAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) map[stri
 	metadataAnnotations := make(map[string]string)
 
 	for key, value := range namespace.Annotations {
-		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
+		if strings.HasPrefix(key, metadataenrichment.Prefix) {
 			_ = setPodAnnotationIfNotExists(pod, key, value)
 		}
 	}
 
 	for key, value := range pod.Annotations {
-		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
+		if strings.HasPrefix(key, metadataenrichment.Prefix) {
 			metadataAnnotations[key] = value
 		}
 	}
@@ -48,9 +49,9 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 		var exists bool
 
 		switch rule.Type {
-		case dynakube.EnrichmentLabelRule:
+		case metadataenrichment.LabelRule:
 			valueFromNamespace, exists = namespace.Labels[rule.Source]
-		case dynakube.EnrichmentAnnotationRule:
+		case metadataenrichment.AnnotationRule:
 			valueFromNamespace, exists = namespace.Annotations[rule.Source]
 		}
 
@@ -61,7 +62,7 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 					copiedAnnotations[rule.ToAnnotationKey()] = valueFromNamespace
 				}
 			} else {
-				copiedAnnotations[dynakube.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
+				copiedAnnotations[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
 			}
 		}
 	}
@@ -75,7 +76,7 @@ func setPodMetadataJSONAnnotation(pod *corev1.Pod, annotations map[string]string
 		log.Error(err, "failed to marshal annotations to map", "annotations", annotations)
 	}
 
-	_ = setPodAnnotationIfNotExists(pod, dynakube.MetadataAnnotation, string(marshaledAnnotations))
+	_ = setPodAnnotationIfNotExists(pod, metadataenrichment.Annotation, string(marshaledAnnotations))
 }
 
 func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) bool {
@@ -96,8 +97,8 @@ func removeMetadataPrefix(annotations map[string]string) map[string]string {
 	annotationsWithoutPrefix := make(map[string]string)
 
 	for key, value := range annotations {
-		if strings.HasPrefix(key, dynakube.MetadataPrefix) {
-			split := strings.Split(key, dynakube.MetadataPrefix)
+		if strings.HasPrefix(key, metadataenrichment.Prefix) {
+			split := strings.Split(key, metadataenrichment.Prefix)
 			annotationsWithoutPrefix[split[1]] = value
 		} else {
 			annotationsWithoutPrefix[key] = value

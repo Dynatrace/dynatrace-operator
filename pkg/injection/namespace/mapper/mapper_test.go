@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,7 @@ func createBaseDynakube(name string, appInjection bool, metadataEnrichment bool)
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
 		Spec: dynakube.DynaKubeSpec{
-			MetadataEnrichment: dynakube.MetadataEnrichment{
+			MetadataEnrichment: metadataenrichment.Spec{
 				Enabled: &metadataEnrichment,
 			},
 		},
