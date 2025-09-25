@@ -51,6 +51,9 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator:
     interfaces:
       Mutator:
+  github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler:
+    interfaces:
+      Handler:
   sigs.k8s.io/controller-runtime/pkg/manager:
     config:
       dir: "test/mocks/{{.SrcPackagePath}}"
