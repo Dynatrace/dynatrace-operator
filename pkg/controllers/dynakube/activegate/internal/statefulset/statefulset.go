@@ -231,7 +231,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 		LivenessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/rest/health",
+					Path: "/rest/state",
 					Port:   intstr.IntOrString{IntVal: consts.HTTPSContainerPort},
 					Scheme: "HTTPS",
 				},
