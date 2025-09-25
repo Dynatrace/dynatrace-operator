@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: read
     name: Prepare properties
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -29,7 +29,7 @@ jobs:
 
   build-push:
     name: Build images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -52,7 +52,7 @@ jobs:
     name: Sign the image index/manifests + Add SBOM
     environment: Release
     needs: [prepare, build-push]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
     steps:
@@ -93,7 +93,7 @@ jobs:
     environment: Release
     permissions:
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       HELM_PACKAGE_VERSION: 0.0.0-${{ needs.prepare.outputs.version_without_prefix }}
     steps:
