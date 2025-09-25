@@ -34,8 +34,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName: ext.GetTokenSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  consts.OtelcTokenSecretKey,
-								Path: consts.OtelcTokenSecretKey,
+								Key:  consts.DatasourceTokenSecretKey,
+								Path: consts.DatasourceTokenSecretKey,
 							},
 						},
 						DefaultMode: ptr.To(int32(420)),

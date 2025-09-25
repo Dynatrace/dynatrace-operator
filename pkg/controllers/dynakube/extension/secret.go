@@ -56,7 +56,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 			return err
 		}
 
-		newOtelcToken, err := dttoken.New(consts.OtelcTokenSecretValuePrefix)
+		newOtelcToken, err := dttoken.New(consts.DatasourceTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate otelc token")
 			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating otelc token"))
@@ -88,8 +88,8 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
-		eecConsts.TokenSecretKey:   []byte(eecToken.String()),
-		consts.OtelcTokenSecretKey: []byte(otelcToken.String()),
+		eecConsts.TokenSecretKey:        []byte(eecToken.String()),
+		consts.DatasourceTokenSecretKey: []byte(otelcToken.String()),
 	}
 
 	return k8ssecret.Build(r.dk, r.getSecretName(), secretData)

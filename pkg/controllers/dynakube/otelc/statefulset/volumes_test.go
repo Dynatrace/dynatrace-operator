@@ -48,8 +48,8 @@ func TestVolumes(t *testing.T) {
 						SecretName: dk.Extensions().GetTokenSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  consts.OtelcTokenSecretKey,
-								Path: consts.OtelcTokenSecretKey,
+								Key:  consts.DatasourceTokenSecretKey,
+								Path: consts.DatasourceTokenSecretKey,
 							},
 						},
 						DefaultMode: ptr.To(int32(420)),
@@ -93,8 +93,8 @@ func TestVolumes(t *testing.T) {
 					SecretName: dk.Extensions().GetTokenSecretName(),
 					Items: []corev1.KeyToPath{
 						{
-							Key:  consts.OtelcTokenSecretKey,
-							Path: consts.OtelcTokenSecretKey,
+							Key:  consts.DatasourceTokenSecretKey,
+							Path: consts.DatasourceTokenSecretKey,
 						},
 					},
 					DefaultMode: ptr.To(int32(420)),

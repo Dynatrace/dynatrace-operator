@@ -97,7 +97,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.NoError(t, err)
 		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
-		require.NotEmpty(t, secretFound.Data[consts.OtelcTokenSecretKey])
+		require.NotEmpty(t, secretFound.Data[consts.DatasourceTokenSecretKey])
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())
