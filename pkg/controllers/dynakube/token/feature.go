@@ -96,7 +96,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			Name:           "MetadataEnrichment Rules",
 			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.MetadataEnrichmentEnabled()
+				return dk.MetadataEnrichment().IsEnabled()
 			},
 		},
 	}

@@ -8,6 +8,7 @@ import (
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
@@ -67,7 +68,7 @@ func TestAddPodAttributes(t *testing.T) {
 				Pod: &pod,
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
-						MetadataEnrichment: dynakube.MetadataEnrichment{
+						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: ptr.To(true),
 						},
 					},
