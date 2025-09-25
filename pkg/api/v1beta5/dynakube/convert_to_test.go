@@ -46,7 +46,7 @@ func TestConvertTo(t *testing.T) {
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		assert.False(t, to.MetadataEnrichmentEnabled())
+		assert.False(t, to.MetadataEnrichment().IsEnabled())
 		compareBase(t, from, to)
 	})
 
@@ -61,7 +61,7 @@ func TestConvertTo(t *testing.T) {
 
 		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring)
 		compareBase(t, from, to)
-		assert.False(t, to.MetadataEnrichmentEnabled())
+		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
 	t.Run("migrate classic-fullstack from v1beta5 to latest", func(t *testing.T) {
@@ -78,7 +78,7 @@ func TestConvertTo(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
 		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack)
 		compareBase(t, from, to)
-		assert.False(t, to.MetadataEnrichmentEnabled())
+		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
 	t.Run("migrate cloud-native from v1beta5 to latest", func(t *testing.T) {
@@ -124,7 +124,7 @@ func TestConvertTo(t *testing.T) {
 
 		compareActiveGateSpec(t, from.Spec.ActiveGate, to.Spec.ActiveGate)
 		compareBase(t, from, to)
-		assert.False(t, to.MetadataEnrichmentEnabled())
+		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
 	t.Run("migrate extensions from v1beta5 to latest", func(t *testing.T) {

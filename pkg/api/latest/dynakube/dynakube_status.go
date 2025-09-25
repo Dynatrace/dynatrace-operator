@@ -3,11 +3,11 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/pkg/errors"
@@ -30,7 +30,7 @@ type DynaKubeStatus struct { //nolint:revive
 	CodeModules oneagent.CodeModulesStatus `json:"codeModules,omitempty"`
 
 	// Observed state of Metadata-Enrichment
-	MetadataEnrichment MetadataEnrichmentStatus `json:"metadataEnrichment,omitempty"`
+	MetadataEnrichment metadataenrichment.Status `json:"metadataEnrichment,omitempty"`
 
 	// Observed state of Kspm
 	Kspm kspm.Status `json:"kspm,omitempty"`
@@ -79,34 +79,6 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 		int(remaining.Minutes()))
 }
 
-type EnrichmentRuleType string
-
-const (
-	EnrichmentLabelRule          EnrichmentRuleType = "LABEL"
-	EnrichmentAnnotationRule     EnrichmentRuleType = "ANNOTATION"
-	MetadataAnnotation           string             = "metadata.dynatrace.com"
-	MetadataPrefix               string             = MetadataAnnotation + "/"
-	enrichmentNamespaceKeyPrefix string             = "k8s.namespace."
-)
-
-type MetadataEnrichmentStatus struct {
-	Rules []EnrichmentRule `json:"rules,omitempty"`
-}
-
-type EnrichmentRule struct {
-	Type   EnrichmentRuleType `json:"type,omitempty"`
-	Source string             `json:"source,omitempty"`
-	Target string             `json:"target,omitempty"`
-}
-
-func (rule EnrichmentRule) ToAnnotationKey() string {
-	if rule.Target == "" {
-		return ""
-	}
-
-	return MetadataPrefix + rule.Target
-}
-
 // SetPhase sets the status phase on the DynaKube object.
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
@@ -126,8 +98,4 @@ func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) erro
 	}
 
 	return errors.WithStack(err)
-}
-
-func GetEmptyTargetEnrichmentKey(metadataType, key string) string {
-	return enrichmentNamespaceKeyPrefix + strings.ToLower(metadataType) + "." + key
 }

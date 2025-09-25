@@ -265,9 +265,7 @@ func (controller *Controller) removeNodeFromCache(nodeCache *Cache, cachedNode C
 }
 
 func (controller *Controller) isNodeDeletable(cachedNode CacheEntry) bool {
-	if controller.timeProvider.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
-		return true
-	} else if cachedNode.IPAddress == "" {
+	if controller.timeProvider.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 || cachedNode.IPAddress == "" {
 		return true
 	}
 

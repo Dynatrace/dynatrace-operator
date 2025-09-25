@@ -61,7 +61,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 
 	injectEverythingLabels := maputil.MergeMap(
 		testDynakube.OneAgent().GetNamespaceSelector().MatchLabels,
-		testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels,
+		testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels,
 	)
 
 	testCases := []testCase{
@@ -93,7 +93,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 			app: sample.NewApp(t, &testDynakube,
 				sample.WithName("deploy-metadata-label"),
 				sample.AsDeployment(),
-				sample.WithNamespaceLabels(testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels),
+				sample.WithNamespaceLabels(testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels),
 			),
 			assess: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
 		},
@@ -101,7 +101,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 			name: "control metadata-enrichment with namespace-selector - pod",
 			app: sample.NewApp(t, &testDynakube,
 				sample.WithName("pod-metadata-label"),
-				sample.WithNamespaceLabels(testDynakube.MetadataEnrichmentNamespaceSelector().MatchLabels),
+				sample.WithNamespaceLabels(testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels),
 			),
 			assess: podHasOnlyMetadataEnrichmentInitContainer,
 		},
