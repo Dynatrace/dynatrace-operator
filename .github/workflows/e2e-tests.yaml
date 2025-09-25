@@ -133,7 +133,7 @@ jobs:
     name: Notify test results in Slack
     environment: E2E
     needs: [ "run-in-k8s", "run-in-ocp", "run-in-ocp-fips" ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
       - name: Set Slack message
