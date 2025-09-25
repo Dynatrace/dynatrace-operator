@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
@@ -283,7 +284,7 @@ func TestMutate(t *testing.T) {
 				Pod: pod.DeepCopy(),
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
-						MetadataEnrichment: dynakube.MetadataEnrichment{
+						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: ptr.To(true),
 						},
 					},
@@ -324,7 +325,7 @@ func TestMutate(t *testing.T) {
 				Pod: pod,
 				DynaKube: dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
-						MetadataEnrichment: dynakube.MetadataEnrichment{
+						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: ptr.To(true),
 						},
 					},
@@ -333,7 +334,7 @@ func TestMutate(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: pod.Namespace,
 						Annotations: map[string]string{
-							dynakube.MetadataPrefix + nsMetaAnnotationKey: nsMetaAnnotationValue,
+							metadataenrichment.Prefix + nsMetaAnnotationKey: nsMetaAnnotationValue,
 						},
 					},
 				},
@@ -361,7 +362,7 @@ func TestMutate(t *testing.T) {
 		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[AnnotationWorkloadKind])
 		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[AnnotationWorkloadName])
 		assert.Equal(t, "true", request.Pod.Annotations[AnnotationInjected])
-		assert.Equal(t, nsMetaAnnotationValue, request.Pod.Annotations[dynakube.MetadataPrefix+nsMetaAnnotationKey])
-		assert.NotEmpty(t, request.Pod.Annotations[dynakube.MetadataAnnotation])
+		assert.Equal(t, nsMetaAnnotationValue, request.Pod.Annotations[metadataenrichment.Prefix+nsMetaAnnotationKey])
+		assert.NotEmpty(t, request.Pod.Annotations[metadataenrichment.Annotation])
 	})
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -136,7 +137,7 @@ func TestWebhook(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
-				MetadataEnrichment: dynakube.MetadataEnrichment{
+				MetadataEnrichment: metadataenrichment.Spec{
 					Enabled: ptr.To(true),
 				},
 			},
@@ -187,7 +188,7 @@ func TestWebhook(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				MetadataEnrichment: dynakube.MetadataEnrichment{
+				MetadataEnrichment: metadataenrichment.Spec{
 					Enabled: ptr.To(true),
 				},
 			},

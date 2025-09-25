@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -90,7 +90,7 @@ func mockGetRulesSettingsAPI(writer http.ResponseWriter, totalCount int) {
 }
 
 func createRulesResponse(totalCount int) GetRulesSettingsResponse {
-	rules := []dynakube.EnrichmentRule{
+	rules := []metadataenrichment.EnrichmentRule{
 		{
 			Source: "rule-1",
 		},

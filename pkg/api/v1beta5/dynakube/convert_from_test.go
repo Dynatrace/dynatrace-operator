@@ -10,6 +10,7 @@ import (
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	logmonitoringlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	metadataenrichmentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -265,7 +266,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
 		assert.Equal(t, oldDk.OneAgent().GetNamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
 	}
 
-	assert.Equal(t, oldDk.MetadataEnrichmentEnabled(), newDk.MetadataEnrichmentEnabled())
+	assert.Equal(t, oldDk.MetadataEnrichmentEnabled(), newDk.MetadataEnrichment().IsEnabled())
 	assert.Equal(t, oldDk.Spec.MetadataEnrichment.NamespaceSelector, newDk.Spec.MetadataEnrichment.NamespaceSelector)
 
 	if oldDk.FF().GetCSIMaxFailedMountAttempts() != exp.DefaultCSIMaxFailedMountAttempts {
@@ -485,7 +486,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			CustomPullSecret:             "pull-secret",
 			SkipCertCheck:                true,
 			EnableIstio:                  true,
-			MetadataEnrichment: dynakubelatest.MetadataEnrichment{
+			MetadataEnrichment: metadataenrichmentlatest.Spec{
 				Enabled:           ptr.To(true),
 				NamespaceSelector: getTestNamespaceSelector(),
 			},

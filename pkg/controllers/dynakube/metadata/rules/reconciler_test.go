@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -176,7 +177,7 @@ func createDynaKube() dynakube.DynaKube {
 			Name: "rules-dk",
 		},
 		Spec: dynakube.DynaKubeSpec{
-			MetadataEnrichment: dynakube.MetadataEnrichment{
+			MetadataEnrichment: metadataenrichment.Spec{
 				Enabled: ptr.To(true),
 			},
 		},
@@ -198,8 +199,8 @@ func createRulesResponse() dtclient.GetRulesSettingsResponse {
 	}
 }
 
-func createRules() []dynakube.EnrichmentRule {
-	return []dynakube.EnrichmentRule{
+func createRules() []metadataenrichment.EnrichmentRule {
+	return []metadataenrichment.EnrichmentRule{
 		{Source: "test1"},
 		{Source: "test2"},
 	}
