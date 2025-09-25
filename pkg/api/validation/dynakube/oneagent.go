@@ -16,7 +16,7 @@ import (
 const (
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
 
-	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring mode and retrieve the respective image, but the CSI driver and/or node image pull is not enabled.`
+	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring/CloudNativeFullstack mode and retrieve the respective codeModules image, but the CSI driver and/or node image pull is not enabled.`
 
 	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but the code modules image is not set.`
 
@@ -129,8 +129,12 @@ func mapKeysToString(m map[string]bool, sep string) string {
 }
 
 func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsApplicationMonitoringMode() {
-		if len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 && !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
+	if !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
+		if dk.OneAgent().IsApplicationMonitoringMode() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
+			return errorImageFieldSetWithoutCSIFlag
+		}
+
+		if dk.OneAgent().IsCloudNativeFullstackMode() && len(dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage) > 0 {
 			return errorImageFieldSetWithoutCSIFlag
 		}
 	}
