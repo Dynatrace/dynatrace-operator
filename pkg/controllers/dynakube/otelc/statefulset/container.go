@@ -14,7 +14,7 @@ const (
 	defaultImageTag          = "latest"
 	containerName            = "collector"
 	secretsTokensPath        = "/secrets/tokens"
-	otelcSecretTokenFilePath = secretsTokensPath + "/" + consts.OtelcTokenSecretKey
+	otelcSecretTokenFilePath = secretsTokensPath + "/" + consts.DatasourceTokenSecretKey
 )
 
 func getContainer(dk *dynakube.DynaKube) corev1.Container {

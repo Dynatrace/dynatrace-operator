@@ -245,7 +245,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.Extensions().GetServiceNameFQDN()},
-		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
+		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey},
 		{Name: envHTTPSCertPathPem, Value: envEecHTTPSCertPathPem},
 		{Name: envHTTPSPrivKeyPathPem, Value: envEecHTTPSPrivKeyPathPem},
 	}

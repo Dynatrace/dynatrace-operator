@@ -19,7 +19,7 @@ func TestContainer(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
 		assert.Equal(
 			t,
-			[]string{"--config=eec://dynakube-extensions-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/otelc.token"},
+			[]string{"--config=eec://dynakube-extensions-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/datasource.token"},
 			buildArgs(dk),
 		)
 	})
@@ -31,7 +31,7 @@ func TestContainer(t *testing.T) {
 		assert.Equal(
 			t,
 			[]string{
-				"--config=eec://dynakube-extensions-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/otelc.token",
+				"--config=eec://dynakube-extensions-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/datasource.token",
 				"--config=file:///config/telemetry.yaml",
 			},
 			buildArgs(dk),
