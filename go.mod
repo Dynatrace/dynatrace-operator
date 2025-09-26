@@ -1,9 +1,9 @@
 module github.com/Dynatrace/dynatrace-operator
 
-go 1.24.2
+go 1.25.1
 
 require (
-	github.com/Dynatrace/dynatrace-bootstrapper v1.1.1
+	github.com/Dynatrace/dynatrace-bootstrapper v1.1.2
 	github.com/container-storage-interface/spec v1.11.0
 	github.com/docker/cli v28.4.0+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
