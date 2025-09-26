@@ -18,7 +18,8 @@ type Spec struct {
 	PrometheusSpec *PrometheusSpec `json:"prometheus,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	DatabasesSpec *[]Database `json:"databases,omitempty"`
+	// +kubebuilder:validation:MaxItems:=1
+	DatabasesSpec *[]DatabaseSpec `json:"databases,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -70,12 +71,14 @@ type ExecutionControllerSpec struct {
 }
 
 // +kubebuilder:object:generate=true
-type Database struct {
+type DatabaseSpec struct {
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength:=8
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9-]+$`
 	ID string `json:"id"`
 
 	// +kubebuilder:validation:Optional
-	Replicas *int32 `json:"replicas"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
