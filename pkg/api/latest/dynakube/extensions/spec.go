@@ -106,7 +106,7 @@ type Database struct {
 }
 
 // +kubebuilder:object:generate=true
-type DatabaseExecutor struct {
+type DatabaseExecutorSpec struct {
 	// +kubebuilder:validation:Required
 	ImageRef image.Ref `json:"imageRef"`
 
