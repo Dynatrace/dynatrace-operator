@@ -120,7 +120,7 @@ func TestProxyEnvsNoProxy(t *testing.T) {
 	}{
 		{
 			name:            "extensions without proxy",
-			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: nil,
 		},
 		{
@@ -137,7 +137,7 @@ func TestProxyEnvsNoProxy(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, without proxy",
-			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 		},
@@ -176,7 +176,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 	}{
 		{
 			name:            "extensions with proxy secret",
-			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: nil,
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
@@ -205,7 +205,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy secret",
-			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 			proxy: &value.Source{
@@ -265,7 +265,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 	}{
 		{
 			name:            "extensions with proxy value",
-			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: nil,
 			proxy: &value.Source{
 				Value: testProxyValue,
@@ -294,7 +294,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy value",
-			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}, Databases: []extensions.Database{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 			proxy: &value.Source{
