@@ -5,7 +5,7 @@ OPERATOR_BUILD_ARCH ?= $(shell echo "${OPERATOR_BUILD_PLATFORM}" | sed "s/.*\///
 
 #Needed for the e2e pipeline to work
 BRANCH ?= $(shell git branch --show-current)
-TAG_BRANCH_SUFFIX ?= $(shell echo "${BRANCH}" | sed "s/[^a-zA-Z0-9_-]/-/g")
+TAG_BRANCH_SUFFIX ?= $(shell hack/build/ci/sanitize-branch-name.sh "${BRANCH}")
 ifneq ($(BRANCH), main)
 	TAG ?= snapshot-${TAG_BRANCH_SUFFIX}
 else
