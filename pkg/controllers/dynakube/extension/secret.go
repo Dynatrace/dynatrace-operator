@@ -42,9 +42,11 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if errors.Is(err, ErrNoMigration) {
 		// no new secret to create, either because it already exists or migration not needed
 		log.Info("extensions token secret no migration required")
+
 		return nil
 	} else if err != nil {
 		log.Info("migration of extension secret failed")
+
 		return err
 	}
 

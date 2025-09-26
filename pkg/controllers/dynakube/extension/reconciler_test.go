@@ -137,6 +137,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		}
 
 		oldSecret, err := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
+		require.NoError(t, err)
 
 		fakeClient := fake.NewClient(oldSecret)
 		r := NewReconciler(fakeClient, fakeClient, dk)
