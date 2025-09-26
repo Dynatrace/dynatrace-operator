@@ -41,7 +41,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 	if errors.Is(err, ErrNoMigration) {
 		// no new secret to create, either because it already exists or migration not needed
-		log.Info("extension secret migration not needed")
+		log.Info("extensions token secret no migration required")
 		return nil
 	} else if err != nil {
 		log.Info("migration of extension secret failed")
@@ -105,7 +105,7 @@ func (r *reconciler) newSecret() (*corev1.Secret, error) {
 func (r *reconciler) migrateSecret(existingSecret *corev1.Secret) (*corev1.Secret, error) {
 	const oTelcTokenKey = "otelc.token"
 
-	if _, exists := existingSecret.Data[consts.DatasourceTokenSecretKey]; !exists {
+	if _, exists := existingSecret.Data[consts.DatasourceTokenSecretKey]; exists {
 		// no migration needed, datasource token file name already correct
 		return nil, ErrNoMigration
 	}
