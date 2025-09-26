@@ -15,31 +15,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var ErrNoMigration = errors.New("no migration needed")
+
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if !r.dk.Extensions().IsEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
-			return nil
-		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), secretConditionType)
-
-		secret, err := r.buildSecret(dttoken.Token{}, dttoken.Token{})
-		if err != nil {
-			log.Error(err, "failed to generate extension secret during cleanup")
-
-			return nil
-		}
-
-		err = r.secrets.Delete(ctx, secret)
-		if err != nil {
-			log.Error(err, "failed to clean up extension secret")
-
-			return nil
-		}
+		r.cleanupSecret(ctx)
 
 		return nil
 	}
 
-	_, err := r.secrets.Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
+	existingSecret, err := r.secrets.Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to check existence of extension secret")
 		conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
@@ -47,38 +32,26 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		return err
 	}
 
+	var newSecret *corev1.Secret
 	if k8serrors.IsNotFound(err) {
-		newEecToken, err := dttoken.New(eecConsts.TokenSecretValuePrefix)
-		if err != nil {
-			log.Info("failed to generate eec token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating eec token"))
+		newSecret, err = r.newSecret()
+	} else if err == nil {
+		newSecret, err = r.migrateSecret(existingSecret)
+	}
 
-			return err
-		}
+	if errors.Is(err, ErrNoMigration) {
+		// no new secret to create, either because it already exists or migration not needed
+		return nil
+	} else if err != nil {
+		return err
+	}
 
-		newOtelcToken, err := dttoken.New(consts.DatasourceTokenSecretValuePrefix)
-		if err != nil {
-			log.Info("failed to generate otelc token")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating otelc token"))
+	_, err = r.secrets.CreateOrUpdate(ctx, newSecret)
+	if err != nil {
+		log.Info("failed to create/update extension secret")
+		conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
 
-			return err
-		}
-
-		newSecret, err := r.buildSecret(*newEecToken, *newOtelcToken)
-		if err != nil {
-			log.Info("failed to generate extension secret")
-			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, err)
-
-			return err
-		}
-
-		_, err = r.secrets.CreateOrUpdate(ctx, newSecret)
-		if err != nil {
-			log.Info("failed to create/update extension secret")
-			conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
-
-			return err
-		}
+		return err
 	}
 
 	conditions.SetSecretCreated(r.dk.Conditions(), secretConditionType, r.getSecretName())
@@ -86,10 +59,10 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Token) (*corev1.Secret, error) {
+func (r *reconciler) buildSecret(eecToken []byte, datasourceToken []byte) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
-		eecConsts.TokenSecretKey:        []byte(eecToken.String()),
-		consts.DatasourceTokenSecretKey: []byte(otelcToken.String()),
+		eecConsts.TokenSecretKey:        eecToken,
+		consts.DatasourceTokenSecretKey: datasourceToken,
 	}
 
 	return k8ssecret.Build(r.dk, r.getSecretName(), secretData)
@@ -97,4 +70,84 @@ func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Toke
 
 func (r *reconciler) getSecretName() string {
 	return r.dk.Extensions().GetTokenSecretName()
+}
+
+func (r *reconciler) newSecret() (*corev1.Secret, error) {
+	newEecToken, err := dttoken.New(eecConsts.TokenSecretValuePrefix)
+	if err != nil {
+		log.Info("failed to generate eec token")
+		conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating eec token"))
+
+		return nil, err
+	}
+
+	newOtelcToken, err := dttoken.New(consts.DatasourceTokenSecretValuePrefix)
+	if err != nil {
+		log.Info("failed to generate otelc token")
+		conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating otelc token"))
+
+		return nil, err
+	}
+
+	newSecret, err := r.buildSecret([]byte(newEecToken.String()), []byte(newOtelcToken.String()))
+	if err != nil {
+		log.Info("failed to generate extension secret")
+		conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, err)
+
+		return nil, err
+	}
+
+	return newSecret, nil
+}
+
+func (r *reconciler) migrateSecret(existingSecret *corev1.Secret) (*corev1.Secret, error) {
+	const oTelcTokenKey = "otelc.token"
+
+	if _, exists := existingSecret.Data[consts.DatasourceTokenSecretKey]; !exists {
+		// no migration needed, datasource token file name already correct
+		return nil, ErrNoMigration
+	}
+
+	datasourceToken, exists := existingSecret.Data[oTelcTokenKey]
+	if !exists {
+		conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Errorf("error migrating datasource token, missing %s key", oTelcTokenKey))
+
+		return nil, errors.New("missing otelc token in existing secret, cannot migrate")
+	}
+
+	eecToken, exists := existingSecret.Data[eecConsts.TokenSecretKey]
+	if !exists {
+		conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Errorf("error migrating EEC token, missing %s key", eecConsts.TokenSecretKey))
+
+		return nil, errors.New("missing EEC token in existing secret, cannot migrate")
+	}
+
+	migratedSecret, err := r.buildSecret(eecToken, datasourceToken)
+	if err != nil {
+		log.Info("failed to migrate extension secret")
+		conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, err)
+
+		return nil, err
+	}
+
+	return migratedSecret, nil
+}
+
+func (r *reconciler) cleanupSecret(ctx context.Context) {
+	if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
+		return
+	}
+	defer meta.RemoveStatusCondition(r.dk.Conditions(), secretConditionType)
+
+	secret, err := r.buildSecret([]byte{}, []byte{})
+	if err != nil {
+		log.Error(err, "failed to build empty extension secret during cleanup")
+
+		return
+	}
+
+	err = r.secrets.Delete(ctx, secret)
+	if err != nil {
+		log.Error(err, "failed to clean up extension secret")
+	}
 }
