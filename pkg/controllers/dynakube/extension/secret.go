@@ -41,8 +41,10 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 	if errors.Is(err, ErrNoMigration) {
 		// no new secret to create, either because it already exists or migration not needed
+		log.Info("extension secret migration not needed")
 		return nil
 	} else if err != nil {
+		log.Info("migration of extension secret failed")
 		return err
 	}
 
@@ -124,7 +126,6 @@ func (r *reconciler) migrateSecret(existingSecret *corev1.Secret) (*corev1.Secre
 
 	migratedSecret, err := r.buildSecret(eecToken, datasourceToken)
 	if err != nil {
-		log.Info("failed to migrate extension secret")
 		conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, err)
 
 		return nil, err
