@@ -18,7 +18,7 @@ type Spec struct {
 	PrometheusSpec *PrometheusSpec `json:"prometheus,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Databases *[]Database `json:"databases,omitempty"`
+	DatabasesSpec *[]Database `json:"databases,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
