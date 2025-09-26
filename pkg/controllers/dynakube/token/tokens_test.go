@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -39,6 +40,14 @@ func getAllScopesForDataIngest() dtclient.TokenScopes {
 	}
 }
 
+func getAllScopesForOTLPExporter() dtclient.TokenScopes {
+	return []string{
+		dtclient.TokenScopeMetricsIngest,
+		dtclient.TokenScopeOpenTelemetryTraceIngest,
+		dtclient.TokenScopeLogsIngest,
+	}
+}
+
 func TestTokens(t *testing.T) {
 	const (
 		fakeTokenNoPermissions                       = "no-permissions"
@@ -46,6 +55,7 @@ func TestTokens(t *testing.T) {
 		fakeTokenAllAPITokenPermissionsIncludingPaaS = "all-permissions-including-paas"
 		fakeTokenPaas                                = "paas-token"
 		fakeTokenAllDataIngestPermissions            = "all-data-ingest-permissions"
+		fakeTokenAllOTLPExporterPermissions          = "all-otlp-exporter-permissions"
 	)
 
 	createFakeClient := func(t *testing.T) *dtclientmock.Client {
@@ -60,6 +70,7 @@ func TestTokens(t *testing.T) {
 			{fakeTokenAllAPITokenPermissionsIncludingPaaS, append(getAllScopesForAPIToken(), getAllScopesForPaaSToken()...)},
 			{fakeTokenPaas, getAllScopesForPaaSToken()},
 			{fakeTokenAllDataIngestPermissions, getAllScopesForDataIngest()},
+			{fakeTokenAllOTLPExporterPermissions, getAllScopesForOTLPExporter()},
 		}
 
 		for _, tokenScope := range tokenScopes {
@@ -153,7 +164,7 @@ func TestTokens(t *testing.T) {
 
 		assert.Len(t, tokens.APIToken().Features, 7)
 		assert.Empty(t, tokens.PaasToken().Features)
-		assert.Len(t, tokens.DataIngestToken().Features, 1)
+		assert.Len(t, tokens.DataIngestToken().Features, 4)
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'Data Ingest' is missing scope 'metrics.ingest']")
 	})
 	t.Run("data ingest enabled => dataingest token has rights => success", func(t *testing.T) {
@@ -168,7 +179,61 @@ func TestTokens(t *testing.T) {
 
 		assert.Len(t, tokens.APIToken().Features, 7)
 		assert.Empty(t, tokens.PaasToken().Features)
-		assert.Len(t, tokens.DataIngestToken().Features, 1)
+		assert.Len(t, tokens.DataIngestToken().Features, 4)
+		assert.NoError(t, err)
+	})
+	t.Run("otlp exporter configuration enabled => dataingest token missing rights => fail", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+					Signals: otlpexporterconfiguration.SignalConfiguration{
+						Traces:  &otlpexporterconfiguration.TracesSignal{},
+						Metrics: &otlpexporterconfiguration.MetricsSignal{},
+						Logs:    &otlpexporterconfiguration.LogsSignal{},
+					},
+				},
+			},
+		}
+
+		apiToken := newToken(dtclient.APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
+		dataingestToken := newToken(dtclient.DataIngestToken, fakeTokenNoPermissions)
+		tokens := Tokens{
+			dtclient.APIToken:        &apiToken,
+			dtclient.DataIngestToken: &dataingestToken,
+		}
+		tokens = tokens.AddFeatureScopesToTokens()
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
+
+		assert.Len(t, tokens.APIToken().Features, 7)
+		assert.Empty(t, tokens.PaasToken().Features)
+		assert.Len(t, tokens.DataIngestToken().Features, 4)
+		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'OTLP trace exporter configuration' is missing scope 'openTelemetryTrace.ingest' feature 'OTLP logs exporter configuration' is missing scope 'logs.ingest' feature 'OTLP metrics exporter configuration' is missing scope 'metrics.ingest']")
+	})
+	t.Run("otlp exporter configuration enabled => dataingest token has rights => success", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+					Signals: otlpexporterconfiguration.SignalConfiguration{
+						Traces:  &otlpexporterconfiguration.TracesSignal{},
+						Metrics: &otlpexporterconfiguration.MetricsSignal{},
+						Logs:    &otlpexporterconfiguration.LogsSignal{},
+					},
+				},
+			},
+		}
+
+		apiToken := newToken(dtclient.APIToken, fakeTokenAllAPITokenPermissionsIncludingPaaS)
+		dataingestToken := newToken(dtclient.DataIngestToken, fakeTokenAllOTLPExporterPermissions)
+		tokens := Tokens{
+			dtclient.APIToken:        &apiToken,
+			dtclient.DataIngestToken: &dataingestToken,
+		}
+		tokens = tokens.AddFeatureScopesToTokens()
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
+
+		assert.Len(t, tokens.APIToken().Features, 7)
+		assert.Empty(t, tokens.PaasToken().Features)
+		assert.Len(t, tokens.DataIngestToken().Features, 4)
 		assert.NoError(t, err)
 	})
 }
