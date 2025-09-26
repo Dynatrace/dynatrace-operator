@@ -30,7 +30,7 @@ const (
 	testNamespace = "test-namespace"
 )
 
-func TestReconciler_Reconcile(t *testing.T) {
+func TestReconciler_ReconcileSecret(t *testing.T) {
 	t.Run("Extension secret not generated when Prometheus is disabled", func(t *testing.T) {
 		dk := createDynakube()
 
@@ -124,7 +124,48 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
 		assert.Contains(t, condition.Message, "A problem occurred when using the Kubernetes API")
 	})
+	t.Run("Extension secret migration", func(t *testing.T) {
+		dk := createDynakube()
+		dk.Spec.Extensions = &extensions.Spec{&extensions.PrometheusSpec{}}
 
+		dsToken := "datasourceToken"
+		eecToken := "eecToken"
+
+		secretData := map[string][]byte{
+			eecConsts.TokenSecretKey: []byte(eecToken),
+			"otelc.token":            []byte(dsToken),
+		}
+
+		oldSecret, err := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
+
+		fakeClient := fake.NewClient(oldSecret)
+		r := NewReconciler(fakeClient, fakeClient, dk)
+
+		err = r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		// assert extensions token is generated
+		var secretFound corev1.Secret
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		require.NoError(t, err)
+
+		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
+		require.Equal(t, []byte(eecToken), secretFound.Data[eecConsts.TokenSecretKey])
+
+		require.NotEmpty(t, secretFound.Data[consts.DatasourceTokenSecretKey])
+		require.Equal(t, []byte(dsToken), secretFound.Data[consts.DatasourceTokenSecretKey])
+
+		// assert extensions token condition is added
+		require.NotEmpty(t, dk.Conditions())
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), secretConditionType)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, dk.Extensions().GetTokenSecretName()+" created", condition.Message)
+	})
+}
+
+func TestReconciler_ReconcileService(t *testing.T) {
 	t.Run("Create service when extensions are enabled with minimal setup", func(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions = &extensions.Spec{&extensions.PrometheusSpec{}}
