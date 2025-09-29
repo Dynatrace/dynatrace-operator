@@ -27,6 +27,7 @@ type Spec struct {
 type PrometheusSpec struct{}
 
 // +kubebuilder:object:generate=true
+
 type ExecutionControllerSpec struct {
 
 	// Defines storage device
