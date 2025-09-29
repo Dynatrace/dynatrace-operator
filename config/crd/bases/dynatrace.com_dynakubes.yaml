@@ -6593,7 +6593,7 @@ spec:
                           type: string
                           x-kubernetes-validations:
                           - message: id must be lowercase alphanumeric and hyphens
-                            rule: self.matches('^[a-z0-9-]+$')
+                            rule: self.matches('^[a-z0-9]+(-[a-z0-9]+)*$')
                         labels:
                           additionalProperties:
                             type: string
