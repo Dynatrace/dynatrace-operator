@@ -33,6 +33,7 @@
   ],
   automergeType: "pr",
   automerge: true,
+  branchNameStrict: true,
   regexManagers: [
     {
       fileMatch: [
