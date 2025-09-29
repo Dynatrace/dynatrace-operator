@@ -7529,6 +7529,7 @@ spec:
                       - id
                       type: object
                     maxItems: 1
+                    minItems: 1
                     type: array
                   prometheus:
                     type: object
