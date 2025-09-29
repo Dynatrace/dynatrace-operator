@@ -59,12 +59,3 @@ func (e *Extensions) GetServiceNameFQDN() string {
 func (e *Extensions) GetServiceName() string {
 	return e.name + consts.ExtensionsControllerSuffix
 }
-
-func (d *DatabaseSpec) GetReplicas() int32 {
-	var defaultReplicas int32 = 1
-	if d.Replicas == nil {
-		return defaultReplicas
-	}
-
-	return *d.Replicas
-}
