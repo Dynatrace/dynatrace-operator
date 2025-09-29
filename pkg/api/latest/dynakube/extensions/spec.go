@@ -19,6 +19,7 @@ type Spec struct {
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems:=1
+	// +kubebuilder:validation:MinItems:=1
 	DatabasesSpec []DatabaseSpec `json:"databases,omitempty"`
 }
 
