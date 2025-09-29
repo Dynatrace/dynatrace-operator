@@ -7522,6 +7522,9 @@ spec:
                     maxItems: 1
                     minItems: 1
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - id
+                    x-kubernetes-list-type: map
                   prometheus:
                     type: object
                 type: object
