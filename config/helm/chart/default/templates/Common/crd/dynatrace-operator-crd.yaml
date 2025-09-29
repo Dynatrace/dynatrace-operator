@@ -6601,8 +6601,10 @@ spec:
                           type: object
                         id:
                           maxLength: 8
-                          pattern: ^[a-z0-9-]+$
                           type: string
+                          x-kubernetes-validations:
+                          - message: id must be lowercase alphanumeric and hyphens
+                            rule: self.matches('^[a-z0-9-]+$')
                         labels:
                           additionalProperties:
                             type: string

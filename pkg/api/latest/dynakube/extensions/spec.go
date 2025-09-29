@@ -75,7 +75,7 @@ type ExecutionControllerSpec struct {
 type DatabaseSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MaxLength:=8
-	// +kubebuilder:validation:Pattern:=`^[a-z0-9-]+$`
+	// +kubebuilder:validation:XValidation:rule="self.matches('^[a-z0-9-]+$')",message="id must be lowercase alphanumeric and hyphens"
 	ID string `json:"id"`
 
 	// +kubebuilder:validation:Optional
