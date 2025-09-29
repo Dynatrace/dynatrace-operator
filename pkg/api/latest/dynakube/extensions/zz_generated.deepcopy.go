@@ -192,13 +192,9 @@ func (in *Spec) DeepCopyInto(out *Spec) {
 	}
 	if in.DatabasesSpec != nil {
 		in, out := &in.DatabasesSpec, &out.DatabasesSpec
-		*out = new([]DatabaseSpec)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]DatabaseSpec, len(*in))
-			for i := range *in {
-				(*in)[i].DeepCopyInto(&(*out)[i])
-			}
+		*out = make([]DatabaseSpec, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 }
