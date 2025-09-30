@@ -185,10 +185,12 @@
       enabled: true,
     },
     {
-      matchDatasources: ["github-runners"],
+      matchDatasources: [
+        "github-runners",
+      ],
       enabled: true,
-      automerge: true
-    }
+      automerge: true,
+    },
   ],
   platformAutomerge: true,
 }
