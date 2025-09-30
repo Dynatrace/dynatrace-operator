@@ -30,6 +30,7 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 
 	if otlpExporterSpec == nil {
 		log.Debug("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
+
 		return false
 	}
 
@@ -54,11 +55,13 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 
 func (m Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 	log.Debug("checking if OTLP env vars have already been injected")
+
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
 func (m Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	_, err := m.mutate(request.BaseRequest)
+
 	return err
 }
 
@@ -66,7 +69,6 @@ func (m Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	log.Debug("reinvocation of OTLP env vars mutator")
 
 	mutated, err := m.mutate(request.BaseRequest)
-
 	if err != nil {
 		log.Error(err, "error during reinvocation of OTLP env vars mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 	}
@@ -128,7 +130,6 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 func injectTraceEnvVars(c *corev1.Container, apiURL string, override bool) bool {
 	// check if any environment variable related to the otlp trace exporter is already set.
 	// If yes, do not set any related env var to not change any customer specific settings
-
 	envVarsToCheck := []string{
 		OTLPTraceEndpointEnv,
 		OTLPTraceHeadersEnv,
@@ -153,7 +154,6 @@ func injectTraceEnvVars(c *corev1.Container, apiURL string, override bool) bool 
 func injectMetricsEnvVars(c *corev1.Container, apiURL string, override bool) bool {
 	// check if any environment variable related to the otlp trace exporter is already set.
 	// If yes, do not set any related env var to not change any customer specific settings
-
 	envVarsToCheck := []string{
 		OTLPMetricsEndpointEnv,
 		OTLPMetricsHeadersEnv,
@@ -178,7 +178,6 @@ func injectMetricsEnvVars(c *corev1.Container, apiURL string, override bool) boo
 func injectLogsEnvVars(c *corev1.Container, apiURL string, override bool) bool {
 	// check if any environment variable related to the otlp trace exporter is already set.
 	// If yes, do not set any related env var to not change any customer specific settings
-
 	envVarsToCheck := []string{
 		OTLPLogsEndpointEnv,
 		OTLPLogsHeadersEnv,

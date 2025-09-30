@@ -117,7 +117,7 @@ func TestHandler_Handle(t *testing.T) {
 		request := createTestMutationRequest(t, dk)
 
 		err := h.Handle(request)
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled")
 		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
