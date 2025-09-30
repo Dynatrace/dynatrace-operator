@@ -70,7 +70,29 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
 		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
 
+		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
+
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
+		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
+
+		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
+
+		dk := getTestDynakube()
+		request := createTestMutationRequest(t, dk)
+
+		err := h.Handle(request)
+		assert.NoError(t, err)
+	})
+	t.Run("call otlp env var reinvocation if enabled", func(t *testing.T) {
+		mockEnvVarMutator := webhookmock.NewMutator(t)
+		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
+
+		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(true)
+
+		mockEnvVarMutator.On("Reinvoke", mock.Anything).Return(true)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
 
 		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
@@ -86,6 +108,7 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
 
 		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
@@ -99,11 +122,12 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled")
 		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
 	})
-	t.Run("return error is resource attributes mutator returns an error", func(t *testing.T) {
+	t.Run("return error if resource attributes mutator returns an error", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 
 		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
