@@ -2,7 +2,8 @@
 
 create_docker_image_tag() {
   if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-    echo "snapshot-${GITHUB_HEAD_REF//[^a-zA-Z0-9_-]/-}"; return
+    head_ref=$(hack/build/ci/sanitize-branch-name.sh "${GITHUB_HEAD_REF}")
+    echo "snapshot-${head_ref}"; return
   elif [[ "${GITHUB_EVENT_NAME}" == "schedule" ]]; then # nightly builds
     echo "nightly-$(date --iso-8601)"; return
   fi
@@ -15,7 +16,8 @@ create_docker_image_tag() {
     echo "snapshot"; return
   fi
 
-  echo "snapshot-${GITHUB_REF_NAME//[^a-zA-Z0-9_-]/-}"
+  ref_name=$(hack/build/ci/sanitize-branch-name.sh "${GITHUB_REF_NAME}")
+  echo "snapshot-${ref_name}"
 }
 
 create_docker_image_labels() {
