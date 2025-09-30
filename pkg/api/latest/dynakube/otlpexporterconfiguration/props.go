@@ -20,6 +20,7 @@ func (s *OTLPExporterConfiguration) IsEnabled() bool {
 	if s.Spec == nil {
 		return false
 	}
+
 	return s.IsTracesEnabled() || s.IsMetricsEnabled() || s.IsLogsEnabled()
 }
 
