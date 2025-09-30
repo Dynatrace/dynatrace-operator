@@ -52,6 +52,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`databases`||-|array|
 |`prometheus`||-|object|
 
 ### .spec.logMonitoring
@@ -146,6 +147,12 @@
 |`namespaceSelector`||-|object|
 |`overrideEnvVars`||-|boolean|
 
+### .spec.templates.databaseExecutor
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`tolerations`||-|array|
+
 ### .spec.oneAgent.cloudNativeFullStack
 
 |Parameter|Description|Default value|Data type|
@@ -211,6 +218,13 @@
 |`logs`||-|object|
 |`metrics`||-|object|
 |`traces`||-|object|
+
+### .spec.templates.databaseExecutor.imageRef
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`repository`||-|string|
+|`tag`||-|string|
 
 ### .spec.templates.extensionExecutionController
 

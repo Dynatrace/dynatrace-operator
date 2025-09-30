@@ -1,5 +1,3 @@
-//go:build integrationtests
-
 package statefulset
 
 import (
