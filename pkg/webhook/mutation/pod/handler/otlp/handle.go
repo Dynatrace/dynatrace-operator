@@ -9,7 +9,10 @@ type Handler struct {
 	resourceAttributeMutator dtwebhook.Mutator
 }
 
-func New(envVarMutator dtwebhook.Mutator, resourceAttributeMutator dtwebhook.Mutator) *Handler {
+func New(
+	envVarMutator dtwebhook.Mutator,
+	resourceAttributeMutator dtwebhook.Mutator,
+) *Handler {
 	return &Handler{
 		envVarMutator:            envVarMutator,
 		resourceAttributeMutator: resourceAttributeMutator,

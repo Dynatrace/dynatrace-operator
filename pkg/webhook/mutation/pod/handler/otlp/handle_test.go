@@ -23,7 +23,7 @@ const (
 )
 
 func TestHandler_Handle(t *testing.T) {
-	t.Run("do not call mutators if Feature flag is disabled enabled", func(t *testing.T) {
+	t.Run("do not call mutators if Feature flag is disabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
