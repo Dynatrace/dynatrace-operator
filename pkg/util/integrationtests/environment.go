@@ -14,8 +14,6 @@ import (
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
@@ -207,16 +205,6 @@ func addScheme(testEnv *envtest.Environment) error {
 	}
 
 	err = v1beta3.AddToScheme(testEnv.Scheme)
-	if err != nil {
-		return err
-	}
-
-	err = v1beta2.AddToScheme(testEnv.Scheme)
-	if err != nil {
-		return err
-	}
-
-	err = v1beta1.AddToScheme(testEnv.Scheme)
 	if err != nil {
 		return err
 	}

@@ -32,12 +32,12 @@ func (mut *Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject,
 		request.DynaKube.FF().IsAutomaticInjection())
-	enabledOnDynakube := request.DynaKube.MetadataEnrichmentEnabled()
+	enabledOnDynakube := request.DynaKube.MetadataEnrichment().IsEnabled()
 
 	matchesNamespace := true // if no namespace selector is configured, we just pass set this to true
 
-	if request.DynaKube.MetadataEnrichmentNamespaceSelector().Size() > 0 {
-		selector, _ := metav1.LabelSelectorAsSelector(request.DynaKube.MetadataEnrichmentNamespaceSelector())
+	if request.DynaKube.MetadataEnrichment().GetNamespaceSelector().Size() > 0 {
+		selector, _ := metav1.LabelSelectorAsSelector(request.DynaKube.MetadataEnrichment().GetNamespaceSelector())
 
 		matchesNamespace = selector.Matches(labels.Set(request.Namespace.Labels))
 	}

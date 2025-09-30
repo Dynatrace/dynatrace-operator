@@ -206,7 +206,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		}
 	}
 
-	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichmentEnabled() {
+	if dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled() {
 		endpointProperties, err := s.prepareEndpoints(ctx, dk)
 		if err != nil {
 			return nil, errors.WithStack(err)

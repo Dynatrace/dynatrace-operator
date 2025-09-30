@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -29,7 +30,7 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Recon
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.MetadataEnrichmentEnabled() && !r.dk.FF().IsNodeImagePull() {
+	if !r.dk.MetadataEnrichment().IsEnabled() && !r.dk.FF().IsNodeImagePull() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil
 		}
@@ -65,7 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]dynakube.EnrichmentRule, error) {
+func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]metadataenrichment.EnrichmentRule, error) {
 	rulesResponse, err := r.dtc.GetRulesSettings(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		conditions.SetDynatraceAPIError(r.dk.Conditions(), conditionType, err)
@@ -73,7 +74,7 @@ func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]dynakube.Enrichm
 		return nil, errors.Join(err, errors.New("error trying to check if rules exist"))
 	}
 
-	var rules []dynakube.EnrichmentRule
+	var rules []metadataenrichment.EnrichmentRule
 	// Shouldn't be necessary, because we only get a single item back from the API, but still, its more "complete" this way
 	for _, item := range rulesResponse.Items {
 		rules = append(rules, item.Value.Rules...)

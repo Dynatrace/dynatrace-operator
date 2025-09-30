@@ -21,9 +21,6 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // +kubebuilder:object:generate=true
 
 type Spec struct {
-	// The namespaces where you want Dynatrace Operator to inject OTLP exporter configuration.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// The OpenTelemetry signals that should be configured to be sent via OTLP
 	Signals SignalConfiguration `json:"signals,omitempty"`
@@ -33,6 +30,9 @@ type Spec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable override of existing OTLP environment variables",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	OverrideEnvVars *bool `json:"overrideEnvVars,omitempty"`
+	// The namespaces where you want Dynatrace Operator to inject OTLP exporter configuration.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

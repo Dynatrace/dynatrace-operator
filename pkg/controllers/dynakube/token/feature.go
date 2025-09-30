@@ -96,7 +96,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			Name:           "MetadataEnrichment Rules",
 			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.MetadataEnrichmentEnabled()
+				return dk.MetadataEnrichment().IsEnabled()
 			},
 		},
 	}
@@ -121,6 +121,27 @@ func getFeaturesForDataIngest() []Feature {
 			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.ActiveGate().IsMetricsIngestEnabled()
+			},
+		},
+		{
+			Name:           "OTLP trace exporter configuration",
+			RequiredScopes: []string{dtclient.TokenScopeOpenTelemetryTraceIngest},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.Spec.OTLPExporterConfiguration != nil && dk.Spec.OTLPExporterConfiguration.IsTracesEnabled()
+			},
+		},
+		{
+			Name:           "OTLP logs exporter configuration",
+			RequiredScopes: []string{dtclient.TokenScopeLogsIngest},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.Spec.OTLPExporterConfiguration != nil && dk.Spec.OTLPExporterConfiguration.IsLogsEnabled()
+			},
+		},
+		{
+			Name:           "OTLP metrics exporter configuration",
+			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.Spec.OTLPExporterConfiguration != nil && dk.Spec.OTLPExporterConfiguration.IsMetricsEnabled()
 			},
 		},
 	}
