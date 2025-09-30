@@ -16,18 +16,25 @@ limitations under the License.
 
 package otlpexporterconfiguration
 
-func (s *Spec) IsOverrideEnabled() bool {
-	return s.OverrideEnvVars != nil && *s.OverrideEnvVars
+func (s *OTLPExporterConfiguration) IsEnabled() bool {
+	if s.Spec == nil {
+		return false
+	}
+	return s.IsTracesEnabled() || s.IsMetricsEnabled() || s.IsLogsEnabled()
 }
 
-func (s *Spec) IsMetricsEnabled() bool {
-	return s.Signals.Metrics != nil
+func (s *OTLPExporterConfiguration) IsOverrideEnabled() bool {
+	return s.Spec != nil && s.OverrideEnvVars != nil && *s.OverrideEnvVars
 }
 
-func (s *Spec) IsTracesEnabled() bool {
-	return s.Signals.Traces != nil
+func (s *OTLPExporterConfiguration) IsMetricsEnabled() bool {
+	return s.Spec != nil && s.Signals.Metrics != nil
 }
 
-func (s *Spec) IsLogsEnabled() bool {
-	return s.Signals.Logs != nil
+func (s *OTLPExporterConfiguration) IsTracesEnabled() bool {
+	return s.Spec != nil && s.Signals.Traces != nil
+}
+
+func (s *OTLPExporterConfiguration) IsLogsEnabled() bool {
+	return s.Spec != nil && s.Signals.Logs != nil
 }

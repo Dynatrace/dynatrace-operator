@@ -26,9 +26,9 @@ func New() dtwebhook.Mutator {
 func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 	log.Debug("checking if OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	otlpExporterSpec := request.DynaKube.Spec.OTLPExporterConfiguration
+	otlpExporterSpec := request.DynaKube.OTLPExporterConfiguration()
 
-	if otlpExporterSpec == nil {
+	if !otlpExporterSpec.IsEnabled() {
 		log.Debug("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 		return false
@@ -77,9 +77,9 @@ func (m Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 }
 
 func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
-	otlpExporterConfig := request.DynaKube.Spec.OTLPExporterConfiguration
+	otlpExporterConfig := request.DynaKube.OTLPExporterConfiguration()
 
-	if otlpExporterConfig == nil {
+	if !otlpExporterConfig.IsEnabled() {
 		log.Debug(
 			"no OTLP exporter configuration set, will not inject OTLP exporter env vars",
 			"podName", request.PodName(),

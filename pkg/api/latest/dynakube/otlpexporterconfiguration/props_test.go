@@ -24,38 +24,43 @@ import (
 
 func TestSpec_IsOverrideEnabled(t *testing.T) {
 	t.Run("overrideEnvVars not set", func(t *testing.T) {
-		s := Spec{}
+		s := OTLPExporterConfiguration{}
 
 		assert.False(t, s.IsOverrideEnabled())
 	})
 	t.Run("overrideEnvVars disabled", func(t *testing.T) {
 		enabled := false
-		s := Spec{
-			OverrideEnvVars: &enabled,
+		s := OTLPExporterConfiguration{
+			Spec: &Spec{
+				OverrideEnvVars: &enabled,
+			},
 		}
 
 		assert.False(t, s.IsOverrideEnabled())
 	})
 	t.Run("overrideEnvVars enabled", func(t *testing.T) {
 		enabled := true
-		s := Spec{
-			OverrideEnvVars: &enabled,
+		s := OTLPExporterConfiguration{
+			Spec: &Spec{
+				OverrideEnvVars: &enabled,
+			},
 		}
-
 		assert.True(t, s.IsOverrideEnabled())
 	})
 }
 
 func TestSpec_IsMetricsEnabled(t *testing.T) {
 	t.Run("metrics disabled", func(t *testing.T) {
-		s := Spec{}
+		s := OTLPExporterConfiguration{}
 
 		assert.False(t, s.IsMetricsEnabled())
 	})
 	t.Run("metrics enabled", func(t *testing.T) {
-		s := Spec{
-			Signals: SignalConfiguration{
-				Metrics: &MetricsSignal{},
+		s := OTLPExporterConfiguration{
+			Spec: &Spec{
+				Signals: SignalConfiguration{
+					Metrics: &MetricsSignal{},
+				},
 			},
 		}
 
@@ -65,14 +70,16 @@ func TestSpec_IsMetricsEnabled(t *testing.T) {
 
 func TestSpec_IsTracesEnabled(t *testing.T) {
 	t.Run("traces disabled", func(t *testing.T) {
-		s := Spec{}
+		s := OTLPExporterConfiguration{}
 
 		assert.False(t, s.IsTracesEnabled())
 	})
 	t.Run("traces enabled", func(t *testing.T) {
-		s := Spec{
-			Signals: SignalConfiguration{
-				Traces: &TracesSignal{},
+		s := OTLPExporterConfiguration{
+			Spec: &Spec{
+				Signals: SignalConfiguration{
+					Traces: &TracesSignal{},
+				},
 			},
 		}
 
@@ -82,17 +89,60 @@ func TestSpec_IsTracesEnabled(t *testing.T) {
 
 func TestSpec_IsLogsEnabled(t *testing.T) {
 	t.Run("logs disabled", func(t *testing.T) {
-		s := Spec{}
+		s := OTLPExporterConfiguration{}
 
 		assert.False(t, s.IsLogsEnabled())
 	})
 	t.Run("traces enabled", func(t *testing.T) {
-		s := Spec{
-			Signals: SignalConfiguration{
-				Logs: &LogsSignal{},
+		s := OTLPExporterConfiguration{
+			Spec: &Spec{
+				Signals: SignalConfiguration{
+					Logs: &LogsSignal{},
+				},
 			},
 		}
 
 		assert.True(t, s.IsLogsEnabled())
+	})
+}
+
+func TestSpec_IsEnabled(t *testing.T) {
+	t.Run("disabled", func(t *testing.T) {
+		s := OTLPExporterConfiguration{}
+
+		assert.False(t, s.IsEnabled())
+	})
+	t.Run("enabled (traces)", func(t *testing.T) {
+		s := OTLPExporterConfiguration{
+			Spec: &Spec{
+				Signals: SignalConfiguration{
+					Traces: &TracesSignal{},
+				},
+			},
+		}
+
+		assert.True(t, s.IsEnabled())
+	})
+	t.Run("enabled (metrics)", func(t *testing.T) {
+		s := OTLPExporterConfiguration{
+			Spec: &Spec{
+				Signals: SignalConfiguration{
+					Metrics: &MetricsSignal{},
+				},
+			},
+		}
+
+		assert.True(t, s.IsEnabled())
+	})
+	t.Run("enabled (logs)", func(t *testing.T) {
+		s := OTLPExporterConfiguration{
+			Spec: &Spec{
+				Signals: SignalConfiguration{
+					Logs: &LogsSignal{},
+				},
+			},
+		}
+
+		assert.True(t, s.IsEnabled())
 	})
 }

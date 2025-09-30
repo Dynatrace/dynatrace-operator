@@ -3,7 +3,6 @@ package otlp
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -23,7 +22,7 @@ const (
 )
 
 func TestHandler_Handle(t *testing.T) {
-	t.Run("do not call mutators if Feature flag is disabled", func(t *testing.T) {
+	t.Run("do not call mutators if OTLPExporterConfiguration is not defined", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
@@ -31,7 +30,7 @@ func TestHandler_Handle(t *testing.T) {
 
 		dk := getTestDynakube()
 
-		dk.Annotations = map[string]string{}
+		dk.Spec.OTLPExporterConfiguration = nil
 
 		request := createTestMutationRequest(t, dk)
 
@@ -41,26 +40,6 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.AssertNotCalled(t, "IsEnabled")
 		mockEnvVarMutator.AssertNotCalled(t, "Mutate")
 		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled")
-		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
-	})
-	t.Run("do not call mutators if not enabled", func(t *testing.T) {
-		mockEnvVarMutator := webhookmock.NewMutator(t)
-		mockResourceAttributeMutator := webhookmock.NewMutator(t)
-
-		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(false)
-		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(false)
-
-		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
-
-		dk := getTestDynakube()
-
-		dk.Annotations[exp.InjectionAutomaticKey] = "false"
-		request := createTestMutationRequest(t, dk)
-
-		err := h.Handle(request)
-		require.NoError(t, err)
-
-		mockEnvVarMutator.AssertNotCalled(t, "Mutate")
 		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
 	})
 	t.Run("call mutators if enabled", func(t *testing.T) {
@@ -166,7 +145,13 @@ func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{},
+			OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+				Signals: otlpexporterconfiguration.SignalConfiguration{
+					Traces:  &otlpexporterconfiguration.TracesSignal{},
+					Metrics: &otlpexporterconfiguration.MetricsSignal{},
+					Logs:    &otlpexporterconfiguration.LogsSignal{},
+				},
+			},
 		},
 	}
 }
@@ -175,9 +160,6 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      testDynakubeName,
 		Namespace: testNamespaceName,
-		Annotations: map[string]string{
-			exp.OTLPExporterConfigurationKey: "true",
-		},
 	}
 }
 
