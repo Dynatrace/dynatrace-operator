@@ -85,6 +85,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 			"podName", request.PodName(),
 			"namespace", request.Namespace.Name,
 		)
+
 		return false, nil
 	}
 
@@ -203,6 +204,7 @@ func addEnvVarLiteralValue(c *corev1.Container, name string, value string) {
 	for i := range c.Env {
 		if c.Env[i].Name == name {
 			c.Env[i].Value = value
+
 			return
 		}
 	}
