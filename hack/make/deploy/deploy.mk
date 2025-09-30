@@ -20,7 +20,7 @@ deploy: manifests/crd/helm
 			--set installCRD=true \
 			--set csidriver.enabled=$(ENABLE_CSI) \
 			--set manifests=true \
-			--set image="$(IMAGE_URI)" \
+			--set image=$(IMAGE_URI) \
 			--set debugLogs=$(DEBUG_LOGS) \
 			--set debug=$(DEBUG)
 
