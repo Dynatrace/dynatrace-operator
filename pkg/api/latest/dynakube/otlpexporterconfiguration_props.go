@@ -5,7 +5,9 @@ import (
 )
 
 func (dk *DynaKube) OTLPExporterConfiguration() *otlpexporterconfiguration.OTLPExporterConfiguration {
-	return &otlpexporterconfiguration.OTLPExporterConfiguration{
+	otlpExporterConfiguration := &otlpexporterconfiguration.OTLPExporterConfiguration{
 		Spec: dk.Spec.OTLPExporterConfiguration,
 	}
+
+	return otlpExporterConfiguration
 }
