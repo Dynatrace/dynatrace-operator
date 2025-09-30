@@ -130,9 +130,11 @@ func getTestDynakube() *dynakube.DynaKube {
 
 func getTestDynakubeMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:        testDynakubeName,
-		Namespace:   testNamespaceName,
-		Annotations: map[string]string{},
+		Name:      testDynakubeName,
+		Namespace: testNamespaceName,
+		Annotations: map[string]string{
+			exp.OTLPExporterConfigurationKey: "true",
+		},
 	}
 }
 

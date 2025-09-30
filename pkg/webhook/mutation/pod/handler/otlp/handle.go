@@ -20,6 +20,9 @@ func New(
 }
 
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
+	if !mutationRequest.DynaKube.FF().IsOTLPExporterConfiguration() {
+		return nil
+	}
 	if h.envVarMutator.IsEnabled(mutationRequest.BaseRequest) {
 		err := h.envVarMutator.Mutate(mutationRequest)
 		if err != nil {

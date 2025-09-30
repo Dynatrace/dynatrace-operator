@@ -23,6 +23,26 @@ const (
 )
 
 func TestHandler_Handle(t *testing.T) {
+	t.Run("do not call mutators if Feature flag is disabled enabled", func(t *testing.T) {
+		mockEnvVarMutator := webhookmock.NewMutator(t)
+		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
+
+		dk := getTestDynakube()
+
+		dk.Annotations = map[string]string{}
+
+		request := createTestMutationRequest(t, dk)
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		mockEnvVarMutator.AssertNotCalled(t, "IsEnabled")
+		mockEnvVarMutator.AssertNotCalled(t, "Mutate")
+		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled")
+		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
+	})
 	t.Run("do not call mutators if not enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
@@ -129,9 +149,11 @@ func getTestDynakube() *dynakube.DynaKube {
 
 func getTestDynakubeMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:        testDynakubeName,
-		Namespace:   testNamespaceName,
-		Annotations: map[string]string{},
+		Name:      testDynakubeName,
+		Namespace: testNamespaceName,
+		Annotations: map[string]string{
+			exp.OTLPExporterConfigurationKey: "true",
+		},
 	}
 }
 
