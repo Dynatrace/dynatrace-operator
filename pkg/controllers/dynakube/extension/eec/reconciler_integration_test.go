@@ -40,25 +40,33 @@ func TestExtensionsDatabases(t *testing.T) {
 	integrationtests.CreateNamespace(t, t.Context(), clt, testNamespaceName)
 
 	t.Run("Valid database ID", func(t *testing.T) {
-		require.NoError(t, testExtensionsDatabasesID(t, clt, "db"))
-		require.NoError(t, testExtensionsDatabasesID(t, clt, "db-1"))
-		require.NoError(t, testExtensionsDatabasesID(t, clt, "db-1-1"))
+		require.NoError(t, createDynakubeWithDatabaseExtension(t, clt, "db"))
+		require.NoError(t, createDynakubeWithDatabaseExtension(t, clt, "db-1"))
+		require.NoError(t, createDynakubeWithDatabaseExtension(t, clt, "db-1-1"))
 	})
 	t.Run("Invalid database ID string pattern", func(t *testing.T) {
-		require.Error(t, testExtensionsDatabasesID(t, clt, "-wrong"))
-		require.Error(t, testExtensionsDatabasesID(t, clt, "WRONG-1"))
-		require.Error(t, testExtensionsDatabasesID(t, clt, "db-"))
-		require.Error(t, testExtensionsDatabasesID(t, clt, "db--1"))
+		err := createDynakubeWithDatabaseExtension(t, clt, "-wrong")
+		require.Errorf(t, err, "should not create dynakube with database ID starting with hyphen")
+
+		err = createDynakubeWithDatabaseExtension(t, clt, "WRONG-1")
+		require.Errorf(t, err, "should not create dynakube with database ID containing uppercase letters")
+
+		err = createDynakubeWithDatabaseExtension(t, clt, "db-")
+		require.Errorf(t, err, "should not create dynakube with database ID ending with hyphen")
+
+		err = createDynakubeWithDatabaseExtension(t, clt, "db--1")
+		require.Errorf(t, err, "should not create dynakube with database ID containing consecutive hyphens")
 	})
 	t.Run("Invalid database ID string length", func(t *testing.T) {
-		require.Error(t, testExtensionsDatabasesID(t, clt, "super-long-value"))
+		err := createDynakubeWithDatabaseExtension(t, clt, "super-long-value")
+		require.Errorf(t, err, "should not create dynakube with database ID longer than 8 characters")
 	})
 
 	// stop test environment
 	integrationtests.DestroyTestEnvironment(t)
 }
 
-func testExtensionsDatabasesID(t *testing.T, clt client.Client, id string) error {
+func createDynakubeWithDatabaseExtension(t *testing.T, clt client.Client, id string) error {
 	dk := getTestDynakube()
 
 	dk.Name = rand.String(10)
