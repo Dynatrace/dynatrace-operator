@@ -32,10 +32,6 @@ func Feature(t *testing.T) features.Feature {
 	previousVersionDynakube.ConvertFrom(&testDynakube)
 	componentDynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, *previousVersionDynakube)
 
-	//	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-
-	//	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
-
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
 	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
@@ -43,8 +39,6 @@ func Feature(t *testing.T) features.Feature {
 	// update to snapshot
 	withCSI := false
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallViaMake(withCSI), true))
-
-	//	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
 
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
