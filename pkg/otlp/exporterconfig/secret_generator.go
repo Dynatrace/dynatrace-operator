@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -34,7 +35,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 	}
 }
 
-// GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
+// GenerateForDynakube creates/updates the OTLP exporter config secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
@@ -66,6 +67,17 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 	return nil
 }
 
+func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	err := cleanupConfig(ctx, client, apiReader, namespaces, dk)
+	if err != nil {
+		log.Error(err, "failed to cleanup bootstrapper config secrets")
+
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
 func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
@@ -80,7 +92,7 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	data["apiToken"] = tokens.Data[dtclient.APIToken]
+	data[dtclient.DataIngestToken] = tokens.Data[dtclient.DataIngestToken]
 
 	return data, nil
 }
@@ -133,4 +145,22 @@ func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynaku
 	}
 
 	return nil
+}
+
+func cleanupConfig(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	defer meta.RemoveStatusCondition(dk.Conditions(), ConfigConditionType)
+
+	nsList := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		nsList = append(nsList, ns.Name)
+	}
+
+	secrets := k8ssecret.Query(client, apiReader, log)
+
+	err := secrets.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
+	if err != nil {
+		log.Error(err, "failed to delete the source bootstrapper-config secret", "name", GetSourceConfigSecretName(dk.Name))
+	}
+
+	return secrets.DeleteForNamespaces(ctx, consts.OTLPExporterSecretName, nsList)
 }
