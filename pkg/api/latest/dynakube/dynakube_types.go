@@ -170,6 +170,8 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
 	// +kubebuilder:validation:Optional
+	DatabaseExecutor extensions.DatabaseExecutorSpec `json:"databaseExecutor,omitempty"`
+	// +kubebuilder:validation:Optional
 	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 }
 
