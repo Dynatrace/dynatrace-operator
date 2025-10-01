@@ -49,7 +49,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		return err
 	}
 
-	//TODO: Remove in future release when migration is no longer needed
+	// TODO: Remove in future release when migration is no longer needed
 	migrationNeeded := r.removeOldSecretAndConditionIfNeeded(ctx, existingSecret)
 
 	if k8serrors.IsNotFound(err) || migrationNeeded {

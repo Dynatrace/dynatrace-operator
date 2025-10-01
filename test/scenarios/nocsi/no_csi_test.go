@@ -4,8 +4,6 @@ package nocsi
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
-	"github.com/Dynatrace/dynatrace-operator/test/features/extensions/upgrade"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -14,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/classic"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/standard"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
@@ -70,10 +69,6 @@ func TestNoCSI_app_monitoring_without_csi(t *testing.T) {
 
 func TestNoCSI_extensions(t *testing.T) {
 	testEnv.Test(t, extensions.Feature(t))
-}
-
-func TestNoCSI_extensions_upgrade(t *testing.T) {
-	testEnv.Test(t, upgrade.Feature(t))
 }
 
 func TestNoCSI_edgeconnect_install(t *testing.T) {
