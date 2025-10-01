@@ -400,7 +400,7 @@ func getTestDynakubeWithExtensionsAndTelemetryIngest() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions:      &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			TelemetryIngest: &telemetryingest.Spec{},
 			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
