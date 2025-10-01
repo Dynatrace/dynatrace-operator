@@ -18,6 +18,14 @@ import (
 var ErrNoMigration = errors.New("no migration needed")
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
+	if migrationNeeded() {
+		// remove condition and maybe old secret
+	}
+
+	reconcileAsBefore()
+}
+
+func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if !r.dk.Extensions().IsEnabled() {
 		r.cleanupSecret(ctx)
 
@@ -35,21 +43,9 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	var newSecret *corev1.Secret
 	if k8serrors.IsNotFound(err) {
 		newSecret, err = r.newSecret()
-	} else if err == nil {
+	} else if r.isMigrationNeeded(existingSecret) {
 		newSecret, err = r.migrateSecret(existingSecret)
 	}
-
-	if errors.Is(err, ErrNoMigration) {
-		// no new secret to create, either because it already exists or migration not needed
-		log.Info("extensions token secret no migration required")
-
-		return nil
-	} else if err != nil {
-		log.Info("migration of extension secret failed")
-
-		return err
-	}
-
 	_, err = r.secrets.CreateOrUpdate(ctx, newSecret)
 	if err != nil {
 		log.Info("failed to create/update extension secret")
@@ -102,6 +98,16 @@ func (r *reconciler) newSecret() (*corev1.Secret, error) {
 	}
 
 	return newSecret, nil
+}
+func (r *reconciler) isMigrationNeeded(existingSecret *corev1.Secret) bool {
+	if existingSecret == nil {
+		return false
+	}
+
+	_, datasourceTokenExists := existingSecret.Data[consts.DatasourceTokenSecretKey]
+
+	return !datasourceTokenExists
+
 }
 
 func (r *reconciler) migrateSecret(existingSecret *corev1.Secret) (*corev1.Secret, error) {
