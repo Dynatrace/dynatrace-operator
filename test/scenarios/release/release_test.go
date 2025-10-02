@@ -6,7 +6,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/upgrade"
+	cloudnativeupgrade "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/upgrade"
+	extensionsupgrade "github.com/Dynatrace/dynatrace-operator/test/features/extensions/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/events"
@@ -45,6 +46,10 @@ func TestMain(m *testing.M) {
 	testEnv.Run(m)
 }
 
-func TestRelease(t *testing.T) {
-	testEnv.Test(t, upgrade.Feature(t))
+func TestRelease_cloudnative_upgrade(t *testing.T) {
+	testEnv.Test(t, cloudnativeupgrade.Feature(t))
+}
+
+func TestRelease_extensions_upgrade(t *testing.T) {
+	testEnv.Test(t, extensionsupgrade.Feature(t))
 }
