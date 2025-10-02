@@ -92,7 +92,22 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			setupErrors = append(setupErrors, err)
 		}
 
-		err := r.generateInitSecret(ctx)
+		oneAgents, metadataEnrichment, err := mapper.ListMonitoredNamespaces(ctx, r.apiReader, r.dk)
+
+		log.Info("namespaces monitored", "selector", "OneAgent", "count (at most 10 are shown)", len(oneAgents), "namespaces", oneAgents)
+
+		log.Info("namespaces monitored", "selector", "MetadataEnrichment", "count (at most 10 are shown)", len(metadataEnrichment), "namespaces", metadataEnrichment)
+
+		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "OneAgent", r.dk.OneAgent().IsAppInjectionNeeded(), oneAgents)
+		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "MetadataEnrichment", r.dk.MetadataEnrichment().IsEnabled(), metadataEnrichment)
+
+		updateCollectedNamespacesMonitoredCondition(r.dk.Conditions())
+
+		if err != nil {
+			log.Error(err, "listing monitored namespaces failed")
+		}
+
+		err = r.generateInitSecret(ctx)
 		if err != nil {
 			setupErrors = append(setupErrors, err)
 		}
