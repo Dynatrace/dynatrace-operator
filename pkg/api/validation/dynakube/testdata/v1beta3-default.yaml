@@ -12,7 +12,7 @@ spec:
   apiUrl: https://url/api
   tokens: token
   customPullSecret: pull-secret
-  enableIstio: true
+  # enableIstio: true  # needs istio CRD setup
   skipCertCheck: true
   proxy:
     value: proxy-value

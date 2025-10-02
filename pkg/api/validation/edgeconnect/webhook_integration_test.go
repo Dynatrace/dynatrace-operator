@@ -10,9 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	admissionv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/yaml"
@@ -20,7 +22,68 @@ import (
 
 func TestWebhook(t *testing.T) {
 	clt := integrationtests.SetupWebhookTestEnvironment(t,
-		envtest.WebhookInstallOptions{},
+		envtest.WebhookInstallOptions{
+			// TODO(avorima): Load this from a file using Paths
+			ValidatingWebhooks: []*admissionv1.ValidatingWebhookConfiguration{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "dynatrace-webhook",
+					},
+					Webhooks: []admissionv1.ValidatingWebhook{
+						{
+							Name: "v1alpha1.edgeconnect.webhook.dynatrace.com",
+							ClientConfig: admissionv1.WebhookClientConfig{
+								Service: &admissionv1.ServiceReference{
+									Path: ptr.To("/validate-dynatrace-com-v1alpha1-edgeconnect"),
+								},
+							},
+							Rules: []admissionv1.RuleWithOperations{
+								{
+									Operations: []admissionv1.OperationType{
+										admissionv1.Create,
+										admissionv1.Update,
+									},
+									Rule: admissionv1.Rule{
+										APIGroups:   []string{"dynatrace.com"},
+										APIVersions: []string{"v1alpha1"},
+										Resources:   []string{"edgeconnects"},
+									},
+								},
+							},
+							MatchPolicy:             ptr.To(admissionv1.Exact),
+							SideEffects:             ptr.To(admissionv1.SideEffectClassNone),
+							TimeoutSeconds:          ptr.To[int32](10),
+							AdmissionReviewVersions: []string{"v1"},
+						},
+						{
+							Name: "v1alpha2.edgeconnect.webhook.dynatrace.com",
+							ClientConfig: admissionv1.WebhookClientConfig{
+								Service: &admissionv1.ServiceReference{
+									Path: ptr.To("/validate-dynatrace-com-v1alpha2-edgeconnect"),
+								},
+							},
+							Rules: []admissionv1.RuleWithOperations{
+								{
+									Operations: []admissionv1.OperationType{
+										admissionv1.Create,
+										admissionv1.Update,
+									},
+									Rule: admissionv1.Rule{
+										APIGroups:   []string{"dynatrace.com"},
+										APIVersions: []string{"v1alpha2"},
+										Resources:   []string{"edgeconnects"},
+									},
+								},
+							},
+							MatchPolicy:             ptr.To(admissionv1.Exact),
+							SideEffects:             ptr.To(admissionv1.SideEffectClassNone),
+							TimeoutSeconds:          ptr.To[int32](10),
+							AdmissionReviewVersions: []string{"v1"},
+						},
+					},
+				},
+			},
+		},
 		validation.SetupWebhookWithManager,
 	)
 

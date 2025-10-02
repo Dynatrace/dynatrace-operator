@@ -58,7 +58,6 @@ spec:
   apiUrl: https://url/api
   customPullSecret: pull-secret
   dynatraceApiRequestThreshold: 42
-  enableIstio: true
   extensions:
     prometheus: {}
   logMonitoring:
