@@ -35,7 +35,9 @@ func TestStatefulSet(t *testing.T) {
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testTenantUUID,
 			},
-			VersionStatus: status.VersionStatus{},
+			VersionStatus: status.VersionStatus{
+				ImageID: "thisismytenant.com/linux/activegate@sha256:312a5fafebb134371dc05e3e0ad00641bd44fde2a31b70dca5edbc708f2e76cb",
+			},
 		},
 		KubeSystemUUID: testKubeSystemUUID,
 	}

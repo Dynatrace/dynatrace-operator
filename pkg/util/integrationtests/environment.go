@@ -114,7 +114,7 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 
 	err = wait.PollUntilContextTimeout(
 		t.Context(),
-		10*time.Millisecond, 1*time.Second, // gomega defaults
+		500*time.Millisecond, 10*time.Second,
 		false,
 		func(ctx context.Context) (bool, error) {
 			conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true}) //nolint:gosec
