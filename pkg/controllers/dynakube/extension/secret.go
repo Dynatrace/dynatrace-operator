@@ -15,7 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const OtelcTokenSecretKey = "otelc.token"
+// TODO: Remove in future release when migration is no longer needed
+const DeprecatedOtelcTokenSecretKey = "otelc.token"
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if !r.dk.Extensions().IsEnabled() {
@@ -50,7 +51,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	}
 
 	// TODO: Remove in future release when migration is no longer needed
-	migrationNeeded := r.removeOldSecretAndConditionIfNeeded(ctx, existingSecret)
+	migrationNeeded := r.removeDeprecatedSecretAndConditionIfNeeded(ctx, existingSecret)
 
 	if k8serrors.IsNotFound(err) || migrationNeeded {
 		newEecToken, err := dttoken.New(eecConsts.TokenSecretValuePrefix)
@@ -104,12 +105,12 @@ func (r *reconciler) getSecretName() string {
 	return r.dk.Extensions().GetTokenSecretName()
 }
 
-func (r *reconciler) removeOldSecretAndConditionIfNeeded(ctx context.Context, existingSecret *corev1.Secret) bool {
+func (r *reconciler) removeDeprecatedSecretAndConditionIfNeeded(ctx context.Context, existingSecret *corev1.Secret) bool {
 	if existingSecret == nil {
 		return false
 	}
 
-	if _, exists := existingSecret.Data[OtelcTokenSecretKey]; !exists {
+	if _, exists := existingSecret.Data[DeprecatedOtelcTokenSecretKey]; !exists {
 		return false
 	}
 

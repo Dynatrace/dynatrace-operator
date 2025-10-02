@@ -125,8 +125,6 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		assert.Contains(t, condition.Message, "A problem occurred when using the Kubernetes API")
 	})
 	t.Run("Extension secret migration", func(t *testing.T) {
-		const oldSecretTokenKey = "otelc.token"
-
 		dk := createDynakube()
 		dk.Spec.Extensions = &extensions.Spec{
 			PrometheusSpec: &extensions.PrometheusSpec{},
@@ -137,8 +135,8 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		eecToken := "eecToken"
 
 		secretData := map[string][]byte{
-			eecConsts.TokenSecretKey: []byte(eecToken),
-			oldSecretTokenKey:        []byte(dsToken),
+			eecConsts.TokenSecretKey:      []byte(eecToken),
+			DeprecatedOtelcTokenSecretKey: []byte(dsToken),
 		}
 
 		oldSecret, err := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
@@ -159,7 +157,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
 		require.NotEmpty(t, secretFound.Data[consts.DatasourceTokenSecretKey])
-		require.Empty(t, secretFound.Data[oldSecretTokenKey])
+		require.Empty(t, secretFound.Data[DeprecatedOtelcTokenSecretKey])
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())

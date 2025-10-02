@@ -3,9 +3,9 @@
 package upgrade
 
 import (
-	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"testing"
 
+	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -16,7 +16,7 @@ import (
 )
 
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("extensions-upgrade")
+	builder := features.New("deprecated-secret-upgrade-operator")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []componentDynakube.Option{
