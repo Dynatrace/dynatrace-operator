@@ -5,12 +5,6 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook/certificates"
-	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	edgeconnectv1alpha2 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	dynakubev1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
-	dynakubev1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
-	dynakubev1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -116,12 +110,12 @@ func run() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = setupDynakubeValidation(webhookManager)
+		err = dynakubevalidation.SetupWebhookWithManager(webhookManager)
 		if err != nil {
 			return err
 		}
 
-		err = setupEdgeconnectValidation(webhookManager)
+		err = edgeconnectvalidation.SetupWebhookWithManager(webhookManager)
 		if err != nil {
 			return err
 		}
@@ -146,48 +140,6 @@ func startCertificateWatcher(webhookManager manager.Manager, namespace string, p
 		}
 
 		watcher.WaitForCertificates()
-	}
-
-	return nil
-}
-
-func setupDynakubeValidation(webhookManager manager.Manager) error {
-	dkValidator := dynakubevalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
-
-	err := dynakubev1beta3.SetupWebhookWithManager(webhookManager, dkValidator)
-	if err != nil {
-		return err
-	}
-
-	err = dynakubev1beta4.SetupWebhookWithManager(webhookManager, dkValidator)
-	if err != nil {
-		return err
-	}
-
-	err = dynakubev1beta5.SetupWebhookWithManager(webhookManager, dkValidator)
-	if err != nil {
-		return err
-	}
-
-	err = dynakubelatest.SetupWebhookWithManager(webhookManager, dkValidator)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func setupEdgeconnectValidation(webhookManager manager.Manager) error {
-	ecValidator := edgeconnectvalidation.New(webhookManager.GetAPIReader(), webhookManager.GetConfig())
-
-	err := edgeconnectv1alpha1.SetupWebhookWithManager(webhookManager, ecValidator)
-	if err != nil {
-		return err
-	}
-
-	err = edgeconnectv1alpha2.SetupWebhookWithManager(webhookManager, ecValidator)
-	if err != nil {
-		return err
 	}
 
 	return nil
