@@ -17,6 +17,8 @@ kind: PriorityClass
 apiVersion: scheduling.k8s.io/v1
 metadata:
   name: dynatrace-high-priority
+  labels:
+    {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
 value: {{ default 1000000 (int (.Values.csidriver).priorityClassValue) }}
 globalDefault: false
 description: "This priority class is used for Dynatrace Components in order to make sure they are not evicted in favor of other pods"
