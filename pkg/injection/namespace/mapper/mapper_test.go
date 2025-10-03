@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -12,6 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func createBaseDynakube(name string, appInjection bool, metadataEnrichment bool) *dynakube.DynaKube {
@@ -244,4 +248,56 @@ func TestUpdateNamespace(t *testing.T) {
 		require.True(t, updated)
 		assert.Len(t, namespace.Labels, 1)
 	})
+}
+
+func TestListMonitoredNamespaces_BasicMatching(t *testing.T) {
+	ctx := context.Background()
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+
+	nsObjs := []client.Object{
+		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-a", Labels: map[string]string{"team": "core"}}},
+		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-b", Labels: map[string]string{"team": "edge"}}},
+		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-c"}},
+		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-d", Labels: map[string]string{"team": "x"}}},
+	}
+
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(nsObjs...).Build()
+
+	oaSel := metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{Key: "team", Operator: metav1.LabelSelectorOpIn, Values: []string{"core", "edge"}},
+		},
+	}
+
+	meSel := metav1.LabelSelector{
+		MatchLabels: map[string]string{"team": "core"},
+	}
+
+	dk := createBaseDynakube("dk", true, true)
+	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = oaSel
+	dk.Spec.MetadataEnrichment.NamespaceSelector = meSel
+	oa, me, err := ListMonitoredNamespaces(ctx, cl, dk)
+	require.NoError(t, err)
+
+	require.Equal(t, []string{"ns-a", "ns-b"}, oa, "OneAgent set mismatch")
+	require.Equal(t, []string{"ns-a"}, me, "MetadataEnrichment set mismatch")
+}
+
+func TestListMonitoredNamespaces_MatchAllAndNotConfigured(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	nsObjs := []client.Object{
+		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "x"}},
+		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "y"}},
+	}
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(nsObjs...).Build()
+
+	dk := createBaseDynakube("dk", true, false)
+	oa, me, err := ListMonitoredNamespaces(ctx, cl, dk)
+	require.NoError(t, err)
+	require.Equal(t, []string{"x", "y"}, oa, "OA should match all namespaces in alphabetical order")
+	require.Empty(t, me, "ME disabled should yield zero namespaces")
 }

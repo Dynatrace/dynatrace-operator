@@ -3,6 +3,7 @@ package mapper
 import (
 	"context"
 	"regexp"
+	"sort"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -174,4 +175,35 @@ func isIgnoredNamespace(dk *dynakube.DynaKube, namespaceName string) bool {
 	}
 
 	return false
+}
+
+func ListMonitoredNamespaces(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) (oneAgent []string, metaEnrich []string, _ error) {
+	nsList := &corev1.NamespaceList{}
+	if err := clt.List(ctx, nsList); err != nil {
+		return nil, nil, err
+	}
+
+	for i := range nsList.Items {
+		ns := &nsList.Items[i]
+		if isIgnoredNamespace(dk, ns.Name) {
+			continue
+		}
+
+		if ok, err := matchOneAgent(dk, ns); err != nil {
+			return nil, nil, err
+		} else if ok {
+			oneAgent = append(oneAgent, ns.Name)
+		}
+
+		if ok, err := matchMetadataEnrichment(dk, ns); err != nil {
+			return nil, nil, err
+		} else if ok {
+			metaEnrich = append(metaEnrich, ns.Name)
+		}
+	}
+
+	sort.Strings(oneAgent)
+	sort.Strings(metaEnrich)
+
+	return oneAgent, metaEnrich, nil
 }
