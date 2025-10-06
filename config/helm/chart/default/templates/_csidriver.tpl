@@ -72,3 +72,18 @@ CSI registration-dir path
 {{- define "dynatrace-operator.CSIRegistrationDir" -}}
 	{{ printf "%s/plugins_registry/" (trimSuffix "/" (default "/var/lib/kubelet" .Values.csidriver.kubeletPath)) }}
 {{- end -}}
+
+
+{{- define "dynatrace-operator.csiDriverHelmJSONEnv" -}}
+- name: helm.json
+  value: |
+    {
+      "tolerations": {{ .Values.csidriver.tolerations | toJson }},
+      "annotations": {{ .Values.csidriver.annotations | toJson }},
+      "labels": {{ .Values.csidriver.labels | toJson }},
+      "job": {
+        "securityContext": {{ .Values.csidriver.job.securityContext | toJson }},
+        "resources": {{ .Values.csidriver.job.resources | toJson }}
+      }
+    }
+{{- end -}}

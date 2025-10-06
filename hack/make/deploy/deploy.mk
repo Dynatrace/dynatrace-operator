@@ -17,7 +17,7 @@ deploy: manifests/crd/helm
 			--namespace dynatrace \
 			--create-namespace \
 			--atomic \
-			--set installCRD=true \
+			--set installCRD=false \
 			--set csidriver.enabled=$(ENABLE_CSI) \
 			--set manifests=true \
 			--set image=$(IMAGE_URI) \

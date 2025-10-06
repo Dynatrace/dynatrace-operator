@@ -72,7 +72,7 @@ startupProbe:
   failureThreshold: 1
 {{- end -}}
 
-{{- define "dynatrace-operator.modules-json-env" -}}
+{{- define "dynatrace-operator.modulesJSONEnv" -}}
 - name: modules.json
   value: |
     {
@@ -87,16 +87,8 @@ startupProbe:
     }
 {{- end -}}
 
-{{- define "dynatrace-operator.helm-json-env" -}}
-- name: helm.json
-  value: |
-    {
-      "tolerations": {{ .Values.csidriver.tolerations | toJson }},
-      "annotations": {{ .Values.csidriver.annotations | toJson }},
-      "labels": {{ .Values.csidriver.labels | toJson }},
-      "job": {
-        "securityContext": {{ .Values.csidriver.job.securityContext | toJson }},
-        "resources": {{ .Values.csidriver.job.resources | toJson }}
-      }
-    }
+
+{{- define "dynatrace-operator.appVersionEnv" -}}
+- name: APP_VERSION
+  value: {{ .Chart.AppVersion | quote }}
 {{- end -}}

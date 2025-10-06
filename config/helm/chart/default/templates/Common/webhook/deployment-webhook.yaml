@@ -99,7 +99,8 @@ spec:
             - name: LOG_LEVEL
               value: "debug"
             {{- end }}
-            {{ include "dynatrace-operator.modules-json-env" . | nindent 12 }}
+            {{ include "dynatrace-operator.appVersionEnv" . | nindent 12 }}
+            {{ include "dynatrace-operator.modulesJSONEnv" . | nindent 12 }}
           readinessProbe:
             httpGet:
               path: /readyz

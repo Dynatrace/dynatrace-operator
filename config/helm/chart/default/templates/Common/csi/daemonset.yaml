@@ -181,8 +181,9 @@ spec:
           - name: CLEANUP_PERIOD
             value: "{{ .Values.csidriver.cleanupPeriod}}"
           {{- end }}
-          {{ include "dynatrace-operator.modules-json-env" . | nindent 10 }}
-          {{ include "dynatrace-operator.helm-json-env" . | nindent 10 }}
+          {{ include "dynatrace-operator.appVersionEnv" . | nindent 10 }}
+          {{ include "dynatrace-operator.modulesJSONEnv" . | nindent 10 }}
+          {{ include "dynatrace-operator.csiDriverHelmJSONEnv" . | nindent 10 }}
         {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         {{- if not .Values.debug }}
         livenessProbe:

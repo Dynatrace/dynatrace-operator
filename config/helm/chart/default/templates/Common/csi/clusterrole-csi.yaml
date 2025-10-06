@@ -19,6 +19,15 @@ metadata:
   labels:
     {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
 rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    resourceNames:
+      - dynakubes.dynatrace.com
+      - edgeconnects.dynatrace.com
+    verbs:
+      - get
   {{- if (eq (include "dynatrace-operator.platform" .) "openshift") }}
   - apiGroups:
       - security.openshift.io

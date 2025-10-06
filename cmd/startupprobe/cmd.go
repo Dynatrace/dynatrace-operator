@@ -51,7 +51,7 @@ func run() func(*cobra.Command, []string) error {
 				return errors.Errorf("no DNS record found for %s", hostname)
 			}
 
-			return nil
+			return checkCRDVersions(ctx)
 		}
 		if err := f(cmd, args); err != nil {
 			fmt.Println(err) //nolint
