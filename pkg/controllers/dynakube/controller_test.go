@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otlp"
 	"net/http"
 	"strings"
 	"testing"
@@ -373,6 +374,9 @@ func TestReconcileComponents(t *testing.T) {
 		mockKSPMReconciler := controllermock.NewReconciler(t)
 		mockKSPMReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
+		mockOTLPReconciler := controllermock.NewReconciler(t)
+		mockOTLPReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -385,6 +389,7 @@ func TestReconcileComponents(t *testing.T) {
 			extensionReconcilerBuilder:     createExtensionReconcilerBuilder(mockExtensionReconciler),
 			otelcReconcilerBuilder:         createOtelcReconcilerBuilder(mockOtelcReconciler),
 			kspmReconcilerBuilder:          createKSPMReconcilerBuilder(mockKSPMReconciler),
+			otlpReconcilerBuilder:          createOTLPReconcilerBuilder(mockOTLPReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 
@@ -392,7 +397,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 7) // ActiveGate, Extension, OtelC, OneAgent LogMonitoring, and Injection reconcilers
+		assert.Len(t, strings.Split(err.Error(), "\n"), 8) // ActiveGate, Extension, OtelC, OneAgent LogMonitoring, Injection and OTLP reconcilers
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
@@ -601,6 +606,12 @@ func createDeploymentMetadataReconcilerBuilder(reconciler controllers.Reconciler
 
 func createProxyReconcilerBuilder(reconciler controllers.Reconciler) proxy.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
+		return reconciler
+	}
+}
+
+func createOTLPReconcilerBuilder(reconciler controllers.Reconciler) otlp.ReconcilerBuilder {
+	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
