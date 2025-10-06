@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -43,7 +43,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Extensions().GetTokenSecretName()},
-				Key:                  consts.OtelcTokenSecretKey,
+				Key:                  consts.DatasourceTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
@@ -120,7 +120,7 @@ func TestProxyEnvsNoProxy(t *testing.T) {
 	}{
 		{
 			name:            "extensions without proxy",
-			extensions:      &extensions.Spec{&extensions.PrometheusSpec{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: nil,
 		},
 		{
@@ -137,7 +137,7 @@ func TestProxyEnvsNoProxy(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, without proxy",
-			extensions:      &extensions.Spec{&extensions.PrometheusSpec{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 		},
@@ -176,7 +176,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 	}{
 		{
 			name:            "extensions with proxy secret",
-			extensions:      &extensions.Spec{&extensions.PrometheusSpec{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: nil,
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
@@ -205,7 +205,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy secret",
-			extensions:      &extensions.Spec{&extensions.PrometheusSpec{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 			proxy: &value.Source{
@@ -265,7 +265,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 	}{
 		{
 			name:            "extensions with proxy value",
-			extensions:      &extensions.Spec{&extensions.PrometheusSpec{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: nil,
 			proxy: &value.Source{
 				Value: testProxyValue,
@@ -294,7 +294,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy value",
-			extensions:      &extensions.Spec{&extensions.PrometheusSpec{}},
+			extensions:      &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 			proxy: &value.Source{
@@ -331,7 +331,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 	}
 }
 
-func getWorkload(t *testing.T, dk *dynakube.DynaKube) *v1.StatefulSet {
+func getWorkload(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	dataIngestToken := getTokens(dk.Name, dk.Namespace)
 	configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 

@@ -238,14 +238,14 @@ func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	containerEnvs := []corev1.EnvVar{
 		{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
-		{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ".svc.cluster.local:443"},
+		{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ":443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecConsts.TokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(int(collectorPort))},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.Extensions().GetServiceNameFQDN()},
-		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.OtelcTokenSecretKey},
+		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey},
 		{Name: envHTTPSCertPathPem, Value: envEecHTTPSCertPathPem},
 		{Name: envHTTPSPrivKeyPathPem, Value: envEecHTTPSPrivKeyPathPem},
 	}

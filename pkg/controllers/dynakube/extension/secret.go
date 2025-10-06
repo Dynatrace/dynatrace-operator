@@ -15,6 +15,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// TODO: Remove in future release when migration is no longer needed
+const DeprecatedOtelcTokenSecretKey = "otelc.token"
+
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if !r.dk.Extensions().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
@@ -39,7 +42,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		return nil
 	}
 
-	_, err := r.secrets.Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
+	existingSecret, err := r.secrets.Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		log.Info("failed to check existence of extension secret")
 		conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
@@ -47,7 +50,10 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 		return err
 	}
 
-	if k8serrors.IsNotFound(err) {
+	// TODO: Remove in future release when migration is no longer needed
+	migrationNeeded := r.removeDeprecatedSecretAndConditionIfNeeded(ctx, existingSecret)
+
+	if k8serrors.IsNotFound(err) || migrationNeeded {
 		newEecToken, err := dttoken.New(eecConsts.TokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate eec token")
@@ -56,7 +62,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 			return err
 		}
 
-		newOtelcToken, err := dttoken.New(consts.OtelcTokenSecretValuePrefix)
+		newOtelcToken, err := dttoken.New(consts.DatasourceTokenSecretValuePrefix)
 		if err != nil {
 			log.Info("failed to generate otelc token")
 			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating otelc token"))
@@ -88,8 +94,8 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
-		eecConsts.TokenSecretKey:   []byte(eecToken.String()),
-		consts.OtelcTokenSecretKey: []byte(otelcToken.String()),
+		eecConsts.TokenSecretKey:        []byte(eecToken.String()),
+		consts.DatasourceTokenSecretKey: []byte(otelcToken.String()),
 	}
 
 	return k8ssecret.Build(r.dk, r.getSecretName(), secretData)
@@ -97,4 +103,26 @@ func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Toke
 
 func (r *reconciler) getSecretName() string {
 	return r.dk.Extensions().GetTokenSecretName()
+}
+
+func (r *reconciler) removeDeprecatedSecretAndConditionIfNeeded(ctx context.Context, existingSecret *corev1.Secret) bool {
+	if existingSecret == nil {
+		return false
+	}
+
+	if _, exists := existingSecret.Data[DeprecatedOtelcTokenSecretKey]; !exists {
+		return false
+	}
+
+	if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
+		return false
+	}
+	defer meta.RemoveStatusCondition(r.dk.Conditions(), secretConditionType)
+
+	err := r.secrets.Delete(ctx, existingSecret)
+	if err != nil {
+		log.Error(err, "failed to delete old extension secret during migration")
+	}
+
+	return true
 }
