@@ -90,7 +90,7 @@ func createDynakubeWithDatabaseID(t *testing.T, clt client.Client, id string) er
 
 	dk.Name = rand.String(10)
 	dk.Spec = dynakube.DynaKubeSpec{
-		Extensions: &extensions.Spec{DatabasesSpec: []extensions.DatabaseSpec{
+		Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{
 			{ID: id},
 		}},
 	}
@@ -103,7 +103,7 @@ func createDynakubeWithDatabaseSpec(t *testing.T, clt client.Client, databases [
 
 	dk.Name = rand.String(10)
 	dk.Spec = dynakube.DynaKubeSpec{
-		Extensions: &extensions.Spec{DatabasesSpec: databases},
+		Extensions: &extensions.Spec{Databases: databases},
 	}
 
 	return clt.Create(t.Context(), dk)

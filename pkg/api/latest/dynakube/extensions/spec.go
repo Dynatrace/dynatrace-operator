@@ -6,7 +6,8 @@ import (
 )
 
 type Extensions struct {
-	*ExecutionControllerSpec
+	Controller *ExecutionControllerSpec
+	Databases  []DatabaseSpec
 
 	name      string
 	namespace string
@@ -15,14 +16,14 @@ type Extensions struct {
 
 // +kubebuilder:object:generate=true
 type Spec struct {
-	PrometheusSpec *PrometheusSpec `json:"prometheus,omitempty"`
+	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems:=1
 	// +kubebuilder:validation:MinItems:=1
 	// +listType=map
 	// +listMapKey=id
-	DatabasesSpec []DatabaseSpec `json:"databases,omitempty"`
+	Databases []DatabaseSpec `json:"databases,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

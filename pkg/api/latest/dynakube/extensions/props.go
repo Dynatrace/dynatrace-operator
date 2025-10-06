@@ -21,7 +21,7 @@ func (e *Extensions) IsEnabled() bool {
 }
 
 func (e *Extensions) GetTLSRefName() string {
-	return e.TLSRefName
+	return e.Controller.TLSRefName
 }
 
 func (e *Extensions) NeedsSelfSignedTLS() bool {
