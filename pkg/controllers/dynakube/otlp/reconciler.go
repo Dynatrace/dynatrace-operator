@@ -76,6 +76,9 @@ func (r *Reconciler) cleanup(ctx context.Context) {
 	}
 
 	err = exporterconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, r.dk)
+	if err != nil {
+		log.Error(err, "failed to cleanup OTLP exporter configuration", "dkName", r.dk.Name)
+	}
 }
 
 func (r *Reconciler) createDynakubeMapper(ctx context.Context) *mapper.DynakubeMapper {

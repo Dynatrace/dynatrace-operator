@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 )
@@ -45,7 +44,7 @@ func TestNewSecretGenerator(t *testing.T) {
 func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	t.Run("no OTLP exporter config enabled - do not create secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 			},
@@ -75,7 +74,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	})
 	t.Run("successfully generate config secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 			},
@@ -121,7 +120,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	})
 	t.Run("update existing secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 			},
@@ -173,7 +172,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	})
 	t.Run("fail while generating secret for dynakube - secret in dynatrace namespace not found", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 			},

@@ -327,7 +327,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) error { //nolint:revive
 	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
