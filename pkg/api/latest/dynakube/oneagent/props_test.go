@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 const testAPIURL = "http://test-endpoint/api"
@@ -68,13 +69,13 @@ func TestDefaultOneAgentImage(t *testing.T) {
 
 	t.Run("OneAgentImage adds raw postfix", func(t *testing.T) {
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5"))
 	})
 
 	t.Run("OneAgentImage doesn't add 'raw' postfix if present", func(t *testing.T) {
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5-raw"))
 	})
 
@@ -82,7 +83,7 @@ func TestDefaultOneAgentImage(t *testing.T) {
 		version := "1.239.14.20220325-164521"
 		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, expectedImage, oneAgent.GetDefaultImage(version))
 	})
 }
@@ -110,7 +111,7 @@ func TestCodeModulesVersion(t *testing.T) {
 
 	t.Run("use status", func(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: testVersion}}
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false, false)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false, false, nil)
 		version := oneAgent.GetCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
 	})
@@ -118,7 +119,7 @@ func TestCodeModulesVersion(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: "other"}}
 		oneAgent := NewOneAgent(&Spec{
 			ApplicationMonitoring: &ApplicationMonitoringSpec{Version: testVersion},
-		}, &Status{}, codeModulesStatus, "", "", false, false, false)
+		}, &Status{}, codeModulesStatus, "", "", false, false, false, nil)
 		version := oneAgent.GetCustomCodeModulesVersion()
 
 		assert.Equal(t, testVersion, version)
@@ -382,5 +383,68 @@ func setupDisabledCSIEnv(t *testing.T) {
 		LogMonitoring:  true,
 		EdgeConnect:    true,
 		Supportability: true,
+	})
+}
+
+func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
+	type testcase struct {
+		name string
+		spec *Spec
+	}
+
+	t.Run("classic, cloud, hostmonitoring", func(t *testing.T) {
+		tcs := []testcase{
+			{
+				name: "Classic Full Stack",
+				spec: &Spec{
+					ClassicFullStack: &HostInjectSpec{},
+				},
+			},
+			{
+				name: "Cloud Native Full Stack",
+				spec: &Spec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{},
+				},
+			},
+			{
+				name: "Host Monitoring",
+				spec: &Spec{
+					HostMonitoring: &HostInjectSpec{},
+				},
+			},
+		}
+
+		for _, tc := range tcs {
+			oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, nil)
+			assert.True(t, oa.IsAutoUpdateEnabled(), tc.name)
+
+			oa = NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, ptr.To(true))
+			assert.True(t, oa.IsAutoUpdateEnabled(), tc.name)
+
+			oa = NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, ptr.To(false))
+			assert.False(t, oa.IsAutoUpdateEnabled(), tc.name)
+		}
+	})
+
+	t.Run("application monitoring", func(t *testing.T) {
+		tcs := []testcase{
+			{
+				name: "Application Monitoring",
+				spec: &Spec{
+					ApplicationMonitoring: &ApplicationMonitoringSpec{},
+				},
+			},
+		}
+
+		for _, tc := range tcs {
+			oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, nil)
+			assert.False(t, oa.IsAutoUpdateEnabled(), tc.name)
+
+			oa = NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, ptr.To(true))
+			assert.False(t, oa.IsAutoUpdateEnabled(), tc.name)
+
+			oa = NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, ptr.To(false))
+			assert.False(t, oa.IsAutoUpdateEnabled(), tc.name)
+		}
 	})
 }

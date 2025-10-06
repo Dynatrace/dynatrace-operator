@@ -201,15 +201,15 @@ func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.
 
 func deprecatedAutoUpdate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	oa := dk.OneAgent()
-	if oa.IsClassicFullStackMode() && oa.ClassicFullStack.AutoUpdate != nil { //nolint:staticcheck
+	if oa.IsClassicFullStackMode() && dk.RemovedFields().IsAutoUpdate() != nil {
 		return warningDeprecatedAutoUpdate
 	}
 
-	if oa.IsHostMonitoringMode() && oa.HostMonitoring.AutoUpdate != nil { //nolint:staticcheck
+	if oa.IsHostMonitoringMode() && dk.RemovedFields().IsAutoUpdate() != nil {
 		return warningDeprecatedAutoUpdate
 	}
 
-	if oa.IsCloudNativeFullstackMode() && oa.CloudNativeFullStack.AutoUpdate != nil { //nolint:staticcheck
+	if oa.IsCloudNativeFullstackMode() && dk.RemovedFields().IsAutoUpdate() != nil {
 		return warningDeprecatedAutoUpdate
 	}
 

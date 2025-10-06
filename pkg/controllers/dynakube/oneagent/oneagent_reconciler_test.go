@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -316,12 +317,14 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	})
 	t.Run("Status.OneAgent.Instances set, if autoUpdate is false", func(t *testing.T) {
 		dk := base.DeepCopy()
-		autoUpdate := false
+
 		reconciler.dk = dk
 		reconciler.connectionInfoReconciler = createConnectionInfoReconcilerMock(t)
 		reconciler.versionReconciler = createVersionReconcilerMock(t)
 		reconciler.tokens = createTokens()
-		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = &autoUpdate //nolint:staticcheck
+		dk.Annotations = map[string]string{
+			conversion.AutoUpdateKey: "false",
+		}
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()

@@ -79,9 +79,11 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 	switch {
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
+		dst.Spec.OneAgent.ClassicFullStack.AutoUpdate = src.RemovedFields().IsAutoUpdate()
 	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
+		dst.Spec.OneAgent.CloudNativeFullStack.AutoUpdate = src.RemovedFields().IsAutoUpdate()
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
@@ -89,6 +91,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
+		dst.Spec.OneAgent.HostMonitoring.AutoUpdate = src.RemovedFields().IsAutoUpdate()
 	}
 
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
@@ -264,7 +267,6 @@ func fromHostInjectSpec(src oneagentlatest.HostInjectSpec) *oneagent.HostInjectS
 	dst.Annotations = src.Annotations
 	dst.Labels = src.Labels
 	dst.NodeSelector = src.NodeSelector
-	dst.AutoUpdate = src.AutoUpdate
 	dst.Version = src.Version
 	dst.Image = src.Image
 	dst.DNSPolicy = src.DNSPolicy

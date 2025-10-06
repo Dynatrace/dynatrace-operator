@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -16,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestOneAgentUpdater(t *testing.T) {
@@ -28,12 +28,16 @@ func TestOneAgentUpdater(t *testing.T) {
 
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					conversion.AutoUpdateKey: "false",
+				},
+			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
-						AutoUpdate: ptr.To(false),
-						Image:      testImage.String(),
-						Version:    testImage.Tag,
+						Image:   testImage.String(),
+						Version: testImage.Tag,
 					},
 				},
 			},
