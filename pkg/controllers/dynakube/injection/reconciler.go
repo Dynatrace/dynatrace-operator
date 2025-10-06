@@ -92,22 +92,26 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			setupErrors = append(setupErrors, err)
 		}
 
-		oneAgents, metadataEnrichment, err := mapper.ListMonitoredNamespaces(ctx, r.apiReader, r.dk)
+		oneAgentNamespaceNames := dkMapper.OneAgentNamespaceNames()
+		metadataEnrichmentNamespaceNames := dkMapper.MetadataEnrichmentNamespaceNames()
 
-		log.Info("namespaces monitored", "selector", "OneAgent", "count (at most 10 are shown)", len(oneAgents), "namespaces", oneAgents)
+		oaSelectorConfigured := r.dk.OneAgent().IsAppInjectionNeeded() && (r.dk.OneAgent().IsNamespaceSelectorDefined())
+		meSelectorConfigured := r.dk.MetadataEnrichment().IsEnabled() && (r.dk.MetadataEnrichment().IsNamespaceSelectorDefined())
 
-		log.Info("namespaces monitored", "selector", "MetadataEnrichment", "count (at most 10 are shown)", len(metadataEnrichment), "namespaces", metadataEnrichment)
+		if oaSelectorConfigured {
+			log.Info("namespaces monitored", "selector", "OneAgent", "count (at most 10 are shown)", len(oneAgentNamespaceNames), "namespaces", oneAgentNamespaceNames)
+		}
 
-		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "OneAgent", r.dk.OneAgent().IsAppInjectionNeeded(), oneAgents)
-		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "MetadataEnrichment", r.dk.MetadataEnrichment().IsEnabled(), metadataEnrichment)
+		if meSelectorConfigured {
+			log.Info("namespaces monitored", "selector", "MetadataEnrichment", "count (at most 10 are shown)", len(metadataEnrichmentNamespaceNames), "namespaces", metadataEnrichmentNamespaceNames)
+		}
+
+		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "OneAgent", oaSelectorConfigured, oneAgentNamespaceNames)
+		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "MetadataEnrichment", meSelectorConfigured, metadataEnrichmentNamespaceNames)
 
 		updateCollectedNamespacesMonitoredCondition(r.dk.Conditions())
 
-		if err != nil {
-			log.Error(err, "listing monitored namespaces failed")
-		}
-
-		err = r.generateInitSecret(ctx)
+		err := r.generateInitSecret(ctx)
 		if err != nil {
 			setupErrors = append(setupErrors, err)
 		}

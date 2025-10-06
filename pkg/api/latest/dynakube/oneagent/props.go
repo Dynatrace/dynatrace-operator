@@ -133,6 +133,14 @@ func (oa *OneAgent) GetNamespaceSelector() *metav1.LabelSelector {
 	}
 }
 
+func (oa *OneAgent) IsNamespaceSelectorDefined() bool {
+	if oa.GetNamespaceSelector() == nil {
+		return false
+	}
+
+	return len(oa.GetNamespaceSelector().MatchExpressions) > 0 || len(oa.GetNamespaceSelector().MatchLabels) > 0
+}
+
 func (oa *OneAgent) GetSecCompProfile() string {
 	switch {
 	case oa.IsCloudNativeFullstackMode():

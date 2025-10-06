@@ -1,7 +1,6 @@
 package mapper
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -13,9 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func createBaseDynakube(name string, appInjection bool, metadataEnrichment bool) *dynakube.DynaKube {
@@ -250,54 +246,150 @@ func TestUpdateNamespace(t *testing.T) {
 	})
 }
 
-func TestListMonitoredNamespaces_BasicMatching(t *testing.T) {
-	ctx := context.Background()
+func TestMapFromDynakube_MatchNamespaces(t *testing.T) {
+	t.Run("AppInjection and MetadataEnrichment with same selector", func(t *testing.T) {
+		labels := map[string]string{"team": "a"}
+		selector := convertToLabelSelector(labels)
+		dk := createDynakubeWithMetadataAndAppInjection("dk-cache", selector)
 
-	scheme := runtime.NewScheme()
-	require.NoError(t, corev1.AddToScheme(scheme))
+		nsList := &corev1.NamespaceList{
+			Items: []corev1.Namespace{
+				*createNamespace("ns-a", map[string]string{"team": "a"}),
+				*createNamespace("ns-b", map[string]string{"team": "b"}),
+				*createNamespace("kube-system", nil),
+			},
+		}
 
-	nsObjs := []client.Object{
-		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-a", Labels: map[string]string{"team": "core"}}},
-		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-b", Labels: map[string]string{"team": "edge"}}},
-		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-c"}},
-		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-d", Labels: map[string]string{"team": "x"}}},
-	}
+		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
+		dm := DynakubeMapper{dk: dk}
 
-	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(nsObjs...).Build()
+		_, err := dm.mapFromDynakube(nsList, dkList)
+		require.NoError(t, err)
 
-	oaSel := metav1.LabelSelector{
-		MatchExpressions: []metav1.LabelSelectorRequirement{
-			{Key: "team", Operator: metav1.LabelSelectorOpIn, Values: []string{"core", "edge"}},
-		},
-	}
+		oa := dm.OneAgentNamespaceNames()
+		me := dm.MetadataEnrichmentNamespaceNames()
 
-	meSel := metav1.LabelSelector{
-		MatchLabels: map[string]string{"team": "core"},
-	}
+		require.Len(t, oa, 1)
+		require.Len(t, me, 1)
+		assert.Equal(t, "ns-a", oa[0])
+		assert.Equal(t, "ns-a", me[0])
+	})
 
-	dk := createBaseDynakube("dk", true, true)
-	dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = oaSel
-	dk.Spec.MetadataEnrichment.NamespaceSelector = meSel
-	oa, me, err := ListMonitoredNamespaces(ctx, cl, dk)
-	require.NoError(t, err)
+	t.Run("OneAgent and MetadataEnrichment with different selectors", func(t *testing.T) {
+		appLabels := map[string]string{"team": "a"}
+		metaLabels := map[string]string{"env": "prod"}
 
-	require.Equal(t, []string{"ns-a", "ns-b"}, oa, "OneAgent set mismatch")
-	require.Equal(t, []string{"ns-a"}, me, "MetadataEnrichment set mismatch")
-}
+		dk := createBaseDynakube("dk", true, true)
+		dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = convertToLabelSelector(appLabels)
+		dk.Spec.MetadataEnrichment.NamespaceSelector = convertToLabelSelector(metaLabels)
 
-func TestListMonitoredNamespaces_MatchAllAndNotConfigured(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	require.NoError(t, corev1.AddToScheme(scheme))
-	nsObjs := []client.Object{
-		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "x"}},
-		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "y"}},
-	}
-	cl := fake.NewClientBuilder().WithScheme(scheme).WithObjects(nsObjs...).Build()
+		nsList := &corev1.NamespaceList{
+			Items: []corev1.Namespace{
+				*createNamespace("ns-a", map[string]string{"team": "a", "env": "prod"}),
+				*createNamespace("ns-b", map[string]string{"team": "a"}),
+				*createNamespace("ns-c", map[string]string{"env": "prod"}),
+				*createNamespace("ns-d", map[string]string{"team": "b"}),
+			},
+		}
 
-	dk := createBaseDynakube("dk", true, false)
-	oa, me, err := ListMonitoredNamespaces(ctx, cl, dk)
-	require.NoError(t, err)
-	require.Equal(t, []string{"x", "y"}, oa, "OA should match all namespaces in alphabetical order")
-	require.Empty(t, me, "ME disabled should yield zero namespaces")
+		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
+		dm := DynakubeMapper{dk: dk}
+
+		_, err := dm.mapFromDynakube(nsList, dkList)
+		require.NoError(t, err)
+
+		oa := dm.OneAgentNamespaceNames()
+		me := dm.MetadataEnrichmentNamespaceNames()
+
+		require.Len(t, oa, 2)
+		require.Len(t, me, 2)
+		assert.Contains(t, oa, "ns-a")
+		assert.Contains(t, oa, "ns-b")
+		assert.Contains(t, me, "ns-a")
+		assert.Contains(t, me, "ns-c")
+	})
+
+	t.Run("Only OneAgent enabled with multiple matching namespaces", func(t *testing.T) {
+		labels := map[string]string{"env": "dev"}
+		selector := convertToLabelSelector(labels)
+		dk := createDynakubeWithAppInject("dk", selector)
+
+		nsList := &corev1.NamespaceList{
+			Items: []corev1.Namespace{
+				*createNamespace("ns-dev-1", map[string]string{"env": "dev"}),
+				*createNamespace("ns-dev-2", map[string]string{"env": "dev"}),
+				*createNamespace("ns-prod", map[string]string{"env": "prod"}),
+				*createNamespace("kube-system", nil),
+			},
+		}
+
+		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
+		dm := DynakubeMapper{dk: dk}
+
+		_, err := dm.mapFromDynakube(nsList, dkList)
+		require.NoError(t, err)
+
+		oa := dm.OneAgentNamespaceNames()
+		me := dm.MetadataEnrichmentNamespaceNames()
+
+		require.Len(t, oa, 2)
+		require.Empty(t, me)
+		assert.Contains(t, oa, "ns-dev-1")
+		assert.Contains(t, oa, "ns-dev-2")
+	})
+
+	t.Run("Only MetadataEnrichment enabled with multiple matching namespaces", func(t *testing.T) {
+		labels := map[string]string{"monitoring": "enabled"}
+		selector := convertToLabelSelector(labels)
+		dk := createDynakubeWithMetadataEnrichment("dk", selector)
+
+		nsList := &corev1.NamespaceList{
+			Items: []corev1.Namespace{
+				*createNamespace("ns-mon-1", map[string]string{"monitoring": "enabled"}),
+				*createNamespace("ns-mon-2", map[string]string{"monitoring": "enabled"}),
+				*createNamespace("ns-no-mon", map[string]string{"monitoring": "disabled"}),
+				*createNamespace("ns-d", nil),
+			},
+		}
+
+		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
+		dm := DynakubeMapper{dk: dk}
+
+		_, err := dm.mapFromDynakube(nsList, dkList)
+		require.NoError(t, err)
+
+		oa := dm.OneAgentNamespaceNames()
+		me := dm.MetadataEnrichmentNamespaceNames()
+
+		require.Empty(t, oa)
+		require.Len(t, me, 2)
+		assert.Contains(t, me, "ns-mon-1")
+		assert.Contains(t, me, "ns-mon-2")
+	})
+
+	t.Run("no matching namespaces for selector", func(t *testing.T) {
+		labels := map[string]string{"nonexistent": "label"}
+		selector := convertToLabelSelector(labels)
+		dk := createDynakubeWithMetadataAndAppInjection("dk", selector)
+
+		nsList := &corev1.NamespaceList{
+			Items: []corev1.Namespace{
+				*createNamespace("ns-a", map[string]string{"team": "a"}),
+				*createNamespace("ns-b", map[string]string{"env": "prod"}),
+				*createNamespace("ns-c", nil),
+			},
+		}
+
+		dkList := &dynakube.DynaKubeList{Items: []dynakube.DynaKube{*dk}}
+		dm := DynakubeMapper{dk: dk}
+
+		_, err := dm.mapFromDynakube(nsList, dkList)
+		require.NoError(t, err)
+
+		oa := dm.OneAgentNamespaceNames()
+		me := dm.MetadataEnrichmentNamespaceNames()
+
+		require.Empty(t, oa)
+		require.Empty(t, me)
+	})
 }

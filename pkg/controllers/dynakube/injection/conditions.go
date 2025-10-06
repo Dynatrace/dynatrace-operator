@@ -23,9 +23,9 @@ const (
 
 	secretsCreatedReason  = "SecretsCreated"
 	secretsCreatedMessage = "Namespaces mapped and secrets created"
-)
 
-const maxNamesInMsg = 10
+	maxNamesInMsg = 10
+)
 
 func setMetadataEnrichmentCreatedCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
@@ -55,17 +55,15 @@ func setNamespacesMonitoredSelectorCondition(conditions *[]metav1.Condition, sel
 		condType = oneAgentNamespacesMonitoredConditionType
 	case "MetadataEnrichment":
 		condType = metadataEnrichmentNamespacesMonitoredConditionType
-	default:
-		condType = namespacesMonitoredConditionType
 	}
 
 	cond := metav1.Condition{Type: condType}
 
 	switch {
 	case !configured:
-		cond.Status = metav1.ConditionFalse
-		cond.Reason = selectorNotConfiguredReason
-		cond.Message = "Selector not configured"
+		_ = meta.RemoveStatusCondition(conditions, condType)
+
+		return
 	case len(names) == 0:
 		cond.Status = metav1.ConditionFalse
 		cond.Reason = noMatchesReason
@@ -91,9 +89,9 @@ func updateCollectedNamespacesMonitoredCondition(conditions *[]metav1.Condition)
 	}
 
 	if oa != nil && oa.Status == metav1.ConditionTrue || me != nil && me.Status == metav1.ConditionTrue {
-		collected.Status = metav1.ConditionFalse
-		collected.Reason = noMatchesReason
-		collected.Message = "No namespaces match the configured selectors"
+		collected.Status = metav1.ConditionTrue
+		collected.Reason = matchesFoundReason
+		collected.Message = "At least one selector has matching namespaces"
 		_ = meta.SetStatusCondition(conditions, collected)
 
 		return
@@ -110,7 +108,7 @@ func updateCollectedNamespacesMonitoredCondition(conditions *[]metav1.Condition)
 
 	collected.Status = metav1.ConditionFalse
 	collected.Reason = noMatchesReason
-	collected.Message = "No namespaces match the configured selectors"
+	collected.Message = "No namespaces match the configured selectors or no selectors configured are defined"
 	meta.SetStatusCondition(conditions, collected)
 }
 
