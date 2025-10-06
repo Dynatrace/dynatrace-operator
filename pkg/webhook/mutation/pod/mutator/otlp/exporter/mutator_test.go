@@ -1,6 +1,7 @@
 package exporter
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -312,16 +313,16 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify traces exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPTraceEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPTraceProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceProtocolEnv))
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 	t.Run("general otlp exporter user defined env vars present, override enabled, add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -364,8 +365,8 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify traces exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPTraceEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPTraceProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceProtocolEnv))
 
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -379,8 +380,8 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify logs exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 	t.Run("specific otlp exporter user defined env vars present, override disabled, do not add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -421,12 +422,12 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 	t.Run("specific otlp exporter user defined env vars present, override enabled, add other specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -489,8 +490,8 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify logs exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 	t.Run("one specific otlp exporter user defined env vars present, override disabled, do not add other specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -531,12 +532,12 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, isEnvVarSet(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 }
 
