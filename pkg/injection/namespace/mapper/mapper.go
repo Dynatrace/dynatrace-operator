@@ -77,7 +77,12 @@ func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
 		return false, err
 	}
 
-	return matchesMetadataEnrichment || matchesOneAgent, nil
+	matchesOtlpExporterConfiguration, err := matchOTLPExporterConfiguration(dk, namespace)
+	if err != nil {
+		return false, err
+	}
+
+	return matchesMetadataEnrichment || matchesOneAgent || matchesOtlpExporterConfiguration, nil
 }
 
 // matchOneAgent uses the namespace selector in the dynakube to check if it matches a given namespace
@@ -111,6 +116,21 @@ func matchMetadataEnrichment(dk *dynakube.DynaKube, namespace *corev1.Namespace)
 	}
 
 	return metadataEnrichmentSelector.Matches(labels.Set(namespace.Labels)), nil
+}
+
+func matchOTLPExporterConfiguration(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	// TODO use helper function IsEnabled()
+	otlpExporterConfiguration := dk.Spec.OTLPExporterConfiguration
+	if otlpExporterConfiguration == nil {
+		return false, nil
+	}
+
+	namespaceSelector, err := metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.NamespaceSelector)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	return namespaceSelector.Matches(labels.Set(namespace.Labels)), nil
 }
 
 // updateNamespace tries to match the namespace to every dynakube with codeModules

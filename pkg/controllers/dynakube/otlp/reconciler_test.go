@@ -38,7 +38,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{},
+				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							testNamespaceSelectorLabel: testDynakube,
+						},
+					},
+				},
 			},
 		}
 
@@ -85,6 +91,7 @@ func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.
 			Name: namespaceName,
 			Labels: map[string]string{
 				dtwebhook.InjectionInstanceLabel: dynakubeName,
+				testNamespaceSelectorLabel:       dynakubeName,
 			},
 		},
 	}
