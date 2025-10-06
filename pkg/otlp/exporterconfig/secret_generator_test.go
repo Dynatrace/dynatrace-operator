@@ -198,6 +198,83 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionFalse, c.Status)
 	})
+
+	t.Run("generate secrets for multiple namespaces (skip terminating)", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
+			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{}},
+		}
+
+		terminatingNS := clientInjectedNamespace("terminating-ns", testDynakube)
+		terminatingNS.Status.Phase = corev1.NamespaceTerminating
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			clientInjectedNamespace(testNamespace, testDynakube),
+			clientInjectedNamespace(testNamespace2, testDynakube),
+			terminatingNS,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
+		)
+
+		mockDTClient := dtclientmock.NewClient(t)
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk))
+
+		// replicated in active namespaces
+		assertSecretExists(t, clt, consts.OTLPExporterSecretName, testNamespace)
+		assertSecretExists(t, clt, consts.OTLPExporterSecretName, testNamespace2)
+		// not replicated into terminating namespace
+		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, "terminating-ns")
+	})
+
+	t.Run("token secret missing ingest token key -> return error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
+			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{}},
+		}
+
+		// tokens secret present but without ingest token key
+		clt := fake.NewClientWithIndex(
+			dk,
+			clientInjectedNamespace(testNamespace, testDynakube),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{"other": []byte("value")}),
+		)
+
+		mockDTClient := dtclientmock.NewClient(t)
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		require.Error(t, secretGenerator.GenerateForDynakube(t.Context(), dk))
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionFalse, c.Status)
+
+		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
+	})
+
+	t.Run("no matching namespaces -> only source secret created", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
+			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{}},
+		}
+
+		// namespace without injection label
+		nonInjected := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "plain-ns"}}
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			nonInjected,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
+		)
+
+		mockDTClient := dtclientmock.NewClient(t)
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk))
+
+		// source secret exists
+		assertSecretExists(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
+		// replicated secret should not exist (no matching namespaces)
+		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, "plain-ns")
+	})
 }
 
 func TestCleanup(t *testing.T) {
@@ -289,4 +366,16 @@ func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.
 			},
 		},
 	}
+}
+
+func assertSecretExists(t *testing.T, clt client.Client, name, namespace string) {
+	var s corev1.Secret
+	err := clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: namespace}, &s)
+	require.NoError(t, err)
+}
+
+func assertSecretNotFound(t *testing.T, clt client.Client, name, namespace string) {
+	var s corev1.Secret
+	err := clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: namespace}, &s)
+	assert.True(t, errors.IsNotFound(err), "expected not found, got %v", err)
 }

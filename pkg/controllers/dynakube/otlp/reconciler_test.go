@@ -1,11 +1,14 @@
 package otlp
 
 import (
+	"context"
+	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -29,6 +32,19 @@ const (
 
 	testNamespaceDynatrace = "dynatrace"
 )
+
+// failingReader simulates failures on List operations
+type failingReader struct {
+	client.Reader
+	fail bool
+}
+
+func (f failingReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error { //nolint:revive
+	if f.fail {
+		return fmt.Errorf("err")
+	}
+	return f.Reader.List(ctx, list, opts...)
+}
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("reconcile OTLP exporter configuration", func(t *testing.T) {
@@ -65,6 +81,98 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		assertSecretFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
+	})
+
+	t.Run("no exporter config triggers cleanup", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+		}
+
+		// pre-create a replicated secret and source secret to ensure cleanup removes them
+		clt := fake.NewClientWithIndex(
+			clientInjectedNamespace(testNamespace, testDynakube),
+			clientSecret(consts.OTLPExporterSecretName, testNamespace, map[string][]byte{"foo": []byte("bar")}),
+			clientSecret(exporterconfig.GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace, map[string][]byte{"foo": []byte("bar")}),
+			dk,
+		)
+
+		dtClient := dtclientmock.NewClient(t)
+		rec := NewReconciler(clt, clt, dtClient, dk)
+
+		err := rec.Reconcile(t.Context())
+		require.NoError(t, err)
+
+		// secrets should be gone after cleanup
+		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
+		assertSecretNotFound(t, clt, exporterconfig.GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
+	})
+
+	t.Run("missing tokens secret returns error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+					NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+				},
+			},
+		}
+
+		clt := fake.NewClientWithIndex(
+			clientInjectedNamespace(testNamespace, testDynakube),
+			dk,
+		)
+
+		dtClient := dtclientmock.NewClient(t)
+		rec := NewReconciler(clt, clt, dtClient, dk)
+
+		err := rec.Reconcile(t.Context())
+		require.Error(t, err, "expected error due to missing tokens secret")
+		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
+
+		found := false
+		for _, cond := range dk.Status.Conditions {
+			if cond.Type == otlpExporterConfigurationConditionType {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "expected OTLPExporterConfiguration condition to be set")
+	})
+
+	t.Run("mapper list namespaces error returns error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+					NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+				},
+			},
+		}
+
+		baseClient := fake.NewClientWithIndex(
+			clientInjectedNamespace(testNamespace, testDynakube),
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				dtclient.DataIngestToken: []byte(testDataIngestToken),
+			}),
+			dk,
+		)
+
+		fReader := failingReader{Reader: baseClient, fail: true}
+
+		dtClient := dtclientmock.NewClient(t)
+		rec := NewReconciler(baseClient, fReader, dtClient, dk)
+
+		err := rec.Reconcile(t.Context())
+		require.Error(t, err)
 	})
 }
 
