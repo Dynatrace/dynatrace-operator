@@ -487,6 +487,10 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockKSPMReconciler := controllermock.NewReconciler(t)
 	mockKSPMReconciler.On("Reconcile", mock.Anything).Return(nil)
 
+	mockOTLPReconciler := controllermock.NewReconciler(t)
+	mockOTLPReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockOTLPReconciler.On("Reconcile", mock.Anything).Return(nil)
+
 	fakeIstio := fakeistio.NewSimpleClientset()
 
 	baseController := &Controller{
@@ -504,6 +508,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		oneAgentReconcilerBuilder:           createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 		otelcReconcilerBuilder:              createOtelcReconcilerBuilder(mockOtelcReconciler),
 		proxyReconcilerBuilder:              createProxyReconcilerBuilder(mockProxyReconciler),
+		otlpReconcilerBuilder:               createOTLPReconcilerBuilder(mockOTLPReconciler),
 	}
 
 	request := reconcile.Request{
