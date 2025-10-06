@@ -59,3 +59,7 @@ func (e *Extensions) GetServiceNameFQDN() string {
 func (e *Extensions) GetServiceName() string {
 	return e.name + consts.ExtensionsControllerSuffix
 }
+
+func (e *Extensions) GetDatabaseExecutorName(id string) string {
+	return e.name + "-database-datasource-" + id
+}

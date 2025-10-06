@@ -15,7 +15,8 @@ func (dk *DynaKube) Extensions() *extensions.Extensions {
 	// Set required fields for getters that may be called when extensions are disabled.
 	ext.SetName(dk.Name)
 	ext.SetNamespace(dk.Namespace)
-	ext.SetEnabled(dk.Spec.Extensions != nil && dk.Spec.Extensions.Prometheus != nil)
+	ext.SetEnabled(dk.Spec.Extensions != nil &&
+		(dk.Spec.Extensions.Prometheus != nil || len(dk.Spec.Extensions.Databases) > 0))
 
 	return ext
 }

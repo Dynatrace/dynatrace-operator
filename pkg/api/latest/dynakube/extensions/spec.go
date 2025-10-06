@@ -7,11 +7,13 @@ import (
 
 type Extensions struct {
 	Controller *ExecutionControllerSpec
-	Databases  []DatabaseSpec
 
 	name      string
 	namespace string
-	enabled   bool
+
+	Databases []DatabaseSpec
+
+	enabled bool
 }
 
 // +kubebuilder:object:generate=true
