@@ -5,8 +5,8 @@ define generate_openshift_manifest
 		--set installCRD=true \
 		--set platform="openshift" \
 		--set manifests=true \
-		--set olm="${OLM}" \
-		--set image="$(IMAGE_URI)" > $(2)
+		--set olm=$(OLM) \
+		--set image=$(IMAGE_URI) > $(2)
 endef
 
 ## Generates an Openshift manifest including CRD and CSI driver
