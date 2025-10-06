@@ -79,6 +79,7 @@ func checkCRD(ctx context.Context, apiReader client.Reader, crdName, appVersion 
 	return nil
 }
 
+// TODO: This logic is used by multiple other commands, should be put into a common place
 func getAPIClient() (client.Reader, error) {
 	kubeConfig, err := config.GetConfig()
 	if err != nil {
