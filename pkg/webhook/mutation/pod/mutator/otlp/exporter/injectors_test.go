@@ -9,7 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestTraceInjector_IsEnabledAndInject(t *testing.T) {
+func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 	apiURL := "http://example/api/v2/otlp"
 
 	tests := []struct {
@@ -56,7 +56,7 @@ func TestTraceInjector_IsEnabledAndInject(t *testing.T) {
 	}
 }
 
-func TestMetricsInjector_IsEnabledAndInject(t *testing.T) {
+func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 	apiURL := "http://example/api/v2/otlp"
 
 	tests := []struct {
@@ -103,7 +103,7 @@ func TestMetricsInjector_IsEnabledAndInject(t *testing.T) {
 	}
 }
 
-func TestLogsInjector_IsEnabledAndInject(t *testing.T) {
+func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 	apiURL := "http://example/api/v2/otlp"
 
 	tests := []struct {

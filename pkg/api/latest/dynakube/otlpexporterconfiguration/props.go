@@ -24,7 +24,7 @@ func (s *OTLPExporterConfiguration) IsEnabled() bool {
 	return s.IsTracesEnabled() || s.IsMetricsEnabled() || s.IsLogsEnabled()
 }
 
-func (s *OTLPExporterConfiguration) IsOverrideEnabled() bool {
+func (s *OTLPExporterConfiguration) IsOverrideEnvVarsEnabled() bool {
 	return s.Spec != nil && s.OverrideEnvVars != nil && *s.OverrideEnvVars
 }
 

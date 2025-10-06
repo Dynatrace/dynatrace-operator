@@ -99,7 +99,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		}
 	}
 
-	override := otlpExporterConfig.IsOverrideEnabled()
+	override := otlpExporterConfig.IsOverrideEnvVarsEnabled()
 
 	// Create per-signal injectors
 	injectors := []injector{

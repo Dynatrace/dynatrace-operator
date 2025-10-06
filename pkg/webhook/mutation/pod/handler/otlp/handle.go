@@ -27,7 +27,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	if h.envVarMutator.IsEnabled(mutationRequest.BaseRequest) {
 		if h.envVarMutator.IsInjected(mutationRequest.BaseRequest) {
 			if h.envVarMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
-				log.Info("reinvocation policy applied", "podName", mutationRequest.PodName())
+				log.Debug("reinvocation policy applied", "podName", mutationRequest.PodName())
 			}
 		} else {
 			err := h.envVarMutator.Mutate(mutationRequest)

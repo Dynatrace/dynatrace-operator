@@ -17,14 +17,13 @@ limitations under the License.
 package otlpexporterconfiguration
 
 import (
+	"k8s.io/utils/ptr"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSpec_IsOverrideEnabled(t *testing.T) {
-	enabled := true
-	disabled := false
 	tests := []struct {
 		name     string
 		config   OTLPExporterConfiguration
@@ -38,14 +37,14 @@ func TestSpec_IsOverrideEnabled(t *testing.T) {
 		{
 			name: "overrideEnvVars disabled",
 			config: OTLPExporterConfiguration{Spec: &Spec{
-				OverrideEnvVars: &disabled,
+				OverrideEnvVars: ptr.To(false),
 			}},
 			expected: false,
 		},
 		{
 			name: "overrideEnvVars enabled",
 			config: OTLPExporterConfiguration{Spec: &Spec{
-				OverrideEnvVars: &enabled,
+				OverrideEnvVars: ptr.To(true),
 			}},
 			expected: true,
 		},
@@ -53,7 +52,7 @@ func TestSpec_IsOverrideEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.config.IsOverrideEnabled())
+			assert.Equal(t, tt.expected, tt.config.IsOverrideEnvVarsEnabled())
 		})
 	}
 }
