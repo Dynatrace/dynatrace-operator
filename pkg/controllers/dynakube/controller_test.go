@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otlp"
 	"net/http"
 	"strings"
 	"testing"
@@ -26,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	oneagentcontroller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"

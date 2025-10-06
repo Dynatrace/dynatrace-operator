@@ -2,7 +2,9 @@ package otlp
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -17,7 +19,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 const (
@@ -41,7 +42,7 @@ type failingReader struct {
 
 func (f failingReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error { //nolint:revive
 	if f.fail {
-		return fmt.Errorf("err")
+		return errors.New("err")
 	}
 	return f.Reader.List(ctx, list, opts...)
 }
