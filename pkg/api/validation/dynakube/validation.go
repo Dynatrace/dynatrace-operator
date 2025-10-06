@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	v1beta3 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube"
@@ -161,28 +162,25 @@ func (v *Validator) runUpdateValidators(ctx context.Context, updateValidators []
 	return results
 }
 
-func getDynakube(obj runtime.Object) (*dynakube.DynaKube, error) {
-	dk := &dynakube.DynaKube{}
+func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
+	dk = &dynakube.DynaKube{}
 
 	switch v := obj.(type) {
 	case *dynakube.DynaKube:
 		dk = v
 	case *v1beta5.DynaKube:
-		err := v.ConvertTo(dk)
-		if err != nil {
-			return dk, err
-		}
+		err = v.ConvertTo(dk)
 	case *v1beta4.DynaKube:
-		err := v.ConvertTo(dk)
-		if err != nil {
-			return dk, err
-		}
+		err = v.ConvertTo(dk)
 	case *v1beta3.DynaKube:
-		err := v.ConvertTo(dk)
-		if err != nil {
-			return dk, err
+		err = v.ConvertTo(dk)
+	default:
+		if gvk := obj.GetObjectKind().GroupVersionKind(); !gvk.Empty() {
+			return nil, fmt.Errorf("unknown object %s", gvk)
 		}
+
+		return nil, fmt.Errorf("unknown object %T", obj)
 	}
 
-	return dk, nil
+	return
 }

@@ -2,9 +2,9 @@ CRD_OPTIONS ?= "crd:crdVersions=v1,maxDescLen=0,ignoreUnexportedFields=true"
 
 OLM ?= false
 
-HELM_CHART_DEFAULT_DIR=config/helm/chart/default/
-HELM_TEMPLATES_DIR=$(HELM_CHART_DEFAULT_DIR)/templates/
-HELM_CRD_DIR=$(HELM_TEMPLATES_DIR)/Common/crd/
+HELM_CHART_DEFAULT_DIR=config/helm/chart/default
+HELM_TEMPLATES_DIR=$(HELM_CHART_DEFAULT_DIR)/templates
+HELM_CRD_DIR=$(HELM_TEMPLATES_DIR)/Common/crd
 
 MANIFESTS_DIR=config/deploy/
 RELEASE_CRD_YAML=config/deploy/dynatrace-operator-crd.yaml
