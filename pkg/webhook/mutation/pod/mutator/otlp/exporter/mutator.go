@@ -196,7 +196,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	pod.Annotations[AnnotationInjected] = AnnotationInjectedTrueValue
+	pod.Annotations[AnnotationInjected] = "true"
 	delete(pod.Annotations, AnnotationReason)
 }
 
@@ -206,7 +206,7 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 			pod.Annotations = make(map[string]string)
 		}
 
-		pod.Annotations[AnnotationInjected] = AnnotationInjectedFalseValue
+		pod.Annotations[AnnotationInjected] = "false"
 		pod.Annotations[AnnotationReason] = reason
 	}
 }
