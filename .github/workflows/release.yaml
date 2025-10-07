@@ -298,7 +298,7 @@ jobs:
           mkdir -p tmp
           echo ${COSIGN_PUBLIC_KEY} | base64 -d > tmp/cosign.pub
       - name: Create pre-release
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        uses: softprops/action-gh-release@aec2ec56f94eb8180ceec724245f64ef008b89f5 # v2.4.0
         if: ${{ contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
@@ -314,7 +314,7 @@ jobs:
           draft: true
           fail_on_unmatched_files: true
       - name: Create release
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2.3.3
+        uses: softprops/action-gh-release@aec2ec56f94eb8180ceec724245f64ef008b89f5 # v2.4.0
         if: ${{ !contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
