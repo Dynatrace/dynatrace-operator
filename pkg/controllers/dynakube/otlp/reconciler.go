@@ -3,6 +3,7 @@ package otlp
 import (
 	"context"
 	goerrors "errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -45,6 +46,7 @@ func NewReconciler(
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	var setupErrors []error
 
+	// TODO use IsEnabled() function
 	if r.dk.Spec.OTLPExporterConfiguration == nil {
 		defer r.cleanup(ctx)
 	} else {
@@ -71,6 +73,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) cleanup(ctx context.Context) {
+	if meta.FindStatusCondition(*r.dk.Conditions(), otlpExporterConfigurationConditionType) == nil {
+		return
+	}
+	defer meta.RemoveStatusCondition(r.dk.Conditions(), otlpExporterConfigurationConditionType)
+
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
 	if err != nil {
 		log.Error(err, "failed to list namespaces for dynakube", "dkName", r.dk.Name)

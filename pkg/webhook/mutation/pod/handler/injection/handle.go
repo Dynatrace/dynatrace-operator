@@ -6,10 +6,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	corev1 "k8s.io/api/core/v1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/secrets"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -77,13 +77,13 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 
 		if !mutated {
-			setNotInjectedAnnotations(mutationRequest, NoMutationNeededReason)
+			annotations.SetNotInjectedAnnotations(mutationRequest, NoMutationNeededReason)
 
 			return nil
 		}
 	}
 
-	setDynatraceInjectedAnnotation(mutationRequest)
+	annotations.SetDynatraceInjectedAnnotation(mutationRequest)
 
 	log.Info("injection finished for pod", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
@@ -164,11 +164,11 @@ func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationReque
 }
 
 func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
-	err := h.replicateSecret(mutationRequest, sourceSecretName, targetSecretName)
+	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, targetSecretName, log)
 	if k8serrors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("unable to copy source of %s as it is not available, injection not possible", sourceSecretName), "pod", mutationRequest.PodName())
 
-		setNotInjectedAnnotations(mutationRequest, NoBootstrapperConfigReason)
+		annotations.SetNotInjectedAnnotations(mutationRequest, NoBootstrapperConfigReason)
 
 		return false
 	}
@@ -176,43 +176,10 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 	if err != nil {
 		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
 
-		setNotInjectedAnnotations(mutationRequest, NoBootstrapperConfigReason)
+		annotations.SetNotInjectedAnnotations(mutationRequest, NoBootstrapperConfigReason)
 
 		return false
 	}
 
 	return true
-}
-
-func (h *Handler) replicateSecret(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) error {
-	var initSecret corev1.Secret
-
-	secretObjectKey := client.ObjectKey{Name: targetSecretName, Namespace: mutationRequest.Namespace.Name}
-
-	err := h.apiReader.Get(mutationRequest.Context, secretObjectKey, &initSecret)
-	if k8serrors.IsNotFound(err) {
-		log.Info(targetSecretName+" is not available, trying to replicate", "pod", mutationRequest.PodName())
-
-		return bootstrapperconfig.Replicate(mutationRequest.Context, mutationRequest.DynaKube, secret.Query(h.kubeClient, h.apiReader, log), sourceSecretName, targetSecretName, mutationRequest.Namespace.Name)
-	}
-
-	return nil
-}
-
-func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) {
-	if mutationRequest.Pod.Annotations == nil {
-		mutationRequest.Pod.Annotations = make(map[string]string)
-	}
-
-	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
-	delete(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
-}
-
-func setNotInjectedAnnotations(mutationRequest *dtwebhook.MutationRequest, reason string) {
-	if mutationRequest.Pod.Annotations == nil {
-		mutationRequest.Pod.Annotations = make(map[string]string)
-	}
-
-	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "false"
-	mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceReason] = reason
 }

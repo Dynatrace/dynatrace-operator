@@ -1,20 +1,35 @@
 package otlp
 
 import (
+	"fmt"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/secrets"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Handler struct {
+	kubeClient client.Client
+	apiReader  client.Reader
+
 	envVarMutator            dtwebhook.Mutator
 	resourceAttributeMutator dtwebhook.Mutator
 }
 
 func New(
+	kubeClient client.Client,
+	apiReader client.Reader,
 	envVarMutator dtwebhook.Mutator,
 	resourceAttributeMutator dtwebhook.Mutator,
 ) *Handler {
 	return &Handler{
+		kubeClient:               kubeClient,
+		apiReader:                apiReader,
 		envVarMutator:            envVarMutator,
 		resourceAttributeMutator: resourceAttributeMutator,
 	}
@@ -24,6 +39,10 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	if !shouldInject(mutationRequest) {
 		log.Debug("OTLP injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
+		return nil
+	}
+
+	if !h.isInputSecretPresent(mutationRequest, exporterconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name), consts.OTLPExporterSecretName) {
 		return nil
 	}
 
@@ -61,4 +80,24 @@ func shouldInject(request *dtwebhook.MutationRequest) bool {
 	namespaceEnabled := true
 
 	return enabledOnPod && namespaceEnabled
+}
+
+func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
+	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, targetSecretName, log)
+	if k8serrors.IsNotFound(err) {
+
+		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterConfigSecretReason)
+
+		return false
+	}
+
+	if err != nil {
+		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
+
+		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterConfigSecretReason)
+
+		return false
+	}
+
+	return true
 }

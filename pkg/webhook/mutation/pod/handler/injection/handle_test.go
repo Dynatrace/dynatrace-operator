@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -305,7 +306,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 			},
 		}
 
-		setDynatraceInjectedAnnotation(&request)
+		annotations.SetDynatraceInjectedAnnotation(&request)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
@@ -324,7 +325,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 			},
 		}
 
-		setDynatraceInjectedAnnotation(&request)
+		annotations.SetDynatraceInjectedAnnotation(&request)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])

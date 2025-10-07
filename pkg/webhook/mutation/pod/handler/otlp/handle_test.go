@@ -6,6 +6,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -13,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -66,7 +69,11 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
 
-		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+			getTestSecret(),
+		)
 
 		dk := getTestDynakube()
 		request := createTestMutationRequest(t, dk)
@@ -84,7 +91,11 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
 
-		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+			getTestSecret(),
+		)
 
 		dk := getTestDynakube()
 		request := createTestMutationRequest(t, dk)
@@ -96,8 +107,20 @@ func TestHandler_Handle(t *testing.T) {
 	})
 }
 
-func createTestHandler(envVarMutator, resourceAttributeMutator mutator.Mutator) *Handler {
-	return New(envVarMutator, resourceAttributeMutator)
+func getTestSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OTLPExporterSecretName,
+			Namespace: testNamespaceName,
+		},
+		Data: map[string][]byte{},
+	}
+}
+
+func createTestHandler(envVarMutator, resourceAttributeMutator mutator.Mutator, objects ...client.Object) *Handler {
+	fakeClient := fake.NewClient(objects...)
+
+	return New(fakeClient, fakeClient, envVarMutator, resourceAttributeMutator)
 }
 
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *mutator.MutationRequest {
