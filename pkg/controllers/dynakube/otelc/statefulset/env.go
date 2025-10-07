@@ -83,7 +83,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 			corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Extensions().GetTokenSecretName()},
-					Key:                  consts.OtelcTokenSecretKey,
+					Key:                  consts.DatasourceTokenSecretKey,
 				}},
 			},
 			corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath},

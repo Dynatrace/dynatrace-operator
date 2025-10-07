@@ -43,7 +43,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Extensions().GetTokenSecretName()},
-				Key:                  consts.OtelcTokenSecretKey,
+				Key:                  consts.DatasourceTokenSecretKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEecTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])

@@ -24,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -79,7 +80,6 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
-		Logger: logd.Get().WithName("manager").Logger,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Host:    webhookInstallOptions.LocalServingHost,
 			Port:    webhookInstallOptions.LocalServingPort,
@@ -114,7 +114,7 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 
 	err = wait.PollUntilContextTimeout(
 		t.Context(),
-		10*time.Millisecond, 1*time.Second, // gomega defaults
+		500*time.Millisecond, 10*time.Second,
 		false,
 		func(ctx context.Context) (bool, error) {
 			conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true}) //nolint:gosec
@@ -150,6 +150,8 @@ func setupBaseTestEnv(t *testing.T) {
 	if err := addScheme(testEnv); err != nil {
 		t.Fatal(err)
 	}
+
+	logf.SetLogger(logd.Get().Logger)
 }
 
 // getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
