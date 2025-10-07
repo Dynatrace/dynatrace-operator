@@ -57,8 +57,6 @@ jobs:
           title: '[Automatic] Update because new branch created ${{ github.ref_name }}'
           labels: 'ci'
           commit-message: self update on new release ${{ github.ref_name }}
-          committer: GitHub <noreply@github.com>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           body: |
             # Description
             This PR updates files after new release has been created:
