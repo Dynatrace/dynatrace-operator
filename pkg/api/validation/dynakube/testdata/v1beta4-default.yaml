@@ -1,0 +1,271 @@
+apiVersion: dynatrace.com/v1beta4
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: default
+  annotations:
+    feature.dynatrace.com/activegate-ignore-proxy: "true"
+    feature.dynatrace.com/automatic-kubernetes-api-monitoring: "true"
+  labels:
+    label: label-value
+spec:
+  apiUrl: https://url/api
+  tokens: token
+  customPullSecret: pull-secret
+  # enableIstio: true  # needs istio CRD setup
+  skipCertCheck: true
+  proxy:
+    value: proxy-value
+    valueFrom: proxy-from
+  trustedCAs: trusted-ca
+  networkZone: network-zone
+  dynatraceApiRequestThreshold: 42
+  metadataEnrichment:
+    enabled: false
+
+  activeGate:
+    dnsPolicy: ClusterFirstWithHostNet
+    annotations:
+      activegate-annotation-key: activegate-annotation-value
+    tlsSecretName: activegate-tls-secret-name
+    priorityClassName: activegate-priority-class-name
+    capabilities:
+      - dynatrace-api
+      - kubernetes-monitoring
+      - metrics-ingest
+    labels:
+      activegate-label-key: activegate-label-value
+    env:
+      - name: activegate-env-1
+        value: activegate-env-value-1
+        valueFrom:
+          configMapKeyRef:
+            key: activegate-env-from-1
+            name: activegate-env-configmap
+      - name: activegate-env-2
+        value: activegate-env-value-2
+        valueFrom:
+          configMapKeyRef:
+            key: activegate-env-from-2
+            name: activegate-env-configmap
+    nodeSelector:
+      activegate-node-selector-key: activegate-node-selector-value
+    image: activegate-image
+    replicas: 2
+    group: activegate-group
+    customProperties:
+      value: activegate-custom-property-value
+      valueFrom: activegate-custom-property-value-from
+    resources:
+      limits:
+        cpu: "3"
+      requests:
+        cpu: "3"
+    tolerations:
+      - key: activegate-toleration-key
+        operator: In
+        value: activegate-toleration-value
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+
+  oneAgent:
+    hostGroup: hostgroup-value
+    hostMonitoring:
+      version: 1.0.0.20240101-000000
+      image: host-inject-image
+      tolerations:
+        - key: host-inject-toleration-key
+          operator: In
+          value: host-inject-toleration-value
+      autoUpdate: false
+      dnsPolicy: ClusterFirstWithHostNet
+      annotations:
+        host-inject-annotation-key: host-inject-annotation-value
+      labels:
+        host-inject-label-key: host-inject-label-value
+      env:
+        - name: host-inject-env-1
+          value: host-inject-env-value-1
+          valueFrom:
+            configMapKeyRef:
+              name: host-inject-env-configmap
+              key: host-inject-env-from-1
+        - name: host-inject-env-2
+          value: host-inject-env-value-2
+          valueFrom:
+            configMapKeyRef:
+              name: host-inject-env-configmap
+              key: host-inject-env-from-2
+      nodeSelector:
+        host-inject-node-selector-key: host-inject-node-selector-value
+      priorityClassName: host-inject-priority-class
+      args:
+        - host-inject-arg-1
+        - host-inject-arg-2
+      oneAgentResources:
+        limits:
+          cpu: "1"
+      secCompProfile: seccomp
+
+  logMonitoring:
+    ingestRuleMatchers:
+      - attribute: attribute1
+        values:
+          - matcher1
+          - matcher2
+          - matcher3
+      - attribute: attribute2
+        values:
+          - matcher1
+          - matcher2
+          - matcher3
+      - attribute: attribute3
+        values:
+          - matcher1
+          - matcher2
+          - matcher3
+
+  extensions: {}
+
+  templates:
+    logMonitoring:
+      labels:
+        logagent-label-key1: logagent-label-value1
+        logagent-label-key2: logagent-label-value2
+      annotations:
+        logagent-annotation-key1: logagent-annotation-value1
+        logagent-annotation-key2: logagent-annotation-value2
+      nodeSelector:
+        selector1: node1
+        selector2: node2
+      imageRef:
+        repository: image.repo
+        tag: 1.2.3
+      dnsPolicy: ClusterFirstWithHostNet
+      secCompProfile: seccomp
+      resources:
+        limits:
+          cpu: "3"
+        requests:
+          cpu: "3"
+      tolerations:
+        - key: otelc-toleration-key
+          operator: In
+          value: otelc-toleration-value
+      args:
+        - --log-level
+        - debug
+        - --log-format
+        - json
+
+    otelCollector:
+      labels:
+        otelc-label-key1: otelc-label-value1
+        otelc-label-key2: otelc-label-value2
+      annotations:
+        otelc-annotation-key1: otelc-annotation-value1
+        otelc-annotation-key2: otelc-annotation-value2
+      replicas: 2
+      imageRef:
+        repository: image.repo
+        tag: 1.2.3
+      tlsRefName: tls-ref-name
+      resources:
+        limits:
+          cpu: "3"
+        requests:
+          cpu: "3"
+      tolerations:
+        - key: otelc-toleration-key
+          operator: In
+          value: otelc-toleration-value
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+
+    extensionExecutionController:
+      labels:
+        eec-label-key1: eec-label-value1
+        eec-label-key2: eec-label-value2
+      annotations:
+        eec-annotation-key1: eec-annotation-value1
+        eec-annotation-key2: eec-annotation-value2
+      imageRef:
+        repository: image.repo
+        tag: 1.2.3
+      tlsRefName: tls-ref-name
+      resources:
+        limits:
+          cpu: "3"
+        requests:
+          cpu: "3"
+      tolerations:
+        - key: otelc-toleration-key
+          operator: In
+          value: otelc-toleration-value
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+      customConfig: custom-eec-config
+      customExtensionCertificates: custom-eec-certificate
+      useEphemeralVolume: true
+
+    kspmNodeConfigurationCollector:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 50%
+          maxSurge: 1
+      labels:
+        ncc-label-key1: ncc-label-value1
+        ncc-label-key2: ncc-label-value2
+      annotations:
+        ncc-annotation-key1: ncc-annotation-value1
+        ncc-annotation-key2: ncc-annotation-value2
+      nodeSelector:
+        selector1: node1
+        selector2: node2
+      imageRef:
+        repository: image.repo
+        tag: 1.2.3
+      priorityClassName: priority-class-name
+      resources:
+        limits:
+          cpu: "3"
+        requests:
+          cpu: "3"
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: node-selector-match-key
+                  operator: In
+                  values:
+                    - node-match-value1
+                    - node-match-value2
+              matchFields:
+                - key: node-selector-field-key
+                  operator: In
+                  values:
+                    - node-field-value1
+                    - node-field-value2
+      tolerations:
+        - key: otelc-toleration-key
+          operator: In
+          value: otelc-toleration-value
+      args:
+        - --log-level
+        - debug
+        - --log-format
+        - json
+      env:
+        - name: ENV1
+          value: VAL1
+        - name: ENV2
+          value: VAL2
+        - name: ENV3
+          value: VAL3

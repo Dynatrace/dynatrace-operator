@@ -1,0 +1,56 @@
+apiVersion: dynatrace.com/v1alpha1
+kind: EdgeConnect
+metadata:
+  name: edgeconnect
+  namespace: default
+  labels:
+    edgeconnect-label-key: edgeconnect-label-value
+  annotations:
+    edgeconnect-annotation-key: edgeconnect-annotation-value
+spec:
+  labels:
+    edgeconnect-label-key: edgeconnect-label-value
+  annotations:
+    edgeconnect-annotation-key: edgeconnect-annotation-value
+  replicas: 1
+  nodeSelector:
+    kubernetes.io/os: linux
+  kubernetesAutomation:
+    enabled: true
+  proxy:
+    host: foo
+    noProxy: bar
+    authRef: baz
+    port: 12345
+  imageRef:
+    repository: image.repo
+    tag: 1.2.3
+  apiServer: foo.dev.apps.dynatracelabs.com
+  hostRestrictions: foo,bar
+  customPullSecret: custom-pull-secret
+  caCertsRef: ca-certs
+  serviceAccountName: default
+  oauth:
+    clientSecret: secret
+    endpoint: https://url
+    resource: resource
+    provisioner: true
+  resources:
+    limits:
+      cpu: "2"
+    requests:
+      cpu: "1"
+  env:
+    - name: ENV1
+      value: VALUE1
+  tolerations:
+    - key: edgeconnect-toleration-key
+      operator: In
+      value: edgeconnect-toleration-value
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+  hostPatterns:
+    - foo.bar.baz
+  autoUpdate: true
