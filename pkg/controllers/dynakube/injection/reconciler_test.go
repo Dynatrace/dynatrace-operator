@@ -126,7 +126,9 @@ func TestReconciler(t *testing.T) {
 
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
 
-		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
+		fakeOtlpReconciler := createReconcilerMock(t)
+
+		rec := NewReconciler(clt, clt, dtClient, istioClient, dk, fakeOtlpReconciler)
 		fakeReconciler := createReconcilerMock(t)
 		rec.(*Reconciler).k8sEntityReconciler = fakeReconciler
 
@@ -177,7 +179,9 @@ func TestReconciler(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		istioClient := setupIstioClientWithObjects(dk)
 
-		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
+		fakeOtlpReconciler := createReconcilerMock(t)
+
+		rec := NewReconciler(clt, clt, dtClient, istioClient, dk, fakeOtlpReconciler)
 		fakeReconciler := createUncalledReconcilerMock(t)
 		rec.(*Reconciler).k8sEntityReconciler = fakeReconciler
 
@@ -244,8 +248,9 @@ func TestReconciler(t *testing.T) {
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
 		fakeReconciler := createUncalledReconcilerMock(t)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
+		fakeOtlpReconciler := createUncalledReconcilerMock(t)
 
-		rec := NewReconciler(boomClient, boomClient, nil, istioClient, dk).(*Reconciler)
+		rec := NewReconciler(boomClient, boomClient, nil, istioClient, dk, fakeOtlpReconciler).(*Reconciler)
 		rec.connectionInfoReconciler = fakeReconciler
 		rec.versionReconciler = fakeVersionReconciler
 		rec.k8sEntityReconciler = fakeReconciler
@@ -268,6 +273,8 @@ func TestRemoveAppInjection(t *testing.T) {
 	rec.connectionInfoReconciler = createUncalledReconcilerMock(t)
 	rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
 	rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
+	// ensure otlpReconciler present for Reconcile
+	rec.otlpReconciler = createReconcilerMock(t)
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
 

@@ -61,13 +61,11 @@ func (dm DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, error) {
 
 func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error {
 	for i, ns := range namespaces {
-		if !dm.dk.OneAgent().IsAppInjectionNeeded() && !dm.dk.MetadataEnrichment().IsEnabled() { // TODO add check for OTLP exporter configuration
-			delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
-			setUpdatedViaDynakubeAnnotation(&namespaces[i])
+		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
+		setUpdatedViaDynakubeAnnotation(&namespaces[i])
 
-			if err := dm.client.Update(dm.ctx, &namespaces[i]); err != nil {
-				return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
-			}
+		if err := dm.client.Update(dm.ctx, &namespaces[i]); err != nil {
+			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
 		}
 
 		err := dm.secrets.DeleteForNamespace(dm.ctx, consts.BootstrapperInitSecretName, ns.Name)

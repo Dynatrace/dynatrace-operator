@@ -378,12 +378,19 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconcilerBuilder(controller.client,
+	err = controller.injectionReconcilerBuilder(
+		controller.client,
 		controller.apiReader,
 		dynatraceClient,
 		istioClient,
-		dk).
-		Reconcile(ctx)
+		dk,
+		controller.otlpReconcilerBuilder(
+			controller.client,
+			controller.apiReader,
+			dynatraceClient,
+			dk,
+		),
+	).Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
@@ -428,25 +435,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	err = kspmReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile kspm")
-
-		componentErrors = append(componentErrors, err)
-	}
-
-	err = controller.otlpReconcilerBuilder(controller.client,
-		controller.apiReader,
-		dynatraceClient,
-		dk).
-		Reconcile(ctx)
-	if err != nil {
-		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
-			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
-			// this situation will clear itself after AG has been started
-			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
-
-			return goerrors.Join(componentErrors...)
-		}
-
-		log.Info("could not reconcile OTLP")
 
 		componentErrors = append(componentErrors, err)
 	}

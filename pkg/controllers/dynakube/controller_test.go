@@ -375,7 +375,6 @@ func TestReconcileComponents(t *testing.T) {
 		mockKSPMReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		mockOTLPReconciler := controllermock.NewReconciler(t)
-		mockOTLPReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -397,7 +396,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 8) // ActiveGate, Extension, OtelC, OneAgent LogMonitoring, Injection and OTLP reconcilers
+		assert.Len(t, strings.Split(err.Error(), "\n"), 7) // ActiveGate, Extension, OtelC, OneAgent LogMonitoring, Injection and OTLP reconcilers
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
@@ -488,8 +487,6 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockKSPMReconciler.On("Reconcile", mock.Anything).Return(nil)
 
 	mockOTLPReconciler := controllermock.NewReconciler(t)
-	mockOTLPReconciler.On("Reconcile", mock.Anything).Return(nil)
-	mockOTLPReconciler.On("Reconcile", mock.Anything).Return(nil)
 
 	fakeIstio := fakeistio.NewSimpleClientset()
 
@@ -586,7 +583,7 @@ func createOtelcReconcilerBuilder(reconciler controllers.Reconciler) otelc.Recon
 }
 
 func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injection.ReconcilerBuilder {
-	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) controllers.Reconciler {
+	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube, otlpReconciler controllers.Reconciler) controllers.Reconciler {
 		return reconciler
 	}
 }
