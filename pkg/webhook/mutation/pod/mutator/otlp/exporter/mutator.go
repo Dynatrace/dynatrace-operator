@@ -44,15 +44,15 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 		enabledOnPod = maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, request.DynaKube.FF().IsAutomaticInjection())
 	}
 
-	namespaceEnabled := true
+	enabledOnNamespace := true
 
 	if otlpExporterConfig.NamespaceSelector.Size() > 0 {
 		selector, _ := metav1.LabelSelectorAsSelector(&otlpExporterConfig.NamespaceSelector)
 
-		namespaceEnabled = selector.Matches(labels.Set(request.Namespace.Labels))
+		enabledOnNamespace = selector.Matches(labels.Set(request.Namespace.Labels))
 	}
 
-	return enabledOnPod && namespaceEnabled
+	return enabledOnPod && enabledOnNamespace
 }
 
 func (m Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
