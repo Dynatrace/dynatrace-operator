@@ -13,7 +13,7 @@ mockery_version=v3.5.5
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 markdownlint_cli_version=v0.45.0
 # renovate depName=github.com/helm-unittest/helm-unittest
-helmunittest_version=v1.0.2
+helmunittest_version=v1.0.3
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 cyclonedx_gomod_version=v1.9.0
 
