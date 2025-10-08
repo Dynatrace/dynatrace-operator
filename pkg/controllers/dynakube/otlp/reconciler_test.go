@@ -3,6 +3,7 @@ package otlp
 import (
 	"context"
 	"errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -82,6 +83,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		assertSecretFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
+
+		assert.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
 	})
 
 	t.Run("no exporter config triggers cleanup", func(t *testing.T) {
@@ -90,7 +93,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testDynakube,
 				Namespace: testNamespaceDynatrace,
 			},
+			Status: dynakube.DynaKubeStatus{
+				Conditions: []metav1.Condition{
+					{},
+				},
+			},
 		}
+
+		setOTLPExporterConfigurationCondition(dk.Conditions())
 
 		// pre-create a replicated secret and source secret to ensure cleanup removes them
 		clt := fake.NewClientWithIndex(
@@ -109,6 +119,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		// secrets should be gone after cleanup
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, exporterconfig.GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
+
+		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
 	})
 
 	t.Run("missing tokens secret returns error", func(t *testing.T) {

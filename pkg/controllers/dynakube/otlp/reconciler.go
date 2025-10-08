@@ -67,6 +67,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return goerrors.Join(setupErrors...)
 	}
 
+	setOTLPExporterConfigurationCondition(r.dk.Conditions())
+
 	log.Info("OTLP exporter configuration reconciled")
 
 	return nil
