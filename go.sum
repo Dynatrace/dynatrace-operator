@@ -206,8 +206,8 @@ go.opentelemetry.io/collector/config/configtelemetry v0.136.0 h1:d5So8zVG6gRl7I3
 go.opentelemetry.io/collector/config/configtelemetry v0.136.0/go.mod h1:Xjw2+DpNLjYtx596EHSWBy0dNQRiJ2H+BlWU907lO40=
 go.opentelemetry.io/collector/config/configtls v1.42.0 h1:gACpOXSmxBeo+M8qjSxt7AU04B0qWzjqg2ZLvMA8Sdo=
 go.opentelemetry.io/collector/config/configtls v1.42.0/go.mod h1:SJNnptQLBW+nO4CgTtNI1di8nAHNOIl2gclu9GsmK8g=
-go.opentelemetry.io/collector/confmap v1.42.0 h1:Hdeqq1RkGBBWbmDpa96aC5LchklzUzCu4aSRRoPicng=
-go.opentelemetry.io/collector/confmap v1.42.0/go.mod h1:KW/l4uXBGnl5OM8WYi3gTg6PeG+y24nlIMS71KwWQjk=
+go.opentelemetry.io/collector/confmap v1.43.0 h1:QVAnbS7A+2Ra61xsuG355vhlW6uOMaKWysrwLQzDUz4=
+go.opentelemetry.io/collector/confmap v1.43.0/go.mod h1:N5GZpFCmwD1GynDu3IWaZW5Ycfc/7YxSU0q1/E3vLdg=
 go.opentelemetry.io/collector/confmap/xconfmap v0.136.0 h1:eC14gN+NL5HxmOmN9Aa4SkAnJhmUgmYP5cgEjCdz0sw=
 go.opentelemetry.io/collector/confmap/xconfmap v0.136.0/go.mod h1:bDvQo42iyxLGR/Nl4eKP//F/jpDcD52JCb7uLGKA3lc=
 go.opentelemetry.io/collector/connector v0.136.0 h1:q697P3BcHJcuqT+GE/Am5bqXGpAvCTf5gSlLL2HZ2iM=
@@ -240,8 +240,8 @@ go.opentelemetry.io/collector/extension/extensiontest v0.136.0 h1:BkL2AC38Xa/WU7
 go.opentelemetry.io/collector/extension/extensiontest v0.136.0/go.mod h1:XxRKblTb56a6zkrb8i9qowl7mY9ebW2NnOvCIXgxjZM=
 go.opentelemetry.io/collector/extension/xextension v0.136.0 h1:Ykw3UUAKugGDLTz+Secowj6pL9Mg6H/V+pezeQKhTJY=
 go.opentelemetry.io/collector/extension/xextension v0.136.0/go.mod h1:BLED8xk0WmkZ0bfjl/WwQ7jk4cJnnrHlo3MHsdhtr/U=
-go.opentelemetry.io/collector/featuregate v1.42.0 h1:uCVwumVBVex46DsG/fvgiTGuf9f53bALra7vGyKaqFI=
-go.opentelemetry.io/collector/featuregate v1.42.0/go.mod h1:d0tiRzVYrytB6LkcYgz2ESFTv7OktRPQe0QEQcPt1L4=
+go.opentelemetry.io/collector/featuregate v1.43.0 h1:Aq8UR5qv1zNlbbkTyqv8kLJtnoQMq/sG1/jS9o1cCJI=
+go.opentelemetry.io/collector/featuregate v1.43.0/go.mod h1:d0tiRzVYrytB6LkcYgz2ESFTv7OktRPQe0QEQcPt1L4=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.136.0 h1:GxjQ+9q6M7PwE3QnA3VVBLt5aHVnk4z7wQLo+J+0tho=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.136.0/go.mod h1:DOvL5ZalQk/zmYBjKZok52dXIxUOK0JoOoQfm5qjbhM=
 go.opentelemetry.io/collector/internal/telemetry v0.136.0 h1:3TcnxyUFs6jJZeLo5ju3fMWS4lRmIApl9To2XWk922M=
