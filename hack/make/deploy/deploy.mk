@@ -31,7 +31,7 @@ undeploy: cleanup/custom-resources
 
 ## Remove all Dynatrace Operator resources from the cluster
 cleanup: cleanup/custom-resources
-	kubectl delete namespace dynatrace --ignore-not-found || true
+	kubectl delete namespace dynatrace --ignore-not-found
 	@echo "Removing Dynatrace Operator cluster-scoped resources"
 	@kubectl api-resources --verbs=list -o name --namespaced=false | \
 		xargs -I {} sh -c \
