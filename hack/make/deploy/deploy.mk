@@ -31,7 +31,7 @@ undeploy: cleanup/custom-resources
 
 ## Remove all Dynatrace Operator resources from the cluster
 cleanup: cleanup/custom-resources
-	kubectl delete namespace dynatrace --ignore-not-found
+	kubectl delete namespace dynatrace --ignore-not-found || true
 	@echo "Removing Dynatrace Operator cluster-scoped resources"
 	@kubectl api-resources --verbs=list -o name --namespaced=false | \
 		xargs -I {} sh -c \
@@ -46,6 +46,6 @@ cleanup: cleanup/custom-resources
 	@echo " done"
 
 cleanup/custom-resources:
-	kubectl delete dynakube --all -n dynatrace
-	kubectl delete edgeconnect --all -n dynatrace
+	kubectl delete dynakube --all -n dynatrace || true
+	kubectl delete edgeconnect --all -n dynatrace || true
 	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
