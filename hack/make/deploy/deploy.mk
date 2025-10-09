@@ -34,7 +34,7 @@ cleanup: cleanup/custom-resources
 	kubectl delete namespace dynatrace --ignore-not-found
 	@echo "Removing Dynatrace Operator cluster-scoped resources"
 	@kubectl api-resources --verbs=list -o name --namespaced=false | \
-		xargs -n 1 -I {} sh -c \
+		xargs -I {} sh -c \
 		"kubectl delete {} --ignore-not-found -l app.kubernetes.io/name=dynatrace-operator 2>&1 | \
 		grep -v 'No resources found'" || true
 
