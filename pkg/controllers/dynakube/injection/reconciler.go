@@ -92,6 +92,25 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			setupErrors = append(setupErrors, err)
 		}
 
+		oneAgentNamespaceNames := dkMapper.OneAgentNamespaceNames()
+		metadataEnrichmentNamespaceNames := dkMapper.MetadataEnrichmentNamespaceNames()
+
+		oaSelectorConfigured := r.dk.OneAgent().IsAppInjectionNeeded() && (r.dk.OneAgent().IsNamespaceSelectorDefined())
+		meSelectorConfigured := r.dk.MetadataEnrichment().IsEnabled() && (r.dk.MetadataEnrichment().IsNamespaceSelectorDefined())
+
+		if oaSelectorConfigured {
+			log.Info("namespaces monitored", "selector", "OneAgent", "count (at most 10 are shown)", len(oneAgentNamespaceNames), "namespaces", oneAgentNamespaceNames)
+		}
+
+		if meSelectorConfigured {
+			log.Info("namespaces monitored", "selector", "MetadataEnrichment", "count (at most 10 are shown)", len(metadataEnrichmentNamespaceNames), "namespaces", metadataEnrichmentNamespaceNames)
+		}
+
+		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "OneAgent", oaSelectorConfigured, oneAgentNamespaceNames)
+		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "MetadataEnrichment", meSelectorConfigured, metadataEnrichmentNamespaceNames)
+
+		updateCollectedNamespacesMonitoredCondition(r.dk.Conditions())
+
 		err := r.generateInitSecret(ctx)
 		if err != nil {
 			setupErrors = append(setupErrors, err)

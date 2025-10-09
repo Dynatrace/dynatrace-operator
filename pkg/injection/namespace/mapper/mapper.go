@@ -62,22 +62,31 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 	ns.Annotations[UpdatedViaDynakubeAnnotation] = "true"
 }
 
-func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
+func matchKinds(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, bool, error) {
 	if isIgnoredNamespace(dk, namespace.Name) {
-		return false, nil
+		return false, false, nil
 	}
 
-	matchesOneAgent, err := matchOneAgent(dk, namespace)
+	matchOA, err := matchOneAgent(dk, namespace)
+	if err != nil {
+		return false, false, err
+	}
+
+	matchME, err := matchMetadataEnrichment(dk, namespace)
+	if err != nil {
+		return false, false, err
+	}
+
+	return matchOA, matchME, nil
+}
+
+func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	matchesOneAgent, matchesMetadaEnrichment, err := matchKinds(dk, namespace)
 	if err != nil {
 		return false, err
 	}
 
-	matchesMetadataEnrichment, err := matchMetadataEnrichment(dk, namespace)
-	if err != nil {
-		return false, err
-	}
-
-	return matchesMetadataEnrichment || matchesOneAgent, nil
+	return matchesOneAgent || matchesMetadaEnrichment, nil
 }
 
 // matchOneAgent uses the namespace selector in the dynakube to check if it matches a given namespace
