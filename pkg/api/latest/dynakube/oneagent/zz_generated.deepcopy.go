@@ -153,11 +153,6 @@ func (in *HostInjectSpec) DeepCopyInto(out *HostInjectSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.AutoUpdate != nil {
-		in, out := &in.AutoUpdate, &out.AutoUpdate
-		*out = new(bool)
-		**out = **in
-	}
 	in.OneAgentResources.DeepCopyInto(&out.OneAgentResources)
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations

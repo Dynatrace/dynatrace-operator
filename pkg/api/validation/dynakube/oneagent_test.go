@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -958,8 +959,6 @@ func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
 		},
 	}
 
-	enabled := true
-
 	checkWarnings := func(t *testing.T, warnings admission.Warnings) {
 		t.Helper()
 		require.Len(t, warnings, 1)
@@ -969,22 +968,28 @@ func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
 	testcases := []struct {
 		name       string
 		valid      oneagent.Spec
-		deprecated oneagent.Spec
+		deprecated map[string]string
 	}{
 		{
 			"classic fullstack",
 			oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}},
-			oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{AutoUpdate: &enabled}},
+			map[string]string{
+				conversion.AutoUpdateKey: "true",
+			},
 		},
 		{
 			"host monitoring",
 			oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}},
-			oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{AutoUpdate: &enabled}},
+			map[string]string{
+				conversion.AutoUpdateKey: "true",
+			},
 		},
 		{
 			"cloudnative fullstack",
 			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
-			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{HostInjectSpec: oneagent.HostInjectSpec{AutoUpdate: &enabled}}},
+			map[string]string{
+				conversion.AutoUpdateKey: "true",
+			},
 		},
 	}
 
@@ -992,8 +997,10 @@ func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			validDK := baseDK.DeepCopy()
 			validDK.Spec.OneAgent = tc.valid
+
 			deprecatedDK := baseDK.DeepCopy()
-			deprecatedDK.Spec.OneAgent = tc.deprecated
+			deprecatedDK.Spec.OneAgent = tc.valid
+			deprecatedDK.Annotations = tc.deprecated
 
 			warnings, err := assertAllowed(t, deprecatedDK)
 			require.NoError(t, err, "creation")
