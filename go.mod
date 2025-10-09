@@ -21,7 +21,7 @@ require (
 	go.opentelemetry.io/collector/component v1.42.0
 	go.opentelemetry.io/collector/config/configtls v1.43.0
 	go.opentelemetry.io/collector/confmap v1.43.0
-	go.opentelemetry.io/collector/pipeline v1.42.0
+	go.opentelemetry.io/collector/pipeline v1.43.0
 	go.opentelemetry.io/collector/service v0.136.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
