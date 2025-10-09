@@ -25,12 +25,12 @@ deploy: manifests/crd/helm
 			--set debug=$(DEBUG)
 
 ## Undeploy the current operator installation
-undeploy: cleanup/cr
+undeploy: cleanup/custom-resources
 	helm uninstall dynatrace-operator \
 			--namespace dynatrace
 
 ## Remove all Dynatrace Operator resources from the cluster
-cleanup: cleanup/cr
+cleanup: cleanup/custom-resources
 	kubectl delete namespace dynatrace --ignore-not-found
 	kubectl delete \
 		clusterrole,clusterrolebinding,mutatingwebhookconfigurations,validatingwebhookconfigurations,crd,priorityclass,poddisruptionbudget \
@@ -43,7 +43,7 @@ cleanup: cleanup/cr
 	done
 	@echo " done"
 
-cleanup/cr:
+cleanup/custom-resources:
 	kubectl delete dynakube --all -n dynatrace
 	kubectl delete edgeconnect --all -n dynatrace
 	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
