@@ -29,7 +29,7 @@ require (
 	golang.org/x/net v0.46.0
 	golang.org/x/oauth2 v0.32.0
 	golang.org/x/sys v0.37.0
-	google.golang.org/grpc v1.75.1
+	google.golang.org/grpc v1.76.0
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.27.1
 	istio.io/client-go v1.27.1
