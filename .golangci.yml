@@ -64,10 +64,6 @@ linters:
     - wsl_v5
     - zerologlint
   settings:
-    goconst:
-      ignore-string-values:
-        - "true"
-        - "false"
     depguard:
       rules:
         all:
