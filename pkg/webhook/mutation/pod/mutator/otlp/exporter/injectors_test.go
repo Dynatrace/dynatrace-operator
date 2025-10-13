@@ -1,10 +1,10 @@
 package exporter
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )

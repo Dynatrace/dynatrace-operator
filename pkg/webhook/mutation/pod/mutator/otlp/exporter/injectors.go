@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	corev1 "k8s.io/api/core/v1"
@@ -22,6 +23,7 @@ func (ti *traceInjector) isEnabled() bool {
 	if ti == nil || ti.cfg == nil {
 		return false
 	}
+
 	return ti.cfg.IsTracesEnabled()
 }
 
@@ -30,6 +32,7 @@ func (ti *traceInjector) Inject(c *corev1.Container, apiURL string, override boo
 	if !ti.isEnabled() {
 		return false
 	}
+
 	addEnvVarLiteralValue(c, OTLPTraceEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "traces"))
 	addEnvVarLiteralValue(c, OTLPTraceProtocolEnv, "http/protobuf")
 
@@ -45,6 +48,7 @@ func (mi *metricsInjector) isEnabled() bool {
 	if mi == nil || mi.cfg == nil {
 		return false
 	}
+
 	return mi.cfg.IsMetricsEnabled()
 }
 
@@ -68,6 +72,7 @@ func (li *logsInjector) isEnabled() bool {
 	if li == nil || li.cfg == nil {
 		return false
 	}
+
 	return li.cfg.IsLogsEnabled()
 }
 

@@ -2,7 +2,6 @@ package exporter
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -198,7 +197,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 		pod.Annotations = make(map[string]string)
 	}
 
-	pod.Annotations[AnnotationInjected] = strconv.FormatBool(true)
+	pod.Annotations[AnnotationInjected] = "true"
 	delete(pod.Annotations, AnnotationReason)
 }
 
@@ -208,7 +207,7 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 			pod.Annotations = make(map[string]string)
 		}
 
-		pod.Annotations[AnnotationInjected] = strconv.FormatBool(false)
+		pod.Annotations[AnnotationInjected] = "false"
 		pod.Annotations[AnnotationReason] = reason
 	}
 }

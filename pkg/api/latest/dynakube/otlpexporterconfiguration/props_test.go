@@ -17,10 +17,10 @@ limitations under the License.
 package otlpexporterconfiguration
 
 import (
-	"k8s.io/utils/ptr"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/ptr"
 )
 
 func TestSpec_IsOverrideEnabled(t *testing.T) {
