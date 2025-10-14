@@ -2,9 +2,8 @@ package exporter
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -92,7 +91,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 
 	log.Debug("injecting OTLP env vars", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	apiURL, err := getIngestEndpoint(&request.DynaKube)
+	apiURL, err := endpoint.BuildOTLPEndpoint(request.DynaKube)
 	if err != nil {
 		return false, dtwebhook.MutatorError{
 			Err:      fmt.Errorf("could not acquire ingest endpoint: %w", err),
@@ -128,23 +127,6 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 	setInjectedAnnotation(request.Pod)
 
 	return mutated, nil
-}
-
-func getIngestEndpoint(dk *dynakube.DynaKube) (string, error) {
-	dtEndpoint := dk.APIURL() + "/v2/otlp"
-
-	if dk.ActiveGate().IsEnabled() {
-		tenantUUID, err := dk.TenantUUID()
-		if err != nil {
-			return "", err
-		}
-
-		serviceFQDN := capability.BuildServiceName(dk.Name) + "." + dk.Namespace + ".svc"
-
-		dtEndpoint = fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFQDN, tenantUUID)
-	}
-
-	return dtEndpoint, nil
 }
 
 func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, override bool) bool {
