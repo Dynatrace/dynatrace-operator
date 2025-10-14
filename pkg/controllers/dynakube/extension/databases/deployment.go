@@ -199,6 +199,18 @@ func buildContainerResources(custom *corev1.ResourceRequirements) corev1.Resourc
 	}
 }
 
+func buildPodSecurityContext() *corev1.PodSecurityContext {
+	return &corev1.PodSecurityContext{
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		RunAsNonRoot: ptr.To(true),
+		// TODO: decide on UID/GID
+		RunAsGroup: ptr.To(int64(1000)),
+		RunAsUser:  ptr.To(int64(1000)),
+	}
+}
+
 func buildContainerSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		Privileged:               ptr.To(false),

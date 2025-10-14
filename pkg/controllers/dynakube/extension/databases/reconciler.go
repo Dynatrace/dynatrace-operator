@@ -8,10 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -68,12 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			deployment.SetNodeSelector(dbex.NodeSelector),
 			deployment.SetImagePullSecrets(r.dk.ImagePullSecretReferences()),
 			deployment.SetServiceAccount(buildServiceAccountName(dbex)),
-			deployment.SetSecurityContext(&corev1.PodSecurityContext{
-				SeccompProfile: &corev1.SeccompProfile{
-					Type: corev1.SeccompProfileTypeRuntimeDefault,
-				},
-				RunAsNonRoot: ptr.To(true),
-			}),
+			deployment.SetSecurityContext(buildPodSecurityContext()),
 			deployment.SetContainer(buildContainer(r.dk, dbex)),
 			deployment.SetVolumes(buildVolumes(r.dk, dbex)),
 		)
