@@ -57,9 +57,6 @@ func TestExtensionsDatabases(t *testing.T) {
 		})
 		require.Error(t, err, "should not create dynakube with more than one database")
 	})
-
-	// stop test environment
-	integrationtests.DestroyTestEnvironment(t)
 }
 
 func createDynakubeWithDatabaseID(t *testing.T, clt client.Client, id string) error {

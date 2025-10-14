@@ -25,7 +25,4 @@ func TestStatefulSet(t *testing.T) {
 	dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
 	err = reconciler.Reconcile(t.Context())
 	require.NoError(t, err)
-
-	// stop test environment
-	integrationtests.DestroyTestEnvironment(t)
 }
