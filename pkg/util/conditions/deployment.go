@@ -1,6 +1,7 @@
 package conditions
 
 import (
+	"fmt"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -12,11 +13,19 @@ const (
 )
 
 func SetDeploymentsApplied(conditions *[]metav1.Condition, conditionType string, names []string) {
+	const maxNames = 3
+	if len(names) > maxNames {
+		more := len(names) - maxNames
+		// Don't mutate input names
+		names = append([]string{}, names[:maxNames]...)
+		names = append(names, fmt.Sprintf("... %d more omitted", more))
+	}
+
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  DeploymentsAppliedReason,
-		Message: strings.Join(names, ","),
+		Message: strings.Join(names, ", "),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
