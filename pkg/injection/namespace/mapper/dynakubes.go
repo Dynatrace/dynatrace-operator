@@ -22,20 +22,20 @@ type DynakubeMapper struct {
 	operatorNs string
 	secrets    k8ssecret.QueryObject
 
-	lastOANames []string
-	lastMENames []string
+	matchedOANamespaces []string
+	matchedMENamespaces []string
 }
 
 func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynakube.DynaKube) DynakubeMapper {
 	return DynakubeMapper{
-		ctx:         ctx,
-		client:      clt,
-		apiReader:   apiReader,
-		operatorNs:  operatorNs,
-		dk:          dk,
-		secrets:     k8ssecret.Query(clt, apiReader, log),
-		lastOANames: []string{},
-		lastMENames: []string{},
+		ctx:                 ctx,
+		client:              clt,
+		apiReader:           apiReader,
+		operatorNs:          operatorNs,
+		dk:                  dk,
+		secrets:             k8ssecret.Query(clt, apiReader, log),
+		matchedOANamespaces: []string{},
+		matchedMENamespaces: []string{},
 	}
 }
 
@@ -143,8 +143,8 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 	sort.Strings(oaNames)
 	sort.Strings(meNames)
 
-	dm.lastOANames = oaNames
-	dm.lastMENames = meNames
+	dm.matchedOANamespaces = oaNames
+	dm.matchedMENamespaces = meNames
 
 	return modifiedNs, err
 }
@@ -162,8 +162,8 @@ func (dm *DynakubeMapper) updateNamespaces(modifiedNs []*corev1.Namespace) error
 }
 
 func (dm *DynakubeMapper) OneAgentNamespaceNames() []string {
-	return dm.lastOANames
+	return dm.matchedOANamespaces
 }
 func (dm *DynakubeMapper) MetadataEnrichmentNamespaceNames() []string {
-	return dm.lastMENames
+	return dm.matchedMENamespaces
 }
