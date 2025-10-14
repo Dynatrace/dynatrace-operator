@@ -2,7 +2,7 @@ apiVersion: dynatrace.com/v1beta6
 kind: DynaKube
 metadata:
   annotations:
-    conversion.dynatrace.com/auto-update: "false"
+    conversion.internal.dynatrace.com/auto-update: "false"
     feature.dynatrace.com/activegate-ignore-proxy: "true"
     feature.dynatrace.com/automatic-kubernetes-api-monitoring: "true"
   labels:

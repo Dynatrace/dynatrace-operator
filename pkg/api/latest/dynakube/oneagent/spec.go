@@ -11,8 +11,6 @@ type OneAgent struct {
 	*Status
 	*CodeModulesStatus
 
-	removedFeatureAutoUpdate *bool
-
 	name       string
 	apiURLHost string
 

@@ -31,7 +31,7 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 }
 
 func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
-	return conversion.NewRemovedFields(&dk.Annotations)
+	return conversion.NewRemovedFields(dk.Annotations)
 }
 
 // APIURL is a getter for dk.Spec.APIURL.

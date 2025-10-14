@@ -7,20 +7,20 @@ import (
 )
 
 const (
-	Prefix = "conversion.dynatrace.com/"
+	Prefix = "conversion.internal.dynatrace.com/"
 
 	AutoUpdateKey = Prefix + "auto-update"
 )
 
 type RemovedFields struct {
-	annotations *map[string]string
+	annotations map[string]string
 }
 
-func NewRemovedFields(annotations *map[string]string) *RemovedFields {
+func NewRemovedFields(annotations map[string]string) *RemovedFields {
 	return &RemovedFields{annotations: annotations}
 }
 
-func (rf *RemovedFields) IsAutoUpdate() *bool {
+func (rf *RemovedFields) GetAutoUpdate() *bool {
 	return rf.getBool(AutoUpdateKey)
 }
 
@@ -29,7 +29,7 @@ func (rf *RemovedFields) SetAutoUpdate(autoUpdate *bool) {
 }
 
 func (rf *RemovedFields) getBool(key string) *bool {
-	if value, exists := (*rf.annotations)[key]; exists {
+	if value, exists := rf.annotations[key]; exists {
 		b, err := strconv.ParseBool(value)
 		if err == nil {
 			return ptr.To(b)
@@ -41,10 +41,10 @@ func (rf *RemovedFields) getBool(key string) *bool {
 
 func (rf *RemovedFields) setBool(key string, value *bool) {
 	if value == nil {
-		delete(*rf.annotations, key)
+		delete(rf.annotations, key)
 
 		return
 	}
 
-	(*rf.annotations)[key] = strconv.FormatBool(*value)
+	rf.annotations[key] = strconv.FormatBool(*value)
 }

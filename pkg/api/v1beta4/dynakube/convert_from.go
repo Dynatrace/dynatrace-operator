@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	dkconversion "github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
@@ -27,6 +28,8 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
 	dst.fromTemplatesSpec(src)
+
+	delete(dst.Annotations, dkconversion.AutoUpdateKey)
 
 	return nil
 }
@@ -79,11 +82,11 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 	switch {
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
-		dst.Spec.OneAgent.ClassicFullStack.AutoUpdate = src.RemovedFields().IsAutoUpdate()
+		dst.Spec.OneAgent.ClassicFullStack.AutoUpdate = src.RemovedFields().GetAutoUpdate()
 	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
-		dst.Spec.OneAgent.CloudNativeFullStack.AutoUpdate = src.RemovedFields().IsAutoUpdate()
+		dst.Spec.OneAgent.CloudNativeFullStack.AutoUpdate = src.RemovedFields().GetAutoUpdate()
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
@@ -91,7 +94,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
-		dst.Spec.OneAgent.HostMonitoring.AutoUpdate = src.RemovedFields().IsAutoUpdate()
+		dst.Spec.OneAgent.HostMonitoring.AutoUpdate = src.RemovedFields().GetAutoUpdate()
 	}
 
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup

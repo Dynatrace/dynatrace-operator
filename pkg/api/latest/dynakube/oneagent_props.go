@@ -14,7 +14,6 @@ func (dk *DynaKube) OneAgent() *oneagent.OneAgent {
 		dk.FF().IsOneAgentPrivileged(),
 		dk.FF().SkipOneAgentLivenessProbe(),
 		dk.FF().IsNodeImagePull(),
-		dk.RemovedFields().IsAutoUpdate(),
 	)
 
 	return oa

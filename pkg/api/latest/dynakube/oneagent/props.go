@@ -21,8 +21,7 @@ const (
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
 	name, apiURLHost string,
-	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool,
-	removedFeatureAutoUpdate *bool) *OneAgent {
+	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe, featureBootstrapperInjection bool) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
 		Status:            status,
@@ -34,8 +33,6 @@ func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatu
 		featureOneAgentPrivileged:        featureOneAgentPrivileged,
 		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
 		featureBootstrapperInjection:     featureBootstrapperInjection,
-
-		removedFeatureAutoUpdate: removedFeatureAutoUpdate,
 	}
 }
 
@@ -88,11 +85,11 @@ func (oa *OneAgent) IsLivenessProbeNeeded() bool {
 func (oa *OneAgent) IsAutoUpdateEnabled() bool {
 	switch {
 	case oa.IsCloudNativeFullstackMode():
-		return oa.removedFeatureAutoUpdate == nil || *oa.removedFeatureAutoUpdate
+		return oa.CloudNativeFullStack.Version == "" && oa.CloudNativeFullStack.Image == ""
 	case oa.IsHostMonitoringMode():
-		return oa.removedFeatureAutoUpdate == nil || *oa.removedFeatureAutoUpdate
+		return oa.HostMonitoring.Version == "" && oa.HostMonitoring.Image == ""
 	case oa.IsClassicFullStackMode():
-		return oa.removedFeatureAutoUpdate == nil || *oa.removedFeatureAutoUpdate
+		return oa.ClassicFullStack.Version == "" && oa.ClassicFullStack.Image == ""
 	default:
 		return false
 	}
