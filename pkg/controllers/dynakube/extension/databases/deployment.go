@@ -19,17 +19,20 @@ import (
 )
 
 const (
-	probePort             = int32(8080)
-	defaultServiceAccount = "dynatrace-database-extensions-executor" // Keep in sync with helm chart
-	executorLabelKey      = "extensions.dynatrace.com/executor.id"
-	datasourceLabelKey    = "extensions.dynatrace.com/datasource"
-	datasourceLabelValue  = "sql"
-	userDataVolumeName    = "user-data"
-	userDataMountPath     = "/var/userdata"
-	tokenVolumeName       = "auth-token"
-	tokenMountPath        = "/var/run/dynatrace/executor/token"
-	certsVolumeName       = "https-certs"
-	certsMountPath        = "/certs"
+	probePort = int32(8080)
+
+	// Keep in sync with helm chart
+	defaultServiceAccount = "dynatrace-database-extensions-executor"
+
+	executorLabelKey     = "extensions.dynatrace.com/executor.id"
+	datasourceLabelKey   = "extensions.dynatrace.com/datasource"
+	datasourceLabelValue = "sql"
+	userDataVolumeName   = "user-data"
+	userDataMountPath    = "/var/userdata"
+	tokenVolumeName      = "auth-token"
+	tokenMountPath       = "/var/run/dynatrace/executor/token"
+	certsVolumeName      = "https-certs"
+	certsMountPath       = "/certs"
 
 	conditionType = "DatabaseDatasourcesAvailable"
 )
