@@ -5,11 +5,85 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func TestReconciler(t *testing.T) {
+	clt := integrationtests.SetupTestEnvironment(t)
+	integrationtests.CreateNamespace(t, t.Context(), clt, testNamespaceName)
+
+	t.Run("apply deployments", func(t *testing.T) {
+		dk := getTestDynakube()
+		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+
+		deployment := getReconciledDeployment(t, clt, dk)
+		require.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, conditionType))
+		require.NotNil(t, deployment)
+	})
+
+	t.Run("delete deployments", func(t *testing.T) {
+		dk := getTestDynakube()
+		integrationtests.CreateKubernetesObject(t, t.Context(), clt, getMatchingDeployment(dk))
+
+		dk.Spec.Extensions.Databases = nil
+		conditions.SetDeploymentsApplied(dk.Conditions(), conditionType, []string{"test"})
+		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+
+		deployment := getReconciledDeployment(t, clt, dk)
+		require.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, conditionType))
+		require.Nil(t, deployment)
+	})
+
+	t.Run("use existing replicas", func(t *testing.T) {
+		dk := getTestDynakube()
+		origDeployment := getMatchingDeployment(dk)
+		// Use non-default (1) value
+		origDeployment.Spec.Replicas = ptr.To(int32(2))
+		integrationtests.CreateKubernetesObject(t, t.Context(), clt, origDeployment)
+
+		dk.Spec.Extensions.Databases[0].Replicas = nil
+		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+
+		deployment := getReconciledDeployment(t, clt, dk)
+		require.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, conditionType))
+		require.NotNil(t, deployment)
+		require.Equal(t, origDeployment.Spec.Replicas, deployment.Spec.Replicas)
+	})
+
+	t.Run("use default replicas", func(t *testing.T) {
+		dk := getTestDynakube()
+
+		dk.Spec.Extensions.Databases[0].Replicas = nil
+		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+
+		deployment := getReconciledDeployment(t, clt, dk)
+		require.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, conditionType))
+		require.NotNil(t, deployment)
+		require.Equal(t, ptr.To(int32(1)), deployment.Spec.Replicas)
+	})
+}
+
+func getReconciledDeployment(t *testing.T, clt client.Client, dk *dynakube.DynaKube) *appsv1.Deployment {
+	t.Helper()
+	require.NoError(t, NewReconciler(clt, clt, dk).Reconcile(t.Context()))
+	deployments := &appsv1.DeploymentList{}
+	require.NoError(t, clt.List(t.Context(), deployments))
+	if len(deployments.Items) == 0 {
+		return nil
+	}
+	require.Len(t, deployments.Items, 1)
+	deployment := &deployments.Items[0]
+	require.NoError(t, clt.Delete(t.Context(), deployment.DeepCopy()))
+
+	return deployment
+}
 
 func TestExtensionsDatabases(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)

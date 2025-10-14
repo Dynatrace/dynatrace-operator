@@ -11,9 +11,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -33,22 +35,15 @@ func TestReconcileErrors(t *testing.T) {
 		dk := getTestDynakube()
 
 		builder := fake.NewClientBuilder().
-			WithObjects(&appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testDynakubeName + "-database-datasource-foo",
-					Namespace: testNamespaceName,
-					Labels: func() map[string]string {
-						labels, _, _ := buildAllLabels(dk, extensions.DatabaseSpec{})
-
-						return labels
-					}(),
-				},
-			}).
+			WithObjects(getMatchingDeployment(dk)).
 			WithInterceptorFuncs(interceptor.Funcs{
 				Delete: func(context.Context, client.WithWatch, client.Object, ...client.DeleteOption) error {
 					return k8serrors.NewInternalError(errors.New("bad"))
 				},
 			})
+
+		// change ID to trigger deletion
+		dk.Spec.Extensions.Databases[0].ID = "foo"
 
 		requireReconcileFails(t, dk, builder)
 	})
@@ -100,7 +95,7 @@ func requireReconcileFails(t *testing.T, dk *dynakube.DynaKube, builder *fake.Cl
 func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
+			Name:        testDynakubeName + "-" + rand.String(6),
 			Namespace:   testNamespaceName,
 			Annotations: map[string]string{},
 		},
@@ -125,6 +120,37 @@ func getTestDynakube() *dynakube.DynaKube {
 				},
 			},
 			CustomPullSecret: testPullSecret,
+		},
+	}
+}
+
+func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
+	db := dk.Spec.Extensions.Databases[0]
+
+	labels, matchLabels, templateLabels := buildAllLabels(dk, db)
+
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.Name + "-database-datasource-" + db.ID,
+			Namespace: testNamespaceName,
+			Labels:    labels,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: db.Replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: matchLabels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: templateLabels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						buildContainer(dk, db),
+					},
+					Volumes: buildVolumes(dk, db),
+				},
+			},
 		},
 	}
 }
