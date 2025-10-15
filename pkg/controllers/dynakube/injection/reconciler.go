@@ -86,32 +86,31 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		defer r.cleanup(ctx)
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx)
-		if err := dkMapper.MapFromDynakube(); err != nil {
+
+		oaNames, meNames, err := dkMapper.MapFromDynakube()
+		if err != nil {
 			log.Info("update of a map of namespaces failed")
 
 			setupErrors = append(setupErrors, err)
 		}
 
-		oneAgentNamespaceNames := dkMapper.OneAgentNamespaceNames()
-		metadataEnrichmentNamespaceNames := dkMapper.MetadataEnrichmentNamespaceNames()
-
-		oaSelectorConfigured := r.dk.OneAgent().IsAppInjectionNeeded() && (r.dk.OneAgent().IsNamespaceSelectorDefined())
-		meSelectorConfigured := r.dk.MetadataEnrichment().IsEnabled() && (r.dk.MetadataEnrichment().IsNamespaceSelectorDefined())
+		oaSelectorConfigured := r.dk.OneAgent().IsAppInjectionNeeded()
+		meSelectorConfigured := r.dk.MetadataEnrichment().IsEnabled()
 
 		if oaSelectorConfigured {
-			log.Info("namespaces monitored", "selector", "OneAgent", "count (at most 10 are shown)", len(oneAgentNamespaceNames), "namespaces", oneAgentNamespaceNames)
+			log.Info("namespaces monitored", "selector", "OneAgent", "count (at most 10 are shown)", len(oaNames), "namespaces", oaNames)
 		}
 
 		if meSelectorConfigured {
-			log.Info("namespaces monitored", "selector", "MetadataEnrichment", "count (at most 10 are shown)", len(metadataEnrichmentNamespaceNames), "namespaces", metadataEnrichmentNamespaceNames)
+			log.Info("namespaces monitored", "selector", "MetadataEnrichment", "count (at most 10 are shown)", len(meNames), "namespaces", meNames)
 		}
 
-		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "OneAgent", oaSelectorConfigured, oneAgentNamespaceNames)
-		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "MetadataEnrichment", meSelectorConfigured, metadataEnrichmentNamespaceNames)
+		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "OneAgent", oaSelectorConfigured, oaNames)
+		setNamespacesMonitoredSelectorCondition(r.dk.Conditions(), "MetadataEnrichment", meSelectorConfigured, meNames)
 
 		updateCollectedNamespacesMonitoredCondition(r.dk.Conditions())
 
-		err := r.generateInitSecret(ctx)
+		err = r.generateInitSecret(ctx)
 		if err != nil {
 			setupErrors = append(setupErrors, err)
 		}

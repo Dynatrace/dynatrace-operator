@@ -26,6 +26,11 @@ type DynakubeMapper struct {
 	matchedMENamespaces []string
 }
 
+type matchedNamespaces struct {
+	oneAgent           []string
+	metadataEnrichment []string
+}
+
 func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynakube.DynaKube) DynakubeMapper {
 	return DynakubeMapper{
 		ctx:                 ctx,
@@ -42,30 +47,34 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 // MapFromDynakube checks all the namespaces to all the dynakubes
 // updates the labels on the namespaces if necessary,
 // finds conflicting dynakubes (2 dynakube with codeModules on the same namespace)
-func (dm *DynakubeMapper) MapFromDynakube() error {
-	modifiedNs, err := dm.MatchingNamespaces()
+func (dm *DynakubeMapper) MapFromDynakube() ([]string, []string, error) {
+	modifiedNs, matchedNamespaces, err := dm.MatchingNamespaces()
 	if err != nil {
-		return errors.Cause(err)
+		return nil, nil, errors.Cause(err)
 	}
 
-	return dm.updateNamespaces(modifiedNs)
+	if err := dm.updateNamespaces(modifiedNs); err != nil {
+		return nil, nil, err
+	}
+
+	return matchedNamespaces.oneAgent, matchedNamespaces.metadataEnrichment, nil
 }
 
-func (dm *DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, error) {
+func (dm *DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, matchedNamespaces, error) {
 	nsList := &corev1.NamespaceList{}
 	if err := dm.apiReader.List(dm.ctx, nsList); err != nil {
-		return nil, errors.Cause(err)
+		return nil, matchedNamespaces{}, errors.Cause(err)
 	}
 
 	dkList := &dynakube.DynaKubeList{}
 	if err := dm.apiReader.List(dm.ctx, dkList, &client.ListOptions{Namespace: dm.operatorNs}); err != nil {
-		return nil, errors.Cause(err)
+		return nil, matchedNamespaces{}, errors.Cause(err)
 	}
 
 	return dm.mapFromDynakube(nsList, dkList)
 }
 
-func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error {
+func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error {
 	for i, ns := range namespaces {
 		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
 		setUpdatedViaDynakubeAnnotation(&namespaces[i])
@@ -85,15 +94,17 @@ func (dm DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error 
 		}
 	}
 
+	dm.matchedMENamespaces = []string{}
+	dm.matchedOANamespaces = []string{}
+
 	return nil
 }
 
-func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *dynakube.DynaKubeList) ([]*corev1.Namespace, error) {
-	var updated bool
-
-	var err error
-
-	var modifiedNs []*corev1.Namespace
+func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *dynakube.DynaKubeList) ([]*corev1.Namespace, matchedNamespaces, error) {
+	var (
+		modifiedNs        []*corev1.Namespace
+		matchedNamespaces matchedNamespaces
+	)
 
 	replaced := false
 
@@ -110,29 +121,26 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 		dkList.Items = append(dkList.Items, *dm.dk)
 	}
 
-	oaNames := []string{}
-	meNames := []string{}
-
 	for i := range nsList.Items {
 		namespace := &nsList.Items[i]
 
 		if !isIgnoredNamespace(dm.dk, namespace.Name) {
 			if ok, err := matchOneAgent(dm.dk, namespace); err != nil {
-				return nil, err
+				return nil, matchedNamespaces, err
 			} else if ok {
-				oaNames = append(oaNames, namespace.Name)
+				matchedNamespaces.oneAgent = append(matchedNamespaces.oneAgent, namespace.Name)
 			}
 
 			if ok, err := matchMetadataEnrichment(dm.dk, namespace); err != nil {
-				return nil, err
+				return nil, matchedNamespaces, err
 			} else if ok {
-				meNames = append(meNames, namespace.Name)
+				matchedNamespaces.metadataEnrichment = append(matchedNamespaces.metadataEnrichment, namespace.Name)
 			}
 		}
 
-		updated, err = updateNamespace(namespace, dkList)
+		updated, err := updateNamespace(namespace, dkList)
 		if err != nil {
-			return nil, err
+			return nil, matchedNamespaces, err
 		}
 
 		if updated {
@@ -140,13 +148,10 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 		}
 	}
 
-	sort.Strings(oaNames)
-	sort.Strings(meNames)
+	sort.Strings(matchedNamespaces.oneAgent)
+	sort.Strings(matchedNamespaces.metadataEnrichment)
 
-	dm.matchedOANamespaces = oaNames
-	dm.matchedMENamespaces = meNames
-
-	return modifiedNs, err
+	return modifiedNs, matchedNamespaces, nil
 }
 
 func (dm *DynakubeMapper) updateNamespaces(modifiedNs []*corev1.Namespace) error {
@@ -159,11 +164,4 @@ func (dm *DynakubeMapper) updateNamespaces(modifiedNs []*corev1.Namespace) error
 	}
 
 	return nil
-}
-
-func (dm *DynakubeMapper) OneAgentNamespaceNames() []string {
-	return dm.matchedOANamespaces
-}
-func (dm *DynakubeMapper) MetadataEnrichmentNamespaceNames() []string {
-	return dm.matchedMENamespaces
 }
