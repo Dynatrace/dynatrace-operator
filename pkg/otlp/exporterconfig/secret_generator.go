@@ -71,7 +71,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
 	err := cleanupConfig(ctx, client, apiReader, namespaces, dk)
 	if err != nil {
-		log.Error(err, "failed to cleanup bootstrapper config secrets")
+		log.Error(err, "failed to cleanup OTLP exporter config secrets")
 
 		return errors.WithStack(err)
 	}
@@ -129,7 +129,7 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 		return err
 	}
 
-	log.Info("done updating OTLP exporter secrets")
+	log.Info("done updating OTLP exporter config secrets")
 	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, consts.OTLPExporterSecretName)
 
 	return nil
@@ -167,7 +167,7 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 
 	err := secrets.DeleteForNamespace(ctx, GetSourceConfigSecretName(dk.Name), dk.Namespace)
 	if err != nil {
-		log.Error(err, "failed to delete the source bootstrapper-config secret", "name", GetSourceConfigSecretName(dk.Name))
+		log.Error(err, "failed to delete the source OTLP exporter config secret", "name", GetSourceConfigSecretName(dk.Name))
 	}
 
 	return secrets.DeleteForNamespaces(ctx, consts.OTLPExporterSecretName, nsList)

@@ -46,8 +46,7 @@ func NewReconciler(
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	var setupErrors []error
 
-	// TODO use IsEnabled() function
-	if r.dk.Spec.OTLPExporterConfiguration == nil {
+	if r.dk.OTLPExporterConfiguration().IsEnabled() {
 		defer r.cleanup(ctx)
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx)

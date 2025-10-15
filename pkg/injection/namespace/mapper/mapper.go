@@ -119,9 +119,8 @@ func matchMetadataEnrichment(dk *dynakube.DynaKube, namespace *corev1.Namespace)
 }
 
 func matchOTLPExporterConfiguration(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	// TODO use helper function IsEnabled()
-	otlpExporterConfiguration := dk.Spec.OTLPExporterConfiguration
-	if otlpExporterConfiguration == nil {
+	otlpExporterConfiguration := dk.OTLPExporterConfiguration()
+	if !otlpExporterConfiguration.IsEnabled() {
 		return false, nil
 	}
 

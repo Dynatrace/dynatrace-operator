@@ -133,8 +133,7 @@ func (r *Reconciler) cleanup(ctx context.Context) {
 	}
 
 	// if also the OTLP exporter is not configured, remove the namespace labels
-	if r.dk.Spec.OTLPExporterConfiguration == nil {
-		// TODO use IsEnabled() function
+	if !r.dk.OTLPExporterConfiguration().IsEnabled() {
 		dkMapper := r.createDynakubeMapper(ctx)
 		if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
 			log.Error(err, "could not unmap dynakube from namespace", "dkName", r.dk.Name)
