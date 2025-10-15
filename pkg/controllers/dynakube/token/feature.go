@@ -127,21 +127,21 @@ func getFeaturesForDataIngest() []Feature {
 			Name:           "OTLP trace exporter configuration",
 			RequiredScopes: []string{dtclient.TokenScopeOpenTelemetryTraceIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.Spec.OTLPExporterConfiguration != nil && dk.Spec.OTLPExporterConfiguration.IsTracesEnabled()
+				return dk.OTLPExporterConfiguration().IsTracesEnabled()
 			},
 		},
 		{
 			Name:           "OTLP logs exporter configuration",
 			RequiredScopes: []string{dtclient.TokenScopeLogsIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.Spec.OTLPExporterConfiguration != nil && dk.Spec.OTLPExporterConfiguration.IsLogsEnabled()
+				return dk.OTLPExporterConfiguration().IsLogsEnabled()
 			},
 		},
 		{
 			Name:           "OTLP metrics exporter configuration",
 			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.Spec.OTLPExporterConfiguration != nil && dk.Spec.OTLPExporterConfiguration.IsMetricsEnabled()
+				return dk.OTLPExporterConfiguration().IsMetricsEnabled()
 			},
 		},
 	}
