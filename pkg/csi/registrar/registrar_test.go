@@ -50,14 +50,12 @@ func TestPluginInfoResponse(t *testing.T) {
 	server := NewServer(driverName, csiAddress, testKubeletRegistrationPath, pluginRegistrationPath(), testVersions)
 
 	var wg sync.WaitGroup
-	// start register server
+
 	wg.Go(func() {
 		err := server.Start(ctx)
 		if err != nil {
 			t.Errorf("failed to start server: %v", err)
 		}
-
-		defer wg.Done()
 	})
 
 	time.Sleep(time.Second)
