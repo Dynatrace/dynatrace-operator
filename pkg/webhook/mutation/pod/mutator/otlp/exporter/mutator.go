@@ -2,6 +2,8 @@ package exporter
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -99,6 +101,19 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		}
 	}
 
+	// add an environment variable with a secret ref to dynatrace-otlp-exporter-config secret
+	dtAPITokenEnvVar := corev1.EnvVar{
+		Name: DynatraceAPIToken,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: consts.OTLPExporterSecretName,
+				},
+				Key: dynatrace.DataIngestToken,
+			},
+		},
+	}
+
 	override := otlpExporterConfig.IsOverrideEnvVarsEnabled()
 
 	// Create per-signal injectors
@@ -121,6 +136,10 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 			if inj.Inject(c, apiURL, override) {
 				mutated = true
 			}
+		}
+
+		if mutated {
+			c.Env = env.AddOrUpdate(c.Env, dtAPITokenEnvVar)
 		}
 	}
 

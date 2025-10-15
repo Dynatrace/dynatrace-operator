@@ -5,9 +5,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
@@ -58,7 +58,11 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
 
-		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+			getTestSecret(),
+		)
 
 		dk := getTestDynakube()
 		request := createTestMutationRequest(t, dk)
@@ -98,7 +102,11 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
 
-		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+			getTestSecret(),
+		)
 
 		dk := getTestDynakube()
 		request := createTestMutationRequest(t, dk)
@@ -131,6 +139,80 @@ func TestHandler_Handle(t *testing.T) {
 
 		err := h.Handle(request)
 		assert.Error(t, err)
+	})
+	t.Run("skip injection and annotate when input secret missing and not replicable", func(t *testing.T) {
+		mockEnvVarMutator := webhookmock.NewMutator(t)
+		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		// enable env var mutator so that secret presence is checked
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+
+		// create handler with NO secrets present
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+		)
+
+		dk := getTestDynakube()
+		req := createTestMutationRequest(t, dk)
+
+		err := h.Handle(req)
+		require.NoError(t, err)
+
+		// should be annotated as not injected due to missing input secret
+		assert.Equal(t, "false", req.Pod.Annotations[mutator.AnnotationDynatraceInjected])
+		assert.Equal(t, NoOTLPExporterConfigSecretReason, req.Pod.Annotations[mutator.AnnotationDynatraceReason])
+
+		// ensure mutators were not invoked
+		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+	})
+
+	t.Run("replicate input secret from source then proceed with injection", func(t *testing.T) {
+		mockEnvVarMutator := webhookmock.NewMutator(t)
+		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
+		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
+		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
+
+		dk := getTestDynakube()
+
+		// provide only the SOURCE secret in the dynakube namespace; target secret absent
+		sourceSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      exporterconfig.GetSourceConfigSecretName(dk.Name),
+				Namespace: dk.Namespace,
+			},
+			Data: map[string][]byte{"token": []byte("abc")},
+		}
+
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+			sourceSecret,
+		)
+
+		req := createTestMutationRequest(t, dk)
+
+		err := h.Handle(req)
+		assert.NoError(t, err)
+
+		// env var mutator should have been called since the secret could be replicated
+		mockEnvVarMutator.AssertCalled(t, "Mutate", mock.Anything)
+
+		// target secret should now exist in the workload namespace
+		var target corev1.Secret
+		targetKey := client.ObjectKey{Name: consts.OTLPExporterSecretName, Namespace: testNamespaceName}
+		require.NoError(t, h.apiReader.Get(req.Context, targetKey, &target))
+		assert.Equal(t, consts.OTLPExporterSecretName, target.Name)
+		assert.Equal(t, testNamespaceName, target.Namespace)
 	})
 }
 

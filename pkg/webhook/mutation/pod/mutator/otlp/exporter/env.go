@@ -20,4 +20,8 @@ const (
 	OTLPLogsCertificateEnv     = "OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE"
 	OTLPMetricsCertificateEnv  = "OTEL_EXPORTER_OTLP_METRICS_CERTIFICATE"
 	OTLPExporterCertificateEnv = "OTLP_EXPORTER_OTLP_CERTIFICATE"
+
+	OTLPAuthorizationHeader = "Authorization=Api-Token $(DT_API_TOKEN)"
+
+	DynatraceAPIToken = "DT_API_TOKEN"
 )
