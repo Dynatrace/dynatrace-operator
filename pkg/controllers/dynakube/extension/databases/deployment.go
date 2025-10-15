@@ -208,9 +208,8 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 		RunAsNonRoot: ptr.To(true),
-		// TODO: decide on UID/GID
-		RunAsGroup: ptr.To(int64(1000)),
-		RunAsUser:  ptr.To(int64(1000)),
+		RunAsGroup:   ptr.To(int64(1000)),
+		RunAsUser:    ptr.To(int64(1000)),
 	}
 }
 
