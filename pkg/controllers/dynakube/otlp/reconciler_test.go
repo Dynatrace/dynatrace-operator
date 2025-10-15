@@ -62,6 +62,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 							testNamespaceSelectorLabel: testDynakube,
 						},
 					},
+					Signals: otlpexporterconfiguration.SignalConfiguration{
+						Metrics: &otlpexporterconfiguration.MetricsSignal{},
+					},
 				},
 			},
 		}
