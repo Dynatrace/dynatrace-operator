@@ -116,12 +116,6 @@
       automerge: true,
     },
     {
-      matchDatasources: [
-        "golang-version",
-      ],
-      rangeStrategy: "bump",
-    },
-    {
       matchManagers: [
         "github-actions",
       ],
