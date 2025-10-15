@@ -149,7 +149,6 @@ func TestReconcileSpec(t *testing.T) {
 		}
 
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
-		// TODO: validate that volume mounts match volumes when DynaKube is applied
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
 		assert.Len(t, deploy.Spec.Template.Spec.Containers[0].VolumeMounts, 4)
 	})
