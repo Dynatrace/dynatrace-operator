@@ -68,7 +68,7 @@ func TestHandler_Handle(t *testing.T) {
 		request := createTestMutationRequest(t, dk)
 
 		err := h.Handle(request)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("call otlp env var reinvocation if enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)

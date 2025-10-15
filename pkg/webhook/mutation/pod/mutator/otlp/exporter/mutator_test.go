@@ -133,7 +133,7 @@ func TestMutator_IsInjected(t *testing.T) {
 	})
 }
 
-func TestMutator_Mutate(t *testing.T) {
+func TestMutator_Mutate(t *testing.T) { //nolint:revive
 	t.Run("no OTLP exporter configuration present on DynaKube - do not modify anything", func(t *testing.T) {
 		m := Mutator{}
 
