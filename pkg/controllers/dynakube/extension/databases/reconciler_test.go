@@ -85,8 +85,10 @@ func TestReconcileSpec(t *testing.T) {
 		db := dk.Extensions().Databases[0]
 		assert.Equal(t, db.Replicas, deploy.Spec.Replicas)
 		assert.Equal(t, defaultServiceAccount, deploy.Spec.Template.Spec.ServiceAccountName)
-		assert.Contains(t, deploy.Spec.Template.Labels, executorLabelKey)
-		assert.Contains(t, deploy.Spec.Template.Labels, datasourceLabelKey)
+		assert.Subset(t, deploy.Spec.Template.Labels, map[string]string{
+			datasourceLabelKey: datasourceLabelValue,
+			executorLabelKey:   db.ID,
+		})
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 3)
 

@@ -13,6 +13,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// DynaKube condition that is managed by the reconciler.
+const conditionType = "DatabaseDatasourcesAvailable"
+
 var log = logd.Get().WithName("extension-dbexecutor")
 
 type Reconciler struct {

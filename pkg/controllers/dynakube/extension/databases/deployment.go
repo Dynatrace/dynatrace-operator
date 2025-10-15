@@ -20,21 +20,20 @@ import (
 
 const (
 	probePort = int32(8080)
-
 	// Keep in sync with helm chart
 	defaultServiceAccount = "dynatrace-database-extensions-executor"
-
-	executorLabelKey     = "extensions.dynatrace.com/executor.id"
+	// Must contain the ID specified in the DynaKube CR.
+	executorLabelKey = "extensions.dynatrace.com/executor.id"
+	// Type of data source to allow EEC to separate them. For database extensions this is always "sql".
 	datasourceLabelKey   = "extensions.dynatrace.com/datasource"
 	datasourceLabelValue = "sql"
-	userDataVolumeName   = "user-data"
-	userDataMountPath    = "/var/userdata"
-	tokenVolumeName      = "auth-token"
-	tokenMountPath       = "/var/run/dynatrace/executor/token"
-	certsVolumeName      = "https-certs"
-	certsMountPath       = "/certs"
 
-	conditionType = "DatabaseDatasourcesAvailable"
+	userDataVolumeName = "user-data"
+	userDataMountPath  = "/var/userdata"
+	tokenVolumeName    = "auth-token"
+	tokenMountPath     = "/var/run/dynatrace/executor/token"
+	certsVolumeName    = "https-certs"
+	certsMountPath     = "/certs"
 )
 
 func buildAllLabels(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
