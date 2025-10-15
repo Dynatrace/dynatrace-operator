@@ -116,8 +116,10 @@
       automerge: true,
     },
     {
-      "matchDatasources": ["golang-version"],
-      "rangeStrategy": "bump"
+      matchDatasources: [
+        "golang-version",
+      ],
+      rangeStrategy: "bump",
     },
     {
       matchManagers: [
