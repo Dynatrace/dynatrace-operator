@@ -135,6 +135,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
 					NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+					Signals: otlpexporterconfiguration.SignalConfiguration{
+						Metrics: &otlpexporterconfiguration.MetricsSignal{},
+					},
 				},
 			},
 		}
@@ -170,6 +173,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
 					NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{testNamespaceSelectorLabel: testDynakube}},
+					Signals: otlpexporterconfiguration.SignalConfiguration{
+						Metrics: &otlpexporterconfiguration.MetricsSignal{},
+					},
 				},
 			},
 		}
