@@ -15,12 +15,8 @@ type Field[T any] struct {
 	name string
 }
 
-func (f Field[T]) Key() string {
-	return f.name
-}
-
 func (f Field[T]) Get() *T {
-	raw, exists := f.data[f.Key()]
+	raw, exists := f.data[f.name]
 	if !exists {
 		return nil
 	}
@@ -35,13 +31,13 @@ func (f Field[T]) Get() *T {
 
 func (f Field[T]) Set(value *T) {
 	if value == nil {
-		delete(f.data, f.Key())
+		delete(f.data, f.name)
 
 		return
 	}
 
 	raw, _ := json.Marshal(*value)
-	f.data[f.Key()] = string(raw)
+	f.data[f.name] = string(raw)
 }
 
 type RemovedFields struct {
