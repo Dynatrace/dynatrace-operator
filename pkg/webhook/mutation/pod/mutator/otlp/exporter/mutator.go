@@ -132,14 +132,13 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 			continue
 		}
 
+		// need to add the token env var first so that it can be used in other env vars
+		c.Env = env.AddOrUpdate(c.Env, dtAPITokenEnvVar)
+
 		for _, inj := range injectors {
 			if inj.Inject(c, apiURL, override) {
 				mutated = true
 			}
-		}
-
-		if mutated {
-			c.Env = env.AddOrUpdate(c.Env, dtAPITokenEnvVar)
 		}
 	}
 
