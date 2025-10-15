@@ -277,7 +277,7 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
 func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentlatest.HostInjectSpec, removedFields *conversion.RemovedFields) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
-	assert.Equal(t, *oldSpec.AutoUpdate, *removedFields.GetAutoUpdate())
+	assert.Equal(t, *oldSpec.AutoUpdate, *removedFields.AutoUpdate.Get())
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
 	assert.Equal(t, oldSpec.Image, newSpec.Image)

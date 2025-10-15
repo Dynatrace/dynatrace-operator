@@ -11,16 +11,16 @@ import (
 func TestRemovedFields(t *testing.T) {
 	rf := NewRemovedFields(map[string]string{})
 
-	rf.SetAutoUpdate(ptr.To(true))
-	require.NotNil(t, rf.GetAutoUpdate())
-	assert.True(t, *rf.GetAutoUpdate())
+	rf.AutoUpdate.Set(ptr.To(true))
+	require.NotNil(t, rf.AutoUpdate.Get())
+	assert.True(t, *rf.AutoUpdate.Get())
 
-	rf.SetAutoUpdate(ptr.To(false))
-	require.NotNil(t, rf.GetAutoUpdate())
-	assert.False(t, *rf.GetAutoUpdate())
+	rf.AutoUpdate.Set(ptr.To(false))
+	require.NotNil(t, rf.AutoUpdate.Get())
+	assert.False(t, *rf.AutoUpdate.Get())
 
-	rf.SetAutoUpdate(nil)
-	assert.Nil(t, rf.GetAutoUpdate())
+	rf.AutoUpdate.Set(nil)
+	assert.Nil(t, rf.AutoUpdate.Get())
 }
 
 func TestRemovedFieldsWithAnnotation(t *testing.T) {
@@ -29,8 +29,8 @@ func TestRemovedFieldsWithAnnotation(t *testing.T) {
 			AutoUpdateKey: "true",
 		})
 
-		require.NotNil(t, rf.GetAutoUpdate())
-		assert.True(t, *rf.GetAutoUpdate())
+		require.NotNil(t, rf.AutoUpdate.Get())
+		assert.True(t, *rf.AutoUpdate.Get())
 	})
 
 	t.Run("false", func(t *testing.T) {
@@ -38,8 +38,8 @@ func TestRemovedFieldsWithAnnotation(t *testing.T) {
 			AutoUpdateKey: "false",
 		})
 
-		require.NotNil(t, rf.GetAutoUpdate())
-		assert.False(t, *rf.GetAutoUpdate())
+		require.NotNil(t, rf.AutoUpdate.Get())
+		assert.False(t, *rf.AutoUpdate.Get())
 	})
 
 	t.Run("invalid bool value", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestRemovedFieldsWithAnnotation(t *testing.T) {
 			AutoUpdateKey: "invalid-bool",
 		})
 
-		assert.Nil(t, rf.GetAutoUpdate())
+		assert.Nil(t, rf.AutoUpdate.Get())
 	})
 }
 
@@ -58,12 +58,12 @@ func TestRemovedFieldsMutability(t *testing.T) {
 
 	rf := NewRemovedFields(annotations)
 
-	require.NotNil(t, rf.GetAutoUpdate())
-	assert.True(t, *rf.GetAutoUpdate())
+	require.NotNil(t, rf.AutoUpdate.Get())
+	assert.True(t, *rf.AutoUpdate.Get())
 
-	rf.SetAutoUpdate(ptr.To(false))
-	require.NotNil(t, rf.GetAutoUpdate())
-	assert.False(t, *rf.GetAutoUpdate())
+	rf.AutoUpdate.Set(ptr.To(false))
+	require.NotNil(t, rf.AutoUpdate.Get())
+	assert.False(t, *rf.AutoUpdate.Get())
 
 	value, exists := annotations[AutoUpdateKey]
 	assert.True(t, exists)

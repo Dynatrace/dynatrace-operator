@@ -1,9 +1,7 @@
 package conversion
 
 import (
-	"strconv"
-
-	"k8s.io/utils/ptr"
+	"encoding/json"
 )
 
 const (
@@ -12,39 +10,46 @@ const (
 	AutoUpdateKey = Prefix + "auto-update"
 )
 
-type RemovedFields struct {
-	annotations map[string]string
+type Field[T any] struct {
+	data map[string]string
+	name string
 }
 
-func NewRemovedFields(annotations map[string]string) *RemovedFields {
-	return &RemovedFields{annotations: annotations}
+func (f Field[T]) Key() string {
+	return f.name
 }
 
-func (rf *RemovedFields) GetAutoUpdate() *bool {
-	return rf.getBool(AutoUpdateKey)
-}
-
-func (rf *RemovedFields) SetAutoUpdate(autoUpdate *bool) {
-	rf.setBool(AutoUpdateKey, autoUpdate)
-}
-
-func (rf *RemovedFields) getBool(key string) *bool {
-	if value, exists := rf.annotations[key]; exists {
-		b, err := strconv.ParseBool(value)
-		if err == nil {
-			return ptr.To(b)
-		}
+func (f Field[T]) Get() *T {
+	raw, exists := f.data[f.Key()]
+	if !exists {
+		return nil
 	}
 
-	return nil
+	var value T
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return nil
+	}
+
+	return &value
 }
 
-func (rf *RemovedFields) setBool(key string, value *bool) {
+func (f Field[T]) Set(value *T) {
 	if value == nil {
-		delete(rf.annotations, key)
+		delete(f.data, f.Key())
 
 		return
 	}
 
-	rf.annotations[key] = strconv.FormatBool(*value)
+	raw, _ := json.Marshal(*value)
+	f.data[f.Key()] = string(raw)
+}
+
+type RemovedFields struct {
+	AutoUpdate Field[bool]
+}
+
+func NewRemovedFields(annotations map[string]string) *RemovedFields {
+	return &RemovedFields{
+		AutoUpdate: Field[bool]{name: AutoUpdateKey, data: annotations},
+	}
 }
