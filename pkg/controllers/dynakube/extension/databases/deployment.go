@@ -68,10 +68,17 @@ func buildServiceAccountName(dbex extensions.DatabaseSpec) string {
 }
 
 func buildContainer(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) corev1.Container {
+	pullPolicy := corev1.PullIfNotPresent
+	if dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag == "latest" {
+		// For initial testing latest image is used, so let runtime pull updates if they're available.
+		// Maybe move this into the imageRef, e.g. imageRef.PullPolicy()
+		pullPolicy = corev1.PullAlways
+	}
+
 	container := corev1.Container{
 		Name:            "database-datasource",
 		Image:           dk.Spec.Templates.DatabaseExecutor.ImageRef.String(),
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		ImagePullPolicy: pullPolicy,
 		Args:            buildContainerArgs(dk),
 		Env:             buildContainerEnvs(),
 		LivenessProbe: &corev1.Probe{

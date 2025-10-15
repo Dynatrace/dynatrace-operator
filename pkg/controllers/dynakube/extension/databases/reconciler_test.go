@@ -95,11 +95,19 @@ func TestReconcileSpec(t *testing.T) {
 		assert.NotNil(t, container.ReadinessProbe)
 		assert.NotNil(t, container.SecurityContext)
 		assert.Equal(t, dk.Spec.Templates.DatabaseExecutor.ImageRef.String(), container.Image)
+		assert.Equal(t, corev1.PullIfNotPresent, container.ImagePullPolicy)
 		assert.Len(t, container.Args, 3)
 		assert.Len(t, container.Env, 1)
 		assert.Len(t, container.VolumeMounts, 3)
 		assert.NotEmpty(t, container.Resources.Requests)
 		assert.NotEmpty(t, container.Resources.Limits)
+	})
+
+	t.Run("override image pull policy", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag = "latest"
+		deploy := getReconciledDeployment(t, fakeClient(), dk)
+		assert.Equal(t, corev1.PullAlways, deploy.Spec.Template.Spec.Containers[0].ImagePullPolicy)
 	})
 
 	t.Run("override labels", func(t *testing.T) {
