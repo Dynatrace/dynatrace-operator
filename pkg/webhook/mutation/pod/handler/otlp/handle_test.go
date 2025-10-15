@@ -92,7 +92,7 @@ func TestHandler_Handle(t *testing.T) {
 		request := createTestMutationRequest(t, dk)
 
 		err := h.Handle(request)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	t.Run("return error if exporter env var mutator returns error", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
@@ -202,7 +202,7 @@ func TestHandler_Handle(t *testing.T) {
 		req := createTestMutationRequest(t, dk)
 
 		err := h.Handle(req)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// env var mutator should have been called since the secret could be replicated
 		mockEnvVarMutator.AssertCalled(t, "Mutate", mock.Anything)
