@@ -82,7 +82,6 @@
 |:-|:-|:-|:-|
 |`annotations`||-|object|
 |`args`||-|array|
-|`autoUpdate`||-|boolean|
 |`dnsPolicy`||-|string|
 |`env`||-|array|
 |`image`||-|string|
@@ -127,7 +126,6 @@
 |:-|:-|:-|:-|
 |`annotations`||-|object|
 |`args`||-|array|
-|`autoUpdate`||-|boolean|
 |`dnsPolicy`||-|string|
 |`env`||-|array|
 |`image`||-|string|
@@ -159,7 +157,6 @@
 |:-|:-|:-|:-|
 |`annotations`||-|object|
 |`args`||-|array|
-|`autoUpdate`||-|boolean|
 |`codeModulesImage`||-|string|
 |`dnsPolicy`||-|string|
 |`env`||-|array|
