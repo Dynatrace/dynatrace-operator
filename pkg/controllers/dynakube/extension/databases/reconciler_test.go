@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -90,6 +91,10 @@ func TestReconcileSpec(t *testing.T) {
 			executorIDLabelKey:        db.ID,
 			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
 		})
+		assert.Contains(t, deploy.Labels, labels.AppComponentLabel)
+		assert.Contains(t, deploy.Labels, labels.AppManagedByLabel)
+		assert.Contains(t, deploy.Labels, labels.AppVersionLabel)
+		assert.Equal(t, deploy.Labels, deploy.Spec.Template.Labels)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 3)
 
@@ -117,6 +122,8 @@ func TestReconcileSpec(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Databases[0].Labels = map[string]string{"foo": "bar"}
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
+		assert.NotEqual(t, deploy.Labels, deploy.Spec.Template.Labels)
+		assert.Subset(t, deploy.Spec.Template.Labels, deploy.Labels)
 		assert.Subset(t, deploy.Spec.Template.Labels, dk.Spec.Extensions.Databases[0].Labels)
 	})
 

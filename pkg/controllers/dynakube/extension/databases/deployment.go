@@ -41,8 +41,7 @@ func buildAllLabels(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) (map[st
 
 	deploymentLabels := appLabels.BuildLabels()
 	matchLabels := appLabels.BuildMatchLabels()
-	// Instance-specific labels should stay on pods to make lookup on deletion simpler.
-	podLabels := maps.Clone(deploymentLabels)
+	podLabels := deploymentLabels
 	podLabels[executorIDLabelKey] = dbex.ID
 	podLabels[consts.DatasourceLabelKey] = consts.DatabaseDatasourceLabelValue
 
@@ -241,6 +240,12 @@ func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.Dyna
 	deployments := &appsv1.DeploymentList{}
 
 	deploymentLabels, _, _ := buildAllLabels(dk, extensions.DatabaseSpec{})
+	// We have to build labels from an empty DB spec to allow cleaning up orphans (without having to delete the DynaKube).
+	// Since the spec is used for generating labels we have to remove some entries to ensure we get all deployments.
+	delete(deploymentLabels, executorIDLabelKey)
+	delete(deploymentLabels, consts.DatasourceLabelKey)
+	delete(deploymentLabels, labels.AppVersionLabel)
+
 	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), client.MatchingLabels(deploymentLabels)); err != nil {
 		return fmt.Errorf("list deployments: %w", err)
 	}
