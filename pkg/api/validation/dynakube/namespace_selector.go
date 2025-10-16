@@ -24,7 +24,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynaku
 
 	dkMapper := mapper.NewDynakubeMapper(ctx, nil, dv.apiReader, dk.Namespace, dk)
 
-	_, _, err := dkMapper.MatchingNamespaces()
+	_, err := dkMapper.MatchingNamespaces()
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
 		log.Info("requested dynakube has conflicting namespaceSelector", "name", dk.Name, "namespace", dk.Namespace)
 
