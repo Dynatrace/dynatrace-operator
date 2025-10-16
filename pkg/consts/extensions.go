@@ -8,6 +8,7 @@ const (
 
 	ExtensionsControllerSuffix        = "-extensions-controller"
 	ExtensionsCollectorTargetPortName = "collector-com"
+	ExtensionsCollectorTargetPort     = 14599
 
 	DatasourceTokenSecretKey         = "datasource.token"
 	DatasourceTokenSecretValuePrefix = "dt0x01"

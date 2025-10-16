@@ -67,7 +67,7 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 	svcPorts := []corev1.ServicePort{
 		{
 			Name:       r.dk.Extensions().GetPortName(),
-			Port:       consts.OtelCollectorComPort,
+			Port:       consts.ExtensionsCollectorTargetPort,
 			Protocol:   corev1.ProtocolTCP,
 			TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsCollectorTargetPortName},
 		},

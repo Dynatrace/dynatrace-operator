@@ -118,7 +118,7 @@ func buildContainer(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) corev1.
 func buildContainerArgs(dk *dynakube.DynaKube) []string {
 	return []string{
 		"--podid=$(POD_NAME)",
-		fmt.Sprintf("--url=https://%s:%d", dk.Extensions().GetServiceNameFQDN(), consts.OtelCollectorComPort),
+		fmt.Sprintf("--url=https://%s:%d", dk.Extensions().GetServiceNameFQDN(), consts.ExtensionsCollectorTargetPort),
 		"--idtoken=" + tokenMountPath + "/" + tokenVolumeName,
 	}
 }
