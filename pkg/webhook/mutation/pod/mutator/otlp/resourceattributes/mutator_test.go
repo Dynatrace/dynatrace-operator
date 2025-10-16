@@ -99,7 +99,7 @@ func Test_getWorkloadInfo(t *testing.T) {
 	}
 }
 
-func TestMutatorMutate(t *testing.T) { //nolint:gocognit
+func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 	_ = appsv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 
