@@ -33,7 +33,7 @@ const (
 	tokenVolumeName    = "auth-token"
 	tokenMountPath     = "/var/run/dynatrace/executor/token"
 	certsVolumeName    = "https-certs"
-	certsMountPath     = "/certs"
+	certsMountPath     = "/var/ssl-certs/dynatrace"
 )
 
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
@@ -184,6 +184,12 @@ func buildVolumes(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) []corev1.
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: dk.Extensions().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSCrtDataName,
+							Path: consts.TLSCrtDataName,
+						},
+					},
 				},
 			},
 		},
