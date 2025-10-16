@@ -384,3 +384,122 @@ func setupDisabledCSIEnv(t *testing.T) {
 		Supportability: true,
 	})
 }
+
+func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
+	type testcase struct {
+		name              string
+		spec              *Spec
+		autoUpdateEnabled bool
+	}
+
+	t.Run("classic, cloud, hostmonitoring", func(t *testing.T) {
+		tcs := []testcase{
+			{
+				name: "Classic Full Stack",
+				spec: &Spec{
+					ClassicFullStack: &HostInjectSpec{
+						Version: "",
+						Image:   "",
+					},
+				},
+				autoUpdateEnabled: true,
+			},
+			{
+				name: "Classic Full Stack - version",
+				spec: &Spec{
+					ClassicFullStack: &HostInjectSpec{
+						Version: "version",
+						Image:   "",
+					},
+				},
+				autoUpdateEnabled: false,
+			},
+			{
+				name: "Classic Full Stack - image",
+				spec: &Spec{
+					ClassicFullStack: &HostInjectSpec{
+						Version: "",
+						Image:   "image",
+					},
+				},
+				autoUpdateEnabled: false,
+			},
+			{
+				name: "Cloud Native Full Stack",
+				spec: &Spec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{},
+				},
+				autoUpdateEnabled: true,
+			},
+			{
+				name: "Cloud Native Full Stack - version",
+				spec: &Spec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{
+						HostInjectSpec: HostInjectSpec{
+							Version: "version",
+							Image:   "",
+						},
+					},
+				},
+				autoUpdateEnabled: false,
+			},
+			{
+				name: "Cloud Native Full Stack - image",
+				spec: &Spec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{
+						HostInjectSpec: HostInjectSpec{
+							Version: "",
+							Image:   "image",
+						},
+					},
+				},
+				autoUpdateEnabled: false,
+			},
+			{
+				name: "Host Monitoring",
+				spec: &Spec{
+					HostMonitoring: &HostInjectSpec{},
+				},
+				autoUpdateEnabled: true,
+			},
+			{
+				name: "Host Monitoring",
+				spec: &Spec{
+					HostMonitoring: &HostInjectSpec{
+						Version: "version",
+						Image:   "",
+					},
+				},
+				autoUpdateEnabled: false,
+			},
+			{
+				name: "Host Monitoring",
+				spec: &Spec{
+					HostMonitoring: &HostInjectSpec{
+						Version: "",
+						Image:   "image",
+					},
+				},
+				autoUpdateEnabled: false,
+			},
+		}
+
+		for _, tc := range tcs {
+			oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false)
+			assert.Equal(t, tc.autoUpdateEnabled, oa.IsAutoUpdateEnabled(), tc.name)
+		}
+	})
+
+	t.Run("application monitoring", func(t *testing.T) {
+		tc := testcase{
+			name: "Application Monitoring",
+			spec: &Spec{
+				ApplicationMonitoring: &ApplicationMonitoringSpec{},
+			},
+			autoUpdateEnabled: false,
+		}
+
+		oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false)
+		assert.Equal(t, tc.autoUpdateEnabled, oa.IsAutoUpdateEnabled(), tc.name)
+	})
+}
