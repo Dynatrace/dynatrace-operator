@@ -24,9 +24,6 @@ const (
 	defaultServiceAccount = "dynatrace-database-extensions-executor"
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
-	// Type of data source to allow EEC to separate them. For database extensions this is always "sql".
-	datasourceLabelKey   = "extensions.dynatrace.com/datasource"
-	datasourceLabelValue = "sql"
 
 	userDataVolumeName = "user-data"
 	userDataMountPath  = "/var/userdata"
@@ -46,7 +43,7 @@ func buildAllLabels(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) (map[st
 	// Instance-specific labels should stay on pods to make lookup on deletion simpler.
 	podLabels := maps.Clone(deploymentLabels)
 	podLabels[executorIDLabelKey] = dbex.ID
-	podLabels[datasourceLabelKey] = datasourceLabelValue
+	podLabels[consts.DatasourceLabelKey] = consts.DatabaseDatasourceLabelValue
 
 	if dbex.Labels != nil {
 		// Always merge into user-provided labels to ensure they don't overwrite our own.

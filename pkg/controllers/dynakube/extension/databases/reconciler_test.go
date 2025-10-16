@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -86,8 +87,8 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Equal(t, db.Replicas, deploy.Spec.Replicas)
 		assert.Equal(t, defaultServiceAccount, deploy.Spec.Template.Spec.ServiceAccountName)
 		assert.Subset(t, deploy.Spec.Template.Labels, map[string]string{
-			datasourceLabelKey: datasourceLabelValue,
-			executorIDLabelKey: db.ID,
+			executorIDLabelKey:        db.ID,
+			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
 		})
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 3)
