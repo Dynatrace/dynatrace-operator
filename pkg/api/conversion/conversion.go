@@ -49,3 +49,7 @@ func NewRemovedFields(annotations map[string]string) *RemovedFields {
 		AutoUpdate: Field[bool]{name: AutoUpdateKey, data: annotations},
 	}
 }
+
+func CleanupAnnotations(annotations map[string]string) {
+	delete(annotations, AutoUpdateKey)
+}

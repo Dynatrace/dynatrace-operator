@@ -39,7 +39,7 @@ func (dst *DynaKube) fromBase(src *dynakubelatest.DynaKube) {
 	}
 
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
-	delete(dst.Annotations, dkconversion.AutoUpdateKey)
+	dkconversion.CleanupAnnotations(dst.Annotations)
 
 	dst.Spec.Proxy = src.Spec.Proxy
 	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold
