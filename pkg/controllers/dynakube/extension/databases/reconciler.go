@@ -34,11 +34,9 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	var (
-		query      = deployment.Query(r.client, r.apiReader, log)
-		ext        = r.dk.Extensions()
-		applyNames = make([]string, len(ext.Databases))
-	)
+	query := deployment.Query(r.client, r.apiReader, log)
+	ext := r.dk.Extensions()
+	applyNames := make([]string, len(ext.Databases))
 
 	for i, dbex := range ext.Databases {
 		applyNames[i] = ext.GetDatabaseExecutorName(dbex.ID)

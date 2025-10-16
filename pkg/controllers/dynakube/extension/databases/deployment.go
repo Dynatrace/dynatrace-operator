@@ -23,7 +23,7 @@ const (
 	// Keep in sync with helm chart
 	defaultServiceAccount = "dynatrace-database-extensions-executor"
 	// Must contain the ID specified in the DynaKube CR.
-	executorLabelKey = "extensions.dynatrace.com/executor.id"
+	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
 	// Type of data source to allow EEC to separate them. For database extensions this is always "sql".
 	datasourceLabelKey   = "extensions.dynatrace.com/datasource"
 	datasourceLabelValue = "sql"
@@ -36,26 +36,27 @@ const (
 	certsMountPath     = "/certs"
 )
 
+// Returns labels for deployment, deployment selector and deployment pod template in that order.
+// Do NOT modify maps produced by this function.
 func buildAllLabels(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
-	appLabels := labels.NewAppLabels(labels.DatabaseDatasourceLabel, dk.Name, labels.DatabaseDatasourceLabel, "")
+	appLabels := labels.NewAppLabels(labels.DatabaseDatasourceLabel, dk.Name, labels.DatabaseDatasourceLabel, dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag)
 
 	deploymentLabels := appLabels.BuildLabels()
-	// Remove empty version label
-	delete(deploymentLabels, labels.AppVersionLabel)
-
 	matchLabels := appLabels.BuildMatchLabels()
-
-	templateLabels := maps.Clone(deploymentLabels)
-	templateLabels[executorLabelKey] = dbex.ID
-	templateLabels[datasourceLabelKey] = datasourceLabelValue
+	// Instance-specific labels should stay on pods to make lookup on deletion simpler.
+	podLabels := maps.Clone(deploymentLabels)
+	podLabels[executorIDLabelKey] = dbex.ID
+	podLabels[datasourceLabelKey] = datasourceLabelValue
 
 	if dbex.Labels != nil {
+		// Always merge into user-provided labels to ensure they don't overwrite our own.
 		temp := maps.Clone(dbex.Labels)
-		maps.Copy(temp, templateLabels)
-		templateLabels = temp
+		maps.Copy(temp, podLabels)
+		podLabels = temp
 	}
 
-	return deploymentLabels, matchLabels, templateLabels
+	// Reuse pod labels for deployment
+	return deploymentLabels, matchLabels, podLabels
 }
 
 func buildServiceAccountName(dbex extensions.DatabaseSpec) string {

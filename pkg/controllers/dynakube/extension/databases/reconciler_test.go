@@ -87,7 +87,7 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Equal(t, defaultServiceAccount, deploy.Spec.Template.Spec.ServiceAccountName)
 		assert.Subset(t, deploy.Spec.Template.Labels, map[string]string{
 			datasourceLabelKey: datasourceLabelValue,
-			executorLabelKey:   db.ID,
+			executorIDLabelKey: db.ID,
 		})
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 3)
