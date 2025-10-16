@@ -99,20 +99,28 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
 func (r *Reconciler) generateData() (map[string]string, error) {
 	data := make(map[string]string)
 
-	dtEndpoint := r.dk.APIURL() + "/v2/otlp"
-
-	if r.dk.ActiveGate().IsEnabled() {
-		tenantUUID, err := r.dk.TenantUUID()
-		if err != nil {
-			return data, err
-		}
-
-		serviceFQDN := capability.BuildServiceName(r.dk.Name) + "." + r.dk.Namespace + ".svc"
-
-		dtEndpoint = fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFQDN, tenantUUID)
+	dtEndpoint, err := BuildOTLPEndpoint(*r.dk)
+	if err != nil {
+		return data, err
 	}
 
 	data["DT_ENDPOINT"] = dtEndpoint
 
 	return data, nil
+}
+
+func BuildOTLPEndpoint(dk dynakube.DynaKube) (string, error) {
+	dtEndpoint := dk.APIURL() + "/v2/otlp"
+
+	if dk.ActiveGate().IsEnabled() {
+		tenantUUID, err := dk.TenantUUID()
+		if err != nil {
+			return "", err
+		}
+
+		serviceFQDN := capability.BuildServiceName(dk.Name) + "." + dk.Namespace + ".svc"
+
+		dtEndpoint = fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFQDN, tenantUUID)
+	}
+	return dtEndpoint, nil
 }

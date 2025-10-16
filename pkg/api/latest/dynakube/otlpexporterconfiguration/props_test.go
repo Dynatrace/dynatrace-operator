@@ -20,79 +20,167 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/ptr"
 )
 
 func TestSpec_IsOverrideEnabled(t *testing.T) {
-	t.Run("overrideEnvVars not set", func(t *testing.T) {
-		s := Spec{}
+	tests := []struct {
+		name     string
+		config   OTLPExporterConfiguration
+		expected bool
+	}{
+		{
+			name:     "overrideEnvVars not set",
+			config:   OTLPExporterConfiguration{},
+			expected: false,
+		},
+		{
+			name: "overrideEnvVars disabled",
+			config: OTLPExporterConfiguration{Spec: &Spec{
+				OverrideEnvVars: ptr.To(false),
+			}},
+			expected: false,
+		},
+		{
+			name: "overrideEnvVars enabled",
+			config: OTLPExporterConfiguration{Spec: &Spec{
+				OverrideEnvVars: ptr.To(true),
+			}},
+			expected: true,
+		},
+	}
 
-		assert.False(t, s.IsOverrideEnabled())
-	})
-	t.Run("overrideEnvVars disabled", func(t *testing.T) {
-		enabled := false
-		s := Spec{
-			OverrideEnvVars: &enabled,
-		}
-
-		assert.False(t, s.IsOverrideEnabled())
-	})
-	t.Run("overrideEnvVars enabled", func(t *testing.T) {
-		enabled := true
-		s := Spec{
-			OverrideEnvVars: &enabled,
-		}
-
-		assert.True(t, s.IsOverrideEnabled())
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.config.IsOverrideEnvVarsEnabled())
+		})
+	}
 }
 
 func TestSpec_IsMetricsEnabled(t *testing.T) {
-	t.Run("metrics disabled", func(t *testing.T) {
-		s := Spec{}
-
-		assert.False(t, s.IsMetricsEnabled())
-	})
-	t.Run("metrics enabled", func(t *testing.T) {
-		s := Spec{
-			Signals: SignalConfiguration{
-				Metrics: &MetricsSignal{},
+	tests := []struct {
+		name     string
+		config   OTLPExporterConfiguration
+		expected bool
+	}{
+		{
+			name:     "metrics disabled",
+			config:   OTLPExporterConfiguration{},
+			expected: false,
+		},
+		{
+			name: "metrics enabled",
+			config: OTLPExporterConfiguration{
+				Spec: &Spec{
+					Signals: SignalConfiguration{
+						Metrics: &MetricsSignal{},
+					},
+				},
 			},
-		}
+			expected: true,
+		},
+	}
 
-		assert.True(t, s.IsMetricsEnabled())
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.config.IsMetricsEnabled())
+		})
+	}
 }
 
 func TestSpec_IsTracesEnabled(t *testing.T) {
-	t.Run("traces disabled", func(t *testing.T) {
-		s := Spec{}
-
-		assert.False(t, s.IsTracesEnabled())
-	})
-	t.Run("traces enabled", func(t *testing.T) {
-		s := Spec{
-			Signals: SignalConfiguration{
-				Traces: &TracesSignal{},
+	tests := []struct {
+		name     string
+		config   OTLPExporterConfiguration
+		expected bool
+	}{
+		{
+			name:     "traces disabled",
+			config:   OTLPExporterConfiguration{},
+			expected: false,
+		},
+		{
+			name: "traces enabled",
+			config: OTLPExporterConfiguration{
+				Spec: &Spec{
+					Signals: SignalConfiguration{
+						Traces: &TracesSignal{},
+					},
+				},
 			},
-		}
+			expected: true,
+		},
+	}
 
-		assert.True(t, s.IsTracesEnabled())
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.config.IsTracesEnabled())
+		})
+	}
 }
 
 func TestSpec_IsLogsEnabled(t *testing.T) {
-	t.Run("logs disabled", func(t *testing.T) {
-		s := Spec{}
-
-		assert.False(t, s.IsLogsEnabled())
-	})
-	t.Run("traces enabled", func(t *testing.T) {
-		s := Spec{
-			Signals: SignalConfiguration{
-				Logs: &LogsSignal{},
+	tests := []struct {
+		name     string
+		config   OTLPExporterConfiguration
+		expected bool
+	}{
+		{
+			name:     "logs disabled",
+			config:   OTLPExporterConfiguration{},
+			expected: false,
+		},
+		{
+			name: "logs enabled",
+			config: OTLPExporterConfiguration{
+				Spec: &Spec{
+					Signals: SignalConfiguration{
+						Logs: &LogsSignal{},
+					},
+				},
 			},
-		}
+			expected: true,
+		},
+	}
 
-		assert.True(t, s.IsLogsEnabled())
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.config.IsLogsEnabled())
+		})
+	}
+}
+
+func TestSpec_IsEnabled(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   OTLPExporterConfiguration
+		expected bool
+	}{
+		{
+			name:     "disabled",
+			config:   OTLPExporterConfiguration{},
+			expected: false,
+		},
+		{
+			name:     "enabled (traces)",
+			config:   OTLPExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Traces: &TracesSignal{}}}},
+			expected: true,
+		},
+		{
+			name:     "enabled (metrics)",
+			config:   OTLPExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Metrics: &MetricsSignal{}}}},
+			expected: true,
+		},
+		{
+			name:     "enabled (logs)",
+			config:   OTLPExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Logs: &LogsSignal{}}}},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.config.IsEnabled())
+		})
+	}
 }
