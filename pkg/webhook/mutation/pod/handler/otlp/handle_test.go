@@ -47,8 +47,6 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
-
 		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
 
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
@@ -62,17 +60,16 @@ func TestHandler_Handle(t *testing.T) {
 		err := h.Handle(request)
 		assert.NoError(t, err)
 	})
-	t.Run("call otlp env var reinvocation if enabled", func(t *testing.T) {
+	t.Run("call otlp exporter env var and resource attribute reinvocation if enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
 		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
 
 		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(true)
 
 		mockEnvVarMutator.On("Reinvoke", mock.Anything).Return(true)
-		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
+		mockResourceAttributeMutator.On("Reinvoke", mock.Anything).Return(true)
 
 		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)
 
@@ -109,7 +106,6 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
 
-		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(errors.New("error"))
 
 		h := createTestHandler(mockEnvVarMutator, mockResourceAttributeMutator)

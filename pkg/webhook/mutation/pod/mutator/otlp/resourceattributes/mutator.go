@@ -32,10 +32,12 @@ func New(apiReader client.Reader) dtwebhook.Mutator {
 }
 
 func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
+	// always return true, as this mutator is only called if OTLP exporter mutator is enabled
 	return true
 }
 
 func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
+	// always return false, as this mutator is only called if OTLP exporter mutator is enabled
 	return false
 }
 
