@@ -44,17 +44,7 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 // updates the labels on the namespaces if necessary,
 // finds conflicting dynakubes (2 dynakube with codeModules on the same namespace)
 func (dm *DynakubeMapper) MapFromDynakube() error {
-	nsList := &corev1.NamespaceList{}
-	if err := dm.apiReader.List(dm.ctx, nsList); err != nil {
-		return errors.Cause(err)
-	}
-
-	dkList := &dynakube.DynaKubeList{}
-	if err := dm.apiReader.List(dm.ctx, dkList, &client.ListOptions{Namespace: dm.operatorNs}); err != nil {
-		return errors.Cause(err)
-	}
-
-	modifiedNs, err := dm.mapFromDynakube(nsList, dkList)
+	modifiedNs, err := dm.MatchingNamespaces()
 	if err != nil {
 		return err
 	}

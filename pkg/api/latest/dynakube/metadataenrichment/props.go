@@ -25,11 +25,3 @@ func (enrichment *MetadataEnrichment) IsEnabled() bool {
 func (enrichment *MetadataEnrichment) GetNamespaceSelector() *metav1.LabelSelector {
 	return &enrichment.NamespaceSelector
 }
-
-func (enrichment *MetadataEnrichment) IsNamespaceSelectorDefined() bool {
-	if enrichment.GetNamespaceSelector() == nil {
-		return false
-	}
-
-	return len(enrichment.NamespaceSelector.MatchExpressions) > 0 || len(enrichment.NamespaceSelector.MatchLabels) > 0
-}
