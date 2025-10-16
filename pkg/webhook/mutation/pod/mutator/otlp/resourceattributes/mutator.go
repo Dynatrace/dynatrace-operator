@@ -32,37 +32,28 @@ func New(apiReader client.Reader) dtwebhook.Mutator {
 }
 
 func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
-	log.Debug("checking if OTLP env var injection is enabled")
-
-	return false
+	return true
 }
 
 func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
-	log.Debug("checking if OTLP env vars have already been injected")
-
 	return false
 }
 
 func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_, err := m.mutate(request.Context, request.BaseRequest)
+	_ = m.mutate(request.Context, request.BaseRequest)
 
-	return err
+	return nil
 }
 
 func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	log.Debug("reinvocation of OTLP resource attribute mutator")
+	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	mutated, err := m.mutate(context.Background(), request.BaseRequest)
-
-	if err != nil {
-		log.Error(err, "failed to reinvoke OTLP resource attribute mutator", "pod", request.Pod.Name, "namespace", request.Pod.Namespace)
-		return false
-	}
+	mutated := m.mutate(context.Background(), request.BaseRequest)
 
 	return mutated
 }
 
-func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (bool, error) {
+func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bool {
 	mutated := false
 	log.Debug("injecting OTLP resource attributes")
 
@@ -104,12 +95,17 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 
 		// Workload attributes (API lookup for e.g. ReplicaSet -> Deployment chain)
-		if m.addPodOwnerAttributes(ctx, request, b, existing) {
+		addedPodOwnerAttrs, err := m.addPodOwnerAttributes(ctx, request, &b, existing)
+		if err != nil {
+			// log the error, but continue with adding the other attributes (best effort)
+			log.Error(err, "failed to add pod owner attributes", "podName", request.PodName(), "namespace", request.Namespace.Name)
+		}
+		if addedPodOwnerAttrs {
 			mutated = true
 		}
 
 		// add attributes from annotations
-		if addAttributesFromAnnotations(request, b, existing) {
+		if addAttributesFromAnnotations(request, &b, existing) {
 			mutated = true
 		}
 
@@ -121,35 +117,41 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 	}
 
-	return mutated, nil
+	return mutated
 }
 
-func (m *Mutator) addPodOwnerAttributes(ctx context.Context, request *dtwebhook.BaseRequest, b strings.Builder, existing *corev1.EnvVar) bool {
+func (m *Mutator) addPodOwnerAttributes(ctx context.Context, request *dtwebhook.BaseRequest, b *strings.Builder, existing *corev1.EnvVar) (bool, error) {
 	mutated := false
 
-	if wkKind, wkName := getWorkloadInfo(ctx, m.apiReader, request.Pod); wkKind != "" && wkName != "" {
+	wkKind, wkName, err := getWorkloadInfo(ctx, m.apiReader, request.Pod)
+
+	if err != nil {
+		return false, err
+	}
+
+	if wkKind != "" && wkName != "" {
 		workloadAttributesToAdd := map[string]string{
 			"k8s.workload.kind": wkKind,
 			"k8s.workload.name": wkName,
 		}
 
 		for key, value := range workloadAttributesToAdd {
-			if appendAttribute(&b, existing, key, value) {
+			if appendAttribute(b, existing, key, value) {
 				mutated = true
 			}
 		}
 	}
-	return mutated
+	return mutated, nil
 }
 
-func addAttributesFromAnnotations(request *dtwebhook.BaseRequest, b strings.Builder, existing *corev1.EnvVar) bool {
+func addAttributesFromAnnotations(request *dtwebhook.BaseRequest, b *strings.Builder, existing *corev1.EnvVar) bool {
 	mutated := false
 	for k, v := range request.Pod.Annotations {
 		metadataAnnotationPrefix := fmt.Sprintf("%s/", metadataenrichment.Annotation)
 
 		if strings.HasPrefix(k, metadataAnnotationPrefix) {
 			attrKey := strings.TrimPrefix(k, metadataAnnotationPrefix)
-			if appendAttribute(&b, existing, attrKey, v) {
+			if appendAttribute(b, existing, attrKey, v) {
 				mutated = true
 			}
 		}
@@ -221,9 +223,9 @@ func ensureEnvVarSourcesSet(c *corev1.Container) {
 // getWorkloadInfo performs live lookups (using reader) to resolve the top-level workload for a pod.
 // If the immediate controller owner is a ReplicaSet, it tries to fetch that ReplicaSet and inspect its controller owner (e.g. Deployment, StatefulSet, Job).
 // Returns empty strings if the workload cannot be determined.
-func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod) (kind, name string) {
+func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod) (kind, name string, err error) {
 	if pod == nil || reader == nil {
-		return "", ""
+		return "", "", err
 	}
 
 	for _, owner := range pod.OwnerReferences {
@@ -233,23 +235,22 @@ func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod)
 
 		switch owner.Kind {
 		case "Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob":
-			return owner.Kind, owner.Name
+			return owner.Kind, owner.Name, err
 		case "ReplicaSet":
 			// lookup ReplicaSet and get its owner
 			rs := &appsv1.ReplicaSet{}
 			err := reader.Get(ctx, types.NamespacedName{Name: owner.Name, Namespace: pod.Namespace}, rs)
 			if err != nil {
-				// fallback to ReplicaSet itself if cannot fetch
-				return owner.Kind, owner.Name
+				return "", "", err
 			}
 			for _, rsOwner := range rs.OwnerReferences {
 				if rsOwner.Controller != nil && *rsOwner.Controller {
-					return rsOwner.Kind, rsOwner.Name
+					return rsOwner.Kind, rsOwner.Name, err
 				}
 			}
-			return owner.Kind, owner.Name
+			return owner.Kind, owner.Name, err
 		}
 	}
 
-	return "", ""
+	return "", "", err
 }

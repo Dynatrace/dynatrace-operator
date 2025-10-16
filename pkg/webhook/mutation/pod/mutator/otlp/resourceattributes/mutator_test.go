@@ -36,11 +36,12 @@ func Test_getWorkloadInfo(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		objects  []runtime.Object
-		pod      *corev1.Pod
-		wantKind string
-		wantName string
+		name        string
+		objects     []runtime.Object
+		pod         *corev1.Pod
+		wantKind    string
+		wantName    string
+		expectError bool
 	}{
 		{
 			name:     "nil pod",
@@ -57,11 +58,12 @@ func Test_getWorkloadInfo(t *testing.T) {
 			wantName: "my-deploy",
 		},
 		{
-			name:     "replicaset fallback when not found",
-			objects:  nil, // no RS object -> fallback
-			pod:      &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns", OwnerReferences: []metav1.OwnerReference{{APIVersion: "apps/v1", Kind: "ReplicaSet", Name: "missing-rs", Controller: ptr.To(true)}}}},
-			wantKind: "ReplicaSet",
-			wantName: "missing-rs",
+			name:        "replicaset fallback when not found",
+			objects:     nil, // no RS object -> fallback
+			pod:         &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns", OwnerReferences: []metav1.OwnerReference{{APIVersion: "apps/v1", Kind: "ReplicaSet", Name: "missing-rs", Controller: ptr.To(true)}}}},
+			wantKind:    "",
+			wantName:    "",
+			expectError: true,
 		},
 		{
 			name:     "statefulset direct",
@@ -79,17 +81,20 @@ func Test_getWorkloadInfo(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		c := tc
-		t.Run(c.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			builder := fake.NewClientBuilder().WithScheme(scheme.Scheme)
-			if c.objects != nil {
-				builder = builder.WithRuntimeObjects(c.objects...)
+			if tt.objects != nil {
+				builder = builder.WithRuntimeObjects(tt.objects...)
 			}
 			client := builder.Build()
-			kind, name := getWorkloadInfo(context.Background(), client, c.pod)
-			assert.Equal(t, c.wantKind, kind)
-			assert.Equal(t, c.wantName, name)
+			kind, name, err := getWorkloadInfo(context.Background(), client, tt.pod)
+
+			if tt.expectError {
+				require.Error(t, err)
+			}
+			assert.Equal(t, tt.wantKind, kind)
+			assert.Equal(t, tt.wantName, name)
 		})
 	}
 }
@@ -240,7 +245,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:revive
 			},
 		},
 		{
-			name:    "replicaset fallback when RS missing (no deployment)",
+			name:    "RS owner missing (no deployment) - add other attributes",
 			objects: nil,
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -264,8 +269,6 @@ func TestMutatorMutate(t *testing.T) { //nolint:revive
 					"k8s.cluster.name=cluster-uid",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c1",
-					"k8s.workload.kind=ReplicaSet",
-					"k8s.workload.name=ghost-rs",
 				},
 			},
 		},
