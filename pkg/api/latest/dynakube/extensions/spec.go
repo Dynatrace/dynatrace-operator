@@ -6,7 +6,7 @@ import (
 )
 
 type Extensions struct {
-	Controller *ExecutionControllerSpec
+	ExecutionController *ExecutionControllerSpec
 
 	name      string
 	namespace string

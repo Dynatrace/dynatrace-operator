@@ -6,7 +6,7 @@ import (
 
 func (dk *DynaKube) Extensions() *extensions.Extensions {
 	ext := &extensions.Extensions{
-		Controller: &dk.Spec.Templates.ExtensionExecutionController,
+		ExecutionController: &dk.Spec.Templates.ExtensionExecutionController,
 	}
 	if dk.Spec.Extensions != nil {
 		ext.Databases = dk.Spec.Extensions.Databases
