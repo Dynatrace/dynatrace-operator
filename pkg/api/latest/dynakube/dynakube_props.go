@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -27,6 +28,10 @@ var log = logd.Get().WithName("dynakube-v1beta6")
 
 func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations)
+}
+
+func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
+	return conversion.NewRemovedFields(dk.Annotations)
 }
 
 // APIURL is a getter for dk.Spec.APIURL.

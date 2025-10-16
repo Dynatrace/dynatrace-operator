@@ -7661,8 +7661,6 @@ spec:
                           type: string
                         type: array
                         x-kubernetes-list-type: set
-                      autoUpdate:
-                        type: boolean
                       dnsPolicy:
                         type: string
                       env:
@@ -7828,8 +7826,6 @@ spec:
                           type: string
                         type: array
                         x-kubernetes-list-type: set
-                      autoUpdate:
-                        type: boolean
                       codeModulesImage:
                         type: string
                       dnsPolicy:
@@ -8058,8 +8054,6 @@ spec:
                           type: string
                         type: array
                         x-kubernetes-list-type: set
-                      autoUpdate:
-                        type: boolean
                       dnsPolicy:
                         type: string
                       env:

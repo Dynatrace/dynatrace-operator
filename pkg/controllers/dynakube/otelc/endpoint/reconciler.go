@@ -122,5 +122,6 @@ func BuildOTLPEndpoint(dk dynakube.DynaKube) (string, error) {
 
 		dtEndpoint = fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFQDN, tenantUUID)
 	}
+
 	return dtEndpoint, nil
 }
