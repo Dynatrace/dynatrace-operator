@@ -94,7 +94,7 @@ func Test_getWorkloadInfo(t *testing.T) {
 	}
 }
 
-func TestMutatorMutate(t *testing.T) {
+func TestMutatorMutate(t *testing.T) { //nolint:revive
 	_ = appsv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 

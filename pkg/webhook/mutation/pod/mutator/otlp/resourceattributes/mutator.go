@@ -104,28 +104,13 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 
 		// Workload attributes (API lookup for e.g. ReplicaSet -> Deployment chain)
-		if wkKind, wkName := getWorkloadInfo(ctx, m.apiReader, request.Pod); wkKind != "" && wkName != "" {
-
-			workloadAttributesToAdd := map[string]string{
-				"k8s.workload.kind": wkKind,
-				"k8s.workload.name": wkName,
-			}
-
-			for key, value := range workloadAttributesToAdd {
-				if appendAttribute(&b, existing, key, value) {
-					mutated = true
-				}
-			}
+		if m.addPodOwnerAttributes(ctx, request, b, existing) {
+			mutated = true
 		}
 
 		// add attributes from annotations
-		for k, v := range request.Pod.Annotations {
-			metadataAnnotationPrefix := fmt.Sprintf("%s/", metadataenrichment.Annotation)
-
-			if strings.HasPrefix(k, metadataAnnotationPrefix) {
-				attrKey := strings.TrimPrefix(k, metadataAnnotationPrefix)
-				appendAttribute(&b, existing, attrKey, v)
-			}
+		if addAttributesFromAnnotations(request, b, existing) {
+			mutated = true
 		}
 
 		finalValue := b.String()
@@ -139,16 +124,46 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	return mutated, nil
 }
 
+func (m *Mutator) addPodOwnerAttributes(ctx context.Context, request *dtwebhook.BaseRequest, b strings.Builder, existing *corev1.EnvVar) bool {
+	mutated := false
+
+	if wkKind, wkName := getWorkloadInfo(ctx, m.apiReader, request.Pod); wkKind != "" && wkName != "" {
+		workloadAttributesToAdd := map[string]string{
+			"k8s.workload.kind": wkKind,
+			"k8s.workload.name": wkName,
+		}
+
+		for key, value := range workloadAttributesToAdd {
+			if appendAttribute(&b, existing, key, value) {
+				mutated = true
+			}
+		}
+	}
+	return mutated
+}
+
+func addAttributesFromAnnotations(request *dtwebhook.BaseRequest, b strings.Builder, existing *corev1.EnvVar) bool {
+	mutated := false
+	for k, v := range request.Pod.Annotations {
+		metadataAnnotationPrefix := fmt.Sprintf("%s/", metadataenrichment.Annotation)
+
+		if strings.HasPrefix(k, metadataAnnotationPrefix) {
+			attrKey := strings.TrimPrefix(k, metadataAnnotationPrefix)
+			if appendAttribute(&b, existing, attrKey, v) {
+				mutated = true
+			}
+		}
+	}
+
+	return mutated
+}
+
 func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool {
-	if dtwebhook.IsContainerExcludedFromInjection(
+	return dtwebhook.IsContainerExcludedFromInjection(
 		request.DynaKube.Annotations,
 		request.Pod.Annotations,
 		c.Name,
-	) {
-		return true
-	}
-
-	return false
+	)
 }
 
 func appendAttribute(b *strings.Builder, existing *corev1.EnvVar, key, value string) bool {
