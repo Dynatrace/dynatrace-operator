@@ -104,6 +104,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 
 		// Workload attributes (API lookup for ReplicaSet -> Deployment chain)
+		// TODO use existing function to get owner information
 		if wkKind, wkName := getWorkloadInfo(ctx, m.apiReader, request.Pod); wkKind != "" && wkName != "" {
 
 			workloadAttributesToAdd := map[string]string{
