@@ -103,8 +103,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 			}
 		}
 
-		// Workload attributes (API lookup for ReplicaSet -> Deployment chain)
-		// TODO use existing function to get owner information
+		// Workload attributes (API lookup for e.g. ReplicaSet -> Deployment chain)
 		if wkKind, wkName := getWorkloadInfo(ctx, m.apiReader, request.Pod); wkKind != "" && wkName != "" {
 
 			workloadAttributesToAdd := map[string]string{
@@ -205,7 +204,7 @@ func ensureEnvVarSourcesSet(c *corev1.Container) {
 }
 
 // getWorkloadInfo performs live lookups (using reader) to resolve the top-level workload for a pod.
-// If the immediate controller owner is a ReplicaSet, it tries to fetch that ReplicaSet and inspect its controller owner (Deployment).
+// If the immediate controller owner is a ReplicaSet, it tries to fetch that ReplicaSet and inspect its controller owner (e.g. Deployment, StatefulSet, Job).
 // Returns empty strings if the workload cannot be determined.
 func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod) (kind, name string) {
 	if pod == nil || reader == nil {
@@ -221,7 +220,7 @@ func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod)
 		case "Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob":
 			return owner.Kind, owner.Name
 		case "ReplicaSet":
-			// lookup ReplicaSet to see if owned by a Deployment
+			// lookup ReplicaSet and get its owner
 			rs := &appsv1.ReplicaSet{}
 			err := reader.Get(ctx, types.NamespacedName{Name: owner.Name, Namespace: pod.Namespace}, rs)
 			if err != nil {
@@ -229,7 +228,7 @@ func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod)
 				return owner.Kind, owner.Name
 			}
 			for _, rsOwner := range rs.OwnerReferences {
-				if rsOwner.Controller != nil && *rsOwner.Controller && rsOwner.Kind == "Deployment" {
+				if rsOwner.Controller != nil && *rsOwner.Controller {
 					return rsOwner.Kind, rsOwner.Name
 				}
 			}
