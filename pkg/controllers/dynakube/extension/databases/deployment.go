@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -249,9 +250,15 @@ func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.Dyna
 			continue
 		}
 
-		if err := client.IgnoreNotFound(clt.Delete(ctx, &deploy)); err != nil {
-			return fmt.Errorf("delete deployment %s: %w", deploy.Name, err)
+		if err := clt.Delete(ctx, &deploy); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return fmt.Errorf("delete deployment %s: %w", deploy.Name, err)
+			}
+
+			return nil
 		}
+
+		log.Info("deleted deployment", "name", deploy.Name)
 	}
 
 	return nil

@@ -16,7 +16,7 @@ import (
 // DynaKube condition that is managed by the reconciler.
 const conditionType = "DatabaseDatasourcesAvailable"
 
-var log = logd.Get().WithName("extension-dbexecutor")
+var log = logd.Get().WithName("extension-databases")
 
 type Reconciler struct {
 	client    client.Client
@@ -34,6 +34,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	log.Debug("reconciling deployments")
+
 	query := deployment.Query(r.client, r.apiReader, log)
 	ext := r.dk.Extensions()
 	applyNames := make([]string, len(ext.Databases))
@@ -79,11 +81,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		_, err = query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
+		changed, err := query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
 		if err != nil {
 			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 			return err
+		}
+
+		if changed {
+			log.Info("ensured deployment", "name", deploy.Name)
 		}
 	}
 
