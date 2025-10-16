@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -66,17 +67,23 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 			continue
 		}
 
-		// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
-		ensureEnvVarSourcesSet(c)
-
 		var b strings.Builder
 		var existing *corev1.EnvVar
+
 		if ev := env.FindEnvVar(c.Env, otlpResourceAttributesEnvVar); ev != nil {
 			existing = ev
 			if ev.Value != "" {
 				b.WriteString(ev.Value)
 			}
+
+			// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
+			c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
+				return e.Name == otlpResourceAttributesEnvVar
+			})
 		}
+
+		// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
+		envVarSourcesAdded := ensureEnvVarSourcesSet(c)
 
 		attributesToAdd := map[string]string{
 			"k8s.namespace.name":         request.Pod.Namespace,
@@ -102,20 +109,18 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 			// log the error, but continue with adding the other attributes (best effort)
 			log.Error(err, "failed to add pod owner attributes", "podName", request.PodName(), "namespace", request.Namespace.Name)
 		}
-		if addedPodOwnerAttrs {
-			mutated = true
-		}
 
 		// add attributes from annotations
-		if addAttributesFromAnnotations(request, &b, existing) {
-			mutated = true
-		}
+		addedAttrsFromAnnotations := addAttributesFromAnnotations(request, &b, existing)
 
 		finalValue := b.String()
-		if existing != nil {
-			existing.Value = finalValue
-		} else if finalValue != "" {
+
+		if finalValue != "" {
 			c.Env = append(c.Env, corev1.EnvVar{Name: otlpResourceAttributesEnvVar, Value: finalValue})
+		}
+
+		if envVarSourcesAdded || addedPodOwnerAttrs || addedAttrsFromAnnotations {
+			mutated = true
 		}
 	}
 
@@ -190,7 +195,9 @@ func appendAttribute(b *strings.Builder, existing *corev1.EnvVar, key, value str
 	return true
 }
 
-func ensureEnvVarSourcesSet(c *corev1.Container) {
+func ensureEnvVarSourcesSet(c *corev1.Container) bool {
+	mutated := false
+
 	if !env.IsIn(c.Env, "K8S_PODNAME") {
 		c.Env = append(
 			c.Env,
@@ -199,6 +206,8 @@ func ensureEnvVarSourcesSet(c *corev1.Container) {
 				ValueFrom: env.NewEnvVarSourceForField("metadata.name"),
 			},
 		)
+
+		mutated = true
 	}
 
 	if !env.IsIn(c.Env, "K8S_PODUID") {
@@ -209,6 +218,8 @@ func ensureEnvVarSourcesSet(c *corev1.Container) {
 				ValueFrom: env.NewEnvVarSourceForField("metadata.uid"),
 			},
 		)
+
+		mutated = true
 	}
 
 	if !env.IsIn(c.Env, "K8S_NODE_NAME") {
@@ -219,7 +230,11 @@ func ensureEnvVarSourcesSet(c *corev1.Container) {
 				ValueFrom: env.NewEnvVarSourceForField("spec.nodeName"),
 			},
 		)
+
+		mutated = true
 	}
+
+	return mutated
 }
 
 // getWorkloadInfo performs live lookups (using reader) to resolve the top-level workload for a pod.
