@@ -67,61 +67,71 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 			continue
 		}
 
-		var b strings.Builder
-		var existing *corev1.EnvVar
-
-		if ev := env.FindEnvVar(c.Env, otlpResourceAttributesEnvVar); ev != nil {
-			existing = ev
-			if ev.Value != "" {
-				b.WriteString(ev.Value)
-			}
-
-			// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
-			c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
-				return e.Name == otlpResourceAttributesEnvVar
-			})
-		}
-
-		// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
-		envVarSourcesAdded := ensureEnvVarSourcesSet(c)
-
-		attributesToAdd := map[string]string{
-			"k8s.namespace.name":         request.Pod.Namespace,
-			"k8s.cluster.uid":            request.DynaKube.Status.KubeSystemUUID,
-			"dt.kubernetes.cluster.id":   request.DynaKube.Status.KubeSystemUUID,
-			"k8s.cluster.name":           request.DynaKube.Status.KubeSystemUUID,
-			"dt.kubernetes.cluster.name": request.DynaKube.Status.KubernetesClusterName,
-			"k8s.container.name":         c.Name,
-			"k8s.pod.name":               "$(K8S_PODNAME)",
-			"k8s.pod.uid":                "$(K8S_PODUID)",
-			"k8s.node.name":              "$(K8S_NODE_NAME)",
-		}
-
-		for key, value := range attributesToAdd {
-			if appendAttribute(&b, existing, key, value) {
-				mutated = true
-			}
-		}
-
-		// Workload attributes (API lookup for e.g. ReplicaSet -> Deployment chain)
-		addedPodOwnerAttrs, err := m.addPodOwnerAttributes(ctx, request, &b, existing)
-		if err != nil {
-			// log the error, but continue with adding the other attributes (best effort)
-			log.Error(err, "failed to add pod owner attributes", "podName", request.PodName(), "namespace", request.Namespace.Name)
-		}
-
-		// add attributes from annotations
-		addedAttrsFromAnnotations := addAttributesFromAnnotations(request, &b, existing)
-
-		finalValue := b.String()
-
-		if finalValue != "" {
-			c.Env = append(c.Env, corev1.EnvVar{Name: otlpResourceAttributesEnvVar, Value: finalValue})
-		}
-
-		if envVarSourcesAdded || addedPodOwnerAttrs || addedAttrsFromAnnotations {
+		if m.addResourceAttributes(ctx, request, c) {
 			mutated = true
 		}
+	}
+
+	return mutated
+}
+
+func (m *Mutator) addResourceAttributes(ctx context.Context, request *dtwebhook.BaseRequest, c *corev1.Container) bool {
+	mutated := false
+
+	var b strings.Builder
+	var existing *corev1.EnvVar
+
+	if ev := env.FindEnvVar(c.Env, otlpResourceAttributesEnvVar); ev != nil {
+		existing = ev
+		if ev.Value != "" {
+			b.WriteString(ev.Value)
+		}
+
+		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
+		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
+			return e.Name == otlpResourceAttributesEnvVar
+		})
+	}
+
+	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
+	envVarSourcesAdded := ensureEnvVarSourcesSet(c)
+
+	attributesToAdd := map[string]string{
+		"k8s.namespace.name":         request.Pod.Namespace,
+		"k8s.cluster.uid":            request.DynaKube.Status.KubeSystemUUID,
+		"dt.kubernetes.cluster.id":   request.DynaKube.Status.KubeSystemUUID,
+		"k8s.cluster.name":           request.DynaKube.Status.KubeSystemUUID,
+		"dt.kubernetes.cluster.name": request.DynaKube.Status.KubernetesClusterName,
+		"k8s.container.name":         c.Name,
+		"k8s.pod.name":               "$(K8S_PODNAME)",
+		"k8s.pod.uid":                "$(K8S_PODUID)",
+		"k8s.node.name":              "$(K8S_NODE_NAME)",
+	}
+
+	for key, value := range attributesToAdd {
+		if appendAttribute(&b, existing, key, value) {
+			mutated = true
+		}
+	}
+
+	// Workload attributes (API lookup for e.g. ReplicaSet -> Deployment chain)
+	addedPodOwnerAttrs, err := m.addPodOwnerAttributes(ctx, request, &b, existing)
+	if err != nil {
+		// log the error, but continue with adding the other attributes (best effort)
+		log.Error(err, "failed to add pod owner attributes", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	}
+
+	// add attributes from annotations
+	addedAttrsFromAnnotations := addAttributesFromAnnotations(request, &b, existing)
+
+	finalValue := b.String()
+
+	if finalValue != "" {
+		c.Env = append(c.Env, corev1.EnvVar{Name: otlpResourceAttributesEnvVar, Value: finalValue})
+	}
+
+	if envVarSourcesAdded || addedPodOwnerAttrs || addedAttrsFromAnnotations {
+		mutated = true
 	}
 
 	return mutated
@@ -240,9 +250,9 @@ func ensureEnvVarSourcesSet(c *corev1.Container) bool {
 // getWorkloadInfo performs live lookups (using reader) to resolve the top-level workload for a pod.
 // If the immediate controller owner is a ReplicaSet, it tries to fetch that ReplicaSet and inspect its controller owner (e.g. Deployment, StatefulSet, Job).
 // Returns empty strings if the workload cannot be determined.
-func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod) (kind, name string, err error) {
+func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod) (string, string, error) {
 	if pod == nil || reader == nil {
-		return "", "", err
+		return "", "", nil
 	}
 
 	for _, owner := range pod.OwnerReferences {
@@ -252,7 +262,7 @@ func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod)
 
 		switch owner.Kind {
 		case "Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob":
-			return owner.Kind, owner.Name, err
+			return owner.Kind, owner.Name, nil
 		case "ReplicaSet":
 			// lookup ReplicaSet and get its owner
 			rs := &appsv1.ReplicaSet{}
@@ -269,5 +279,5 @@ func getWorkloadInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod)
 		}
 	}
 
-	return "", "", err
+	return "", "", nil
 }
