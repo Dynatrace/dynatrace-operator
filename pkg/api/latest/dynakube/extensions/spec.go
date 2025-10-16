@@ -13,7 +13,7 @@ type Extensions struct {
 
 	Databases []DatabaseSpec
 
-	enabled bool
+	prometheusEnabled bool
 }
 
 // +kubebuilder:object:generate=true
