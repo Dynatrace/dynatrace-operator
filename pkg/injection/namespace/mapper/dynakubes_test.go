@@ -26,7 +26,7 @@ func TestMapFromDynakube(t *testing.T) {
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
-		_, _, err := dm.MapFromDynakube()
+		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
@@ -45,7 +45,7 @@ func TestMapFromDynakube(t *testing.T) {
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
-		_, _, err := dm.MapFromDynakube()
+		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
@@ -64,7 +64,7 @@ func TestMapFromDynakube(t *testing.T) {
 		clt := fake.NewClient(movedDk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", movedDk)
 
-		_, _, err := dm.MapFromDynakube()
+		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
@@ -84,7 +84,7 @@ func TestMapFromDynakube(t *testing.T) {
 		clt := fake.NewClient(dk, conflictingDk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", conflictingDk)
 
-		_, _, err := dm.MapFromDynakube()
+		err := dm.MapFromDynakube()
 
 		require.Error(t, err)
 	})
@@ -94,7 +94,7 @@ func TestMapFromDynakube(t *testing.T) {
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
-		_, _, err := dm.MapFromDynakube()
+		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
@@ -111,7 +111,7 @@ func TestMapFromDynakube(t *testing.T) {
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
-		_, _, err := dm.MapFromDynakube()
+		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
@@ -130,7 +130,7 @@ func TestMapFromDynakube(t *testing.T) {
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
-		_, _, err := dm.MapFromDynakube()
+		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 

@@ -10,6 +10,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -47,17 +48,49 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 // MapFromDynakube checks all the namespaces to all the dynakubes
 // updates the labels on the namespaces if necessary,
 // finds conflicting dynakubes (2 dynakube with codeModules on the same namespace)
-func (dm *DynakubeMapper) MapFromDynakube() ([]string, []string, error) {
-	modifiedNs, matchedNamespaces, err := dm.MatchingNamespaces()
+func (dm *DynakubeMapper) MapFromDynakube() error {
+	nsList := &corev1.NamespaceList{}
+	if err := dm.apiReader.List(dm.ctx, nsList); err != nil {
+		return errors.Cause(err)
+	}
+
+	dkList := &dynakube.DynaKubeList{}
+	if err := dm.apiReader.List(dm.ctx, dkList, &client.ListOptions{Namespace: dm.operatorNs}); err != nil {
+		return errors.Cause(err)
+	}
+
+	modifiedNs, matchedNamespaces, err := dm.mapFromDynakube(nsList, dkList)
 	if err != nil {
-		return nil, nil, errors.Cause(err)
+		return err
 	}
 
 	if err := dm.updateNamespaces(modifiedNs); err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	return matchedNamespaces.oneAgent, matchedNamespaces.metadataEnrichment, nil
+	if dm.dk.OneAgent().IsAppInjectionNeeded() {
+		log.Info("namespaces monitored",
+			"selector", "OneAgent",
+			"count (at most 10 are shown)", len(matchedNamespaces.oneAgent),
+			"namespaces", matchedNamespaces.oneAgent,
+		)
+	}
+
+	if dm.dk.MetadataEnrichment().IsEnabled() {
+		log.Info("namespaces monitored",
+			"selector", "MetadataEnrichment",
+			"count (at most 10 are shown)", len(matchedNamespaces.metadataEnrichment),
+			"namespaces", matchedNamespaces.metadataEnrichment,
+		)
+	}
+
+	oaActive := dm.dk.OneAgent().IsAppInjectionNeeded()
+	meActive := dm.dk.MetadataEnrichment().IsEnabled()
+	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "OneAgent", oaActive, matchedNamespaces.oneAgent)
+	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "MetadataEnrichment", meActive, matchedNamespaces.metadataEnrichment)
+	updateCollectedNamespacesMonitoredCondition(dm.dk.Conditions())
+
+	return nil
 }
 
 func (dm *DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, matchedNamespaces, error) {
@@ -94,8 +127,8 @@ func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error
 		}
 	}
 
-	dm.matchedMENamespaces = []string{}
-	dm.matchedOANamespaces = []string{}
+	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType)
+	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), metadataEnrichmentNamespacesMonitoredConditionType)
 
 	return nil
 }
