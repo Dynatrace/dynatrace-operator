@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/pod"
 	corev1 "k8s.io/api/core/v1"
 )
 

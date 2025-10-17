@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/env"
 	corev1 "k8s.io/api/core/v1"
 )
 

@@ -9,12 +9,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/configmap"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/affinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/topology"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -250,7 +250,7 @@ func buildAppLabels(dkName string) *labels.AppLabels {
 }
 
 func buildAffinity() corev1.Affinity {
-	return node.Affinity()
+	return affinity.NewMultiArchNodeAffinity()
 }
 
 func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o *appsv1.StatefulSet) {

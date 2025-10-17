@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/labels"
 	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/supportarchive/remotecommand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

@@ -12,8 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/affinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/topology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -204,7 +204,7 @@ func TestAffinity(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
 		statefulSet := getStatefulset(t, dk)
 
-		expectedAffinity := node.Affinity()
+		expectedAffinity := affinity.NewMultiArchNodeAffinity()
 
 		assert.Equal(t, expectedAffinity, *statefulSet.Spec.Template.Spec.Affinity)
 	})
