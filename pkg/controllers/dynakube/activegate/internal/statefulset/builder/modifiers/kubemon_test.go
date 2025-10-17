@@ -55,6 +55,9 @@ func TestKubernetesMonitoringModify(t *testing.T) {
 		isSubset(t, expectedVolumes, sts.Spec.Template.Spec.Volumes)
 		isSubset(t, expectedVolumeMounts, container.VolumeMounts)
 		isSubset(t, expectedIniContainers, sts.Spec.Template.Spec.InitContainers)
+
+		require.NotNil(t, sts.Spec.Template.Spec.AutomountServiceAccountToken)
+		assert.True(t, *sts.Spec.Template.Spec.AutomountServiceAccountToken)
 	})
 	t.Run("successfully modified with readonly feature flag", func(t *testing.T) {
 		dk := getBaseDynakube()

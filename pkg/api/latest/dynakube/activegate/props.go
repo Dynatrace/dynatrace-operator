@@ -73,7 +73,7 @@ func (ag *Spec) GetReplicas() int32 {
 }
 
 func (ag *Spec) GetServiceAccountName() string {
-	return "dynatrace-" + ag.GetServiceAccountOwner()
+	return "dynatrace-activegate"
 }
 
 func (ag *Spec) IsKubernetesMonitoringEnabled() bool {

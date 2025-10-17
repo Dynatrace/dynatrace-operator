@@ -1,9 +1,14 @@
-{{- if .Values.rbac.kspm.create }}
+
+{{- if .Values.rbac.kspm.create}}
+{{- if not .Values.rbac.activeGate.create}}
+{{- fail "rbac.activeGate.create = true is required for rbac.kspm.create"}}
+{{- end }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: dynatrace-kubernetes-monitoring-kspm
   labels:
+    rbac.dynatrace.com/aggregate-to-monitoring: "true"
     {{- include "dynatrace-operator.kspmLabels" . | nindent 4 }}
 rules:
   - apiGroups:
@@ -63,19 +68,4 @@ rules:
       - get
       - list
       - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: dynatrace-kubernetes-monitoring-kspm
-  labels:
-    {{- include "dynatrace-operator.kspmLabels" . | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: dynatrace-kubernetes-monitoring-kspm
-subjects:
-  - kind: ServiceAccount
-    name: dynatrace-kubernetes-monitoring
-    namespace: {{ .Release.Namespace }}
 {{ end }}
