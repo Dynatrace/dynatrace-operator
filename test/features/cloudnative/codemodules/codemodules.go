@@ -18,7 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/env"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"

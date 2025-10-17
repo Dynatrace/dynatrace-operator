@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/container"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"

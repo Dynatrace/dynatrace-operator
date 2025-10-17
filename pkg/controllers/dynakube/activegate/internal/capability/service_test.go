@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"

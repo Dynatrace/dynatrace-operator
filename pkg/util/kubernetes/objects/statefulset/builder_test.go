@@ -3,7 +3,7 @@ package statefulset
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

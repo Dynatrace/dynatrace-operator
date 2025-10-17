@@ -2,7 +2,7 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/affinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/affinity"
 	corev1 "k8s.io/api/core/v1"
 )
 

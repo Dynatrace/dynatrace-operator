@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"

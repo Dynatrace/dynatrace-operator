@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

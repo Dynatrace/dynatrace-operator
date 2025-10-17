@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/secret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"

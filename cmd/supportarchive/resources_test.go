@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/env"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

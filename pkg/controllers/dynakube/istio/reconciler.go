@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"

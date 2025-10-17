@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	logmonitoringds "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
-	k8senv "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/env"
+	k8senv "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

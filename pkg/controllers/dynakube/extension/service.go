@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/service"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/labels"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"

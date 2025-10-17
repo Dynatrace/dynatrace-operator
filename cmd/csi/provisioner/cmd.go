@@ -8,7 +8,7 @@ import (
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"

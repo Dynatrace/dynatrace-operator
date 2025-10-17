@@ -6,7 +6,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
-	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/volumes"
+	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
