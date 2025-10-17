@@ -73,7 +73,6 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 	meActive := dm.dk.MetadataEnrichment().IsEnabled()
 	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "OneAgent", oaActive, dm.matchedOANamespaces)
 	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "MetadataEnrichment", meActive, dm.matchedMENamespaces)
-	updateCollectedNamespacesMonitoredCondition(dm.dk.Conditions())
 
 	return nil
 }
@@ -139,19 +138,17 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 	for i := range nsList.Items {
 		namespace := &nsList.Items[i]
 
-		if !isIgnoredNamespace(dm.dk, namespace.Name) {
-			result, err := match(dm.dk, namespace)
-			if err != nil {
-				return nil, err
-			}
+		result, err := match(dm.dk, namespace)
+		if err != nil {
+			return nil, err
+		}
 
-			if result.IsOA {
-				dm.matchedOANamespaces = append(dm.matchedOANamespaces, namespace.Name)
-			}
+		if result.IsOA {
+			dm.matchedOANamespaces = append(dm.matchedOANamespaces, namespace.Name)
+		}
 
-			if result.IsME {
-				dm.matchedMENamespaces = append(dm.matchedMENamespaces, namespace.Name)
-			}
+		if result.IsME {
+			dm.matchedMENamespaces = append(dm.matchedMENamespaces, namespace.Name)
 		}
 
 		updated, err := updateNamespace(namespace, dkList)

@@ -9,14 +9,11 @@ import (
 )
 
 const (
-	namespacesMonitoredConditionType = "NamespacesMonitored"
-
 	oneAgentNamespacesMonitoredConditionType           = "OneAgentNamespacesMonitored"
 	metadataEnrichmentNamespacesMonitoredConditionType = "MetadataEnrichmentNamespacesMonitored"
 
-	matchesFoundReason          = "MatchesFound"
-	noMatchesReason             = "NoMatches"
-	selectorNotConfiguredReason = "SelectorNotConfigured"
+	matchesFoundReason = "MatchesFound"
+	noMatchesReason    = "NoMatches"
 
 	maxNamesInMsg = 10
 )
@@ -30,6 +27,12 @@ func setNamespacesMonitoredSelectorCondition(conditions *[]metav1.Condition, sel
 	case "MetadataEnrichment":
 		condType = metadataEnrichmentNamespacesMonitoredConditionType
 	}
+
+	log.Info("namespaces monitored",
+		"selector", selectorType,
+		"count (at most 10 are displayed)", len(names),
+		"namespaces", names,
+	)
 
 	cond := metav1.Condition{Type: condType}
 
@@ -53,43 +56,13 @@ func setNamespacesMonitoredSelectorCondition(conditions *[]metav1.Condition, sel
 	_ = meta.SetStatusCondition(conditions, cond)
 }
 
-func updateCollectedNamespacesMonitoredCondition(conditions *[]metav1.Condition) {
-	oa := meta.FindStatusCondition(*conditions, oneAgentNamespacesMonitoredConditionType)
-	me := meta.FindStatusCondition(*conditions, metadataEnrichmentNamespacesMonitoredConditionType)
-
-	if oa == nil && me == nil {
-		_ = meta.RemoveStatusCondition(conditions, namespacesMonitoredConditionType)
-
-		return
-	}
-
-	collected := metav1.Condition{
-		Type:               namespacesMonitoredConditionType,
-		LastTransitionTime: metav1.Now(),
-	}
-
-	if (oa != nil && oa.Status == metav1.ConditionTrue) || (me != nil && me.Status == metav1.ConditionTrue) {
-		collected.Status = metav1.ConditionTrue
-		collected.Reason = matchesFoundReason
-		collected.Message = "Either no selector is configured or at least one selector matches one or more namespaces"
-		_ = meta.SetStatusCondition(conditions, collected)
-
-		return
-	}
-
-	collected.Status = metav1.ConditionFalse
-	collected.Reason = noMatchesReason
-	collected.Message = "No namespaces match the configured selectors"
-	_ = meta.SetStatusCondition(conditions, collected)
-}
-
 func formatMatchMessage(names []string, limit int) string {
 	if len(names) == 0 {
 		return "no namespaces match"
 	}
 
 	if len(names) > limit {
-		return fmt.Sprintf("%d namespaces match: %s (at most %d shown)", len(names), strings.Join(names[:limit], ", "), limit)
+		return fmt.Sprintf("%d namespaces match: %s (at most %d are displayed)", len(names), strings.Join(names[:limit], ", "), limit)
 	}
 
 	return fmt.Sprintf("%d namespaces match: %s", len(names), strings.Join(names, ", "))
