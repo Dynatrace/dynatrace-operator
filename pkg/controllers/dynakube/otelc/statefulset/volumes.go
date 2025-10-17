@@ -24,7 +24,7 @@ const (
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	var volumes []corev1.Volume
 
-	if ext := dk.Extensions(); ext.IsEnabled() {
+	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
 		volumes = append(
 			volumes,
 			corev1.Volume{
@@ -137,7 +137,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	var vm []corev1.VolumeMount
 
-	if dk.Extensions().IsEnabled() {
+	if dk.Extensions().IsPrometheusEnabled() {
 		vm = append(
 			vm,
 			corev1.VolumeMount{
@@ -187,5 +187,5 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 }
 
 func isTrustedCAsVolumeNeeded(dk *dynakube.DynaKube) bool {
-	return dk.Extensions().IsEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
+	return dk.Extensions().IsPrometheusEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
 }

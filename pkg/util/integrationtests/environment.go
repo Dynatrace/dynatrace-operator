@@ -44,6 +44,14 @@ func SetupTestEnvironment(t *testing.T) client.Client {
 		t.Fatal(err)
 	}
 
+	t.Cleanup(func() {
+		err := testEnv.Stop()
+		if err != nil {
+			// test is already ending, no need to explicitly fail test
+			t.Error(err, "stop env")
+		}
+	})
+
 	clt, err := client.New(cfg, client.Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -222,12 +230,4 @@ func addScheme(testEnv *envtest.Environment) error {
 	}
 
 	return nil
-}
-
-func DestroyTestEnvironment(t *testing.T) {
-	// stop test environment
-	err := testEnv.Stop()
-	if err != nil {
-		t.Fatal(err)
-	}
 }

@@ -30,7 +30,4 @@ func TestStatefulSet(t *testing.T) {
 	dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 	err = reconciler.Reconcile(ctx)
 	require.NoError(t, err)
-
-	// stop test environment
-	integrationtests.DestroyTestEnvironment(t)
 }

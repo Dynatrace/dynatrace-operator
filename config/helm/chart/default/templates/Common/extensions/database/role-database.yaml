@@ -8,6 +8,18 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["list"]
+  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+      - nonroot-v2
+      - hostmount-anyuid
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+  {{ end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

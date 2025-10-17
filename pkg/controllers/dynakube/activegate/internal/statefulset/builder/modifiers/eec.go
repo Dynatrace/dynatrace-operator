@@ -31,7 +31,7 @@ type EecModifier struct {
 }
 
 func (mod EecModifier) Enabled() bool {
-	return mod.dk.Extensions().IsEnabled()
+	return mod.dk.Extensions().IsAnyEnabled()
 }
 
 func (mod EecModifier) Modify(sts *appsv1.StatefulSet) error {

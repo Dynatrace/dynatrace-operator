@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/eec"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -54,6 +55,10 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	err = eec.NewReconciler(r.client, r.apiReader, r.dk).Reconcile(ctx)
 	if err != nil {
+		return err
+	}
+
+	if err := databases.NewReconciler(r.client, r.apiReader, r.dk).Reconcile(ctx); err != nil {
 		return err
 	}
 

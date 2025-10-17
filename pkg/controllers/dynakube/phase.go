@@ -63,7 +63,7 @@ func (controller *Controller) determineExtensionsCollectorPhase(dk *dynakube.Dyn
 }
 
 func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
-	if dk.Extensions().IsEnabled() {
+	if dk.Extensions().IsPrometheusEnabled() {
 		statefulSet := &appsv1.StatefulSet{}
 
 		err := controller.client.Get(context.Background(), types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)

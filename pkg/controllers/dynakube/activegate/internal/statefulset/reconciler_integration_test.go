@@ -62,7 +62,4 @@ func TestStatefulSet(t *testing.T) {
 	dk.Spec.ActiveGate.UseEphemeralVolume = true
 	err = reconciler.Reconcile(ctx)
 	require.NoError(t, err)
-
-	// stop test environment
-	integrationtests.DestroyTestEnvironment(t)
 }

@@ -77,7 +77,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getDynakubeNoProxyEnvValue(dk)})
 	}
 
-	if dk.Extensions().IsEnabled() {
+	if dk.Extensions().IsPrometheusEnabled() {
 		envs = append(
 			envs,
 			corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
@@ -113,7 +113,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		)
 	}
 
-	if dk.Extensions().IsEnabled() && dk.Spec.TrustedCAs != "" {
+	if dk.Extensions().IsPrometheusEnabled() && dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: otelcConsts.TrustedCAVolumePath})
 	}
 
@@ -139,7 +139,7 @@ func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
 	noProxyValues := []string{}
 
-	if ext := dk.Extensions(); ext.IsEnabled() {
+	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
 		noProxyValues = append(noProxyValues, ext.GetServiceNameFQDN())
 	}
 
