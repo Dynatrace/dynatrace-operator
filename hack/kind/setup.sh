@@ -6,6 +6,7 @@ k8s_version=1.34
 name=kind
 
 # TODO: we can use renovate to update these image versions
+# DAQ-15444
 # based on release page https://github.com/kubernetes-sigs/kind/releases
 KIND_IMAGE_K8S_131=docker.io/kindest/node:v1.31.12@sha256:0f5cc49c5e73c0c2bb6e2df56e7df189240d83cf94edfa30946482eb08ec57d2
 KIND_IMAGE_K8S_132=docker.io/kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1
