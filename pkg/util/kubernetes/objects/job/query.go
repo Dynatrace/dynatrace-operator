@@ -3,8 +3,8 @@ package job
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/settings/labels"
 	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -26,9 +26,8 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 				return out
 			},
-			IsEqual:             isEqual,
-			MustRecreate:        mustRecreate,
-			CopyProtectedFields: func(_, _ *batchv1.Job) {},
+			IsEqual:      isEqual,
+			MustRecreate: mustRecreate,
 
 			KubeClient: kubeClient,
 			KubeReader: kubeReader,

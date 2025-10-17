@@ -26,9 +26,8 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 				return out
 			},
-			IsEqual:             isEqual,
-			MustRecreate:        func(_, _ *corev1.Secret) bool { return false },
-			CopyProtectedFields: func(_, _ *corev1.Secret) {},
+			IsEqual:      isEqual,
+			MustRecreate: func(_, _ *corev1.Secret) bool { return false },
 
 			KubeClient: kubeClient,
 			KubeReader: kubeReader,

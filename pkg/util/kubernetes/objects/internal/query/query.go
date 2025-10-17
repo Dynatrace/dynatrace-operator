@@ -17,12 +17,11 @@ import (
 )
 
 type Generic[T client.Object, L client.ObjectList] struct {
-	Target              T
-	ListTarget          L
-	ToList              func(L) []T
-	IsEqual             func(T, T) bool
-	MustRecreate        func(T, T) bool
-	CopyProtectedFields func(T, T)
+	Target       T
+	ListTarget   L
+	ToList       func(L) []T
+	IsEqual      func(T, T) bool
+	MustRecreate func(T, T) bool
 
 	Owner      client.Object
 	KubeClient client.Client
@@ -98,8 +97,6 @@ func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, e
 	} else if err != nil {
 		return false, err
 	}
-
-	c.CopyProtectedFields(currentObject, newObject)
 
 	err = hasher.AddAnnotation(newObject)
 	if err != nil {
