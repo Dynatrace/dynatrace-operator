@@ -30,6 +30,7 @@ const (
 	testDynakubeName            = "dynakube"
 	testNamespaceName           = "dynatrace"
 	testPullSecret              = "pull-secret"
+	testTrustedCAs              = "trusted-cas"
 	testExecutorImageRepository = "repo/dynatrace-executor"
 	testExecutorImageTag        = "1.123.0"
 )
@@ -96,7 +97,12 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Contains(t, deploy.Labels, labels.AppVersionLabel)
 		assert.Equal(t, deploy.Labels, deploy.Spec.Template.Labels)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
-		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 3)
+
+		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
+		assert.Equal(t, "https-certs", deploy.Spec.Template.Spec.Volumes[2].Name)
+		assert.Equal(t, dk.Extensions().GetTLSSecretName(), deploy.Spec.Template.Spec.Volumes[2].VolumeSource.Secret.SecretName)
+		assert.Equal(t, "custom-certs", deploy.Spec.Template.Spec.Volumes[3].Name)
+		assert.Equal(t, testTrustedCAs, deploy.Spec.Template.Spec.Volumes[3].VolumeSource.ConfigMap.Name)
 
 		container := deploy.Spec.Template.Spec.Containers[0]
 		assert.NotNil(t, container.LivenessProbe)
@@ -106,7 +112,13 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Equal(t, corev1.PullIfNotPresent, container.ImagePullPolicy)
 		assert.Len(t, container.Args, 3)
 		assert.Len(t, container.Env, 1)
-		assert.Len(t, container.VolumeMounts, 3)
+
+		assert.Len(t, container.VolumeMounts, 4)
+		assert.Equal(t, "https-certs", container.VolumeMounts[2].Name)
+		assert.Equal(t, "/var/ssl-certs/dynatrace", container.VolumeMounts[2].MountPath)
+		assert.Equal(t, "custom-certs", container.VolumeMounts[3].Name)
+		assert.Equal(t, "/var/ssl-certs/user", container.VolumeMounts[3].MountPath)
+
 		assert.NotEmpty(t, container.Resources.Requests)
 		assert.NotEmpty(t, container.Resources.Limits)
 	})
@@ -167,8 +179,8 @@ func TestReconcileSpec(t *testing.T) {
 		}
 
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
-		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
-		assert.Len(t, deploy.Spec.Template.Spec.Containers[0].VolumeMounts, 4)
+		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 5)
+		assert.Len(t, deploy.Spec.Template.Spec.Containers[0].VolumeMounts, 5)
 	})
 }
 
@@ -233,6 +245,7 @@ func getTestDynakube() *dynakube.DynaKube {
 				},
 			},
 			CustomPullSecret: testPullSecret,
+			TrustedCAs:       testTrustedCAs,
 		},
 	}
 }
