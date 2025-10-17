@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -74,10 +73,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			deployment.SetVolumes(buildVolumes(r.dk, dbex)),
 		)
 		if err != nil {
-			return err
-		}
-
-		if err := hasher.AddAnnotation(deploy); err != nil {
 			return err
 		}
 
