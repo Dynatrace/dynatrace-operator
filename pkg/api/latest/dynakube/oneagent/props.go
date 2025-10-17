@@ -85,11 +85,11 @@ func (oa *OneAgent) IsLivenessProbeNeeded() bool {
 func (oa *OneAgent) IsAutoUpdateEnabled() bool {
 	switch {
 	case oa.IsCloudNativeFullstackMode():
-		return oa.CloudNativeFullStack.AutoUpdate == nil || *oa.CloudNativeFullStack.AutoUpdate
+		return oa.CloudNativeFullStack.Version == "" && oa.CloudNativeFullStack.Image == ""
 	case oa.IsHostMonitoringMode():
-		return oa.HostMonitoring.AutoUpdate == nil || *oa.HostMonitoring.AutoUpdate
+		return oa.HostMonitoring.Version == "" && oa.HostMonitoring.Image == ""
 	case oa.IsClassicFullStackMode():
-		return oa.ClassicFullStack.AutoUpdate == nil || *oa.ClassicFullStack.AutoUpdate
+		return oa.ClassicFullStack.Version == "" && oa.ClassicFullStack.Image == ""
 	default:
 		return false
 	}
