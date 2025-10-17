@@ -181,6 +181,14 @@ x-google-marketplace:
         - validatingwebhookconfigurations
         verbs:
         - '*'
+      - apiGroups:
+        - scheduling.k8s.io
+        resources:
+        - priorityclasses
+        verbs:
+          - get
+          - create
+          - patch
 properties:
   name:
     type: string
