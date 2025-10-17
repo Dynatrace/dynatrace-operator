@@ -16,6 +16,8 @@ markdownlint_cli_version=v0.45.0
 helmunittest_version=v1.0.3
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 cyclonedx_gomod_version=v1.9.0
+# renovate depName=github.com/mikefarah/yq/v4
+yq_version=v4.48.1
 
 ENVTEST_K8S_VERSION = $(shell go list -m -f "{{ .Version }}" k8s.io/api | sed 's/v0/1/' )
 
@@ -95,3 +97,7 @@ prerequisites/python:
 ## Install 'cyclonedx-gomod' if it is missing
 prerequisites/cyclonedx-gomod:
 	go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@$(cyclonedx_gomod_version)
+
+## Install 'yq' if it is missing
+prerequisites/yq:
+	go install github.com/mikefarah/yq/v4@$(yq_version)
