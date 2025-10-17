@@ -26,26 +26,13 @@ deploy: manifests/crd/helm
 
 ## Undeploy the current operator installation
 undeploy: cleanup/custom-resources
+	kubectl delete dynakube --all -n dynatrace || true
+	kubectl delete edgeconnect --all -n dynatrace || true
+	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
+
 	helm uninstall dynatrace-operator \
 			--namespace dynatrace
 
 ## Remove all Dynatrace Operator resources from the cluster
-cleanup: cleanup/custom-resources
-	kubectl delete namespace dynatrace --ignore-not-found
-	@echo "Removing Dynatrace Operator cluster-scoped resources"
-	@kubectl api-resources --verbs=list -o name --namespaced=false | \
-		xargs -I {} sh -c \
-		"kubectl delete {} --ignore-not-found -l app.kubernetes.io/name=dynatrace-operator 2>&1 | \
-		grep -v 'No resources found'" || true
-
-	@echo -n "Removing Dynatrace Operator secrets and configmaps from all namespaces "
-	@for ns in $$(kubectl get ns -o jsonpath="{.items[*].metadata.name}"); do \
-		kubectl delete secret,cm -l app.kubernetes.io/name=dynatrace-operator --ignore-not-found -n $$ns > /dev/null 2>&1 || true; \
-		printf '.'; \
-	done
-	@echo " done"
-
-cleanup/custom-resources:
-	kubectl delete dynakube --all -n dynatrace || true
-	kubectl delete edgeconnect --all -n dynatrace || true
-	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
+cleanup: 
+	@./hack/cluster/cleanup-dynatrace-objects.sh
