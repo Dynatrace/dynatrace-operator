@@ -3,7 +3,7 @@ package metadataenrichment
 import (
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (rule EnrichmentRule) ToAnnotationKey() string {
@@ -22,6 +22,6 @@ func (enrichment *MetadataEnrichment) IsEnabled() bool {
 	return enrichment.Enabled != nil && *enrichment.Enabled
 }
 
-func (enrichment *MetadataEnrichment) GetNamespaceSelector() *v1.LabelSelector {
+func (enrichment *MetadataEnrichment) GetNamespaceSelector() *metav1.LabelSelector {
 	return &enrichment.NamespaceSelector
 }
