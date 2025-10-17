@@ -17,6 +17,15 @@ type ConflictChecker struct {
 	alreadyUsed bool
 }
 
+type matchResult struct {
+	IsOA bool
+	IsME bool
+}
+
+func (m matchResult) IsAny() bool {
+	return m.IsOA || m.IsME
+}
+
 func (c *ConflictChecker) check(dk *dynakube.DynaKube) error {
 	metadataEnrichment := dk.MetadataEnrichment()
 	if !dk.OneAgent().IsAppInjectionNeeded() && !metadataEnrichment.IsEnabled() {
@@ -62,22 +71,28 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 	ns.Annotations[UpdatedViaDynakubeAnnotation] = "true"
 }
 
-func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
+func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (matchResult, error) {
+	var result matchResult
+
 	if isIgnoredNamespace(dk, namespace.Name) {
-		return false, nil
+		return result, nil
 	}
 
 	matchOA, err := matchOneAgent(dk, namespace)
 	if err != nil {
-		return false, err
+		return result, err
 	}
+
+	result.IsOA = matchOA
 
 	matchME, err := matchMetadataEnrichment(dk, namespace)
 	if err != nil {
-		return false, err
+		return result, err
 	}
 
-	return matchOA || matchME, nil
+	result.IsME = matchME
+
+	return result, nil
 }
 
 // matchOneAgent uses the namespace selector in the dynakube to check if it matches a given namespace
@@ -128,13 +143,13 @@ func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynakube.Dy
 			return namespaceUpdated, err
 		}
 
-		if matches {
+		if matches.IsAny() {
 			if err := conflict.check(dk); err != nil {
 				return namespaceUpdated, err
 			}
 		}
 
-		labelsUpdated := updateLabels(matches, dk, namespace)
+		labelsUpdated := updateLabels(matches.IsAny(), dk, namespace)
 		namespaceUpdated = labelsUpdated || namespaceUpdated
 	}
 

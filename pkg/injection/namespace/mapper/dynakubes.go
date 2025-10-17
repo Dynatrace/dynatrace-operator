@@ -140,15 +140,16 @@ func (dm *DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *
 		namespace := &nsList.Items[i]
 
 		if !isIgnoredNamespace(dm.dk, namespace.Name) {
-			if ok, err := matchOneAgent(dm.dk, namespace); err != nil {
+			result, err := match(dm.dk, namespace)
+			if err != nil {
 				return nil, err
-			} else if ok {
+			}
+
+			if result.IsOA {
 				dm.matchedOANamespaces = append(dm.matchedOANamespaces, namespace.Name)
 			}
 
-			if ok, err := matchMetadataEnrichment(dm.dk, namespace); err != nil {
-				return nil, err
-			} else if ok {
+			if result.IsME {
 				dm.matchedMENamespaces = append(dm.matchedMENamespaces, namespace.Name)
 			}
 		}
