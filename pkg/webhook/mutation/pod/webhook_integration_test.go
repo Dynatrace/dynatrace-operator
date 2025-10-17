@@ -124,6 +124,14 @@ func TestWebhook(t *testing.T) {
 	}
 	createObject(t, clt, bootstrapperSecret)
 
+	otlpExporterSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OTLPExporterSecretName,
+			Namespace: testNamespace,
+		},
+	}
+	createObject(t, clt, otlpExporterSecret)
+
 	t.Run("success", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

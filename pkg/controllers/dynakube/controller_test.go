@@ -25,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	oneagentcontroller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -373,6 +374,8 @@ func TestReconcileComponents(t *testing.T) {
 		mockKSPMReconciler := controllermock.NewReconciler(t)
 		mockKSPMReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
+		mockOTLPReconciler := controllermock.NewReconciler(t)
+
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -385,6 +388,7 @@ func TestReconcileComponents(t *testing.T) {
 			extensionReconcilerBuilder:     createExtensionReconcilerBuilder(mockExtensionReconciler),
 			otelcReconcilerBuilder:         createOtelcReconcilerBuilder(mockOtelcReconciler),
 			kspmReconcilerBuilder:          createKSPMReconcilerBuilder(mockKSPMReconciler),
+			otlpReconcilerBuilder:          createOTLPReconcilerBuilder(mockOTLPReconciler),
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 
@@ -392,7 +396,7 @@ func TestReconcileComponents(t *testing.T) {
 
 		require.Error(t, err)
 		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 7) // ActiveGate, Extension, OtelC, OneAgent LogMonitoring, and Injection reconcilers
+		assert.Len(t, strings.Split(err.Error(), "\n"), 7) // ActiveGate, Extension, OtelC, OneAgent LogMonitoring, Injection and OTLP reconcilers
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
@@ -482,6 +486,8 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockKSPMReconciler := controllermock.NewReconciler(t)
 	mockKSPMReconciler.On("Reconcile", mock.Anything).Return(nil)
 
+	mockOTLPReconciler := controllermock.NewReconciler(t)
+
 	fakeIstio := fakeistio.NewSimpleClientset()
 
 	baseController := &Controller{
@@ -499,6 +505,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		oneAgentReconcilerBuilder:           createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 		otelcReconcilerBuilder:              createOtelcReconcilerBuilder(mockOtelcReconciler),
 		proxyReconcilerBuilder:              createProxyReconcilerBuilder(mockProxyReconciler),
+		otlpReconcilerBuilder:               createOTLPReconcilerBuilder(mockOTLPReconciler),
 	}
 
 	request := reconcile.Request{
@@ -576,7 +583,7 @@ func createOtelcReconcilerBuilder(reconciler controllers.Reconciler) otelc.Recon
 }
 
 func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injection.ReconcilerBuilder {
-	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) controllers.Reconciler {
+	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube, otlpReconciler controllers.Reconciler) controllers.Reconciler {
 		return reconciler
 	}
 }
@@ -601,6 +608,12 @@ func createDeploymentMetadataReconcilerBuilder(reconciler controllers.Reconciler
 
 func createProxyReconcilerBuilder(reconciler controllers.Reconciler) proxy.ReconcilerBuilder {
 	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
+		return reconciler
+	}
+}
+
+func createOTLPReconcilerBuilder(reconciler controllers.Reconciler) otlp.ReconcilerBuilder {
+	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }
