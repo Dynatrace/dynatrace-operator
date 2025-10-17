@@ -1,0 +1,31 @@
+suite: test clusterrole for kubernetes monitoring
+templates:
+  - Common/activegate/kubernetes-monitoring/clusterrole-kubernetes-monitoring-kspm.yaml
+tests:
+  - it: ClusterRole should exist
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-kubernetes-monitoring-kspm
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: metadata.labels["rbac.dynatrace.com/aggregate-to-monitoring"]
+          value: "true"
+      - isNotEmpty:
+          path: rules
+  - it: shouldn't exist if turned off
+    set:
+      rbac.kspm.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should fail if only kspm is turned on
+    set:
+      rbac.activeGate.create: false
+      rbac.kspm.create: true
+    asserts:
+     - failedTemplate: {}
