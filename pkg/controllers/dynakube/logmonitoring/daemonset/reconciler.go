@@ -6,9 +6,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/affinity"
+	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/daemonset"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -93,7 +93,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		daemonset.SetAllAnnotations(nil, r.getAnnotations()),
 		daemonset.SetServiceAccount(serviceAccountName),
 		daemonset.SetDNSPolicy(r.dk.LogMonitoring().Template().DNSPolicy),
-		daemonset.SetAffinity(node.Affinity()),
+		daemonset.SetAffinity(affinity.NewMultiArchNodeAffinity()),
 		daemonset.SetPriorityClass(r.dk.LogMonitoring().Template().PriorityClassName),
 		daemonset.SetNodeSelector(r.dk.LogMonitoring().Template().NodeSelector),
 		daemonset.SetTolerations(r.dk.LogMonitoring().Template().Tolerations),

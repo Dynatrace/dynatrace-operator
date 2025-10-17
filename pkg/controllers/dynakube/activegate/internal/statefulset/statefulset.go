@@ -10,9 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/affinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/statefulset"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
@@ -270,14 +270,14 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 }
 
 func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
-	var affinity corev1.Affinity
+	var af corev1.Affinity
 	if statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.TenantRegistryVersionSource || statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.CustomVersionVersionSource {
-		affinity = node.AMDOnlyAffinity()
+		af = affinity.NewAMDOnlyNodeAffinity()
 	} else {
-		affinity = node.Affinity()
+		af = affinity.NewMultiArchNodeAffinity()
 	}
 
-	return &affinity
+	return &af
 }
 
 func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {

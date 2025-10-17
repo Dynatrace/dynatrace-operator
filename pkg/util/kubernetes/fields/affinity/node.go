@@ -1,4 +1,4 @@
-package node
+package affinity
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -10,23 +10,23 @@ const (
 	kubernetesOS   = "kubernetes.io/os"
 )
 
-func Affinity() corev1.Affinity {
-	return AffinityForArches(arch.AMDImage, arch.ARMImage, arch.PPCLEImage, arch.S390Image)
+func NewMultiArchNodeAffinity() corev1.Affinity {
+	return nodeAffinityForArches(arch.AMDImage, arch.ARMImage, arch.PPCLEImage, arch.S390Image)
 }
 
-// AMDOnlyAffinity provides an affinity that will only allow deployment on AMD64 nodes.
+// NewAMDOnlyNodeAffinity provides an affinity that will only allow deployment on AMD64 nodes.
 // This is manly needed for the Dynatrace tenant-registry as it only has AMD64 images.
-func AMDOnlyAffinity() corev1.Affinity {
-	return AffinityForArches(arch.AMDImage)
+func NewAMDOnlyNodeAffinity() corev1.Affinity {
+	return nodeAffinityForArches(arch.AMDImage)
 }
 
-func AffinityForArches(arches ...string) corev1.Affinity {
+func nodeAffinityForArches(arches ...string) corev1.Affinity {
 	return corev1.Affinity{
 		NodeAffinity: &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{
 					{
-						MatchExpressions: affinityNodeRequirementsForArches(arches...),
+						MatchExpressions: nodeAffinityRequirementsForArches(arches...),
 					},
 				},
 			},
@@ -34,7 +34,7 @@ func AffinityForArches(arches ...string) corev1.Affinity {
 	}
 }
 
-func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {
+func nodeAffinityRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {
 	return []corev1.NodeSelectorRequirement{
 		{
 			Key:      kubernetesArch,

@@ -1,7 +1,7 @@
 package configmap
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/internal/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/builder"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
