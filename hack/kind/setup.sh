@@ -7,15 +7,10 @@ name=kind
 
 # Color codes and symbols
 red="\033[0;31m"
-green="\033[0;32m"
 yel="\033[0;33m"
 cyan="\033[0;36m" # C = cyan
-bold="\033[0;37m" # B = white bold
-gray="\033[0;90m"
 end="\033[0m" # E is the "end" marker.
 warn="⚠️  "
-wait="⏳️  "
-greencheck="✅  "
 redcross="❌  "
 
 # TODO: we can use renovate to update these image versions
