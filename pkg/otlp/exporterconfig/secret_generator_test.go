@@ -65,13 +65,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk)
 		require.NoError(t, err)
 
-		var secret corev1.Secret
-		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterSecretName, Namespace: testNamespace}, &secret)
-		require.True(t, errors.IsNotFound(err))
-
-		var sourceSecret corev1.Secret
-		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
-		require.True(t, errors.IsNotFound(err))
+		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
+		assertSecretNotFound(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
 	})
 	t.Run("successfully generate config secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -308,36 +303,12 @@ func TestCleanup(t *testing.T) {
 		{ObjectMeta: metav1.ObjectMeta{Name: testNamespace2}},
 	}
 
-	var secretNS1 corev1.Secret
-	err := clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterSecretName, Namespace: testNamespace}, &secretNS1)
+	err := Cleanup(t.Context(), clt, clt, namespaces, dk)
 	require.NoError(t, err)
 
-	require.NotEmpty(t, secretNS1)
-	assert.Equal(t, consts.OTLPExporterSecretName, secretNS1.Name)
-
-	var secretNS2 corev1.Secret
-	err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterSecretName, Namespace: testNamespace}, &secretNS2)
-	require.NoError(t, err)
-
-	require.NotEmpty(t, secretNS2)
-	assert.Equal(t, consts.OTLPExporterSecretName, secretNS2.Name)
-
-	err = Cleanup(t.Context(), clt, clt, namespaces, dk)
-	require.NoError(t, err)
-
-	var deleted corev1.Secret
-	err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterSecretName, Namespace: testNamespace}, &deleted)
-	require.Error(t, err)
-	assert.True(t, errors.IsNotFound(err))
-
-	err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterSecretName, Namespace: testNamespace2}, &deleted)
-	require.Error(t, err)
-	assert.True(t, errors.IsNotFound(err))
-
-	err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &deleted)
-	require.Error(t, err)
-	assert.True(t, errors.IsNotFound(err))
-	require.Nil(t, meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType))
+	assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
+	assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
+	assertSecretNotFound(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
 }
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
