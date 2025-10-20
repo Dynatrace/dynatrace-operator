@@ -85,6 +85,11 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	templateAnnotations := map[string]string{tokenSecretHashAnnotation: r.dk.KSPM().TokenSecretHash}
 	maps.Copy(templateAnnotations, r.dk.KSPM().Annotations)
 
+	affinity := node.AMDOnlyAffinity()
+	if r.dk.KSPM().NodeAffinity != nil {
+		affinity.NodeAffinity = r.dk.KSPM().NodeAffinity
+	}
+
 	ds, err := daemonset.Build(r.dk, r.dk.KSPM().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.KSPM().Labels),
 		daemonset.SetAllAnnotations(r.dk.KSPM().Annotations, templateAnnotations),

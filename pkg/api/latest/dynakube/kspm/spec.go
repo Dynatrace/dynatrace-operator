@@ -67,7 +67,7 @@ type NodeConfigurationCollectorSpec struct {
 
 	// Define the nodeAffinity for the DaemonSet of the NodeConfigurationCollector
 	// +kubebuilder:validation:Optional
-	NodeAffinity corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
+	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
 
 	// Set tolerations for the NodeConfigurationCollector pods
 	// +kubebuilder:validation:Optional
