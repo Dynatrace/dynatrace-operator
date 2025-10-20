@@ -28,7 +28,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKSPM(),
-		componentDynakube.WithKSPMImageRefSpec(consts.LogMonitoringImageRepo, consts.LogMonitoringImageTag),
+		componentDynakube.WithKSPMImageRefSpec(consts.KSPMImageRepo, consts.KSPMImageTag),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
