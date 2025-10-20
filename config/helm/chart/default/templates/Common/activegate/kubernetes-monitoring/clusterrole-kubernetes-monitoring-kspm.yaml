@@ -1,8 +1,5 @@
-
 {{- if .Values.rbac.kspm.create}}
-{{- if not .Values.rbac.activeGate.create}}
-{{- fail "rbac.activeGate.create = true is required for rbac.kspm.create"}}
-{{- end }}
+{{- include "validation.rbac.kspm" . }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

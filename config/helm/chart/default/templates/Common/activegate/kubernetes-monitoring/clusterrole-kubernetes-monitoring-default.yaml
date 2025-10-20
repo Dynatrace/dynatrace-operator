@@ -1,7 +1,5 @@
 {{- if .Values.rbac.kubernetesMonitoring.create }}
-{{- if not .Values.rbac.activeGate.create}}
-{{- fail "rbac.activeGate.create = true is required for rbac.kubernetesMonitoring.create"}}
-{{- end }}
+{{- include "validation.rbac.kubemon" . }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
