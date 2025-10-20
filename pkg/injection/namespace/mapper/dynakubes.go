@@ -53,22 +53,6 @@ func (dm *DynakubeMapper) MapFromDynakube() error {
 		return err
 	}
 
-	if dm.dk.OneAgent().IsAppInjectionNeeded() {
-		log.Info("namespaces monitored",
-			"selector", "OneAgent",
-			"count (at most 10 are displayed)", len(dm.matchedOANamespaces),
-			"namespaces", dm.matchedOANamespaces,
-		)
-	}
-
-	if dm.dk.MetadataEnrichment().IsEnabled() {
-		log.Info("namespaces monitored",
-			"selector", "MetadataEnrichment",
-			"count (at most 10 are displayed)", len(dm.matchedMENamespaces),
-			"namespaces", dm.matchedMENamespaces,
-		)
-	}
-
 	oaActive := dm.dk.OneAgent().IsAppInjectionNeeded()
 	meActive := dm.dk.MetadataEnrichment().IsEnabled()
 	setNamespacesMonitoredSelectorCondition(dm.dk.Conditions(), "OneAgent", oaActive, dm.matchedOANamespaces)
