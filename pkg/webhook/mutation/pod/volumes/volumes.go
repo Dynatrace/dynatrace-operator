@@ -15,9 +15,13 @@ var (
 )
 
 const (
-	ConfigVolumeName    = "dynatrace-config"
-	InitConfigMountPath = "/mnt/config"
-	ConfigMountPath     = "/var/lib/dynatrace"
+	ConfigVolumeName             = "dynatrace-config"
+	InitConfigMountPath          = "/mnt/config"
+	ConfigMountPath              = "/var/lib/dynatrace"
+	ConfigMountSubPathOneAgent   = "/oneagent"
+	ConfigMountPathOneAgent      = ConfigMountPath + ConfigMountSubPathOneAgent
+	ConfigMountSubPathEnrichment = "/enrichment"
+	ConfigMountPathEnrichment    = ConfigMountPath + ConfigMountSubPathEnrichment
 
 	InputVolumeName    = "dynatrace-input"
 	InitInputMountPath = "/mnt/input"
@@ -57,18 +61,36 @@ func AddConfigVolume(pod *corev1.Pod) {
 	)
 }
 
-func AddConfigVolumeMount(container *corev1.Container) {
-	if mounts.IsPathIn(container.VolumeMounts, ConfigMountPath) {
-		return
-	}
+func AddConfigVolumeMount(container *corev1.Container, splitMountsEnabled bool) {
+	if splitMountsEnabled {
+		if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathOneAgent) {
+			container.VolumeMounts = append(container.VolumeMounts,
+				corev1.VolumeMount{
+					Name:      ConfigVolumeName,
+					MountPath: ConfigMountPathOneAgent,
+					SubPath:   container.Name + ConfigMountSubPathOneAgent,
+				},
+			)
+		}
 
-	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      ConfigVolumeName,
-			MountPath: ConfigMountPath,
-			SubPath:   container.Name,
-		},
-	)
+		if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathEnrichment) {
+			container.VolumeMounts = append(container.VolumeMounts,
+				corev1.VolumeMount{
+					Name:      ConfigVolumeName,
+					MountPath: ConfigMountPathEnrichment,
+					SubPath:   container.Name + ConfigMountSubPathEnrichment,
+				},
+			)
+		}
+	} else if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPath) {
+		container.VolumeMounts = append(container.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      ConfigVolumeName,
+				MountPath: ConfigMountPath,
+				SubPath:   container.Name,
+			},
+		)
+	}
 }
 
 func AddInitConfigVolumeMount(container *corev1.Container) {
