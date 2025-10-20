@@ -472,3 +472,133 @@ func Test_appendAttribute(t *testing.T) {
 		})
 	}
 }
+
+func Test_addAttributesFromAnnotations(t *testing.T) {
+	tests := []struct {
+		name         string
+		annotations  map[string]string
+		existingEnv  corev1.EnvVar
+		existingAttr string
+		wantMutated  bool
+		wantResult   string
+	}{
+		{
+			name:         "no metadata annotations",
+			annotations:  map[string]string{"foo": "bar"},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  false,
+			wantResult:   "",
+		},
+		{
+			name:         "single metadata annotation",
+			annotations:  map[string]string{"metadata.dynatrace.com/my-attribute": "foo"},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  true,
+			wantResult:   "my-attribute=foo",
+		},
+		{
+			name: "multiple metadata annotations",
+			annotations: map[string]string{
+				"metadata.dynatrace.com/attr1": "value1",
+				"metadata.dynatrace.com/attr2": "value2",
+				"other-annotation":             "ignored",
+			},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  true,
+			wantResult:   "attr1=value1,attr2=value2",
+		},
+		{
+			name:         "annotation with comma is escaped",
+			annotations:  map[string]string{"metadata.dynatrace.com/my-attribute": "foo,bar"},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  true,
+			wantResult:   "my-attribute=foo%2Cbar",
+		},
+		{
+			name:         "annotation with equals sign is escaped",
+			annotations:  map[string]string{"metadata.dynatrace.com/my-attribute": "foo=bar"},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  true,
+			wantResult:   "my-attribute=foo%3Dbar",
+		},
+		{
+			name:         "annotation with special characters is escaped",
+			annotations:  map[string]string{"metadata.dynatrace.com/my-attribute": "foo bar&baz"},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  true,
+			wantResult:   "my-attribute=foo+bar%26baz",
+		},
+		{
+			name:         "annotation with multiple special chars",
+			annotations:  map[string]string{"metadata.dynatrace.com/complex": "a,b=c&d e"},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  true,
+			wantResult:   "complex=a%2Cb%3Dc%26d+e",
+		},
+		{
+			name:         "appends to existing attributes",
+			annotations:  map[string]string{"metadata.dynatrace.com/new-attr": "value"},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "existing=attr",
+			wantMutated:  true,
+			wantResult:   "existing=attr,new-attr=value",
+		},
+		{
+			name:         "does not override existing key in env var",
+			annotations:  map[string]string{"metadata.dynatrace.com/existing": "new-value"},
+			existingEnv:  corev1.EnvVar{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "existing=old-value"},
+			existingAttr: "",
+			wantMutated:  false,
+			wantResult:   "",
+		},
+		{
+			name:         "empty annotation value is ignored",
+			annotations:  map[string]string{"metadata.dynatrace.com/empty": ""},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  false,
+			wantResult:   "",
+		},
+		{
+			name: "mix of empty and non-empty annotations",
+			annotations: map[string]string{
+				"metadata.dynatrace.com/empty":     "",
+				"metadata.dynatrace.com/non-empty": "value",
+			},
+			existingEnv:  corev1.EnvVar{},
+			existingAttr: "",
+			wantMutated:  true,
+			wantResult:   "non-empty=value",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := &strings.Builder{}
+			if tt.existingAttr != "" {
+				b.WriteString(tt.existingAttr)
+			}
+
+			request := &dtwebhook.BaseRequest{
+				Pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: tt.annotations,
+					},
+				},
+			}
+
+			mutated := addAttributesFromAnnotations(request, b, tt.existingEnv)
+			assert.Equal(t, tt.wantMutated, mutated, "addAttributesFromAnnotations() return value mismatch")
+
+			result := b.String()
+			assert.Equal(t, tt.wantResult, result, "builder content mismatch")
+		})
+	}
+}

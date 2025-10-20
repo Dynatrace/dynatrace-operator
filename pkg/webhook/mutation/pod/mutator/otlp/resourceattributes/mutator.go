@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"net/url"
 	"slices"
 	"strings"
 
@@ -168,7 +169,9 @@ func addAttributesFromAnnotations(request *dtwebhook.BaseRequest, b *strings.Bui
 
 		if strings.HasPrefix(k, metadataAnnotationPrefix) {
 			attrKey := strings.TrimPrefix(k, metadataAnnotationPrefix)
-			if appendAttribute(b, existing, attrKey, v) {
+			// apply percent encoding to prevent errors when passing attribute values with special characters to the OTEL SDKs
+			// see https://opentelemetry.io/docs/specs/otel/resource/sdk/#specifying-resource-information-via-an-environment-variable
+			if appendAttribute(b, existing, attrKey, url.QueryEscape(v)) {
 				mutated = true
 			}
 		}
