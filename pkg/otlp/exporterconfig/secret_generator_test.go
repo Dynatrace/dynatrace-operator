@@ -221,7 +221,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientInjectedNamespace(testNamespace2, testDynakube),
 			terminatingNS,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
-			clientSecret(tlsSecretName, certsTestNamespaceDynatr, map[string][]byte{dynakube.TLSCert: tlsCrt}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCert: tlsCrt}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -284,7 +284,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			nonInjected,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
-			clientSecret(tlsSecretName, certsTestNamespaceDynatr, map[string][]byte{dynakube.TLSCert: []byte(testCrt)}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCert: []byte(testCrt)}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -304,8 +304,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      certsTestDynakube,
-				Namespace: certsTestNamespaceDynatr,
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -317,7 +317,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		clt := fake.NewClientWithIndex(
 			dk,
-			clientInjectedNamespace(certsTestNamespace, certsTestDynakube),
+			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
 		)
 
@@ -325,8 +325,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		require.Error(t, sg.GenerateForDynakube(t.Context(), dk))
 
-		assertSecretNotFound(t, clt, GetSourceCertsSecretName(dk.Name), certsTestNamespaceDynatr)
-		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, certsTestNamespace)
+		assertSecretNotFound(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
+		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
 	})
 }
 
