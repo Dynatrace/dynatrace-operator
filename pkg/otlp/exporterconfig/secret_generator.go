@@ -39,7 +39,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 // GenerateForDynakube creates/updates the OTLP exporter config secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
-	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
+	log.Info("reconciling namespace OTLP exporter secret for", "dynakube", dk.Name)
 
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
