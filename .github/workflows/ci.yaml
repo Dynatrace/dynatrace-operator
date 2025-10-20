@@ -257,6 +257,7 @@ jobs:
         with:
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
+
   run-preflight:
     name: Run preflight on quay.io without submitting results when merging to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
