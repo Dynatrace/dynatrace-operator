@@ -245,7 +245,8 @@ K8S_VERSION=1.31 make kind/setup
 make kind/setup
 ```
 
-> !Note: The kind cluster will be created with the name `kind`.
+> [!NOTE]
+> The kind cluster will be created with the name `kind`.
 > and the kubeconfig context will be set to `kind-kind` (see `kind get clusters` and `kubectl config get-contexts`).
 > All you need to do is to run e2e tests via `make test/e2e/<scope_of_the_changes>` against kind cluster.
 
