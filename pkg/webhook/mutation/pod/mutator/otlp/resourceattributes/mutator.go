@@ -79,10 +79,10 @@ func (m *Mutator) addResourceAttributes(ctx context.Context, request *dtwebhook.
 	mutated := false
 
 	var b strings.Builder
-	var existing *corev1.EnvVar
+	var existing corev1.EnvVar
 
 	if ev := env.FindEnvVar(c.Env, otlpResourceAttributesEnvVar); ev != nil {
-		existing = ev
+		existing = *ev
 		if ev.Value != "" {
 			b.WriteString(ev.Value)
 		}
@@ -137,7 +137,7 @@ func (m *Mutator) addResourceAttributes(ctx context.Context, request *dtwebhook.
 	return mutated
 }
 
-func (m *Mutator) addPodOwnerAttributes(ctx context.Context, request *dtwebhook.BaseRequest, b *strings.Builder, existing *corev1.EnvVar) (bool, error) {
+func (m *Mutator) addPodOwnerAttributes(ctx context.Context, request *dtwebhook.BaseRequest, b *strings.Builder, existing corev1.EnvVar) (bool, error) {
 	mutated := false
 
 	wkKind, wkName, err := getWorkloadInfo(ctx, m.apiReader, request.Pod)
@@ -161,7 +161,7 @@ func (m *Mutator) addPodOwnerAttributes(ctx context.Context, request *dtwebhook.
 	return mutated, nil
 }
 
-func addAttributesFromAnnotations(request *dtwebhook.BaseRequest, b *strings.Builder, existing *corev1.EnvVar) bool {
+func addAttributesFromAnnotations(request *dtwebhook.BaseRequest, b *strings.Builder, existing corev1.EnvVar) bool {
 	mutated := false
 	for k, v := range request.Pod.Annotations {
 		metadataAnnotationPrefix := fmt.Sprintf("%s/", metadataenrichment.Annotation)
@@ -185,17 +185,18 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool
 	)
 }
 
-func appendAttribute(b *strings.Builder, existing *corev1.EnvVar, key, value string) bool {
+func appendAttribute(b *strings.Builder, existing corev1.EnvVar, key, value string) bool {
 	if value == "" {
 		return false
 	}
-	if b.Len() > 0 {
-		b.WriteString(",")
-	}
 
-	if existing != nil && strings.Contains(existing.Value, key) {
+	if strings.Contains(existing.Value, fmt.Sprintf("%s=", key)) {
 		// do not override existing value
 		return false
+	}
+
+	if b.Len() > 0 {
+		b.WriteString(",")
 	}
 
 	b.WriteString(key)

@@ -24,6 +24,9 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		return nil
 	}
 
+	// the execution of both the env var mutator and the resource attribute mutator
+	// is controlled by the env var mutator's IsEnabled method
+	// therefore, we only need to check it here
 	if h.envVarMutator.IsEnabled(mutationRequest.BaseRequest) {
 		if h.envVarMutator.IsInjected(mutationRequest.BaseRequest) {
 			if h.envVarMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {

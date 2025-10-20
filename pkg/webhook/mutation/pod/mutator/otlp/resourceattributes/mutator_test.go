@@ -331,7 +331,14 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 				attrs := strings.Split(val, ",")
 
 				for _, expected := range tt.wantAttributes[container.Name] {
-					assert.Contains(t, attrs, expected, "expected attr %s missing; got %v", expected, attrs)
+					count := 0
+					for _, attr := range attrs {
+						if attr == expected {
+							count++
+						}
+					}
+					// ensure that expected attributes appear exactly once
+					assert.Equal(t, 1, count, "expected attr %s to appear exactly once; got %v", expected, attrs)
 				}
 				// verify env vars for pod/node references present with correct field paths
 				var podNameVar, podUIDVar, nodeNameVar *corev1.EnvVar
@@ -407,7 +414,7 @@ func Test_appendAttribute(t *testing.T) {
 
 	type args struct {
 		b        *strings.Builder
-		existing *corev1.EnvVar
+		existing corev1.EnvVar
 		key      string
 		value    string
 	}
@@ -420,10 +427,9 @@ func Test_appendAttribute(t *testing.T) {
 		{
 			name: "empty value",
 			args: args{
-				b:        &strings.Builder{},
-				existing: nil,
-				key:      "key1",
-				value:    "",
+				b:     &strings.Builder{},
+				key:   "key1",
+				value: "",
 			},
 			want:            false,
 			wantEnvVarValue: "",
@@ -431,10 +437,9 @@ func Test_appendAttribute(t *testing.T) {
 		{
 			name: "appends to empty builder",
 			args: args{
-				b:        &strings.Builder{},
-				existing: nil,
-				key:      "key1",
-				value:    "value1",
+				b:     &strings.Builder{},
+				key:   "key1",
+				value: "value1",
 			},
 			want:            true,
 			wantEnvVarValue: "key1=value1",
@@ -442,10 +447,9 @@ func Test_appendAttribute(t *testing.T) {
 		{
 			name: "appends to builder",
 			args: args{
-				b:        b,
-				existing: nil,
-				key:      "key1",
-				value:    "value1",
+				b:     b,
+				key:   "key1",
+				value: "value1",
 			},
 			want:            true,
 			wantEnvVarValue: "key=value,key1=value1",
@@ -454,7 +458,7 @@ func Test_appendAttribute(t *testing.T) {
 			name: "do not overwrite existing key",
 			args: args{
 				b:        &strings.Builder{},
-				existing: &corev1.EnvVar{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "key1=oldvalue"},
+				existing: corev1.EnvVar{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "key1=oldvalue"},
 				key:      "key1",
 				value:    "newvalue",
 			},
