@@ -188,7 +188,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify traces exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/traces",
+			Value: "http://my-cluster/api/v2/otlp/v1/traces",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -199,7 +199,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify metrics exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/metrics",
+			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -210,7 +210,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify logs exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/logs",
+			Value: "http://my-cluster/api/v2/otlp/v1/logs",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -415,7 +415,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/metrics",
+			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -545,7 +545,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/metrics",
+			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
