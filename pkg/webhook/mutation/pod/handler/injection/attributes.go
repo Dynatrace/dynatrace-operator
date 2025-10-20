@@ -59,7 +59,7 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 			ContainerName: c.Name,
 		})
 
-		volumes.AddConfigVolumeMount(c)
+		volumes.AddConfigVolumeMount(c, request.IsSplitMountsFFEnabled())
 	}
 
 	if len(attributes) > 0 {
@@ -76,7 +76,12 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 	return false, nil
 }
 
-func isInjected(container corev1.Container) bool {
+func isInjected(container corev1.Container, splitMountsEnabled bool) bool {
+	if splitMountsEnabled {
+		return mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPathOneAgent) ||
+			mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPathEnrichment)
+	}
+
 	return mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPath)
 }
 
