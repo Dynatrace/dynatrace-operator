@@ -14,6 +14,7 @@ import (
 	otlphandler "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
+	otlpexporter "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
 	otlpresourceattributes "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -94,7 +95,7 @@ func newWebhook( //nolint:revive
 			oneagent.NewMutator(),
 		),
 		otlpHandler: otlphandler.New(
-			otlpresourceattributes.New(kubeClient),
+			otlpexporter.New(),
 			otlpresourceattributes.New(kubeClient),
 		),
 		kubeClient:       kubeClient,
