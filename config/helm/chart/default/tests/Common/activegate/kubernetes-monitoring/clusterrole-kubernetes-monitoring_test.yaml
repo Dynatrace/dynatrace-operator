@@ -18,7 +18,7 @@ tests:
           path: aggregationRule.clusterRoleSelectors
           content:
             matchLabels:
-              rbac.dynatrace.com/aggregate-to-monitoring: "true"
+              rbac.dynatrace.com/aggregate-to-kubernetes-monitoring: "true"
 
   - it: ClusterRoleBinding should exist
     documentIndex: 1

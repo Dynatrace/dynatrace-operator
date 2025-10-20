@@ -13,7 +13,7 @@ tests:
       - isNotEmpty:
           path: metadata.labels
       - equal:
-          path: metadata.labels["rbac.dynatrace.com/aggregate-to-monitoring"]
+          path: metadata.labels["rbac.dynatrace.com/aggregate-to-kubernetes-monitoring"]
           value: "true"
       - isNotEmpty:
           path: rules
