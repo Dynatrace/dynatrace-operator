@@ -65,6 +65,21 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		}
 	}
 
+	certs, certErr := s.generateCerts(ctx, dk)
+	if certErr != nil {
+		return errors.WithStack(certErr)
+	}
+	if len(certs) != 0 {
+		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs)
+		if err != nil {
+			return err
+		}
+		err = s.createSecretForNSlist(ctx, consts.OTLPExporterCertsSecretName, CertsConditionType, nsList, dk, certs)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
 	return nil
 }
 
@@ -72,10 +87,14 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 	err := cleanupConfig(ctx, client, apiReader, namespaces, dk)
 	if err != nil {
 		log.Error(err, "failed to cleanup OTLP exporter config secrets")
-
 		return errors.WithStack(err)
 	}
 
+	err = cleanupCerts(ctx, client, apiReader, namespaces, dk)
+	if err != nil {
+		log.Error(err, "failed to cleanup OTLP exporter certs secrets")
+		return errors.WithStack(err)
+	}
 	return nil
 }
 
@@ -105,6 +124,21 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	return data, nil
 }
 
+func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	data := map[string][]byte{}
+
+	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
+	if err != nil {
+		conditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
+		return nil, errors.WithStack(err)
+	}
+	if len(agCerts) != 0 {
+		data[consts.TLSCrtDataName] = agCerts
+	}
+
+	return data, nil
+}
+
 func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-limit
 	ctx context.Context,
 	secretName string,
@@ -129,8 +163,8 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 		return err
 	}
 
-	log.Info("done updating OTLP exporter config secrets")
-	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, consts.OTLPExporterSecretName)
+	log.Info("done updating OTLP exporter secrets", "name", secretName)
+	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, secretName)
 
 	return nil
 }
@@ -171,4 +205,22 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 	}
 
 	return secrets.DeleteForNamespaces(ctx, consts.OTLPExporterSecretName, nsList)
+}
+
+func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	defer meta.RemoveStatusCondition(dk.Conditions(), CertsConditionType)
+
+	nsList := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		nsList = append(nsList, ns.Name)
+	}
+
+	secrets := k8ssecret.Query(client, apiReader, log)
+
+	err := secrets.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
+	if err != nil {
+		log.Error(err, "failed to delete the source OTLP exporter certs secret", "name", GetSourceCertsSecretName(dk.Name))
+	}
+
+	return secrets.DeleteForNamespaces(ctx, consts.OTLPExporterCertsSecretName, nsList)
 }
