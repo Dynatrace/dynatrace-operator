@@ -30,6 +30,7 @@ jobs:
       prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed == 'true' && 'true' || '' }}
       ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
       is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
+      markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -81,6 +82,13 @@ jobs:
           files: |
             hack/make/prerequisites.mk
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
+      - name: Detect markdown changes
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
+        id: markdown
+        with:
+          files: |
+            **/*.md
+          base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
       - name: List Changed Files
         run: |
           echo "CI changed: ${{ steps.ci.outputs.all_changed_files }}"
@@ -88,6 +96,7 @@ jobs:
           echo "Dockerfile changed: ${{ steps.dockerfile.outputs.all_changed_files }}"
           echo "Helm changed: ${{ steps.helm.outputs.all_changed_files }}"
           echo "Prerequisites changed: ${{ steps.prerequisites.outputs.all_changed_files }}"
+          echo "Markdown changed: ${{ steps.markdown.outputs.all_changed_files }}"
 
   helm-test:
     needs: detect-changes
@@ -212,6 +221,8 @@ jobs:
           args: --severity-threshold=high
 
   markdown-lint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.markdown_changed
     name: Lint markdown files
     runs-on: ubuntu-24.04
     steps:
