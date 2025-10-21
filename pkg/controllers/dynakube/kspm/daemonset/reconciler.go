@@ -7,9 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/affinity"
+	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/daemonset"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,7 +89,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.KSPM().Labels),
 		daemonset.SetAllAnnotations(r.dk.KSPM().Annotations, templateAnnotations),
 		daemonset.SetServiceAccount(serviceAccountName),
-		daemonset.SetAffinity(node.AMDOnlyAffinity()),
+		daemonset.SetAffinity(affinity.NewAMDOnlyNodeAffinity()),
 		daemonset.SetPriorityClass(r.dk.KSPM().PriorityClassName),
 		daemonset.SetNodeSelector(r.dk.KSPM().NodeSelector),
 		daemonset.SetTolerations(r.dk.KSPM().Tolerations),

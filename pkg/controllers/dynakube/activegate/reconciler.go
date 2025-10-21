@@ -19,7 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"

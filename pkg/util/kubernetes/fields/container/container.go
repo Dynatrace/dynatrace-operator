@@ -1,7 +1,7 @@
 package container
 
 import (
-	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/pod"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
