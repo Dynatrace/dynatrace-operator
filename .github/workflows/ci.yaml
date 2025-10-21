@@ -24,12 +24,12 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-24.04
     outputs:
-      go_changed: ${{ steps.go-files.outputs.any_changed }}
-      docker_changed: ${{ steps.dockerfile.outputs.any_changed }}
-      helm_changed: ${{ steps.helm.outputs.any_changed }}
-      prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed }}
-      ci_changed: ${{ steps.ci.outputs.any_changed }}
-      is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch }}
+      go_changed: ${{ steps.go-files.outputs.any_changed == 'true' && 'true' || '' }}
+      docker_changed: ${{ steps.dockerfile.outputs.any_changed == 'true' && 'true' || '' }}
+      helm_changed: ${{ steps.helm.outputs.any_changed == 'true' && 'true' || '' }}
+      prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed == 'true' && 'true' || '' }}
+      ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
+      is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -91,13 +91,7 @@ jobs:
 
   helm-test:
     needs: detect-changes
-    if: >
-      ${{
-        needs.detect-changes.outputs.is_protected_branch == 'true' ||
-        needs.detect-changes.outputs.helm_changed == 'true' ||
-        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
-        needs.detect-changes.outputs.ci_changed == 'true'
-      }}
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run helm unit tests
     runs-on: ubuntu-24.04
     steps:
@@ -115,13 +109,7 @@ jobs:
 
   helm-lint:
     needs: detect-changes
-    if: >
-      ${{
-        needs.detect-changes.outputs.is_protected_branch == 'true' ||
-        needs.detect-changes.outputs.helm_changed == 'true' ||
-        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
-        needs.detect-changes.outputs.ci_changed == 'true'
-      }}
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run helm linting
     runs-on: ubuntu-24.04
     steps:
@@ -139,13 +127,7 @@ jobs:
 
   tests:
     needs: detect-changes
-    if: >
-      ${{
-        needs.detect-changes.outputs.is_protected_branch == 'true' ||
-        needs.detect-changes.outputs.go_changed == 'true' ||
-        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
-        needs.detect-changes.outputs.ci_changed == 'true'
-      }}
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run unit tests
     runs-on: ubuntu-24.04
     steps:
@@ -167,13 +149,7 @@ jobs:
 
   linting:
     needs: detect-changes
-    if: >
-      ${{
-        needs.detect-changes.outputs.is_protected_branch == 'true' ||
-        needs.detect-changes.outputs.go_changed == 'true' ||
-        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
-        needs.detect-changes.outputs.ci_changed == 'true'
-      }}
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run linting
     runs-on: ubuntu-24.04
     steps:
@@ -189,13 +165,7 @@ jobs:
   generated-files:
     name: Check generated files
     needs: detect-changes
-    if: >
-      ${{
-        needs.detect-changes.outputs.is_protected_branch == 'true' ||
-        needs.detect-changes.outputs.go_changed == 'true' ||
-        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
-        needs.detect-changes.outputs.ci_changed == 'true'
-      }}
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -228,13 +198,7 @@ jobs:
 
   security:
     needs: detect-changes
-    if: >
-      ${{
-        needs.detect-changes.outputs.is_protected_branch == 'true' ||
-        needs.detect-changes.outputs.go_changed == 'true' ||
-        needs.detect-changes.outputs.docker_changed == 'true' ||
-        needs.detect-changes.outputs.ci_changed == 'true'
-      }}
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
     name: Code security scanning alerts
     runs-on: ubuntu-24.04
     steps:
@@ -278,13 +242,7 @@ jobs:
 
   build-push:
     needs: [detect-changes]
-    if: >
-      ${{
-        needs.detect-changes.outputs.is_protected_branch == 'true' ||
-        needs.detect-changes.outputs.go_changed == 'true' ||
-        needs.detect-changes.outputs.docker_changed == 'true' ||
-        needs.detect-changes.outputs.ci_changed == 'true'
-      }}
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
     name: Build images
     runs-on: ubuntu-24.04
     steps:
