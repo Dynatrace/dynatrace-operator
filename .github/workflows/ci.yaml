@@ -262,6 +262,8 @@ jobs:
 
   prepare:
     name: Prepare properties
+    needs: [detect-changes]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout

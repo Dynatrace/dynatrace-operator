@@ -70,6 +70,14 @@ jobs:
 
   prepare:
     name: Prepare properties
+    needs: [detect-changes]
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.go_changed == 'true' ||
+        needs.detect-changes.outputs.docker_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
