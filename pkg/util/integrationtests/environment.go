@@ -162,9 +162,7 @@ func setupBaseTestEnv(t *testing.T) {
 // setting the 'KUBEBUILDER_ASSETS' environment variable. To ensure the binaries are
 // properly set up, run 'make setup-envtest' beforehand.
 func getFirstFoundEnvTestBinaryDir() string {
-	gobin := os.Getenv("GOBIN")
-
-	basePath := filepath.Join(gobin, "k8s")
+	basePath := filepath.Join(projectpath.Root, "bin", "k8s")
 
 	entries, err := os.ReadDir(basePath)
 	if err != nil {
