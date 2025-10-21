@@ -23,19 +23,17 @@ func Feature(t *testing.T) features.Feature {
 	builder := features.New("kspm-components-rollout")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	secretConfig.APITokenNoSettings = "" // Always use more privileged token
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKSPM(),
 		componentDynakube.WithKSPMImageRefSpec(consts.KSPMImageRepo, consts.KSPMImageTag),
 		componentDynakube.WithActiveGate(),
-		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
 
-	componentDynakube.InstallWithoutSettingsScopes(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
 
