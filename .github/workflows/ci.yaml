@@ -225,7 +225,9 @@ jobs:
 
   govulncheck:
     needs: detect-changes
-    if: ${{ (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed) }}
+    if: >
+        !needs.detect-changes.outputs.is_snyk_authorized &&
+        (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Govulncheck
     runs-on: ubuntu-24.04
     steps:
