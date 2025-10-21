@@ -91,7 +91,13 @@ jobs:
 
   helm-test:
     needs: detect-changes
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.helm_changed == 'true' ||
+        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     name: Run helm unit tests
     runs-on: ubuntu-24.04
     steps:
@@ -109,7 +115,13 @@ jobs:
 
   helm-lint:
     needs: detect-changes
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.helm_changed == 'true' ||
+        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     name: Run helm linting
     runs-on: ubuntu-24.04
     steps:
@@ -127,7 +139,13 @@ jobs:
 
   tests:
     needs: detect-changes
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.go_changed == 'true' ||
+        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     name: Run unit tests
     runs-on: ubuntu-24.04
     steps:
@@ -149,7 +167,13 @@ jobs:
 
   linting:
     needs: detect-changes
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.go_changed == 'true' ||
+        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     name: Run linting
     runs-on: ubuntu-24.04
     steps:
@@ -165,7 +189,13 @@ jobs:
   generated-files:
     name: Check generated files
     needs: detect-changes
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.go_changed == 'true' ||
+        needs.detect-changes.outputs.prerequisites_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -198,7 +228,13 @@ jobs:
 
   security:
     needs: detect-changes
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.go_changed == 'true' ||
+        needs.detect-changes.outputs.docker_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     name: Code security scanning alerts
     runs-on: ubuntu-24.04
     steps:
@@ -240,7 +276,13 @@ jobs:
 
   build-push:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.go_changed == 'true' ||
+        needs.detect-changes.outputs.docker_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     name: Build images
     runs-on: ubuntu-24.04
     steps:

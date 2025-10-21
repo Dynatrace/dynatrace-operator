@@ -85,7 +85,13 @@ jobs:
   build-images:
     name: Build images
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.go_changed == 'true' ||
+        needs.detect-changes.outputs.docker_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     strategy:
       matrix:
         platform: [linux/arm64, linux/amd64]
@@ -117,7 +123,13 @@ jobs:
   index:
     name: Create image-index
     needs: [detect-changes, prepare, build-images]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      ${{
+        needs.detect-changes.outputs.is_protected_branch == 'true' ||
+        needs.detect-changes.outputs.go_changed == 'true' ||
+        needs.detect-changes.outputs.docker_changed == 'true' ||
+        needs.detect-changes.outputs.ci_changed == 'true'
+      }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
