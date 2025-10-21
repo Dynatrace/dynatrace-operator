@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"go/build"
 	"net"
 	"os"
 	"path/filepath"
@@ -164,15 +163,6 @@ func setupBaseTestEnv(t *testing.T) {
 // properly set up, run 'make setup-envtest' beforehand.
 func getFirstFoundEnvTestBinaryDir() string {
 	gobin := os.Getenv("GOBIN")
-	gopath := os.Getenv("GOPATH")
-
-	if gopath == "" {
-		gopath = build.Default.GOPATH
-	}
-
-	if gobin == "" {
-		gobin = filepath.Join(gopath, "bin")
-	}
 
 	basePath := filepath.Join(gobin, "k8s")
 
