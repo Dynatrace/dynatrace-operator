@@ -30,8 +30,8 @@ func setNamespacesMonitoredSelectorCondition(conditions *[]metav1.Condition, sel
 
 	log.Info("namespaces monitored",
 		"selector", selectorType,
-		"count (at most 10 are displayed)", len(names),
-		"namespaces", names,
+		"count", len(names),
+		"namespaces (max 10 listed)", names,
 	)
 
 	cond := metav1.Condition{Type: condType}
