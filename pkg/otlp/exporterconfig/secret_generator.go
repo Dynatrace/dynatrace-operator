@@ -133,7 +133,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 		return nil, errors.WithStack(err)
 	}
 	if len(agCerts) != 0 {
-		data[consts.TLSCrtDataName] = agCerts
+		data[consts.ActiveGateCertDataName] = agCerts
 	}
 
 	return data, nil

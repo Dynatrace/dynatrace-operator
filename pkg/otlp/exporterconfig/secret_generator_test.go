@@ -24,6 +24,7 @@ const (
 	testDataIngestToken = "test-ingest-token"
 	testCrt             = "test-cert"
 	oldDataIngestToken  = "old-data-ingest-token"
+	oldTestCert         = "old-test-cert"
 
 	testDynakube   = "test-dynakube"
 	testNamespace  = "test-namespace"
@@ -70,7 +71,9 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		assertSecretNotFound(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
 		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
 	})
-	t.Run("successfully generate config secret for dynakube", func(t *testing.T) {
+	t.Run("successfully generate secrets for dynakube", func(t *testing.T) {
+		tlsSecretName := "ag-tls-secret"
+
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -80,6 +83,10 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
 					Signals: otlpexporterconfiguration.SignalConfiguration{},
 				},
+				ActiveGate: activegate.Spec{
+					TLSSecretName: tlsSecretName,
+					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
+				},
 			},
 		}
 
@@ -88,6 +95,9 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(testDataIngestToken),
+			}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
+				dynakube.TLSCert: []byte(testCrt),
 			}),
 		)
 
@@ -112,11 +122,26 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
+		var sourceCertSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceCertsSecretName(dk.Name), Namespace: dk.Namespace}, &sourceCertSecret)
+		require.NoError(t, err)
+
+		assert.Equal(t, testCrt, string(sourceCertSecret.Data[consts.ActiveGateCertDataName]))
+
+		var certSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterCertsSecretName, Namespace: testNamespace}, &certSecret)
+		require.NoError(t, err)
+		assert.NotEmpty(t, secret.Data)
+
+		assert.Equal(t, testCrt, string(certSecret.Data[consts.ActiveGateCertDataName]))
+
 		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
-	t.Run("update existing secret", func(t *testing.T) {
+	t.Run("update existing secrets", func(t *testing.T) {
+		tlsSecretName := "ag-tls-secret"
+
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -126,6 +151,10 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
 					Signals: otlpexporterconfiguration.SignalConfiguration{},
 				},
+				ActiveGate: activegate.Spec{
+					TLSSecretName: tlsSecretName,
+					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
+				},
 			},
 		}
 
@@ -134,6 +163,9 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(testDataIngestToken),
+			}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
+				dynakube.TLSCert: []byte(testCrt),
 			}),
 			clientSecret(consts.OTLPExporterSecretName, testNamespace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(oldDataIngestToken),
@@ -141,6 +173,12 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(oldDataIngestToken),
 			}),
+			clientSecret(consts.OTLPExporterCertsSecretName, testNamespace, map[string][]byte{
+				consts.ActiveGateCertDataName: []byte(oldTestCert),
+			}),
+			clientSecret(GetSourceCertsSecretName(dk.Name), dk.Namespace, map[string][]byte{
+				consts.ActiveGateCertDataName: []byte(oldTestCert),
+			}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -163,6 +201,19 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
+
+		var sourceCertSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceCertsSecretName(dk.Name), Namespace: dk.Namespace}, &sourceCertSecret)
+		require.NoError(t, err)
+
+		assert.Equal(t, testCrt, string(sourceCertSecret.Data[consts.ActiveGateCertDataName]))
+
+		var certSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterCertsSecretName, Namespace: testNamespace}, &certSecret)
+		require.NoError(t, err)
+		assert.NotEmpty(t, secret.Data)
+
+		assert.Equal(t, testCrt, string(certSecret.Data[consts.ActiveGateCertDataName]))
 
 		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
