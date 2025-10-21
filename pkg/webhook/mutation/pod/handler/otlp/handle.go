@@ -2,9 +2,9 @@ package otlp
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/secrets"
@@ -83,7 +83,6 @@ func (h *Handler) isExporterTokenSecretPresent(mutationRequest *dtwebhook.Mutati
 
 	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, consts.OTLPExporterSecretName, log)
 	if k8serrors.IsNotFound(err) {
-
 		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterConfigSecretReason)
 
 		return false
@@ -105,11 +104,11 @@ func (h *Handler) isExporterActiveGateCertSecretPresent(mutationRequest *dtwebho
 		// no ActiveGate, no certs needed
 		return true
 	}
+
 	sourceSecretName := exporterconfig.GetSourceCertsSecretName(mutationRequest.DynaKube.Name)
 
 	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, consts.OTLPExporterCertsSecretName, log)
 	if k8serrors.IsNotFound(err) {
-
 		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterActiveGateCertSecretReason)
 
 		return false

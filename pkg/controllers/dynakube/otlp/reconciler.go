@@ -3,7 +3,6 @@ package otlp
 import (
 	"context"
 	goerrors "errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -11,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,7 +28,6 @@ type ReconcilerBuilder func(
 	dk *dynakube.DynaKube,
 ) controllers.Reconciler
 
-//nolint:revive
 func NewReconciler(
 	client client.Client,
 	apiReader client.Reader,

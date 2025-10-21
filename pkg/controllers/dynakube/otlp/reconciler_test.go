@@ -3,7 +3,6 @@ package otlp
 import (
 	"context"
 	"errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -18,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -41,10 +41,11 @@ type failingReader struct {
 	fail bool
 }
 
-func (f failingReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error { //nolint:revive
+func (f failingReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 	if f.fail {
 		return errors.New("err")
 	}
+
 	return f.Reader.List(ctx, list, opts...)
 }
 
@@ -158,6 +159,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		for _, cond := range dk.Status.Conditions {
 			if cond.Type == otlpExporterConfigurationConditionType {
 				found = true
+
 				break
 			}
 		}

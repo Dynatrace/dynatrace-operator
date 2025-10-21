@@ -69,11 +69,13 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 	if certErr != nil {
 		return errors.WithStack(certErr)
 	}
+
 	if len(certs) != 0 {
 		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs)
 		if err != nil {
 			return err
 		}
+
 		err = s.createSecretForNSlist(ctx, consts.OTLPExporterCertsSecretName, CertsConditionType, nsList, dk, certs)
 		if err != nil {
 			return errors.WithStack(err)
@@ -87,14 +89,17 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 	err := cleanupConfig(ctx, client, apiReader, namespaces, dk)
 	if err != nil {
 		log.Error(err, "failed to cleanup OTLP exporter config secrets")
+
 		return errors.WithStack(err)
 	}
 
 	err = cleanupCerts(ctx, client, apiReader, namespaces, dk)
 	if err != nil {
 		log.Error(err, "failed to cleanup OTLP exporter certs secrets")
+
 		return errors.WithStack(err)
 	}
+
 	return nil
 }
 
@@ -130,8 +135,10 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
+
 		return nil, errors.WithStack(err)
 	}
+
 	if len(agCerts) != 0 {
 		data[consts.ActiveGateCertDataName] = agCerts
 	}

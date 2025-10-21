@@ -228,6 +228,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		for i := range containerEnvVars {
 			if containerEnvVars[i].Name == DynatraceAPIToken {
 				dtTokenVar = &containerEnvVars[i]
+
 				break
 			}
 		}
@@ -433,6 +434,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		for i := range containerEnvVars {
 			if containerEnvVars[i].Name == DynatraceAPIToken {
 				dtTokenVar = &containerEnvVars[i]
+
 				break
 			}
 		}
@@ -626,6 +628,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 				volFound = true
 				require.NotNil(t, v.Secret)
 				assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
+
 				break
 			}
 		}
@@ -638,6 +641,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 				if mnt.Name == activeGateTrustedCertVolumeName && mnt.MountPath == exporterCertsMountPath {
 					mountFound = true
 					assert.True(t, mnt.ReadOnly)
+
 					break
 				}
 			}

@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -235,6 +236,7 @@ func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
 	if !dk.ActiveGate().IsEnabled() || !dk.ActiveGate().HasCaCert() {
 		return
 	}
+
 	defaultMode := int32(420)
 	agCertVolume := corev1.Volume{
 		Name: activeGateTrustedCertVolumeName,
