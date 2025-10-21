@@ -235,6 +235,24 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		assert.Equal(t, daemonset.Spec.Template.Spec.NodeSelector, customNodeSelector)
 	})
+
+	t.Run("respect custom nodeAffinity", func(t *testing.T) {
+		customNodeAffinity := &corev1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{{MatchExpressions: []corev1.NodeSelectorRequirement{{Key: "example", Values: []string{"value1"}}}}},
+			},
+		}
+
+		dk := createDynakube(true)
+		dk.KSPM().NodeAffinity = customNodeAffinity
+		reconciler := NewReconciler(nil,
+			nil, dk)
+		daemonset, err := reconciler.generateDaemonSet()
+		require.NoError(t, err)
+		require.NotNil(t, daemonset)
+
+		assert.Equal(t, daemonset.Spec.Template.Spec.Affinity.NodeAffinity, customNodeAffinity)
+	})
 }
 
 func createDynakube(isEnabled bool) *dynakube.DynaKube {

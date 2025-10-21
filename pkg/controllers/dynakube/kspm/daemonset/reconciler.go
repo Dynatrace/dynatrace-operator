@@ -94,7 +94,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.KSPM().Labels),
 		daemonset.SetAllAnnotations(r.dk.KSPM().Annotations, templateAnnotations),
 		daemonset.SetServiceAccount(serviceAccountName),
-		daemonset.SetAffinity(node.AMDOnlyAffinity()),
+		daemonset.SetAffinity(affinity),
 		daemonset.SetPriorityClass(r.dk.KSPM().PriorityClassName),
 		daemonset.SetNodeSelector(r.dk.KSPM().NodeSelector),
 		daemonset.SetTolerations(r.dk.KSPM().Tolerations),
