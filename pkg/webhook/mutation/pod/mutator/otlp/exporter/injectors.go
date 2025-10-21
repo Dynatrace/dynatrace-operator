@@ -2,15 +2,15 @@ package exporter
 
 import (
 	"fmt"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // injector defines the interface for injecting signal specific OTLP env vars.
 type injector interface {
-	Inject(c *corev1.Container, apiURL string, override bool) bool
+	Inject(c *corev1.Container, apiURL string, addCertificate bool) bool
 }
 
 // traceInjector handles traces signal env var injection.
@@ -28,7 +28,7 @@ func (ti *traceInjector) isEnabled() bool {
 }
 
 // Inject performs the actual injection of trace env vars.
-func (ti *traceInjector) Inject(c *corev1.Container, apiURL string, override bool) bool {
+func (ti *traceInjector) Inject(c *corev1.Container, apiURL string, addCertificate bool) bool {
 	if !ti.isEnabled() {
 		return false
 	}
@@ -36,6 +36,10 @@ func (ti *traceInjector) Inject(c *corev1.Container, apiURL string, override boo
 	addEnvVarLiteralValue(c, OTLPTraceEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "traces"))
 	addEnvVarLiteralValue(c, OTLPTraceProtocolEnv, "http/protobuf")
 	addEnvVarLiteralValue(c, OTLPTraceHeadersEnv, OTLPAuthorizationHeader)
+
+	if addCertificate {
+		addEnvVarLiteralValue(c, OTLPTraceCertificateEnv, getCertificatePath())
+	}
 
 	return true
 }
@@ -53,7 +57,7 @@ func (mi *metricsInjector) isEnabled() bool {
 	return mi.cfg.IsMetricsEnabled()
 }
 
-func (mi *metricsInjector) Inject(c *corev1.Container, apiURL string, override bool) bool {
+func (mi *metricsInjector) Inject(c *corev1.Container, apiURL string, addCertificate bool) bool {
 	if !mi.isEnabled() {
 		return false
 	}
@@ -61,6 +65,10 @@ func (mi *metricsInjector) Inject(c *corev1.Container, apiURL string, override b
 	addEnvVarLiteralValue(c, OTLPMetricsEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "metrics"))
 	addEnvVarLiteralValue(c, OTLPMetricsProtocolEnv, "http/protobuf")
 	addEnvVarLiteralValue(c, OTLPMetricsHeadersEnv, OTLPAuthorizationHeader)
+
+	if addCertificate {
+		addEnvVarLiteralValue(c, OTLPMetricsCertificateEnv, getCertificatePath())
+	}
 
 	return true
 }
@@ -78,7 +86,7 @@ func (li *logsInjector) isEnabled() bool {
 	return li.cfg.IsLogsEnabled()
 }
 
-func (li *logsInjector) Inject(c *corev1.Container, apiURL string, override bool) bool {
+func (li *logsInjector) Inject(c *corev1.Container, apiURL string, addCertificate bool) bool {
 	if !li.isEnabled() {
 		return false
 	}
@@ -87,9 +95,17 @@ func (li *logsInjector) Inject(c *corev1.Container, apiURL string, override bool
 	addEnvVarLiteralValue(c, OTLPLogsProtocolEnv, "http/protobuf")
 	addEnvVarLiteralValue(c, OTLPLogsHeadersEnv, OTLPAuthorizationHeader)
 
+	if addCertificate {
+		addEnvVarLiteralValue(c, OTLPLogsCertificateEnv, getCertificatePath())
+	}
+
 	return true
 }
 
 func addEnvVarLiteralValue(c *corev1.Container, name string, value string) {
 	c.Env = env.AddOrUpdate(c.Env, corev1.EnvVar{Name: name, Value: value})
+}
+
+func getCertificatePath() string {
+	return fmt.Sprintf("%s/%s", exporterCertsMountPath, consts.ActiveGateCertDataName)
 }

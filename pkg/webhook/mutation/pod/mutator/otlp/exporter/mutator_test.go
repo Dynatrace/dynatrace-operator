@@ -603,6 +603,62 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
 	})
+	t.Run("activegate with ca cert and override enabled -> mounts cert volume and injects certificate env vars", func(t *testing.T) {
+		m := Mutator{}
+
+		dk := getTestDynakube()
+		dk.Spec.APIURL = "http://my-cluster/api"
+		// Enable ActiveGate capability + TLS secret so HasCaCert() is true
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "dummy-uuid"
+
+		override := true
+		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override
+
+		request := createTestMutationRequest(t, dk)
+		err := m.Mutate(request)
+		require.NoError(t, err)
+
+		// Volume referencing certificate secret must be present
+		volFound := false
+		for _, v := range request.Pod.Spec.Volumes {
+			if v.Name == activeGateTrustedCertVolumeName {
+				volFound = true
+				require.NotNil(t, v.Secret)
+				assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
+				break
+			}
+		}
+		assert.True(t, volFound, "expected cert volume")
+
+		certPath := getCertificatePath()
+		for _, c := range request.Pod.Spec.Containers {
+			mountFound := false
+			for _, mnt := range c.VolumeMounts {
+				if mnt.Name == activeGateTrustedCertVolumeName && mnt.MountPath == exporterCertsMountPath {
+					mountFound = true
+					assert.True(t, mnt.ReadOnly)
+					break
+				}
+			}
+			assert.True(t, mountFound, "expected cert mount on container %s", c.Name)
+			// Certificate env vars injected because override=true passed to injectors
+			for _, e := range c.Env {
+				if e.Name == OTLPTraceCertificateEnv || e.Name == OTLPMetricsCertificateEnv || e.Name == OTLPLogsCertificateEnv {
+					assert.Equal(t, certPath, e.Value)
+				}
+			}
+			assert.True(t, env.IsIn(c.Env, OTLPTraceCertificateEnv))
+			assert.True(t, env.IsIn(c.Env, OTLPMetricsCertificateEnv))
+			assert.True(t, env.IsIn(c.Env, OTLPLogsCertificateEnv))
+		}
+		// Init containers should not have the mount
+		for _, c := range request.Pod.Spec.InitContainers {
+			for _, mnt := range c.VolumeMounts {
+				assert.NotEqual(t, activeGateTrustedCertVolumeName, mnt.Name)
+			}
+		}
+	})
 }
 
 func TestMutator_Reinvoke(t *testing.T) {

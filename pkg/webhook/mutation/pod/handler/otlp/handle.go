@@ -42,15 +42,18 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	}
 
 	if h.envVarMutator.IsEnabled(mutationRequest.BaseRequest) {
-		if !h.isInputSecretPresent(
-			mutationRequest,
-			exporterconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name),
-			consts.OTLPExporterSecretName,
-		) {
+		if !h.isExporterTokenSecretPresent(mutationRequest) {
 			log.Debug("required input secret not present, skipping OTLP injection", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 			return nil
 		}
+
+		if !h.isExporterActiveGateCertSecretPresent(mutationRequest) {
+			log.Debug("required ActiveGate cert secret not present, skipping OTLP injection", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+
+			return nil
+		}
+
 		if h.envVarMutator.IsInjected(mutationRequest.BaseRequest) {
 			if h.envVarMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
 				log.Debug("reinvocation policy applied", "podName", mutationRequest.PodName())
@@ -75,8 +78,10 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
-	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, targetSecretName, log)
+func (h *Handler) isExporterTokenSecretPresent(mutationRequest *dtwebhook.MutationRequest) bool {
+	sourceSecretName := exporterconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name)
+
+	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, consts.OTLPExporterSecretName, log)
 	if k8serrors.IsNotFound(err) {
 
 		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterConfigSecretReason)
@@ -88,6 +93,32 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
 
 		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterConfigSecretReason)
+
+		return false
+	}
+
+	return true
+}
+
+func (h *Handler) isExporterActiveGateCertSecretPresent(mutationRequest *dtwebhook.MutationRequest) bool {
+	if !mutationRequest.DynaKube.ActiveGate().HasCaCert() {
+		// no ActiveGate, no certs needed
+		return true
+	}
+	sourceSecretName := exporterconfig.GetSourceCertsSecretName(mutationRequest.DynaKube.Name)
+
+	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, consts.OTLPExporterCertsSecretName, log)
+	if k8serrors.IsNotFound(err) {
+
+		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterActiveGateCertSecretReason)
+
+		return false
+	}
+
+	if err != nil {
+		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
+
+		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterActiveGateCertSecretReason)
 
 		return false
 	}

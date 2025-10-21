@@ -17,5 +17,6 @@ const (
 	// AnnotationOTLPReason is add to provide extra info why an injection didn't happen.
 	AnnotationOTLPReason = AnnotationPrefix + ".dynatrace.com/reason"
 
-	NoOTLPExporterConfigSecretReason = "NoOTLPExporterConfigSecret"
+	NoOTLPExporterConfigSecretReason         = "NoOTLPExporterConfigSecret"
+	NoOTLPExporterActiveGateCertSecretReason = "NoOTLPExporterActiveGateCertSecret"
 )

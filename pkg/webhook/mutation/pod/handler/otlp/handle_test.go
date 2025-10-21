@@ -1,6 +1,7 @@
 package otlp
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -61,10 +62,39 @@ func TestHandler_Handle(t *testing.T) {
 		h := createTestHandler(
 			mockEnvVarMutator,
 			mockResourceAttributeMutator,
-			getTestSecret(),
+			getTestTokenSecret(),
+			getTestCertSecret(),
 		)
 
 		dk := getTestDynakube()
+		request := createTestMutationRequest(t, dk)
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+	})
+	t.Run("call mutators if no certificate secret is present, but ActiveGate is disabled", func(t *testing.T) {
+		mockEnvVarMutator := webhookmock.NewMutator(t)
+		mockResourceAttributeMutator := webhookmock.NewMutator(t)
+
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
+
+		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
+
+		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
+		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
+
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+			getTestTokenSecret(),
+		)
+
+		dk := getTestDynakube()
+
+		dk.ActiveGate().TLSSecretName = ""
+		dk.ActiveGate().Capabilities = []activegate.CapabilityDisplayName{}
+
 		request := createTestMutationRequest(t, dk)
 
 		err := h.Handle(request)
@@ -85,7 +115,8 @@ func TestHandler_Handle(t *testing.T) {
 		h := createTestHandler(
 			mockEnvVarMutator,
 			mockResourceAttributeMutator,
-			getTestSecret(),
+			getTestTokenSecret(),
+			getTestCertSecret(),
 		)
 
 		dk := getTestDynakube()
@@ -105,7 +136,8 @@ func TestHandler_Handle(t *testing.T) {
 		h := createTestHandler(
 			mockEnvVarMutator,
 			mockResourceAttributeMutator,
-			getTestSecret(),
+			getTestTokenSecret(),
+			getTestCertSecret(),
 		)
 
 		dk := getTestDynakube()
@@ -131,7 +163,8 @@ func TestHandler_Handle(t *testing.T) {
 		h := createTestHandler(
 			mockEnvVarMutator,
 			mockResourceAttributeMutator,
-			getTestSecret(),
+			getTestTokenSecret(),
+			getTestCertSecret(),
 		)
 
 		dk := getTestDynakube()
@@ -171,8 +204,39 @@ func TestHandler_Handle(t *testing.T) {
 		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled", mock.Anything)
 		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
 	})
+	t.Run("skip injection and annotate when certificate secret missing and not replicable", func(t *testing.T) {
+		mockEnvVarMutator := webhookmock.NewMutator(t)
+		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
-	t.Run("replicate input secret from source then proceed with injection", func(t *testing.T) {
+		// enable env var mutator so that secret presence is checked
+		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
+		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+
+		// create handler with NO cert secret present
+		h := createTestHandler(
+			mockEnvVarMutator,
+			mockResourceAttributeMutator,
+			getTestTokenSecret(),
+		)
+
+		dk := getTestDynakube()
+		req := createTestMutationRequest(t, dk)
+
+		err := h.Handle(req)
+		require.NoError(t, err)
+
+		// should be annotated as not injected due to missing input secret
+		assert.Equal(t, "false", req.Pod.Annotations[mutator.AnnotationDynatraceInjected])
+		assert.Equal(t, NoOTLPExporterActiveGateCertSecretReason, req.Pod.Annotations[mutator.AnnotationDynatraceReason])
+
+		// ensure mutators were not invoked
+		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled", mock.Anything)
+		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+	})
+	t.Run("replicate secrets from sources then proceed with injection", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
 		mockResourceAttributeMutator := webhookmock.NewMutator(t)
 
@@ -193,10 +257,19 @@ func TestHandler_Handle(t *testing.T) {
 			Data: map[string][]byte{"token": []byte("abc")},
 		}
 
+		sourceCertSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      exporterconfig.GetSourceCertsSecretName(dk.Name),
+				Namespace: dk.Namespace,
+			},
+			Data: map[string][]byte{"activegate-tls.cert": []byte("abc")},
+		}
+
 		h := createTestHandler(
 			mockEnvVarMutator,
 			mockResourceAttributeMutator,
 			sourceSecret,
+			sourceCertSecret,
 		)
 
 		req := createTestMutationRequest(t, dk)
@@ -216,10 +289,20 @@ func TestHandler_Handle(t *testing.T) {
 	})
 }
 
-func getTestSecret() *corev1.Secret {
+func getTestTokenSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      consts.OTLPExporterSecretName,
+			Namespace: testNamespaceName,
+		},
+		Data: map[string][]byte{},
+	}
+}
+
+func getTestCertSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OTLPExporterCertsSecretName,
 			Namespace: testNamespaceName,
 		},
 		Data: map[string][]byte{},
@@ -257,6 +340,10 @@ func getTestDynakube() *dynakube.DynaKube {
 					Metrics: &otlpexporterconfiguration.MetricsSignal{},
 					Logs:    &otlpexporterconfiguration.LogsSignal{},
 				},
+			},
+			ActiveGate: activegate.Spec{
+				TLSSecretName: "tls-secret",
+				Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
 			},
 		},
 	}
