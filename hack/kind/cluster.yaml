@@ -1,0 +1,13 @@
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    metadata:
+      name: config
+    etcd:
+      local:
+        extraArgs:
+          unsafe-no-fsync: "true" # etcd performance improvement for CI only by removing the overhead of forcing data to disk but is unsafe for production because it can lead to data loss and corruption if the system crashes.
+nodes:
+  - role: control-plane
