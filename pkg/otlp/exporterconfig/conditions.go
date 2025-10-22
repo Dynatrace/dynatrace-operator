@@ -1,3 +1,3 @@
 package exporterconfig
 
-const ConfigConditionType = "OTLPExporterConfiguration"
+const ConfigConditionType = "OTLPExporterConfigSecret"
