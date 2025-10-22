@@ -133,6 +133,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		TerminationGracePeriodSeconds: statefulSetBuilder.dynakube.ActiveGate().GetTerminationGracePeriodSeconds(),
 		TopologySpreadConstraints:     statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
 		Volumes:                       statefulSetBuilder.buildVolumes(),
+		AutomountServiceAccountToken:  ptr.To(false),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
