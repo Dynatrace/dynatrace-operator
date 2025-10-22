@@ -7,7 +7,6 @@
 - [E2E tests](#e2e-tests)
 - [Useful commands](#useful-commands)
   - [Remove all Dynatrace pods in force mode (useful debugging E2E tests)](#remove-all-dynatrace-pods-in-force-mode-useful-debugging-e2e-tests)
-  - [Copy CSI driver database to localhost for introspection via sqlite command](#copy-csi-driver-database-to-localhost-for-introspection-via-sqlite-command)
   - [Add debug suffix on E2E tests to avoid removing pods](#add-debug-suffix-on-e2e-tests-to-avoid-removing-pods)
   - [Debug cluster nodes by opening a shell prompt (details here)](#debug-cluster-nodes-by-opening-a-shell-prompt)
 
@@ -232,20 +231,35 @@ Check the available E2E tests via make command:
 make help | grep 'e2e'
 ```
 
-We recommended to only execute the ones related to the changes as each one can take some minutes to finish.
+We recommended only executing the ones related to the changes as each one can take some minutes to finish.
 
 ## Useful commands
+
+### Install kind cluster
+
+```sh
+K8S_VERSION=1.31 make kind/setup
+
+# or 1.34 (default if K8S_VERSION not set)
+
+make kind/setup
+```
+
+> [!NOTE]
+> The kind cluster will be created with the name `kind`.
+> and the kubeconfig context will be set to `kind-kind` (see `kind get clusters` and `kubectl config get-contexts`).
+> All you need to do is to run e2e tests via `make test/e2e/<scope_of_the_changes>` against kind cluster.
+
+### Delete kind cluster
+
+```sh
+kind delete cluster --name kind
+```
 
 ### Remove all Dynatrace pods in force mode (useful debugging E2E tests)
 
 ```sh
 kubectl delete pods --all --force --grace-period=0 -n dynatrace
-```
-
-### Copy CSI driver database to localhost for introspection via sqlite command
-
-```sh
-kubectl cp dynatrace/dynatrace-oneagent-csi-driver-<something>:/data/csi.db csi.sqlite
 ```
 
 ### Add debug suffix on E2E tests to avoid removing pods
