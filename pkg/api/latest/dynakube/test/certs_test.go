@@ -17,8 +17,9 @@ const (
 	testConfigMapName  = "test-config-map"
 	testConfigMapValue = "test-config-map-value"
 
-	testSecretName  = "test-secret"
-	testSecretValue = "test-secret-value"
+	testSecretName     = "test-secret"
+	testSecretValue    = "test-secret-value"
+	testSecretValueNew = "test-secret-value-new"
 )
 
 func TestCerts(t *testing.T) {
@@ -98,6 +99,14 @@ func activeGateTLSCertificate(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testSecretValue, string(tlsCert))
 	}
+
+	t.Run("get tls certificates from tls.crt", func(t *testing.T) {
+		testFunc(t, map[string][]byte{
+			// prioritize tls.crt over server.crt
+			dynakube.TLSCert:    []byte(testSecretValue),
+			dynakube.TLSCertKey: []byte(testSecretValueNew),
+		})
+	})
 
 	t.Run("get tls certificates from server.crt", func(t *testing.T) {
 		testFunc(t, map[string][]byte{

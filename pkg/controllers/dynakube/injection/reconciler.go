@@ -31,6 +31,7 @@ type Reconciler struct {
 	k8sEntityReconciler       controllers.Reconciler
 	enrichmentRulesReconciler controllers.Reconciler
 	dynatraceClient           dynatrace.Client
+	otlpReconciler            controllers.Reconciler
 }
 
 type ReconcilerBuilder func(
@@ -39,6 +40,7 @@ type ReconcilerBuilder func(
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	dk *dynakube.DynaKube,
+	otlpReconciler controllers.Reconciler,
 ) controllers.Reconciler
 
 //nolint:revive
@@ -48,6 +50,7 @@ func NewReconciler(
 	dynatraceClient dynatrace.Client,
 	istioClient *istio.Client,
 	dk *dynakube.DynaKube,
+	otlpReconciler controllers.Reconciler,
 ) controllers.Reconciler {
 	var istioReconciler istio.Reconciler = nil
 
@@ -65,6 +68,7 @@ func NewReconciler(
 		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
 		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dk),
 		k8sEntityReconciler:       k8sentity.NewReconciler(dynatraceClient, dk),
+		otlpReconciler:            otlpReconciler,
 	}
 }
 
@@ -75,6 +79,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if err := r.setupEnrichmentInjection(ctx); err != nil {
+		setupErrors = append(setupErrors, err)
+	}
+
+	if err := r.setupOTLPExporterInjection(ctx); err != nil {
 		setupErrors = append(setupErrors, err)
 	}
 
@@ -125,9 +133,12 @@ func (r *Reconciler) cleanup(ctx context.Context) {
 		log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
 	}
 
-	dkMapper := r.createDynakubeMapper(ctx)
-	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
-		log.Error(err, "could not unmap dynakube from namespace", "dkName", r.dk.Name)
+	// if also the OTLP exporter is not configured, remove the namespace labels
+	if !r.dk.OTLPExporterConfiguration().IsEnabled() {
+		dkMapper := r.createDynakubeMapper(ctx)
+		if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
+			log.Error(err, "could not unmap dynakube from namespace", "dkName", r.dk.Name)
+		}
 	}
 }
 
@@ -202,4 +213,14 @@ func (r *Reconciler) createDynakubeMapper(ctx context.Context) *mapper.DynakubeM
 	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, operatorNamespace, r.dk)
 
 	return &dkMapper
+}
+
+func (r *Reconciler) setupOTLPExporterInjection(ctx context.Context) error {
+	if err := r.otlpReconciler.Reconcile(ctx); err != nil {
+		log.Info("error reconciling otlp exporter secrets")
+
+		return err
+	}
+
+	return nil
 }

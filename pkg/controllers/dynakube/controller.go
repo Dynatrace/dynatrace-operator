@@ -23,6 +23,7 @@ import (
 	logmondaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -86,6 +87,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 		kspmReconcilerBuilder:               kspm.NewReconciler,
+		otlpReconcilerBuilder:               otlp.NewReconciler,
 	}
 }
 
@@ -123,6 +125,7 @@ type Controller struct {
 	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
 	proxyReconcilerBuilder              proxy.ReconcilerBuilder
 	kspmReconcilerBuilder               kspm.ReconcilerBuilder
+	otlpReconcilerBuilder               otlp.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -375,12 +378,19 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconcilerBuilder(controller.client,
+	err = controller.injectionReconcilerBuilder(
+		controller.client,
 		controller.apiReader,
 		dynatraceClient,
 		istioClient,
-		dk).
-		Reconcile(ctx)
+		dk,
+		controller.otlpReconcilerBuilder(
+			controller.client,
+			controller.apiReader,
+			dynatraceClient,
+			dk,
+		),
+	).Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
