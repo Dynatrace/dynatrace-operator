@@ -20,7 +20,7 @@ type ConflictChecker struct {
 type matchResult struct {
 	IsOA   bool
 	IsME   bool
-  IsOTLP bool
+	IsOTLP bool
 }
 
 func (m matchResult) IsAny() bool {
@@ -90,15 +90,15 @@ func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (matchResult, err
 	if err != nil {
 		return result, err
 	}
-  
-  result.IsME = matchME
+
+	result.IsME = matchME
 
 	matchOTLP, err := matchOTLPExporterConfiguration(dk, namespace)
 	if err != nil {
 		return result, err
 	}
-  
-  result.IsOTLP = matchOTLP
+
+	result.IsOTLP = matchOTLP
 
 	return result, nil
 }
