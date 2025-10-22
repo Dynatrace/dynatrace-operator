@@ -141,7 +141,7 @@ func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollecto
 	dst.ImageRef = src.ImageRef
 	dst.PriorityClassName = src.PriorityClassName
 	dst.Resources = src.Resources
-	dst.NodeAffinity = src.NodeAffinity
+	dst.NodeAffinity = &src.NodeAffinity
 	dst.Tolerations = src.Tolerations
 	dst.Args = src.Args
 	dst.Env = src.Env
