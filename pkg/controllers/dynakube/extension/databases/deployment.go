@@ -39,18 +39,18 @@ const (
 
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
 // Do NOT modify maps produced by this function.
-func buildAllLabels(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
+func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
 	appLabels := labels.NewAppLabels(labels.DatabaseDatasourceLabel, dk.Name, labels.DatabaseDatasourceLabel, dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag)
 
 	deploymentLabels := appLabels.BuildLabels()
 	matchLabels := appLabels.BuildMatchLabels()
 	podLabels := deploymentLabels
-	podLabels[executorIDLabelKey] = dbex.ID
+	podLabels[executorIDLabelKey] = dbSpec.ID
 	podLabels[consts.DatasourceLabelKey] = consts.DatabaseDatasourceLabelValue
 
-	if dbex.Labels != nil {
+	if dbSpec.Labels != nil {
 		// Always merge into user-provided labels to ensure they don't overwrite our own.
-		temp := maps.Clone(dbex.Labels)
+		temp := maps.Clone(dbSpec.Labels)
 		maps.Copy(temp, podLabels)
 		podLabels = temp
 	}
@@ -59,15 +59,15 @@ func buildAllLabels(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) (map[st
 	return deploymentLabels, matchLabels, podLabels
 }
 
-func buildServiceAccountName(dbex extensions.DatabaseSpec) string {
-	if dbex.ServiceAccountName != "" {
-		return dbex.ServiceAccountName
+func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
+	if dbSpec.ServiceAccountName != "" {
+		return dbSpec.ServiceAccountName
 	}
 
 	return defaultServiceAccount
 }
 
-func buildContainer(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) corev1.Container {
+func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev1.Container {
 	pullPolicy := corev1.PullIfNotPresent
 	if dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag == "latest" {
 		// For initial testing latest image is used, so let runtime pull updates if they're available.
@@ -107,9 +107,9 @@ func buildContainer(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) corev1.
 			FailureThreshold:    3,
 			SuccessThreshold:    1,
 		},
-		Resources:       buildContainerResources(dbex.Resources),
+		Resources:       buildContainerResources(dbSpec.Resources),
 		SecurityContext: buildContainerSecurityContext(),
-		VolumeMounts:    buildVolumeMounts(dbex),
+		VolumeMounts:    buildVolumeMounts(dbSpec),
 	}
 
 	return container
@@ -136,7 +136,7 @@ func buildContainerEnvs() []corev1.EnvVar {
 	}
 }
 
-func buildVolumeMounts(dbex extensions.DatabaseSpec) []corev1.VolumeMount {
+func buildVolumeMounts(dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      userDataVolumeName,
@@ -154,10 +154,10 @@ func buildVolumeMounts(dbex extensions.DatabaseSpec) []corev1.VolumeMount {
 		},
 	}
 
-	return append(volumeMounts, dbex.VolumeMounts...)
+	return append(volumeMounts, dbSpec.VolumeMounts...)
 }
 
-func buildVolumes(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) []corev1.Volume {
+func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
 			Name: userDataVolumeName,
@@ -195,7 +195,7 @@ func buildVolumes(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) []corev1.
 		},
 	}
 
-	return append(volumes, dbex.Volumes...)
+	return append(volumes, dbSpec.Volumes...)
 }
 
 func buildContainerResources(custom *corev1.ResourceRequirements) corev1.ResourceRequirements {

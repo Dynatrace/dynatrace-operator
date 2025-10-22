@@ -46,8 +46,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	ext := r.dk.Extensions()
 	expectedDeploymentNames := make([]string, len(ext.Databases))
 
-	for i, dbex := range ext.Databases {
-		expectedDeploymentNames[i] = ext.GetDatabaseExecutorName(dbex.ID)
+	for i, dbSpec := range ext.Databases {
+		expectedDeploymentNames[i] = ext.GetDatabaseExecutorName(dbSpec.ID)
 	}
 
 	if err := deleteDeployments(ctx, r.client, r.dk, expectedDeploymentNames); err != nil {
@@ -58,8 +58,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	var buildErrors error
 
-	for i, dbex := range ext.Databases {
-		replicas, err := r.getReplicas(ctx, expectedDeploymentNames[i], dbex.Replicas)
+	for i, dbSpec := range ext.Databases {
+		replicas, err := r.getReplicas(ctx, expectedDeploymentNames[i], dbSpec.Replicas)
 		if err != nil {
 			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
@@ -67,19 +67,19 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		deploy, err := deployment.Build(
-			r.dk, ext.GetDatabaseExecutorName(dbex.ID),
+			r.dk, ext.GetDatabaseExecutorName(dbSpec.ID),
 			deployment.SetReplicas(replicas),
-			deployment.SetAllLabels(buildAllLabels(r.dk, dbex)),
-			deployment.SetAllAnnotations(nil, dbex.Annotations),
-			deployment.SetAffinity(dbex.Affinity),
+			deployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
+			deployment.SetAllAnnotations(nil, dbSpec.Annotations),
+			deployment.SetAffinity(dbSpec.Affinity),
 			deployment.SetTolerations(r.dk.Spec.Templates.DatabaseExecutor.Tolerations),
-			deployment.SetTopologySpreadConstraints(dbex.TopologySpreadConstraints),
-			deployment.SetNodeSelector(dbex.NodeSelector),
+			deployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),
+			deployment.SetNodeSelector(dbSpec.NodeSelector),
 			deployment.SetImagePullSecrets(r.dk.ImagePullSecretReferences()),
-			deployment.SetServiceAccount(buildServiceAccountName(dbex)),
+			deployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
 			deployment.SetSecurityContext(buildPodSecurityContext()),
-			deployment.SetContainer(buildContainer(r.dk, dbex)),
-			deployment.SetVolumes(buildVolumes(r.dk, dbex)),
+			deployment.SetContainer(buildContainer(r.dk, dbSpec)),
+			deployment.SetVolumes(buildVolumes(r.dk, dbSpec)),
 		)
 		if err != nil {
 			// Not a critical error. Next deployment could succeed.
