@@ -57,7 +57,7 @@ func TestConvertTo(t *testing.T) {
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring)
+		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring, to.RemovedFields())
 		compareBase(t, from, to)
 		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
@@ -74,7 +74,7 @@ func TestConvertTo(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
 		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
-		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack)
+		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack, to.RemovedFields())
 		compareBase(t, from, to)
 		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
@@ -91,7 +91,7 @@ func TestConvertTo(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
 		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
-		compareCloudNativeSpec(t, *from.Spec.OneAgent.CloudNativeFullStack, *to.Spec.OneAgent.CloudNativeFullStack)
+		compareCloudNativeSpec(t, *from.Spec.OneAgent.CloudNativeFullStack, *to.Spec.OneAgent.CloudNativeFullStack, to.RemovedFields())
 		compareBase(t, from, to)
 	})
 
