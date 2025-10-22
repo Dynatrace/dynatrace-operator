@@ -12,7 +12,12 @@ const (
 	DeploymentsAppliedReason = "DeploymentsApplied"
 )
 
-func SetDeploymentsApplied(conditions *[]metav1.Condition, conditionType string, names []string) {
+type Setter interface {
+	metav1.Object
+	Conditions() *[]metav1.Condition
+}
+
+func SetDeploymentsApplied(obj Setter, conditionType string, names []string) {
 	const maxNames = 3
 	if len(names) > maxNames {
 		more := len(names) - maxNames
@@ -22,10 +27,11 @@ func SetDeploymentsApplied(conditions *[]metav1.Condition, conditionType string,
 	}
 
 	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  DeploymentsAppliedReason,
-		Message: strings.Join(names, ", "),
+		Type:               conditionType,
+		Status:             metav1.ConditionTrue,
+		Reason:             DeploymentsAppliedReason,
+		Message:            strings.Join(names, ", "),
+		ObservedGeneration: obj.GetGeneration(),
 	}
-	_ = meta.SetStatusCondition(conditions, condition)
+	_ = meta.SetStatusCondition(obj.Conditions(), condition)
 }

@@ -32,7 +32,7 @@ func TestReconciler(t *testing.T) {
 		integrationtests.CreateKubernetesObject(t, t.Context(), clt, getMatchingDeployment(dk))
 
 		dk.Spec.Extensions.Databases = nil
-		conditions.SetDeploymentsApplied(dk.Conditions(), conditionType, []string{"test"})
+		conditions.SetDeploymentsApplied(dk, conditionType, []string{"test"})
 		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
 
 		deployment := getReconciledDeployment(t, clt, dk)

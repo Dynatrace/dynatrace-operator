@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -35,6 +36,11 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	log.Debug("reconciling deployments")
+
+	if cond := meta.FindStatusCondition(r.dk.Status.Conditions, conditionType); cond != nil &&
+		cond.Status == metav1.ConditionTrue && cond.ObservedGeneration == r.dk.Generation {
+		return nil
+	}
 
 	query := deployment.Query(r.client, r.apiReader, log)
 	ext := r.dk.Extensions()
@@ -100,7 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if len(expectedDeploymentNames) > 0 {
-		conditions.SetDeploymentsApplied(r.dk.Conditions(), conditionType, expectedDeploymentNames)
+		conditions.SetDeploymentsApplied(r.dk, conditionType, expectedDeploymentNames)
 	} else {
 		_ = meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 	}

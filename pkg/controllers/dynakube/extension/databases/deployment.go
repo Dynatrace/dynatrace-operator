@@ -20,7 +20,10 @@ import (
 )
 
 const (
-	probePort = int32(8080)
+	probePort                = int32(8080)
+	livenessProbePath        = "/health/live"
+	readinessProbePath       = "/health/ready"
+	userGroupID        int64 = 1000
 	// Keep in sync with helm chart
 	defaultServiceAccount = "dynatrace-database-extensions-executor"
 	// Must contain the ID specified in the DynaKube CR.
@@ -81,7 +84,7 @@ func buildContainer(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) corev1.
 		LivenessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/health/live",
+					Path: livenessProbePath,
 					Port: intstr.IntOrString{IntVal: probePort},
 				},
 			},
@@ -94,7 +97,7 @@ func buildContainer(dk *dynakube.DynaKube, dbex extensions.DatabaseSpec) corev1.
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/health/ready",
+					Path: readinessProbePath,
 					Port: intstr.IntOrString{IntVal: probePort},
 				},
 			},
@@ -218,8 +221,8 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 		RunAsNonRoot: ptr.To(true),
-		RunAsGroup:   ptr.To(int64(1000)),
-		RunAsUser:    ptr.To(int64(1000)),
+		RunAsGroup:   ptr.To(userGroupID),
+		RunAsUser:    ptr.To(userGroupID),
 	}
 }
 
@@ -239,14 +242,10 @@ func buildContainerSecurityContext() *corev1.SecurityContext {
 func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.DynaKube, keep []string) error {
 	deployments := &appsv1.DeploymentList{}
 
-	deploymentLabels, _, _ := buildAllLabels(dk, extensions.DatabaseSpec{})
 	// We have to build labels from an empty DB spec to allow cleaning up orphans (without having to delete the DynaKube).
-	// Since the spec is used for generating labels we have to remove some entries to ensure we get all deployments.
-	delete(deploymentLabels, executorIDLabelKey)
-	delete(deploymentLabels, consts.DatasourceLabelKey)
-	delete(deploymentLabels, labels.AppVersionLabel)
+	deploymentLabels, _, _ := buildAllLabels(dk, extensions.DatabaseSpec{})
 
-	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), client.MatchingLabels(deploymentLabels)); err != nil {
+	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), sanitizedListLabels(deploymentLabels)); err != nil {
 		return fmt.Errorf("list deployments: %w", err)
 	}
 
@@ -267,4 +266,13 @@ func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.Dyna
 	}
 
 	return nil
+}
+
+func sanitizedListLabels(deploymentLabels map[string]string) client.MatchingLabels {
+	// Remove instance-specific keys to ensure we get all related deployments.
+	delete(deploymentLabels, executorIDLabelKey)
+	delete(deploymentLabels, consts.DatasourceLabelKey)
+	delete(deploymentLabels, labels.AppVersionLabel)
+
+	return deploymentLabels
 }
