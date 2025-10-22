@@ -178,7 +178,7 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/readyz",
-					Port:   intstr.IntOrString{IntVal: consts.ExtensionsCollectorTargetPort},
+					Port:   intstr.IntOrString{IntVal: consts.ExtensionsDatasourceTargetPort},
 					Scheme: "HTTPS",
 				},
 			},
@@ -191,8 +191,8 @@ func buildContainer(dk *dynakube.DynaKube) corev1.Container {
 		SecurityContext: buildSecurityContext(),
 		Ports: []corev1.ContainerPort{
 			{
-				Name:          consts.ExtensionsCollectorTargetPortName,
-				ContainerPort: consts.ExtensionsCollectorTargetPort,
+				Name:          consts.ExtensionsDatasourceTargetPortName,
+				ContainerPort: consts.ExtensionsDatasourceTargetPort,
 			},
 		},
 		Env:          buildContainerEnvs(dk),
@@ -239,7 +239,7 @@ func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
 		{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ":443"},
 		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecConsts.TokenSecretKey},
-		{Name: envEecIngestPort, Value: strconv.Itoa(consts.ExtensionsCollectorTargetPort)},
+		{Name: envEecIngestPort, Value: strconv.Itoa(consts.ExtensionsDatasourceTargetPort)},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},

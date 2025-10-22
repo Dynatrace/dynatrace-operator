@@ -97,6 +97,16 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Equal(t, deploy.Labels, deploy.Spec.Template.Labels)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 3)
+		for _, vol := range deploy.Spec.Template.Spec.Volumes {
+			switch vol.Name {
+			case userDataVolumeName:
+				assert.NotNil(t, vol.EmptyDir)
+			case tokenVolumeName, certsVolumeName:
+				assert.NotNil(t, vol.Secret)
+			default:
+				t.Fatalf("deployment has unexpected volume %s", vol.Name)
+			}
+		}
 
 		container := deploy.Spec.Template.Spec.Containers[0]
 		assert.NotNil(t, container.LivenessProbe)
@@ -104,11 +114,23 @@ func TestReconcileSpec(t *testing.T) {
 		assert.NotNil(t, container.SecurityContext)
 		assert.Equal(t, dk.Spec.Templates.DatabaseExecutor.ImageRef.String(), container.Image)
 		assert.Equal(t, corev1.PullIfNotPresent, container.ImagePullPolicy)
+		assert.NotEmpty(t, container.Resources.Requests)
+		assert.NotEmpty(t, container.Resources.Limits)
 		assert.Len(t, container.Args, 3)
 		assert.Len(t, container.Env, 1)
 		assert.Len(t, container.VolumeMounts, 3)
-		assert.NotEmpty(t, container.Resources.Requests)
-		assert.NotEmpty(t, container.Resources.Limits)
+		for _, mnt := range container.VolumeMounts {
+			switch mnt.Name {
+			case userDataVolumeName:
+				assert.Equal(t, userDataMountPath, mnt.MountPath)
+			case tokenVolumeName:
+				assert.Equal(t, tokenMountPath, mnt.MountPath)
+			case certsVolumeName:
+				assert.Equal(t, certsMountPath, mnt.MountPath)
+			default:
+				t.Fatalf("deployment has unexpected volume mount %s", mnt.Name)
+			}
+		}
 	})
 
 	t.Run("override image pull policy", func(t *testing.T) {

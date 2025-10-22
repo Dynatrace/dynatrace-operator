@@ -2,6 +2,7 @@ package databases
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -37,20 +38,22 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	query := deployment.Query(r.client, r.apiReader, log)
 	ext := r.dk.Extensions()
-	applyNames := make([]string, len(ext.Databases))
+	expectedDeploymentNames := make([]string, len(ext.Databases))
 
 	for i, dbex := range ext.Databases {
-		applyNames[i] = ext.GetDatabaseExecutorName(dbex.ID)
+		expectedDeploymentNames[i] = ext.GetDatabaseExecutorName(dbex.ID)
 	}
 
-	if err := deleteDeployments(ctx, r.client, r.dk, applyNames); err != nil {
+	if err := deleteDeployments(ctx, r.client, r.dk, expectedDeploymentNames); err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
+	var buildErrors error
+
 	for i, dbex := range ext.Databases {
-		replicas, err := r.getReplicas(ctx, applyNames[i], dbex.Replicas)
+		replicas, err := r.getReplicas(ctx, expectedDeploymentNames[i], dbex.Replicas)
 		if err != nil {
 			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
@@ -73,23 +76,31 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			deployment.SetVolumes(buildVolumes(r.dk, dbex)),
 		)
 		if err != nil {
-			return err
+			// Not a critical error. Next deployment could succeed.
+			buildErrors = errors.Join(buildErrors, err)
+
+			continue
 		}
 
 		changed, err := query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
 		if err != nil {
 			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
-			return err
+			// Surface previous errors if there are any
+			return errors.Join(err, buildErrors)
 		}
 
 		if changed {
-			log.Info("ensured deployment", "name", deploy.Name)
+			log.Info("deployment created or updated", "name", deploy.Name)
 		}
 	}
 
-	if len(applyNames) > 0 {
-		conditions.SetDeploymentsApplied(r.dk.Conditions(), conditionType, applyNames)
+	if buildErrors != nil {
+		return buildErrors
+	}
+
+	if len(expectedDeploymentNames) > 0 {
+		conditions.SetDeploymentsApplied(r.dk.Conditions(), conditionType, expectedDeploymentNames)
 	} else {
 		_ = meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 	}
@@ -97,6 +108,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
+// To work well with horizontal pod autoscalers, ensure that we use external changes to replicas and not overwrite it.
 func (r *Reconciler) getReplicas(ctx context.Context, name string, defaultReplicas *int32) (int32, error) {
 	if defaultReplicas != nil {
 		return *defaultReplicas, nil

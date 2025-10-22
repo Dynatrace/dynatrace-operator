@@ -68,7 +68,6 @@ func TestIsModuleDisabled(t *testing.T) {
 			moduleFunc:      isActiveGateModuleDisabled,
 			expectedMessage: "",
 		},
-
 		{
 			title:           "ecc module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
@@ -104,7 +103,6 @@ func TestIsModuleDisabled(t *testing.T) {
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: "",
 		},
-
 		{
 			title:           "logmonitoring module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{LogMonitoring: &logmonitoring.Spec{}}},

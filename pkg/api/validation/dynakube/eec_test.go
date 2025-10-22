@@ -201,7 +201,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 	)
 }
 
-func TestWarnIfmultiplyDKwithExtensionsEnabled(t *testing.T) {
+func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 	imgRef := image.Ref{
 		Repository: "a",
 		Tag:        "b",

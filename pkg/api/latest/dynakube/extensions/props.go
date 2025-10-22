@@ -57,7 +57,7 @@ func (e *Extensions) GetTokenSecretName() string {
 }
 
 func (e *Extensions) GetPortName() string {
-	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsCollectorTargetPortName
+	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsDatasourceTargetPortName
 }
 
 func (e *Extensions) GetServiceNameFQDN() string {
