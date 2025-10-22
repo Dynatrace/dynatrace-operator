@@ -68,6 +68,6 @@ func (e *Extensions) GetServiceName() string {
 	return e.name + consts.ExtensionsControllerSuffix
 }
 
-func (e *Extensions) GetDatabaseExecutorName(id string) string {
-	return e.name + "-database-datasource-" + id
+func (e *Extensions) GetDatabaseDatasourceName(id string) string {
+	return e.name + "-db-datasource-" + id
 }

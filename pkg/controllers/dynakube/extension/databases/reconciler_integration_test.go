@@ -67,6 +67,16 @@ func TestReconciler(t *testing.T) {
 		require.NotNil(t, deployment)
 		require.Equal(t, ptr.To(int32(1)), deployment.Spec.Replicas)
 	})
+
+	t.Run("don't exceed 63 characters", func(t *testing.T)  {
+		dk := getTestDynakube()
+		dk.Name = rand.String(dynakube.MaxNameLength)
+		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+
+		deployment := getReconciledDeployment(t, clt, dk)
+		require.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, conditionType))
+		require.NotNil(t, deployment)
+	})
 }
 
 func TestExtensionsDatabases(t *testing.T) {

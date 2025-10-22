@@ -295,7 +295,7 @@ func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.Name + "-database-datasource-" + db.ID,
+			Name:      dk.Name + "-db-datasource-" + db.ID,
 			Namespace: testNamespaceName,
 			Labels:    labels,
 		},

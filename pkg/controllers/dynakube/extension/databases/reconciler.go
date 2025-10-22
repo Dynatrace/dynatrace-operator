@@ -47,7 +47,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	expectedDeploymentNames := make([]string, len(ext.Databases))
 
 	for i, dbSpec := range ext.Databases {
-		expectedDeploymentNames[i] = ext.GetDatabaseExecutorName(dbSpec.ID)
+		expectedDeploymentNames[i] = ext.GetDatabaseDatasourceName(dbSpec.ID)
 	}
 
 	if err := deleteDeployments(ctx, r.client, r.dk, expectedDeploymentNames); err != nil {
@@ -67,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		deploy, err := deployment.Build(
-			r.dk, ext.GetDatabaseExecutorName(dbSpec.ID),
+			r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
 			deployment.SetReplicas(replicas),
 			deployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
 			deployment.SetAllAnnotations(nil, dbSpec.Annotations),
