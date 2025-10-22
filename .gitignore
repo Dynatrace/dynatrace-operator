@@ -97,9 +97,10 @@ kind-logs-*
 /testbin/bin/kube-apiserver
 /testbin/bin/kubectl
 /testbin/setup-envtest.sh
-/bin/manager
+/bin
 /dynatrace-operator.iml
 /csi.db
+/node_modules
 
 test/testdata/secrets/*
 
