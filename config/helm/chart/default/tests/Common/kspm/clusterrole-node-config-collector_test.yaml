@@ -1,0 +1,55 @@
+suite: test clusterrole for the dynatrace OpenTelemetry collector endpoints
+templates:
+  - Common/kspm/clusterrole-node-config-collector.yaml
+tests:
+  - it: ClusterRole/Binding should exist on openshift
+    set:
+      platform: openshift
+    asserts:
+    - hasDocuments:
+        count: 2
+
+  - it: ClusterRole should exist with SCC permissions on openshift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-node-config-collector
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
+  - it: ClusterRoleBinding should exist on openshift
+    set:
+      platform: openshift
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-node-config-collector
+      - isNotEmpty:
+          path: metadata.labels
+
+  - it: Shouldn't exist if turned off
+    set:
+      platform: openshift
+      rbac.kspm.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
