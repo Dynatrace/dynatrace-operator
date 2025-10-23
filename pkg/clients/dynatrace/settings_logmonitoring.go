@@ -32,7 +32,7 @@ type logMonSettingsItem struct {
 
 type posLogMonSettingsBody struct {
 	SchemaID      string              `json:"schemaId"`
-	SchemaVersion string              `json:"schemaVersion"`
+	//SchemaVersion string              `json:"schemaVersion"`
 	Scope         string              `json:"scope,omitempty"`
 	Value         logMonSettingsValue `json:"value"`
 }
@@ -98,7 +98,7 @@ func createBaseLogMonSettings(clusterName, schemaID string, schemaVersion string
 
 	base := posLogMonSettingsBody{
 		SchemaID:      schemaID,
-		SchemaVersion: schemaVersion,
+		//SchemaVersion: schemaVersion,
 		Value: logMonSettingsValue{
 			SendToStorage:   true,
 			Enabled:         true,
