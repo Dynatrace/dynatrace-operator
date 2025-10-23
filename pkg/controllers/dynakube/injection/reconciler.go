@@ -102,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if r.dk.OneAgent().IsAppInjectionNeeded() || r.dk.MetadataEnrichment().IsEnabled() {
-		err := r.generateInitSecret(ctx)
+		err := r.generateInitSecret(ctx, namespaces)
 		if err != nil {
 			setupErrors = append(setupErrors, err)
 		}
@@ -173,8 +173,8 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) generateInitSecret(ctx context.Context) error {
-	err := bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk)
+func (r *Reconciler) generateInitSecret(ctx context.Context, namespaces []corev1.Namespace) error {
+	err := bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk, namespaces)
 	if err != nil {
 		if conditions.IsKubeAPIError(err) {
 			conditions.SetKubeAPIError(r.dk.Conditions(), codeModulesInjectionConditionType, err)

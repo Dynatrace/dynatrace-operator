@@ -68,6 +68,35 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
 	})
+	t.Run("no namespaces provided - should not error", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+					Signals: otlpexporterconfiguration.SignalConfiguration{},
+				},
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				dtclient.DataIngestToken: []byte(testDataIngestToken),
+			}),
+		)
+
+		mockDTClient := dtclientmock.NewClient(t)
+
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
+		require.NoError(t, err)
+	})
 	t.Run("successfully generate config secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -81,9 +110,11 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			},
 		}
 
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
 		clt := fake.NewClientWithIndex(
 			dk,
-			clientInjectedNamespace(testNamespace, testDynakube),
+			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(testDataIngestToken),
 			}),
@@ -92,7 +123,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		mockDTClient := dtclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -127,9 +158,11 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			},
 		}
 
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
 		clt := fake.NewClientWithIndex(
 			dk,
-			clientInjectedNamespace(testNamespace, testDynakube),
+			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(testDataIngestToken),
 			}),
@@ -144,7 +177,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		mockDTClient := dtclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -204,17 +237,20 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		terminatingNS := clientInjectedNamespace("terminating-ns", testDynakube)
 		terminatingNS.Status.Phase = corev1.NamespaceTerminating
 
+		namespace1 := clientInjectedNamespace(testNamespace, testDynakube)
+		namespace2 := clientInjectedNamespace(testNamespace2, testDynakube)
+
 		clt := fake.NewClientWithIndex(
 			dk,
-			clientInjectedNamespace(testNamespace, testDynakube),
-			clientInjectedNamespace(testNamespace2, testDynakube),
+			namespace1,
+			namespace2,
 			terminatingNS,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk, nil))
+		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace1, *namespace2, *terminatingNS}))
 
 		// replicated in active namespaces
 		assertSecretExists(t, clt, consts.OTLPExporterSecretName, testNamespace)

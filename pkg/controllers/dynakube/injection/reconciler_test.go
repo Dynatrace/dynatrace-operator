@@ -441,7 +441,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
-		err := r.generateInitSecret(ctx)
+		err := r.generateInitSecret(ctx, nil)
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {
