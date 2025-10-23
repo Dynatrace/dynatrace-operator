@@ -101,15 +101,20 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if r.dk.OneAgent().IsAppInjectionNeeded() || r.dk.MetadataEnrichment().IsEnabled() {
-		err := r.generateInitSecret(ctx, namespaces)
-		if err != nil {
-			setupErrors = append(setupErrors, err)
-		}
-	} else {
-		r.cleanupInitSecret(ctx, namespaces)
+	setupErrors = r.handleInitSecret(ctx, namespaces, setupErrors)
+
+	setupErrors = r.handleOTLPSecret(ctx, namespaces, setupErrors)
+
+	if len(setupErrors) > 0 {
+		return goerrors.Join(setupErrors...)
 	}
 
+	log.Info("app injection reconciled")
+
+	return nil
+}
+
+func (r *Reconciler) handleOTLPSecret(ctx context.Context, namespaces []corev1.Namespace, setupErrors []error) []error {
 	if r.dk.OTLPExporterConfiguration().IsEnabled() {
 		err := r.generateOTLPSecret(ctx, namespaces)
 		if err != nil {
@@ -120,14 +125,19 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	} else {
 		r.cleanupOTLPSecret(ctx, namespaces)
 	}
+	return setupErrors
+}
 
-	if len(setupErrors) > 0 {
-		return goerrors.Join(setupErrors...)
+func (r *Reconciler) handleInitSecret(ctx context.Context, namespaces []corev1.Namespace, setupErrors []error) []error {
+	if r.dk.OneAgent().IsAppInjectionNeeded() || r.dk.MetadataEnrichment().IsEnabled() {
+		err := r.generateInitSecret(ctx, namespaces)
+		if err != nil {
+			setupErrors = append(setupErrors, err)
+		}
+	} else {
+		r.cleanupInitSecret(ctx, namespaces)
 	}
-
-	log.Info("app injection reconciled")
-
-	return nil
+	return setupErrors
 }
 
 func (r *Reconciler) unmap(ctx context.Context) {
