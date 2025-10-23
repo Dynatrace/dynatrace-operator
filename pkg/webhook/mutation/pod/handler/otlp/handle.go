@@ -2,6 +2,7 @@ package otlp
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
@@ -50,6 +51,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 
 			return nil
 		}
+
 		if h.envVarMutator.IsInjected(mutationRequest.BaseRequest) {
 			if h.envVarMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
 				log.Debug("reinvocation policy applied", "podName", mutationRequest.PodName())
@@ -83,7 +85,6 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
 	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, targetSecretName, log)
 	if k8serrors.IsNotFound(err) {
-
 		annotations.SetNotInjectedAnnotations(
 			mutationRequest,
 			AnnotationOTLPInjected,

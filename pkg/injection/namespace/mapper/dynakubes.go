@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-  "github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"

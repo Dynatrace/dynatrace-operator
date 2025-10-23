@@ -133,7 +133,7 @@ func TestMutator_IsInjected(t *testing.T) {
 	})
 }
 
-func TestMutator_Mutate(t *testing.T) { //nolint:revive
+func TestMutator_Mutate(t *testing.T) {
 	t.Run("no OTLP exporter configuration present on DynaKube - do not modify anything", func(t *testing.T) {
 		m := Mutator{}
 
@@ -588,6 +588,7 @@ func assertTokenEnvVarIsSet(t *testing.T, containerEnvVars []corev1.EnvVar) {
 	for i := range containerEnvVars {
 		if containerEnvVars[i].Name == DynatraceAPITokenEnv {
 			dtTokenVar = &containerEnvVars[i]
+
 			break
 		}
 	}

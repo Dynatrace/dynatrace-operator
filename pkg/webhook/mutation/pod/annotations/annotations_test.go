@@ -15,6 +15,7 @@ func newTestMutationRequest(t *testing.T) *mutator.MutationRequest {
 	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod", Namespace: "ns"}}
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
 	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "ns"}}
+
 	return mutator.NewMutationRequest(t.Context(), *ns, nil, pod, *dk)
 }
 

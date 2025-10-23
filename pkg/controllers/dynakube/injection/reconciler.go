@@ -3,6 +3,7 @@ package injection
 import (
 	"context"
 	goerrors "errors"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -93,11 +94,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 			setupErrors = append(setupErrors, err)
 		}
-
-		err := r.generateInitSecret(ctx)
-		if err != nil {
-			setupErrors = append(setupErrors, err)
-		}
 	}
 
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
@@ -144,7 +140,6 @@ func (r *Reconciler) unmap(ctx context.Context) {
 	if err := dkMapper.UnmapFromDynaKube(namespaces); err != nil {
 		log.Error(err, "could not unmap dynakube from namespace", "dkName", r.dk.Name)
 	}
-
 }
 
 func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
