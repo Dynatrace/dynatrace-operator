@@ -5,7 +5,7 @@ kind: ClusterRole
 metadata:
   name: dynatrace-kubernetes-monitoring-kspm
   labels:
-    rbac.dynatrace.com/aggregate-to-kubernetes-monitoring: "true"
+    rbac.dynatrace.com/aggregate-to-monitoring: "true": "true"
     {{- include "dynatrace-operator.kspmLabels" . | nindent 4 }}
 rules:
   - apiGroups:
