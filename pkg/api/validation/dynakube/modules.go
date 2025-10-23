@@ -8,11 +8,12 @@ import (
 )
 
 var (
-	errorOneAgentModuleDisabled      = installconfig.GetModuleValidationErrorMessage("OneAgent")
-	errorActiveGateModuleDisabled    = installconfig.GetModuleValidationErrorMessage("ActiveGate")
-	errorExtensionsModuleDisabled    = installconfig.GetModuleValidationErrorMessage("Extensions")
-	errorLogMonitoringModuleDisabled = installconfig.GetModuleValidationErrorMessage("LogMonitoring")
-	errorKSPMDisabled                = installconfig.GetModuleValidationErrorMessage("KSPM")
+	errorOneAgentModuleDisabled             = installconfig.GetModuleValidationErrorMessage("OneAgent")
+	errorActiveGateModuleDisabled           = installconfig.GetModuleValidationErrorMessage("ActiveGate")
+	errorExtensionsModuleDisabled           = installconfig.GetModuleValidationErrorMessage("Extensions")
+	errorLogMonitoringModuleDisabled        = installconfig.GetModuleValidationErrorMessage("LogMonitoring")
+	errorKSPMDisabled                       = installconfig.GetModuleValidationErrorMessage("KSPM")
+	errorKubernetesMonitoringModuleDisabled = installconfig.GetModuleValidationErrorMessage("KubernetesMonitoring")
 )
 
 func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
@@ -24,8 +25,12 @@ func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.Dyna
 }
 
 func isActiveGateModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.ActiveGate().IsEnabled() && !v.modules.ActiveGate && !v.modules.KSPM {
+	if dk.ActiveGate().IsEnabled() && !v.modules.ActiveGate {
 		return errorActiveGateModuleDisabled
+	}
+
+	if dk.ActiveGate().IsKubernetesMonitoringEnabled() && !v.modules.KubernetesMonitoring && !v.modules.KSPM {
+		return errorKubernetesMonitoringModuleDisabled
 	}
 
 	return ""
