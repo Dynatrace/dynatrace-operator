@@ -68,7 +68,7 @@ func TestReconciler(t *testing.T) {
 		require.Equal(t, ptr.To(int32(1)), deployment.Spec.Replicas)
 	})
 
-	t.Run("don't exceed 63 characters", func(t *testing.T)  {
+	t.Run("don't exceed 63 characters", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Name = rand.String(dynakube.MaxNameLength)
 		integrationtests.CreateDynakube(t, t.Context(), clt, dk)

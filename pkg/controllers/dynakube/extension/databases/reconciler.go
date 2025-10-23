@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -13,11 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// DynaKube condition that is managed by the reconciler.
-const conditionType = "DatabaseDatasourcesAvailable"
-
-var log = logd.Get().WithName("extension-databases")
 
 type Reconciler struct {
 	client    client.Client
