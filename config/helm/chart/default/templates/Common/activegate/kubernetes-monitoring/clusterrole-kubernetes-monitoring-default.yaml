@@ -18,7 +18,7 @@ kind: ClusterRole
 metadata:
   name: dynatrace-kubernetes-monitoring-default
   labels:
-    rbac.dynatrace.com/aggregate-to-monitoring: "true": "true"
+    rbac.dynatrace.com/aggregate-to-monitoring: "true"
     {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
 rules:
   - apiGroups:
