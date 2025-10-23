@@ -249,6 +249,7 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
+                        "kubernetesMonitoring": true,
                         "kspm": true
                       }
                   - name: helm.json

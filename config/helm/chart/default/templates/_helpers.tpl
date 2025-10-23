@@ -83,6 +83,7 @@ startupProbe:
       "logMonitoring": {{ .Values.rbac.logMonitoring.create }},
       "edgeConnect": {{ .Values.rbac.edgeConnect.create }},
       "supportability": {{ .Values.rbac.supportability }},
+      "kubernetesMonitoring": {{ .Values.rbac.kubernetesMonitoring }},
       "kspm": {{ .Values.rbac.kspm.create }}
     }
 {{- end -}}

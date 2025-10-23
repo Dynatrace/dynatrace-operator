@@ -36,6 +36,7 @@ func TestGet(t *testing.T) {
 			"logMonitoring": false,
 			"edgeConnect": true,
 			"supportability": false,
+			"KubernetesMonitoring": false,
 			"kspm": true
 		}`
 		expected := Modules{
@@ -46,6 +47,7 @@ func TestGet(t *testing.T) {
 			LogMonitoring:  false,
 			EdgeConnect:    true,
 			Supportability: false,
+			KubernetesMonitoring: false,
 			KSPM:           true,
 		}
 
