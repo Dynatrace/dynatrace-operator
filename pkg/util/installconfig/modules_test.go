@@ -69,17 +69,19 @@ func TestGet(t *testing.T) {
 			"logMonitoring": false,
 			"edgeConnect": true,
 			"supportability": false,
+			"kubernetesMonitoring": false,
 			"kspm": true
 		}`
 		expected := Modules{
-			CSIDriver:      false,
-			ActiveGate:     true,
-			OneAgent:       false,
-			Extensions:     true,
-			LogMonitoring:  false,
-			EdgeConnect:    true,
-			Supportability: false,
-			KSPM:           true,
+			CSIDriver:            false,
+			ActiveGate:           true,
+			OneAgent:             false,
+			Extensions:           true,
+			LogMonitoring:        false,
+			EdgeConnect:          true,
+			Supportability:       false,
+			KubernetesMonitoring: false,
+			KSPM:                 true,
 		}
 
 		t.Setenv(ModulesJSONEnv, jsonValue)
