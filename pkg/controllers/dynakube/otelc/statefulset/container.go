@@ -9,9 +9,6 @@ import (
 )
 
 const (
-	// default values
-	defaultImageRepo         = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag          = "latest"
 	containerName            = "collector"
 	secretsTokensPath        = "/secrets/tokens"
 	otelcSecretTokenFilePath = secretsTokensPath + "/" + consts.DatasourceTokenSecretKey
@@ -20,14 +17,6 @@ const (
 func getContainer(dk *dynakube.DynaKube) corev1.Container {
 	imageRepo := dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository
 	imageTag := dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag
-
-	if imageRepo == "" {
-		imageRepo = defaultImageRepo
-	}
-
-	if imageTag == "" {
-		imageTag = defaultImageTag
-	}
 
 	return corev1.Container{
 		Name:            containerName,
