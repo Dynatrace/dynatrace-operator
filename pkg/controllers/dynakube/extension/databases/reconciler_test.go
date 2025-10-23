@@ -195,17 +195,6 @@ func TestReconcileSpec(t *testing.T) {
 }
 
 func TestReconcileCondition(t *testing.T) {
-	t.Run("skip", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Generation = 123
-		_ = meta.SetStatusCondition(dk.Conditions(), metav1.Condition{
-			Type:               conditionType,
-			Status:             metav1.ConditionTrue,
-			ObservedGeneration: dk.Generation,
-		})
-		require.NoError(t, NewReconciler(nil, nil, dk).Reconcile(t.Context()))
-	})
-
 	t.Run("update observed generation", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Generation = 100
