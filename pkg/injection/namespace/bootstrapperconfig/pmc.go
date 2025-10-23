@@ -19,7 +19,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	if !conditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
 		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
 
-		source, err := getSecretFromSource(ctx, *dk, s.secrets, GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, dk.Namespace)
+		source, err := k8ssecret.GetSecretFromSource(ctx, s.secrets, GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, dk.Namespace, dk.Namespace)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 

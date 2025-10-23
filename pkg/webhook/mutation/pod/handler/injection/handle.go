@@ -77,13 +77,22 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 
 		if !mutated {
-			annotations.SetNotInjectedAnnotations(mutationRequest, NoMutationNeededReason)
+			annotations.SetNotInjectedAnnotations(
+				mutationRequest,
+				dtwebhook.AnnotationDynatraceInjected,
+				dtwebhook.AnnotationDynatraceReason,
+				NoMutationNeededReason,
+			)
 
 			return nil
 		}
 	}
 
-	annotations.SetDynatraceInjectedAnnotation(mutationRequest)
+	annotations.SetDynatraceInjectedAnnotation(
+		mutationRequest,
+		dtwebhook.AnnotationDynatraceInjected,
+		dtwebhook.AnnotationDynatraceReason,
+	)
 
 	log.Info("injection finished for pod", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
@@ -168,7 +177,12 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 	if k8serrors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("unable to copy source of %s as it is not available, injection not possible", sourceSecretName), "pod", mutationRequest.PodName())
 
-		annotations.SetNotInjectedAnnotations(mutationRequest, NoBootstrapperConfigReason)
+		annotations.SetNotInjectedAnnotations(
+			mutationRequest,
+			dtwebhook.AnnotationDynatraceInjected,
+			dtwebhook.AnnotationDynatraceReason,
+			NoBootstrapperConfigReason,
+		)
 
 		return false
 	}
@@ -176,7 +190,12 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 	if err != nil {
 		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
 
-		annotations.SetNotInjectedAnnotations(mutationRequest, NoBootstrapperConfigReason)
+		annotations.SetNotInjectedAnnotations(
+			mutationRequest,
+			dtwebhook.AnnotationDynatraceInjected,
+			dtwebhook.AnnotationDynatraceReason,
+			NoBootstrapperConfigReason,
+		)
 
 		return false
 	}

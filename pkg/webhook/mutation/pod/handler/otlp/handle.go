@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/secrets"
@@ -70,6 +69,12 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 	}
 
+	annotations.SetDynatraceInjectedAnnotation(
+		mutationRequest,
+		AnnotationOTLPInjected,
+		AnnotationOTLPReason,
+	)
+
 	log.Debug("OTLP injection finished", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
 	return nil
@@ -79,7 +84,12 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, targetSecretName, log)
 	if k8serrors.IsNotFound(err) {
 
-		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterConfigSecretReason)
+		annotations.SetNotInjectedAnnotations(
+			mutationRequest,
+			AnnotationOTLPInjected,
+			AnnotationOTLPReason,
+			NoOTLPExporterConfigSecretReason,
+		)
 
 		return false
 	}
@@ -87,7 +97,12 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 	if err != nil {
 		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
 
-		annotations.SetNotInjectedAnnotations(mutationRequest, NoOTLPExporterConfigSecretReason)
+		annotations.SetNotInjectedAnnotations(
+			mutationRequest,
+			dtwebhook.AnnotationDynatraceInjected,
+			dtwebhook.AnnotationDynatraceReason,
+			NoOTLPExporterConfigSecretReason,
+		)
 
 		return false
 	}

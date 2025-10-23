@@ -37,7 +37,7 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 	log.Debug("OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	// first, check if otlp injection is enabled explicitly on pod
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject, false)
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjectionEnabled, false)
 
 	if !enabledOnPod {
 		// if not enabled explicitly, check general injection setting via 'dynatrace.com/inject' annotation
@@ -58,7 +58,7 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 func (m Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 	log.Debug("checking if OTLP env vars have already been injected")
 
-	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
+	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjected, false)
 }
 
 func (m Mutator) Mutate(request *dtwebhook.MutationRequest) error {
@@ -103,7 +103,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 
 	// add an environment variable with a secret ref to dynatrace-otlp-exporter-config secret
 	dtAPITokenEnvVar := corev1.EnvVar{
-		Name: DynatraceAPIToken,
+		Name: DynatraceAPITokenEnv,
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -141,8 +141,6 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 			}
 		}
 	}
-
-	setInjectedAnnotation(request.Pod)
 
 	return mutated, nil
 }
@@ -192,22 +190,13 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, over
 	return false
 }
 
-func setInjectedAnnotation(pod *corev1.Pod) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[AnnotationInjected] = "true"
-	delete(pod.Annotations, AnnotationReason)
-}
-
 func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	return func(pod *corev1.Pod) {
 		if pod.Annotations == nil {
 			pod.Annotations = make(map[string]string)
 		}
 
-		pod.Annotations[AnnotationInjected] = "false"
-		pod.Annotations[AnnotationReason] = reason
+		pod.Annotations[dtwebhook.AnnotationOTLPInjected] = "false"
+		pod.Annotations[dtwebhook.AnnotationOTLPReason] = reason
 	}
 }

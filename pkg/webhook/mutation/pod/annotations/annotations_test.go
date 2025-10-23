@@ -23,7 +23,7 @@ func TestSetDynatraceInjectedAnnotation_InitializesMapAndSetsFlags(t *testing.T)
 	// ensure nil map scenario
 	req.Pod.Annotations = nil
 
-	SetDynatraceInjectedAnnotation(req)
+	SetDynatraceInjectedAnnotation(req, mutator.AnnotationDynatraceInjected, mutator.AnnotationDynatraceReason)
 
 	require.NotNil(t, req.Pod.Annotations)
 	assert.Equal(t, "true", req.Pod.Annotations[mutator.AnnotationDynatraceInjected])
@@ -39,7 +39,7 @@ func TestSetDynatraceInjectedAnnotation_RemovesReasonIfPresent(t *testing.T) {
 		mutator.AnnotationDynatraceInjected: "false",
 	}
 
-	SetDynatraceInjectedAnnotation(req)
+	SetDynatraceInjectedAnnotation(req, mutator.AnnotationDynatraceInjected, mutator.AnnotationDynatraceReason)
 
 	assert.Equal(t, "true", req.Pod.Annotations[mutator.AnnotationDynatraceInjected])
 	assert.Equal(t, "value", req.Pod.Annotations["other"], "unrelated annotation must be preserved")
@@ -51,7 +51,7 @@ func TestSetNotInjectedAnnotations_InitializesMapAndSetsReason(t *testing.T) {
 	req := newTestMutationRequest(t)
 	req.Pod.Annotations = nil
 
-	SetNotInjectedAnnotations(req, "missing-secret")
+	SetNotInjectedAnnotations(req, mutator.AnnotationDynatraceInjected, mutator.AnnotationDynatraceReason, "missing-secret")
 
 	require.NotNil(t, req.Pod.Annotations)
 	assert.Equal(t, "false", req.Pod.Annotations[mutator.AnnotationDynatraceInjected])

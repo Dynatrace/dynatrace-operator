@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -38,7 +37,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 
 // GenerateForDynakube creates/updates the OTLP exporter config secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
+func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	log.Info("reconciling namespace OTLP exporter secret for", "dynakube", dk.Name)
 
 	data, err := s.generateConfig(ctx, dk)
@@ -46,20 +45,13 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		return errors.WithStack(err)
 	}
 
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, s.apiReader, dk.Name)
-	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
-
-		return errors.WithStack(err)
-	}
-
 	if len(data) != 0 {
-		err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
+		err = s.createSourceForWebhook(ctx, dk, data)
 		if err != nil {
 			return err
 		}
 
-		err = s.createSecretForNSlist(ctx, consts.OTLPExporterSecretName, ConfigConditionType, nsList, dk, data)
+		err = s.createSecretForNamespaces(ctx, consts.OTLPExporterSecretName, namespaces, dk, data)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -88,14 +80,14 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 
 	var tokens corev1.Secret
 	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
 	if _, ok := tokens.Data[dtclient.DataIngestToken]; !ok {
 		err := errors.New("data ingest token not found in tokens secret")
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return nil, err
 	}
@@ -105,49 +97,42 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	return data, nil
 }
 
-func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-limit
-	ctx context.Context,
-	secretName string,
-	conditionType string,
-	nsList []corev1.Namespace,
-	dk *dynakube.DynaKube,
-	data map[string][]byte,
-) error {
+func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretName string, nsList []corev1.Namespace, dk *dynakube.DynaKube, data map[string][]byte) error {
 	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
+		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
 
 		return err
 	}
 
 	err = s.secrets.CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return err
 	}
 
 	log.Info("done updating OTLP exporter config secrets")
-	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, consts.OTLPExporterSecretName)
+	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), ConditionType, consts.OTLPExporterSecretName)
 
 	return nil
 }
 
-func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, secretName, conditionType string, data map[string][]byte) error {
+func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
 	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
 
-	secret, err := k8ssecret.BuildForNamespace(secretName, dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.BuildForNamespace(GetSourceConfigSecretName(dk.Name), dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
+		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
 
 		return err
 	}
 
 	_, err = s.secrets.WithOwner(dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
 
 		return err
 	}
@@ -156,7 +141,7 @@ func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynaku
 }
 
 func cleanupConfig(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	defer meta.RemoveStatusCondition(dk.Conditions(), ConfigConditionType)
+	defer meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
 
 	nsList := make([]string, 0, len(namespaces))
 	for _, ns := range namespaces {

@@ -62,7 +62,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		mockDTClient := dtclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(t.Context(), dk)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.NoError(t, err)
 
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
@@ -92,7 +92,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		mockDTClient := dtclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(t.Context(), dk)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -110,7 +110,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -144,7 +144,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		mockDTClient := dtclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(t.Context(), dk)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -162,7 +162,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -187,10 +187,10 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		mockDTClient := dtclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(t.Context(), dk)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.Error(t, err)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionFalse, c.Status)
 	})
@@ -214,7 +214,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		mockDTClient := dtclientmock.NewClient(t)
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk))
+		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk, nil))
 
 		// replicated in active namespaces
 		assertSecretExists(t, clt, consts.OTLPExporterSecretName, testNamespace)
@@ -238,9 +238,9 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		mockDTClient := dtclientmock.NewClient(t)
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		require.Error(t, secretGenerator.GenerateForDynakube(t.Context(), dk))
+		require.Error(t, secretGenerator.GenerateForDynakube(t.Context(), dk, nil))
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionFalse, c.Status)
 
@@ -264,7 +264,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		mockDTClient := dtclientmock.NewClient(t)
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk))
+		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk, nil))
 
 		// source secret exists
 		assertSecretExists(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
@@ -282,7 +282,7 @@ func TestCleanup(t *testing.T) {
 		Spec: dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
 			Conditions: []metav1.Condition{
-				{Type: ConfigConditionType},
+				{Type: ConditionType},
 				{Type: "other"},
 			},
 		},
@@ -309,6 +309,9 @@ func TestCleanup(t *testing.T) {
 	assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 	assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
 	assertSecretNotFound(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
+
+	c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+	assert.Nil(t, c)
 }
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {

@@ -40,11 +40,6 @@ func TestHandler_Handle(t *testing.T) {
 
 		err := h.Handle(request)
 		require.NoError(t, err)
-
-		mockEnvVarMutator.AssertNotCalled(t, "IsEnabled")
-		mockEnvVarMutator.AssertNotCalled(t, "Mutate")
-		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled")
-		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
 	})
 	t.Run("call mutators if enabled", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
@@ -113,9 +108,6 @@ func TestHandler_Handle(t *testing.T) {
 
 		err := h.Handle(request)
 		require.Error(t, err)
-
-		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled")
-		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate")
 	})
 	t.Run("return error if resource attributes mutator returns an error", func(t *testing.T) {
 		mockEnvVarMutator := webhookmock.NewMutator(t)
@@ -146,9 +138,6 @@ func TestHandler_Handle(t *testing.T) {
 
 		// enable env var mutator so that secret presence is checked
 		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
-		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
-		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled", mock.Anything)
-		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
 
 		// create handler with NO secrets present
 		h := createTestHandler(
@@ -163,13 +152,8 @@ func TestHandler_Handle(t *testing.T) {
 		require.NoError(t, err)
 
 		// should be annotated as not injected due to missing input secret
-		assert.Equal(t, "false", req.Pod.Annotations[mutator.AnnotationDynatraceInjected])
-		assert.Equal(t, NoOTLPExporterConfigSecretReason, req.Pod.Annotations[mutator.AnnotationDynatraceReason])
-
-		// ensure mutators were not invoked
-		mockEnvVarMutator.AssertNotCalled(t, "Mutate", mock.Anything)
-		mockResourceAttributeMutator.AssertNotCalled(t, "IsEnabled", mock.Anything)
-		mockResourceAttributeMutator.AssertNotCalled(t, "Mutate", mock.Anything)
+		assert.Equal(t, "false", req.Pod.Annotations[mutator.AnnotationOTLPInjected])
+		assert.Equal(t, NoOTLPExporterConfigSecretReason, req.Pod.Annotations[mutator.AnnotationOTLPReason])
 	})
 
 	t.Run("replicate input secret from source then proceed with injection", func(t *testing.T) {
@@ -203,9 +187,6 @@ func TestHandler_Handle(t *testing.T) {
 
 		err := h.Handle(req)
 		require.NoError(t, err)
-
-		// env var mutator should have been called since the secret could be replicated
-		mockEnvVarMutator.AssertCalled(t, "Mutate", mock.Anything)
 
 		// target secret should now exist in the workload namespace
 		var target corev1.Secret

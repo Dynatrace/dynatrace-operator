@@ -23,7 +23,6 @@ import (
 	logmondaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -87,7 +86,6 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 		kspmReconcilerBuilder:               kspm.NewReconciler,
-		otlpReconcilerBuilder:               otlp.NewReconciler,
 	}
 }
 
@@ -125,7 +123,6 @@ type Controller struct {
 	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
 	proxyReconcilerBuilder              proxy.ReconcilerBuilder
 	kspmReconcilerBuilder               kspm.ReconcilerBuilder
-	otlpReconcilerBuilder               otlp.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -327,7 +324,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) error { //nolint:revive
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) error {
 	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
@@ -384,12 +381,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		dynatraceClient,
 		istioClient,
 		dk,
-		controller.otlpReconcilerBuilder(
-			controller.client,
-			controller.apiReader,
-			dynatraceClient,
-			dk,
-		),
 	).Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {

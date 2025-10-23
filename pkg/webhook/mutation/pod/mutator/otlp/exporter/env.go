@@ -23,5 +23,5 @@ const (
 
 	OTLPAuthorizationHeader = "Authorization=Api-Token $(DT_API_TOKEN)"
 
-	DynatraceAPIToken = "DT_API_TOKEN"
+	DynatraceAPITokenEnv = "DT_API_TOKEN"
 )

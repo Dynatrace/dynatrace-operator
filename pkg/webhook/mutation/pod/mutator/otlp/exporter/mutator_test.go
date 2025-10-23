@@ -68,7 +68,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 		dk := getTestDynakube()
 		request := createTestMutationRequest(t, dk)
 
-		request.Pod.Annotations[AnnotationInject] = "true"
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "true"
 
 		m := Mutator{}
 
@@ -85,7 +85,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		request := createTestMutationRequest(t, dk)
 
-		request.Pod.Annotations[AnnotationInject] = "true"
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "true"
 
 		m := Mutator{}
 
@@ -102,7 +102,7 @@ func TestMutator_IsEnabled(t *testing.T) {
 
 		request := createTestMutationRequest(t, dk)
 
-		request.Pod.Annotations[AnnotationInject] = "true"
+		request.Pod.Annotations[mutator.AnnotationOTLPInjectionEnabled] = "true"
 
 		request.Namespace.Labels = map[string]string{
 			"otlp": "true",
@@ -120,7 +120,7 @@ func TestMutator_IsInjected(t *testing.T) {
 
 		request := createTestMutationRequest(t, getTestDynakube())
 
-		request.Pod.Annotations[AnnotationInjected] = "true"
+		request.Pod.Annotations[mutator.AnnotationOTLPInjected] = "true"
 
 		assert.True(t, m.IsInjected(request.BaseRequest))
 	})
@@ -224,18 +224,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{Name: OTLPLogsHeadersEnv, Value: OTLPAuthorizationHeader})
 
 		// verify DT_API_TOKEN secret ref env var
-		var dtTokenVar *corev1.EnvVar
-		for i := range containerEnvVars {
-			if containerEnvVars[i].Name == DynatraceAPIToken {
-				dtTokenVar = &containerEnvVars[i]
-				break
-			}
-		}
-		require.NotNil(t, dtTokenVar, "expected DT_API_TOKEN env var to be injected")
-		require.NotNil(t, dtTokenVar.ValueFrom)
-		require.NotNil(t, dtTokenVar.ValueFrom.SecretKeyRef)
-		assert.Equal(t, consts.OTLPExporterSecretName, dtTokenVar.ValueFrom.SecretKeyRef.Name)
-		assert.Equal(t, dynatrace.DataIngestToken, dtTokenVar.ValueFrom.SecretKeyRef.Key)
+		assertTokenEnvVarIsSet(t, containerEnvVars)
 	})
 	t.Run("user defined env vars present, do not add OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -314,7 +303,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceHeadersEnv))
 		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPIToken))
+		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("general otlp exporter user defined env vars present, do not add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -366,7 +355,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceHeadersEnv))
 		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPIToken))
+		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("general otlp exporter user defined env vars present, override enabled, add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -429,18 +418,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
 
 		// verify DT_API_TOKEN secret ref env var
-		var dtTokenVar *corev1.EnvVar
-		for i := range containerEnvVars {
-			if containerEnvVars[i].Name == DynatraceAPIToken {
-				dtTokenVar = &containerEnvVars[i]
-				break
-			}
-		}
-		require.NotNil(t, dtTokenVar, "expected DT_API_TOKEN env var to be injected")
-		require.NotNil(t, dtTokenVar.ValueFrom)
-		require.NotNil(t, dtTokenVar.ValueFrom.SecretKeyRef)
-		assert.Equal(t, consts.OTLPExporterSecretName, dtTokenVar.ValueFrom.SecretKeyRef.Name)
-		assert.Equal(t, dynatrace.DataIngestToken, dtTokenVar.ValueFrom.SecretKeyRef.Key)
+		assertTokenEnvVarIsSet(t, containerEnvVars)
 	})
 	t.Run("specific otlp exporter user defined env vars present, override disabled, do not add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -491,7 +469,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify no headers or token env vars were added due to skip
 		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPIToken))
+		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("specific otlp exporter user defined env vars present, override enabled, add other specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -603,6 +581,21 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
 	})
+}
+
+func assertTokenEnvVarIsSet(t *testing.T, containerEnvVars []corev1.EnvVar) {
+	var dtTokenVar *corev1.EnvVar
+	for i := range containerEnvVars {
+		if containerEnvVars[i].Name == DynatraceAPITokenEnv {
+			dtTokenVar = &containerEnvVars[i]
+			break
+		}
+	}
+	require.NotNil(t, dtTokenVar, "expected DT_API_TOKEN env var to be injected")
+	require.NotNil(t, dtTokenVar.ValueFrom)
+	require.NotNil(t, dtTokenVar.ValueFrom.SecretKeyRef)
+	assert.Equal(t, consts.OTLPExporterSecretName, dtTokenVar.ValueFrom.SecretKeyRef.Name)
+	assert.Equal(t, dynatrace.DataIngestToken, dtTokenVar.ValueFrom.SecretKeyRef.Key)
 }
 
 func TestMutator_Reinvoke(t *testing.T) {

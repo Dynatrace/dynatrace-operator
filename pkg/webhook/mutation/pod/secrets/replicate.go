@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -22,12 +21,12 @@ func EnsureReplicated(mutationRequest *dtwebhook.MutationRequest, kubeClient cli
 	if k8serrors.IsNotFound(err) {
 		logger.Info(targetSecretName+" is not available, trying to replicate", "pod", mutationRequest.PodName())
 
-		return bootstrapperconfig.Replicate(
+		return secret.Replicate(
 			mutationRequest.Context,
-			mutationRequest.DynaKube,
 			secret.Query(kubeClient, apiReader, logger),
 			sourceSecretName,
 			targetSecretName,
+			mutationRequest.DynaKube.Namespace,
 			mutationRequest.Namespace.Name,
 		)
 	}
