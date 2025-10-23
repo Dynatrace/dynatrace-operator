@@ -11,4 +11,6 @@ const (
 	EecImageTag            = "1.319.26.20250711-102845"
 	LogMonitoringImageRepo = "public.ecr.aws/dynatrace/dynatrace-logmodule"
 	LogMonitoringImageTag  = "1.309.59.20250319-140247"
+	KSPMImageRepo          = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector"
+	KSPMImageTag           = "1.5.2"
 )

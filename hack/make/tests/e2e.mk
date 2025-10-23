@@ -188,3 +188,6 @@ test/e2e/telemetryingest/otel-collector-endpoint-tls: manifests/crd/helm
 
 test/e2e/telemetryingest/otel-collector-config-udpate: manifests/crd/helm
 	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "telemetryingest_configuration_update" -args $(SKIPCLEANUP)
+
+test/e2e/kspm: manifests/crd/helm
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "kspm" -args $(SKIPCLEANUP)

@@ -28,7 +28,6 @@ fi
 
 SDK_PARAMS=(
 --extra-service-accounts dynatrace-dynakube-oneagent
---extra-service-accounts dynatrace-kubernetes-monitoring
 --extra-service-accounts dynatrace-activegate
 --extra-service-accounts dynatrace-opentelemetry-collector
 --extra-service-accounts dynatrace-edgeconnect
