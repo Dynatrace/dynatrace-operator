@@ -38,7 +38,6 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 DEADCODE ?= $(LOCALBIN)/deadcode
-GOIMPORTS ?= $(LOCALBIN)/goimports
 MOCKERY ?= $(LOCALBIN)/mockery
 CYCLONEDX_GOMOD ?= $(LOCALBIN)/cyclonedx-gomod
 YQ ?= $(LOCALBIN)/yq
@@ -62,7 +61,6 @@ prerequisites/controller-gen:
 ## Install go linters
 prerequisites/go-linting: prerequisites/go-deadcode
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
-	$(call go-install-tool,$(GOIMPORTS),golang.org/x/tools/cmd/goimports,$(GOLANG_TOOLS_VERSION))
 
 ## Install go deadcode
 prerequisites/go-deadcode:
