@@ -232,6 +232,18 @@ func TestAddTemplateSpec(t *testing.T) {
 		assert.Equal(t, dk.PullSecretNames()[0], spec.ImagePullSecrets[0].Name)
 	})
 
+	t.Run("has AutomountServiceAccountToken set to false by default", func(t *testing.T) {
+		dk := getTestDynakube()
+		multiCapability := capability.NewMultiCapability(&dk)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts := appsv1.StatefulSet{}
+
+		builder.addTemplateSpec(&sts)
+		spec := sts.Spec.Template.Spec
+		require.NotNil(t, spec.AutomountServiceAccountToken)
+		assert.False(t, *spec.AutomountServiceAccountToken)
+	})
+
 	t.Run("adds capability specific stuff", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.KubeMonCapability.DisplayName)

@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -62,7 +63,7 @@ func TestConvertFrom(t *testing.T) {
 		err := to.ConvertFrom(&from)
 		require.NoError(t, err)
 
-		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring)
+		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring, from.RemovedFields())
 		compareBase(t, to, from)
 	})
 
@@ -79,7 +80,7 @@ func TestConvertFrom(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
 
-		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack)
+		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack, from.RemovedFields())
 		compareBase(t, to, from)
 	})
 
@@ -96,7 +97,7 @@ func TestConvertFrom(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
 
-		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack)
+		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack, from.RemovedFields())
 		compareBase(t, to, from)
 	})
 
@@ -273,10 +274,10 @@ func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
 	}
 }
 
-func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentlatest.HostInjectSpec) {
+func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentlatest.HostInjectSpec, removedFields *conversion.RemovedFields) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
-	assert.Equal(t, *oldSpec.AutoUpdate, *newSpec.AutoUpdate)
+	assert.Equal(t, *oldSpec.AutoUpdate, *removedFields.AutoUpdate.Get())
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
 	assert.Equal(t, oldSpec.Image, newSpec.Image)
@@ -295,8 +296,8 @@ func compareAppInjectionSpec(t *testing.T, oldSpec oneagent.AppInjectionSpec, ne
 	assert.Equal(t, oldSpec.NamespaceSelector, newSpec.NamespaceSelector)
 }
 
-func compareCloudNativeSpec(t *testing.T, oldSpec oneagent.CloudNativeFullStackSpec, newSpec oneagentlatest.CloudNativeFullStackSpec) {
-	compareHostInjectSpec(t, oldSpec.HostInjectSpec, newSpec.HostInjectSpec)
+func compareCloudNativeSpec(t *testing.T, oldSpec oneagent.CloudNativeFullStackSpec, newSpec oneagentlatest.CloudNativeFullStackSpec, removedFields *conversion.RemovedFields) {
+	compareHostInjectSpec(t, oldSpec.HostInjectSpec, newSpec.HostInjectSpec, removedFields)
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 }
 
@@ -450,7 +451,11 @@ func compareNodeConfigurationCollectorTemplateSpec(t *testing.T, oldSpec kspm.No
 	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
-	assert.Equal(t, oldSpec.NodeAffinity, newSpec.NodeAffinity)
+	if newSpec.NodeAffinity != nil {
+		assert.Equal(t, &oldSpec.NodeAffinity, newSpec.NodeAffinity)
+	} else {
+		assert.Empty(t, oldSpec.NodeAffinity)
+	}
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
@@ -466,6 +471,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			Annotations: map[string]string{
 				exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
 				exp.AGAutomaticK8sAPIMonitoringKey: "true",
+				conversion.AutoUpdateKey:           "false",
 			},
 			Labels: map[string]string{
 				"label": "label-value",
@@ -500,8 +506,7 @@ func getNewHostInjectSpec() oneagentlatest.HostInjectSpec {
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
 		},
-		AutoUpdate: ptr.To(false),
-		DNSPolicy:  corev1.DNSClusterFirstWithHostNet,
+		DNSPolicy: corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"host-inject-annotation-key": "host-inject-annotation-value",
 		},
@@ -837,7 +842,7 @@ func getNewNodeConfigurationCollectorTemplateSpec() kspmlatest.NodeConfiguration
 				Request: "claim-request",
 			}},
 		},
-		NodeAffinity: corev1.NodeAffinity{
+		NodeAffinity: &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{{
 					MatchExpressions: []corev1.NodeSelectorRequirement{

@@ -1,4 +1,4 @@
-{{- if and ((.Values.preview).fullObjectCoverage).enabled .Values.rbac.activeGate.create }}
+{{- if and .Values.rbac.kspm.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,50 +12,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-kubernetes-monitoring-full
+  name: dynatrace-node-config-collector
   labels:
-      {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
+  {{- include "dynatrace-operator.kspmLabels" . | nindent 4 }}
 rules:
-  - apiGroups: [ "*" ]
-    resources: [ "*" ]
-    verbs:
-      - list
-      - watch
-      - get
-  - nonResourceURLs:
-      - /metrics
-      - /version
-      - /readyz
-      - /livez
-    verbs:
-      - get
-  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
   - apiGroups:
       - security.openshift.io
     resourceNames:
       - privileged
-      - nonroot-v2
     resources:
       - securitycontextconstraints
     verbs:
       - use
-  {{ end }}
 ---
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-kubernetes-monitoring-full
+  name: dynatrace-node-config-collector
   labels:
-    {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: dynatrace-kubernetes-monitoring-full
+    {{- include "dynatrace-operator.kspmLabels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-kubernetes-monitoring
+    name: dynatrace-node-config-collector
     namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: dynatrace-node-config-collector
+  apiGroup: rbac.authorization.k8s.io
 {{ end }}

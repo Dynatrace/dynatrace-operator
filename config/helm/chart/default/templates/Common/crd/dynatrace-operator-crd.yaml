@@ -4,6 +4,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
+  labels:
+    {{- include "dynatrace-operator.commonLabels" . | nindent 4 }}
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -7672,8 +7674,6 @@ spec:
                           type: string
                         type: array
                         x-kubernetes-list-type: set
-                      autoUpdate:
-                        type: boolean
                       dnsPolicy:
                         type: string
                       env:
@@ -7839,8 +7839,6 @@ spec:
                           type: string
                         type: array
                         x-kubernetes-list-type: set
-                      autoUpdate:
-                        type: boolean
                       codeModulesImage:
                         type: string
                       dnsPolicy:
@@ -8069,8 +8067,6 @@ spec:
                           type: string
                         type: array
                         x-kubernetes-list-type: set
-                      autoUpdate:
-                        type: boolean
                       dnsPolicy:
                         type: string
                       env:
@@ -9221,6 +9217,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
+  labels:
+    {{- include "dynatrace-operator.commonLabels" . | nindent 4 }}
   name: edgeconnects.dynatrace.com
 spec:
   conversion:
