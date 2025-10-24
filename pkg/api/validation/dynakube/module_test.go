@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -92,23 +93,37 @@ func TestIsModuleDisabled(t *testing.T) {
 		{
 			title:           "kspm module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
-			modules:         installconfig.Modules{KSPM: false},
+			modules:         installconfig.Modules{KSPM: false, KubernetesMonitoring: true},
 			moduleFunc:      isKSPMDisabled,
-			expectedMessage: errorKSPMDisabled,
+			expectedMessage: errorKSPMModuleDisabled,
 		},
 		{
 			title:           "kspm module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
-			modules:         installconfig.Modules{KSPM: false},
+			modules:         installconfig.Modules{KSPM: false, KubernetesMonitoring: true},
 			moduleFunc:      isKSPMDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "kspm module enabled and also configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
-			modules:         installconfig.Modules{KSPM: true},
+			modules:         installconfig.Modules{KSPM: true, KubernetesMonitoring: true},
 			moduleFunc:      isKSPMDisabled,
 			expectedMessage: "",
+		},
+		{
+			title:           "kspm module enabled and also configured, no kubemon module enabled => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
+			modules:         installconfig.Modules{KSPM: true, KubernetesMonitoring: false},
+			moduleFunc:      isKSPMDisabled,
+			expectedMessage: errorKSPMDependsOnKubernetesMonitoringModule,
+		},
+		{
+			title:           "kspm module disabled and also configured, no kubemon module enabled => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
+			modules:         installconfig.Modules{KSPM: false, KubernetesMonitoring: false},
+			moduleFunc:      isKSPMDisabled,
+			expectedMessage: strings.Join([]string{errorKSPMModuleDisabled, errorKSPMDependsOnKubernetesMonitoringModule}, ","),
 		},
 		{
 			title:           "ag module disabled but also configured in dk => error",

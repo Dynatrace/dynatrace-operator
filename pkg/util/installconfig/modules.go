@@ -14,6 +14,8 @@ const (
 	ModulesJSONEnv = "modules.json"
 
 	validationErrorTemplate = "%s has been disabled during Operator install. The necessary resources for %s to work are not present on the cluster. Redeploy the Operator via Helm with all the necessary resources enabled."
+
+	validationDependentErrorTemplate = "%s has been disabled during Operator install. That is a dependency for %s to work. Redeploy the Operator via Helm with all the necessary resources enabled."
 )
 
 var (
@@ -98,4 +100,8 @@ func SetModulesOverride(t *testing.T, modules Modules) {
 
 func GetModuleValidationErrorMessage(moduleName string) string {
 	return fmt.Sprintf(validationErrorTemplate, moduleName, moduleName)
+}
+
+func GetDependentModuleValidationErrorMessage(moduleName, dependentModule string) string {
+	return fmt.Sprintf(validationDependentErrorTemplate, moduleName, dependentModule)
 }

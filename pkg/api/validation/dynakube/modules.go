@@ -2,18 +2,20 @@ package validation
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 )
 
 var (
-	errorOneAgentModuleDisabled             = installconfig.GetModuleValidationErrorMessage("OneAgent")
-	errorActiveGateModuleDisabled           = installconfig.GetModuleValidationErrorMessage("ActiveGate")
-	errorExtensionsModuleDisabled           = installconfig.GetModuleValidationErrorMessage("Extensions")
-	errorLogMonitoringModuleDisabled        = installconfig.GetModuleValidationErrorMessage("LogMonitoring")
-	errorKSPMDisabled                       = installconfig.GetModuleValidationErrorMessage("KSPM")
-	errorKubernetesMonitoringModuleDisabled = installconfig.GetModuleValidationErrorMessage("KubernetesMonitoring")
+	errorOneAgentModuleDisabled                  = installconfig.GetModuleValidationErrorMessage("OneAgent")
+	errorActiveGateModuleDisabled                = installconfig.GetModuleValidationErrorMessage("ActiveGate")
+	errorExtensionsModuleDisabled                = installconfig.GetModuleValidationErrorMessage("Extensions")
+	errorLogMonitoringModuleDisabled             = installconfig.GetModuleValidationErrorMessage("LogMonitoring")
+	errorKSPMModuleDisabled                      = installconfig.GetModuleValidationErrorMessage("KSPM")
+	errorKubernetesMonitoringModuleDisabled      = installconfig.GetModuleValidationErrorMessage("KubernetesMonitoring")
+	errorKSPMDependsOnKubernetesMonitoringModule = installconfig.GetDependentModuleValidationErrorMessage("KubernetesMonitoring", "KSPM")
 )
 
 func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
@@ -53,8 +55,17 @@ func isLogMonitoringModuleDisabled(_ context.Context, v *Validator, dk *dynakube
 }
 
 func isKSPMDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.KSPM().IsEnabled() && !v.modules.KSPM {
-		return errorKSPMDisabled
+	if dk.KSPM().IsEnabled() {
+		errs := []string{}
+		if !v.modules.KSPM {
+			errs = append(errs, errorKSPMModuleDisabled)
+		}
+
+		if !v.modules.KubernetesMonitoring {
+			errs = append(errs, errorKSPMDependsOnKubernetesMonitoringModule)
+		}
+
+		return strings.Join(errs, ",")
 	}
 
 	return ""
