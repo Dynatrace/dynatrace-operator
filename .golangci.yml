@@ -127,7 +127,6 @@ linters:
         - G305
     govet:
       disable:
-        - copylocks
         - fieldalignment
     misspell:
       locale: US
