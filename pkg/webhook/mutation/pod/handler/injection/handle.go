@@ -77,7 +77,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 
 		if !mutated {
-			annotations.SetNotInjectedAnnotations(
+			annotations.SetNotInjected(
 				mutationRequest,
 				dtwebhook.AnnotationDynatraceInjected,
 				dtwebhook.AnnotationDynatraceReason,
@@ -88,7 +88,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	annotations.SetDynatraceInjectedAnnotation(
+	annotations.SetInjected(
 		mutationRequest,
 		dtwebhook.AnnotationDynatraceInjected,
 		dtwebhook.AnnotationDynatraceReason,
@@ -177,7 +177,7 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 	if k8serrors.IsNotFound(err) {
 		log.Info(fmt.Sprintf("unable to copy source of %s as it is not available, injection not possible", sourceSecretName), "pod", mutationRequest.PodName())
 
-		annotations.SetNotInjectedAnnotations(
+		annotations.SetNotInjected(
 			mutationRequest,
 			dtwebhook.AnnotationDynatraceInjected,
 			dtwebhook.AnnotationDynatraceReason,
@@ -190,7 +190,7 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 	if err != nil {
 		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
 
-		annotations.SetNotInjectedAnnotations(
+		annotations.SetNotInjected(
 			mutationRequest,
 			dtwebhook.AnnotationDynatraceInjected,
 			dtwebhook.AnnotationDynatraceReason,

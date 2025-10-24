@@ -50,7 +50,10 @@ func TestReplicate(t *testing.T) {
 			sourceNs,
 		)
 
-		err := Replicate(ctx, Query(clt, clt, testLog), testSourceSecretName, consts.BootstrapperInitSecretName, sourceNs.Name, targetNs.Name)
+		sourceKey := client.ObjectKey{Name: testSourceSecretName, Namespace: sourceNs.Name}
+		targetKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}
+
+		err := Replicate(ctx, Query(clt, clt, testLog), sourceKey, targetKey)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
@@ -69,7 +72,10 @@ func TestReplicate(t *testing.T) {
 			alreadyPresentConfig,
 		)
 
-		err := Replicate(ctx, Query(clt, clt, testLog), testSourceSecretName, consts.BootstrapperInitSecretName, sourceNs.Name, targetNs.Name)
+		sourceKey := client.ObjectKey{Name: testSourceSecretName, Namespace: sourceNs.Name}
+		targetKey := client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}
+
+		err := Replicate(ctx, Query(clt, clt, testLog), sourceKey, targetKey)
 		require.NoError(t, err)
 
 		var replicated corev1.Secret

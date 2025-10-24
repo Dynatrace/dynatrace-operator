@@ -2,7 +2,7 @@ package annotations
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 
-func SetDynatraceInjectedAnnotation(mutationRequest *mutator.MutationRequest, injectedAnnotation, reasonAnnotation string) {
+func SetInjected(mutationRequest *mutator.MutationRequest, injectedAnnotation, reasonAnnotation string) {
 	if mutationRequest.Pod.Annotations == nil {
 		mutationRequest.Pod.Annotations = make(map[string]string)
 	}
@@ -11,7 +11,7 @@ func SetDynatraceInjectedAnnotation(mutationRequest *mutator.MutationRequest, in
 	delete(mutationRequest.Pod.Annotations, reasonAnnotation)
 }
 
-func SetNotInjectedAnnotations(mutationRequest *mutator.MutationRequest, injectedAnnotation, reasonAnnotation, reasonValue string) {
+func SetNotInjected(mutationRequest *mutator.MutationRequest, injectedAnnotation, reasonAnnotation, reasonValue string) {
 	if mutationRequest.Pod.Annotations == nil {
 		mutationRequest.Pod.Annotations = make(map[string]string)
 	}

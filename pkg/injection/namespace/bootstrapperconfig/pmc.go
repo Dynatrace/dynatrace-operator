@@ -13,13 +13,24 @@ import (
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
 	if !conditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
 		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
 
-		source, err := k8ssecret.GetSecretFromSource(ctx, s.secrets, GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName, dk.Namespace, dk.Namespace)
+		sourceKey := client.ObjectKey{
+			Name:      GetSourceCertsSecretName(dk.Name),
+			Namespace: dk.Namespace,
+		}
+
+		targetKey := client.ObjectKey{
+			Name:      consts.BootstrapperInitSecretName,
+			Namespace: dk.Namespace,
+		}
+
+		source, err := k8ssecret.GetSecretFromSource(ctx, s.secrets, sourceKey, targetKey)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 

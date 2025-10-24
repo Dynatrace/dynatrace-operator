@@ -306,7 +306,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 			},
 		}
 
-		annotations.SetDynatraceInjectedAnnotation(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
+		annotations.SetInjected(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
@@ -325,7 +325,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 			},
 		}
 
-		annotations.SetDynatraceInjectedAnnotation(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
+		annotations.SetInjected(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])

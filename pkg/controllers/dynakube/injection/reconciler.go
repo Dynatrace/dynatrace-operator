@@ -128,6 +128,7 @@ func (r *Reconciler) setupOTLPSecret(ctx context.Context, namespaces []corev1.Na
 	} else {
 		r.cleanupOTLPSecret(ctx, namespaces)
 	}
+
 	return nil
 }
 
@@ -139,6 +140,7 @@ func (r *Reconciler) setupInitSecret(ctx context.Context, namespaces []corev1.Na
 	} else {
 		r.cleanupInitSecret(ctx, namespaces)
 	}
+
 	return nil
 }
 
@@ -245,13 +247,14 @@ func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.
 		meta.FindStatusCondition(*r.dk.Conditions(), metaDataEnrichmentConditionType) == nil {
 		return
 	}
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), codeModulesInjectionConditionType)
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), metaDataEnrichmentConditionType)
 
 	err := bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, r.dk)
 	if err != nil {
 		log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
 	}
+
+	meta.RemoveStatusCondition(r.dk.Conditions(), codeModulesInjectionConditionType)
+	meta.RemoveStatusCondition(r.dk.Conditions(), metaDataEnrichmentConditionType)
 }
 
 func (r *Reconciler) cleanupOTLPSecret(ctx context.Context, namespaces []corev1.Namespace) {

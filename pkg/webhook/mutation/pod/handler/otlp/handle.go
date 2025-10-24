@@ -71,10 +71,10 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	annotations.SetDynatraceInjectedAnnotation(
+	annotations.SetInjected(
 		mutationRequest,
-		AnnotationOTLPInjected,
-		AnnotationOTLPReason,
+		dtwebhook.AnnotationOTLPInjected,
+		dtwebhook.AnnotationOTLPReason,
 	)
 
 	log.Debug("OTLP injection finished", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
@@ -85,10 +85,10 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName, targetSecretName string) bool {
 	err := secrets.EnsureReplicated(mutationRequest, h.kubeClient, h.apiReader, sourceSecretName, targetSecretName, log)
 	if k8serrors.IsNotFound(err) {
-		annotations.SetNotInjectedAnnotations(
+		annotations.SetNotInjected(
 			mutationRequest,
-			AnnotationOTLPInjected,
-			AnnotationOTLPReason,
+			dtwebhook.AnnotationOTLPInjected,
+			dtwebhook.AnnotationOTLPReason,
 			NoOTLPExporterConfigSecretReason,
 		)
 
@@ -98,7 +98,7 @@ func (h *Handler) isInputSecretPresent(mutationRequest *dtwebhook.MutationReques
 	if err != nil {
 		log.Error(err, fmt.Sprintf("unable to verify, if %s is available, injection not possible", sourceSecretName))
 
-		annotations.SetNotInjectedAnnotations(
+		annotations.SetNotInjected(
 			mutationRequest,
 			dtwebhook.AnnotationDynatraceInjected,
 			dtwebhook.AnnotationDynatraceReason,
