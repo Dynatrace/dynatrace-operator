@@ -2,7 +2,6 @@ package databases
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
@@ -44,8 +43,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	var buildErrors error
-
 	for i, dbSpec := range ext.Databases {
 		replicas, err := r.getReplicas(ctx, expectedDeploymentNames[i], dbSpec.Replicas)
 		if err != nil {
@@ -70,27 +67,22 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			deployment.SetVolumes(buildVolumes(r.dk, dbSpec)),
 		)
 		if err != nil {
-			// Not a critical error. Next deployment could succeed.
-			buildErrors = errors.Join(buildErrors, err)
+			// This error indicates that the scheme is missing required types and is unrecoverable.
+			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
-			continue
+			return err
 		}
 
 		changed, err := query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
 		if err != nil {
 			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
-			// Surface previous errors if there are any
-			return errors.Join(err, buildErrors)
+			return err
 		}
 
 		if changed {
 			log.Info("deployment created or updated", "name", deploy.Name)
 		}
-	}
-
-	if buildErrors != nil {
-		return buildErrors
 	}
 
 	if len(expectedDeploymentNames) > 0 {
