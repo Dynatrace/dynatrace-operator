@@ -494,7 +494,7 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 }
 
 func TestCleanupOTLPInjection(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-dynakube",
