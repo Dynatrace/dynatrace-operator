@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -296,6 +297,17 @@ func TestExtensionsDatabasesPhaseChanges(t *testing.T) {
 			status.Deploying,
 		},
 		{
+			"pending deployment reconcile",
+			fake.NewClient(func() *appsv1.Deployment {
+				deploy := createDeployment(dk, 2, 2)
+				deploy.Generation = 2
+				deploy.Status.ObservedGeneration = 1
+
+				return deploy
+			}()),
+			status.Deploying,
+		},
+		{
 			"pods ready",
 			fake.NewClient(createDeployment(dk, 2, 2)),
 			status.Running,
@@ -312,6 +324,21 @@ func TestExtensionsDatabasesPhaseChanges(t *testing.T) {
 			assert.Equal(t, test.expectPhase, phase)
 		})
 	}
+
+	// needs special setup that would complicate the table driven test
+	t.Run("ignore deleting deployments", func(t *testing.T) {
+		deploy := createDeployment(dk, 1, 2)
+		deploy.Finalizers = []string{"keep-me"}
+		clt := fake.NewClient(deploy)
+		require.NoError(t, clt.Delete(t.Context(), deploy))
+
+		controller := &Controller{
+			client:    clt,
+			apiReader: clt,
+		}
+		phase := controller.determineExtensionsDatabasesPhase(t.Context(), dk)
+		assert.Equal(t, status.Running, phase)
+	})
 }
 
 func TestLogAgentPhaseChanges(t *testing.T) {

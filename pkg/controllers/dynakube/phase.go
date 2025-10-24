@@ -17,10 +17,10 @@ func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dy
 		controller.determineActiveGatePhase,
 		controller.determineExtensionsExecutionControllerPhase,
 		controller.determineExtensionsCollectorPhase,
+		controller.determineExtensionsDatabasesPhase,
 		controller.determineOneAgentPhase,
 		controller.determineLogAgentPhase,
 		controller.determineKSPMPhase,
-		controller.determineExtensionsDatabasesPhase,
 	}
 	for _, component := range components {
 		if phase := component(ctx, dk); phase != status.Running {
@@ -110,9 +110,15 @@ func (controller *Controller) determineExtensionsDatabasesPhase(ctx context.Cont
 		}
 
 		for _, deployment := range deployments {
-			if deployment.DeletionTimestamp.IsZero() &&
-				deployment.Generation != deployment.Status.ObservedGeneration ||
+			// The databases reconciler may delete deployments and we don't want to wait for them.
+			if !deployment.DeletionTimestamp.IsZero() {
+				continue
+			}
+			// Check the generation to ensure that the reported readyReplicas match the latest desired state.
+			if deployment.Generation != deployment.Status.ObservedGeneration ||
 				*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
+				log.Info("deployment is still deploying", "dynakube", dk.Name, "deployment", deployment.Name)
+
 				return status.Deploying
 			}
 		}
