@@ -12,8 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (controller *Controller) determineDynaKubePhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	components := []func(dk *dynakube.DynaKube) status.DeploymentPhase{
+func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	components := []func(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase{
 		controller.determineActiveGatePhase,
 		controller.determineExtensionsExecutionControllerPhase,
 		controller.determineExtensionsCollectorPhase,
@@ -23,7 +23,7 @@ func (controller *Controller) determineDynaKubePhase(dk *dynakube.DynaKube) stat
 		controller.determineExtensionsDatabasesPhase,
 	}
 	for _, component := range components {
-		if phase := component(dk); phase != status.Running {
+		if phase := component(ctx, dk); phase != status.Running {
 			return phase
 		}
 	}
@@ -31,9 +31,9 @@ func (controller *Controller) determineDynaKubePhase(dk *dynakube.DynaKube) stat
 	return status.Running
 }
 
-func (controller *Controller) determineActiveGatePhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+func (controller *Controller) determineActiveGatePhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
 	if dk.ActiveGate().IsEnabled() {
-		activeGatePods, err := controller.numberOfMissingActiveGatePods(dk)
+		activeGatePods, err := controller.numberOfMissingActiveGatePods(ctx, dk)
 		if err != nil {
 			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dk.Name)
 
@@ -56,19 +56,19 @@ func (controller *Controller) determineActiveGatePhase(dk *dynakube.DynaKube) st
 	return status.Running
 }
 
-func (controller *Controller) determineExtensionsExecutionControllerPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(dk, dk.Extensions().GetExecutionControllerStatefulsetName())
+func (controller *Controller) determineExtensionsExecutionControllerPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	return controller.determinePrometheusStatefulsetPhase(ctx, dk, dk.Extensions().GetExecutionControllerStatefulsetName())
 }
 
-func (controller *Controller) determineExtensionsCollectorPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
-	return controller.determinePrometheusStatefulsetPhase(dk, dk.OtelCollectorStatefulsetName())
+func (controller *Controller) determineExtensionsCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	return controller.determinePrometheusStatefulsetPhase(ctx, dk, dk.OtelCollectorStatefulsetName())
 }
 
-func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
+func (controller *Controller) determinePrometheusStatefulsetPhase(ctx context.Context, dk *dynakube.DynaKube, statefulsetName string) status.DeploymentPhase {
 	if dk.Extensions().IsPrometheusEnabled() {
 		statefulSet := &appsv1.StatefulSet{}
 
-		err := controller.client.Get(context.Background(), types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
+		err := controller.client.Get(ctx, types.NamespacedName{Name: statefulsetName, Namespace: dk.Namespace}, statefulSet)
 		if k8serrors.IsNotFound(err) {
 			log.Info("statefulset to be deployed", "dynakube", dk.Name, "statefulset", statefulsetName)
 
@@ -96,9 +96,9 @@ func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.D
 	return status.Running
 }
 
-func (controller *Controller) determineExtensionsDatabasesPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+func (controller *Controller) determineExtensionsDatabasesPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
 	if dk.Extensions().IsDatabasesEnabled() {
-		deployments, err := databases.ListDeployments(context.Background(), controller.client, dk)
+		deployments, err := databases.ListDeployments(ctx, controller.client, dk)
 		if err != nil {
 			log.Error(err, "deployments could not be accessed", "dynakube", dk.Name)
 
@@ -121,9 +121,9 @@ func (controller *Controller) determineExtensionsDatabasesPhase(dk *dynakube.Dyn
 	return status.Running
 }
 
-func (controller *Controller) determineOneAgentPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+func (controller *Controller) determineOneAgentPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
 	if dk.OneAgent().IsCloudNativeFullstackMode() || dk.OneAgent().IsClassicFullStackMode() || dk.OneAgent().IsHostMonitoringMode() {
-		oneAgentPods, err := controller.numberOfMissingDaemonSetPods(dk, dk.OneAgent().GetDaemonsetName())
+		oneAgentPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.OneAgent().GetDaemonsetName())
 		if k8serrors.IsNotFound(err) {
 			log.Info("oneagent daemonset not yet available", "dynakube", dk.Name)
 
@@ -146,9 +146,9 @@ func (controller *Controller) determineOneAgentPhase(dk *dynakube.DynaKube) stat
 	return status.Running
 }
 
-func (controller *Controller) determineLogAgentPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+func (controller *Controller) determineLogAgentPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
 	if dk.LogMonitoring().IsStandalone() {
-		logAgentPods, err := controller.numberOfMissingDaemonSetPods(dk, dk.LogMonitoring().GetDaemonSetName())
+		logAgentPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.LogMonitoring().GetDaemonSetName())
 		if k8serrors.IsNotFound(err) {
 			log.Info("logagent daemonset not yet available", "dynakube", dk.Name)
 
@@ -171,9 +171,9 @@ func (controller *Controller) determineLogAgentPhase(dk *dynakube.DynaKube) stat
 	return status.Running
 }
 
-func (controller *Controller) determineKSPMPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+func (controller *Controller) determineKSPMPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
 	if dk.KSPM().IsEnabled() {
-		kspmPods, err := controller.numberOfMissingDaemonSetPods(dk, dk.KSPM().GetDaemonSetName())
+		kspmPods, err := controller.numberOfMissingDaemonSetPods(ctx, dk, dk.KSPM().GetDaemonSetName())
 		if k8serrors.IsNotFound(err) {
 			log.Info("kspm daemonset not yet available", "dynakube", dk.Name)
 
@@ -196,11 +196,11 @@ func (controller *Controller) determineKSPMPhase(dk *dynakube.DynaKube) status.D
 	return status.Running
 }
 
-func (controller *Controller) numberOfMissingDaemonSetPods(dk *dynakube.DynaKube, dsName string) (int32, error) {
+func (controller *Controller) numberOfMissingDaemonSetPods(ctx context.Context, dk *dynakube.DynaKube, dsName string) (int32, error) {
 	daemonSet := &appsv1.DaemonSet{}
 	instanceName := dsName
 
-	err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, daemonSet)
+	err := controller.client.Get(ctx, types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, daemonSet)
 	if err != nil {
 		return 0, err
 	}
@@ -208,11 +208,11 @@ func (controller *Controller) numberOfMissingDaemonSetPods(dk *dynakube.DynaKube
 	return daemonSet.Status.CurrentNumberScheduled - daemonSet.Status.NumberReady, nil
 }
 
-func (controller *Controller) numberOfMissingActiveGatePods(dk *dynakube.DynaKube) (int32, error) {
+func (controller *Controller) numberOfMissingActiveGatePods(ctx context.Context, dk *dynakube.DynaKube) (int32, error) {
 	activeGateStatefulSet := &appsv1.StatefulSet{}
 	instanceName := capability.CalculateStatefulSetName(dk.Name)
 
-	err := controller.client.Get(context.Background(), types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, activeGateStatefulSet)
+	err := controller.client.Get(ctx, types.NamespacedName{Name: instanceName, Namespace: dk.Namespace}, activeGateStatefulSet)
 	if k8serrors.IsNotFound(err) {
 		return -1, nil
 	}

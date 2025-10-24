@@ -201,7 +201,7 @@ func (controller *Controller) handleError(
 		log.Error(err, "error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
 	default:
-		dk.Status.SetPhase(controller.determineDynaKubePhase(dk))
+		dk.Status.SetPhase(controller.determineDynaKubePhase(ctx, dk))
 	}
 
 	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dk.Status); err != nil {
