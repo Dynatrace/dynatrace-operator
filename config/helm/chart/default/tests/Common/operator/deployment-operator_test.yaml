@@ -98,6 +98,7 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
+                        "kubernetesMonitoring": true,
                         "kspm": true
                       }
                 ports:
@@ -292,6 +293,7 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
+                        "kubernetesMonitoring": true,
                         "kspm": true
                       }
                 ports:

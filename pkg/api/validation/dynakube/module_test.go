@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -45,27 +46,6 @@ func TestIsModuleDisabled(t *testing.T) {
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}}},
 			modules:         installconfig.Modules{OneAgent: true, CSIDriver: true},
 			moduleFunc:      isOneAgentModuleDisabled,
-			expectedMessage: "",
-		},
-		{
-			title:           "ag module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
-			modules:         installconfig.Modules{ActiveGate: false},
-			moduleFunc:      isActiveGateModuleDisabled,
-			expectedMessage: errorActiveGateModuleDisabled,
-		},
-		{
-			title:           "ag module disabled but not configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
-			modules:         installconfig.Modules{ActiveGate: false},
-			moduleFunc:      isActiveGateModuleDisabled,
-			expectedMessage: "",
-		},
-		{
-			title:           "ag module enabled and also configured => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
-			modules:         installconfig.Modules{ActiveGate: true},
-			moduleFunc:      isActiveGateModuleDisabled,
 			expectedMessage: "",
 		},
 		{
@@ -113,23 +93,93 @@ func TestIsModuleDisabled(t *testing.T) {
 		{
 			title:           "kspm module disabled but also configured in dk => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
-			modules:         installconfig.Modules{KSPM: false},
+			modules:         installconfig.Modules{KSPM: false, KubernetesMonitoring: true},
 			moduleFunc:      isKSPMDisabled,
-			expectedMessage: errorKSPMDisabled,
+			expectedMessage: errorKSPMModuleDisabled,
 		},
 		{
 			title:           "kspm module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
-			modules:         installconfig.Modules{KSPM: false},
+			modules:         installconfig.Modules{KSPM: false, KubernetesMonitoring: true},
 			moduleFunc:      isKSPMDisabled,
 			expectedMessage: "",
 		},
 		{
 			title:           "kspm module enabled and also configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
-			modules:         installconfig.Modules{KSPM: true},
+			modules:         installconfig.Modules{KSPM: true, KubernetesMonitoring: true},
 			moduleFunc:      isKSPMDisabled,
 			expectedMessage: "",
+		},
+		{
+			title:           "kspm module enabled and also configured, no kubemon module enabled => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
+			modules:         installconfig.Modules{KSPM: true, KubernetesMonitoring: false},
+			moduleFunc:      isKSPMDisabled,
+			expectedMessage: errorKSPMDependsOnKubernetesMonitoringModule,
+		},
+		{
+			title:           "kspm module disabled and also configured, no kubemon module enabled => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Kspm: &kspm.Spec{}}},
+			modules:         installconfig.Modules{KSPM: false, KubernetesMonitoring: false},
+			moduleFunc:      isKSPMDisabled,
+			expectedMessage: strings.Join([]string{errorKSPMModuleDisabled, errorKSPMDependsOnKubernetesMonitoringModule}, ","),
+		},
+		{
+			title:           "ag module disabled but also configured in dk => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}}}},
+			modules:         installconfig.Modules{ActiveGate: false},
+			moduleFunc:      isActiveGateModuleDisabled,
+			expectedMessage: errorActiveGateModuleDisabled,
+		},
+		{
+			title:           "ag module disabled but not configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
+			modules:         installconfig.Modules{ActiveGate: false},
+			moduleFunc:      isActiveGateModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "ag module enabled and also configured => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}}}},
+			modules:         installconfig.Modules{ActiveGate: true},
+			moduleFunc:      isActiveGateModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "dk has kubemon configured, available rbac [ag, kspm] => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
+			modules:         installconfig.Modules{ActiveGate: true, KSPM: true, KubernetesMonitoring: false},
+			moduleFunc:      isActiveGateModuleDisabled,
+			expectedMessage: errorKubernetesMonitoringModuleDisabled,
+		},
+		{
+			title:           "dk has kubemon configured, available rbac [ag, kspm, kubemon] => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
+			modules:         installconfig.Modules{ActiveGate: true, KSPM: true, KubernetesMonitoring: true},
+			moduleFunc:      isActiveGateModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "dk has kubemon configured, available rbac [ag, kubemon] => no error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
+			modules:         installconfig.Modules{ActiveGate: true, KubernetesMonitoring: true},
+			moduleFunc:      isActiveGateModuleDisabled,
+			expectedMessage: "",
+		},
+		{
+			title:           "dk has kubemon configured, available rbac [ag] => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
+			modules:         installconfig.Modules{ActiveGate: true, KubernetesMonitoring: false},
+			moduleFunc:      isActiveGateModuleDisabled,
+			expectedMessage: errorKubernetesMonitoringModuleDisabled,
+		},
+		{
+			title:           "dk has kubemon configured, available rbac [kubemon] => error",
+			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
+			modules:         installconfig.Modules{ActiveGate: false, KubernetesMonitoring: true},
+			moduleFunc:      isActiveGateModuleDisabled,
+			expectedMessage: errorActiveGateModuleDisabled,
 		},
 	}
 

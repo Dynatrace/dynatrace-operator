@@ -13,7 +13,7 @@ tests:
       - isNotEmpty:
           path: metadata.labels
       - equal:
-          path: metadata.labels["rbac.dynatrace.com/aggregate-to-kubernetes-monitoring"]
+          path: metadata.labels["rbac.dynatrace.com/aggregate-to-monitoring"]
           value: "true"
       - isNotEmpty:
           path: rules
@@ -23,9 +23,10 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
   - it: should fail if only kspm is turned on
     set:
-      rbac.activeGate.create: false
+      rbac.kubernetesMonitoring.create: false
       rbac.kspm.create: true
     asserts:
      - failedTemplate: {}
