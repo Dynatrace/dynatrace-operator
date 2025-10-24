@@ -30,8 +30,8 @@ YQ_VERSION ?= v4.48.1
 GO_TEST_COVERAGE_VERSION ?= v2.17.0
 # renovate depName=github.com/dkorunic/betteralign/cmd/betteralign
 BETTERALIGN_VERSION ?= v0.7.3
-# renovate depName=sigs.k8s.io/controller-runtime/tools/setup-envtest
-SETUP_ENVTEST_VERSION ?= release-0.22
+#SETUP_ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
+SETUP_ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
