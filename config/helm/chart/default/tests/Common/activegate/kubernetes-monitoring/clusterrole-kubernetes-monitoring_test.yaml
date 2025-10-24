@@ -12,7 +12,7 @@ tests:
           value: dynatrace-kubernetes-monitoring
       - isNotEmpty:
           path: metadata.labels
-      - isEmpty:
+      - isNull:
           path: rules
       - contains:
           path: aggregationRule.clusterRoleSelectors
