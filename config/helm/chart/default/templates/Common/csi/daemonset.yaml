@@ -60,6 +60,8 @@ spec:
         imagePullPolicy: Always
         args:
         - csi-init
+        env:
+          {{- include "dynatrace-operator.gomemlimit" .Values.csidriver.csiInit.resources | nindent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         resources:
@@ -107,6 +109,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        {{- include "dynatrace-operator.gomemlimit" .Values.csidriver.server.resources | nindent 8 }}
         {{- if .Values.debugLogs }}
         - name: LOG_LEVEL
           value: "debug"
@@ -181,8 +184,9 @@ spec:
           - name: CLEANUP_PERIOD
             value: "{{ .Values.csidriver.cleanupPeriod}}"
           {{- end }}
-          {{ include "dynatrace-operator.modules-json-env" . | nindent 10 }}
-          {{ include "dynatrace-operator.helm-json-env" . | nindent 10 }}
+          {{- include "dynatrace-operator.modules-json-env" . | nindent 10 }}
+          {{- include "dynatrace-operator.helm-json-env" . | nindent 10 }}
+          {{- include "dynatrace-operator.gomemlimit" .Values.csidriver.provisioner.resources | nindent 10 }}
         {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         {{- if not .Values.debug }}
         livenessProbe:
@@ -225,6 +229,7 @@ spec:
         env:
         - name: DRIVER_REG_SOCK_PATH
           value: {{ include "dynatrace-operator.CSISocketPath" . }}
+        {{- include "dynatrace-operator.gomemlimit" .Values.csidriver.registrar.resources | nindent 8 }}
         args:
         {{- if .Values.csidriver.registrar.builtIn }}
         - csi-node-driver-registrar
@@ -265,6 +270,8 @@ spec:
         command:
         - livenessprobe
         {{- end }}
+        env:
+          {{- include "dynatrace-operator.gomemlimit" .Values.csidriver.livenessprobe.resources | nindent 8 }}
         resources:
           {{- if .Values.csidriver.livenessprobe.resources }}
           {{- toYaml .Values.csidriver.livenessprobe.resources | nindent 10 }}
