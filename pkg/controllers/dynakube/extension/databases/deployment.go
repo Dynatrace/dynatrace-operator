@@ -220,8 +220,6 @@ func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev
 							Path: customCertsFileName,
 						},
 					},
-					DefaultMode: nil,
-					Optional:    nil,
 				},
 			},
 		})

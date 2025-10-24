@@ -107,10 +107,10 @@ func TestReconcileSpec(t *testing.T) {
 				assert.NotNil(t, vol.Secret)
 			case certsVolumeName:
 				assert.NotNil(t, vol.Secret)
-				assert.Equal(t, dk.Extensions().GetTLSSecretName(), deploy.Spec.Template.Spec.Volumes[2].VolumeSource.Secret.SecretName)
+				assert.Equal(t, dk.Extensions().GetTLSSecretName(), vol.Secret.SecretName)
 			case customCertsVolumeName:
 				assert.NotNil(t, vol.ConfigMap)
-				assert.Equal(t, testTrustedCAs, deploy.Spec.Template.Spec.Volumes[3].VolumeSource.ConfigMap.Name)
+				assert.Equal(t, testTrustedCAs, vol.ConfigMap.Name)
 
 			default:
 				t.Fatalf("deployment has unexpected volume %s", vol.Name)
