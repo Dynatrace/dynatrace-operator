@@ -132,11 +132,11 @@ func TestIsModuleDisabled(t *testing.T) {
 			expectedMessage: "",
 		},
 		{
-			title:           "dk has kubemon configured, available rbac [ag, kspm] => no error",
+			title:           "dk has kubemon configured, available rbac [ag, kspm] => error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}}}},
 			modules:         installconfig.Modules{ActiveGate: true, KSPM: true, KubernetesMonitoring: false},
 			moduleFunc:      isActiveGateModuleDisabled,
-			expectedMessage: "",
+			expectedMessage: errorKubernetesMonitoringModuleDisabled,
 		},
 		{
 			title:           "dk has kubemon configured, available rbac [ag, kspm, kubemon] => no error",

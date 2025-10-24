@@ -29,7 +29,7 @@ func isActiveGateModuleDisabled(_ context.Context, v *Validator, dk *dynakube.Dy
 		return errorActiveGateModuleDisabled
 	}
 
-	if dk.ActiveGate().IsKubernetesMonitoringEnabled() && !v.modules.KubernetesMonitoring && !v.modules.KSPM {
+	if dk.ActiveGate().IsKubernetesMonitoringEnabled() && !v.modules.KubernetesMonitoring {
 		return errorKubernetesMonitoringModuleDisabled
 	}
 

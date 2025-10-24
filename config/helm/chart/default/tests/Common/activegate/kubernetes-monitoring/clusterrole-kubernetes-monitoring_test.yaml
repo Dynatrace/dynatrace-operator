@@ -52,7 +52,6 @@ tests:
 
   - it: shouldn't exist if turned off
     set:
-      rbac.activeGate.create: true
       rbac.kubernetesMonitoring.create: false
     asserts:
       - hasDocuments:
