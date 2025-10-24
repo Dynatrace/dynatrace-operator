@@ -108,3 +108,6 @@ local/
 
 permissions.md
 dynatrace-operator-bin-sbom.cdx.json
+
+package.json
+package-lock.json
