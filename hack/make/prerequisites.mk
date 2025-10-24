@@ -42,7 +42,6 @@ GOIMPORTS ?= $(LOCALBIN)/goimports
 MOCKERY ?= $(LOCALBIN)/mockery
 CYCLONEDX_GOMOD ?= $(LOCALBIN)/cyclonedx-gomod
 YQ ?= $(LOCALBIN)/yq
-BETTERALIGN ?= $(LOCALBIN)/betteralign
 GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 PYTHON ?= $(LOCALBIN)/.venv/bin/python3
@@ -64,8 +63,6 @@ prerequisites/controller-gen:
 prerequisites/go-linting: prerequisites/go-deadcode
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 	$(call go-install-tool,$(GOIMPORTS),golang.org/x/tools/cmd/goimports,$(GOLANG_TOOLS_VERSION))
-	$(call go-install-tool,$(BETTERALIGN),github.com/dkorunic/betteralign/cmd/betteralign,$(BETTERALIGN_VERSION))
-
 
 ## Install go deadcode
 prerequisites/go-deadcode:
