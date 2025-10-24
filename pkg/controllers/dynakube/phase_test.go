@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -263,6 +264,56 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 	})
 }
 
+func TestExtensionsDatabasesPhaseChanges(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{}}},
+		},
+	}
+
+	tests := []struct {
+		name        string
+		client      client.Client
+		expectPhase status.DeploymentPhase
+	}{
+		{
+			"no deployments",
+			fake.NewClient(),
+			status.Deploying,
+		},
+		{
+			"api error",
+			errorClient{},
+			status.Error,
+		},
+		{
+			"pods not ready",
+			fake.NewClient(createDeployment(dk, 1, 2)),
+			status.Deploying,
+		},
+		{
+			"pods ready",
+			fake.NewClient(createDeployment(dk, 2, 2)),
+			status.Running,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			controller := &Controller{
+				client:    test.client,
+				apiReader: test.client,
+			}
+			phase := controller.determineExtensionsDatabasesPhase(dk)
+			assert.Equal(t, test.expectPhase, phase)
+		})
+	}
+}
+
 func TestLogAgentPhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -494,5 +545,21 @@ func TestDynakubePhaseChanges(t *testing.T) {
 		}
 		phase := controller.determineDynaKubePhase(dk)
 		assert.Equal(t, test.phase, phase, "failed", "testcase", i)
+	}
+}
+
+func createDeployment(dk *dynakube.DynaKube, replicas, readyReplicas int32) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: dk.Namespace,
+			Labels:    labels.NewAppLabels(labels.DatabaseDatasourceLabel, dk.Name, labels.DatabaseDatasourceLabel, "").BuildLabels(),
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+		},
+		Status: appsv1.DeploymentStatus{
+			ReadyReplicas: readyReplicas,
+		},
 	}
 }

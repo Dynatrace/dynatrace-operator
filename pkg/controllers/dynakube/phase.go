@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,6 +20,7 @@ func (controller *Controller) determineDynaKubePhase(dk *dynakube.DynaKube) stat
 		controller.determineOneAgentPhase,
 		controller.determineLogAgentPhase,
 		controller.determineKSPMPhase,
+		controller.determineExtensionsDatabasesPhase,
 	}
 	for _, component := range components {
 		if phase := component(dk); phase != status.Running {
@@ -88,6 +90,31 @@ func (controller *Controller) determinePrometheusStatefulsetPhase(dk *dynakube.D
 			log.Info("statefulset is still deploying", "dynakube", dk.Name, "statefulset", statefulsetName)
 
 			return status.Deploying
+		}
+	}
+
+	return status.Running
+}
+
+func (controller *Controller) determineExtensionsDatabasesPhase(dk *dynakube.DynaKube) status.DeploymentPhase {
+	if dk.Extensions().IsDatabasesEnabled() {
+		deployments, err := databases.ListDeployments(context.Background(), controller.client, dk)
+		if err != nil {
+			log.Error(err, "deployments could not be accessed", "dynakube", dk.Name)
+
+			return status.Error
+		}
+
+		if len(deployments) == 0 {
+			return status.Deploying
+		}
+
+		for _, deployment := range deployments {
+			if deployment.DeletionTimestamp.IsZero() &&
+				deployment.Generation != deployment.Status.ObservedGeneration ||
+				*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
+				return status.Deploying
+			}
 		}
 	}
 
