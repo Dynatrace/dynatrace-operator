@@ -219,6 +219,11 @@ func (controller *Controller) handleError(
 		return reconcile.Result{}, err
 	}
 
+	if dk.Status.Phase == dynatracestatus.Deploying {
+		// Speed up waiting for resources to be ready
+		return reconcile.Result{RequeueAfter: 1 * time.Second}, nil
+	}
+
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
 
