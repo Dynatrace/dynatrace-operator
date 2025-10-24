@@ -18,12 +18,13 @@ type ConflictChecker struct {
 }
 
 type matchResult struct {
-	IsOA bool
-	IsME bool
+	IsOA   bool
+	IsME   bool
+	IsOTLP bool
 }
 
 func (m matchResult) IsAny() bool {
-	return m.IsOA || m.IsME
+	return m.IsOA || m.IsME || m.IsOTLP
 }
 
 func (c *ConflictChecker) check(dk *dynakube.DynaKube) error {
@@ -92,6 +93,13 @@ func match(dk *dynakube.DynaKube, namespace *corev1.Namespace) (matchResult, err
 
 	result.IsME = matchME
 
+	matchOTLP, err := matchOTLPExporterConfiguration(dk, namespace)
+	if err != nil {
+		return result, err
+	}
+
+	result.IsOTLP = matchOTLP
+
 	return result, nil
 }
 
@@ -126,6 +134,20 @@ func matchMetadataEnrichment(dk *dynakube.DynaKube, namespace *corev1.Namespace)
 	}
 
 	return metadataEnrichmentSelector.Matches(labels.Set(namespace.Labels)), nil
+}
+
+func matchOTLPExporterConfiguration(dk *dynakube.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	otlpExporterConfiguration := dk.OTLPExporterConfiguration()
+	if !otlpExporterConfiguration.IsEnabled() {
+		return false, nil
+	}
+
+	namespaceSelector, err := metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.NamespaceSelector)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	return namespaceSelector.Matches(labels.Set(namespace.Labels)), nil
 }
 
 // updateNamespace tries to match the namespace to every dynakube with codeModules

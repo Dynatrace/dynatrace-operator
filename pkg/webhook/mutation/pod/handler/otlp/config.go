@@ -7,3 +7,7 @@ import (
 var (
 	log = logd.Get().WithName("pod-mutation-otlp")
 )
+
+const (
+	NoOTLPExporterConfigSecretReason = "NoOTLPExporterConfigSecret"
+)

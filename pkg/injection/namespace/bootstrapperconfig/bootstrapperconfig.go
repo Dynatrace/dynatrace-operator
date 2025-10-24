@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
@@ -45,18 +44,11 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube) error {
+func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, s.apiReader, dk.Name)
-	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
-
 		return errors.WithStack(err)
 	}
 
@@ -66,7 +58,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 			return err
 		}
 
-		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, nsList, dk, data)
+		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, namespaces, dk, data)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -84,7 +76,7 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		}
 
 		// Create the certs secret for all namespaces
-		err := s.createSecretForNSlist(ctx, consts.BootstrapperInitCertsSecretName, CertsConditionType, nsList, dk, certs)
+		err := s.createSecretForNSlist(ctx, consts.BootstrapperInitCertsSecretName, CertsConditionType, namespaces, dk, certs)
 		if err != nil {
 			return errors.WithStack(err)
 		}

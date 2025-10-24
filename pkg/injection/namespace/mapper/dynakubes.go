@@ -93,6 +93,11 @@ func (dm *DynakubeMapper) UnmapFromDynaKube(namespaces []corev1.Namespace) error
 		if err != nil {
 			return err
 		}
+
+		err = dm.secrets.DeleteForNamespace(dm.ctx, consts.OTLPExporterSecretName, ns.Name)
+		if err != nil {
+			return err
+		}
 	}
 
 	_ = meta.RemoveStatusCondition(dm.dk.Conditions(), oneAgentNamespacesMonitoredConditionType)
