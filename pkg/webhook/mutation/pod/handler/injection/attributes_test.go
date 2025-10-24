@@ -7,6 +7,7 @@ import (
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -17,6 +18,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+)
+
+const (
+	injectionSplitMountsEnabled  = true
+	injectionSplitMountsDisabled = false
 )
 
 func TestAddPodAttributes(t *testing.T) {
@@ -155,13 +161,13 @@ func TestAddContainerAttributes(t *testing.T) {
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app1Container)
+		volumes.AddConfigVolumeMount(&app1Container, injectionSplitMountsDisabled)
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app2Container)
+		volumes.AddConfigVolumeMount(&app2Container, injectionSplitMountsDisabled)
 
 		initContainer := corev1.Container{
 			Args: []string{},
@@ -192,7 +198,7 @@ func TestAddContainerAttributes(t *testing.T) {
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app1Container)
+		volumes.AddConfigVolumeMount(&app1Container, injectionSplitMountsDisabled)
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
@@ -219,6 +225,164 @@ func TestAddContainerAttributes(t *testing.T) {
 		}
 
 		addContainerAttributes(&request)
+
+		require.Len(t, initContainer.Args, 1)
+		validateContainerAttributes(t, pod, initContainer.Args)
+	})
+}
+
+func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
+	validateContainerAttributes := func(t *testing.T, pod corev1.Pod, args []string) {
+		t.Helper()
+
+		require.NotEmpty(t, args)
+
+		for _, arg := range args {
+			splitArg := strings.Split(arg, "=")
+			require.Len(t, splitArg, 2)
+
+			var attr containerattr.Attributes
+
+			require.NoError(t, json.Unmarshal([]byte(splitArg[1]), &attr))
+			assert.Contains(t, pod.Spec.Containers, corev1.Container{
+				Name:  attr.ContainerName,
+				Image: attr.ToURI(),
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: volumes.ConfigMountPath + "/oneagent",
+						SubPath:   attr.ContainerName + "/oneagent",
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: volumes.ConfigMountPath + "/enrichment",
+						SubPath:   attr.ContainerName + "/enrichment",
+					},
+				},
+			})
+		}
+	}
+
+	t.Run("add container-attributes + mount", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					exp.InjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+			},
+			InstallContainer: &initContainer,
+		}
+
+		_, err := addContainerAttributes(&request)
+		require.NoError(t, err)
+
+		validateContainerAttributes(t, pod, initContainer.Args)
+	})
+
+	t.Run("no new container ==> no new arg", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app1Container, injectionSplitMountsEnabled)
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app2Container, injectionSplitMountsEnabled)
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					exp.InjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+			},
+			InstallContainer: &initContainer,
+		}
+
+		_, err := addContainerAttributes(&request)
+		require.NoError(t, err)
+
+		require.Empty(t, initContainer.Args)
+	})
+
+	t.Run("partially new => only add new", func(t *testing.T) {
+		app1Container := corev1.Container{
+			Name:  "app-1-name",
+			Image: "registry1.example.com/repository/image:tag",
+		}
+		volumes.AddConfigVolumeMount(&app1Container, injectionSplitMountsEnabled)
+
+		app2Container := corev1.Container{
+			Name:  "app-2-name",
+			Image: "registry2.example.com/repository/image:tag",
+		}
+
+		initContainer := corev1.Container{
+			Args: []string{},
+		}
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					exp.InjectionSplitMounts: "true",
+				},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					app1Container,
+					app2Container,
+				},
+			},
+		}
+
+		request := dtwebhook.MutationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				Pod: &pod,
+			},
+			InstallContainer: &initContainer,
+		}
+
+		_, err := addContainerAttributes(&request)
+		require.NoError(t, err)
 
 		require.Len(t, initContainer.Args, 1)
 		validateContainerAttributes(t, pod, initContainer.Args)

@@ -242,7 +242,7 @@ func TestMutate(t *testing.T) {
 			// update each container
 			assert.NotEqual(t, original.Pod.Spec.Containers[i], request.Pod.Spec.Containers[i])
 
-			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i]))
+			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i], false))
 		}
 
 		assert.True(t, mut.IsInjected(request.BaseRequest))
@@ -322,13 +322,13 @@ func TestReinvoke(t *testing.T) {
 
 		for i := range request.Pod.Spec.Containers {
 			// only update not-injected
-			if containerIsInjected(original.Pod.Spec.Containers[i]) {
+			if containerIsInjected(original.Pod.Spec.Containers[i], false) {
 				assert.Equal(t, original.Pod.Spec.Containers[i], request.Pod.Spec.Containers[i])
 			} else {
 				assert.NotEqual(t, original.Pod.Spec.Containers[i], request.Pod.Spec.Containers[i])
 			}
 
-			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i]))
+			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i], false))
 		}
 	})
 
@@ -403,7 +403,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 		require.NotNil(t, storageEnv)
 		assert.Contains(t, storageEnv.Value, DtStoragePath)
 
-		assert.True(t, containerIsInjected(container))
+		assert.True(t, containerIsInjected(container, false))
 	})
 }
 

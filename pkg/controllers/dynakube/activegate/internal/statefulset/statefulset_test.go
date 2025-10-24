@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
@@ -89,6 +90,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
+			exp.InjectionSplitMounts:                     "true",
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
@@ -154,7 +156,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
-			"test": "test",
+			exp.InjectionSplitMounts:                     "true",
+			"test":                                       "test",
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
