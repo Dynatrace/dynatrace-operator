@@ -40,9 +40,6 @@ const (
 	activeGateComponent   = "activegate"
 	TelemetryIngestTLSCrt = "custom-cas/tls-telemetry-ingest.crt"
 	TelemetryIngestTLSKey = "custom-cas/tls-telemetry-ingest.key"
-
-	otelCollectorImageRepository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	otelCollectorImageTag        = "latest"
 )
 
 // Rollout of OTel collector when no ActiveGate is configured in the Dynakube
@@ -54,7 +51,7 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRefSpec(otelCollectorImageRepository, otelCollectorImageTag),
+		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
@@ -81,7 +78,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 	optionsTelemetryIngestEnabled := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true, "zipkin"),
-		componentDynakube.WithOTelCollectorImageRefSpec(otelCollectorImageRepository, otelCollectorImageTag),
+		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
 		componentDynakube.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
@@ -103,7 +100,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 	optionsTelemetryIngestDisabled := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(false),
-		componentDynakube.WithOTelCollectorImageRefSpec(otelCollectorImageRepository, otelCollectorImageTag),
+		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
 		componentDynakube.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
@@ -132,7 +129,7 @@ func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRefSpec(otelCollectorImageRepository, otelCollectorImageTag),
+		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
 		componentDynakube.WithTelemetryIngestEndpointTLS(consts.TelemetryIngestTLSSecretName),
 	}
 
@@ -166,7 +163,7 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	optionsZipkin := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true, "zipkin"),
-		componentDynakube.WithOTelCollectorImageRefSpec(otelCollectorImageRepository, otelCollectorImageTag),
+		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
 	}
 
 	testDynakubeZipkin := *componentDynakube.New(optionsZipkin...)
@@ -187,7 +184,7 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	optionsJaeger := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true, "jaeger"),
-		componentDynakube.WithOTelCollectorImageRefSpec(otelCollectorImageRepository, otelCollectorImageTag),
+		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
 	}
 
 	testDynakubeJaeger := *componentDynakube.New(optionsJaeger...)
