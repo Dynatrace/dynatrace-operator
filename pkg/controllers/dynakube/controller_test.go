@@ -613,6 +613,10 @@ func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Objec
 	return errors.New("fake error")
 }
 
+func (clt errorClient) List(context.Context, client.ObjectList, ...client.ListOption) error {
+	return errors.New("fake error")
+}
+
 func TestGetDynakube(t *testing.T) {
 	t.Run("get dynakube", func(t *testing.T) {
 		fakeClient := fake.NewClient(&dynakube.DynaKube{

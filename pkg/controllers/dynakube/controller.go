@@ -201,7 +201,7 @@ func (controller *Controller) handleError(
 		log.Error(err, "error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
 	default:
-		dk.Status.SetPhase(controller.determineDynaKubePhase(dk))
+		dk.Status.SetPhase(controller.determineDynaKubePhase(ctx, dk))
 	}
 
 	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dk.Status); err != nil {
@@ -217,6 +217,11 @@ func (controller *Controller) handleError(
 
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if dk.Status.Phase == dynatracestatus.Deploying {
+		// Speed up waiting for resources to be ready
+		return reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil

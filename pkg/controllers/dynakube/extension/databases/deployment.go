@@ -37,6 +37,20 @@ const (
 	certsMountPath     = "/var/ssl-certs/dynatrace"
 )
 
+// ListDeployments returns a list of database datasource deployments that are managed by the DynaKube.
+func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) ([]appsv1.Deployment, error) {
+	deployments := &appsv1.DeploymentList{}
+
+	// We have to build labels from an empty DB spec to allow cleaning up orphans (without having to delete the DynaKube).
+	deploymentLabels, _, _ := buildAllLabels(dk, extensions.DatabaseSpec{})
+
+	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), sanitizedListLabels(deploymentLabels)); err != nil {
+		return nil, fmt.Errorf("list deployments: %w", err)
+	}
+
+	return deployments.Items, nil
+}
+
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
 // Do NOT modify maps produced by this function.
 func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
@@ -240,16 +254,12 @@ func buildContainerSecurityContext() *corev1.SecurityContext {
 }
 
 func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.DynaKube, keep []string) error {
-	deployments := &appsv1.DeploymentList{}
-
-	// We have to build labels from an empty DB spec to allow cleaning up orphans (without having to delete the DynaKube).
-	deploymentLabels, _, _ := buildAllLabels(dk, extensions.DatabaseSpec{})
-
-	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), sanitizedListLabels(deploymentLabels)); err != nil {
-		return fmt.Errorf("list deployments: %w", err)
+	deployments, err := ListDeployments(ctx, clt, dk)
+	if err != nil {
+		return err
 	}
 
-	for _, deploy := range deployments.Items {
+	for _, deploy := range deployments {
 		if slices.Contains(keep, deploy.Name) {
 			continue
 		}
