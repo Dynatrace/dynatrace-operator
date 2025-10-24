@@ -39,7 +39,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if ext := r.dk.Extensions(); ext.IsEnabled() && ext.NeedsSelfSignedTLS() {
+	if ext := r.dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
 
