@@ -33,6 +33,14 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: nil,
 					},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
+					},
 				},
 			})
 	})
@@ -45,6 +53,14 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
 						Protocols: []string{},
+					},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
 					},
 				},
 			})
@@ -132,6 +148,14 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
+					},
 				},
 			})
 	})
@@ -183,6 +207,14 @@ func TestConflictingServiceNames(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:          testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
+					},
 				},
 			},
 			&dynakube.DynaKube{
@@ -317,7 +349,7 @@ func TestForbiddenSuffix(t *testing.T) {
 
 func TestImages(t *testing.T) {
 	t.Run("otel collector image missing", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 1,
+		assertDenied(t, []string{errorOtelCollectorMissingImage},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{

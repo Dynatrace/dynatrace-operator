@@ -249,3 +249,14 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 		dk.Spec.TelemetryIngest.TLSRefName = secretName
 	}
 }
+
+func WithOTelCollectorImageRefSpec(repo, tag string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.OpenTelemetryCollector = dynakube.OpenTelemetryCollectorSpec{
+			ImageRef: image.Ref{
+				Repository: repo,
+				Tag:        tag,
+			},
+		}
+	}
+}
