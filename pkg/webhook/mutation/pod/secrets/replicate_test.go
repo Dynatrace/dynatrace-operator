@@ -1,6 +1,8 @@
 package secrets
 
 import (
+	"context"
+	"github.com/pkg/errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -65,6 +67,14 @@ func TestEnsureReplicated(t *testing.T) {
 		errGet := clt.Get(t.Context(), client.ObjectKey{Name: targetSecret, Namespace: testNamespace}, &s)
 		assert.True(t, k8serrors.IsNotFound(errGet), "target secret should not be created on failure")
 	})
+	t.Run("target get returns error other than not found -> returns error", func(t *testing.T) {
+		clt := &errorClient{fake.NewClient()}
+		req := newRequest(t)
+
+		err := EnsureReplicated(req, clt, clt, sourceSecret, targetSecret, logger)
+		require.Error(t, err)
+		assert.False(t, k8serrors.IsNotFound(err))
+	})
 }
 
 func newRequest(t *testing.T) *mutator.MutationRequest {
@@ -73,4 +83,13 @@ func newRequest(t *testing.T) *mutator.MutationRequest {
 	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: testNamespace}}
 
 	return mutator.NewMutationRequest(t.Context(), *ns, nil, pod, *dk)
+}
+
+type errorClient struct {
+	client.Client
+}
+
+// override Get to always return a generic error
+func (e *errorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	return errors.New("error")
 }
