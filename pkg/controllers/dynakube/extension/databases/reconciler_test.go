@@ -101,7 +101,6 @@ func TestReconcileSpec(t *testing.T) {
 		for _, vol := range deploy.Spec.Template.Spec.Volumes {
 			switch vol.Name {
 			case userDataVolumeName:
-
 				assert.NotNil(t, vol.EmptyDir)
 			case tokenVolumeName:
 				assert.NotNil(t, vol.Secret)
