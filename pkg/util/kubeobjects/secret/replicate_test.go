@@ -1,7 +1,6 @@
 package secret
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -21,7 +20,7 @@ var (
 )
 
 func TestReplicate(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	sourceNs := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -57,7 +56,7 @@ func TestReplicate(t *testing.T) {
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}, &replicated)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}, &replicated)
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
 		assert.Equal(t, source.Labels, replicated.Labels)
@@ -79,7 +78,7 @@ func TestReplicate(t *testing.T) {
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
-		err = clt.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}, &replicated)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: targetNs.Name}, &replicated)
 		require.NoError(t, err)
 		assert.NotEqual(t, source.Data, replicated.Data)
 	})
