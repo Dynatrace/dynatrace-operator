@@ -15,7 +15,7 @@ const (
 )
 
 func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.Extensions().IsEnabled() {
+	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}
 
@@ -29,7 +29,7 @@ func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 }
 
 func conflictingAPIURLForExtensions(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
-	if !dk.Extensions().IsEnabled() {
+	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}
 
@@ -45,7 +45,7 @@ func conflictingAPIURLForExtensions(ctx context.Context, dv *Validator, dk *dyna
 			continue
 		}
 
-		if item.Extensions().IsEnabled() && (dk.APIURL() == item.APIURL()) {
+		if item.Extensions().IsAnyEnabled() && (dk.APIURL() == item.APIURL()) {
 			return fmt.Sprintf(warningConflictingAPIURLForExtensions, item.Name)
 		}
 	}
@@ -54,7 +54,7 @@ func conflictingAPIURLForExtensions(ctx context.Context, dv *Validator, dk *dyna
 }
 
 func extensionControllerPVCStorageDevice(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.Extensions().IsEnabled() {
+	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}
 

@@ -26,17 +26,21 @@ HELMUNITTEST_VERSION ?= v1.0.3
 CYCLONEDX_GOMOD_VERSION ?= v1.9.0
 # renovate depName=github.com/mikefarah/yq/v4
 YQ_VERSION ?= v4.48.1
+# renovate depName=github.com/vladopajic/go-test-coverage/v2
+GO_TEST_COVERAGE_VERSION ?= v2.17.0
+# renovate depName=github.com/dkorunic/betteralign/cmd/betteralign
+BETTERALIGN_VERSION ?= v0.7.3
+#SETUP_ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
+SETUP_ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 DEADCODE ?= $(LOCALBIN)/deadcode
-GOIMPORTS ?= $(LOCALBIN)/goimports
 MOCKERY ?= $(LOCALBIN)/mockery
 CYCLONEDX_GOMOD ?= $(LOCALBIN)/cyclonedx-gomod
 YQ ?= $(LOCALBIN)/yq
-BETTERALIGN ?= $(LOCALBIN)/betteralign
 GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 PYTHON ?= $(LOCALBIN)/.venv/bin/python3
@@ -57,9 +61,6 @@ prerequisites/controller-gen:
 ## Install go linters
 prerequisites/go-linting: prerequisites/go-deadcode
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
-	$(call go-install-tool,$(GOIMPORTS),golang.org/x/tools/cmd/goimports,$(GOLANG_TOOLS_VERSION))
-	$(call go-install-tool,$(BETTERALIGN),github.com/dkorunic/betteralign/cmd/betteralign,latest)
-
 
 ## Install go deadcode
 prerequisites/go-deadcode:
@@ -67,7 +68,7 @@ prerequisites/go-deadcode:
 
 ## Install go test coverage
 prerequisites/go-test-coverage:
-	$(call go-install-tool,$(GO_TEST_COVERAGE),github.com/vladopajic/go-test-coverage/v2,latest)
+	$(call go-install-tool,$(GO_TEST_COVERAGE),github.com/vladopajic/go-test-coverage/v2,$(GO_TEST_COVERAGE_VERSION))
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
@@ -87,7 +88,7 @@ prerequisites/yq:
 
 ## Install setup-envtest locally
 prerequisites/envtest:
-	$(call go-install-tool,$(SETUP_ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
+	$(call go-install-tool,$(SETUP_ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(SETUP_ENVTEST_VERSION))
 
 ## Setup envtest binaries for the specified Kubernetes version
 prerequisites/setup-envtest: prerequisites/envtest

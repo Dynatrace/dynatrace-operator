@@ -27,7 +27,7 @@ Validate if the required related RBACs were enable for kubernetes-monitoring
 Validate if the required related RBACs were enabled for kspm
 */}}
 {{- define "validation.rbac.kspm" -}}
-{{- if not .Values.rbac.activeGate.create}}
-{{- fail "rbac.activeGate.create = true is required to enable rbac.kspm.create"}}
+{{- if not .Values.rbac.kubernetesMonitoring.create}}
+{{- fail "rbac.kubernetesMonitoring.create = true is required to enable rbac.kspm.create"}}
 {{- end }}
 {{- end -}}
