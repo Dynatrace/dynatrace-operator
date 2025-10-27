@@ -188,7 +188,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify traces exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/traces",
+			Value: "http://my-cluster/api/v2/otlp/v1/traces",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -199,7 +199,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify metrics exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/metrics",
+			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -210,7 +210,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify logs exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/logs",
+			Value: "http://my-cluster/api/v2/otlp/v1/logs",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -248,7 +248,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
 			{
 				Name:  OTLPTraceEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/traces",
+				Value: "http://user-endpoint/api/v2/otlp/v1/traces",
 			},
 			{
 				Name:  OTLPTraceProtocolEnv,
@@ -256,7 +256,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 			},
 			{
 				Name:  OTLPMetricsEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/metrics",
+				Value: "http://user-endpoint/api/v2/otlp/v1/metrics",
 			},
 			{
 				Name:  OTLPMetricsProtocolEnv,
@@ -264,7 +264,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 			},
 			{
 				Name:  OTLPLogsEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/logs",
+				Value: "http://user-endpoint/api/v2/otlp/v1/logs",
 			},
 			{
 				Name:  OTLPLogsProtocolEnv,
@@ -281,7 +281,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify traces exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/traces",
+			Value: "http://user-endpoint/api/v2/otlp/v1/traces",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -292,7 +292,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify metrics exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/metrics",
+			Value: "http://user-endpoint/api/v2/otlp/v1/metrics",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -303,7 +303,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify logs exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/logs",
+			Value: "http://user-endpoint/api/v2/otlp/v1/logs",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -416,7 +416,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/metrics",
+			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -457,7 +457,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
 			{
 				Name:  OTLPTraceEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/traces",
+				Value: "http://user-endpoint/api/v2/otlp/v1/traces",
 			},
 			{
 				Name:  OTLPTraceProtocolEnv,
@@ -474,7 +474,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify user defined env vars are kept as they are
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/traces",
+			Value: "http://user-endpoint/api/v2/otlp/v1/traces",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -511,7 +511,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
 			{
 				Name:  OTLPTraceEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/traces",
+				Value: "http://user-endpoint/api/v2/otlp/v1/traces",
 			},
 			{
 				Name:  OTLPTraceProtocolEnv,
@@ -519,7 +519,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 			},
 			{
 				Name:  OTLPMetricsEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/metrics",
+				Value: "http://user-endpoint/api/v2/otlp/v1/metrics",
 			},
 			{
 				Name:  OTLPMetricsProtocolEnv,
@@ -536,7 +536,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify user defined env vars are kept as they are
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/traces",
+			Value: "http://user-endpoint/api/v2/otlp/v1/traces",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -547,7 +547,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/metrics",
+			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -572,7 +572,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
 			{
 				Name:  OTLPTraceEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/traces",
+				Value: "http://user-endpoint/api/v2/otlp/v1/traces",
 			},
 			{
 				Name:  OTLPTraceProtocolEnv,
@@ -589,7 +589,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive,gocognit
 		// verify user defined env vars are kept as they are
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/traces",
+			Value: "http://user-endpoint/api/v2/otlp/v1/traces",
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
