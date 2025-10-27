@@ -33,6 +33,8 @@ func EnsureReplicated(mutationRequest *dtwebhook.MutationRequest, kubeClient cli
 				Namespace: mutationRequest.Namespace.Name,
 			},
 		)
+	} else if err != nil {
+		return err
 	}
 
 	return nil
