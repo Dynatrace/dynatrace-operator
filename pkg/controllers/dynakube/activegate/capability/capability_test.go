@@ -1,6 +1,7 @@
 package capability
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -121,6 +122,32 @@ func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedArgNameWithTelemetryIngest, mc.ArgName())
 	})
+	t.Run("creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled", func(t *testing.T) {
+		var emptyCapabilites []activegate.CapabilityDisplayName
+		dk := buildDynakube(emptyCapabilites, false, true)
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.False(t, mc.Enabled())
+		assert.Empty(t, mc.ArgName())
+	})
+}
+
+func TestNewMultiCapabilityWithOTLPExporterConfiguration(t *testing.T) {
+	t.Run("creates new multicapability with OTLP exporter configuration enabled", func(t *testing.T) {
+		dk := buildDynakube(capabilities, false, true)
+
+		dk.Spec.OTLPExporterConfiguration = &otlpexporterconfiguration.Spec{
+			Signals: otlpexporterconfiguration.SignalConfiguration{
+				Metrics: &otlpexporterconfiguration.MetricsSignal{},
+			},
+		}
+
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.True(t, mc.Enabled())
+		assert.Equal(t, expectedArgNameWithTelemetryIngest, mc.ArgName())
+	})
+
 	t.Run("creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled", func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, false, true)
