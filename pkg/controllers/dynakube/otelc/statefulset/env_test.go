@@ -181,7 +181,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace.svc",
 		},
 		{
 			name:            "telemetryIngest, public AG, with proxy secret",
@@ -201,7 +201,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "dynakube-activegate.dynatrace",
+			expectedNoProxy: "dynakube-activegate.dynatrace.svc",
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy secret",
@@ -211,7 +211,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace.svc",
 		},
 	}
 
@@ -270,7 +270,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace.svc",
 		},
 		{
 			name:            "telemetryIngest, public AG, with proxy value",
@@ -290,7 +290,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "dynakube-activegate.dynatrace",
+			expectedNoProxy: "dynakube-activegate.dynatrace.svc",
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy value",
@@ -300,7 +300,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace.svc",
 		},
 	}
 
