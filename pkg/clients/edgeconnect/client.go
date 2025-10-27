@@ -3,6 +3,8 @@ package edgeconnect
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -23,6 +26,7 @@ type client struct {
 	ctx        context.Context
 	httpClient *http.Client
 	baseURL    string
+	customCA   []byte
 }
 
 // Option can be passed to NewClient and customizes the created client instance.
@@ -47,6 +51,29 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 		return nil, errors.New("can't create http client for edge connect")
 	}
 
+	if c.customCA != nil {
+		rootCAs, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, errors.Wrap(err, "read system certificates")
+		}
+
+		if ok := rootCAs.AppendCertsFromPEM(c.customCA); !ok {
+			return nil, errors.New("append custom certs")
+		}
+
+		ot := httpClient.Transport.(*oauth2.Transport)
+		if ot.Base == nil {
+			ot.Base = &http.Transport{}
+		}
+
+		t := ot.Base.(*http.Transport)
+		if t.TLSClientConfig == nil {
+			t.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+		}
+
+		t.TLSClientConfig.RootCAs = rootCAs
+	}
+
 	c.httpClient = httpClient
 
 	return c, nil
@@ -67,6 +94,12 @@ func WithTokenURL(url string) func(*client) {
 func WithOauthScopes(scopes []string) func(*client) {
 	return func(c *client) {
 		c.Scopes = scopes
+	}
+}
+
+func WithCustomCA(caData []byte) func(*client) {
+	return func(c *client) {
+		c.customCA = caData
 	}
 }
 
