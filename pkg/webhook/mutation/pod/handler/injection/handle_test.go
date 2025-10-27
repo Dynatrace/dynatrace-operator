@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
@@ -36,6 +37,26 @@ func TestHandleImpl(t *testing.T) {
 			Namespace: testNamespaceName,
 		},
 	}
+
+	t.Run("injection disabled => do not execute handler", func(t *testing.T) {
+		h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
+
+		dk := getTestDynakube()
+
+		dk.Spec.OneAgent = oneagent.Spec{}
+		dk.Spec.MetadataEnrichment = metadataenrichment.Spec{}
+
+		request := createTestMutationRequest(dk)
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		_, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
+		require.False(t, ok)
+
+		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
+		require.False(t, ok)
+	})
 
 	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
 		h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
