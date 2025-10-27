@@ -34,7 +34,7 @@ func (ti *traceInjector) Inject(c *corev1.Container, apiURL string, addCertifica
 		return false
 	}
 
-	addEnvVarLiteralValue(c, OTLPTraceEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "traces"))
+	addEnvVarLiteralValue(c, OTLPTraceEndpointEnv, fmt.Sprintf("%s/v1/traces", apiURL))
 	addEnvVarLiteralValue(c, OTLPTraceProtocolEnv, "http/protobuf")
 	addEnvVarLiteralValue(c, OTLPTraceHeadersEnv, OTLPAuthorizationHeader)
 
@@ -63,7 +63,7 @@ func (mi *metricsInjector) Inject(c *corev1.Container, apiURL string, addCertifi
 		return false
 	}
 
-	addEnvVarLiteralValue(c, OTLPMetricsEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "metrics"))
+	addEnvVarLiteralValue(c, OTLPMetricsEndpointEnv, fmt.Sprintf("%s/v1/metrics", apiURL))
 	addEnvVarLiteralValue(c, OTLPMetricsProtocolEnv, "http/protobuf")
 	addEnvVarLiteralValue(c, OTLPMetricsHeadersEnv, OTLPAuthorizationHeader)
 
@@ -92,7 +92,7 @@ func (li *logsInjector) Inject(c *corev1.Container, apiURL string, addCertificat
 		return false
 	}
 
-	addEnvVarLiteralValue(c, OTLPLogsEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "logs"))
+	addEnvVarLiteralValue(c, OTLPLogsEndpointEnv, fmt.Sprintf("%s/v1/logs", apiURL))
 	addEnvVarLiteralValue(c, OTLPLogsProtocolEnv, "http/protobuf")
 	addEnvVarLiteralValue(c, OTLPLogsHeadersEnv, OTLPAuthorizationHeader)
 
