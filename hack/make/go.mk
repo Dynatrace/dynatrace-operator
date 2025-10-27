@@ -2,12 +2,8 @@
 go/golangci:
 	$(GOLANGCI_LINT) run --fix --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s
 
-## Runs betteralign
-go/betteralign:
-	$(BETTERALIGN) -apply ./...
-
 ## Runs all the linting tools
-go/lint: prerequisites/go-linting go/betteralign go/golangci go/deadcode
+go/lint: prerequisites/go-linting go/golangci go/deadcode
 
 ## Runs all go unit and integration tests and writes the coverprofile to coverage.txt
 go/test: prerequisites/setup-envtest

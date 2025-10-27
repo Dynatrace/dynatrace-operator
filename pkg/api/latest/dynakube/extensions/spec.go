@@ -6,23 +6,26 @@ import (
 )
 
 type Extensions struct {
-	*ExecutionControllerSpec
+	ExecutionController *ExecutionControllerSpec
 
 	name      string
 	namespace string
-	enabled   bool
+
+	Databases []DatabaseSpec
+
+	prometheusEnabled bool
 }
 
 // +kubebuilder:object:generate=true
 type Spec struct {
-	PrometheusSpec *PrometheusSpec `json:"prometheus,omitempty"`
+	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MaxItems:=1
 	// +kubebuilder:validation:MinItems:=1
 	// +listType=map
 	// +listMapKey=id
-	DatabasesSpec []DatabaseSpec `json:"databases,omitempty"`
+	Databases []DatabaseSpec `json:"databases,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

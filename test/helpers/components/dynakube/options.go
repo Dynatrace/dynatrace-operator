@@ -179,7 +179,7 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.Applicati
 func WithExtensionsEnabledSpec(promEnabled bool) Option {
 	return func(dk *dynakube.DynaKube) {
 		if promEnabled {
-			dk.Spec.Extensions = &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}}
+			dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
 		} else {
 			dk.Spec.Extensions = nil

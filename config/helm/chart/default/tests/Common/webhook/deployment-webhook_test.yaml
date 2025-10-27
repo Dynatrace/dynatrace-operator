@@ -134,6 +134,7 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
+                        "kubernetesMonitoring": true,
                         "kspm": true
                       }
                 livenessProbe:
@@ -331,6 +332,7 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
+                        "kubernetesMonitoring": true,
                         "kspm": true
                       }
                 livenessProbe:
@@ -493,6 +495,7 @@ tests:
                         "logMonitoring": true,
                         "edgeConnect": true,
                         "supportability": true,
+                        "kubernetesMonitoring": true,
                         "kspm": true
                       }
                 livenessProbe:

@@ -12,13 +12,13 @@ tests:
           value: dynatrace-kubernetes-monitoring
       - isNotEmpty:
           path: metadata.labels
-      - isEmpty:
+      - isNull:
           path: rules
       - contains:
           path: aggregationRule.clusterRoleSelectors
           content:
             matchLabels:
-              rbac.dynatrace.com/aggregate-to-kubernetes-monitoring: "true"
+              rbac.dynatrace.com/aggregate-to-monitoring: "true"
 
   - it: ClusterRoleBinding should exist
     documentIndex: 1
@@ -52,7 +52,6 @@ tests:
 
   - it: shouldn't exist if turned off
     set:
-      rbac.activeGate.create: true
       rbac.kubernetesMonitoring.create: false
     asserts:
       - hasDocuments:
