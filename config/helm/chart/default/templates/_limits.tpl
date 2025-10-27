@@ -18,7 +18,6 @@ Set the GOMEMLIMIT envvar to 90% of the configured memory limit. So the go garba
 {{- define "dynatrace-operator.gomemlimit" -}}
 {{- $limit := (.limits).memory -}}
 {{- $number := 0 -}}
-{{- $unit := "" -}}
 {{- if not $limit -}}
   {{- $number := -1 -}}
 {{- else if hasSuffix "Gi" $limit -}}
