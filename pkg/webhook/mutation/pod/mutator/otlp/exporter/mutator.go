@@ -152,7 +152,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		c.Env = env.AddOrUpdate(c.Env, dtAPITokenEnvVar)
 
 		for _, inj := range injectors {
-			if inj.Inject(c, apiURL, override) {
+			if inj.Inject(c, apiURL, shouldAddCertificate) {
 				mutated = true
 			}
 		}
