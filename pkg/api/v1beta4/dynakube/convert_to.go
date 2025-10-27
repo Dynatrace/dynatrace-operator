@@ -76,7 +76,7 @@ func (src *DynaKube) toKspmSpec(dst *dynakubelatest.DynaKube) {
 func (src *DynaKube) toExtensionsSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.Extensions != nil {
 		dst.Spec.Extensions = &extensionslatest.Spec{
-			PrometheusSpec: &extensionslatest.PrometheusSpec{},
+			Prometheus: &extensionslatest.PrometheusSpec{},
 		}
 	}
 }
@@ -141,7 +141,7 @@ func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollecto
 	dst.ImageRef = src.ImageRef
 	dst.PriorityClassName = src.PriorityClassName
 	dst.Resources = src.Resources
-	dst.NodeAffinity = src.NodeAffinity
+	dst.NodeAffinity = &src.NodeAffinity
 	dst.Tolerations = src.Tolerations
 	dst.Args = src.Args
 	dst.Env = src.Env

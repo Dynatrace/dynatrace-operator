@@ -14,38 +14,54 @@ import (
 const testDynakubeName = "dynakube"
 
 func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
-	t.Run("no error if extensions are enabled with activegate with k8s-monitoring", func(t *testing.T) {
-		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		dk.Spec.ActiveGate = activegate.Spec{
-			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.KubeMonCapability.DisplayName,
+	runExtensionTestCases(t,
+		extensionTestCase{
+			"no error if activegate with k8s-monitoring",
+			func(t *testing.T, setExtensions dkMutatorFunc) {
+				dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
+				dk.Spec.ActiveGate = activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				}
+				assertAllowed(t, setExtensions(dk))
 			},
-		}
-		assertAllowed(t, dk)
-	})
-	t.Run("error if extensions are enabled without activegate with k8s-monitoring", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 2,
-			createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL))
-	})
-	t.Run("error if extensions are enabled with activegate with k8s-monitoring but automatic Kuberenetes API monitoring is disabled", func(t *testing.T) {
-		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		dk.Annotations = map[string]string{
-			exp.AGAutomaticK8sAPIMonitoringKey: "false",
-		}
-		dk.Spec.ActiveGate = activegate.Spec{
-			Capabilities: []activegate.CapabilityDisplayName{
-				activegate.KubeMonCapability.DisplayName,
+		},
+
+		extensionTestCase{
+			"error if no activegate with k8s-monitoring",
+			func(t *testing.T, setExtensions dkMutatorFunc) {
+				assertAllowedWithWarnings(t, 2, setExtensions(createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)))
 			},
-		}
-		assertAllowedWithWarnings(t, 2, dk)
-	})
-	t.Run("error if extensions are enabled but automatic Kuberenetes API monitoring is disabled and without activgate k8s-monitoring", func(t *testing.T) {
-		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		dk.Annotations = map[string]string{
-			exp.AGAutomaticK8sAPIMonitoringKey: "false",
-		}
-		assertAllowedWithWarnings(t, 2, dk)
-	})
+		},
+
+		extensionTestCase{
+			"error if activegate with k8s-monitoring but automatic Kuberenetes API monitoring is disabled",
+			func(t *testing.T, setExtensions dkMutatorFunc) {
+				dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
+				dk.Annotations = map[string]string{
+					exp.AGAutomaticK8sAPIMonitoringKey: "false",
+				}
+				dk.Spec.ActiveGate = activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				}
+				assertAllowedWithWarnings(t, 2, setExtensions(dk))
+			},
+		},
+
+		extensionTestCase{
+			"error if automatic Kuberenetes API monitoring is disabled and without activgate k8s-monitoring",
+			func(t *testing.T, setExtensions dkMutatorFunc) {
+				dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
+				dk.Annotations = map[string]string{
+					exp.AGAutomaticK8sAPIMonitoringKey: "false",
+				}
+				assertAllowedWithWarnings(t, 2, setExtensions(dk))
+			},
+		},
+	)
 }
 
 func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube {
@@ -55,8 +71,7 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			APIURL:     apiURL,
-			Extensions: &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}},
+			APIURL: apiURL,
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: image.Ref{
@@ -69,4 +84,35 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 	}
 
 	return dk
+}
+
+type extensionTestCase struct {
+	title string
+	test  func(t *testing.T, setExtensions dkMutatorFunc)
+}
+
+type dkMutatorFunc func(*dynakube.DynaKube) *dynakube.DynaKube
+
+func runExtensionTestCases(t *testing.T, cases ...extensionTestCase) {
+	matrix := []struct {
+		name string
+		spec *extensions.Spec
+	}{
+		{"prometheus extension enabled: ", &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}},
+		{"databases extension enabled:", &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}}},
+		{"all extensions enabled:", &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}, Databases: []extensions.DatabaseSpec{{ID: "test"}}}},
+	}
+
+	for _, tt := range matrix {
+		for _, tc := range cases {
+			name := tt.name + ":" + tc.title
+			t.Run(name, func(t *testing.T) {
+				tc.test(t, func(dk *dynakube.DynaKube) *dynakube.DynaKube {
+					dk.Spec.Extensions = tt.spec
+
+					return dk
+				})
+			})
+		}
+	}
 }
