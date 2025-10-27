@@ -29,12 +29,15 @@ const (
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
 
-	userDataVolumeName = "user-data"
-	userDataMountPath  = "/var/userdata"
-	tokenVolumeName    = "auth-token"
-	tokenMountPath     = "/var/run/dynatrace/executor/token"
-	certsVolumeName    = "https-certs"
-	certsMountPath     = "/var/ssl-certs/dynatrace"
+	userDataVolumeName    = "user-data"
+	userDataMountPath     = "/var/userdata"
+	tokenVolumeName       = "auth-token"
+	tokenMountPath        = "/var/run/dynatrace/executor/token"
+	certsVolumeName       = "https-certs"
+	certsMountPath        = "/var/ssl-certs/dynatrace"
+	customCertsVolumeName = "custom-certs"
+	customCertsMountPath  = "/var/ssl-certs/user"
+	customCertsFileName   = "custom.crt"
 )
 
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
@@ -109,7 +112,7 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev
 		},
 		Resources:       buildContainerResources(dbSpec.Resources),
 		SecurityContext: buildContainerSecurityContext(),
-		VolumeMounts:    buildVolumeMounts(dbSpec),
+		VolumeMounts:    buildVolumeMounts(dk, dbSpec),
 	}
 
 	return container
@@ -136,7 +139,7 @@ func buildContainerEnvs() []corev1.EnvVar {
 	}
 }
 
-func buildVolumeMounts(dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      userDataVolumeName,
@@ -152,6 +155,14 @@ func buildVolumeMounts(dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
 			MountPath: certsMountPath,
 			ReadOnly:  true,
 		},
+	}
+
+	if dk.Spec.TrustedCAs != "" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      customCertsVolumeName,
+			MountPath: customCertsMountPath,
+			ReadOnly:  true,
+		})
 	}
 
 	return append(volumeMounts, dbSpec.VolumeMounts...)
@@ -193,6 +204,25 @@ func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev
 				},
 			},
 		},
+	}
+
+	if dk.Spec.TrustedCAs != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: customCertsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dk.Spec.TrustedCAs,
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  dynakube.TrustedCAKey,
+							Path: customCertsFileName,
+						},
+					},
+				},
+			},
+		})
 	}
 
 	return append(volumes, dbSpec.Volumes...)

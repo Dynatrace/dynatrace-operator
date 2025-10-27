@@ -30,6 +30,7 @@ const (
 	testDynakubeName            = "dynakube"
 	testNamespaceName           = "dynatrace"
 	testPullSecret              = "pull-secret"
+	testTrustedCAs              = "trusted-cas"
 	testExecutorImageRepository = "repo/dynatrace-executor"
 	testExecutorImageTag        = "1.123.0"
 )
@@ -96,13 +97,20 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Contains(t, deploy.Labels, labels.AppVersionLabel)
 		assert.Equal(t, deploy.Labels, deploy.Spec.Template.Labels)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
-		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 3)
+		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
 		for _, vol := range deploy.Spec.Template.Spec.Volumes {
 			switch vol.Name {
 			case userDataVolumeName:
 				assert.NotNil(t, vol.EmptyDir)
-			case tokenVolumeName, certsVolumeName:
+			case tokenVolumeName:
 				assert.NotNil(t, vol.Secret)
+			case certsVolumeName:
+				assert.NotNil(t, vol.Secret)
+				assert.Equal(t, dk.Extensions().GetTLSSecretName(), vol.Secret.SecretName)
+			case customCertsVolumeName:
+				assert.NotNil(t, vol.ConfigMap)
+				assert.Equal(t, testTrustedCAs, vol.ConfigMap.Name)
+
 			default:
 				t.Fatalf("deployment has unexpected volume %s", vol.Name)
 			}
@@ -118,7 +126,7 @@ func TestReconcileSpec(t *testing.T) {
 		assert.NotEmpty(t, container.Resources.Limits)
 		assert.Len(t, container.Args, 3)
 		assert.Len(t, container.Env, 1)
-		assert.Len(t, container.VolumeMounts, 3)
+		assert.Len(t, container.VolumeMounts, 4)
 		for _, mnt := range container.VolumeMounts {
 			switch mnt.Name {
 			case userDataVolumeName:
@@ -127,6 +135,8 @@ func TestReconcileSpec(t *testing.T) {
 				assert.Equal(t, tokenMountPath, mnt.MountPath)
 			case certsVolumeName:
 				assert.Equal(t, certsMountPath, mnt.MountPath)
+			case customCertsVolumeName:
+				assert.Equal(t, customCertsMountPath, mnt.MountPath)
 			default:
 				t.Fatalf("deployment has unexpected volume mount %s", mnt.Name)
 			}
@@ -189,8 +199,8 @@ func TestReconcileSpec(t *testing.T) {
 		}
 
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
-		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
-		assert.Len(t, deploy.Spec.Template.Spec.Containers[0].VolumeMounts, 4)
+		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 5)
+		assert.Len(t, deploy.Spec.Template.Spec.Containers[0].VolumeMounts, 5)
 	})
 }
 
@@ -273,6 +283,7 @@ func getTestDynakube() *dynakube.DynaKube {
 				},
 			},
 			CustomPullSecret: testPullSecret,
+			TrustedCAs:       testTrustedCAs,
 		},
 	}
 }
