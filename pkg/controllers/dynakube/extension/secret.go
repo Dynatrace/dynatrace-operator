@@ -19,7 +19,7 @@ import (
 const DeprecatedOtelcTokenSecretKey = "otelc.token"
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
-	if !r.dk.Extensions().IsEnabled() {
+	if !r.dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
 			return nil
 		}

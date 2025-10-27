@@ -137,7 +137,9 @@ func fromKspmNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfiguration
 	dst.ImageRef = src.ImageRef
 	dst.PriorityClassName = src.PriorityClassName
 	dst.Resources = src.Resources
-	dst.NodeAffinity = src.NodeAffinity
+	if src.NodeAffinity != nil {
+		dst.NodeAffinity = *src.NodeAffinity
+	}
 	dst.Tolerations = src.Tolerations
 	dst.Args = src.Args
 	dst.Env = src.Env

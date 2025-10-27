@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/hostmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/test/features/kspm"
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -122,4 +123,8 @@ func TestNoCSI_telemetryingest_w_otel_collector_endpoint_tls(t *testing.T) {
 
 func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
 	testEnv.Test(t, telemetryingest.OtelCollectorConfigUpdate(t))
+}
+
+func TestNoCSI_kspm(t *testing.T) {
+	testEnv.Test(t, kspm.Feature(t))
 }

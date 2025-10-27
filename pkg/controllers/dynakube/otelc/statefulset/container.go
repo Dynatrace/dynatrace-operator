@@ -44,8 +44,8 @@ func getContainer(dk *dynakube.DynaKube) corev1.Container {
 func buildArgs(dk *dynakube.DynaKube) []string {
 	args := []string{}
 
-	if ext := dk.Extensions(); ext.IsEnabled() {
-		args = append(args, fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", ext.GetServiceNameFQDN(), consts.OtelCollectorComPort, otelcSecretTokenFilePath))
+	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
+		args = append(args, fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", ext.GetServiceNameFQDN(), consts.ExtensionsDatasourceTargetPort, otelcSecretTokenFilePath))
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {

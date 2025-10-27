@@ -94,6 +94,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		defer r.cleanup(ctx)
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx)
+
 		if err := dkMapper.MapFromDynakube(); err != nil {
 			log.Info("update of a map of namespaces failed")
 
