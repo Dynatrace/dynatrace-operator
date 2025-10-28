@@ -122,10 +122,11 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 }
 
 func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
-	if !dk.ActiveGate().HasCaCert() {
-		return nil, nil
-	}
 	data := map[string][]byte{}
+
+	if !dk.ActiveGate().HasCaCert() {
+		return data, nil
+	}
 
 	agCert, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
