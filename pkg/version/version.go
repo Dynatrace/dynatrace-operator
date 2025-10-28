@@ -3,6 +3,7 @@ package version
 import (
 	"fmt"
 	"runtime"
+	"runtime/debug"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
@@ -37,4 +38,7 @@ func LogVersionToLogger(log logd.Logger) {
 		"goVersion", runtime.Version(),
 		"platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	)
+
+	// SetMemoryLimit returns the previously set memory limit. A negative input does not adjust the limit, and allows for retrieval of the currently set memory limit.
+	log.Debug("GOMEMLIMIT", "value (in bytes)", debug.SetMemoryLimit(-1))
 }
