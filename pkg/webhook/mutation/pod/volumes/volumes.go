@@ -61,36 +61,58 @@ func AddConfigVolume(pod *corev1.Pod) {
 	)
 }
 
-func AddConfigVolumeMount(container *corev1.Container, splitMountsEnabled bool) {
-	if splitMountsEnabled {
-		if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathOneAgent) {
-			container.VolumeMounts = append(container.VolumeMounts,
-				corev1.VolumeMount{
-					Name:      ConfigVolumeName,
-					MountPath: ConfigMountPathOneAgent,
-					SubPath:   container.Name + ConfigMountSubPathOneAgent,
-				},
-			)
-		}
-
-		if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathEnrichment) {
-			container.VolumeMounts = append(container.VolumeMounts,
-				corev1.VolumeMount{
-					Name:      ConfigVolumeName,
-					MountPath: ConfigMountPathEnrichment,
-					SubPath:   container.Name + ConfigMountSubPathEnrichment,
-				},
-			)
-		}
-	} else if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPath) {
-		container.VolumeMounts = append(container.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      ConfigVolumeName,
-				MountPath: ConfigMountPath,
-				SubPath:   container.Name,
-			},
-		)
+func IsConfigVolumeMountNeeded(container *corev1.Container, splitMountsEnabled bool) bool {
+	if !splitMountsEnabled && !mounts.IsPathIn(container.VolumeMounts, ConfigMountPath) {
+		return true
 	}
+
+	return false
+}
+
+func AddConfigVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      ConfigVolumeName,
+			MountPath: ConfigMountPath,
+			SubPath:   container.Name,
+		},
+	)
+}
+
+func IsOneAgentConfigVolumeMountNeeded(container *corev1.Container, splitMountsEnabled bool, isAppInjectionEnabled bool) bool {
+	if splitMountsEnabled && !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathOneAgent) && isAppInjectionEnabled {
+		return true
+	}
+
+	return false
+}
+
+func AddOneAgentConfigVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      ConfigVolumeName,
+			MountPath: ConfigMountPathOneAgent,
+			SubPath:   container.Name + ConfigMountSubPathOneAgent,
+		},
+	)
+}
+
+func IsEnrichmentConfigVolumeMountNeeded(container *corev1.Container, splitMountsEnabled bool, isMetadataEnrichmentEnabled bool) bool {
+	if splitMountsEnabled && !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathEnrichment) && isMetadataEnrichmentEnabled {
+		return true
+	}
+
+	return false
+}
+
+func AddEnrichmentConfigVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      ConfigVolumeName,
+			MountPath: ConfigMountPathEnrichment,
+			SubPath:   container.Name + ConfigMountSubPathEnrichment,
+		},
+	)
 }
 
 func AddInitConfigVolumeMount(container *corev1.Container) {

@@ -7,7 +7,6 @@ import (
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
@@ -59,7 +58,17 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 			ContainerName: c.Name,
 		})
 
-		volumes.AddConfigVolumeMount(c, request.IsSplitMountsFFEnabled())
+		if volumes.IsConfigVolumeMountNeeded(c, request.IsSplitMountsFFEnabled()) {
+			volumes.AddConfigVolumeMount(c)
+		}
+
+		if volumes.IsOneAgentConfigVolumeMountNeeded(c, request.IsSplitMountsFFEnabled(), request.DynaKube.OneAgent().IsAppInjectionNeeded()) {
+			volumes.AddOneAgentConfigVolumeMount(c)
+		}
+
+		if volumes.IsEnrichmentConfigVolumeMountNeeded(c, request.IsSplitMountsFFEnabled(), request.DynaKube.MetadataEnrichment().IsEnabled()) {
+			volumes.AddEnrichmentConfigVolumeMount(c)
+		}
 	}
 
 	if len(attributes) > 0 {
@@ -76,13 +85,14 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 	return false, nil
 }
 
-func isInjected(container corev1.Container, splitMountsEnabled bool) bool {
-	if splitMountsEnabled {
-		return mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPathOneAgent) ||
-			mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPathEnrichment)
+func isInjected(container corev1.Container, splitMountsEnabled bool, isAppInjectionEnabled bool, isMetadataEnrichmentEnabled bool) bool {
+	if !volumes.IsConfigVolumeMountNeeded(&container, splitMountsEnabled) &&
+		!volumes.IsOneAgentConfigVolumeMountNeeded(&container, splitMountsEnabled, isAppInjectionEnabled) &&
+		!volumes.IsEnrichmentConfigVolumeMountNeeded(&container, splitMountsEnabled, isMetadataEnrichmentEnabled) {
+		return true
 	}
 
-	return mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPath)
+	return false
 }
 
 func createImageInfo(imageURI string) containerattr.ImageInfo { // TODO: move to bootstrapper repo
