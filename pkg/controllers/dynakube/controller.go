@@ -375,12 +375,13 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconcilerBuilder(controller.client,
+	err = controller.injectionReconcilerBuilder(
+		controller.client,
 		controller.apiReader,
 		dynatraceClient,
 		istioClient,
-		dk).
-		Reconcile(ctx)
+		dk,
+	).Reconcile(ctx)
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
