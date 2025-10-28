@@ -95,6 +95,7 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Named("dynakube-controller").
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
+		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Complete(controller)
@@ -217,11 +218,6 @@ func (controller *Controller) handleError(
 
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-
-	if dk.Status.Phase == dynatracestatus.Deploying {
-		// Speed up waiting for resources to be ready
-		return reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
