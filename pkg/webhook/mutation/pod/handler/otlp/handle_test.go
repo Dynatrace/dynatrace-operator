@@ -159,7 +159,6 @@ func TestHandler_Handle(t *testing.T) {
 		mockEnvVarMutator.On("IsEnabled", mock.Anything).Return(true)
 		mockEnvVarMutator.On("IsInjected", mock.Anything).Return(false)
 		mockEnvVarMutator.On("Mutate", mock.Anything).Return(nil)
-		mockResourceAttributeMutator.On("IsEnabled", mock.Anything).Return(true)
 		mockResourceAttributeMutator.On("Mutate", mock.Anything).Return(nil)
 
 		dk := getTestDynakube()
