@@ -114,7 +114,11 @@ test/e2e/extensions/upgrade: manifests/crd/helm
 test/e2e/applicationmonitoring/metadataenrichment: manifests/crd/helm
 	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "metadata_enrichment" -args $(SKIPCLEANUP)
 
-## Runs Application Monitoring label versio detection e2e test only
+## Runs Application Monitoring otlp-exporter-configuration e2e test only
+test/e2e/applicationmonitoring/otlpexporterconfiguration: manifests/crd/helm
+	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "otlp_exporter_configuration" -args $(SKIPCLEANUP)
+
+## Runs Application Monitoring label version detection e2e test only
 test/e2e/applicationmonitoring/labelversion: manifests/crd/helm
 	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "label_version" -args $(SKIPCLEANUP)
 
