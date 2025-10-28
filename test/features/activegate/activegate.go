@@ -266,6 +266,7 @@ func assertReadOnlyRootFilesystems(t *testing.T, activeGatePod corev1.Pod) {
 	for _, c := range activeGatePod.Spec.InitContainers {
 		if !strings.Contains(c.Name, "istio") {
 			initContainer = &c
+			break
 		}
 	}
 	require.NotNil(t, initContainer, "Missing non-istio InitContainer")

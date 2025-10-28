@@ -63,7 +63,7 @@ spec:
     spec:
       serviceAccountName: proxy
       containers:
-      - image: ghcr.io/b4tman/squid-ssl-bump:6.9
+      - image: ghcr.io/b4tman/squid-ssl-bump@sha256:248e5220c2afe14feffaf12938e7d49bb3ab1a0c5d62437a34adde263c2305a3 # 6.9
         name: squid
         env:
           - name: SQUID_CONFIG_FILE
