@@ -98,7 +98,7 @@ func newWebhook( //nolint:revive
 			kubeClient,
 			apiReader,
 			otlpexporter.New(),
-			otlpresourceattributes.New(kubeClient),
+			otlpresourceattributes.New(apiReader),
 		),
 		kubeClient:       kubeClient,
 		apiReader:        apiReader,
