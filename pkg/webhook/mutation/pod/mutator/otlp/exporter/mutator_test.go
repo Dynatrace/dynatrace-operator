@@ -622,12 +622,14 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 				}
 			}
 			assert.True(t, mountFound, "expected cert mount on container %s", c.Name)
-			// Certificate env vars injected because override=true passed to injectors
+
+			// Certificate env vars injected because addCertificate=true passed to injectors
 			for _, e := range c.Env {
 				if e.Name == OTLPTraceCertificateEnv || e.Name == OTLPMetricsCertificateEnv || e.Name == OTLPLogsCertificateEnv {
 					assert.Equal(t, certPath, e.Value)
 				}
 			}
+
 			assert.True(t, env.IsIn(c.Env, OTLPTraceCertificateEnv))
 			assert.True(t, env.IsIn(c.Env, OTLPMetricsCertificateEnv))
 			assert.True(t, env.IsIn(c.Env, OTLPLogsCertificateEnv))
