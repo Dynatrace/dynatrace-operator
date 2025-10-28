@@ -27,13 +27,13 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without traces -> disabled",
-			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterCofigurationSpec{}},
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with traces -> enabled and injects",
-			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterCofigurationSpec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
 			expectEnabled:  true,
 			expectInjected: true,
 			expectEnvVars:  []string{OTLPTraceEndpointEnv, OTLPTraceProtocolEnv},
@@ -74,13 +74,13 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without metrics -> disabled",
-			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterCofigurationSpec{}},
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with metrics -> enabled and injects",
-			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterCofigurationSpec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
 			expectEnabled:  true,
 			expectInjected: true,
 			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv},
@@ -121,13 +121,13 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without logs -> disabled",
-			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterCofigurationSpec{}},
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with logs -> enabled and injects",
-			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterCofigurationSpec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
 			expectEnabled:  true,
 			expectInjected: true,
 			expectEnvVars:  []string{OTLPLogsEndpointEnv, OTLPLogsProtocolEnv},

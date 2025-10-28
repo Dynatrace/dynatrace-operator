@@ -26,7 +26,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -125,7 +125,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	}
 	if in.OTLPExporterConfiguration != nil {
 		in, out := &in.OTLPExporterConfiguration, &out.OTLPExporterConfiguration
-		*out = new(otlp.Spec)
+		*out = new(otlp.ExporterCofigurationSpec)
 		(*in).DeepCopyInto(*out)
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)

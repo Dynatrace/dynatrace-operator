@@ -103,7 +103,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Configuration for OTLP Exporter Configuration
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OTLP Exporter Configuration",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	OTLPExporterConfiguration *otlp.Spec `json:"otlpExporterConfiguration,omitempty"`
+	OTLPExporterConfiguration *otlp.ExporterCofigurationSpec `json:"otlpExporterConfiguration,omitempty"`
 
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).

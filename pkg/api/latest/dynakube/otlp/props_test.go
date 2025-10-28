@@ -36,14 +36,14 @@ func TestSpec_IsOverrideEnabled(t *testing.T) {
 		},
 		{
 			name: "overrideEnvVars disabled",
-			config: ExporterConfiguration{Spec: &Spec{
+			config: ExporterConfiguration{Spec: &ExporterCofigurationSpec{
 				OverrideEnvVars: ptr.To(false),
 			}},
 			expected: false,
 		},
 		{
 			name: "overrideEnvVars enabled",
-			config: ExporterConfiguration{Spec: &Spec{
+			config: ExporterConfiguration{Spec: &ExporterCofigurationSpec{
 				OverrideEnvVars: ptr.To(true),
 			}},
 			expected: true,
@@ -71,7 +71,7 @@ func TestSpec_IsMetricsEnabled(t *testing.T) {
 		{
 			name: "metrics enabled",
 			config: ExporterConfiguration{
-				Spec: &Spec{
+				Spec: &ExporterCofigurationSpec{
 					Signals: SignalConfiguration{
 						Metrics: &MetricsSignal{},
 					},
@@ -102,7 +102,7 @@ func TestSpec_IsTracesEnabled(t *testing.T) {
 		{
 			name: "traces enabled",
 			config: ExporterConfiguration{
-				Spec: &Spec{
+				Spec: &ExporterCofigurationSpec{
 					Signals: SignalConfiguration{
 						Traces: &TracesSignal{},
 					},
@@ -133,7 +133,7 @@ func TestSpec_IsLogsEnabled(t *testing.T) {
 		{
 			name: "logs enabled",
 			config: ExporterConfiguration{
-				Spec: &Spec{
+				Spec: &ExporterCofigurationSpec{
 					Signals: SignalConfiguration{
 						Logs: &LogsSignal{},
 					},
@@ -163,17 +163,17 @@ func TestSpec_IsEnabled(t *testing.T) {
 		},
 		{
 			name:     "enabled (traces)",
-			config:   ExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Traces: &TracesSignal{}}}},
+			config:   ExporterConfiguration{Spec: &ExporterCofigurationSpec{Signals: SignalConfiguration{Traces: &TracesSignal{}}}},
 			expected: true,
 		},
 		{
 			name:     "enabled (metrics)",
-			config:   ExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Metrics: &MetricsSignal{}}}},
+			config:   ExporterConfiguration{Spec: &ExporterCofigurationSpec{Signals: SignalConfiguration{Metrics: &MetricsSignal{}}}},
 			expected: true,
 		},
 		{
 			name:     "enabled (logs)",
-			config:   ExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Logs: &LogsSignal{}}}},
+			config:   ExporterConfiguration{Spec: &ExporterCofigurationSpec{Signals: SignalConfiguration{Logs: &LogsSignal{}}}},
 			expected: true,
 		},
 	}

@@ -19,12 +19,12 @@ package otlp
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 type ExporterConfiguration struct {
-	*Spec
+	Spec *ExporterCofigurationSpec
 }
 
 // +kubebuilder:object:generate=true
 
-type Spec struct {
+type ExporterCofigurationSpec struct {
 
 	// The OpenTelemetry signals that should be configured to be sent via OTLP
 	Signals SignalConfiguration `json:"signals,omitempty"`

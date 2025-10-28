@@ -26,9 +26,9 @@ func New() dtwebhook.Mutator {
 }
 
 func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
-	otlpExporterConfig := request.DynaKube.OTLPExporterConfiguration()
+	otlpExporterConfiguration := request.DynaKube.OTLPExporterConfiguration()
 
-	if !otlpExporterConfig.IsEnabled() {
+	if !otlpExporterConfiguration.IsEnabled() {
 		log.Debug("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 		return false
@@ -46,8 +46,8 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 
 	enabledOnNamespace := true
 
-	if otlpExporterConfig.NamespaceSelector.Size() > 0 {
-		selector, _ := metav1.LabelSelectorAsSelector(&otlpExporterConfig.NamespaceSelector)
+	if otlpExporterConfiguration.Spec.NamespaceSelector.Size() > 0 {
+		selector, _ := metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.Spec.NamespaceSelector)
 
 		enabledOnNamespace = selector.Matches(labels.Set(request.Namespace.Labels))
 	}

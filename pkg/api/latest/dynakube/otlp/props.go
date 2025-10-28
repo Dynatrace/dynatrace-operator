@@ -25,17 +25,17 @@ func (s *ExporterConfiguration) IsEnabled() bool {
 }
 
 func (s *ExporterConfiguration) IsOverrideEnvVarsEnabled() bool {
-	return s.Spec != nil && s.OverrideEnvVars != nil && *s.OverrideEnvVars
+	return s.Spec != nil && s.Spec.OverrideEnvVars != nil && *s.Spec.OverrideEnvVars
 }
 
 func (s *ExporterConfiguration) IsMetricsEnabled() bool {
-	return s.Spec != nil && s.Signals.Metrics != nil
+	return s.Spec != nil && s.Spec.Signals.Metrics != nil
 }
 
 func (s *ExporterConfiguration) IsTracesEnabled() bool {
-	return s.Spec != nil && s.Signals.Traces != nil
+	return s.Spec != nil && s.Spec.Signals.Traces != nil
 }
 
 func (s *ExporterConfiguration) IsLogsEnabled() bool {
-	return s.Spec != nil && s.Signals.Logs != nil
+	return s.Spec != nil && s.Spec.Signals.Logs != nil
 }

@@ -185,7 +185,7 @@ func TestTokens(t *testing.T) {
 	t.Run("otlp exporter configuration enabled => dataingest token missing rights => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlp.Spec{
+				OTLPExporterConfiguration: &otlp.ExporterCofigurationSpec{
 					Signals: otlp.SignalConfiguration{
 						Traces:  &otlp.TracesSignal{},
 						Metrics: &otlp.MetricsSignal{},
@@ -212,7 +212,7 @@ func TestTokens(t *testing.T) {
 	t.Run("otlp exporter configuration enabled => dataingest token has rights => success", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlp.Spec{
+				OTLPExporterConfiguration: &otlp.ExporterCofigurationSpec{
 					Signals: otlp.SignalConfiguration{
 						Traces:  &otlp.TracesSignal{},
 						Metrics: &otlp.MetricsSignal{},
