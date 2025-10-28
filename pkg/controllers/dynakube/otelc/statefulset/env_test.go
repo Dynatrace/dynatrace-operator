@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -15,6 +16,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	testNoProxyFFValue = "test-no-proxy"
 )
 
 func TestEnvironmentVariables(t *testing.T) {
@@ -329,6 +335,48 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envNoProxy, Value: tt.expectedNoProxy})
 		})
 	}
+}
+
+func TestCustomNoProxy(t *testing.T) {
+	t.Run("no-proxy ff not used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        testDynakubeName,
+				Namespace:   testNamespaceName,
+				Annotations: map[string]string{},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+		}
+		noProxy := getDynakubeNoProxyEnvValue(dk)
+		assert.Equal(t, dk.Name+"-activegate."+dk.Namespace+".svc", noProxy)
+	})
+
+	t.Run("no-proxy ff used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakubeName,
+				Namespace: testNamespaceName,
+				Annotations: map[string]string{
+					exp.NoProxyKey: testNoProxyFFValue,
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+		}
+		noProxy := getDynakubeNoProxyEnvValue(dk)
+		assert.Equal(t, dk.Name+"-activegate."+dk.Namespace+".svc"+","+testNoProxyFFValue, noProxy)
+	})
 }
 
 func getWorkload(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
