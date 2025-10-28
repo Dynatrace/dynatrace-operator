@@ -34,7 +34,7 @@ const (
 )
 
 func TestNoProxyConsistency(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("NO_PROXY matches DT_ENDPOINT if proxy is set and local AG defined", func(t *testing.T) {
 		dk := createDynaKube(true)
