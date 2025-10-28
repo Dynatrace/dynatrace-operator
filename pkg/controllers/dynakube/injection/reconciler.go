@@ -15,8 +15,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -82,8 +84,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return goerrors.Join(setupErrors...)
 	}
 
-	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichment().IsEnabled() {
-		defer r.cleanup(ctx)
+	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichment().IsEnabled() && !r.dk.OTLPExporterConfiguration().IsEnabled() {
+		defer r.unmap(ctx)
 	} else {
 		dkMapper := r.createDynakubeMapper(ctx)
 
@@ -92,11 +94,19 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 			setupErrors = append(setupErrors, err)
 		}
+	}
 
-		err := r.generateInitSecret(ctx)
-		if err != nil {
-			setupErrors = append(setupErrors, err)
-		}
+	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
+	if err != nil {
+		return err
+	}
+
+	if err := r.setupInitSecret(ctx, namespaces); err != nil {
+		setupErrors = append(setupErrors, err)
+	}
+
+	if err := r.setupOTLPSecret(ctx, namespaces); err != nil {
+		setupErrors = append(setupErrors, err)
 	}
 
 	if len(setupErrors) > 0 {
@@ -108,22 +118,36 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) cleanup(ctx context.Context) {
-	if meta.FindStatusCondition(*r.dk.Conditions(), codeModulesInjectionConditionType) == nil &&
-		meta.FindStatusCondition(*r.dk.Conditions(), metaDataEnrichmentConditionType) == nil {
-		return
-	}
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), codeModulesInjectionConditionType)
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), metaDataEnrichmentConditionType)
+func (r *Reconciler) setupOTLPSecret(ctx context.Context, namespaces []corev1.Namespace) error {
+	if r.dk.OTLPExporterConfiguration().IsEnabled() {
+		if err := r.generateOTLPSecret(ctx, namespaces); err != nil {
+			return err
+		}
 
+		setOTLPExporterConfigurationCondition(r.dk.Conditions())
+	} else {
+		r.cleanupOTLPSecret(ctx, namespaces)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) setupInitSecret(ctx context.Context, namespaces []corev1.Namespace) error {
+	if r.dk.OneAgent().IsAppInjectionNeeded() || r.dk.MetadataEnrichment().IsEnabled() {
+		if err := r.generateInitSecret(ctx, namespaces); err != nil {
+			return err
+		}
+	} else {
+		r.cleanupInitSecret(ctx, namespaces)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) unmap(ctx context.Context) {
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
 	if err != nil {
 		log.Error(err, "failed to list namespaces for dynakube", "dkName", r.dk.Name)
-	}
-
-	err = bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, r.dk)
-	if err != nil {
-		log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
 	}
 
 	dkMapper := r.createDynakubeMapper(ctx)
@@ -163,11 +187,24 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) generateInitSecret(ctx context.Context) error {
-	err := bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk)
+func (r *Reconciler) generateInitSecret(ctx context.Context, namespaces []corev1.Namespace) error {
+	err := bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk, namespaces)
 	if err != nil {
 		if conditions.IsKubeAPIError(err) {
 			conditions.SetKubeAPIError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1.Namespace) error {
+	err := exporterconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk, namespaces)
+	if err != nil {
+		if conditions.IsKubeAPIError(err) {
+			conditions.SetKubeAPIError(r.dk.Conditions(), otlpExporterConfigurationConditionType, err)
 		}
 
 		return err
@@ -203,4 +240,32 @@ func (r *Reconciler) createDynakubeMapper(ctx context.Context) *mapper.DynakubeM
 	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, operatorNamespace, r.dk)
 
 	return &dkMapper
+}
+
+func (r *Reconciler) cleanupInitSecret(ctx context.Context, namespaces []corev1.Namespace) {
+	if meta.FindStatusCondition(*r.dk.Conditions(), codeModulesInjectionConditionType) == nil &&
+		meta.FindStatusCondition(*r.dk.Conditions(), metaDataEnrichmentConditionType) == nil {
+		return
+	}
+
+	err := bootstrapperconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, r.dk)
+	if err != nil {
+		log.Error(err, "failed to clean-up bootstrapper code module injection init-secrets")
+	}
+
+	meta.RemoveStatusCondition(r.dk.Conditions(), codeModulesInjectionConditionType)
+	meta.RemoveStatusCondition(r.dk.Conditions(), metaDataEnrichmentConditionType)
+}
+
+func (r *Reconciler) cleanupOTLPSecret(ctx context.Context, namespaces []corev1.Namespace) {
+	if meta.FindStatusCondition(*r.dk.Conditions(), otlpExporterConfigurationConditionType) == nil {
+		return
+	}
+
+	err := exporterconfig.Cleanup(ctx, r.client, r.apiReader, namespaces, r.dk)
+	if err != nil {
+		log.Error(err, "failed to clean-up otlp exporter configuration secrets")
+	}
+
+	meta.RemoveStatusCondition(r.dk.Conditions(), otlpExporterConfigurationConditionType)
 }
