@@ -450,7 +450,11 @@ func compareNodeConfigurationCollectorTemplateSpec(t *testing.T, oldSpec kspm.No
 	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
-	assert.Equal(t, oldSpec.NodeAffinity, newSpec.NodeAffinity)
+	if newSpec.NodeAffinity != nil {
+		assert.Equal(t, &oldSpec.NodeAffinity, newSpec.NodeAffinity)
+	} else {
+		assert.Empty(t, oldSpec.NodeAffinity)
+	}
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
@@ -836,7 +840,7 @@ func getNewNodeConfigurationCollectorTemplateSpec() kspmlatest.NodeConfiguration
 				Request: "claim-request",
 			}},
 		},
-		NodeAffinity: corev1.NodeAffinity{
+		NodeAffinity: &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{{
 					MatchExpressions: []corev1.NodeSelectorRequirement{

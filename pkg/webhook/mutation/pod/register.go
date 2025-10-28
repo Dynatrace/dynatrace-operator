@@ -95,6 +95,8 @@ func newWebhook( //nolint:revive
 			oneagent.NewMutator(),
 		),
 		otlpHandler: otlphandler.New(
+			kubeClient,
+			apiReader,
 			otlpexporter.New(),
 			otlpresourceattributes.New(kubeClient),
 		),

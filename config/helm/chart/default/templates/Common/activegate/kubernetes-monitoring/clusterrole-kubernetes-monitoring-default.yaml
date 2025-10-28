@@ -1,4 +1,5 @@
-{{- if or (eq .Values.rbac.activeGate.create true) (eq .Values.rbac.kspm.create true) }}
+{{- if .Values.rbac.kubernetesMonitoring.create }}
+{{- include "validation.rbac.kubemon" . }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +16,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: dynatrace-kubernetes-monitoring
+  name: dynatrace-kubernetes-monitoring-default
   labels:
+    rbac.dynatrace.com/aggregate-to-monitoring: "true"
     {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
 rules:
   - apiGroups:
@@ -123,30 +125,4 @@ rules:
       - /livez
     verbs:
       - get
-  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
-  - apiGroups:
-      - security.openshift.io
-    resourceNames:
-      - privileged
-      - nonroot-v2
-    resources:
-      - securitycontextconstraints
-    verbs:
-      - use
-  {{ end }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: dynatrace-kubernetes-monitoring
-  labels:
-    {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: dynatrace-kubernetes-monitoring
-subjects:
-  - kind: ServiceAccount
-    name: dynatrace-kubernetes-monitoring
-    namespace: {{ .Release.Namespace }}
 {{ end }}
