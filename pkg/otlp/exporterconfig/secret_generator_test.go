@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -21,7 +22,10 @@ import (
 
 const (
 	testDataIngestToken = "test-ingest-token"
+	testCrt             = "test-cert"
 	oldDataIngestToken  = "old-data-ingest-token"
+	oldTestCert         = "old-test-cert"
+	tlsSecretName       = "ag-tls-secret"
 
 	testDynakube   = "test-dynakube"
 	testNamespace  = "test-namespace"
@@ -43,7 +47,7 @@ func TestNewSecretGenerator(t *testing.T) {
 }
 
 func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
-	t.Run("no OTLP exporter config enabled - do not create secret", func(t *testing.T) {
+	t.Run("no OTLP exporter config enabled - do not create secrets", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -67,6 +71,9 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
+
+		assertSecretNotFound(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
+		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
 	})
 	t.Run("no namespaces provided - should not error", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -107,6 +114,10 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
 					Signals: otlpexporterconfiguration.SignalConfiguration{},
 				},
+				ActiveGate: activegate.Spec{
+					TLSSecretName: tlsSecretName,
+					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
+				},
 			},
 		}
 
@@ -117,6 +128,9 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(testDataIngestToken),
+			}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
+				dynakube.TLSCert: []byte(testCrt),
 			}),
 		)
 
@@ -141,7 +155,20 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		var sourceCertSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceCertsSecretName(dk.Name), Namespace: dk.Namespace}, &sourceCertSecret)
+		require.NoError(t, err)
+
+		assert.Equal(t, testCrt, string(sourceCertSecret.Data[consts.ActiveGateCertDataName]))
+
+		var certSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterCertsSecretName, Namespace: testNamespace}, &certSecret)
+		require.NoError(t, err)
+		assert.NotEmpty(t, secret.Data)
+
+		assert.Equal(t, testCrt, string(certSecret.Data[consts.ActiveGateCertDataName]))
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -155,6 +182,10 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
 					Signals: otlpexporterconfiguration.SignalConfiguration{},
 				},
+				ActiveGate: activegate.Spec{
+					TLSSecretName: tlsSecretName,
+					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
+				},
 			},
 		}
 
@@ -166,11 +197,20 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(testDataIngestToken),
 			}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
+				dynakube.TLSCert: []byte(testCrt),
+			}),
 			clientSecret(consts.OTLPExporterSecretName, testNamespace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(oldDataIngestToken),
 			}),
 			clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(oldDataIngestToken),
+			}),
+			clientSecret(consts.OTLPExporterCertsSecretName, testNamespace, map[string][]byte{
+				consts.ActiveGateCertDataName: []byte(oldTestCert),
+			}),
+			clientSecret(GetSourceCertsSecretName(dk.Name), dk.Namespace, map[string][]byte{
+				consts.ActiveGateCertDataName: []byte(oldTestCert),
 			}),
 		)
 
@@ -195,7 +235,20 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
 		assert.Equal(t, secret.Data, sourceSecret.Data)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		var sourceCertSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceCertsSecretName(dk.Name), Namespace: dk.Namespace}, &sourceCertSecret)
+		require.NoError(t, err)
+
+		assert.Equal(t, testCrt, string(sourceCertSecret.Data[consts.ActiveGateCertDataName]))
+
+		var certSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterCertsSecretName, Namespace: testNamespace}, &certSecret)
+		require.NoError(t, err)
+		assert.NotEmpty(t, secret.Data)
+
+		assert.Equal(t, testCrt, string(certSecret.Data[consts.ActiveGateCertDataName]))
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
@@ -223,7 +276,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		err := secretGenerator.GenerateForDynakube(t.Context(), dk, nil)
 		require.Error(t, err)
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionFalse, c.Status)
 	})
@@ -231,7 +284,13 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	t.Run("generate secrets for multiple namespaces (skip terminating)", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
-			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{}},
+			Spec: dynakube.DynaKubeSpec{
+				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{},
+				ActiveGate: activegate.Spec{
+					TLSSecretName: tlsSecretName,
+					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
+				},
+			},
 		}
 
 		terminatingNS := clientInjectedNamespace("terminating-ns", testDynakube)
@@ -246,6 +305,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			namespace2,
 			terminatingNS,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCert: []byte(testCrt)}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -255,8 +315,12 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		// replicated in active namespaces
 		assertSecretExists(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretExists(t, clt, consts.OTLPExporterSecretName, testNamespace2)
+
+		assertSecretExists(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
+		assertSecretExists(t, clt, consts.OTLPExporterCertsSecretName, testNamespace2)
 		// not replicated into terminating namespace
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, "terminating-ns")
+		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, "terminating-ns")
 	})
 
 	t.Run("token secret missing ingest token key -> return error", func(t *testing.T) {
@@ -276,17 +340,24 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 		require.Error(t, secretGenerator.GenerateForDynakube(t.Context(), dk, nil))
 
-		c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
 		assert.Equal(t, metav1.ConditionFalse, c.Status)
 
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
+		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
 	})
 
 	t.Run("no matching namespaces -> only source secret created", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
-			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{}},
+			Spec: dynakube.DynaKubeSpec{
+				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{},
+				ActiveGate: activegate.Spec{
+					TLSSecretName: tlsSecretName,
+					Capabilities:  []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName},
+				},
+			},
 		}
 
 		// namespace without injection label
@@ -296,6 +367,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			nonInjected,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCert: []byte(testCrt)}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -304,8 +376,75 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		// source secret exists
 		assertSecretExists(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
+		assertSecretExists(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
 		// replicated secret should not exist (no matching namespaces)
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, "plain-ns")
+		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, "plain-ns")
+	})
+
+	t.Run("missing tls secret referenced -> error", func(t *testing.T) {
+		tlsSecretName := "missing-tls"
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					TLSSecretName: tlsSecretName,
+					Capabilities:  []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
+				},
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
+		)
+
+		sg := NewSecretGenerator(clt, clt, dtclientmock.NewClient(t))
+
+		require.Error(t, sg.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace}))
+
+		assertSecretNotFound(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
+		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
+	})
+
+	t.Run("tls secret missing tls.crt key -> error", func(t *testing.T) {
+		tlsSecretName := "missing-tls"
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespaceDynatrace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					TLSSecretName: tlsSecretName,
+					Capabilities:  []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
+				},
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{"unknown": []byte("value")}),
+		)
+
+		sg := NewSecretGenerator(clt, clt, dtclientmock.NewClient(t))
+
+		require.Error(t, sg.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace}))
+
+		assertSecretNotFound(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
+		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
 	})
 }
 
@@ -318,7 +457,7 @@ func TestCleanup(t *testing.T) {
 		Spec: dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
 			Conditions: []metav1.Condition{
-				{Type: ConditionType},
+				{Type: ConfigConditionType},
 				{Type: "other"},
 			},
 		},
@@ -333,6 +472,10 @@ func TestCleanup(t *testing.T) {
 		clientSecret(consts.OTLPExporterSecretName, testNamespace, nil),
 		clientSecret(consts.OTLPExporterSecretName, testNamespace2, nil),
 		clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, nil),
+
+		clientSecret(consts.OTLPExporterCertsSecretName, testNamespace, nil),
+		clientSecret(consts.OTLPExporterCertsSecretName, testNamespace2, nil),
+		clientSecret(GetSourceCertsSecretName(dk.Name), dk.Namespace, nil),
 	)
 	namespaces := []corev1.Namespace{
 		{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}},
@@ -346,7 +489,11 @@ func TestCleanup(t *testing.T) {
 	assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
 	assertSecretNotFound(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
 
-	c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+	assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
+	assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace2)
+	assertSecretNotFound(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
+
+	c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 	assert.Nil(t, c)
 }
 

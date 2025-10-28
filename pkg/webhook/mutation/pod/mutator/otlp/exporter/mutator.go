@@ -3,6 +3,7 @@ package exporter
 import (
 	"fmt"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
@@ -13,6 +14,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+)
+
+const (
+	activeGateTrustedCertVolumeName = "dynatrace-certs"
+	exporterCertsMountPath          = "/dynatrace-certs"
 )
 
 var (
@@ -114,6 +120,8 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		},
 	}
 
+	shouldAddCertificate := request.DynaKube.ActiveGate().IsEnabled() && request.DynaKube.ActiveGate().HasCaCert()
+
 	override := otlpExporterConfig.IsOverrideEnvVarsEnabled()
 
 	// Create per-signal injectors
@@ -132,14 +140,26 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 			continue
 		}
 
+		if shouldAddCertificate {
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: exporterCertsMountPath,
+				ReadOnly:  true,
+			})
+		}
+
 		// need to add the token env var first so that it can be used in other env vars
 		c.Env = env.AddOrUpdate(c.Env, dtAPITokenEnvVar)
 
 		for _, inj := range injectors {
-			if inj.Inject(c, apiURL, override) {
+			if inj.Inject(c, apiURL, shouldAddCertificate) {
 				mutated = true
 			}
 		}
+	}
+
+	if shouldAddCertificate && mutated {
+		addActiveGateCertVolume(request.DynaKube, request.Pod)
 	}
 
 	return mutated, nil
@@ -199,4 +219,22 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 		pod.Annotations[dtwebhook.AnnotationOTLPInjected] = "false"
 		pod.Annotations[dtwebhook.AnnotationOTLPReason] = reason
 	}
+}
+
+func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
+	if !dk.ActiveGate().IsEnabled() || !dk.ActiveGate().HasCaCert() {
+		return
+	}
+
+	defaultMode := int32(420)
+	agCertVolume := corev1.Volume{
+		Name: activeGateTrustedCertVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				DefaultMode: &defaultMode,
+				SecretName:  consts.OTLPExporterCertsSecretName,
+			},
+		},
+	}
+	pod.Spec.Volumes = append(pod.Spec.Volumes, agCertVolume)
 }
