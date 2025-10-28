@@ -2,9 +2,7 @@ package version
 
 import (
 	"fmt"
-	"math"
 	"runtime"
-	"runtime/debug"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
@@ -39,6 +37,4 @@ func LogVersionToLogger(log logd.Logger) {
 		"goVersion", runtime.Version(),
 		"platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	)
-
-	log.Debug("PREVIOUS GOMEMLIMIT", "value", debug.SetMemoryLimit(math.MaxInt64))
 }
