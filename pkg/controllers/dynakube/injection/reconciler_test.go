@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -108,14 +108,14 @@ func TestReconciler(t *testing.T) {
 						},
 					},
 				},
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+				OTLPExporterConfiguration: &otlp.Spec{
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testNamespaceSelectorLabel: testDynakube,
 						},
 					},
-					Signals: otlpexporterconfiguration.SignalConfiguration{
-						Metrics: &otlpexporterconfiguration.MetricsSignal{},
+					Signals: otlp.SignalConfiguration{
+						Metrics: &otlp.MetricsSignal{},
 					},
 				},
 			},

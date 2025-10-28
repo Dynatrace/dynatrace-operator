@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package otlpexporterconfiguration
+package otlp
 
-func (s *OTLPExporterConfiguration) IsEnabled() bool {
+func (s *ExporterConfiguration) IsEnabled() bool {
 	if s.Spec == nil {
 		return false
 	}
@@ -24,18 +24,18 @@ func (s *OTLPExporterConfiguration) IsEnabled() bool {
 	return s.IsTracesEnabled() || s.IsMetricsEnabled() || s.IsLogsEnabled()
 }
 
-func (s *OTLPExporterConfiguration) IsOverrideEnvVarsEnabled() bool {
+func (s *ExporterConfiguration) IsOverrideEnvVarsEnabled() bool {
 	return s.Spec != nil && s.OverrideEnvVars != nil && *s.OverrideEnvVars
 }
 
-func (s *OTLPExporterConfiguration) IsMetricsEnabled() bool {
+func (s *ExporterConfiguration) IsMetricsEnabled() bool {
 	return s.Spec != nil && s.Signals.Metrics != nil
 }
 
-func (s *OTLPExporterConfiguration) IsTracesEnabled() bool {
+func (s *ExporterConfiguration) IsTracesEnabled() bool {
 	return s.Spec != nil && s.Signals.Traces != nil
 }
 
-func (s *OTLPExporterConfiguration) IsLogsEnabled() bool {
+func (s *ExporterConfiguration) IsLogsEnabled() bool {
 	return s.Spec != nil && s.Signals.Logs != nil
 }

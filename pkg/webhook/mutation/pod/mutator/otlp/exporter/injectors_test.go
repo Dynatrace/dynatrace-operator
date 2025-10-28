@@ -3,7 +3,7 @@ package exporter
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -14,7 +14,7 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		cfg            *otlpexporterconfiguration.OTLPExporterConfiguration
+		cfg            *otlp.ExporterConfiguration
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -27,13 +27,13 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without traces -> disabled",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{}},
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with traces -> enabled and injects",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Traces: &otlpexporterconfiguration.TracesSignal{}}}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
 			expectEnabled:  true,
 			expectInjected: true,
 			expectEnvVars:  []string{OTLPTraceEndpointEnv, OTLPTraceProtocolEnv},
@@ -61,7 +61,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		cfg            *otlpexporterconfiguration.OTLPExporterConfiguration
+		cfg            *otlp.ExporterConfiguration
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -74,13 +74,13 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without metrics -> disabled",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{}},
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with metrics -> enabled and injects",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Metrics: &otlpexporterconfiguration.MetricsSignal{}}}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
 			expectEnabled:  true,
 			expectInjected: true,
 			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv},
@@ -108,7 +108,7 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		cfg            *otlpexporterconfiguration.OTLPExporterConfiguration
+		cfg            *otlp.ExporterConfiguration
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -121,13 +121,13 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without logs -> disabled",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{}},
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with logs -> enabled and injects",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Logs: &otlpexporterconfiguration.LogsSignal{}}}},
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.Spec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
 			expectEnabled:  true,
 			expectInjected: true,
 			expectEnvVars:  []string{OTLPLogsEndpointEnv, OTLPLogsProtocolEnv},
