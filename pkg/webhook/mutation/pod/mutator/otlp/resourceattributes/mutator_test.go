@@ -2,20 +2,20 @@ package resourceattributes
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 	"strings"
 	"testing"
 
 	latestdynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -88,7 +88,7 @@ func Test_getWorkloadInfo(t *testing.T) {
 				builder = builder.WithRuntimeObjects(tt.objects...)
 			}
 			client := builder.Build()
-			kind, name, err := getWorkloadInfo(context.Background(), client, tt.pod)
+			kind, name, err := getPodOwnerInfo(context.Background(), client, tt.pod)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -313,6 +313,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 				for _, e := range container.Env {
 					if e.Name == "OTEL_RESOURCE_ATTRIBUTES" {
 						val = e.Value
+
 						break
 					}
 				}
@@ -323,6 +324,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 					for _, envName := range []string{"K8S_PODNAME", "K8S_PODUID", "K8S_NODE_NAME"} {
 						assert.False(t, env.IsIn(container.Env, envName), "env var %s should not be injected", envName)
 					}
+
 					continue
 				}
 
@@ -407,7 +409,6 @@ func TestMutatorReinvoke(t *testing.T) {
 }
 
 func Test_appendAttribute(t *testing.T) {
-
 	b := &strings.Builder{}
 
 	b.WriteString("key=value")
