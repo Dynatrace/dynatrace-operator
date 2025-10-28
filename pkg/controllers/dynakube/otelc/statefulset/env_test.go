@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	testNoProxyFFValue = "test-no-proxy"
+	testNoProxyFFValue   = "test-no-proxy , other-test-no-proxy"
+	expectedNoProxyValue = "test-no-proxy,other-test-no-proxy"
 )
 
 func TestEnvironmentVariables(t *testing.T) {
@@ -375,7 +376,7 @@ func TestCustomNoProxy(t *testing.T) {
 			},
 		}
 		noProxy := getDynakubeNoProxyEnvValue(dk)
-		assert.Equal(t, dk.Name+"-activegate."+dk.Namespace+".svc"+","+testNoProxyFFValue, noProxy)
+		assert.Equal(t, dk.Name+"-activegate."+dk.Namespace+".svc"+","+expectedNoProxyValue, noProxy)
 	})
 }
 
