@@ -122,18 +122,23 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 }
 
 func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	if !dk.ActiveGate().HasCaCert() {
+		return nil, nil
+	}
 	data := map[string][]byte{}
 
-	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
+	agCert, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
 
-	if len(agCerts) != 0 {
-		data[consts.ActiveGateCertDataName] = agCerts
+	if len(agCert) == 0 {
+		return nil, errors.New("no active gate tls certificate found")
 	}
+
+	data[consts.ActiveGateCertDataName] = agCert
 
 	return data, nil
 }
