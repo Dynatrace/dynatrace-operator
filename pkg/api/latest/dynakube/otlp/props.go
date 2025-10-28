@@ -16,26 +16,26 @@ limitations under the License.
 
 package otlp
 
-func (s *ExporterConfiguration) IsEnabled() bool {
-	if s.Spec == nil {
+func (e *ExporterConfiguration) IsEnabled() bool {
+	if e.Spec == nil {
 		return false
 	}
 
-	return s.IsTracesEnabled() || s.IsMetricsEnabled() || s.IsLogsEnabled()
+	return e.IsTracesEnabled() || e.IsMetricsEnabled() || e.IsLogsEnabled()
 }
 
-func (s *ExporterConfiguration) IsOverrideEnvVarsEnabled() bool {
-	return s.Spec != nil && s.Spec.OverrideEnvVars != nil && *s.Spec.OverrideEnvVars
+func (e *ExporterConfiguration) IsOverrideEnvVarsEnabled() bool {
+	return e.Spec != nil && e.Spec.OverrideEnvVars != nil && *e.Spec.OverrideEnvVars
 }
 
-func (s *ExporterConfiguration) IsMetricsEnabled() bool {
-	return s.Spec != nil && s.Spec.Signals.Metrics != nil
+func (e *ExporterConfiguration) IsMetricsEnabled() bool {
+	return e.Spec != nil && e.Spec.Signals.Metrics != nil
 }
 
-func (s *ExporterConfiguration) IsTracesEnabled() bool {
-	return s.Spec != nil && s.Spec.Signals.Traces != nil
+func (e *ExporterConfiguration) IsTracesEnabled() bool {
+	return e.Spec != nil && e.Spec.Signals.Traces != nil
 }
 
-func (s *ExporterConfiguration) IsLogsEnabled() bool {
-	return s.Spec != nil && s.Spec.Signals.Logs != nil
+func (e *ExporterConfiguration) IsLogsEnabled() bool {
+	return e.Spec != nil && e.Spec.Signals.Logs != nil
 }
