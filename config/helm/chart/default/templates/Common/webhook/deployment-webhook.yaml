@@ -95,6 +95,7 @@ spec:
               value: ":{{ .Values.webhook.ports.healthProbe | default "10080" }}"
             - name: METRICS_BIND_ADDRESS
               value: ":{{ .Values.webhook.ports.metrics | default "8383" }}"
+            {{ include "dynatrace-operator.gomemlimit" .Values.webhook | nindent 12 }}
             {{- if .Values.debugLogs }}
             - name: LOG_LEVEL
               value: "debug"
