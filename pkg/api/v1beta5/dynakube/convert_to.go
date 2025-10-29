@@ -157,6 +157,12 @@ func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubela
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
+	if dst.ImageRef.Repository == "" {
+		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	}
+	if dst.ImageRef.Tag == "" {
+		dst.ImageRef.Tag = "latest"
+	}
 	dst.TLSRefName = src.TLSRefName
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
