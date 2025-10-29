@@ -9,9 +9,9 @@ type RuleType string
 const (
 	LabelRule          RuleType = "LABEL"
 	AnnotationRule     RuleType = "ANNOTATION"
-	Annotation         string             = "metadata.dynatrace.com"
-	Prefix                                = Annotation + "/"
-	namespaceKeyPrefix string             = "k8s.namespace."
+	Annotation         string   = "metadata.dynatrace.com"
+	Prefix                      = Annotation + "/"
+	namespaceKeyPrefix string   = "k8s.namespace."
 )
 
 type MetadataEnrichment struct {
@@ -32,6 +32,6 @@ type Spec struct {
 
 type Rule struct {
 	Type   RuleType `json:"type,omitempty"`
-	Source string             `json:"source,omitempty"`
-	Target string             `json:"target,omitempty"`
+	Source string   `json:"source,omitempty"`
+	Target string   `json:"target,omitempty"`
 }
