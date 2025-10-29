@@ -13,4 +13,6 @@ const (
 	LogMonitoringImageTag  = "1.309.59.20250319-140247"
 	KSPMImageRepo          = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector"
 	KSPMImageTag           = "1.5.2"
+	OtelCollectorImageRepo = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	OtelCollectorImageTag  = "latest"
 )

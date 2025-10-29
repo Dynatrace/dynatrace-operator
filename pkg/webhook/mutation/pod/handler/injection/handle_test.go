@@ -6,10 +6,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +37,26 @@ func TestHandleImpl(t *testing.T) {
 			Namespace: testNamespaceName,
 		},
 	}
+
+	t.Run("injection disabled => do not execute handler", func(t *testing.T) {
+		h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
+
+		dk := getTestDynakube()
+
+		dk.Spec.OneAgent = oneagent.Spec{}
+		dk.Spec.MetadataEnrichment = metadataenrichment.Spec{}
+
+		request := createTestMutationRequest(dk)
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		_, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
+		require.False(t, ok)
+
+		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
+		require.False(t, ok)
+	})
 
 	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
 		h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
@@ -305,7 +327,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 			},
 		}
 
-		setDynatraceInjectedAnnotation(&request)
+		annotations.SetInjected(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
@@ -324,7 +346,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 			},
 		}
 
-		setDynatraceInjectedAnnotation(&request)
+		annotations.SetInjected(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])

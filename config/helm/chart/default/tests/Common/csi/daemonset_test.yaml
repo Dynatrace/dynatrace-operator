@@ -102,6 +102,9 @@ tests:
               imagePullPolicy: Always
               args:
               - csi-init
+              env:
+              - name: GOMEMLIMIT
+                value: 90MiB
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
               resources:
@@ -179,6 +182,8 @@ tests:
                       fieldRef:
                         apiVersion: v1
                         fieldPath: spec.nodeName
+                  - name: GOMEMLIMIT
+                    value: 90MiB
                 image: image-name
                 imagePullPolicy: Always
                 livenessProbe:
@@ -319,6 +324,8 @@ tests:
                 env:
                   - name: DRIVER_REG_SOCK_PATH
                     value: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
+                  - name: GOMEMLIMIT
+                    value: 27MiB
                 image: image-name
                 imagePullPolicy: Always
                 name: registrar
@@ -351,6 +358,9 @@ tests:
                 image: image-name
                 imagePullPolicy: Always
                 name: liveness-probe
+                env:
+                - name: GOMEMLIMIT
+                  value: 27MiB
                 resources:
                   limits:
                     cpu: 20m
