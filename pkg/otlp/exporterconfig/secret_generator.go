@@ -139,7 +139,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 		return nil, errors.New("no active gate tls certificate found")
 	}
 
-	data[consts.ActiveGateCertDataName] = agCert
+	data[ActiveGateCertDataName] = agCert
 
 	return data, nil
 }

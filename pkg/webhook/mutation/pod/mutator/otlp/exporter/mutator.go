@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	activeGateTrustedCertVolumeName = "dynatrace-certs"
-	exporterCertsMountPath          = "/dynatrace-certs"
+	activeGateTrustedCertVolumeName = "otlp-dynatrace-certs"
+	exporterCertsMountPath          = "/otlp-dynatrace-certs"
 )
 
 var (
@@ -141,11 +141,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		}
 
 		if shouldAddCertificate {
-			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-				Name:      activeGateTrustedCertVolumeName,
-				MountPath: exporterCertsMountPath,
-				ReadOnly:  true,
-			})
+			ensureCertificateVolumeMounted(c)
 		}
 
 		// need to add the token env var first so that it can be used in other env vars
@@ -163,6 +159,26 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 	}
 
 	return mutated, nil
+}
+
+func ensureCertificateVolumeMounted(c *corev1.Container) {
+	alreadyMounted := false
+
+	for _, vm := range c.VolumeMounts {
+		if vm.Name == activeGateTrustedCertVolumeName {
+			alreadyMounted = true
+
+			break
+		}
+	}
+
+	if !alreadyMounted {
+		c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+			Name:      activeGateTrustedCertVolumeName,
+			MountPath: exporterCertsMountPath,
+			ReadOnly:  true,
+		})
+	}
 }
 
 func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, override bool) bool {
@@ -226,6 +242,13 @@ func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
 		return
 	}
 
+	// avoid duplicate volume additions on reinvocation or multiple container matches
+	for _, v := range pod.Spec.Volumes {
+		if v.Name == activeGateTrustedCertVolumeName {
+			return
+		}
+	}
+
 	defaultMode := int32(420)
 	agCertVolume := corev1.Volume{
 		Name: activeGateTrustedCertVolumeName,
@@ -236,5 +259,10 @@ func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
 			},
 		},
 	}
+
+	if pod.Spec.Volumes == nil {
+		pod.Spec.Volumes = []corev1.Volume{}
+	}
+
 	pod.Spec.Volumes = append(pod.Spec.Volumes, agCertVolume)
 }

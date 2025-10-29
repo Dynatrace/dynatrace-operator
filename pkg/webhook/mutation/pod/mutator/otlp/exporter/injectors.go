@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -108,5 +108,5 @@ func addEnvVarLiteralValue(c *corev1.Container, name string, value string) {
 }
 
 func getCertificatePath() string {
-	return fmt.Sprintf("%s/%s", exporterCertsMountPath, consts.ActiveGateCertDataName)
+	return fmt.Sprintf("%s/%s", exporterCertsMountPath, exporterconfig.ActiveGateCertDataName)
 }

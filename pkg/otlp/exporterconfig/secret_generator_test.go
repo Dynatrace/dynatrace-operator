@@ -159,14 +159,14 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceCertsSecretName(dk.Name), Namespace: dk.Namespace}, &sourceCertSecret)
 		require.NoError(t, err)
 
-		assert.Equal(t, testCrt, string(sourceCertSecret.Data[consts.ActiveGateCertDataName]))
+		assert.Equal(t, testCrt, string(sourceCertSecret.Data[ActiveGateCertDataName]))
 
 		var certSecret corev1.Secret
 		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterCertsSecretName, Namespace: testNamespace}, &certSecret)
 		require.NoError(t, err)
 		assert.NotEmpty(t, secret.Data)
 
-		assert.Equal(t, testCrt, string(certSecret.Data[consts.ActiveGateCertDataName]))
+		assert.Equal(t, testCrt, string(certSecret.Data[ActiveGateCertDataName]))
 
 		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)
@@ -207,10 +207,10 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				dtclient.DataIngestToken: []byte(oldDataIngestToken),
 			}),
 			clientSecret(consts.OTLPExporterCertsSecretName, testNamespace, map[string][]byte{
-				consts.ActiveGateCertDataName: []byte(oldTestCert),
+				ActiveGateCertDataName: []byte(oldTestCert),
 			}),
 			clientSecret(GetSourceCertsSecretName(dk.Name), dk.Namespace, map[string][]byte{
-				consts.ActiveGateCertDataName: []byte(oldTestCert),
+				ActiveGateCertDataName: []byte(oldTestCert),
 			}),
 		)
 
@@ -239,14 +239,14 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceCertsSecretName(dk.Name), Namespace: dk.Namespace}, &sourceCertSecret)
 		require.NoError(t, err)
 
-		assert.Equal(t, testCrt, string(sourceCertSecret.Data[consts.ActiveGateCertDataName]))
+		assert.Equal(t, testCrt, string(sourceCertSecret.Data[ActiveGateCertDataName]))
 
 		var certSecret corev1.Secret
 		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterCertsSecretName, Namespace: testNamespace}, &certSecret)
 		require.NoError(t, err)
 		assert.NotEmpty(t, secret.Data)
 
-		assert.Equal(t, testCrt, string(certSecret.Data[consts.ActiveGateCertDataName]))
+		assert.Equal(t, testCrt, string(certSecret.Data[ActiveGateCertDataName]))
 
 		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
 		require.NotNil(t, c)

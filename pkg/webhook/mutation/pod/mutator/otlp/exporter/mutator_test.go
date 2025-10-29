@@ -684,6 +684,56 @@ func TestMutator_Reinvoke(t *testing.T) {
 	})
 }
 
+func Test_ensureCertificateVolumeMounted(t *testing.T) {
+	newContainer := func() corev1.Container { return corev1.Container{Name: "app"} }
+
+	t.Run("adds mount when absent", func(t *testing.T) {
+		c := newContainer()
+		require.Empty(t, c.VolumeMounts)
+		ensureCertificateVolumeMounted(&c)
+		require.Len(t, c.VolumeMounts, 1)
+		vm := c.VolumeMounts[0]
+		assert.Equal(t, activeGateTrustedCertVolumeName, vm.Name)
+		assert.Equal(t, exporterCertsMountPath, vm.MountPath)
+		assert.True(t, vm.ReadOnly)
+	})
+
+	t.Run("does not duplicate mount", func(t *testing.T) {
+		c := newContainer()
+		c.VolumeMounts = []corev1.VolumeMount{{Name: activeGateTrustedCertVolumeName, MountPath: exporterCertsMountPath, ReadOnly: true}}
+		ensureCertificateVolumeMounted(&c)
+		assert.Len(t, c.VolumeMounts, 1)
+	})
+}
+
+func Test_addActiveGateCertVolume(t *testing.T) {
+	newPod := func() *corev1.Pod { return &corev1.Pod{} }
+	baseDK := func() dynakube.DynaKube { return dynakube.DynaKube{} }
+
+	t.Run("no activegate -> no volume", func(t *testing.T) {
+		dk := baseDK() // ActiveGate not enabled
+		pod := newPod()
+		addActiveGateCertVolume(dk, pod)
+		assert.Empty(t, pod.Spec.Volumes)
+	})
+
+	t.Run("activegate with cert secret -> volume added once", func(t *testing.T) {
+		dk := baseDK()
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName}, TLSSecretName: "custom-tls"}
+		pod := newPod()
+		addActiveGateCertVolume(dk, pod)
+		require.Len(t, pod.Spec.Volumes, 1)
+		v := pod.Spec.Volumes[0]
+		assert.Equal(t, activeGateTrustedCertVolumeName, v.Name)
+		require.NotNil(t, v.Secret)
+		assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
+
+		// second call should not duplicate
+		addActiveGateCertVolume(dk, pod)
+		assert.Len(t, pod.Spec.Volumes, 1)
+	})
+}
+
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *mutator.MutationRequest {
 	return mutator.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
