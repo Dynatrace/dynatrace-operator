@@ -2,6 +2,7 @@ package resourceattributes
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,86 +20,6 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
-
-func Test_getWorkloadInfo(t *testing.T) {
-	// Ensure schemes are registered
-	_ = appsv1.AddToScheme(scheme.Scheme)
-	_ = corev1.AddToScheme(scheme.Scheme)
-
-	deploymentOwner := metav1.OwnerReference{APIVersion: "apps/v1", Kind: "Deployment", Name: "my-deploy", Controller: ptr.To(true)}
-	replicaSetWithDeployment := &appsv1.ReplicaSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-deploy-1234567890",
-			Namespace: "ns",
-			OwnerReferences: []metav1.OwnerReference{
-				deploymentOwner,
-			},
-		},
-	}
-
-	tests := []struct {
-		name        string
-		objects     []runtime.Object
-		pod         *corev1.Pod
-		wantKind    string
-		wantName    string
-		expectError bool
-	}{
-		{
-			name:     "nil pod",
-			objects:  nil,
-			pod:      nil,
-			wantKind: "",
-			wantName: "",
-		},
-		{
-			name:     "replicaset owned by deployment (api lookup)",
-			objects:  []runtime.Object{replicaSetWithDeployment},
-			pod:      &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns", OwnerReferences: []metav1.OwnerReference{{APIVersion: "apps/v1", Kind: "ReplicaSet", Name: replicaSetWithDeployment.Name, Controller: ptr.To(true)}}}},
-			wantKind: "Deployment",
-			wantName: "my-deploy",
-		},
-		{
-			name:        "replicaset fallback when not found",
-			objects:     nil, // no RS object -> fallback
-			pod:         &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns", OwnerReferences: []metav1.OwnerReference{{APIVersion: "apps/v1", Kind: "ReplicaSet", Name: "missing-rs", Controller: ptr.To(true)}}}},
-			wantKind:    "",
-			wantName:    "",
-			expectError: true,
-		},
-		{
-			name:     "statefulset direct",
-			objects:  nil,
-			pod:      &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns", OwnerReferences: []metav1.OwnerReference{{APIVersion: "apps/v1", Kind: "StatefulSet", Name: "db", Controller: ptr.To(true)}}}},
-			wantKind: "StatefulSet",
-			wantName: "db",
-		},
-		{
-			name:     "non-controller owner ignored",
-			objects:  nil,
-			pod:      &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns", OwnerReferences: []metav1.OwnerReference{{APIVersion: "batch/v1", Kind: "Job", Name: "job1", Controller: nil}}}},
-			wantKind: "",
-			wantName: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			builder := fake.NewClientBuilder().WithScheme(scheme.Scheme)
-			if tt.objects != nil {
-				builder = builder.WithRuntimeObjects(tt.objects...)
-			}
-			client := builder.Build()
-			kind, name, err := getPodOwnerInfo(context.Background(), client, tt.pod)
-
-			if tt.expectError {
-				require.Error(t, err)
-			}
-			assert.Equal(t, tt.wantKind, kind)
-			assert.Equal(t, tt.wantName, name)
-		})
-	}
-}
 
 func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 	_ = appsv1.AddToScheme(scheme.Scheme)
@@ -107,8 +29,13 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 	baseDK.Status.KubeSystemUUID = "cluster-uid"
 	baseDK.Status.KubernetesClusterName = "cluster-name"
 
+	deployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "ns"}}
 	deploymentOwner := metav1.OwnerReference{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Controller: ptr.To(true)}
-	replicaSetOwned := &appsv1.ReplicaSet{ObjectMeta: metav1.ObjectMeta{Name: "web-1234567890", Namespace: "ns", OwnerReferences: []metav1.OwnerReference{deploymentOwner}}}
+	replicaSetOwned := &appsv1.ReplicaSet{ObjectMeta: metav1.ObjectMeta{
+		Name:            "web-1234567890",
+		Namespace:       "ns",
+		OwnerReferences: []metav1.OwnerReference{deploymentOwner},
+	}}
 
 	tests := []struct {
 		name           string
@@ -118,7 +45,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 	}{
 		{
 			name:    "adds attributes with deployment workload via replicaset lookup",
-			objects: []runtime.Object{replicaSetOwned},
+			objects: []runtime.Object{replicaSetOwned, deployment},
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace:   "ns",
@@ -145,7 +72,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.pod.name=$(K8S_PODNAME)",
 					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.node.name=$(K8S_NODE_NAME)",
-					"k8s.workload.kind=Deployment",
+					"k8s.workload.kind=deployment",
 					"k8s.workload.name=web",
 					"foo=bar",
 				},
@@ -153,7 +80,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 		},
 		{
 			name:    "preserves existing attributes and appends new ones (statefulset)",
-			objects: nil,
+			objects: []runtime.Object{&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "db", Namespace: "ns"}}},
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace:   "ns",
@@ -181,7 +108,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.pod.name=$(K8S_PODNAME)",
 					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.node.name=$(K8S_NODE_NAME)",
-					"k8s.workload.kind=StatefulSet",
+					"k8s.workload.kind=statefulset",
 					"k8s.workload.name=db",
 				},
 			},
@@ -206,7 +133,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 		},
 		{
 			name:    "multiple containers all mutated (job)",
-			objects: nil,
+			objects: []runtime.Object{&v1.Job{ObjectMeta: metav1.ObjectMeta{Name: "jobx", Namespace: "ns"}}},
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "ns",
@@ -229,7 +156,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.name=cluster-uid",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c1",
-					"k8s.workload.kind=Job",
+					"k8s.workload.kind=job",
 					"k8s.workload.name=jobx",
 				},
 				"c2": {
@@ -239,7 +166,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.name=cluster-uid",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c2",
-					"k8s.workload.kind=Job",
+					"k8s.workload.kind=job",
 					"k8s.workload.name=jobx",
 				},
 			},
@@ -599,7 +526,21 @@ func Test_addAttributesFromAnnotations(t *testing.T) {
 			assert.Equal(t, tt.wantMutated, mutated, "addAttributesFromAnnotations() return value mismatch")
 
 			result := b.String()
-			assert.Equal(t, tt.wantResult, result, "builder content mismatch")
+
+			// split and sort the result and expected strings for comparison
+			expected := tt.wantResult
+			if expected != "" {
+				expParts := strings.Split(expected, ",")
+				sort.Strings(expParts)
+				expected = strings.Join(expParts, ",")
+			}
+			if result != "" {
+				resParts := strings.Split(result, ",")
+				sort.Strings(resParts)
+				result = strings.Join(resParts, ",")
+			}
+
+			assert.Equal(t, expected, result, "builder content mismatch")
 		})
 	}
 }

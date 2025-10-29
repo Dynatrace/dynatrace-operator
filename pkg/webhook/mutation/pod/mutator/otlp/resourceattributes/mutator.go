@@ -10,9 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	appsv1 "k8s.io/api/apps/v1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -25,11 +24,11 @@ const (
 )
 
 type Mutator struct {
-	apiReader client.Reader
+	kubeClient client.Client
 }
 
-func New(apiReader client.Reader) dtwebhook.Mutator {
-	return &Mutator{apiReader: apiReader}
+func New(apiReader client.Client) dtwebhook.Mutator {
+	return &Mutator{kubeClient: apiReader}
 }
 
 func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
@@ -62,7 +61,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 	log.Debug("injecting OTLP resource attributes")
 
 	// fetch workload information once per pod
-	ownerKind, ownerName, err := getPodOwnerInfo(ctx, m.apiReader, request.Pod)
+	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, request, log)
 	if err != nil {
 		// log error but continue (best effort)
 		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
@@ -75,7 +74,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 			continue
 		}
 
-		if m.addResourceAttributes(request, c, ownerKind, ownerName) {
+		if m.addResourceAttributes(request, c, ownerInfo) {
 			mutated = true
 		}
 	}
@@ -83,7 +82,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 	return mutated
 }
 
-func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerKind, ownerName string) bool {
+func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info) bool {
 	mutated := false
 
 	var (
@@ -125,10 +124,10 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 	}
 
 	// add workload attributes (only once fetched per pod, but appended per container to env var if not already present)
-	if ownerKind != "" && ownerName != "" {
+	if ownerInfo != nil {
 		workloadAttributesToAdd := map[string]string{
-			"k8s.workload.kind": ownerKind,
-			"k8s.workload.name": ownerName,
+			"k8s.workload.kind": ownerInfo.Kind,
+			"k8s.workload.name": ownerInfo.Name,
 		}
 		for key, value := range workloadAttributesToAdd {
 			if appendAttribute(&b, existing, key, value) {
@@ -241,42 +240,4 @@ func ensureEnvVarSourcesSet(c *corev1.Container) bool {
 	}
 
 	return mutated
-}
-
-// getPodOwnerInfo performs live lookups (using reader) to resolve the top-level workload for a pod.
-// If the immediate controller owner is a ReplicaSet, it tries to fetch that ReplicaSet and inspect its controller owner (e.g. Deployment, StatefulSet, Job).
-// Returns empty strings if the workload cannot be determined.
-func getPodOwnerInfo(ctx context.Context, reader client.Reader, pod *corev1.Pod) (string, string, error) {
-	if pod == nil || reader == nil {
-		return "", "", nil
-	}
-
-	for _, owner := range pod.OwnerReferences {
-		if owner.Controller == nil || !*owner.Controller {
-			continue
-		}
-
-		switch owner.Kind {
-		case "Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob":
-			return owner.Kind, owner.Name, nil
-		case "ReplicaSet":
-			// lookup ReplicaSet and get its owner
-			rs := &appsv1.ReplicaSet{}
-
-			err := reader.Get(ctx, types.NamespacedName{Name: owner.Name, Namespace: pod.Namespace}, rs)
-			if err != nil {
-				return "", "", err
-			}
-
-			for _, rsOwner := range rs.OwnerReferences {
-				if rsOwner.Controller != nil && *rsOwner.Controller {
-					return rsOwner.Kind, rsOwner.Name, err
-				}
-			}
-
-			return owner.Kind, owner.Name, err
-		}
-	}
-
-	return "", "", nil
 }
