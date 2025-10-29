@@ -39,7 +39,7 @@ func isActiveGateModuleDisabled(_ context.Context, v *Validator, dk *dynakube.Dy
 }
 
 func isExtensionsModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.Extensions().IsEnabled() && !v.modules.Extensions {
+	if dk.Extensions().IsAnyEnabled() && !v.modules.Extensions {
 		return errorExtensionsModuleDisabled
 	}
 

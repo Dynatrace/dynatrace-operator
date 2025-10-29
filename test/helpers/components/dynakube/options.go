@@ -179,7 +179,7 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.Applicati
 func WithExtensionsEnabledSpec(promEnabled bool) Option {
 	return func(dk *dynakube.DynaKube) {
 		if promEnabled {
-			dk.Spec.Extensions = &extensions.Spec{PrometheusSpec: &extensions.PrometheusSpec{}}
+			dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
 		} else {
 			dk.Spec.Extensions = nil
@@ -247,5 +247,16 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 			dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 		}
 		dk.Spec.TelemetryIngest.TLSRefName = secretName
+	}
+}
+
+func WithOTelCollectorImageRefSpec(repo, tag string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.OpenTelemetryCollector = dynakube.OpenTelemetryCollectorSpec{
+			ImageRef: image.Ref{
+				Repository: repo,
+				Tag:        tag,
+			},
+		}
 	}
 }
