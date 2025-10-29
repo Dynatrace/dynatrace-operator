@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -144,7 +144,18 @@ func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
 	}
 
 	if dk.ActiveGate().IsEnabled() {
-		noProxyValues = append(noProxyValues, capability.BuildServiceName(dk.Name)+"."+dk.Namespace)
+		noProxyValues = append(noProxyValues, activegate.GetServiceFQDN(dk))
+	}
+
+	noProxyValue := dk.FF().GetNoProxy()
+	if noProxyValue != "" {
+		hostnames := strings.Split(noProxyValue, ",")
+		for _, hostname := range hostnames {
+			hostname = strings.TrimSpace(hostname)
+			if hostname != "" {
+				noProxyValues = append(noProxyValues, hostname)
+			}
+		}
 	}
 
 	return strings.Join(noProxyValues, ",")
