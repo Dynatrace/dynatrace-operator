@@ -31,6 +31,9 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 }
 
 func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
+	if dk.Annotations == nil {
+		dk.Annotations = make(map[string]string)
+	}
 	return conversion.NewRemovedFields(dk.Annotations)
 }
 

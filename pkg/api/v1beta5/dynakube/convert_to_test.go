@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
@@ -191,6 +192,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
 
 		compareBase(t, from, to)
 	})

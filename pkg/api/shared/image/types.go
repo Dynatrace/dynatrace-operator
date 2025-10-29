@@ -26,3 +26,7 @@ func (ref Ref) StringWithDefaults(repo, tag string) string {
 func (ref Ref) String() string {
 	return ref.Repository + ":" + ref.Tag
 }
+
+func (ref *Ref) IsZero() bool {
+	return ref == nil || *ref == Ref{}
+}
