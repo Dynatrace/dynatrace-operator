@@ -46,7 +46,7 @@ func (in *Status) DeepCopyInto(out *Status) {
 	*out = *in
 	if in.Rules != nil {
 		in, out := &in.Rules, &out.Rules
-		*out = make([]EnrichmentRule, len(*in))
+		*out = make([]Rule, len(*in))
 		copy(*out, *in)
 	}
 }
