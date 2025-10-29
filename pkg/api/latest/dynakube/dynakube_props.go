@@ -32,8 +32,11 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 
 func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
 	if dk.Annotations == nil {
+		// Set this value here instead of in the conversion package to prevent having to use a pointer to map.
+		// Pointer to map is the only way to initialize a nil map function argument.
 		dk.Annotations = make(map[string]string)
 	}
+
 	return conversion.NewRemovedFields(dk.Annotations)
 }
 
