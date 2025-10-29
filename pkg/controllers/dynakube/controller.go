@@ -95,6 +95,7 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Named("dynakube-controller").
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
+		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Complete(controller)
@@ -201,7 +202,7 @@ func (controller *Controller) handleError(
 		log.Error(err, "error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
 	default:
-		dk.Status.SetPhase(controller.determineDynaKubePhase(dk))
+		dk.Status.SetPhase(controller.determineDynaKubePhase(ctx, dk))
 	}
 
 	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dk.Status); err != nil {
