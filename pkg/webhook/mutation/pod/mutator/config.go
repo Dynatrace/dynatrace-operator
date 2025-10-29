@@ -29,4 +29,6 @@ const (
 
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "dynatrace-operator"
+
+	InjectionSplitMounts = "dynatrace.com/split-mounts"
 )

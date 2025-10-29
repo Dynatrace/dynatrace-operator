@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
@@ -20,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
@@ -90,7 +90,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
-			exp.InjectionSplitMounts:                     "true",
+			mutator.InjectionSplitMounts:                 "true",
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
@@ -156,7 +156,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
-			exp.InjectionSplitMounts:                     "true",
+			mutator.InjectionSplitMounts:                 "true",
 			"test":                                       "test",
 		}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	corev1 "k8s.io/api/core/v1"
@@ -64,7 +63,7 @@ func (req *BaseRequest) PodName() string {
 }
 
 func (req *BaseRequest) IsSplitMountsFFEnabled() bool {
-	if value, found := req.Pod.Annotations[exp.InjectionSplitMounts]; found && strings.ToLower(value) == "true" {
+	if value, found := req.Pod.Annotations[InjectionSplitMounts]; found && strings.ToLower(value) == "true" {
 		return true
 	}
 

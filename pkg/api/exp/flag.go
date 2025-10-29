@@ -18,8 +18,6 @@ const (
 	failPhrase   = "fail"
 
 	DefaultMinRequestThresholdMinutes = 15
-
-	InjectionSplitMounts = "feature.dynatrace.com/split-mounts"
 )
 
 type FeatureFlags struct {
