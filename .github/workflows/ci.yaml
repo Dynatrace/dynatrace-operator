@@ -30,6 +30,8 @@ jobs:
       prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed }}
       ci_changed: ${{ steps.ci.outputs.any_changed }}
       is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch }}
+      is_snyk_authorized: ${{ steps.is-snyk-authorized.outputs.is_authorized }}
+      is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -44,6 +46,14 @@ jobs:
           else
             echo "is_protected_branch=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Check if synk credentials are present
+        id: is-snyk-authorized
+        run: |
+          echo "is_authorized=${{ secrets.SNYK_API_TOKEN != '' }}" >> $GITHUB_OUTPUT
+      - name: Check if docker credentials are present
+        id: is-docker-authorized
+        run: |
+          echo "is_authorized=${{ secrets.QUAY_USERNAME != '' && secrets.QUAY_PASSWORD != '' }}" >> $GITHUB_OUTPUT
       - name: Detect CI file changes
         uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: ci
@@ -198,7 +208,9 @@ jobs:
 
   security:
     needs: detect-changes
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
+    if: >
+      needs.detect-changes.outputs.is_snyk_authorized &&
+      (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Code security scanning alerts
     runs-on: ubuntu-24.04
     steps:
@@ -210,6 +222,22 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_API_TOKEN }}
         with:
           args: --severity-threshold=high
+
+  govulncheck:
+    needs: detect-changes
+    if: >
+        !needs.detect-changes.outputs.is_snyk_authorized &&
+        (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
+    name: Govulncheck
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
+        with:
+          go-version-file: "${{ github.workspace }}/go.mod"
+          repo-checkout: false
 
   markdown-lint:
     name: Lint markdown files
@@ -240,7 +268,7 @@ jobs:
 
   build-push:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Build images
     runs-on: ubuntu-24.04
     steps:
