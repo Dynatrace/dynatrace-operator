@@ -4,14 +4,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type EnrichmentRuleType string
+type RuleType string
 
 const (
-	LabelRule          EnrichmentRuleType = "LABEL"
-	AnnotationRule     EnrichmentRuleType = "ANNOTATION"
-	Annotation         string             = "metadata.dynatrace.com"
-	Prefix                                = Annotation + "/"
-	namespaceKeyPrefix string             = "k8s.namespace."
+	LabelRule          RuleType = "LABEL"
+	AnnotationRule     RuleType = "ANNOTATION"
+	Annotation         string   = "metadata.dynatrace.com"
+	Prefix                      = Annotation + "/"
+	namespaceKeyPrefix string   = "k8s.namespace."
 )
 
 type MetadataEnrichment struct {
@@ -30,8 +30,8 @@ type Spec struct {
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
-type EnrichmentRule struct {
-	Type   EnrichmentRuleType `json:"type,omitempty"`
-	Source string             `json:"source,omitempty"`
-	Target string             `json:"target,omitempty"`
+type Rule struct {
+	Type   RuleType `json:"type,omitempty"`
+	Source string   `json:"source,omitempty"`
+	Target string   `json:"target,omitempty"`
 }

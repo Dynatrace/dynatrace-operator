@@ -101,6 +101,8 @@ tests:
                         "kubernetesMonitoring": true,
                         "kspm": true
                       }
+                  - name: GOMEMLIMIT
+                    value: 116MiB
                 ports:
                   - containerPort: 10080
                     name: livez
@@ -296,6 +298,8 @@ tests:
                         "kubernetesMonitoring": true,
                         "kspm": true
                       }
+                  - name: GOMEMLIMIT
+                    value: 116MiB
                 ports:
                   - containerPort: 10080
                     name: livez
@@ -497,6 +501,89 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].resources.requests.ephemeral-storage
           value: 320
+
+  - it: should set GOMEMLIMIT to 90% of the limit - Mi
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 420Mi
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 378MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - M
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 420M
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 361MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - convert from Gi
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 1Gi
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 922MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - convert from G
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 2G
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 1677MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - small value
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 50M
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 44MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - super small value -> don't care
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 1M
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 1MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - no limit -> no env
+    set:
+      platform: kubernetes
+      operator.limits: null
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+          any: true
 
 ####################### imageref tests #######################
   - it: should run the same if image is set

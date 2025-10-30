@@ -1,7 +1,7 @@
 package exporter
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -13,7 +13,7 @@ type injector interface {
 
 // traceInjector handles traces signal env var injection.
 type traceInjector struct {
-	cfg *otlpexporterconfiguration.OTLPExporterConfiguration
+	cfg *otlp.ExporterConfiguration
 }
 
 // isEnabled returns true if traces should be injected according to the configuration.
@@ -40,7 +40,7 @@ func (ti *traceInjector) Inject(c *corev1.Container, apiURL string, override boo
 
 // metricsInjector handles metrics signal env var injection.
 type metricsInjector struct {
-	cfg *otlpexporterconfiguration.OTLPExporterConfiguration
+	cfg *otlp.ExporterConfiguration
 }
 
 func (mi *metricsInjector) isEnabled() bool {
@@ -65,7 +65,7 @@ func (mi *metricsInjector) Inject(c *corev1.Container, apiURL string, override b
 
 // logsInjector handles logs signal env var injection.
 type logsInjector struct {
-	cfg *otlpexporterconfiguration.OTLPExporterConfiguration
+	cfg *otlp.ExporterConfiguration
 }
 
 func (li *logsInjector) isEnabled() bool {
