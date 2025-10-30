@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -366,8 +366,8 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 
 		request.DynaKube.Spec.APIURL = "http://my-cluster/api"
 		request.DynaKube.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override
-		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlpexporterconfiguration.SignalConfiguration{
-			Metrics: &otlpexporterconfiguration.MetricsSignal{},
+		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlp.SignalConfiguration{
+			Metrics: &otlp.MetricsSignal{},
 		}
 
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
@@ -426,8 +426,8 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		request := createTestMutationRequest(t, getTestDynakube())
 
 		request.DynaKube.Spec.APIURL = "http://my-cluster/api"
-		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlpexporterconfiguration.SignalConfiguration{
-			Metrics: &otlpexporterconfiguration.MetricsSignal{},
+		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlp.SignalConfiguration{
+			Metrics: &otlp.MetricsSignal{},
 		}
 
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
@@ -480,8 +480,8 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 
 		request.DynaKube.Spec.APIURL = "http://my-cluster/api"
 		request.DynaKube.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override
-		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlpexporterconfiguration.SignalConfiguration{
-			Metrics: &otlpexporterconfiguration.MetricsSignal{},
+		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlp.SignalConfiguration{
+			Metrics: &otlp.MetricsSignal{},
 		}
 
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
@@ -541,8 +541,8 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		request := createTestMutationRequest(t, getTestDynakube())
 
 		request.DynaKube.Spec.APIURL = "http://my-cluster/api"
-		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlpexporterconfiguration.SignalConfiguration{
-			Metrics: &otlpexporterconfiguration.MetricsSignal{},
+		request.DynaKube.Spec.OTLPExporterConfiguration.Signals = otlp.SignalConfiguration{
+			Metrics: &otlp.MetricsSignal{},
 		}
 
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
@@ -753,11 +753,11 @@ func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
-				Signals: otlpexporterconfiguration.SignalConfiguration{
-					Metrics: &otlpexporterconfiguration.MetricsSignal{},
-					Traces:  &otlpexporterconfiguration.TracesSignal{},
-					Logs:    &otlpexporterconfiguration.LogsSignal{},
+			OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+				Signals: otlp.SignalConfiguration{
+					Metrics: &otlp.MetricsSignal{},
+					Traces:  &otlp.TracesSignal{},
+					Logs:    &otlp.LogsSignal{},
 				},
 			},
 		},

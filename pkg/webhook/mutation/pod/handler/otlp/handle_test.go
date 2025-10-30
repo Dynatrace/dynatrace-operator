@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
@@ -312,11 +312,11 @@ func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
-				Signals: otlpexporterconfiguration.SignalConfiguration{
-					Traces:  &otlpexporterconfiguration.TracesSignal{},
-					Metrics: &otlpexporterconfiguration.MetricsSignal{},
-					Logs:    &otlpexporterconfiguration.LogsSignal{},
+			OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+				Signals: otlp.SignalConfiguration{
+					Traces:  &otlp.TracesSignal{},
+					Metrics: &otlp.MetricsSignal{},
+					Logs:    &otlp.LogsSignal{},
 				},
 			},
 			ActiveGate: activegate.Spec{

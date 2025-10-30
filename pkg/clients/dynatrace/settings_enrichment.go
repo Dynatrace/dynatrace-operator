@@ -26,7 +26,7 @@ type RuleItem struct {
 }
 
 type RulesResponseValue struct {
-	Rules []metadataenrichment.EnrichmentRule `json:"rules"`
+	Rules []metadataenrichment.Rule `json:"rules"`
 }
 
 func (dtc *dynatraceClient) GetRulesSettings(ctx context.Context, kubeSystemUUID string, entityID string) (GetRulesSettingsResponse, error) {

@@ -124,6 +124,8 @@ tests:
                     value: :10080
                   - name: METRICS_BIND_ADDRESS
                     value: :8383
+                  - name: GOMEMLIMIT
+                    value: 116MiB
                   - name: modules.json
                     value: |
                       {
@@ -322,6 +324,8 @@ tests:
                     value: :10080
                   - name: METRICS_BIND_ADDRESS
                     value: :8383
+                  - name: GOMEMLIMIT
+                    value: 116MiB
                   - name: modules.json
                     value: |
                       {
@@ -485,6 +489,8 @@ tests:
                     value: :10080
                   - name: METRICS_BIND_ADDRESS
                     value: :8383
+                  - name: GOMEMLIMIT
+                    value: 116MiB
                   - name: modules.json
                     value: |
                       {

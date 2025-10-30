@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	k8sconfigmap "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
@@ -118,9 +118,7 @@ func BuildOTLPEndpoint(dk dynakube.DynaKube) (string, error) {
 			return "", err
 		}
 
-		serviceFQDN := capability.BuildServiceName(dk.Name) + "." + dk.Namespace + ".svc"
-
-		dtEndpoint = fmt.Sprintf("https://%s/e/%s/api/v2/otlp", serviceFQDN, tenantUUID)
+		dtEndpoint = fmt.Sprintf("https://%s/e/%s/api/v2/otlp", activegate.GetServiceFQDN(&dk), tenantUUID)
 	}
 
 	return dtEndpoint, nil

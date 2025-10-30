@@ -142,7 +142,7 @@ func matchOTLPExporterConfiguration(dk *dynakube.DynaKube, namespace *corev1.Nam
 		return false, nil
 	}
 
-	namespaceSelector, err := metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.NamespaceSelector)
+	namespaceSelector, err := metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.Spec.NamespaceSelector)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}

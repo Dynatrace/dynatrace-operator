@@ -3,7 +3,7 @@ package exporter
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -14,7 +14,7 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		cfg            *otlpexporterconfiguration.OTLPExporterConfiguration
+		cfg            *otlp.OTLPExporterConfiguration
 		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
@@ -29,14 +29,14 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without traces -> disabled",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
 			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with traces -> enabled and injects (no cert)",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Traces: &otlpexporterconfiguration.TracesSignal{}}}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
 			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
@@ -44,7 +44,7 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config with traces -> enabled and injects (with cert)",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Traces: &otlpexporterconfiguration.TracesSignal{}}}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
 			addCertificate: true,
 			expectEnabled:  true,
 			expectInjected: true,
@@ -75,7 +75,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		cfg            *otlpexporterconfiguration.OTLPExporterConfiguration
+		cfg            *otlp.OTLPExporterConfiguration
 		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
@@ -90,14 +90,14 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without metrics -> disabled",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
 			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with metrics -> enabled and injects (no cert)",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Metrics: &otlpexporterconfiguration.MetricsSignal{}}}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
 			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
@@ -105,7 +105,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config with metrics -> enabled and injects (with cert)",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Metrics: &otlpexporterconfiguration.MetricsSignal{}}}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
 			addCertificate: true,
 			expectEnabled:  true,
 			expectInjected: true,
@@ -136,7 +136,7 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		cfg            *otlpexporterconfiguration.OTLPExporterConfiguration
+		cfg            *otlp.OTLPExporterConfiguration
 		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
@@ -151,14 +151,14 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config without logs -> disabled",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
 			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config with logs -> enabled and injects (no cert)",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Logs: &otlpexporterconfiguration.LogsSignal{}}}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
 			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
@@ -166,7 +166,7 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 		},
 		{
 			name:           "config with logs -> enabled and injects (with cert)",
-			cfg:            &otlpexporterconfiguration.OTLPExporterConfiguration{Spec: &otlpexporterconfiguration.Spec{Signals: otlpexporterconfiguration.SignalConfiguration{Logs: &otlpexporterconfiguration.LogsSignal{}}}},
+			cfg:            &otlp.OTLPExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
 			addCertificate: true,
 			expectEnabled:  true,
 			expectInjected: true,
