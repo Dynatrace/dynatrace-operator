@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# DESCRIPTION:
+#   This script deploys a DaemonSet that runs on all Linux nodes (amd64/arm64) in the cluster
+#   to clean up Dynatrace OneAgent installations and CSI driver artifacts. It uses an init
+#   container to perform the cleanup, ensuring each node is cleaned exactly once without restarts.
+#
+# USAGE:
+#   ./cleanup-node-fs.sh [NAMESPACE]
+
 export NAMESPACE="${1:-dynatrace}"
 export DAEMONSET_NAME="dynatrace-cleanup-node-fs"
 export MAX_WAIT_SECONDS=300
