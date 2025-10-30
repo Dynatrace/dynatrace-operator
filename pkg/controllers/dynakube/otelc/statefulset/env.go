@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -77,7 +77,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getDynakubeNoProxyEnvValue(dk)})
 	}
 
-	if dk.Extensions().IsEnabled() {
+	if dk.Extensions().IsPrometheusEnabled() {
 		envs = append(
 			envs,
 			corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
@@ -113,7 +113,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		)
 	}
 
-	if dk.Extensions().IsEnabled() && dk.Spec.TrustedCAs != "" {
+	if dk.Extensions().IsPrometheusEnabled() && dk.Spec.TrustedCAs != "" {
 		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: otelcConsts.TrustedCAVolumePath})
 	}
 
@@ -139,12 +139,23 @@ func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
 	noProxyValues := []string{}
 
-	if ext := dk.Extensions(); ext.IsEnabled() {
+	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
 		noProxyValues = append(noProxyValues, ext.GetServiceNameFQDN())
 	}
 
 	if dk.ActiveGate().IsEnabled() {
-		noProxyValues = append(noProxyValues, capability.BuildServiceName(dk.Name)+"."+dk.Namespace)
+		noProxyValues = append(noProxyValues, activegate.GetServiceFQDN(dk))
+	}
+
+	noProxyValue := dk.FF().GetNoProxy()
+	if noProxyValue != "" {
+		hostnames := strings.Split(noProxyValue, ",")
+		for _, hostname := range hostnames {
+			hostname = strings.TrimSpace(hostname)
+			if hostname != "" {
+				noProxyValues = append(noProxyValues, hostname)
+			}
+		}
 	}
 
 	return strings.Join(noProxyValues, ",")

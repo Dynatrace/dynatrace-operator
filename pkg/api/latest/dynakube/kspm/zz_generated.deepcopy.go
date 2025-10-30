@@ -54,7 +54,11 @@ func (in *NodeConfigurationCollectorSpec) DeepCopyInto(out *NodeConfigurationCol
 	}
 	out.ImageRef = in.ImageRef
 	in.Resources.DeepCopyInto(&out.Resources)
-	in.NodeAffinity.DeepCopyInto(&out.NodeAffinity)
+	if in.NodeAffinity != nil {
+		in, out := &in.NodeAffinity, &out.NodeAffinity
+		*out = new(corev1.NodeAffinity)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]corev1.Toleration, len(*in))

@@ -180,7 +180,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		assert.Empty(t, ns.Labels)
 		assert.Len(t, ns.Annotations, 1)
 	})
-	t.Run("Remove "+consts.BootstrapperInitSecretName+" and "+consts.BootstrapperInitCertsSecretName+" secrets", func(t *testing.T) {
+	t.Run("Remove "+consts.BootstrapperInitSecretName+", "+consts.BootstrapperInitCertsSecretName+" and "+consts.OTLPExporterSecretName+" secrets", func(t *testing.T) {
 		clt := fake.NewClient(namespace, namespace2)
 		ctx := context.Background()
 
@@ -189,6 +189,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 
 		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: namespace.Name}})
 		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitCertsSecretName, Namespace: namespace.Name}})
+		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.OTLPExporterSecretName, Namespace: namespace.Name}})
 
 		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dk)
 		err = dm.UnmapFromDynaKube(namespaces)
@@ -198,6 +199,8 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitCertsSecretName, Namespace: namespace.Name}, &secret)
+		assert.True(t, k8serrors.IsNotFound(err))
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPExporterSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Remove "+consts.BootstrapperInitSecretName, func(t *testing.T) {

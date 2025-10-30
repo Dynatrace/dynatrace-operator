@@ -3,25 +3,25 @@ package metadataenrichment
 import (
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (rule EnrichmentRule) ToAnnotationKey() string {
-	if rule.Target == "" {
+func (r Rule) ToAnnotationKey() string {
+	if r.Target == "" {
 		return ""
 	}
 
-	return Prefix + rule.Target
+	return Prefix + r.Target
 }
 
 func GetEmptyTargetEnrichmentKey(metadataType, key string) string {
 	return namespaceKeyPrefix + strings.ToLower(metadataType) + "." + key
 }
 
-func (enrichment *MetadataEnrichment) IsEnabled() bool {
-	return enrichment.Enabled != nil && *enrichment.Enabled
+func (m *MetadataEnrichment) IsEnabled() bool {
+	return m.Enabled != nil && *m.Enabled
 }
 
-func (enrichment *MetadataEnrichment) GetNamespaceSelector() *v1.LabelSelector {
-	return &enrichment.NamespaceSelector
+func (m *MetadataEnrichment) GetNamespaceSelector() *metav1.LabelSelector {
+	return &m.NamespaceSelector
 }

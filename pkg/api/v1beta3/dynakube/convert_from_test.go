@@ -183,6 +183,23 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
+	t.Run("clear default otelc image", func(t *testing.T) {
+		from := getNewDynakubeBase()
+		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
+		from.RemovedFields().DefaultOTELCImage.Set(ptr.To(true))
+
+		to := DynaKube{}
+
+		err := to.ConvertFrom(&from)
+		require.NoError(t, err)
+
+		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
+		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
+		assert.Empty(t, to.Annotations[conversion.DefaultOTELCImageKey])
+
+		compareBase(t, to, from)
+	})
+
 	t.Run("migrate log-monitoring templates from latest to v1beta3", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.LogMonitoring = getNewLogMonitoringTemplateSpec()
@@ -450,7 +467,11 @@ func compareNodeConfigurationCollectorTemplateSpec(t *testing.T, oldSpec kspm.No
 	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
-	assert.Equal(t, oldSpec.NodeAffinity, newSpec.NodeAffinity)
+	if newSpec.NodeAffinity != nil {
+		assert.Equal(t, &oldSpec.NodeAffinity, newSpec.NodeAffinity)
+	} else {
+		assert.Empty(t, oldSpec.NodeAffinity)
+	}
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
@@ -836,7 +857,7 @@ func getNewNodeConfigurationCollectorTemplateSpec() kspmlatest.NodeConfiguration
 				Request: "claim-request",
 			}},
 		},
-		NodeAffinity: corev1.NodeAffinity{
+		NodeAffinity: &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{{
 					MatchExpressions: []corev1.NodeSelectorRequirement{

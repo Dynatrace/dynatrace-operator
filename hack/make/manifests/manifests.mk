@@ -6,4 +6,4 @@ manifests: manifests/prepare-directory manifests/kubernetes manifests/openshift 
 
 ## Generate deep copy files
 manifests/deepcopy: prerequisites/controller-gen
-	controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./pkg/api/..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/api/..."
