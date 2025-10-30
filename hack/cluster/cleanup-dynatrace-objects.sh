@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# This script cleans up Dynatrace Operator related objects from a Kubernetes cluster.
-# It removes custom resources, the Dynatrace namespace, cluster-scoped resources,
-# and any related secrets and configmaps from all namespaces.
-
-# Usage: ./cleanup-dynatrace-objects.sh [namespace]
-# If no namespace is provided, defaults to 'dynatrace'.
+# DESCRIPTION:
+#   This script cleans up Dynatrace Operator related objects from a Kubernetes cluster.
+#   It removes custom resources, the Dynatrace namespace, cluster-scoped resources,
+#   and any related secrets and configmaps from all namespaces.
+#
+# USAGE:
+#   ./cleanup-dynatrace-objects.sh [namespace]
+#   If no namespace is provided, defaults to 'dynatrace'.
 
 NAMESPACE="${1:-dynatrace}"
 echo "Using namespace: $NAMESPACE"
