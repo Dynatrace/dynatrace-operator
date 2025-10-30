@@ -112,7 +112,6 @@ echo "Waiting for all cleanup pods to be finished..."
 # Wait for all pods to reach Running state
 elapsed=0
 while [ $elapsed -lt $MAX_WAIT_SECONDS ]; do
-  # Get DaemonSet status
   desired=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.desiredNumberScheduled}' 2>/dev/null || echo "0")
   ready=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.numberReady}' 2>/dev/null || echo "0")
   current=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.currentNumberScheduled}' 2>/dev/null || echo "0")
@@ -177,10 +176,17 @@ fi
 
 sleep $WAIT_BEFORE_DAEMONSET_DESTRUCTION_SECONDS
 
-# Delete the DaemonSet
-echo ""
-echo "Deleting cleanup DaemonSet..."
-kubectl delete daemonset "$DAEMONSET_NAME" -n "$NAMESPACE"
+# Only delete the DaemonSet if all cleanups were successful
+if [ $failed_inits -eq 0 ] && [ $successful_inits -eq $total_pods ] && [ $total_pods -gt 0 ]; then
+  echo ""
+  echo "✅ All cleanups successful. Deleting cleanup DaemonSet..."
+  kubectl delete daemonset "$DAEMONSET_NAME" -n "$NAMESPACE"
+else
+  echo ""
+  echo "⚠️  Some cleanups failed or are incomplete. Keeping DaemonSet for investigation."
+  echo "    To view logs: kubectl logs -n $NAMESPACE -l app=$DAEMONSET_NAME -c cleanup-init"
+  echo "    To delete manually: kubectl delete daemonset $DAEMONSET_NAME -n $NAMESPACE"
+fi
 
 echo ""
 echo "Restarting CSI driver pods in case they are deployed..."
