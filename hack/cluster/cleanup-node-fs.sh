@@ -1,9 +1,9 @@
 #!/bin/bash
 
 export NAMESPACE="${1:-dynatrace}"
-export JOB_NAME="dynatrace-cleanup-node-fs"
+export DAEMONSET_NAME="dynatrace-cleanup-node-fs"
 export MAX_WAIT_SECONDS=300
-export WAIT_BEFORE_JOB_DESTRUCTION_SECONDS=0
+export WAIT_BEFORE_DAEMONSET_DESTRUCTION_SECONDS=0
 export CSI_DRIVER_DATA_PATH="/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com"
 
 echo "Using namespace: $NAMESPACE"
@@ -12,39 +12,23 @@ kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || {
   kubectl create namespace "$NAMESPACE"
 }
 
-number_of_nodes=$(kubectl get nodes --no-headers | wc -l | tr -d ' ')
-
-echo "Creating cleanup job for $number_of_nodes nodes..."
+echo "Creating cleanup DaemonSet..."
 
 cat <<EOF | kubectl apply -f -
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: DaemonSet
 metadata:
-  name: ${JOB_NAME}
+  name: ${DAEMONSET_NAME}
   namespace: $NAMESPACE
 spec:
-  ttlSecondsAfterFinished: 300
-  manualSelector: true
   selector:
     matchLabels:
-      job-name: ${JOB_NAME}
-  parallelism: $number_of_nodes
-  completions: $number_of_nodes
+      app: ${DAEMONSET_NAME}
   template:
     metadata:
       labels:
-        job-name: ${JOB_NAME}
+        app: ${DAEMONSET_NAME}
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: job-name
-                    operator: In
-                    values:
-                      - ${JOB_NAME}
-              topologyKey: "kubernetes.io/hostname"
       initContainers:
       - name: cleanup-init
         image: registry.access.redhat.com/ubi9-micro:9.6
@@ -118,24 +102,26 @@ spec:
             path: /
             type: ""
           name: host-root
-      restartPolicy: Never
+      restartPolicy: Always
       terminationGracePeriodSeconds: 5
 EOF
 
 echo ""
-echo "Waiting for all pods to be running (init containers completed)..."
+echo "Waiting for all cleanup pods to be finished..."
 
 # Wait for all pods to reach Running state
 elapsed=0
 while [ $elapsed -lt $MAX_WAIT_SECONDS ]; do
-  running_count=$(kubectl get pods -n "$NAMESPACE" -l job-name="$JOB_NAME" --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l | tr -d ' ')
-  total_count=$(kubectl get pods -n "$NAMESPACE" -l job-name="$JOB_NAME" --no-headers 2>/dev/null | wc -l | tr -d ' ')
+  # Get DaemonSet status
+  desired=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.desiredNumberScheduled}' 2>/dev/null || echo "0")
+  ready=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.numberReady}' 2>/dev/null || echo "0")
+  current=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.currentNumberScheduled}' 2>/dev/null || echo "0")
   
-  echo "Running pods: $running_count/$number_of_nodes (Total pods: $total_count)"
+  echo "DaemonSet status: Ready: $ready/$desired (Current scheduled: $current)"
   
-  if [ "$running_count" -eq "$number_of_nodes" ]; then
+  if [ "$ready" -eq "$desired" ] && [ "$desired" -gt "0" ]; then
     echo ""
-    echo "✅ All $number_of_nodes pods are running - init containers completed successfully!"
+    echo "✅ All $desired DaemonSet pods are ready - cleanup completed successfully!"
     break
   fi
   
@@ -151,14 +137,16 @@ fi
 # Get detailed status
 echo ""
 echo "Pod status summary:"
-kubectl get pods -n "$NAMESPACE" -l job-name="$JOB_NAME"
+kubectl get pods -n "$NAMESPACE" -l app="$DAEMONSET_NAME"
 
 echo ""
 echo "Init container completion status:"
 successful_inits=0
 failed_inits=0
+total_pods=0
 
-for pod in $(kubectl get pods -n "$NAMESPACE" -l job-name="$JOB_NAME" --no-headers -o custom-columns=":metadata.name"); do
+for pod in $(kubectl get pods -n "$NAMESPACE" -l app="$DAEMONSET_NAME" --no-headers -o custom-columns=":metadata.name"); do
+  total_pods=$((total_pods + 1))
   # Check if init container completed (it always exits 0 to prevent restarts)
   init_status=$(kubectl get pod "$pod" -n "$NAMESPACE" -o jsonpath='{.status.initContainerStatuses[0].state}' 2>/dev/null)
   
@@ -182,18 +170,19 @@ done
 
 echo ""
 echo "📊 Cleanup Results:"
-echo "  ✅ Successful cleanups: $successful_inits/$number_of_nodes"
+echo "  ✅ Successful cleanups: $successful_inits/$total_pods"
 if [ $failed_inits -gt 0 ]; then
-  echo "  ❌ Failed cleanups: $failed_inits/$number_of_nodes"
+  echo "  ❌ Failed cleanups: $failed_inits/$total_pods"
 fi
 
-sleep $WAIT_BEFORE_JOB_DESTRUCTION_SECONDS
+sleep $WAIT_BEFORE_DAEMONSET_DESTRUCTION_SECONDS
 
-# Delete the job
+# Delete the DaemonSet
 echo ""
-echo "Deleting cleanup job..."
-kubectl delete job "$JOB_NAME" -n "$NAMESPACE"
+echo "Deleting cleanup DaemonSet..."
+kubectl delete daemonset "$DAEMONSET_NAME" -n "$NAMESPACE"
 
+echo ""
 echo "Restarting CSI driver pods in case they are deployed..."
 kubectl -n $NAMESPACE delete pod -l app.kubernetes.io/component=csi-driver,app.kubernetes.io/name=dynatrace-operator
 
