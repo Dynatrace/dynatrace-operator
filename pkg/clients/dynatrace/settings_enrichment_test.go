@@ -90,7 +90,7 @@ func mockGetRulesSettingsAPI(writer http.ResponseWriter, totalCount int) {
 }
 
 func createRulesResponse(totalCount int) GetRulesSettingsResponse {
-	rules := []metadataenrichment.EnrichmentRule{
+	rules := []metadataenrichment.Rule{
 		{
 			Source: "rule-1",
 		},

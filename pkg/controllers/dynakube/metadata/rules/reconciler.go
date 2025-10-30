@@ -66,7 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]metadataenrichment.EnrichmentRule, error) {
+func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]metadataenrichment.Rule, error) {
 	rulesResponse, err := r.dtc.GetRulesSettings(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		conditions.SetDynatraceAPIError(r.dk.Conditions(), conditionType, err)
@@ -74,7 +74,7 @@ func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]metadataenrichme
 		return nil, errors.Join(err, errors.New("error trying to check if rules exist"))
 	}
 
-	var rules []metadataenrichment.EnrichmentRule
+	var rules []metadataenrichment.Rule
 	// Shouldn't be necessary, because we only get a single item back from the API, but still, its more "complete" this way
 	for _, item := range rulesResponse.Items {
 		rules = append(rules, item.Value.Rules...)
