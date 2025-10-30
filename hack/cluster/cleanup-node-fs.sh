@@ -100,6 +100,15 @@ spec:
         volumeMounts:
         - name: host-root
           mountPath: /mnt/root
+        resources:
+          requests:
+            cpu: 50m
+          limits:
+            cpu: 100m
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: true
+          privileged: true
       containers:
       - name: main
         image: registry.access.redhat.com/ubi9-micro:9.6
