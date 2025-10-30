@@ -3,6 +3,8 @@ package exporter
 import (
 	"fmt"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
@@ -24,9 +26,9 @@ func New() dtwebhook.Mutator {
 }
 
 func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
-	otlpExporterConfig := request.DynaKube.OTLPExporterConfiguration()
+	otlpExporterConfiguration := request.DynaKube.OTLPExporterConfiguration()
 
-	if !otlpExporterConfig.IsEnabled() {
+	if !otlpExporterConfiguration.IsEnabled() {
 		log.Debug("OTLP env var injection is disabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 		return false
@@ -35,7 +37,7 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 	log.Debug("OTLP env var injection is enabled", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
 	// first, check if otlp injection is enabled explicitly on pod
-	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject, false)
+	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjectionEnabled, false)
 
 	if !enabledOnPod {
 		// if not enabled explicitly, check general injection setting via 'dynatrace.com/inject' annotation
@@ -44,8 +46,8 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 
 	enabledOnNamespace := true
 
-	if otlpExporterConfig.NamespaceSelector.Size() > 0 {
-		selector, _ := metav1.LabelSelectorAsSelector(&otlpExporterConfig.NamespaceSelector)
+	if otlpExporterConfiguration.Spec.NamespaceSelector.Size() > 0 {
+		selector, _ := metav1.LabelSelectorAsSelector(&otlpExporterConfiguration.Spec.NamespaceSelector)
 
 		enabledOnNamespace = selector.Matches(labels.Set(request.Namespace.Labels))
 	}
@@ -56,7 +58,7 @@ func (m Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 func (m Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 	log.Debug("checking if OTLP env vars have already been injected")
 
-	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
+	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOTLPInjected, false)
 }
 
 func (m Mutator) Mutate(request *dtwebhook.MutationRequest) error {
@@ -99,6 +101,19 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		}
 	}
 
+	// add an environment variable with a secret ref to dynatrace-otlp-exporter-config secret
+	dtAPITokenEnvVar := corev1.EnvVar{
+		Name: DynatraceAPITokenEnv,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: consts.OTLPExporterSecretName,
+				},
+				Key: dynatrace.DataIngestToken,
+			},
+		},
+	}
+
 	override := otlpExporterConfig.IsOverrideEnvVarsEnabled()
 
 	// Create per-signal injectors
@@ -117,14 +132,15 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 			continue
 		}
 
+		// need to add the token env var first so that it can be used in other env vars
+		c.Env = env.AddOrUpdate(c.Env, dtAPITokenEnvVar)
+
 		for _, inj := range injectors {
 			if inj.Inject(c, apiURL, override) {
 				mutated = true
 			}
 		}
 	}
-
-	setInjectedAnnotation(request.Pod)
 
 	return mutated, nil
 }
@@ -174,22 +190,13 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, over
 	return false
 }
 
-func setInjectedAnnotation(pod *corev1.Pod) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[AnnotationInjected] = "true"
-	delete(pod.Annotations, AnnotationReason)
-}
-
 func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	return func(pod *corev1.Pod) {
 		if pod.Annotations == nil {
 			pod.Annotations = make(map[string]string)
 		}
 
-		pod.Annotations[AnnotationInjected] = "false"
-		pod.Annotations[AnnotationReason] = reason
+		pod.Annotations[dtwebhook.AnnotationOTLPInjected] = "false"
+		pod.Annotations[dtwebhook.AnnotationOTLPReason] = reason
 	}
 }

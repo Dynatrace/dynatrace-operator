@@ -1,9 +1,7 @@
 package exporter
 
 import (
-	"fmt"
-
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -15,7 +13,7 @@ type injector interface {
 
 // traceInjector handles traces signal env var injection.
 type traceInjector struct {
-	cfg *otlpexporterconfiguration.OTLPExporterConfiguration
+	cfg *otlp.ExporterConfiguration
 }
 
 // isEnabled returns true if traces should be injected according to the configuration.
@@ -33,15 +31,16 @@ func (ti *traceInjector) Inject(c *corev1.Container, apiURL string, override boo
 		return false
 	}
 
-	addEnvVarLiteralValue(c, OTLPTraceEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "traces"))
+	addEnvVarLiteralValue(c, OTLPTraceEndpointEnv, apiURL+"/v1/traces")
 	addEnvVarLiteralValue(c, OTLPTraceProtocolEnv, "http/protobuf")
+	addEnvVarLiteralValue(c, OTLPTraceHeadersEnv, OTLPAuthorizationHeader)
 
 	return true
 }
 
 // metricsInjector handles metrics signal env var injection.
 type metricsInjector struct {
-	cfg *otlpexporterconfiguration.OTLPExporterConfiguration
+	cfg *otlp.ExporterConfiguration
 }
 
 func (mi *metricsInjector) isEnabled() bool {
@@ -57,15 +56,16 @@ func (mi *metricsInjector) Inject(c *corev1.Container, apiURL string, override b
 		return false
 	}
 
-	addEnvVarLiteralValue(c, OTLPMetricsEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "metrics"))
+	addEnvVarLiteralValue(c, OTLPMetricsEndpointEnv, apiURL+"/v1/metrics")
 	addEnvVarLiteralValue(c, OTLPMetricsProtocolEnv, "http/protobuf")
+	addEnvVarLiteralValue(c, OTLPMetricsHeadersEnv, OTLPAuthorizationHeader)
 
 	return true
 }
 
 // logsInjector handles logs signal env var injection.
 type logsInjector struct {
-	cfg *otlpexporterconfiguration.OTLPExporterConfiguration
+	cfg *otlp.ExporterConfiguration
 }
 
 func (li *logsInjector) isEnabled() bool {
@@ -81,8 +81,9 @@ func (li *logsInjector) Inject(c *corev1.Container, apiURL string, override bool
 		return false
 	}
 
-	addEnvVarLiteralValue(c, OTLPLogsEndpointEnv, fmt.Sprintf("%s/%s", apiURL, "logs"))
+	addEnvVarLiteralValue(c, OTLPLogsEndpointEnv, apiURL+"/v1/logs")
 	addEnvVarLiteralValue(c, OTLPLogsProtocolEnv, "http/protobuf")
+	addEnvVarLiteralValue(c, OTLPLogsHeadersEnv, OTLPAuthorizationHeader)
 
 	return true
 }

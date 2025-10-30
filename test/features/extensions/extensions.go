@@ -34,6 +34,7 @@ func Feature(t *testing.T) features.Feature {
 		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
+		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
 	}
 
 	testDynakube := *componentDynakube.New(options...)

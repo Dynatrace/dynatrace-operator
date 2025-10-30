@@ -262,8 +262,17 @@ func checkReadOnlySettings(dk *dynakube.DynaKube) features.Func {
 }
 
 func assertReadOnlyRootFilesystems(t *testing.T, activeGatePod corev1.Pod) {
-	assert.NotNil(t, *activeGatePod.Spec.InitContainers[0].SecurityContext)
-	assert.True(t, *activeGatePod.Spec.InitContainers[0].SecurityContext.ReadOnlyRootFilesystem, "InitContainer should have ReadOnly filesystem")
+	var initContainer *corev1.Container
+	for _, c := range activeGatePod.Spec.InitContainers {
+		if !strings.Contains(c.Name, "istio") {
+			initContainer = &c
+
+			break
+		}
+	}
+	require.NotNil(t, initContainer, "Missing non-istio InitContainer")
+	require.NotNilf(t, *initContainer.SecurityContext, "InitContainer %s should have security context", initContainer.Name)
+	assert.Truef(t, *initContainer.SecurityContext.ReadOnlyRootFilesystem, "InitContainer %s should have ReadOnly filesystem", initContainer.Name)
 	assert.NotNil(t, *activeGatePod.Spec.Containers[0].SecurityContext)
 	assert.True(t, *activeGatePod.Spec.Containers[0].SecurityContext.ReadOnlyRootFilesystem, "Container should have ReadOnly filesystem")
 }

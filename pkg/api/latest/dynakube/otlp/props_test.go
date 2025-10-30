@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package otlpexporterconfiguration
+package otlp
 
 import (
 	"testing"
@@ -26,24 +26,24 @@ import (
 func TestSpec_IsOverrideEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   OTLPExporterConfiguration
+		config   ExporterConfiguration
 		expected bool
 	}{
 		{
 			name:     "overrideEnvVars not set",
-			config:   OTLPExporterConfiguration{},
+			config:   ExporterConfiguration{},
 			expected: false,
 		},
 		{
 			name: "overrideEnvVars disabled",
-			config: OTLPExporterConfiguration{Spec: &Spec{
+			config: ExporterConfiguration{Spec: &ExporterConfigurationSpec{
 				OverrideEnvVars: ptr.To(false),
 			}},
 			expected: false,
 		},
 		{
 			name: "overrideEnvVars enabled",
-			config: OTLPExporterConfiguration{Spec: &Spec{
+			config: ExporterConfiguration{Spec: &ExporterConfigurationSpec{
 				OverrideEnvVars: ptr.To(true),
 			}},
 			expected: true,
@@ -60,18 +60,18 @@ func TestSpec_IsOverrideEnabled(t *testing.T) {
 func TestSpec_IsMetricsEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   OTLPExporterConfiguration
+		config   ExporterConfiguration
 		expected bool
 	}{
 		{
 			name:     "metrics disabled",
-			config:   OTLPExporterConfiguration{},
+			config:   ExporterConfiguration{},
 			expected: false,
 		},
 		{
 			name: "metrics enabled",
-			config: OTLPExporterConfiguration{
-				Spec: &Spec{
+			config: ExporterConfiguration{
+				Spec: &ExporterConfigurationSpec{
 					Signals: SignalConfiguration{
 						Metrics: &MetricsSignal{},
 					},
@@ -91,18 +91,18 @@ func TestSpec_IsMetricsEnabled(t *testing.T) {
 func TestSpec_IsTracesEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   OTLPExporterConfiguration
+		config   ExporterConfiguration
 		expected bool
 	}{
 		{
 			name:     "traces disabled",
-			config:   OTLPExporterConfiguration{},
+			config:   ExporterConfiguration{},
 			expected: false,
 		},
 		{
 			name: "traces enabled",
-			config: OTLPExporterConfiguration{
-				Spec: &Spec{
+			config: ExporterConfiguration{
+				Spec: &ExporterConfigurationSpec{
 					Signals: SignalConfiguration{
 						Traces: &TracesSignal{},
 					},
@@ -122,18 +122,18 @@ func TestSpec_IsTracesEnabled(t *testing.T) {
 func TestSpec_IsLogsEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   OTLPExporterConfiguration
+		config   ExporterConfiguration
 		expected bool
 	}{
 		{
 			name:     "logs disabled",
-			config:   OTLPExporterConfiguration{},
+			config:   ExporterConfiguration{},
 			expected: false,
 		},
 		{
 			name: "logs enabled",
-			config: OTLPExporterConfiguration{
-				Spec: &Spec{
+			config: ExporterConfiguration{
+				Spec: &ExporterConfigurationSpec{
 					Signals: SignalConfiguration{
 						Logs: &LogsSignal{},
 					},
@@ -153,27 +153,27 @@ func TestSpec_IsLogsEnabled(t *testing.T) {
 func TestSpec_IsEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   OTLPExporterConfiguration
+		config   ExporterConfiguration
 		expected bool
 	}{
 		{
 			name:     "disabled",
-			config:   OTLPExporterConfiguration{},
+			config:   ExporterConfiguration{},
 			expected: false,
 		},
 		{
 			name:     "enabled (traces)",
-			config:   OTLPExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Traces: &TracesSignal{}}}},
+			config:   ExporterConfiguration{Spec: &ExporterConfigurationSpec{Signals: SignalConfiguration{Traces: &TracesSignal{}}}},
 			expected: true,
 		},
 		{
 			name:     "enabled (metrics)",
-			config:   OTLPExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Metrics: &MetricsSignal{}}}},
+			config:   ExporterConfiguration{Spec: &ExporterConfigurationSpec{Signals: SignalConfiguration{Metrics: &MetricsSignal{}}}},
 			expected: true,
 		},
 		{
 			name:     "enabled (logs)",
-			config:   OTLPExporterConfiguration{Spec: &Spec{Signals: SignalConfiguration{Logs: &LogsSignal{}}}},
+			config:   ExporterConfiguration{Spec: &ExporterConfigurationSpec{Signals: SignalConfiguration{Logs: &LogsSignal{}}}},
 			expected: true,
 		},
 	}
