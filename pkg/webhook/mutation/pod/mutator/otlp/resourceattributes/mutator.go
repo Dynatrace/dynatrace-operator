@@ -2,11 +2,8 @@ package resourceattributes
 
 import (
 	"context"
-	"net/url"
 	"slices"
-	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -61,7 +58,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 	log.Debug("injecting OTLP resource attributes")
 
 	// fetch workload information once per pod
-	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, request, log)
+	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, *request, log)
 	if err != nil {
 		// log error but continue (best effort)
 		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
@@ -85,16 +82,10 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info) bool {
 	mutated := false
 
-	var (
-		b        strings.Builder
-		existing corev1.EnvVar
-	)
+	existingAttributes := attributes{}
 
 	if ev := env.FindEnvVar(c.Env, otlpResourceAttributesEnvVar); ev != nil {
-		existing = *ev
-		if ev.Value != "" {
-			b.WriteString(ev.Value)
-		}
+		existingAttributes = newAttributesFromEnv(*ev)
 
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
 		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
@@ -105,7 +96,7 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
 	envVarSourcesAdded := ensureEnvVarSourcesSet(c)
 
-	attributesToAdd := map[string]string{
+	attributesToAdd := attributes{
 		"k8s.namespace.name":         request.Pod.Namespace,
 		"k8s.cluster.uid":            request.DynaKube.Status.KubeSystemUUID,
 		"dt.kubernetes.cluster.id":   request.DynaKube.Status.KubeSystemUUID,
@@ -117,58 +108,36 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		"k8s.node.name":              "$(K8S_NODE_NAME)",
 	}
 
-	for key, value := range attributesToAdd {
-		if appendAttribute(&b, existing, key, value) {
-			mutated = true
-		}
+	if existingAttributes.merge(attributesToAdd) {
+		mutated = true
 	}
 
 	// add workload attributes (only once fetched per pod, but appended per container to env var if not already present)
 	if ownerInfo != nil {
-		workloadAttributesToAdd := map[string]string{
+		workloadAttributesToAdd := attributes{
 			"k8s.workload.kind": ownerInfo.Kind,
 			"k8s.workload.name": ownerInfo.Name,
 		}
-		for key, value := range workloadAttributesToAdd {
-			if appendAttribute(&b, existing, key, value) {
-				mutated = true
-			}
+
+		if existingAttributes.merge(workloadAttributesToAdd) {
+			mutated = true
 		}
 	}
 
 	// add attributes from annotations
-	addedAttrsFromAnnotations := addAttributesFromAnnotations(request, &b, existing)
+	attributesFromAnnotations := newAttributesFromMap(request.Pod.Annotations)
 
-	finalValue := b.String()
+	if existingAttributes.merge(attributesFromAnnotations) {
+		mutated = true
+	}
+
+	finalValue := existingAttributes.toString()
 
 	if finalValue != "" {
 		c.Env = append(c.Env, corev1.EnvVar{Name: otlpResourceAttributesEnvVar, Value: finalValue})
 	}
 
-	if envVarSourcesAdded || addedAttrsFromAnnotations {
-		mutated = true
-	}
-
-	return mutated
-}
-
-func addAttributesFromAnnotations(request *dtwebhook.BaseRequest, b *strings.Builder, existing corev1.EnvVar) bool {
-	mutated := false
-
-	for k, v := range request.Pod.Annotations {
-		metadataAnnotationPrefix := metadataenrichment.Annotation + "/"
-
-		if strings.HasPrefix(k, metadataAnnotationPrefix) {
-			attrKey := strings.TrimPrefix(k, metadataAnnotationPrefix)
-			// apply percent encoding to prevent errors when passing attribute values with special characters to the OTEL SDKs
-			// see https://opentelemetry.io/docs/specs/otel/resource/sdk/#specifying-resource-information-via-an-environment-variable
-			if appendAttribute(b, existing, attrKey, url.QueryEscape(v)) {
-				mutated = true
-			}
-		}
-	}
-
-	return mutated
+	return envVarSourcesAdded || mutated
 }
 
 func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool {
@@ -177,27 +146,6 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool
 		request.Pod.Annotations,
 		c.Name,
 	)
-}
-
-func appendAttribute(b *strings.Builder, existing corev1.EnvVar, key, value string) bool {
-	if value == "" {
-		return false
-	}
-
-	if strings.Contains(existing.Value, key+"=") {
-		// do not override existing value
-		return false
-	}
-
-	if b.Len() > 0 {
-		b.WriteString(",")
-	}
-
-	b.WriteString(key)
-	b.WriteString("=")
-	b.WriteString(value)
-
-	return true
 }
 
 func ensureEnvVarSourcesSet(c *corev1.Container) bool {

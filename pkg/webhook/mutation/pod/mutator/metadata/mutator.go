@@ -54,7 +54,7 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
-	workloadInfo, err := workload.FindRootOwnerOfPod(request.Context, mut.metaClient, request.BaseRequest, log)
+	workloadInfo, err := workload.FindRootOwnerOfPod(request.Context, mut.metaClient, *request.BaseRequest, log)
 	if err != nil {
 		return dtwebhook.MutatorError{
 			Err:      errors.WithStack(err),

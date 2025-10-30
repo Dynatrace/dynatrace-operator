@@ -26,7 +26,7 @@ func NewInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *Info {
 	}
 }
 
-func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request *dtwebhook.BaseRequest, log logd.Logger) (*Info, error) {
+func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhook.BaseRequest, log logd.Logger) (*Info, error) {
 	podPartialMetadata := &metav1.PartialObjectMetadata{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: request.Pod.APIVersion,

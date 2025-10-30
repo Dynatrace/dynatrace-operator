@@ -2,7 +2,6 @@ package resourceattributes
 
 import (
 	"context"
-	"sort"
 	"strings"
 	"testing"
 
@@ -21,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
+func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 	_ = appsv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 
@@ -296,7 +295,7 @@ func TestMutatorMutate(t *testing.T) { //nolint:gocognit,revive
 	}
 }
 
-func TestMutatorReinvoke(t *testing.T) {
+func Test_Mutator_Reinvoke(t *testing.T) {
 	_ = appsv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 
@@ -333,214 +332,4 @@ func TestMutatorReinvoke(t *testing.T) {
 
 	result := mut.Reinvoke(req)
 	assert.True(t, result, "Reinvoke should return true when mutation occurs")
-}
-
-func Test_appendAttribute(t *testing.T) {
-	b := &strings.Builder{}
-
-	b.WriteString("key=value")
-
-	type args struct {
-		b        *strings.Builder
-		existing corev1.EnvVar
-		key      string
-		value    string
-	}
-	tests := []struct {
-		name            string
-		args            args
-		want            bool
-		wantEnvVarValue string
-	}{
-		{
-			name: "empty value",
-			args: args{
-				b:     &strings.Builder{},
-				key:   "key1",
-				value: "",
-			},
-			want:            false,
-			wantEnvVarValue: "",
-		},
-		{
-			name: "appends to empty builder",
-			args: args{
-				b:     &strings.Builder{},
-				key:   "key1",
-				value: "value1",
-			},
-			want:            true,
-			wantEnvVarValue: "key1=value1",
-		},
-		{
-			name: "appends to builder",
-			args: args{
-				b:     b,
-				key:   "key1",
-				value: "value1",
-			},
-			want:            true,
-			wantEnvVarValue: "key=value,key1=value1",
-		},
-		{
-			name: "do not overwrite existing key",
-			args: args{
-				b:        &strings.Builder{},
-				existing: corev1.EnvVar{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "key1=oldvalue"},
-				key:      "key1",
-				value:    "newvalue",
-			},
-			want:            false,
-			wantEnvVarValue: "key1=oldvalue",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, appendAttribute(tt.args.b, tt.args.existing, tt.args.key, tt.args.value), "appendAttribute(%v, %v, %v, %v)", tt.args.b, tt.args.existing, tt.args.key, tt.args.value)
-		})
-	}
-}
-
-func Test_addAttributesFromAnnotations(t *testing.T) {
-	tests := []struct {
-		name         string
-		annotations  map[string]string
-		existingEnv  corev1.EnvVar
-		existingAttr string
-		wantMutated  bool
-		wantResult   string
-	}{
-		{
-			name:         "no metadata annotations",
-			annotations:  map[string]string{"foo": "bar"},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  false,
-			wantResult:   "",
-		},
-		{
-			name:         "single metadata annotation",
-			annotations:  map[string]string{"metadata.dynatrace.com/my-attribute": "foo"},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  true,
-			wantResult:   "my-attribute=foo",
-		},
-		{
-			name: "multiple metadata annotations",
-			annotations: map[string]string{
-				"metadata.dynatrace.com/attr1": "value1",
-				"metadata.dynatrace.com/attr2": "value2",
-				"other-annotation":             "ignored",
-			},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  true,
-			wantResult:   "attr1=value1,attr2=value2",
-		},
-		{
-			name:         "annotation with comma is escaped",
-			annotations:  map[string]string{"metadata.dynatrace.com/my-attribute": "foo,bar"},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  true,
-			wantResult:   "my-attribute=foo%2Cbar",
-		},
-		{
-			name:         "annotation with equals sign is escaped",
-			annotations:  map[string]string{"metadata.dynatrace.com/my-attribute": "foo=bar"},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  true,
-			wantResult:   "my-attribute=foo%3Dbar",
-		},
-		{
-			name:         "annotation with special characters is escaped",
-			annotations:  map[string]string{"metadata.dynatrace.com/my-attribute": "foo bar&baz"},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  true,
-			wantResult:   "my-attribute=foo+bar%26baz",
-		},
-		{
-			name:         "annotation with multiple special chars",
-			annotations:  map[string]string{"metadata.dynatrace.com/complex": "a,b=c&d e"},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  true,
-			wantResult:   "complex=a%2Cb%3Dc%26d+e",
-		},
-		{
-			name:         "appends to existing attributes",
-			annotations:  map[string]string{"metadata.dynatrace.com/new-attr": "value"},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "existing=attr",
-			wantMutated:  true,
-			wantResult:   "existing=attr,new-attr=value",
-		},
-		{
-			name:         "does not override existing key in env var",
-			annotations:  map[string]string{"metadata.dynatrace.com/existing": "new-value"},
-			existingEnv:  corev1.EnvVar{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "existing=old-value"},
-			existingAttr: "",
-			wantMutated:  false,
-			wantResult:   "",
-		},
-		{
-			name:         "empty annotation value is ignored",
-			annotations:  map[string]string{"metadata.dynatrace.com/empty": ""},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  false,
-			wantResult:   "",
-		},
-		{
-			name: "mix of empty and non-empty annotations",
-			annotations: map[string]string{
-				"metadata.dynatrace.com/empty":     "",
-				"metadata.dynatrace.com/non-empty": "value",
-			},
-			existingEnv:  corev1.EnvVar{},
-			existingAttr: "",
-			wantMutated:  true,
-			wantResult:   "non-empty=value",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := &strings.Builder{}
-			if tt.existingAttr != "" {
-				b.WriteString(tt.existingAttr)
-			}
-
-			request := &dtwebhook.BaseRequest{
-				Pod: &corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Annotations: tt.annotations,
-					},
-				},
-			}
-
-			mutated := addAttributesFromAnnotations(request, b, tt.existingEnv)
-			assert.Equal(t, tt.wantMutated, mutated, "addAttributesFromAnnotations() return value mismatch")
-
-			result := b.String()
-
-			// split and sort the result and expected strings for comparison
-			expected := tt.wantResult
-			if expected != "" {
-				expParts := strings.Split(expected, ",")
-				sort.Strings(expParts)
-				expected = strings.Join(expParts, ",")
-			}
-			if result != "" {
-				resParts := strings.Split(result, ",")
-				sort.Strings(resParts)
-				result = strings.Join(resParts, ",")
-			}
-
-			assert.Equal(t, expected, result, "builder content mismatch")
-		})
-	}
 }
