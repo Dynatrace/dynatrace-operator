@@ -10,7 +10,7 @@
 
 export NAMESPACE="${1:-dynatrace}"
 export DAEMONSET_NAME="dynatrace-cleanup-node-fs"
-export MAX_WAIT_SECONDS=300
+export MAX_WAIT_SECONDS=600
 export WAIT_BEFORE_DAEMONSET_DESTRUCTION_SECONDS=0
 export CSI_DRIVER_DATA_PATH="/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
 
@@ -19,7 +19,17 @@ kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || {
   echo "Namespace $NAMESPACE does not exist. Creating it..."
   kubectl create namespace "$NAMESPACE"
 }
-  
+
+running_pods=$(kubectl get pods -n "$NAMESPACE" --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l | tr -d ' ')
+if [ "$running_pods" -gt 0 ]; then
+  echo ""
+  echo "❌  FAILURE: Found $running_pods running pod(s) in namespace $NAMESPACE:"
+  echo ""
+  echo "Please uninstall the Dynatrace Operator and ensure all related pods are terminated before running this cleanup script."
+  exit 1
+fi
+
+echo ""
 echo "Creating cleanup DaemonSet..."
 
 cat <<EOF | kubectl apply -f -
@@ -39,6 +49,16 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/os: linux
+      tolerations:
+      - key: ToBeDeletedByClusterAutoscaler
+        operator: Exists
+        effect: NoSchedule
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -155,8 +175,8 @@ while [ $elapsed -lt $MAX_WAIT_SECONDS ]; do
     break
   fi
   
-  sleep 2
-  elapsed=$((elapsed + 2))
+  sleep 5
+  elapsed=$((elapsed + 5))
 done
 
 if [ $elapsed -ge $MAX_WAIT_SECONDS ]; then
@@ -220,8 +240,8 @@ else
 fi
 
 echo ""
-echo "Restarting CSI driver pods in case they are deployed..."
-kubectl -n $NAMESPACE delete pod -l app.kubernetes.io/component=csi-driver,app.kubernetes.io/name=dynatrace-operator
+echo "Deleting namespace $NAMESPACE..."
+kubectl delete namespace "$NAMESPACE" --ignore-not-found
 
 echo ""
 echo "Cleanup process completed." 
