@@ -21,11 +21,11 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-24.04
     outputs:
-      go_changed: ${{ steps.go-files.outputs.any_changed }}
-      docker_changed: ${{ steps.dockerfile.outputs.any_changed }}
-      ci_changed: ${{ steps.ci.outputs.any_changed }}
-      is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch }}
-      is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized }}
+      go_changed: ${{ steps.go-files.outputs.any_changed == 'true' && 'true' || '' }}
+      docker_changed: ${{ steps.dockerfile.outputs.any_changed == 'true' && 'true' || '' }}
+      ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
+      is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
+      is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -75,6 +75,8 @@ jobs:
 
   prepare:
     name: Prepare properties
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
