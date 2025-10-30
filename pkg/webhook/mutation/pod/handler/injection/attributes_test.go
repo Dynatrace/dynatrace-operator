@@ -93,6 +93,27 @@ func TestAddPodAttributes(t *testing.T) {
 }
 
 func TestAddContainerAttributes(t *testing.T) {
+	// request to pre-mount required volumes: OneAgent or Enrichment or both
+	vmBaseRequest := &dtwebhook.BaseRequest{
+		Pod: &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.InjectionSplitMounts: "false",
+				},
+			},
+		},
+		DynaKube: dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(true),
+				},
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+			},
+		},
+	}
+
 	validateContainerAttributes := func(t *testing.T, pod corev1.Pod, args []string) {
 		t.Helper()
 
@@ -157,13 +178,13 @@ func TestAddContainerAttributes(t *testing.T) {
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app1Container)
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest)
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app2Container)
+		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest)
 
 		initContainer := corev1.Container{
 			Args: []string{},
@@ -194,7 +215,7 @@ func TestAddContainerAttributes(t *testing.T) {
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app1Container)
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest)
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
@@ -228,6 +249,33 @@ func TestAddContainerAttributes(t *testing.T) {
 }
 
 func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
+	// request to pre-mount required volumes: OneAgent or Enrichment or both
+	vmBaseRequest := func(metadataEnrichment bool, oneAgent bool) *dtwebhook.BaseRequest {
+		br := &dtwebhook.BaseRequest{
+			Pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						dtwebhook.InjectionSplitMounts: "true",
+					},
+				},
+			},
+			DynaKube: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					MetadataEnrichment: metadataenrichment.Spec{
+						Enabled: ptr.To(metadataEnrichment),
+					},
+				},
+			},
+		}
+		if oneAgent {
+			br.DynaKube.Spec.OneAgent = oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+			}
+		}
+
+		return br
+	}
+
 	validateContainerAttributes := func(t *testing.T, pod corev1.Pod, args []string) {
 		t.Helper()
 
@@ -374,15 +422,13 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddOneAgentConfigVolumeMount(&app1Container)
-		volumes.AddEnrichmentConfigVolumeMount(&app1Container)
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest(true, true))
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		volumes.AddOneAgentConfigVolumeMount(&app2Container)
-		volumes.AddEnrichmentConfigVolumeMount(&app2Container)
+		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest(true, true))
 
 		initContainer := corev1.Container{
 			Args: []string{},
@@ -429,8 +475,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddOneAgentConfigVolumeMount(&app1Container)
-		volumes.AddEnrichmentConfigVolumeMount(&app1Container)
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest(true, true))
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
@@ -483,13 +528,13 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddOneAgentConfigVolumeMount(&app1Container)
+		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest(false, true))
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		volumes.AddEnrichmentConfigVolumeMount(&app2Container)
+		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest(true, false))
 
 		initContainer := corev1.Container{
 			Args: []string{},

@@ -85,7 +85,7 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	return mutateUserContainers(request.BaseRequest, installPath)
 }
 
-func containerIsInjected(container corev1.Container, _ bool, _ bool, _ bool) bool {
+func containerIsInjected(container corev1.Container, _ *dtwebhook.BaseRequest) bool {
 	return mounts.IsIn(container.VolumeMounts, BinVolumeName)
 }
 

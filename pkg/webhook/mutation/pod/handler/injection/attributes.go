@@ -7,6 +7,7 @@ import (
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
@@ -58,17 +59,7 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 			ContainerName: c.Name,
 		})
 
-		if volumes.IsConfigVolumeMountNeeded(c, request.IsSplitMountsFFEnabled()) {
-			volumes.AddConfigVolumeMount(c)
-		}
-
-		if volumes.IsOneAgentConfigVolumeMountNeeded(c, request.IsSplitMountsFFEnabled(), request.DynaKube.OneAgent().IsAppInjectionNeeded()) {
-			volumes.AddOneAgentConfigVolumeMount(c)
-		}
-
-		if volumes.IsEnrichmentConfigVolumeMountNeeded(c, request.IsSplitMountsFFEnabled(), request.DynaKube.MetadataEnrichment().IsEnabled()) {
-			volumes.AddEnrichmentConfigVolumeMount(c)
-		}
+		volumes.AddConfigVolumeMount(c, request.BaseRequest)
 	}
 
 	if len(attributes) > 0 {
@@ -85,14 +76,17 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 	return false, nil
 }
 
-func isInjected(container corev1.Container, splitMountsEnabled bool, isAppInjectionEnabled bool, isMetadataEnrichmentEnabled bool) bool {
-	if !volumes.IsConfigVolumeMountNeeded(&container, splitMountsEnabled) &&
-		!volumes.IsOneAgentConfigVolumeMountNeeded(&container, splitMountsEnabled, isAppInjectionEnabled) &&
-		!volumes.IsEnrichmentConfigVolumeMountNeeded(&container, splitMountsEnabled, isMetadataEnrichmentEnabled) {
-		return true
-	}
+func isInjected(container corev1.Container, request *dtwebhook.BaseRequest) bool {
+	if request.IsSplitMountsEnabled() {
+		if request.DynaKube.OneAgent().IsAppInjectionNeeded() && !mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPathOneAgent) ||
+			request.DynaKube.MetadataEnrichment().IsEnabled() && !mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPathEnrichment) {
+			return false
+		}
 
-	return false
+		return true
+	} else {
+		return mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPath)
+	}
 }
 
 func createImageInfo(imageURI string) containerattr.ImageInfo { // TODO: move to bootstrapper repo

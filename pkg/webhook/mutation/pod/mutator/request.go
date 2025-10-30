@@ -62,7 +62,7 @@ func (req *BaseRequest) PodName() string {
 	return pod.GetName(*req.Pod)
 }
 
-func (req *BaseRequest) IsSplitMountsFFEnabled() bool {
+func (req *BaseRequest) IsSplitMountsEnabled() bool {
 	if value, found := req.Pod.Annotations[InjectionSplitMounts]; found && strings.ToLower(value) == "true" {
 		return true
 	}
@@ -70,7 +70,7 @@ func (req *BaseRequest) IsSplitMountsFFEnabled() bool {
 	return false
 }
 
-func (req *BaseRequest) NewContainers(isInjected func(corev1.Container, bool, bool, bool) bool) (newContainers []*corev1.Container) {
+func (req *BaseRequest) NewContainers(isInjected func(corev1.Container, *BaseRequest) bool) (newContainers []*corev1.Container) {
 	newContainers = []*corev1.Container{}
 
 	for i := range req.Pod.Spec.Containers {
@@ -79,7 +79,7 @@ func (req *BaseRequest) NewContainers(isInjected func(corev1.Container, bool, bo
 			continue
 		}
 
-		if isInjected(*container, req.IsSplitMountsFFEnabled(), req.DynaKube.OneAgent().IsAppInjectionNeeded(), req.DynaKube.MetadataEnrichment().IsEnabled()) {
+		if isInjected(*container, req) {
 			continue
 		}
 
