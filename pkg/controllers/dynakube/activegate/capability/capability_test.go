@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
@@ -136,9 +136,9 @@ func TestNewMultiCapabilityWithOTLPExporterConfiguration(t *testing.T) {
 	t.Run("creates new multicapability with OTLP exporter configuration enabled", func(t *testing.T) {
 		dk := buildDynakube(capabilities, false, true)
 
-		dk.Spec.OTLPExporterConfiguration = &otlpexporterconfiguration.Spec{
-			Signals: otlpexporterconfiguration.SignalConfiguration{
-				Metrics: &otlpexporterconfiguration.MetricsSignal{},
+		dk.Spec.OTLPExporterConfiguration = &otlp.ExporterConfigurationSpec{
+			Signals: otlp.SignalConfiguration{
+				Metrics: &otlp.MetricsSignal{},
 			},
 		}
 

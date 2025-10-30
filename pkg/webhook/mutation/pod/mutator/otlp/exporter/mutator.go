@@ -9,6 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
@@ -162,23 +164,15 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 }
 
 func ensureCertificateVolumeMounted(c *corev1.Container) {
-	alreadyMounted := false
-
-	for _, vm := range c.VolumeMounts {
-		if vm.Name == activeGateTrustedCertVolumeName {
-			alreadyMounted = true
-
-			break
-		}
+	if mounts.IsIn(c.VolumeMounts, activeGateTrustedCertVolumeName) {
+		return
 	}
 
-	if !alreadyMounted {
-		c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-			Name:      activeGateTrustedCertVolumeName,
-			MountPath: exporterCertsMountPath,
-			ReadOnly:  true,
-		})
-	}
+	c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+		Name:      activeGateTrustedCertVolumeName,
+		MountPath: exporterCertsMountPath,
+		ReadOnly:  true,
+	})
 }
 
 func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, override bool) bool {
@@ -238,15 +232,13 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 }
 
 func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
-	if !dk.ActiveGate().IsEnabled() || !dk.ActiveGate().HasCaCert() {
+	if !dk.ActiveGate().HasCaCert() {
 		return
 	}
 
 	// avoid duplicate volume additions on reinvocation or multiple container matches
-	for _, v := range pod.Spec.Volumes {
-		if v.Name == activeGateTrustedCertVolumeName {
-			return
-		}
+	if volumes.IsIn(pod.Spec.Volumes, activeGateTrustedCertVolumeName) {
+		return
 	}
 
 	defaultMode := int32(420)
