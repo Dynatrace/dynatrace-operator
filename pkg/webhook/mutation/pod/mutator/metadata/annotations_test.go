@@ -54,7 +54,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			metadataenrichment.Prefix + "copyofannotations": "copyofannotations",
 			"test-annotation": "test-value",
 		}
-		request.DynaKube.Status.MetadataEnrichment.Rules = []metadataenrichment.EnrichmentRule{
+		request.DynaKube.Status.MetadataEnrichment.Rules = []metadataenrichment.Rule{
 			{
 				Type:   metadataenrichment.AnnotationRule,
 				Source: "test-annotation",
@@ -114,7 +114,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test4": "test-annotation-value4",
 		}
 
-		request.DynaKube.Status.MetadataEnrichment.Rules = []metadataenrichment.EnrichmentRule{
+		request.DynaKube.Status.MetadataEnrichment.Rules = []metadataenrichment.Rule{
 			{
 				Type:   metadataenrichment.LabelRule,
 				Source: "test",
