@@ -12,7 +12,7 @@ export NAMESPACE="${1:-dynatrace}"
 export DAEMONSET_NAME="dynatrace-cleanup-node-fs"
 export MAX_WAIT_SECONDS=300
 export WAIT_BEFORE_DAEMONSET_DESTRUCTION_SECONDS=0
-export CSI_DRIVER_DATA_PATH="/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com"
+export CSI_DRIVER_DATA_PATH="/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
 
 echo "Using namespace: $NAMESPACE"
 kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || {
@@ -49,6 +49,8 @@ spec:
                 values:
                 - amd64
                 - arm64
+                - ppc64le
+                - s390x
       initContainers:
       - name: cleanup-init
         image: registry.access.redhat.com/ubi9-micro:9.6
