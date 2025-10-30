@@ -99,7 +99,7 @@ jobs:
           echo "Markdown changed: ${{ steps.markdown.outputs.all_changed_files }}"
 
   helm-test:
-    needs: detect-changes
+    needs: [detect-changes]
     if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run helm unit tests
     runs-on: ubuntu-24.04
@@ -117,7 +117,7 @@ jobs:
           make test/helm/unit
 
   helm-lint:
-    needs: detect-changes
+    needs: [detect-changes]
     if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run helm linting
     runs-on: ubuntu-24.04
@@ -157,7 +157,7 @@ jobs:
           make go/check-coverage
 
   linting:
-    needs: detect-changes
+    needs: [detect-changes]
     if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run linting
     runs-on: ubuntu-24.04
@@ -173,7 +173,7 @@ jobs:
 
   generated-files:
     name: Check generated files
-    needs: detect-changes
+    needs: [detect-changes]
     if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     runs-on: ubuntu-24.04
     steps:
@@ -221,7 +221,7 @@ jobs:
           args: --severity-threshold=high
 
   markdown-lint:
-    needs: detect-changes
+    needs: [detect-changes]
     if: needs.detect-changes.outputs.markdown_changed
     name: Lint markdown files
     runs-on: ubuntu-24.04
