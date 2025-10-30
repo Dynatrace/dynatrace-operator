@@ -643,7 +643,7 @@ func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynakube.DynaKubeSpec{
-			OTLPExporterConfiguration: &otlp.ExporterCofigurationSpec{
+			OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 				Signals: otlp.SignalConfiguration{
 					Metrics: &otlp.MetricsSignal{},
 					Traces:  &otlp.TracesSignal{},

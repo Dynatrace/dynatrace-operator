@@ -108,7 +108,7 @@ func TestReconciler(t *testing.T) {
 						},
 					},
 				},
-				OTLPExporterConfiguration: &otlp.ExporterCofigurationSpec{
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					NamespaceSelector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							testNamespaceSelectorLabel: testDynakube,

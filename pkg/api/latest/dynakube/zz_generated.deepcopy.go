@@ -125,7 +125,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	}
 	if in.OTLPExporterConfiguration != nil {
 		in, out := &in.OTLPExporterConfiguration, &out.OTLPExporterConfiguration
-		*out = new(otlp.ExporterCofigurationSpec)
+		*out = new(otlp.ExporterConfigurationSpec)
 		(*in).DeepCopyInto(*out)
 	}
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
