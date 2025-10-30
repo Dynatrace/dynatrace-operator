@@ -19,7 +19,7 @@ package otlp
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 type ExporterConfiguration struct {
-	Spec *ExporterCofigurationSpec
+	Spec *ExporterConfigurationSpec
 }
 
 // +kubebuilder:object:generate=true
