@@ -19,7 +19,7 @@ kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || {
   echo "Namespace $NAMESPACE does not exist. Creating it..."
   kubectl create namespace "$NAMESPACE"
 }
-
+  
 echo "Creating cleanup DaemonSet..."
 
 cat <<EOF | kubectl apply -f -
