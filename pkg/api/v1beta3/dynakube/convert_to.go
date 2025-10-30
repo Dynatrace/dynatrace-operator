@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta3/dynakube/oneagent"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -104,7 +105,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 func (src *DynaKube) toTemplatesSpec(dst *dynakubelatest.DynaKube) {
 	dst.Spec.Templates.LogMonitoring = toLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
 	dst.Spec.Templates.KspmNodeConfigurationCollector = toKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KspmNodeConfigurationCollector)
-	dst.Spec.Templates.OpenTelemetryCollector = toOpenTelemetryCollectorTemplate(src.Spec.Templates.OpenTelemetryCollector)
+	dst.Spec.Templates.OpenTelemetryCollector = toOpenTelemetryCollectorTemplate(dst, src.Spec.Templates.OpenTelemetryCollector)
 	dst.Spec.Templates.ExtensionExecutionController = toExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
 
@@ -147,13 +148,18 @@ func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollecto
 	return dst
 }
 
-func toOpenTelemetryCollectorTemplate(src OpenTelemetryCollectorSpec) dynakubelatest.OpenTelemetryCollectorSpec {
+func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelemetryCollectorSpec) dynakubelatest.OpenTelemetryCollectorSpec {
 	dst := dynakubelatest.OpenTelemetryCollectorSpec{}
 
 	dst.Labels = src.Labels
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
+	if dst.ImageRef.IsZero() {
+		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+		dst.ImageRef.Tag = "latest"
+		dk.RemovedFields().DefaultOTELCImage.Set(ptr.To(true))
+	}
 	dst.TLSRefName = src.TlsRefName
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations

@@ -26,3 +26,9 @@ func (ref Ref) StringWithDefaults(repo, tag string) string {
 func (ref Ref) String() string {
 	return ref.Repository + ":" + ref.Tag
 }
+
+// IsZero returns true if the image ref is empty.
+// Prefer this name over IsEmpty for compatibility with JSON omitzero.
+func (ref *Ref) IsZero() bool {
+	return ref == nil || *ref == Ref{}
+}
