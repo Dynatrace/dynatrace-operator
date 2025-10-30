@@ -24,7 +24,7 @@ type ExporterConfiguration struct {
 
 // +kubebuilder:object:generate=true
 
-type ExporterCofigurationSpec struct {
+type ExporterConfigurationSpec struct {
 
 	// The OpenTelemetry signals that should be configured to be sent via OTLP
 	Signals SignalConfiguration `json:"signals,omitempty"`
