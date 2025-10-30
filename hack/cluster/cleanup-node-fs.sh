@@ -29,6 +29,18 @@ spec:
       labels:
         app: ${DAEMONSET_NAME}
     spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - arm64
       initContainers:
       - name: cleanup-init
         image: registry.access.redhat.com/ubi9-micro:9.6
