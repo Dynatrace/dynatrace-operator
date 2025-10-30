@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
@@ -185,11 +185,11 @@ func TestTokens(t *testing.T) {
 	t.Run("otlp exporter configuration enabled => dataingest token missing rights => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
-					Signals: otlpexporterconfiguration.SignalConfiguration{
-						Traces:  &otlpexporterconfiguration.TracesSignal{},
-						Metrics: &otlpexporterconfiguration.MetricsSignal{},
-						Logs:    &otlpexporterconfiguration.LogsSignal{},
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					Signals: otlp.SignalConfiguration{
+						Traces:  &otlp.TracesSignal{},
+						Metrics: &otlp.MetricsSignal{},
+						Logs:    &otlp.LogsSignal{},
 					},
 				},
 			},
@@ -212,11 +212,11 @@ func TestTokens(t *testing.T) {
 	t.Run("otlp exporter configuration enabled => dataingest token has rights => success", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
-					Signals: otlpexporterconfiguration.SignalConfiguration{
-						Traces:  &otlpexporterconfiguration.TracesSignal{},
-						Metrics: &otlpexporterconfiguration.MetricsSignal{},
-						Logs:    &otlpexporterconfiguration.LogsSignal{},
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					Signals: otlp.SignalConfiguration{
+						Traces:  &otlp.TracesSignal{},
+						Metrics: &otlp.MetricsSignal{},
+						Logs:    &otlp.LogsSignal{},
 					},
 				},
 			},

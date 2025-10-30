@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -75,8 +75,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
-					Signals: otlpexporterconfiguration.SignalConfiguration{},
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					Signals: otlp.SignalConfiguration{},
 				},
 			},
 		}
@@ -104,8 +104,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
-					Signals: otlpexporterconfiguration.SignalConfiguration{},
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					Signals: otlp.SignalConfiguration{},
 				},
 			},
 		}
@@ -152,8 +152,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
-					Signals: otlpexporterconfiguration.SignalConfiguration{},
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					Signals: otlp.SignalConfiguration{},
 				},
 			},
 		}
@@ -206,8 +206,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				Namespace: testNamespaceDynatrace,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
-					Signals: otlpexporterconfiguration.SignalConfiguration{},
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					Signals: otlp.SignalConfiguration{},
 				},
 			},
 		}
@@ -231,7 +231,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	t.Run("generate secrets for multiple namespaces (skip terminating)", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
-			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{}},
+			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{}},
 		}
 
 		terminatingNS := clientInjectedNamespace("terminating-ns", testDynakube)
@@ -262,7 +262,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	t.Run("token secret missing ingest token key -> return error", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
-			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{}},
+			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{}},
 		}
 
 		// tokens secret present but without ingest token key
@@ -286,7 +286,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	t.Run("no matching namespaces -> only source secret created", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
-			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{}},
+			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{}},
 		}
 
 		// namespace without injection label
