@@ -42,4 +42,4 @@ cleanup/cluster:
 
 ## Remove node filesystem leftovers
 cleanup/node-fs:
-	@./hack/cluster/cleanup-node-fs.sh
+	@SKIP_RUNNING_PODS_WARNING=true ./hack/cluster/cleanup-node-fs.sh dynatrace

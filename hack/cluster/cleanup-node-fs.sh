@@ -17,18 +17,35 @@ export CSI_DRIVER_DATA_PATH="/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
 export UBI_MICRO_IMAGE="registry.access.redhat.com/ubi9-micro:9.6-1760515026@sha256:aff810919642215e15c993b9bbc110dbcc446608730ad24499dafd9df7a8f8f4"
 
 echo "Using namespace: $NAMESPACE"
+namespace_created=false
 kubectl get namespace "$NAMESPACE" >/dev/null 2>&1 || {
   echo "Namespace $NAMESPACE does not exist. Creating it..."
   kubectl create namespace "$NAMESPACE"
+  namespace_created=true
 }
 
 running_pods=$(kubectl get pods -n "$NAMESPACE" --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l | tr -d ' ')
 if [ "$running_pods" -gt 0 ]; then
   echo ""
-  echo "❌  FAILURE: Found $running_pods running pod(s) in namespace $NAMESPACE:"
+  echo "⚠️  WARNING: Found $running_pods running pod(s) in namespace $NAMESPACE"
   echo ""
-  echo "Please uninstall the Dynatrace Operator and ensure all related pods are terminated before running this cleanup script."
-  exit 1
+  echo "Make sure that no DynaKube is deployed and all monitored pods were restarted before running this cleanup script."
+  echo ""
+  
+  if [ "$SKIP_RUNNING_PODS_WARNING" = true ]; then
+    echo "Skipping running pods warning. Continuing with cleanup..."
+  else
+    read -p "Do you want to continue anyway? (yes/no): " response
+    case "$response" in
+      [yY][eE][sS]|[yY])
+        echo "Continuing with cleanup..."
+        ;;
+      *)
+        echo "Cleanup cancelled."
+        exit 0
+        ;;
+    esac
+  fi
 fi
 
 echo ""
@@ -241,9 +258,11 @@ else
   echo "    To delete manually: kubectl delete daemonset $DAEMONSET_NAME -n $NAMESPACE"
 fi
 
-echo ""
-echo "Deleting namespace $NAMESPACE..."
-kubectl delete namespace "$NAMESPACE" --ignore-not-found
+if [ "$namespace_created" = true ]; then
+  echo ""
+  echo "Deleting namespace $NAMESPACE (created by this script)..."
+  kubectl delete namespace "$NAMESPACE" --ignore-not-found
+fi
 
 echo ""
 echo "Cleanup process completed." 
