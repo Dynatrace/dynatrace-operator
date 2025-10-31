@@ -145,11 +145,13 @@ spec:
             
             if [ \$exit_code -eq 0 ]; then
                 echo 'SUCCESS: Node filesystem cleanup completed successfully.';
+                echo 'SUCCESS' > /dev/termination-log
             else
                 echo 'FAILURE: Node filesystem cleanup completed with errors.';
+                echo 'FAILURE' > /dev/termination-log
             fi
             
-            # Always exit 0 to prevent restarts - we'll check logs for SUCCESS/FAILURE
+            # Always exit 0 to prevent restarts - we'll check termination log for SUCCESS/FAILURE
             exit 0
         volumeMounts:
         - name: host-root
@@ -225,17 +227,17 @@ for pod in $(kubectl get pods -n "$NAMESPACE" -l app="$DAEMONSET_NAME" --no-head
   init_status=$(kubectl get pod "$pod" -n "$NAMESPACE" -o jsonpath='{.status.initContainerStatuses[0].state}' 2>/dev/null)
   
   if echo "$init_status" | grep -q "terminated"; then
-    # Check logs for SUCCESS or FAILURE marker
-    logs=$(kubectl logs "$pod" -n "$NAMESPACE" -c cleanup-init 2>/dev/null || echo "")
+    # Check termination message for SUCCESS or FAILURE marker
+    termination_message=$(kubectl get pod "$pod" -n "$NAMESPACE" -o jsonpath='{.status.initContainerStatuses[0].state.terminated.message}' 2>/dev/null)
     
-    if echo "$logs" | grep -q "SUCCESS: Node filesystem cleanup completed successfully"; then
+    if [ "$termination_message" = "SUCCESS" ]; then
       successful_inits=$((successful_inits + 1))
-    elif echo "$logs" | grep -q "FAILURE: Node filesystem cleanup completed with errors"; then
+    elif [ "$termination_message" = "FAILURE" ]; then
       failed_inits=$((failed_inits + 1))
       echo "  ❌ $pod - cleanup failed (check logs: kubectl logs $pod -n $NAMESPACE -c cleanup-init)"
     else
       # Init container terminated but no clear status
-      echo "  ⚠️  $pod - unknown status"
+      echo "  ⚠️  $pod - unknown status (termination message: '$termination_message')"
     fi
   else
     echo "  ⏳ $pod - init container still running or pending"
