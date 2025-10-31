@@ -272,4 +272,8 @@ if [ "$namespace_created" = true ]; then
 fi
 
 echo ""
+echo "Restarting CSI driver pods in case they are deployed..."
+kubectl -n $NAMESPACE delete pod -l app.kubernetes.io/component=csi-driver,app.kubernetes.io/name=dynatrace-operator
+
+echo ""
 echo "Cleanup process completed." 
