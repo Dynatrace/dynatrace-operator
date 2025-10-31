@@ -193,7 +193,7 @@ while [ $elapsed -lt $MAX_WAIT_SECONDS ]; do
   ready=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.numberReady}' 2>/dev/null || echo "0")
   current=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.currentNumberScheduled}' 2>/dev/null || echo "0")
   
-  echo "DaemonSet status: Ready: $ready/$desired (Current scheduled: $current)"
+  printf "\rDaemonSet status: Ready: %s/%s (Current scheduled: %s) - %ss elapsed" "$ready" "$desired" "$current" "$elapsed"
   
   if [ "$ready" -eq "$desired" ] && [ "$desired" -gt "0" ]; then
     echo ""
