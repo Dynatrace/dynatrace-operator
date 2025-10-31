@@ -124,8 +124,12 @@ spec:
 
             for dir in "\${directories[@]}"; do
                 if [ -d "\$dir" ]; then
-                    rm -rf "\$dir"
-                    echo "Removed OneAgent directory: \$dir"
+                    if rm -rf "\$dir" 2>&1; then
+                        echo "Removed OneAgent directory: \$dir"
+                    else
+                        echo "ERROR: Failed to remove OneAgent directory: \$dir"
+                        exit_code=1
+                    fi
                 else
                     echo "OneAgent directory not found (skipping): \$dir"
                 fi
@@ -135,7 +139,8 @@ spec:
             if rm -rf /mnt/root${CSI_DRIVER_DATA_PATH} 2>&1; then
                 echo 'CSI driver directory removed successfully.';
             else
-                echo 'WARNING: Failed to remove CSI driver directory (may not exist).';
+                echo 'ERROR: Failed to remove CSI driver directory.';
+                exit_code=1
             fi
             
             if [ \$exit_code -eq 0 ]; then
