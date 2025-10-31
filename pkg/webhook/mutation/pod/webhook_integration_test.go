@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -227,16 +227,16 @@ func TestOTLPWebhook(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: apiURL,
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
 					NamespaceSelector: metav1.LabelSelector{ // match test namespace label applied earlier
 						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
 						},
 					},
-					Signals: otlpexporterconfiguration.SignalConfiguration{
-						Metrics: &otlpexporterconfiguration.MetricsSignal{},
-						Logs:    &otlpexporterconfiguration.LogsSignal{},
-						Traces:  &otlpexporterconfiguration.TracesSignal{},
+					Signals: otlpspec.SignalConfiguration{
+						Metrics: &otlpspec.MetricsSignal{},
+						Logs:    &otlpspec.LogsSignal{},
+						Traces:  &otlpspec.TracesSignal{},
 					},
 				},
 			},
@@ -300,16 +300,16 @@ func TestOTLPWebhook(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: apiURL,
-				OTLPExporterConfiguration: &otlpexporterconfiguration.Spec{
+				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
 					NamespaceSelector: metav1.LabelSelector{ // match test namespace label applied earlier
 						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
 						},
 					},
-					Signals: otlpexporterconfiguration.SignalConfiguration{
-						Metrics: &otlpexporterconfiguration.MetricsSignal{},
-						Logs:    &otlpexporterconfiguration.LogsSignal{},
-						Traces:  &otlpexporterconfiguration.TracesSignal{},
+					Signals: otlpspec.SignalConfiguration{
+						Metrics: &otlpspec.MetricsSignal{},
+						Logs:    &otlpspec.LogsSignal{},
+						Traces:  &otlpspec.TracesSignal{},
 					},
 				},
 			},
