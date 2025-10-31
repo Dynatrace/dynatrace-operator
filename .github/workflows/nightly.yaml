@@ -6,8 +6,8 @@ on:
     - cron: 0 0 * * 1-5
 
 env:
-  DOCKER_REGISTRY: quay.io
-  DOCKER_REPOSITORY: dynatrace/dynatrace-operator
+  DOCKER_REGISTRY: ghcr.io
+  # DOCKER_REPOSITORY is set in the "prepare" job below
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
 
 jobs:
@@ -23,12 +23,22 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
+      - name: Set Docker repository
+        id: set-docker-repository
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          # Avoid upper case characters
+          github_repository=$(echo "$GITHUB_REPOSITORY" | tr "[:upper:]" "[:lower:]")
+          echo "docker-repository=${github_repository}" >> "$GITHUB_OUTPUT"
     outputs:
+      docker_repository: ${{ steps.set-docker-repository.outputs.docker-repository }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
   build-push:
     name: Build images
+    needs: [prepare]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -37,14 +47,14 @@ jobs:
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build image
         id: build-image
         uses: ./.github/actions/build-push-image
         with:
           platforms: ${{ env.PLATFORMS }}
-          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
+          images: ${{ env.DOCKER_REGISTRY }}/${{ needs.prepare.outputs.docker_repository }}
     outputs:
       digest: ${{ steps.build-image.outputs.digest }}
 
@@ -55,6 +65,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -62,19 +73,19 @@ jobs:
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Sign images
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image: ${{ env.DOCKER_REGISTRY }}/${{ needs.prepare.outputs.docker_repository }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Create SBOM
         id: sbom
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
-          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ needs.prepare.outputs.docker_repository }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
@@ -82,7 +93,7 @@ jobs:
       - name: Upload SBOM
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image: ${{ env.DOCKER_REGISTRY }}/${{ needs.prepare.outputs.docker_repository }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
@@ -93,6 +104,7 @@ jobs:
     environment: Release
     permissions:
       id-token: write
+      packages: write
     runs-on: ubuntu-24.04
     env:
       HELM_PACKAGE_VERSION: 0.0.0-${{ needs.prepare.outputs.version_without_prefix }}
@@ -114,13 +126,13 @@ jobs:
       - name: Authenticate Helm
         shell: bash
         run: |
-          helm registry login -u "${{ secrets.QUAY_USERNAME }}" -p "${{ secrets.QUAY_PASSWORD }}" "${{ env.DOCKER_REGISTRY }}"
+          helm registry login -u "${{ github.repository_owner }}" -p "${{ secrets.GITHUB_TOKEN }}" "${{ env.DOCKER_REGISTRY }}"
       - name: Authenticate Docker
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload and sign helm package
         uses: ./.github/actions/upload-nightly-helm
         with:
