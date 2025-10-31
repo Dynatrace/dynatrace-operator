@@ -66,6 +66,14 @@
       ],
       datasourceTemplate: "github-releases",
     },
+    {
+      fileMatch: [
+        "(^|/|\\.)cleanup-node-fs.sh$",
+      ],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+export UBI_MICRO_IMAGE=\".*?:(?<currentValue>.*)\"",
+      ],
+    },
   ],
   packageRules: [
     {
