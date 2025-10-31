@@ -9,7 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
@@ -42,12 +42,12 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		dynakubeComponents.WithAnnotations(map[string]string{exp.InjectionAutomaticKey: "true"}),
 	)
 	// configure OTLP exporter signals + namespace selector
-	testDynakube.Spec.OTLPExporterConfiguration = &otlpexporterconfiguration.Spec{
+	testDynakube.Spec.OTLPExporterConfiguration = &otlp.ExporterConfigurationSpec{
 		NamespaceSelector: metav1.LabelSelector{MatchLabels: map[string]string{"otlp-inject": testDynakube.Name}},
-		Signals: otlpexporterconfiguration.SignalConfiguration{
-			Metrics: &otlpexporterconfiguration.MetricsSignal{},
-			Logs:    &otlpexporterconfiguration.LogsSignal{},
-			Traces:  &otlpexporterconfiguration.TracesSignal{},
+		Signals: otlp.SignalConfiguration{
+			Metrics: &otlp.MetricsSignal{},
+			Logs:    &otlp.LogsSignal{},
+			Traces:  &otlp.TracesSignal{},
 		},
 	}
 
