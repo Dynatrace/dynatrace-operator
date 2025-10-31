@@ -59,7 +59,7 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 			ContainerName: c.Name,
 		})
 
-		volumes.AddConfigVolumeMount(c)
+		volumes.AddConfigVolumeMount(c, request.BaseRequest)
 	}
 
 	if len(attributes) > 0 {
@@ -76,8 +76,17 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 	return false, nil
 }
 
-func isInjected(container corev1.Container) bool {
-	return mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPath)
+func isInjected(container corev1.Container, request *dtwebhook.BaseRequest) bool {
+	if request.IsSplitMountsEnabled() {
+		if request.DynaKube.OneAgent().IsAppInjectionNeeded() && !mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPathOneAgent) ||
+			request.DynaKube.MetadataEnrichmentEnabled() && !mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPathEnrichment) {
+			return false
+		}
+
+		return true
+	} else {
+		return mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPath)
+	}
 }
 
 func createImageInfo(imageURI string) containerattr.ImageInfo { // TODO: move to bootstrapper repo
