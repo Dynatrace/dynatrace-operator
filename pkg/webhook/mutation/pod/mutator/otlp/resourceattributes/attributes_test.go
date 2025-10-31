@@ -12,13 +12,23 @@ import (
 )
 
 func Test_newAttributesFromEnv(t *testing.T) {
-	t.Run("empty env value returns empty map", func(t *testing.T) {
-		attrs := newAttributesFromEnv(corev1.EnvVar{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: ""})
+	const envName = "OTEL_RESOURCE_ATTRIBUTES"
+
+	t.Run("env var missing returns empty map and found=false", func(t *testing.T) {
+		attrs, found := newAttributesFromEnv([]corev1.EnvVar{}, envName)
+		assert.False(t, found)
+		assert.Empty(t, attrs)
+	})
+
+	t.Run("empty env value returns empty map and found=true", func(t *testing.T) {
+		attrs, found := newAttributesFromEnv([]corev1.EnvVar{{Name: envName, Value: ""}}, envName)
+		assert.True(t, found)
 		assert.Empty(t, attrs)
 	})
 
 	t.Run("parses key=value pairs and trims whitespace", func(t *testing.T) {
-		attrs := newAttributesFromEnv(corev1.EnvVar{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: " k1 = v1 , k2=v2,k3= v3  "})
+		attrs, found := newAttributesFromEnv([]corev1.EnvVar{{Name: envName, Value: " k1 = v1 , k2=v2,k3= v3  "}}, envName)
+		require.True(t, found)
 		require.Len(t, attrs, 3)
 		assert.Equal(t, "v1", attrs["k1"])
 		assert.Equal(t, "v2", attrs["k2"])
@@ -26,7 +36,8 @@ func Test_newAttributesFromEnv(t *testing.T) {
 	})
 
 	t.Run("ignores malformed entries without '='", func(t *testing.T) {
-		attrs := newAttributesFromEnv(corev1.EnvVar{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "k1=v1,k2,k3=v3"})
+		attrs, found := newAttributesFromEnv([]corev1.EnvVar{{Name: envName, Value: "k1=v1,k2,k3=v3"}}, envName)
+		require.True(t, found)
 		require.Len(t, attrs, 2)
 		assert.Contains(t, attrs, "k1")
 		assert.Contains(t, attrs, "k3")
@@ -80,8 +91,10 @@ func Test_attributes_toString(t *testing.T) {
 }
 
 func Test_attributes(t *testing.T) {
+	const envName = "OTEL_RESOURCE_ATTRIBUTES"
 	// Build from env then merge annotations
-	envAttrs := newAttributesFromEnv(corev1.EnvVar{Value: "k1=v1,k2=v2"})
+	envAttrs, found := newAttributesFromEnv([]corev1.EnvVar{{Name: envName, Value: "k1=v1,k2=v2"}}, envName)
+	require.True(t, found)
 	annotKey := metadataenrichment.Annotation + "/custom.key"
 	annotVal := "value:with/special chars"
 	mapAttrs := newAttributesFromMap(map[string]string{annotKey: annotVal})

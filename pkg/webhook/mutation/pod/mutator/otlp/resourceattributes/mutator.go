@@ -80,13 +80,10 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 }
 
 func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info) bool {
-	mutated := false
+	var mutated bool
 
-	existingAttributes := attributes{}
-
-	if ev := env.FindEnvVar(c.Env, otlpResourceAttributesEnvVar); ev != nil {
-		existingAttributes = newAttributesFromEnv(*ev)
-
+	existingAttributes, ok := newAttributesFromEnv(c.Env, otlpResourceAttributesEnvVar)
+	if ok {
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
 		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
 			return e.Name == otlpResourceAttributesEnvVar
@@ -108,28 +105,19 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		"k8s.node.name":              "$(K8S_NODE_NAME)",
 	}
 
-	if existingAttributes.merge(attributesToAdd) {
-		mutated = true
-	}
-
 	// add workload attributes (only once fetched per pod, but appended per container to env var if not already present)
 	if ownerInfo != nil {
 		workloadAttributesToAdd := attributes{
 			"k8s.workload.kind": ownerInfo.Kind,
 			"k8s.workload.name": ownerInfo.Name,
 		}
-
-		if existingAttributes.merge(workloadAttributesToAdd) {
-			mutated = true
-		}
+		_ = attributesToAdd.merge(workloadAttributesToAdd)
 	}
-
-	// add attributes from annotations
+	// add attributes from annotations - these have the highest precedence, i.e. users can potentially overwrite the above attributes
 	attributesFromAnnotations := newAttributesFromMap(request.Pod.Annotations)
+	_ = attributesFromAnnotations.merge(attributesToAdd)
 
-	if existingAttributes.merge(attributesFromAnnotations) {
-		mutated = true
-	}
+	mutated = existingAttributes.merge(attributesFromAnnotations)
 
 	finalValue := existingAttributes.toString()
 
@@ -151,39 +139,27 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool
 func ensureEnvVarSourcesSet(c *corev1.Container) bool {
 	mutated := false
 
-	if !env.IsIn(c.Env, "K8S_PODNAME") {
-		c.Env = append(
-			c.Env,
-			corev1.EnvVar{
-				Name:      "K8S_PODNAME",
-				ValueFrom: env.NewEnvVarSourceForField("metadata.name"),
-			},
-		)
-
+	if envs, added := env.Append(c.Env, corev1.EnvVar{
+		Name:      "K8S_PODNAME",
+		ValueFrom: env.NewEnvVarSourceForField("metadata.name"),
+	}); added {
+		c.Env = envs
 		mutated = true
 	}
 
-	if !env.IsIn(c.Env, "K8S_PODUID") {
-		c.Env = append(
-			c.Env,
-			corev1.EnvVar{
-				Name:      "K8S_PODUID",
-				ValueFrom: env.NewEnvVarSourceForField("metadata.uid"),
-			},
-		)
-
+	if envs, added := env.Append(c.Env, corev1.EnvVar{
+		Name:      "K8S_PODUID",
+		ValueFrom: env.NewEnvVarSourceForField("metadata.uid"),
+	}); added {
+		c.Env = envs
 		mutated = true
 	}
 
-	if !env.IsIn(c.Env, "K8S_NODE_NAME") {
-		c.Env = append(
-			c.Env,
-			corev1.EnvVar{
-				Name:      "K8S_NODE_NAME",
-				ValueFrom: env.NewEnvVarSourceForField("spec.nodeName"),
-			},
-		)
-
+	if envs, added := env.Append(c.Env, corev1.EnvVar{
+		Name:      "K8S_NODE_NAME",
+		ValueFrom: env.NewEnvVarSourceForField("spec.nodeName"),
+	}); added {
+		c.Env = envs
 		mutated = true
 	}
 
