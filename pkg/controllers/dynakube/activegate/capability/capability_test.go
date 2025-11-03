@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
@@ -34,7 +35,7 @@ var capabilities = []activegate.CapabilityDisplayName{
 }
 
 func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableTelemetryIngest bool) *dynakube.DynaKube {
-	extensionsSpec := &extensions.Spec{&extensions.PrometheusSpec{}}
+	extensionsSpec := &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 	if !enableExtensions {
 		extensionsSpec = nil
 	}
@@ -121,6 +122,32 @@ func TestNewMultiCapabilityWithTelemetryIngest(t *testing.T) {
 		assert.True(t, mc.Enabled())
 		assert.Equal(t, expectedArgNameWithTelemetryIngest, mc.ArgName())
 	})
+	t.Run("creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled", func(t *testing.T) {
+		var emptyCapabilites []activegate.CapabilityDisplayName
+		dk := buildDynakube(emptyCapabilites, false, true)
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.False(t, mc.Enabled())
+		assert.Empty(t, mc.ArgName())
+	})
+}
+
+func TestNewMultiCapabilityWithOTLPExporterConfiguration(t *testing.T) {
+	t.Run("creates new multicapability with OTLP exporter configuration enabled", func(t *testing.T) {
+		dk := buildDynakube(capabilities, false, true)
+
+		dk.Spec.OTLPExporterConfiguration = &otlp.ExporterConfigurationSpec{
+			Signals: otlp.SignalConfiguration{
+				Metrics: &otlp.MetricsSignal{},
+			},
+		}
+
+		mc := NewMultiCapability(dk)
+		require.NotNil(t, mc)
+		assert.True(t, mc.Enabled())
+		assert.Equal(t, expectedArgNameWithTelemetryIngest, mc.ArgName())
+	})
+
 	t.Run("creates new multicapability without capabilities set in dynakube and TelemetryIngest enabled", func(t *testing.T) {
 		var emptyCapabilites []activegate.CapabilityDisplayName
 		dk := buildDynakube(emptyCapabilites, false, true)

@@ -64,6 +64,10 @@ linters:
     - wsl_v5
     - zerologlint
   settings:
+    goconst:
+      ignore-string-values:
+        - "true"
+        - "false"
     depguard:
       rules:
         all:
@@ -122,10 +126,8 @@ linters:
         - G101
         - G305
     govet:
-      enable:
-        - fieldalignment
       disable:
-        - copylocks
+        - fieldalignment
     misspell:
       locale: US
     mnd:

@@ -199,8 +199,8 @@ func createRulesResponse() dtclient.GetRulesSettingsResponse {
 	}
 }
 
-func createRules() []metadataenrichment.EnrichmentRule {
-	return []metadataenrichment.EnrichmentRule{
+func createRules() []metadataenrichment.Rule {
+	return []metadataenrichment.Rule{
 		{Source: "test1"},
 		{Source: "test2"},
 	}

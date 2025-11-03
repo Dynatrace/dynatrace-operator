@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	metaDataEnrichmentConditionType   = "MetadataEnrichment"
-	codeModulesInjectionConditionType = "CodeModulesInjection"
+	metaDataEnrichmentConditionType        = "MetadataEnrichment"
+	codeModulesInjectionConditionType      = "CodeModulesInjection"
+	otlpExporterConfigurationConditionType = "OTLPExporterConfiguration"
 
 	secretsCreatedReason  = "SecretsCreated"
 	secretsCreatedMessage = "Namespaces mapped and secrets created"
@@ -26,6 +27,16 @@ func setMetadataEnrichmentCreatedCondition(conditions *[]metav1.Condition) {
 func setCodeModulesInjectionCreatedCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    codeModulesInjectionConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  secretsCreatedReason,
+		Message: secretsCreatedMessage,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func setOTLPExporterConfigurationCondition(conditions *[]metav1.Condition) {
+	condition := metav1.Condition{
+		Type:    otlpExporterConfigurationConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  secretsCreatedReason,
 		Message: secretsCreatedMessage,

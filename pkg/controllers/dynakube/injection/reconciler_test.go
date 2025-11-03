@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -16,6 +17,7 @@ import (
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -106,6 +108,16 @@ func TestReconciler(t *testing.T) {
 						},
 					},
 				},
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							testNamespaceSelectorLabel: testDynakube,
+						},
+					},
+					Signals: otlp.SignalConfiguration{
+						Metrics: &otlp.MetricsSignal{},
+					},
+				},
 			},
 		}
 		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
@@ -113,8 +125,9 @@ func TestReconciler(t *testing.T) {
 			clientNotInjectedNamespace(testNamespace, testDynakube),
 			clientNotInjectedNamespace(testNamespace2, testDynakube2),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				dtclient.APIToken:  []byte(testAPIToken),
-				dtclient.PaasToken: []byte(testPaasToken),
+				dtclient.APIToken:        []byte(testAPIToken),
+				dtclient.PaasToken:       []byte(testPaasToken),
+				dtclient.DataIngestToken: []byte(testDataIngestToken),
 			}),
 			dk,
 		)
@@ -136,6 +149,9 @@ func TestReconciler(t *testing.T) {
 		assertSecretFound(t, clt, dk.OneAgent().GetTenantSecret(), dk.Namespace)
 		assertSecretFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, testNamespace2)
+
+		assertSecretFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
+		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
 
 		_, err = istioClient.GetServiceEntry(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
@@ -168,6 +184,8 @@ func TestReconciler(t *testing.T) {
 			clientSecret(consts.BootstrapperInitSecretName, testNamespace2, nil),
 			clientSecret(consts.BootstrapperInitCertsSecretName, testNamespace, nil),
 			clientSecret(consts.BootstrapperInitCertsSecretName, testNamespace2, nil),
+			clientSecret(consts.OTLPExporterSecretName, testNamespace, nil),
+			clientSecret(consts.OTLPExporterSecretName, testNamespace2, nil),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
@@ -188,8 +206,13 @@ func TestReconciler(t *testing.T) {
 		assertSecretFound(t, clt, consts.BootstrapperInitSecretName, testNamespace2)
 		assertSecretNotFound(t, clt, consts.BootstrapperInitCertsSecretName, testNamespace)
 		assertSecretFound(t, clt, consts.BootstrapperInitCertsSecretName, testNamespace2)
+
+		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
+		assertSecretFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
+
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), metaDataEnrichmentConditionType))
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType))
+		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
 
 		obj, err := istioClient.GetServiceEntry(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
@@ -268,6 +291,7 @@ func TestRemoveAppInjection(t *testing.T) {
 	rec.connectionInfoReconciler = createUncalledReconcilerMock(t)
 	rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
 	rec.k8sEntityReconciler = createUncalledReconcilerMock(t)
+
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
 
@@ -417,7 +441,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
-		err := r.generateInitSecret(ctx)
+		err := r.generateInitSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]})
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {
@@ -429,7 +453,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 }
 
 func TestCleanupOneAgentInjection(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-dynakube",
@@ -456,13 +480,55 @@ func TestCleanupOneAgentInjection(t *testing.T) {
 		)
 		r := Reconciler{client: clt, apiReader: clt, dk: dk}
 
-		r.cleanup(ctx)
+		r.unmap(ctx)
+		r.cleanupInitSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]})
 
 		for _, ns := range namespaces {
 			assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 		}
 
 		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
+
+		assert.Empty(t, dk.Conditions())
+	})
+}
+
+func TestCleanupOTLPInjection(t *testing.T) {
+	ctx := t.Context()
+	dkBase := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-dynakube",
+			Namespace: "my-dynatrace",
+		},
+		Spec: dynakube.DynaKubeSpec{},
+	}
+
+	t.Run("remove everything", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+		namespaces := []*corev1.Namespace{
+			clientInjectedNamespace("ns-1", dk.Name),
+			clientInjectedNamespace("ns-2", dk.Name),
+		}
+
+		setOTLPExporterConfigurationCondition(dk.Conditions())
+
+		clt := fake.NewClientWithIndex(
+			clientSecret(consts.OTLPExporterSecretName, namespaces[0].Name, nil),
+			clientSecret(consts.OTLPExporterSecretName, namespaces[1].Name, nil),
+			clientSecret(bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace, nil),
+			dk,
+			namespaces[0], namespaces[1],
+		)
+		r := Reconciler{client: clt, apiReader: clt, dk: dk}
+
+		r.unmap(ctx)
+		r.cleanupOTLPSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]})
+
+		for _, ns := range namespaces {
+			assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, ns.Name)
+		}
+
+		assertSecretNotFound(t, clt, exporterconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
 
 		assert.Empty(t, dk.Conditions())
 	})

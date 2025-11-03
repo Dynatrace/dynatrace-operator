@@ -43,6 +43,8 @@ tests:
               - dynatrace-bootstrapper-config
               - dynatrace-bootstrapper-certs
               - dynatrace-metadata-enrichment-endpoint
+              - dynatrace-otlp-exporter-config
+              - dynatrace-otlp-exporter-certs
             resources:
               - secrets
             verbs:

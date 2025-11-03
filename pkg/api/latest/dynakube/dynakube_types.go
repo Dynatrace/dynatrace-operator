@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlpexporterconfiguration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,7 +103,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Configuration for OTLP Exporter Configuration
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OTLP Exporter Configuration",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	OTLPExporterConfiguration *otlpexporterconfiguration.Spec `json:"otlpExporterConfiguration,omitempty"`
+	OTLPExporterConfiguration *otlp.ExporterConfigurationSpec `json:"otlpExporterConfiguration,omitempty"`
 
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
@@ -169,6 +169,8 @@ type TemplatesSpec struct {
 	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
+	// +kubebuilder:validation:Optional
+	DatabaseExecutor extensions.DatabaseExecutorSpec `json:"databaseExecutor,omitempty"`
 	// +kubebuilder:validation:Optional
 	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
 }

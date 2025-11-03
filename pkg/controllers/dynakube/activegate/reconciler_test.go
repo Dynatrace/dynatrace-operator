@@ -366,7 +366,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			},
 		}
 
@@ -397,7 +397,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
-				Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			},
 		}
 
@@ -428,7 +428,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			},
 		}
 
@@ -459,7 +459,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			},
 		}
 

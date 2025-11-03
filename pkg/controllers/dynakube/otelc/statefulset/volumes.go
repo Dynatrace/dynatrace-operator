@@ -24,7 +24,7 @@ const (
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	var volumes []corev1.Volume
 
-	if ext := dk.Extensions(); ext.IsEnabled() {
+	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
 		volumes = append(
 			volumes,
 			corev1.Volume{
@@ -34,8 +34,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName: ext.GetTokenSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  consts.OtelcTokenSecretKey,
-								Path: consts.OtelcTokenSecretKey,
+								Key:  consts.DatasourceTokenSecretKey,
+								Path: consts.DatasourceTokenSecretKey,
 							},
 						},
 						DefaultMode: ptr.To(int32(420)),
@@ -87,7 +87,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName: dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  dynakube.TLSCertKey,
+								Key:  dynakube.ServerCertKey,
 								Path: otelcconsts.ActiveGateCertFile,
 							},
 						},
@@ -137,7 +137,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	var vm []corev1.VolumeMount
 
-	if dk.Extensions().IsEnabled() {
+	if dk.Extensions().IsPrometheusEnabled() {
 		vm = append(
 			vm,
 			corev1.VolumeMount{
@@ -187,5 +187,5 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 }
 
 func isTrustedCAsVolumeNeeded(dk *dynakube.DynaKube) bool {
-	return dk.Extensions().IsEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
+	return dk.Extensions().IsPrometheusEnabled() && dk.Spec.TrustedCAs != "" || dk.TelemetryIngest().IsEnabled() && dk.IsCACertificateNeeded()
 }

@@ -3,6 +3,7 @@ package dynakube
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
@@ -59,7 +60,7 @@ func TestConvertTo(t *testing.T) {
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring)
+		compareHostInjectSpec(t, *from.Spec.OneAgent.HostMonitoring, *to.Spec.OneAgent.HostMonitoring, to.RemovedFields())
 		compareBase(t, from, to)
 		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
@@ -76,7 +77,7 @@ func TestConvertTo(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.CloudNativeFullStack)
 		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
-		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack)
+		compareHostInjectSpec(t, *from.Spec.OneAgent.ClassicFullStack, *to.Spec.OneAgent.ClassicFullStack, to.RemovedFields())
 		compareBase(t, from, to)
 		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
@@ -93,7 +94,7 @@ func TestConvertTo(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.ClassicFullStack)
 		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
-		compareCloudNativeSpec(t, *from.Spec.OneAgent.CloudNativeFullStack, *to.Spec.OneAgent.CloudNativeFullStack)
+		compareCloudNativeSpec(t, *from.Spec.OneAgent.CloudNativeFullStack, *to.Spec.OneAgent.CloudNativeFullStack, to.RemovedFields())
 		compareBase(t, from, to)
 	})
 
@@ -136,7 +137,7 @@ func TestConvertTo(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.NotNil(t, to.Spec.Extensions)
-		assert.NotNil(t, to.Spec.Extensions.PrometheusSpec)
+		assert.NotNil(t, to.Spec.Extensions.Prometheus)
 		compareBase(t, from, to)
 	})
 
@@ -177,6 +178,21 @@ func TestConvertTo(t *testing.T) {
 
 		compareOpenTelemetryTemplateSpec(t, from.Spec.Templates.OpenTelemetryCollector, to.Spec.Templates.OpenTelemetryCollector)
 		compareExtensionsExecutionControllerTemplateSpec(t, from.Spec.Templates.ExtensionExecutionController, to.Spec.Templates.ExtensionExecutionController)
+
+		compareBase(t, from, to)
+	})
+
+	t.Run("default otelc image", func(t *testing.T) {
+		from := getOldDynakubeBase()
+
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
+		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
 
 		compareBase(t, from, to)
 	})

@@ -21,10 +21,11 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-24.04
     outputs:
-      go_changed: ${{ steps.go-files.outputs.any_changed }}
-      docker_changed: ${{ steps.dockerfile.outputs.any_changed }}
-      ci_changed: ${{ steps.ci.outputs.any_changed }}
-      is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch }}
+      go_changed: ${{ steps.go-files.outputs.any_changed == 'true' && 'true' || '' }}
+      docker_changed: ${{ steps.dockerfile.outputs.any_changed == 'true' && 'true' || '' }}
+      ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
+      is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
+      is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -39,6 +40,10 @@ jobs:
           else
             echo "is_protected_branch=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Check if docker credentials are present
+        id: is-docker-authorized
+        run: |
+          echo "is_authorized=${{ secrets.QUAY_USERNAME != '' && secrets.QUAY_PASSWORD != '' }}" >> $GITHUB_OUTPUT
       - name: Detect CI file changes
         uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: ci
@@ -70,6 +75,8 @@ jobs:
 
   prepare:
     name: Prepare properties
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -85,7 +92,7 @@ jobs:
   build-images:
     name: Build images
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     strategy:
       matrix:
         platform: [linux/arm64, linux/amd64]
@@ -101,7 +108,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Login to Registry
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
@@ -123,7 +130,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Login to Registry
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}

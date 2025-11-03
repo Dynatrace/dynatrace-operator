@@ -233,13 +233,15 @@ rbac:
   activeGate:
     create: true
     annotations: {}
+  kubernetesMonitoring:
+    create: true
   edgeConnect:
     create: true
     annotations: {}
   extensions:
     create: true
     annotations: {}
-    prometheus: 
+    prometheus:
       create: true
     database:
       create: true

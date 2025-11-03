@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	dkconversion "github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
@@ -37,6 +38,7 @@ func (dst *DynaKube) fromBase(src *dynakubelatest.DynaKube) {
 	}
 
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
+	dkconversion.CleanupAnnotations(dst.Annotations)
 
 	dst.Spec.Proxy = src.Spec.Proxy
 	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold
@@ -79,9 +81,11 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 	switch {
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
+		dst.Spec.OneAgent.ClassicFullStack.AutoUpdate = src.RemovedFields().AutoUpdate.Get()
 	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
+		dst.Spec.OneAgent.CloudNativeFullStack.AutoUpdate = src.RemovedFields().AutoUpdate.Get()
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
@@ -89,6 +93,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
+		dst.Spec.OneAgent.HostMonitoring.AutoUpdate = src.RemovedFields().AutoUpdate.Get()
 	}
 
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
@@ -97,7 +102,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 func (dst *DynaKube) fromTemplatesSpec(src *dynakubelatest.DynaKube) {
 	dst.Spec.Templates.LogMonitoring = fromLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
 	dst.Spec.Templates.KspmNodeConfigurationCollector = fromKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KspmNodeConfigurationCollector)
-	dst.Spec.Templates.OpenTelemetryCollector = fromOpenTelemetryCollectorTemplate(src.Spec.Templates.OpenTelemetryCollector)
+	dst.Spec.Templates.OpenTelemetryCollector = fromOpenTelemetryCollectorTemplate(src, src.Spec.Templates.OpenTelemetryCollector)
 	dst.Spec.Templates.ExtensionExecutionController = fromExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
 
@@ -132,7 +137,9 @@ func fromKspmNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfiguration
 	dst.ImageRef = src.ImageRef
 	dst.PriorityClassName = src.PriorityClassName
 	dst.Resources = src.Resources
-	dst.NodeAffinity = src.NodeAffinity
+	if src.NodeAffinity != nil {
+		dst.NodeAffinity = *src.NodeAffinity
+	}
 	dst.Tolerations = src.Tolerations
 	dst.Args = src.Args
 	dst.Env = src.Env
@@ -140,13 +147,17 @@ func fromKspmNodeConfigurationCollectorTemplate(src kspmlatest.NodeConfiguration
 	return dst
 }
 
-func fromOpenTelemetryCollectorTemplate(src dynakubelatest.OpenTelemetryCollectorSpec) OpenTelemetryCollectorSpec {
+func fromOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src dynakubelatest.OpenTelemetryCollectorSpec) OpenTelemetryCollectorSpec {
 	dst := OpenTelemetryCollectorSpec{}
 
 	dst.Labels = src.Labels
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
+	if usingDefault := dk.RemovedFields().DefaultOTELCImage.Get(); usingDefault != nil && *usingDefault {
+		dst.ImageRef.Repository = ""
+		dst.ImageRef.Tag = ""
+	}
 	dst.TLSRefName = src.TLSRefName
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
@@ -264,7 +275,6 @@ func fromHostInjectSpec(src oneagentlatest.HostInjectSpec) *oneagent.HostInjectS
 	dst.Annotations = src.Annotations
 	dst.Labels = src.Labels
 	dst.NodeSelector = src.NodeSelector
-	dst.AutoUpdate = src.AutoUpdate
 	dst.Version = src.Version
 	dst.Image = src.Image
 	dst.DNSPolicy = src.DNSPolicy

@@ -63,17 +63,14 @@ func (c *CSIDriver) Stop() {
 
 // goServe starts a grpc server.
 func goServe(server *grpc.Server, wg *sync.WaitGroup, listener net.Listener, started chan<- bool) {
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		started <- true
 
 		err := server.Serve(listener)
 		if err != nil {
 			panic(err.Error())
 		}
-	}()
+	})
 }
 
 // stop stops a grpc server.

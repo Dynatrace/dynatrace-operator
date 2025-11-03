@@ -48,8 +48,8 @@ func TestVolumes(t *testing.T) {
 						SecretName: dk.Extensions().GetTokenSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  consts.OtelcTokenSecretKey,
-								Path: consts.OtelcTokenSecretKey,
+								Key:  consts.DatasourceTokenSecretKey,
+								Path: consts.DatasourceTokenSecretKey,
 							},
 						},
 						DefaultMode: ptr.To(int32(420)),
@@ -93,8 +93,8 @@ func TestVolumes(t *testing.T) {
 					SecretName: dk.Extensions().GetTokenSecretName(),
 					Items: []corev1.KeyToPath{
 						{
-							Key:  consts.OtelcTokenSecretKey,
-							Path: consts.OtelcTokenSecretKey,
+							Key:  consts.DatasourceTokenSecretKey,
+							Path: consts.DatasourceTokenSecretKey,
 						},
 					},
 					DefaultMode: ptr.To(int32(420)),
@@ -361,7 +361,7 @@ func agCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 				SecretName: dk.ActiveGate().GetTLSSecretName(),
 				Items: []corev1.KeyToPath{
 					{
-						Key:  dynakube.TLSCertKey,
+						Key:  dynakube.ServerCertKey,
 						Path: otelcconsts.ActiveGateCertFile,
 					},
 				},
@@ -400,7 +400,7 @@ func getTestDynakubeWithExtensionsAndTelemetryIngest() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions:      &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions:      &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			TelemetryIngest: &telemetryingest.Spec{},
 			Templates:       dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},

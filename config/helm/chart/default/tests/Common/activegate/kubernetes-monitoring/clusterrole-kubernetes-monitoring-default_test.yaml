@@ -1,0 +1,170 @@
+suite: test default clusterrole for kubernetes monitoring
+templates:
+  - Common/activegate/kubernetes-monitoring/clusterrole-kubernetes-monitoring-default.yaml
+tests:
+  - it: ClusterRole should exist
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-kubernetes-monitoring-default
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: metadata.labels["rbac.dynatrace.com/aggregate-to-monitoring"]
+          value: "true"
+      - isNotEmpty:
+          path: rules
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - nodes
+              - pods
+              - namespaces
+              - replicationcontrollers
+              - events
+              - resourcequotas
+              - pods/proxy
+              - nodes/proxy
+              - nodes/metrics
+              - services
+              - persistentvolumeclaims
+              - persistentvolumes
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - batch
+            resources:
+              - jobs
+              - cronjobs
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps
+            resources:
+              - deployments
+              - replicasets
+              - statefulsets
+              - daemonsets
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps.openshift.io
+            resources:
+              - deploymentconfigs
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - config.openshift.io
+            resources:
+              - clusterversions
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - dynatrace.com
+            resources:
+              - dynakubes
+              - edgeconnects
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apiextensions.k8s.io
+            resources:
+              - customresourcedefinitions
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - networking.k8s.io
+            resources:
+              - ingresses
+              - networkpolicies
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - discovery.k8s.io
+            resources:
+              - endpointslices
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+              apiGroups:
+              - autoscaling
+              resources:
+              - horizontalpodautoscalers
+              verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            nonResourceURLs:
+              - /metrics
+              - /version
+              - /readyz
+              - /livez
+            verbs:
+              - get
+
+  - it: should fail if only kubernetesMonitoring is turned on
+    set:
+      rbac.activeGate.create: false
+      rbac.kubernetesMonitoring.create: true
+    asserts:
+     - failedTemplate: {}
+  - it: shouldn't exist if turned off
+    set:
+      rbac.activeGate.create: true
+      rbac.kubernetesMonitoring.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

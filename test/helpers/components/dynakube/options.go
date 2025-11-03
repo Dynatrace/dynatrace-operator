@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
@@ -178,7 +179,7 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.Applicati
 func WithExtensionsEnabledSpec(promEnabled bool) Option {
 	return func(dk *dynakube.DynaKube) {
 		if promEnabled {
-			dk.Spec.Extensions = &extensions.Spec{&extensions.PrometheusSpec{}}
+			dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
 		} else {
 			dk.Spec.Extensions = nil
@@ -212,6 +213,23 @@ func WithLogMonitoringImageRefSpec(repo, tag string) Option {
 	}
 }
 
+func WithKSPM() Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Kspm = &kspm.Spec{}
+	}
+}
+
+func WithKSPMImageRefSpec(repo, tag string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.KspmNodeConfigurationCollector = kspm.NodeConfigurationCollectorSpec{
+			ImageRef: image.Ref{
+				Repository: repo,
+				Tag:        tag,
+			},
+		}
+	}
+}
+
 func WithTelemetryIngestEnabled(enabled bool, protocols ...string) Option {
 	return func(dk *dynakube.DynaKube) {
 		if enabled {
@@ -229,5 +247,16 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 			dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 		}
 		dk.Spec.TelemetryIngest.TLSRefName = secretName
+	}
+}
+
+func WithOTelCollectorImageRefSpec(repo, tag string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.OpenTelemetryCollector = dynakube.OpenTelemetryCollectorSpec{
+			ImageRef: image.Ref{
+				Repository: repo,
+				Tag:        tag,
+			},
+		}
 	}
 }

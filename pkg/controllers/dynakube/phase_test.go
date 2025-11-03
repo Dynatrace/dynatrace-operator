@@ -12,7 +12,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,7 +37,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("error accessing k8s api -> error", func(t *testing.T) {
@@ -44,7 +46,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("activegate pods not ready -> deploying", func(t *testing.T) {
@@ -60,7 +62,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("activegate deployed -> running", func(t *testing.T) {
@@ -76,7 +78,7 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
@@ -116,7 +118,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("Error accessing k8s api", func(t *testing.T) {
@@ -125,7 +127,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("OneAgent daemonsets in cluster not all ready -> deploying", func(t *testing.T) {
@@ -134,7 +136,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("OneAgent daemonsets in cluster all ready -> running", func(t *testing.T) {
@@ -143,7 +145,7 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
@@ -168,7 +170,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 		},
 	}
 
@@ -178,7 +180,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineExtensionsExecutionControllerPhase(dk)
+		phase := controller.determineExtensionsExecutionControllerPhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("error accessing k8s api -> error", func(t *testing.T) {
@@ -187,7 +189,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineExtensionsExecutionControllerPhase(dk)
+		phase := controller.determineExtensionsExecutionControllerPhase(t.Context(), dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("eec pods not ready -> deploying", func(t *testing.T) {
@@ -197,7 +199,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineExtensionsExecutionControllerPhase(dk)
+		phase := controller.determineExtensionsExecutionControllerPhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("eec deployed -> running", func(t *testing.T) {
@@ -207,7 +209,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineExtensionsExecutionControllerPhase(dk)
+		phase := controller.determineExtensionsExecutionControllerPhase(t.Context(), dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
@@ -219,7 +221,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 		},
 	}
 
@@ -229,7 +231,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineExtensionsCollectorPhase(dk)
+		phase := controller.determineExtensionsCollectorPhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("error accessing k8s api -> error", func(t *testing.T) {
@@ -238,7 +240,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineExtensionsCollectorPhase(dk)
+		phase := controller.determineExtensionsCollectorPhase(t.Context(), dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("otelc pods not ready -> deploying", func(t *testing.T) {
@@ -248,7 +250,7 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineExtensionsCollectorPhase(dk)
+		phase := controller.determineExtensionsCollectorPhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("otelc deployed -> running", func(t *testing.T) {
@@ -258,7 +260,83 @@ func TestExtensionsCollectorPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineExtensionsCollectorPhase(dk)
+		phase := controller.determineExtensionsCollectorPhase(t.Context(), dk)
+		assert.Equal(t, status.Running, phase)
+	})
+}
+
+func TestExtensionsDatabasesPhaseChanges(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{}}},
+		},
+	}
+
+	tests := []struct {
+		name        string
+		client      client.Client
+		expectPhase status.DeploymentPhase
+	}{
+		{
+			"no deployments",
+			fake.NewClient(),
+			status.Deploying,
+		},
+		{
+			"api error",
+			errorClient{},
+			status.Error,
+		},
+		{
+			"pods not ready",
+			fake.NewClient(createDeployment(dk, 1, 2)),
+			status.Deploying,
+		},
+		{
+			"pending deployment reconcile",
+			fake.NewClient(func() *appsv1.Deployment {
+				deploy := createDeployment(dk, 2, 2)
+				deploy.Generation = 2
+				deploy.Status.ObservedGeneration = 1
+
+				return deploy
+			}()),
+			status.Deploying,
+		},
+		{
+			"pods ready",
+			fake.NewClient(createDeployment(dk, 2, 2)),
+			status.Running,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			controller := &Controller{
+				client:    test.client,
+				apiReader: test.client,
+			}
+			phase := controller.determineExtensionsDatabasesPhase(t.Context(), dk)
+			assert.Equal(t, test.expectPhase, phase)
+		})
+	}
+
+	// needs special setup that would complicate the table driven test
+	t.Run("ignore deleting deployments", func(t *testing.T) {
+		deploy := createDeployment(dk, 1, 2)
+		deploy.Finalizers = []string{"keep-me"}
+		clt := fake.NewClient(deploy)
+		require.NoError(t, clt.Delete(t.Context(), deploy))
+
+		controller := &Controller{
+			client:    clt,
+			apiReader: clt,
+		}
+		phase := controller.determineExtensionsDatabasesPhase(t.Context(), dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
@@ -288,7 +366,7 @@ func TestLogAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("Error accessing k8s api", func(t *testing.T) {
@@ -297,7 +375,7 @@ func TestLogAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("LogAgent daemonsets in cluster not all ready -> deploying", func(t *testing.T) {
@@ -306,7 +384,7 @@ func TestLogAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("LogAgent daemonsets in cluster all ready -> running", func(t *testing.T) {
@@ -315,7 +393,7 @@ func TestLogAgentPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
@@ -345,7 +423,7 @@ func TestKSPMPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("Error accessing k8s api", func(t *testing.T) {
@@ -354,7 +432,7 @@ func TestKSPMPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Error, phase)
 	})
 	t.Run("KSPM daemonsets in cluster not all ready -> deploying", func(t *testing.T) {
@@ -363,7 +441,7 @@ func TestKSPMPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Deploying, phase)
 	})
 	t.Run("KSPM daemonsets in cluster all ready -> running", func(t *testing.T) {
@@ -372,7 +450,7 @@ func TestKSPMPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, status.Running, phase)
 	})
 }
@@ -392,7 +470,7 @@ func TestDynakubePhaseChanges(t *testing.T) {
 
 			Kspm: &kspm.Spec{},
 
-			Extensions: &extensions.Spec{&extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 		},
 	}
 
@@ -492,7 +570,23 @@ func TestDynakubePhaseChanges(t *testing.T) {
 			client:    test.clt,
 			apiReader: test.clt,
 		}
-		phase := controller.determineDynaKubePhase(dk)
+		phase := controller.determineDynaKubePhase(t.Context(), dk)
 		assert.Equal(t, test.phase, phase, "failed", "testcase", i)
+	}
+}
+
+func createDeployment(dk *dynakube.DynaKube, replicas, readyReplicas int32) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: dk.Namespace,
+			Labels:    labels.NewAppLabels(labels.DatabaseDatasourceLabel, dk.Name, labels.DatabaseDatasourceLabel, "").BuildLabels(),
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+		},
+		Status: appsv1.DeploymentStatus{
+			ReadyReplicas: readyReplicas,
+		},
 	}
 }

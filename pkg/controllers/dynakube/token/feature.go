@@ -123,5 +123,26 @@ func getFeaturesForDataIngest() []Feature {
 				return dk.ActiveGate().IsMetricsIngestEnabled()
 			},
 		},
+		{
+			Name:           "OTLP trace exporter configuration",
+			RequiredScopes: []string{dtclient.TokenScopeOpenTelemetryTraceIngest},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.OTLPExporterConfiguration().IsTracesEnabled()
+			},
+		},
+		{
+			Name:           "OTLP logs exporter configuration",
+			RequiredScopes: []string{dtclient.TokenScopeLogsIngest},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.OTLPExporterConfiguration().IsLogsEnabled()
+			},
+		},
+		{
+			Name:           "OTLP metrics exporter configuration",
+			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.OTLPExporterConfiguration().IsMetricsEnabled()
+			},
+		},
 	}
 }

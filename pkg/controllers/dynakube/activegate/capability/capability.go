@@ -62,7 +62,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 
-	if len(dk.Spec.ActiveGate.Capabilities) == 0 && dk.Extensions().IsEnabled() {
+	if len(dk.Spec.ActiveGate.Capabilities) == 0 && dk.Extensions().IsAnyEnabled() {
 		mc.properties.Replicas = ptr.To(int32(1))
 	}
 
@@ -77,11 +77,11 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 		capabilityArgs = append(capabilityArgs, argName)
 	}
 
-	if dk.Extensions().IsEnabled() {
+	if dk.Extensions().IsAnyEnabled() {
 		capabilityArgs = append(capabilityArgs, "extension_controller")
 	}
 
-	if dk.TelemetryIngest().IsEnabled() {
+	if dk.TelemetryIngest().IsEnabled() || dk.OTLPExporterConfiguration().IsEnabled() {
 		capabilityArgs = append(capabilityArgs, "log_analytics_collector", "generic_ingest", "otlp_ingest")
 	}
 

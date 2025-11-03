@@ -9,29 +9,15 @@ import (
 )
 
 const (
-	// default values
-	defaultImageRepo         = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
-	defaultImageTag          = "latest"
 	containerName            = "collector"
 	secretsTokensPath        = "/secrets/tokens"
-	otelcSecretTokenFilePath = secretsTokensPath + "/" + consts.OtelcTokenSecretKey
+	otelcSecretTokenFilePath = secretsTokensPath + "/" + consts.DatasourceTokenSecretKey
 )
 
 func getContainer(dk *dynakube.DynaKube) corev1.Container {
-	imageRepo := dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository
-	imageTag := dk.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag
-
-	if imageRepo == "" {
-		imageRepo = defaultImageRepo
-	}
-
-	if imageTag == "" {
-		imageTag = defaultImageTag
-	}
-
 	return corev1.Container{
 		Name:            containerName,
-		Image:           imageRepo + ":" + imageTag,
+		Image:           dk.Spec.Templates.OpenTelemetryCollector.ImageRef.String(),
 		ImagePullPolicy: corev1.PullAlways,
 		SecurityContext: buildSecurityContext(),
 		Env:             getEnvs(dk),
@@ -44,8 +30,8 @@ func getContainer(dk *dynakube.DynaKube) corev1.Container {
 func buildArgs(dk *dynakube.DynaKube) []string {
 	args := []string{}
 
-	if ext := dk.Extensions(); ext.IsEnabled() {
-		args = append(args, fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", ext.GetServiceNameFQDN(), consts.OtelCollectorComPort, otelcSecretTokenFilePath))
+	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
+		args = append(args, fmt.Sprintf("--config=eec://%s:%d/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=%s", ext.GetServiceNameFQDN(), consts.ExtensionsDatasourceTargetPort, otelcSecretTokenFilePath))
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {

@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
@@ -89,6 +90,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
+			mutator.InjectionSplitMounts:                 "true",
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
@@ -154,7 +156,8 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
-			"test": "test",
+			mutator.InjectionSplitMounts:                 "true",
+			"test":                                       "test",
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
@@ -230,6 +233,18 @@ func TestAddTemplateSpec(t *testing.T) {
 		assert.NotEmpty(t, spec.Affinity)
 		assert.Len(t, dk.PullSecretNames(), len(spec.ImagePullSecrets))
 		assert.Equal(t, dk.PullSecretNames()[0], spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("has AutomountServiceAccountToken set to false by default", func(t *testing.T) {
+		dk := getTestDynakube()
+		multiCapability := capability.NewMultiCapability(&dk)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
+		sts := appsv1.StatefulSet{}
+
+		builder.addTemplateSpec(&sts)
+		spec := sts.Spec.Template.Spec
+		require.NotNil(t, spec.AutomountServiceAccountToken)
+		assert.False(t, *spec.AutomountServiceAccountToken)
 	})
 
 	t.Run("adds capability specific stuff", func(t *testing.T) {

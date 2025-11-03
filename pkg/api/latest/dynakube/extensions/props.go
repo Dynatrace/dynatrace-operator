@@ -12,16 +12,24 @@ func (e *Extensions) SetNamespace(namespace string) {
 	e.namespace = namespace
 }
 
-func (e *Extensions) SetEnabled(enabled bool) {
-	e.enabled = enabled
+func (e *Extensions) SetPrometheusEnabled(enabled bool) {
+	e.prometheusEnabled = enabled
 }
 
-func (e *Extensions) IsEnabled() bool {
-	return e.enabled
+func (e *Extensions) IsPrometheusEnabled() bool {
+	return e.prometheusEnabled
+}
+
+func (e *Extensions) IsDatabasesEnabled() bool {
+	return len(e.Databases) > 0
+}
+
+func (e *Extensions) IsAnyEnabled() bool {
+	return e.IsPrometheusEnabled() || e.IsDatabasesEnabled()
 }
 
 func (e *Extensions) GetTLSRefName() string {
-	return e.TLSRefName
+	return e.ExecutionController.TLSRefName
 }
 
 func (e *Extensions) NeedsSelfSignedTLS() bool {
@@ -49,7 +57,7 @@ func (e *Extensions) GetTokenSecretName() string {
 }
 
 func (e *Extensions) GetPortName() string {
-	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsCollectorTargetPortName
+	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsDatasourceTargetPortName
 }
 
 func (e *Extensions) GetServiceNameFQDN() string {
@@ -58,4 +66,8 @@ func (e *Extensions) GetServiceNameFQDN() string {
 
 func (e *Extensions) GetServiceName() string {
 	return e.name + consts.ExtensionsControllerSuffix
+}
+
+func (e *Extensions) GetDatabaseDatasourceName(id string) string {
+	return e.name + "-db-datasource-" + id
 }

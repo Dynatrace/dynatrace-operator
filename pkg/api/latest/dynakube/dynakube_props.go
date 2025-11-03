@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -27,6 +28,16 @@ var log = logd.Get().WithName("dynakube-v1beta6")
 
 func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations)
+}
+
+func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
+	if dk.Annotations == nil {
+		// Set this value here instead of in the conversion package to prevent having to use a pointer to map.
+		// Pointer to map is the only way to initialize a nil map function argument.
+		dk.Annotations = make(map[string]string)
+	}
+
+	return conversion.NewRemovedFields(dk.Annotations)
 }
 
 // APIURL is a getter for dk.Spec.APIURL.

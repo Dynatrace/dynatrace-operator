@@ -14,6 +14,8 @@ const (
 	ModulesJSONEnv = "modules.json"
 
 	validationErrorTemplate = "%s has been disabled during Operator install. The necessary resources for %s to work are not present on the cluster. Redeploy the Operator via Helm with all the necessary resources enabled."
+
+	validationDependentErrorTemplate = "%s has been disabled during Operator install. That is a dependency for %s to work. Redeploy the Operator via Helm with all the necessary resources enabled."
 )
 
 var (
@@ -25,28 +27,30 @@ var (
 	override *Modules
 
 	fallbackModules = Modules{
-		CSIDriver:      true,
-		ActiveGate:     true,
-		OneAgent:       true,
-		Extensions:     true,
-		LogMonitoring:  true,
-		EdgeConnect:    true,
-		Supportability: true,
-		KSPM:           true,
+		CSIDriver:            true,
+		ActiveGate:           true,
+		OneAgent:             true,
+		Extensions:           true,
+		LogMonitoring:        true,
+		EdgeConnect:          true,
+		Supportability:       true,
+		KSPM:                 true,
+		KubernetesMonitoring: true,
 	}
 
 	log = logd.Get().WithName("install-config")
 )
 
 type Modules struct {
-	CSIDriver      bool `json:"csiDriver"`
-	ActiveGate     bool `json:"activeGate"`
-	OneAgent       bool `json:"oneAgent"`
-	Extensions     bool `json:"extensions"`
-	LogMonitoring  bool `json:"logMonitoring"`
-	EdgeConnect    bool `json:"edgeConnect"`
-	Supportability bool `json:"supportability"`
-	KSPM           bool `json:"kspm"`
+	CSIDriver            bool `json:"csiDriver"`
+	ActiveGate           bool `json:"activeGate"`
+	OneAgent             bool `json:"oneAgent"`
+	Extensions           bool `json:"extensions"`
+	LogMonitoring        bool `json:"logMonitoring"`
+	EdgeConnect          bool `json:"edgeConnect"`
+	Supportability       bool `json:"supportability"`
+	KubernetesMonitoring bool `json:"kubernetesMonitoring"`
+	KSPM                 bool `json:"kspm"`
 }
 
 func GetModules() Modules {
@@ -96,4 +100,8 @@ func SetModulesOverride(t *testing.T, modules Modules) {
 
 func GetModuleValidationErrorMessage(moduleName string) string {
 	return fmt.Sprintf(validationErrorTemplate, moduleName, moduleName)
+}
+
+func GetDependentModuleValidationErrorMessage(moduleName, dependentModule string) string {
+	return fmt.Sprintf(validationDependentErrorTemplate, moduleName, dependentModule)
 }

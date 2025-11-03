@@ -37,7 +37,7 @@ func (dk *DynaKube) ExtensionsTokenSecretName() string {
 }
 
 func (dk *DynaKube) ExtensionsPortName() string {
-	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsCollectorTargetPortName
+	return "dynatrace" + consts.ExtensionsControllerSuffix + "-" + consts.ExtensionsDatasourceTargetPortName
 }
 
 func (dk *DynaKube) ExtensionsServiceNameFQDN() string {

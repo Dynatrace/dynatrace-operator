@@ -79,9 +79,11 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		}
 
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
 		clt := fake.NewClientWithIndex(
 			dk,
-			clientInjectedNamespace(testNamespace, testDynakube),
+			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
@@ -96,7 +98,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -143,15 +145,17 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		}
 
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
 		clt := fake.NewClientWithIndex(
 			dk,
-			clientInjectedNamespace(testNamespace, testDynakube),
+			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.TLSCertKey: []byte("test-cert-value"),
+				dynakube.ServerCertKey: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
@@ -172,7 +176,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -240,15 +244,17 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		}
 
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
 		clt := fake.NewClientWithIndex(
 			dk,
-			clientInjectedNamespace(testNamespace, testDynakube),
+			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				dtclient.APIToken:  []byte(testAPIToken),
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.TLSCertKey: []byte("test-cert-value"),
+				dynakube.ServerCertKey: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
@@ -270,7 +276,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -334,7 +340,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
-		err := secretGenerator.GenerateForDynakube(context.Background(), dk)
+		err := secretGenerator.GenerateForDynakube(context.Background(), dk, nil)
 		require.Error(t, err)
 
 		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
