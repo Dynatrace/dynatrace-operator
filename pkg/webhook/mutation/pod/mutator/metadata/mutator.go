@@ -62,16 +62,19 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	attributes := podattr.Attributes{}
-	attributes.WorkloadInfo = podattr.WorkloadInfo{
+	attrs := podattr.Attributes{}
+	attrs.WorkloadInfo = podattr.WorkloadInfo{
 		WorkloadKind: workloadInfo.Kind,
 		WorkloadName: workloadInfo.Name,
 	}
-	addMetadataToInitArgs(request, &attributes)
+
+	setDeprecatedAttributes(&attrs)
+
+	addMetadataToInitArgs(request, &attrs)
 	setInjectedAnnotation(request.Pod)
 	setWorkloadAnnotations(request.Pod, workloadInfo)
 
-	args, err := podattr.ToArgs(attributes)
+	args, err := podattr.ToArgs(attrs)
 	if err != nil {
 		return err
 	}
