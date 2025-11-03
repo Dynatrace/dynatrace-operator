@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu -o pipefail
+set -x
 
 echo "Switching to target branch directory..."
 cd target
