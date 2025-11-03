@@ -62,7 +62,7 @@ popd
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
 which gotestsum
-
+which make
 
 if [[ -z "${TARGET_IMAGE}" ]]; then
   make IMG="$TARGET_IMAGE" test/e2e-publish
