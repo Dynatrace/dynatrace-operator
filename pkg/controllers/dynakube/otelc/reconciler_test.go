@@ -2,6 +2,7 @@ package otelc
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -42,19 +43,23 @@ func TestNoProxyConsistency(t *testing.T) {
 		clt := createClient(t, &dk)
 
 		dtEndpoint, noProxy := reconcile(t, ctx, clt, dk)
-		// NO_PROXY    = noProxy
-		// DT_ENDPOINT = scheme :// hostname=noProxy / path
-		assert.Contains(t, dtEndpoint, "/"+noProxy+"/")
+
+		noProxyHostnames := strings.Split(noProxy, ",")
+
+		// NO_PROXY    = ..,hostname,..
+		// DT_ENDPOINT = scheme :// hostname / path
+		assert.Contains(t, dtEndpoint, "/"+noProxyHostnames[2]+"/")
 	})
 
-	t.Run("NO_PROXY matches DT_ENDPOINT if proxy is set and cluster AG defined", func(t *testing.T) {
+	t.Run("NO_PROXY does not contain DT_ENDPOINT if proxy is set and cluster AG defined", func(t *testing.T) {
 		dk := createDynaKube(false)
 
 		clt := createClient(t, &dk)
 
 		dtEndpoint, noProxy := reconcile(t, ctx, clt, dk)
+
 		assert.Equal(t, dk.APIURL()+"/v2/otlp", dtEndpoint)
-		assert.Empty(t, noProxy)
+		assert.Equal(t, "$(KUBERNETES_SERVICE_HOST),kubernetes.default", noProxy)
 	})
 }
 
