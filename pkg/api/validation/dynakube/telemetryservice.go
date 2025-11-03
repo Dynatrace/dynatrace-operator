@@ -174,7 +174,7 @@ func forbiddenTelemetryIngestServiceNameSuffix(_ context.Context, _ *Validator, 
 }
 
 func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.TelemetryIngest().IsEnabled() && !dk.Extensions().IsAnyEnabled() {
+	if !dk.TelemetryIngest().IsEnabled() && !dk.Extensions().IsPrometheusEnabled() {
 		return ""
 	}
 
