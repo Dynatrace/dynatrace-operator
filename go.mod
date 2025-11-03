@@ -11,7 +11,7 @@ require (
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.18.1
-	github.com/kubernetes-csi/csi-lib-utils v0.22.0
+	github.com/kubernetes-csi/csi-lib-utils v0.23.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
