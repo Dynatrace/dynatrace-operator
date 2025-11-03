@@ -361,7 +361,7 @@ func agCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 				SecretName: dk.ActiveGate().GetTLSSecretName(),
 				Items: []corev1.KeyToPath{
 					{
-						Key:  dynakube.TLSCertKey,
+						Key:  dynakube.ServerCertKey,
 						Path: otelcconsts.ActiveGateCertFile,
 					},
 				},
