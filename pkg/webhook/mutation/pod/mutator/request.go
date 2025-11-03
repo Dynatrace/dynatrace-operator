@@ -2,6 +2,7 @@ package mutator
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
@@ -61,7 +62,15 @@ func (req *BaseRequest) PodName() string {
 	return pod.GetName(*req.Pod)
 }
 
-func (req *BaseRequest) NewContainers(isInjected func(corev1.Container) bool) (newContainers []*corev1.Container) {
+func (req *BaseRequest) IsSplitMountsEnabled() bool {
+	if value, found := req.Pod.Annotations[InjectionSplitMounts]; found && strings.ToLower(value) == "true" {
+		return true
+	}
+
+	return false
+}
+
+func (req *BaseRequest) NewContainers(isInjected func(corev1.Container, *BaseRequest) bool) (newContainers []*corev1.Container) {
 	newContainers = []*corev1.Container{}
 
 	for i := range req.Pod.Spec.Containers {
@@ -70,7 +79,7 @@ func (req *BaseRequest) NewContainers(isInjected func(corev1.Container) bool) (n
 			continue
 		}
 
-		if isInjected(*container) {
+		if isInjected(*container, req) {
 			continue
 		}
 
