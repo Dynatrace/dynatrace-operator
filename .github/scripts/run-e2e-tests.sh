@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-set -e # instructs bash to immediately exit if any command has a non-zero exit status.
-set -u # causes the bash shell to treat unset variables as an error and exit immediately.
-set -o pipefail # causes a pipeline to return the exit status of the last command in the pipe that returned a non-zero return value.
-set -x # instructs bash to print each command and its arguments to standard output as they are executed.
+set -eu -o pipefail
 
 echo "Switching to target branch directory..."
 cd target
