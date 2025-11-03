@@ -95,7 +95,7 @@ func Test_generateData(t *testing.T) {
 			name:         "in-cluster ActiveGate",
 			apiURL:       fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", testTenantUUID),
 			inClusterAg:  true,
-			expectedData: map[string]string{"DT_ENDPOINT": fmt.Sprintf("https://test-dk-activegate.test-namespace.svc/e/%s/api/v2/otlp", testTenantUUID)},
+			expectedData: map[string]string{"DT_ENDPOINT": fmt.Sprintf("https://test-dk-activegate.test-namespace/e/%s/api/v2/otlp", testTenantUUID)},
 		},
 		{
 			name:         "public ActiveGate",
