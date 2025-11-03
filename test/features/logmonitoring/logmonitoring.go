@@ -68,7 +68,7 @@ func Feature(t *testing.T) features.Feature {
 
 	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,
 		map[string][]byte{
-			dynakube.TLSCertKey:                    agCrt,
+			dynakube.ServerCertKey:                 agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))

@@ -54,6 +54,7 @@ rules:
       - dynatrace-dynakube-config
       - dynatrace-metadata-enrichment-endpoint
       - dynatrace-otlp-exporter-config
+      - dynatrace-otlp-exporter-certs
     verbs:
       - get
       - update

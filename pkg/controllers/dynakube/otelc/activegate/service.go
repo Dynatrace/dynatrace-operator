@@ -6,5 +6,5 @@ import (
 )
 
 func GetServiceFQDN(dk *dynakube.DynaKube) string {
-	return capability.BuildServiceName(dk.Name) + "." + dk.Namespace + ".svc"
+	return capability.BuildServiceName(dk.Name) + "." + dk.Namespace
 }

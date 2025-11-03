@@ -15,6 +15,7 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 	tests := []struct {
 		name           string
 		cfg            *otlp.ExporterConfiguration
+		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -22,21 +23,32 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 		{
 			name:           "nil config -> disabled",
 			cfg:            nil,
+			addCertificate: true, // even if requested, should not inject
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config without traces -> disabled",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
-			name:           "config with traces -> enabled and injects",
+			name:           "config with traces -> enabled and injects (no cert)",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
+			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPTraceEndpointEnv, OTLPTraceProtocolEnv},
+			expectEnvVars:  []string{OTLPTraceEndpointEnv, OTLPTraceProtocolEnv, OTLPTraceHeadersEnv},
+		},
+		{
+			name:           "config with traces -> enabled and injects (with cert)",
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
+			addCertificate: true,
+			expectEnabled:  true,
+			expectInjected: true,
+			expectEnvVars:  []string{OTLPTraceEndpointEnv, OTLPTraceProtocolEnv, OTLPTraceHeadersEnv, OTLPTraceCertificateEnv},
 		},
 	}
 
@@ -46,8 +58,10 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Equal(t, tt.expectEnabled, inj.isEnabled())
 
 			c := &corev1.Container{}
-			injected := inj.Inject(c, apiURL, false)
+			injected := inj.Inject(c, apiURL, tt.addCertificate)
 			assert.Equal(t, tt.expectInjected, injected)
+
+			assert.Len(t, c.Env, len(tt.expectEnvVars))
 
 			for _, envName := range tt.expectEnvVars {
 				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
@@ -62,6 +76,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 	tests := []struct {
 		name           string
 		cfg            *otlp.ExporterConfiguration
+		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -69,21 +84,32 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 		{
 			name:           "nil config -> disabled",
 			cfg:            nil,
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config without metrics -> disabled",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
-			name:           "config with metrics -> enabled and injects",
+			name:           "config with metrics -> enabled and injects (no cert)",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
+			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv},
+			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv},
+		},
+		{
+			name:           "config with metrics -> enabled and injects (with cert)",
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
+			addCertificate: true,
+			expectEnabled:  true,
+			expectInjected: true,
+			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsCertificateEnv},
 		},
 	}
 
@@ -93,8 +119,10 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Equal(t, tt.expectEnabled, inj.isEnabled())
 
 			c := &corev1.Container{}
-			injected := inj.Inject(c, apiURL, true) // override flag shouldn't matter for injection presence
+			injected := inj.Inject(c, apiURL, tt.addCertificate) // override flag shouldn't matter for injection presence
 			assert.Equal(t, tt.expectInjected, injected)
+
+			assert.Len(t, c.Env, len(tt.expectEnvVars))
 
 			for _, envName := range tt.expectEnvVars {
 				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
@@ -109,6 +137,7 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 	tests := []struct {
 		name           string
 		cfg            *otlp.ExporterConfiguration
+		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -116,21 +145,32 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 		{
 			name:           "nil config -> disabled",
 			cfg:            nil,
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config without logs -> disabled",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
-			name:           "config with logs -> enabled and injects",
+			name:           "config with logs -> enabled and injects (no cert)",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
+			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPLogsEndpointEnv, OTLPLogsProtocolEnv},
+			expectEnvVars:  []string{OTLPLogsEndpointEnv, OTLPLogsProtocolEnv, OTLPLogsHeadersEnv},
+		},
+		{
+			name:           "config with logs -> enabled and injects (with cert)",
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
+			addCertificate: true,
+			expectEnabled:  true,
+			expectInjected: true,
+			expectEnvVars:  []string{OTLPLogsEndpointEnv, OTLPLogsProtocolEnv, OTLPLogsHeadersEnv, OTLPLogsCertificateEnv},
 		},
 	}
 
@@ -140,8 +180,10 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Equal(t, tt.expectEnabled, inj.isEnabled())
 
 			c := &corev1.Container{}
-			injected := inj.Inject(c, apiURL, false)
+			injected := inj.Inject(c, apiURL, tt.addCertificate)
 			assert.Equal(t, tt.expectInjected, injected)
+
+			assert.Len(t, c.Env, len(tt.expectEnvVars))
 
 			for _, envName := range tt.expectEnvVars {
 				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
