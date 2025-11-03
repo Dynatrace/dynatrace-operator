@@ -351,10 +351,14 @@ func TestMutate(t *testing.T) {
 
 		kindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.kind", strings.ToLower(request.Pod.OwnerReferences[0].Kind))
 		nameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.name", strings.ToLower(request.Pod.OwnerReferences[0].Name))
+		depKindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, deprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind))
+		depNameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, deprecatedWorkloadNameKey, strings.ToLower(request.Pod.OwnerReferences[0].Name))
 		metaFromNsAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, nsMetaAnnotationKey, nsMetaAnnotationValue)
 
 		assert.Contains(t, request.InstallContainer.Args, kindAttr)
 		assert.Contains(t, request.InstallContainer.Args, nameAttr)
+		assert.Contains(t, request.InstallContainer.Args, depKindAttr)
+		assert.Contains(t, request.InstallContainer.Args, depNameAttr)
 		assert.Contains(t, request.InstallContainer.Args, metaFromNsAttr)
 		assert.Contains(t, request.InstallContainer.Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 
