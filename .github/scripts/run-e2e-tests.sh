@@ -62,6 +62,7 @@ popd
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
 which gotestsum
+cat /etc/os-releas
 which make
 
 if [[ -z "${TARGET_IMAGE}" ]]; then
