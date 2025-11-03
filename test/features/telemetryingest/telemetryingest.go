@@ -426,7 +426,7 @@ func createAgTLSSecret(namespace string) (corev1.Secret, error) {
 
 	return secret.New(consts.AgSecretName, namespace,
 		map[string][]byte{
-			dynakube.TLSCertKey:                    agCrt,
+			dynakube.ServerCertKey:                 agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		}), nil
 }

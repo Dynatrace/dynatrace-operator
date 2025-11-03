@@ -133,7 +133,7 @@ func TestMutator_IsInjected(t *testing.T) {
 	})
 }
 
-func TestMutator_Mutate(t *testing.T) {
+func TestMutator_Mutate(t *testing.T) { //nolint:revive
 	t.Run("no OTLP exporter configuration present on DynaKube - do not modify anything", func(t *testing.T) {
 		m := Mutator{}
 
@@ -581,6 +581,66 @@ func TestMutator_Mutate(t *testing.T) {
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
 		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
 	})
+	t.Run("activegate with ca cert and override enabled -> mounts cert volume and injects certificate env vars", func(t *testing.T) {
+		m := Mutator{}
+
+		dk := getTestDynakube()
+		dk.Spec.APIURL = "http://my-cluster/api"
+		// Enable ActiveGate capability + TLS secret so HasCaCert() is true
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "dummy-uuid"
+
+		override := true
+		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override
+
+		request := createTestMutationRequest(t, dk)
+		err := m.Mutate(request)
+		require.NoError(t, err)
+
+		// Volume referencing certificate secret must be present
+		volFound := false
+		for _, v := range request.Pod.Spec.Volumes {
+			if v.Name == activeGateTrustedCertVolumeName {
+				volFound = true
+				require.NotNil(t, v.Secret)
+				assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
+
+				break
+			}
+		}
+		assert.True(t, volFound, "expected cert volume")
+
+		certPath := getCertificatePath()
+		for _, c := range request.Pod.Spec.Containers {
+			mountFound := false
+			for _, mnt := range c.VolumeMounts {
+				if mnt.Name == activeGateTrustedCertVolumeName && mnt.MountPath == exporterCertsMountPath {
+					mountFound = true
+					assert.True(t, mnt.ReadOnly)
+
+					break
+				}
+			}
+			assert.True(t, mountFound, "expected cert mount on container %s", c.Name)
+
+			// Certificate env vars injected because addCertificate=true passed to injectors
+			for _, e := range c.Env {
+				if e.Name == OTLPTraceCertificateEnv || e.Name == OTLPMetricsCertificateEnv || e.Name == OTLPLogsCertificateEnv {
+					assert.Equal(t, certPath, e.Value)
+				}
+			}
+
+			assert.True(t, env.IsIn(c.Env, OTLPTraceCertificateEnv))
+			assert.True(t, env.IsIn(c.Env, OTLPMetricsCertificateEnv))
+			assert.True(t, env.IsIn(c.Env, OTLPLogsCertificateEnv))
+		}
+		// Init containers should not have the mount
+		for _, c := range request.Pod.Spec.InitContainers {
+			for _, mnt := range c.VolumeMounts {
+				assert.NotEqual(t, activeGateTrustedCertVolumeName, mnt.Name)
+			}
+		}
+	})
 }
 
 func assertTokenEnvVarIsSet(t *testing.T, containerEnvVars []corev1.EnvVar) {
@@ -621,6 +681,56 @@ func TestMutator_Reinvoke(t *testing.T) {
 		mutated := m.Reinvoke(request.ToReinvocationRequest())
 
 		require.False(t, mutated)
+	})
+}
+
+func Test_ensureCertificateVolumeMounted(t *testing.T) {
+	newContainer := func() corev1.Container { return corev1.Container{Name: "app"} }
+
+	t.Run("adds mount when absent", func(t *testing.T) {
+		c := newContainer()
+		require.Empty(t, c.VolumeMounts)
+		ensureCertificateVolumeMounted(&c)
+		require.Len(t, c.VolumeMounts, 1)
+		vm := c.VolumeMounts[0]
+		assert.Equal(t, activeGateTrustedCertVolumeName, vm.Name)
+		assert.Equal(t, exporterCertsMountPath, vm.MountPath)
+		assert.True(t, vm.ReadOnly)
+	})
+
+	t.Run("does not duplicate mount", func(t *testing.T) {
+		c := newContainer()
+		c.VolumeMounts = []corev1.VolumeMount{{Name: activeGateTrustedCertVolumeName, MountPath: exporterCertsMountPath, ReadOnly: true}}
+		ensureCertificateVolumeMounted(&c)
+		assert.Len(t, c.VolumeMounts, 1)
+	})
+}
+
+func Test_addActiveGateCertVolume(t *testing.T) {
+	newPod := func() *corev1.Pod { return &corev1.Pod{} }
+	baseDK := func() dynakube.DynaKube { return dynakube.DynaKube{} }
+
+	t.Run("no activegate -> no volume", func(t *testing.T) {
+		dk := baseDK() // ActiveGate not enabled
+		pod := newPod()
+		addActiveGateCertVolume(dk, pod)
+		assert.Empty(t, pod.Spec.Volumes)
+	})
+
+	t.Run("activegate with cert secret -> volume added once", func(t *testing.T) {
+		dk := baseDK()
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName}, TLSSecretName: "custom-tls"}
+		pod := newPod()
+		addActiveGateCertVolume(dk, pod)
+		require.Len(t, pod.Spec.Volumes, 1)
+		v := pod.Spec.Volumes[0]
+		assert.Equal(t, activeGateTrustedCertVolumeName, v.Name)
+		require.NotNil(t, v.Secret)
+		assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
+
+		// second call should not duplicate
+		addActiveGateCertVolume(dk, pod)
+		assert.Len(t, pod.Spec.Volumes, 1)
 	})
 }
 

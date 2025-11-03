@@ -195,7 +195,7 @@ func getAgTLSSecret(secret *corev1.Secret) features.Func {
 		err := envConfig.Client().Resources().Get(ctx, secret.Name, secret.Namespace, secret)
 		require.NoError(t, err)
 
-		_, ok := secret.Data[dynakube.TLSCertKey]
+		_, ok := secret.Data[dynakube.ServerCertKey]
 		require.True(t, ok)
 
 		return ctx
@@ -232,7 +232,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	agP12, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
 	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
-			dynakube.TLSCertKey:             agCrt,
+			dynakube.ServerCertKey:          agCrt,
 			agCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
@@ -316,8 +316,8 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	}
 	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
-	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[dynakube.TLSCertKey] }, nil)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[dynakube.TLSCertKey] }, nil)
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[dynakube.ServerCertKey] }, nil)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[dynakube.ServerCertKey] }, nil)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -360,7 +360,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	agP12, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
 	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
-			dynakube.TLSCertKey:             agCrt,
+			dynakube.ServerCertKey:          agCrt,
 			agCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
@@ -463,8 +463,8 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 	}
 	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
-	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[dynakube.TLSCertKey] }, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[dynakube.TLSCertKey] }, trustedCa)
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[dynakube.ServerCertKey] }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[dynakube.ServerCertKey] }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
