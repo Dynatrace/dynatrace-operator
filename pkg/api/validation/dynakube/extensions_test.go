@@ -79,6 +79,12 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 						Tag:        "version",
 					},
 				},
+				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+					ImageRef: image.Ref{
+						Repository: "repo/otel-collector",
+						Tag:        "version",
+					},
+				},
 			},
 		},
 	}
