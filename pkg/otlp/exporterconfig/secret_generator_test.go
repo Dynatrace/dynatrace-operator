@@ -130,7 +130,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				dtclient.DataIngestToken: []byte(testDataIngestToken),
 			}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.ServerCertKey: []byte(testCrt),
+				dynakube.TLSCertKey: []byte(testCrt),
 			}),
 		)
 
@@ -198,7 +198,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				dtclient.DataIngestToken: []byte(testDataIngestToken),
 			}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.ServerCertKey: []byte(testCrt),
+				dynakube.TLSCertKey: []byte(testCrt),
 			}),
 			clientSecret(consts.OTLPExporterSecretName, testNamespace, map[string][]byte{
 				dtclient.DataIngestToken: []byte(oldDataIngestToken),
@@ -305,7 +305,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			namespace2,
 			terminatingNS,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
-			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.ServerCertKey: []byte(testCrt)}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCertKey: []byte(testCrt)}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
@@ -367,7 +367,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			nonInjected,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
-			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.ServerCertKey: []byte(testCrt)}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCertKey: []byte(testCrt)}),
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)

@@ -155,7 +155,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.TLSCertKey: []byte("test-cert-value"),
+				dynakube.ServerCertKey: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
@@ -254,7 +254,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				dtclient.PaasToken: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.TLSCertKey: []byte("test-cert-value"),
+				dynakube.ServerCertKey: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),

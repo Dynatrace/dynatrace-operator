@@ -27,8 +27,8 @@ import (
 
 const (
 	TrustedCAKey  = "certs"
-	TLSCertKey    = "server.crt"
-	ServerCertKey = "tls.crt"
+	ServerCertKey = "server.crt"
+	TLSCertKey    = "tls.crt"
 )
 
 func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
@@ -59,12 +59,12 @@ func (dk *DynaKube) ActiveGateTLSCert(ctx context.Context, kubeReader client.Rea
 		}
 
 		// first check if the tls.crt key is available
-		if tlsCertKey, ok := tlsSecret.Data[ServerCertKey]; ok {
+		if tlsCertKey, ok := tlsSecret.Data[TLSCertKey]; ok {
 			return tlsCertKey, nil
 		}
 
 		// use server.crt as fallback for older secrets
-		if tlsCertKey, ok := tlsSecret.Data[TLSCertKey]; ok {
+		if tlsCertKey, ok := tlsSecret.Data[ServerCertKey]; ok {
 			return tlsCertKey, nil
 		}
 	}

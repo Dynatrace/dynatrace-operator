@@ -102,15 +102,15 @@ func activeGateTLSCertificate(t *testing.T) {
 
 	t.Run("get tls certificates from server.crt", func(t *testing.T) {
 		testFunc(t, map[string][]byte{
-			dynakube.TLSCertKey: []byte(testSecretValue),
+			dynakube.ServerCertKey: []byte(testSecretValue),
 		})
 	})
 
 	t.Run("get tls certificates from tls.crt", func(t *testing.T) {
 		testFunc(t, map[string][]byte{
 			// prioritize tls.crt over server.crt
-			dynakube.ServerCertKey: []byte(testSecretValue),
-			dynakube.TLSCertKey:    []byte(testSecretValueNew),
+			dynakube.TLSCertKey:    []byte(testSecretValue),
+			dynakube.ServerCertKey: []byte(testSecretValueNew),
 		})
 	})
 }
