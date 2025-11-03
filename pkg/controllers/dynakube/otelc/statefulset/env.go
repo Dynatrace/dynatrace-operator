@@ -137,7 +137,10 @@ func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 }
 
 func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
-	noProxyValues := []string{}
+	noProxyValues := []string{
+		"$(KUBERNETES_SERVICE_HOST)",
+		"kubernetes.default",
+	}
 
 	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
 		noProxyValues = append(noProxyValues, ext.GetServiceNameFQDN())
