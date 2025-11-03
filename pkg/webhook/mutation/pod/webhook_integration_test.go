@@ -2,16 +2,19 @@ package pod_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -321,6 +324,100 @@ func TestOTLPWebhook(t *testing.T) {
 
 		assert.False(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationOTLPInjected, false))
 		assert.Equal(t, otlp.NoOTLPExporterConfigSecretReason, pod.Annotations[podmutator.AnnotationOTLPReason])
+	})
+
+	t.Run("otlp exporter activegate", func(t *testing.T) {
+		const dataIngestToken = "test-token"
+		const agCertData = "ag-cert-data"
+
+		apiURL := "https://example.live.dynatrace.com"
+		tenantUUID := uuid.NewString()
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: apiURL,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+					},
+				},
+				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
+					NamespaceSelector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
+						},
+					},
+					Signals: otlpspec.SignalConfiguration{
+						Metrics: &otlpspec.MetricsSignal{},
+						Logs:    &otlpspec.LogsSignal{},
+						Traces:  &otlpspec.TracesSignal{},
+					},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: oneagent.Status{
+					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: communication.ConnectionInfo{
+							TenantUUID: tenantUUID,
+						},
+					},
+				},
+			},
+		}
+
+		apiTokenSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      consts.OTLPExporterSecretName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dynatrace.APIToken:        []byte(dataIngestToken),
+				dynatrace.DataIngestToken: []byte(dataIngestToken),
+			},
+		}
+		createObject(t, clt, apiTokenSecret)
+
+		agCertSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      consts.OTLPExporterCertsSecretName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dynakube.TLSCertKey: []byte(agCertData),
+			},
+		}
+		createObject(t, clt, agCertSecret)
+
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, nil)
+		appContainer := pod.Spec.Containers[0]
+
+		envMap := map[string]corev1.EnvVar{}
+		for _, e := range appContainer.Env {
+			envMap[e.Name] = e
+		}
+
+		dtTokenEnv, ok := envMap[exporter.DynatraceAPITokenEnv]
+		require.True(t, ok, "DT_API_TOKEN missing")
+		require.NotNil(t, dtTokenEnv.ValueFrom)
+		require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
+		assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
+		assert.Equal(t, dynatrace.DataIngestToken, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
+
+		expectedService := fmt.Sprintf("%s-%s.%s", dk.Name, agconsts.MultiActiveGateName, testNamespace)
+		expectedBase := fmt.Sprintf("https://%s/e/%s/api/v2/otlp", expectedService, tenantUUID)
+
+		assert.Equal(t, expectedBase+"/v1/metrics", envMap[exporter.OTLPMetricsEndpointEnv].Value)
+		assert.Equal(t, expectedBase+"/v1/logs", envMap[exporter.OTLPLogsEndpointEnv].Value)
+		assert.Equal(t, expectedBase+"/v1/traces", envMap[exporter.OTLPTraceEndpointEnv].Value)
 	})
 }
 
