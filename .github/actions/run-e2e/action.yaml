@@ -88,15 +88,15 @@ runs:
       env:
         FLC_NAMESPACE: ${{ inputs.flc-namespace }}
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
-    - name: Check cluster status
-      id: check_cluster_status
-      shell: bash
-      run: |
-        echo "Cluster status: ${{ steps.create_cluster.outputs.cluster_status }}"
-        if [[ "${{ steps.create_cluster.outputs.cluster_status }}" == "skipped" ]]; then
-          echo "Cluster creation failed or was skipped. Skipping tests."
-          echo "skip_tests=true" >> $GITHUB_OUTPUT
-        fi
+#    - name: Check cluster status
+#      id: check_cluster_status
+#      shell: bash
+#      run: |
+#        echo "Cluster status: ${{ steps.create_cluster.outputs.cluster_status }}"
+#        if [[ "${{ steps.create_cluster.outputs.cluster_status }}" == "skipped" ]]; then
+#          echo "Cluster creation failed or was skipped. Skipping tests."
+#          echo "skip_tests=true" >> $GITHUB_OUTPUT
+#        fi
     - name: Run tests
       shell: bash
       run: ref/.github/scripts/run-e2e-tests.sh
@@ -116,16 +116,16 @@ runs:
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
-      if: steps.check_cluster_status.outputs.skip_tests != 'true'
-    - name: Destroy cluster
-      shell: bash
-      run: ref/.github/scripts/destroy-cluster.sh
-      env:
-        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
-        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
-      if: always()
-    - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      with:
-        files: target/results/*.xml
-      if: always()
+#      if: steps.check_cluster_status.outputs.skip_tests != 'true'
+#    - name: Destroy cluster
+#      shell: bash
+#      run: ref/.github/scripts/destroy-cluster.sh
+#      env:
+#        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+#        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
+#      if: always()
+#    - name: Publish test results
+#      uses: EnricoMi/publish-unit-test-result-action@v2
+#      with:
+#        files: target/results/*.xml
+#      if: always()

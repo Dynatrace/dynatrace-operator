@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-set -x
+set -e # instructs bash to immediately exit if any command has a non-zero exit status.
+set -u # causes the bash shell to treat unset variables as an error and exit immediately.
+set -o pipefail # causes a pipeline to return the exit status of the last command in the pipe that returned a non-zero return value.
+set -x # instructs bash to print each command and its arguments to standard output as they are executed.
 
 echo "Switching to target branch directory..."
 cd target
@@ -57,6 +60,9 @@ EOF
 popd
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
+
+which gotestsum
+
 
 if [[ -z "${TARGET_IMAGE}" ]]; then
   make IMG="$TARGET_IMAGE" test/e2e-publish
