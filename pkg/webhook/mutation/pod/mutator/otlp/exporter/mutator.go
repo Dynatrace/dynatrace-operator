@@ -122,7 +122,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		},
 	}
 
-	shouldAddCertificate := request.DynaKube.ActiveGate().IsEnabled() && request.DynaKube.ActiveGate().HasCaCert()
+	shouldAddCertificate := request.DynaKube.ActiveGate().HasCaCert()
 
 	override := otlpExporterConfig.IsOverrideEnvVarsEnabled()
 
