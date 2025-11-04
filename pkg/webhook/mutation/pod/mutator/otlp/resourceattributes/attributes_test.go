@@ -76,7 +76,7 @@ func Test_attributes_merge(t *testing.T) {
 
 func Test_attributes_toString(t *testing.T) {
 	attrs := attributes{"a": "1", "b": "2", "c": "3"}
-	result := attrs.toString()
+	result := attrs.String()
 	parts := strings.Split(result, ",")
 	require.Len(t, parts, 3)
 	pairs := map[string]string{}
@@ -103,7 +103,7 @@ func Test_attributes(t *testing.T) {
 	// ensure encoded value is present
 	assert.Equal(t, url.QueryEscape(annotVal), envAttrs["custom.key"])
 	// ensure final string contains all keys (order ignored)
-	final := envAttrs.toString()
+	final := envAttrs.String()
 	for _, k := range []string{"k1=v1", "k2=v2", "custom.key=" + url.QueryEscape(annotVal)} {
 		assert.Contains(t, final, k)
 	}

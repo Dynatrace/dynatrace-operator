@@ -119,7 +119,7 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 
 	mutated = existingAttributes.merge(attributesFromAnnotations)
 
-	finalValue := existingAttributes.toString()
+	finalValue := existingAttributes.String()
 
 	if finalValue != "" {
 		c.Env = append(c.Env, corev1.EnvVar{Name: otlpResourceAttributesEnvVar, Value: finalValue})

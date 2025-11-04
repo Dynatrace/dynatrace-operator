@@ -20,11 +20,8 @@ func newAttributesFromEnv(envs []corev1.EnvVar, name string) (attributes, bool) 
 
 		split := strings.Split(ev.Value, ",")
 		for _, pair := range split {
-			kv := strings.SplitN(pair, "=", 2)
-			if len(kv) == 2 {
-				key := strings.TrimSpace(kv[0])
-				value := strings.TrimSpace(kv[1])
-				res[key] = value
+			if key, value, ok := strings.Cut(pair, "="); ok {
+				res[strings.TrimSpace(key)] = strings.TrimSpace(value)
 			}
 		}
 	}
@@ -62,7 +59,7 @@ func (a attributes) merge(other attributes) bool {
 	return mutated
 }
 
-func (a attributes) toString() string {
+func (a attributes) String() string {
 	result := ""
 
 	first := true
