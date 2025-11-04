@@ -124,11 +124,17 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
-	if !dk.ActiveGate().HasCaCert() {
+	var agCert []byte
+	var err error
+
+	if dk.ActiveGate().HasCaCert() {
+		agCert, err = dk.ActiveGateTLSCert(ctx, s.apiReader)
+	} else if dk.Spec.TrustedCAs != "" {
+		agCert, err = dk.TrustedCAs(ctx, s.apiReader)
+	} else {
 		return data, nil
 	}
 
-	agCert, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
 		conditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
 
