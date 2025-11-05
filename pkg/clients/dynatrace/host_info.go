@@ -10,92 +10,100 @@ import (
 	"github.com/pkg/errors"
 )
 
-type HostNotFoundErr struct {
+type HostEntityNotFoundErr struct {
 	IP string
 }
 
-func (e HostNotFoundErr) Error() string {
-	return fmt.Sprintf("host not found for ip: %v", e.IP)
-}
-
-type hostInfo struct {
-	version  string
-	entityID string
-}
-
-func (dtc *dynatraceClient) GetHostEntityIDForIP(ctx context.Context, ip string) (string, error) {
-	if len(ip) == 0 {
-		return "", errors.New("ip is invalid")
-	}
-
-	hostInfo, err := dtc.getHostInfoForIP(ctx, ip)
-	if err != nil {
-		return "", err
-	}
-
-	if hostInfo.entityID == "" {
-		return "", errors.New("entity id not set for host")
-	}
-
-	return hostInfo.entityID, nil
-}
-
-func (dtc *dynatraceClient) getHostInfoForIP(ctx context.Context, ip string) (*hostInfo, error) {
-	if len(dtc.hostCache) == 0 {
-		err := dtc.buildHostCache(ctx)
-		if err != nil {
-			return nil, errors.WithMessage(err, "error building host-cache from dynatrace cluster")
-		}
-	}
-
-	switch hostInfo, ok := dtc.hostCache[ip]; {
-	case !ok:
-		return nil, HostNotFoundErr{IP: ip}
-	default:
-		return &hostInfo, nil
-	}
-}
-
-func (dtc *dynatraceClient) buildHostCache(ctx context.Context) error {
-	resp, err := dtc.makeRequest(ctx, dtc.getHostsURL(), dynatraceAPIToken)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	defer utils.CloseBodyAfterRequest(resp)
-
-	responseData, err := dtc.getServerResponseData(resp)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	err = dtc.setHostCacheFromResponse(responseData)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func (e HostEntityNotFoundErr) Error() string {
+	return fmt.Sprintf("HOST entity not found for ip: %v", e.IP)
 }
 
 type hostInfoResponse struct {
-	AgentVersion *struct {
-		Timestamp string
-		Major     int
-		Minor     int
-		Revision  int
-	}
 	EntityID          string
 	NetworkZoneID     string
 	IPAddresses       []string
 	LastSeenTimestamp int64
 }
 
-func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
-	dtc.hostCache = make(map[string]hostInfo)
+// hostEntityMap maps IPs to their respective HOST entityID according to the Dynatrace API
+type hostEntityMap map[string]string
+
+// Update adds or overwrites the IP-to-Entity mapping if the IP already existed
+// The reason we do this "overwrite check" is somewhat unknown, it used to be part of a "caching" logic, however that cache was actually never really used.
+// Kept it "as is" mainly to not introduce new behavior, it is unknown how the API we use handles repeated IP usage. But it can be just dead code.
+func (entityMap hostEntityMap) Update(info hostInfoResponse, entityID string) {
+	for _, ip := range info.IPAddresses {
+		if oldEntityID, ok := entityMap[ip]; ok {
+			log.Info("hosts mapping: duplicate IP, replacing HOST entity to 'newer' one", "ip", ip, "new", entityID, "old", oldEntityID)
+		}
+
+		entityMap[ip] = entityID
+	}
+}
+
+// GetHostEntityIDForIP will find the Dynatrace HOST entityID for a given IP.
+// This call is very expensive, as the API we use (`/v1/entity/infrastructure/hosts`) can only give use all the HOST entities for a Tenant. (there are ways to filter, but not with the info we have)
+// A Tenant can have hundreds or even thousands of these entities, and we have to parse through ALL of them.
+// You could naturally ask: "Why don't we stop early if we found the IP?"
+// - To which the answer is: Historical reasons. We don't want to change behavior in any major way now, so we are keeping it as is.
+func (dtc *dynatraceClient) GetHostEntityIDForIP(ctx context.Context, ip string) (string, error) {
+	if len(ip) == 0 {
+		return "", errors.New("ip is invalid")
+	}
+
+	entityID, err := dtc.getHostEntityIDForIP(ctx, ip)
+	if err != nil {
+		return "", err
+	}
+
+	if entityID == "" {
+		return "", HostEntityNotFoundErr{IP: ip}
+	}
+
+	return entityID, nil
+}
+
+func (dtc *dynatraceClient) getHostEntityIDForIP(ctx context.Context, ip string) (string, error) {
+	ipHostMapping, err := dtc.buildHostEntityMap(ctx)
+	if err != nil {
+		return "", errors.WithMessage(err, "error building host-cache from dynatrace cluster")
+	}
+
+	switch entityID, ok := ipHostMapping[ip]; {
+	case !ok:
+		return "", HostEntityNotFoundErr{IP: ip}
+	default:
+		return entityID, nil
+	}
+}
+
+func (dtc *dynatraceClient) buildHostEntityMap(ctx context.Context) (hostEntityMap, error) {
+	resp, err := dtc.makeRequest(ctx, dtc.getHostsURL(), dynatraceAPIToken)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	defer utils.CloseBodyAfterRequest(resp)
+
+	responseData, err := dtc.getServerResponseData(resp)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	ipHostMapping, err := dtc.createHostEntityMapFromResponse(responseData)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return ipHostMapping, nil
+}
+
+func (dtc *dynatraceClient) createHostEntityMapFromResponse(response []byte) (hostEntityMap, error) {
+	ipHostMapping := hostEntityMap{}
 
 	hostInfoResponses, err := dtc.extractHostInfoResponse(response)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	now := dtc.now
@@ -116,13 +124,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 		nz := info.NetworkZoneID
 
 		if (dtc.networkZone != "" && nz == dtc.networkZone) || (dtc.networkZone == "" && (nz == "default" || nz == "")) {
-			hostInfo := hostInfo{entityID: info.EntityID}
-
-			if v := info.AgentVersion; v != nil {
-				hostInfo.version = fmt.Sprintf("%d.%d.%d.%s", v.Major, v.Minor, v.Revision, v.Timestamp)
-			}
-
-			dtc.updateHostCache(info, hostInfo)
+			ipHostMapping.Update(info, info.EntityID)
 		}
 	}
 
@@ -130,17 +132,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 		log.Info("hosts cache: ignoring inactive hosts", "ids", inactive)
 	}
 
-	return nil
-}
-
-func (dtc *dynatraceClient) updateHostCache(info hostInfoResponse, hostInfo hostInfo) {
-	for _, ip := range info.IPAddresses {
-		if old, ok := dtc.hostCache[ip]; ok {
-			log.Info("hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
-		}
-
-		dtc.hostCache[ip] = hostInfo
-	}
+	return ipHostMapping, nil
 }
 
 func (dtc *dynatraceClient) extractHostInfoResponse(response []byte) ([]hostInfoResponse, error) {

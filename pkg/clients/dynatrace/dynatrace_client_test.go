@@ -45,7 +45,6 @@ func TestMakeRequest(t *testing.T) {
 		apiToken:  apiToken,
 		paasToken: paasToken,
 
-		hostCache:  make(map[string]hostInfo),
 		httpClient: http.DefaultClient,
 	}
 
@@ -77,7 +76,6 @@ func TestGetResponseOrServerError(t *testing.T) {
 		apiToken:  apiToken,
 		paasToken: paasToken,
 
-		hostCache:  make(map[string]hostInfo),
 		httpClient: http.DefaultClient,
 	}
 
@@ -138,40 +136,6 @@ func TestGetResponseOrServerError(t *testing.T) {
 
 		assert.EqualError(t, err,
 			"Server returned status code 403 (via proxy proxy.dynatrace.org); can't unmarshal response (content-type: text/html): <!doctype html><html>hi</html>")
-	})
-}
-
-func TestBuildHostCache(t *testing.T) {
-	ctx := context.Background()
-
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler(t))
-	defer dynatraceServer.Close()
-
-	dc := &dynatraceClient{
-		url:       dynatraceServer.URL,
-		paasToken: paasToken,
-		now:       time.Unix(1521540000, 0),
-
-		hostCache:  make(map[string]hostInfo),
-		httpClient: http.DefaultClient,
-	}
-
-	require.NotNil(t, dc)
-	t.Run("sad path", func(t *testing.T) {
-		dc.apiToken = ""
-		err := dc.buildHostCache(ctx)
-		require.Error(t, err, "error querying dynatrace server")
-		assert.Empty(t, dc.hostCache)
-	})
-	t.Run("happy path", func(t *testing.T) {
-		dc.apiToken = apiToken
-		err := dc.buildHostCache(ctx)
-		require.NoError(t, err)
-		assert.NotEmpty(t, dc.hostCache)
-		assert.ObjectsAreEqual(dc.hostCache, map[string]hostInfo{
-			"10.11.12.13": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
-			"192.168.0.1": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
-		})
 	})
 }
 
@@ -239,8 +203,6 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 		handleLatestActiveGateVersion(request, writer)
 	case agentVersions:
 		handleAvailableAgentVersions(request, writer)
-	case "/v1/entity/infrastructure/hosts":
-		(&ipHandler{}).ServeHTTP(writer, request)
 	case "/v1/deployment/installer/agent/connectioninfo":
 		handleCommunicationHosts(request, writer)
 	case "/v1/events":
@@ -263,53 +225,6 @@ func writeError(w http.ResponseWriter, status int) {
 
 	w.WriteHeader(status)
 	_, _ = w.Write(result)
-}
-
-func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
-	ctx := context.Background()
-	// now:                         20/05/2020 10:10 AM UTC
-	// HOST-42 - lastSeenTimestamp: 20/05/2020 10:04 AM UTC
-	// HOST-84 - lastSeenTimestamp: 19/05/2020 01:49 AM UTC
-	c := dynatraceClient{
-		now: time.Unix(1589969400, 0).UTC(),
-	}
-
-	require.NoError(t, c.setHostCacheFromResponse([]byte(`[
-	{
-		"entityId": "HOST-42",
-		"displayName": "A",
-		"firstSeenTimestamp": 1589940921731,
-		"lastSeenTimestamp": 1589969061511,
-		"ipAddresses": [
-			"1.1.1.1"
-		],
-		"monitoringMode": "FULL_STACK",
-		"networkZoneId": "default",
-		"agentVersion": {
-			"major": 1,
-			"minor": 195,
-			"revision": 0,
-			"timestamp": "20200515-045253",
-			"sourceRevision": ""
-		}
-	},
-	{
-		"entityId": "HOST-84",
-		"displayName": "B",
-		"firstSeenTimestamp": 1589767448722,
-		"lastSeenTimestamp": 1589852948530,
-		"ipAddresses": [
-			"1.1.1.1"
-		],
-		"monitoringMode": "FULL_STACK",
-		"networkZoneId": "default"
-	}
-]`)))
-
-	info, err := c.getHostInfoForIP(ctx, "1.1.1.1")
-	require.NoError(t, err)
-	require.Equal(t, "HOST-42", info.entityID)
-	require.Equal(t, "1.195.0.20200515-045253", info.version)
 }
 
 func createTestDynatraceServer(t *testing.T, handler http.Handler, networkZoneName string) (*httptest.Server, Client) {

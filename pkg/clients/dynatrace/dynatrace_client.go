@@ -27,8 +27,6 @@ type dynatraceClient struct {
 
 	httpClient *http.Client
 
-	hostCache map[string]hostInfo
-
 	url       string
 	apiToken  string
 	paasToken string

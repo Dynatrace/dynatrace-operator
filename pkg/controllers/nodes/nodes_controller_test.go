@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", ErrNotFound)
+		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", ErrNotFound)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
@@ -167,7 +167,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", dtclient.HostNotFoundErr{IP: "1.2.3.4"})
+		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", dtclient.HostEntityNotFoundErr{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
@@ -260,7 +260,7 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclientmock.Cl
 
 func createDTMockClient(t *testing.T, ip, host string) *dtclientmock.Client {
 	dtClient := dtclientmock.NewClient(t)
-	dtClient.On("GetEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), ip).Return(host, nil)
+	dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), ip).Return(host, nil)
 	dtClient.On("SendEvent", mock.AnythingOfType("context.backgroundCtx"), mock.MatchedBy(func(e *dtclient.EventData) bool {
 		return e.EventType == "MARKED_FOR_TERMINATION"
 	})).Return(nil)
