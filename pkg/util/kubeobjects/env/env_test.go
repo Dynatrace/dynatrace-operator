@@ -82,3 +82,44 @@ func TestDefaultNamespace(t *testing.T) {
 		assert.Equal(t, "dynatrace", got)
 	})
 }
+
+func TestAppend(t *testing.T) {
+	t.Run("append new", func(t *testing.T) {
+		envVars := []corev1.EnvVar{{Name: "a", Value: "A"}}
+		envVars, added := Append(envVars, corev1.EnvVar{Name: "b", Value: "B"})
+		assert.True(t, added)
+		assert.Equal(t, []corev1.EnvVar{
+			{Name: "a", Value: "A"},
+			{Name: "b", Value: "B"},
+		}, envVars)
+	})
+
+	t.Run("skip existing", func(t *testing.T) {
+		envVars := []corev1.EnvVar{{Name: "a", Value: "A"}}
+		envVars, added := Append(envVars, corev1.EnvVar{Name: "a", Value: "X"})
+		assert.False(t, added)
+		assert.Equal(t, []corev1.EnvVar{
+			{Name: "a", Value: "A"},
+		}, envVars)
+	})
+
+	t.Run("append to empty", func(t *testing.T) {
+		var envVars []corev1.EnvVar
+		envVars, added := Append(envVars, corev1.EnvVar{Name: "z", Value: "Z"})
+		assert.True(t, added)
+		assert.Equal(t, []corev1.EnvVar{
+			{Name: "z", Value: "Z"},
+		}, envVars)
+	})
+
+	t.Run("append multiple existing", func(t *testing.T) {
+		envVars := []corev1.EnvVar{{Name: "a", Value: "A"}, {Name: "b", Value: "B"}}
+		envVars, added := Append(envVars, corev1.EnvVar{Name: "c", Value: "C"})
+		assert.True(t, added)
+		assert.Equal(t, []corev1.EnvVar{
+			{Name: "a", Value: "A"},
+			{Name: "b", Value: "B"},
+			{Name: "c", Value: "C"},
+		}, envVars)
+	})
+}

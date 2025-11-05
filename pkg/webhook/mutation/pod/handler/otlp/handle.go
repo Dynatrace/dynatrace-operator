@@ -41,6 +41,9 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		return nil
 	}
 
+	// the execution of both the env var mutator and the resource attribute mutator
+	// is controlled by the env var mutator's IsEnabled method
+	// therefore, we only need to check it here
 	if h.envVarMutator.IsEnabled(mutationRequest.BaseRequest) {
 		if !h.isTokenSecretPresent(
 			mutationRequest,
@@ -61,20 +64,20 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 
 		if h.envVarMutator.IsInjected(mutationRequest.BaseRequest) {
 			if h.envVarMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
-				log.Debug("reinvocation policy applied", "podName", mutationRequest.PodName())
+				log.Debug("OTLP exporter env var reinvocation policy applied", "podName", mutationRequest.PodName())
+			}
+
+			if h.resourceAttributeMutator.Reinvoke(mutationRequest.ToReinvocationRequest()) {
+				log.Debug("OTLP resource attribute reinvocation policy applied", "podName", mutationRequest.PodName())
 			}
 		} else {
-			err := h.envVarMutator.Mutate(mutationRequest)
-			if err != nil {
+			if err := h.envVarMutator.Mutate(mutationRequest); err != nil {
 				return err
 			}
-		}
-	}
 
-	if h.resourceAttributeMutator.IsEnabled(mutationRequest.BaseRequest) {
-		err := h.resourceAttributeMutator.Mutate(mutationRequest)
-		if err != nil {
-			return err
+			if err := h.resourceAttributeMutator.Mutate(mutationRequest); err != nil {
+				return err
+			}
 		}
 	}
 
