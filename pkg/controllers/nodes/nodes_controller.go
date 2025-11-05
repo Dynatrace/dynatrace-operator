@@ -288,7 +288,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	entityID, err := dynatraceClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
+	entityID, err := dynatraceClient.GetHostEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {
 		if errors.As(err, &dtclient.HostNotFoundErr{}) {
 			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
