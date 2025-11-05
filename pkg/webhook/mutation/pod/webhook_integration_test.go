@@ -3,6 +3,8 @@ package pod_test
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -25,6 +27,7 @@ import (
 	metadatamutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	oneagentmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,6 +185,11 @@ func TestWebhook(t *testing.T) {
 }
 
 func TestOTLPWebhook(t *testing.T) {
+	metadataAnnotations := map[string]string{
+		"metadata.dynatrace.com/service.name": "checkout service",
+		"metadata.dynatrace.com/custom.key":   "value:with/special chars",
+	}
+
 	clt := integrationtests.SetupWebhookTestEnvironment(t,
 		getWebhookInstallOptions(),
 
@@ -259,7 +267,9 @@ func TestOTLPWebhook(t *testing.T) {
 
 		createDynaKube(t, clt, dk)
 
-		pod := createPod(t, clt, nil)
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Annotations = metadataAnnotations
+		})
 
 		// verify mutation occurred by presence of OTLP env vars (annotation may not be set when no OneAgent injection)
 
@@ -289,6 +299,17 @@ func TestOTLPWebhook(t *testing.T) {
 		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsEndpointEnv, Value: baseEndpoint + "/v1/metrics"})
 		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPLogsEndpointEnv, Value: baseEndpoint + "/v1/logs"})
 		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPTraceEndpointEnv, Value: baseEndpoint + "/v1/traces"})
+
+		raEnv := env.FindEnvVar(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+
+		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
+
+		parsed := parseResourceAttributes(raEnv.Value)
+
+		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/service.name"]), parsed["service.name"])
+		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/custom.key"]), parsed["custom.key"])
+		assert.Equal(t, testNamespace, parsed["k8s.namespace.name"])
+		assert.Equal(t, "app", parsed["k8s.container.name"])
 	})
 
 	t.Run("data ingest token secret missing", func(t *testing.T) {
@@ -419,6 +440,72 @@ func TestOTLPWebhook(t *testing.T) {
 		assert.Equal(t, expectedBase+"/v1/logs", envMap[exporter.OTLPLogsEndpointEnv].Value)
 		assert.Equal(t, expectedBase+"/v1/traces", envMap[exporter.OTLPTraceEndpointEnv].Value)
 	})
+
+	t.Run("otlp exporter activegate - certificate secret missing", func(t *testing.T) {
+		const dataIngestToken = "test-token"
+		const agCertData = "ag-cert-data"
+
+		apiURL := "https://example.live.dynatrace.com"
+		tenantUUID := uuid.NewString()
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: apiURL,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+					},
+				},
+				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
+					NamespaceSelector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
+						},
+					},
+					Signals: otlpspec.SignalConfiguration{
+						Metrics: &otlpspec.MetricsSignal{},
+						Logs:    &otlpspec.LogsSignal{},
+						Traces:  &otlpspec.TracesSignal{},
+					},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: oneagent.Status{
+					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: communication.ConnectionInfo{
+							TenantUUID: tenantUUID,
+						},
+					},
+				},
+			},
+		}
+
+		apiTokenSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      consts.OTLPExporterSecretName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dynatrace.APIToken:        []byte(dataIngestToken),
+				dynatrace.DataIngestToken: []byte(dataIngestToken),
+			},
+		}
+		createObject(t, clt, apiTokenSecret)
+
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, nil)
+
+		assert.False(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationOTLPInjected, false))
+		assert.Equal(t, otlp.NoOTLPExporterActiveGateCertSecretReason, pod.Annotations[podmutator.AnnotationOTLPReason])
+	})
 }
 
 func getWebhookInstallOptions() envtest.WebhookInstallOptions {
@@ -515,4 +602,26 @@ func createDynaKube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
 	createObject(t, clt, dk)
 	dk.Status = status
 	dk.UpdateStatus(t.Context(), clt)
+}
+
+func parseResourceAttributes(value string) map[string]string {
+	res := map[string]string{}
+	for _, p := range strings.Split(value, ",") {
+		p = strings.TrimSpace(p)
+		if p == "" || !strings.Contains(p, "=") {
+			continue
+		}
+		key, val, ok := strings.Cut(p, "=")
+		if !ok {
+			continue
+		}
+
+		key = strings.TrimSpace(key)
+		val = strings.TrimSpace(val)
+
+		if key != "" && val != "" {
+			res[key] = val
+		}
+	}
+	return res
 }
