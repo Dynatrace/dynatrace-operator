@@ -72,7 +72,7 @@ func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, test
 }
 
 func SetupProxyWithCustomCAandTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynakube.DynaKube, pemCert []byte, pemPk []byte) {
-	if testDynakube.Spec.Proxy != nil {
+	if testDynakube.HasProxy() {
 		builder.Assess("create proxy namespace", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyNamespaceWithCustomCADeploymentPath), true))
 		proxySecret := createProxyTLSSecret(pemCert, pemPk)
 		builder.Assess("create proxy TLS secret", secret.Create(proxySecret))
