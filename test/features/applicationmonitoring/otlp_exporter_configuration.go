@@ -5,6 +5,8 @@ package applicationmonitoring
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -13,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
@@ -51,6 +54,11 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 	}
 
+	metadataAnnotations := map[string]string{
+		"metadata.dynatrace.com/service.name": "checkout service",
+		"metadata.dynatrace.com/custom.key":   "value:with/special chars",
+	}
+
 	type testCase struct {
 		name                 string
 		app                  *sample.App
@@ -69,6 +77,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 				sample.WithName("deploy-otlp"),
 				sample.AsDeployment(),
 				sample.WithNamespaceLabels(matchingLabels),
+				sample.WithAnnotations(metadataAnnotations),
 			),
 			assess:               deploymentPodsHaveOTLPExporterEnvVarsInjected,
 			expectedBaseEndpoint: baseEndpoint,
@@ -78,6 +87,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 			app: sample.NewApp(t, &testDynakube,
 				sample.WithName("pod-otlp"),
 				sample.WithNamespaceLabels(matchingLabels),
+				sample.WithAnnotations(metadataAnnotations),
 			),
 			assess:               podHasOTLPExporterEnvVarsInjected,
 			expectedBaseEndpoint: baseEndpoint,
@@ -119,7 +129,8 @@ func podHasOTLPExporterEnvVarsInjected(app *sample.App, expectedBase string) fea
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		pods := app.GetPods(ctx, t, envConfig.Client().Resources())
 		require.NotEmpty(t, pods.Items)
-		assertOTLPEnvVarsPresent(t, &pods.Items[0], expectedBase)
+		assertOTLPEnvVarsPresentWithResourceAttributes(t, &pods.Items[0], expectedBase)
+
 		return ctx
 	}
 }
@@ -136,8 +147,10 @@ func podHasNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) features.Fun
 func deploymentPodsHaveOTLPExporterEnvVarsInjected(app *sample.App, expectedBase string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		query := deployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
-		err := query.ForEachPod(func(p corev1.Pod) { assertOTLPEnvVarsPresent(t, &p, expectedBase) })
+
+		err := query.ForEachPod(func(p corev1.Pod) { assertOTLPEnvVarsPresentWithResourceAttributes(t, &p, expectedBase) })
 		require.NoError(t, err)
+
 		return ctx
 	}
 }
@@ -189,9 +202,47 @@ func assertOTLPEnvVarsAbsent(t *testing.T, podItem *corev1.Pod) { //nolint:reviv
 	require.NotNil(t, podItem)
 	require.NotEmpty(t, podItem.Spec.Containers)
 	appContainer := podItem.Spec.Containers[0]
-	for _, name := range []string{exporter.OTLPTraceEndpointEnv, exporter.OTLPLogsEndpointEnv, exporter.OTLPMetricsEndpointEnv, exporter.OTLPTraceHeadersEnv, exporter.OTLPLogsHeadersEnv, exporter.OTLPMetricsHeadersEnv, exporter.DynatraceAPITokenEnv} {
+	for _, name := range []string{exporter.OTLPTraceEndpointEnv, exporter.OTLPLogsEndpointEnv, exporter.OTLPMetricsEndpointEnv, exporter.OTLPTraceHeadersEnv, exporter.OTLPLogsHeadersEnv, exporter.OTLPMetricsHeadersEnv, exporter.DynatraceAPITokenEnv, resourceattributes.OTELResourceAttributesEnv} {
 		for _, e := range appContainer.Env {
 			assert.NotEqual(t, name, e.Name, "%s should not be injected", name)
 		}
 	}
+}
+
+func assertOTLPEnvVarsPresentWithResourceAttributes(t *testing.T, podItem *corev1.Pod, expectedBase string) {
+	assertOTLPEnvVarsPresent(t, podItem, expectedBase) // reuse existing checks from original file
+	envMap := map[string]corev1.EnvVar{}
+	for _, e := range podItem.Spec.Containers[0].Env {
+		envMap[e.Name] = e
+	}
+	raEnv, ok := envMap["OTEL_RESOURCE_ATTRIBUTES"]
+	assert.True(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing")
+	if ok {
+		parsed := parseResourceAttributes(raEnv.Value)
+		assert.Equal(t, url.QueryEscape("checkout service"), parsed["service.name"])       // annotation encoded
+		assert.Equal(t, url.QueryEscape("value:with/special chars"), parsed["custom.key"]) // annotation encoded
+		assert.Equal(t, podItem.Namespace, parsed["k8s.namespace.name"])                   // base attribute
+	}
+}
+
+func parseResourceAttributes(value string) map[string]string {
+	res := map[string]string{}
+	for _, p := range strings.Split(value, ",") {
+		p = strings.TrimSpace(p)
+		if p == "" || !strings.Contains(p, "=") {
+			continue
+		}
+		key, val, ok := strings.Cut(p, "=")
+		if !ok {
+			continue
+		}
+
+		key = strings.TrimSpace(key)
+		val = strings.TrimSpace(val)
+
+		if key != "" && val != "" {
+			res[key] = val
+		}
+	}
+	return res
 }

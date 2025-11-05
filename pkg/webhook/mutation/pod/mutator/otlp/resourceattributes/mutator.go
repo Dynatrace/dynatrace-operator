@@ -17,7 +17,7 @@ var (
 )
 
 const (
-	otlpResourceAttributesEnvVar = "OTEL_RESOURCE_ATTRIBUTES"
+	OTELResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES"
 )
 
 type Mutator struct {
@@ -82,11 +82,11 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info) bool {
 	var mutated bool
 
-	existingAttributes, ok := newAttributesFromEnv(c.Env, otlpResourceAttributesEnvVar)
+	existingAttributes, ok := newAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 	if ok {
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
 		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
-			return e.Name == otlpResourceAttributesEnvVar
+			return e.Name == OTELResourceAttributesEnv
 		})
 	}
 
@@ -122,7 +122,7 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 	finalValue := existingAttributes.String()
 
 	if finalValue != "" {
-		c.Env = append(c.Env, corev1.EnvVar{Name: otlpResourceAttributesEnvVar, Value: finalValue})
+		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: finalValue})
 	}
 
 	return envVarSourcesAdded || mutated
