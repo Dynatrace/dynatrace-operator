@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"slices"
 	"context"
 	"os"
 	"time"
@@ -220,11 +221,9 @@ func isUnschedulable(node *corev1.Node) bool {
 
 func hasUnschedulableTaint(node *corev1.Node) bool {
 	for _, taint := range node.Spec.Taints {
-		for _, unschedulableTaint := range unschedulableTaints {
-			if taint.Key == unschedulableTaint {
+		if slices.Contains(unschedulableTaints, taint.Key) {
 				return true
 			}
-		}
 	}
 
 	return false
