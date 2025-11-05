@@ -49,7 +49,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("check if cache is not outdated", func(t *testing.T) {
-		cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{lastUpdatedCacheAnnotation: ""}}}
+		cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{lastUpdatedAnnotation: ""}}}
 		nodesCache := &Cache{obj: &cm}
 		assert.False(t, nodesCache.IsOutdated(time.Now()))
 	})

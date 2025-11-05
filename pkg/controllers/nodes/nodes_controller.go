@@ -114,7 +114,7 @@ func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynak
 	}
 
 	if cached, err := nodeCache.GetEntry(nodeName); err == nil {
-		cacheEntry.LastMarkedForTermination = cached.LastMarkedForTermination
+		cacheEntry.SetLastMarkedForTerminationTimestamp(cached.LastMarkedForTermination)
 	}
 
 	// Handle unschedulable Nodes, if they have a OneAgent instance

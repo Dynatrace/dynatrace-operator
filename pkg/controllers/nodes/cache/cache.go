@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	ConfigMapName              = "dynatrace-node-cache"
-	cacheLifetime              = 10 * time.Minute
-	lastUpdatedCacheAnnotation = "DTOperatorLastUpdated"
+	ConfigMapName         = "dynatrace-node-cache"
+	pruneInterval         = 10 * time.Minute
+	lastUpdatedAnnotation = "DTOperatorLastUpdated"
 )
 
 // ErrEntryNotFound is returned when entry hasn't been found in the cache.
@@ -144,7 +144,7 @@ func (cache *Cache) DeleteEntry(node string) {
 	}
 }
 
-// Keys returns a list of node names on the cache.
+// Keys returns a list of node names in the cache.
 func (cache *Cache) Keys() []string {
 	if cache.obj.Data == nil {
 		return []string{}
@@ -172,17 +172,13 @@ func (cache *Cache) Store(ctx context.Context, client client.Client) error {
 		return client.Create(ctx, cache.obj)
 	}
 
-	if err := client.Update(ctx, cache.obj); err != nil {
-		return err
-	}
-
-	return nil
+	return client.Update(ctx, cache.obj)
 }
 
 func (cache *Cache) IsOutdated(now time.Time) bool {
-	if lastUpdated, ok := cache.obj.Annotations[lastUpdatedCacheAnnotation]; ok {
+	if lastUpdated, ok := cache.obj.Annotations[lastUpdatedAnnotation]; ok {
 		if lastUpdatedTime, err := time.Parse(time.RFC3339, lastUpdated); err == nil {
-			return lastUpdatedTime.Add(cacheLifetime).Before(now)
+			return lastUpdatedTime.Add(pruneInterval).Before(now)
 		} else {
 			return false
 		}
@@ -196,7 +192,7 @@ func (cache *Cache) UpdateTimestamp(now time.Time) {
 		cache.obj.Annotations = make(map[string]string)
 	}
 
-	cache.obj.Annotations[lastUpdatedCacheAnnotation] = now.Format(time.RFC3339)
+	cache.obj.Annotations[lastUpdatedAnnotation] = now.Format(time.RFC3339)
 	cache.upd = true
 }
 
