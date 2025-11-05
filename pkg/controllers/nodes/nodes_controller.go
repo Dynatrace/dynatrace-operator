@@ -1,9 +1,9 @@
 package nodes
 
 import (
-	"slices"
 	"context"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -222,8 +222,8 @@ func isUnschedulable(node *corev1.Node) bool {
 func hasUnschedulableTaint(node *corev1.Node) bool {
 	for _, taint := range node.Spec.Taints {
 		if slices.Contains(unschedulableTaints, taint.Key) {
-				return true
-			}
+			return true
+		}
 	}
 
 	return false
