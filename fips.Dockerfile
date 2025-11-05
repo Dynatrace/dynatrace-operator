@@ -31,7 +31,7 @@ RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.9.0
 RUN CGO_ENABLED=1 cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM registry.access.redhat.com/ubi9-micro:9.6-1760515026@sha256:aff810919642215e15c993b9bbc110dbcc446608730ad24499dafd9df7a8f8f4 AS base
+FROM registry.access.redhat.com/ubi9-micro:9.6-1762316544@sha256:990002083442f6a93cd3249da32ecb7c3f6be778a1bec3a73a9c17fbc40edc15 AS base
 FROM registry.access.redhat.com/ubi9:9.6-1760340943@sha256:dec374e05cc13ebbc0975c9f521f3db6942d27f8ccdf06b180160490eef8bdbc AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
