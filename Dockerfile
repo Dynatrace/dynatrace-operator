@@ -6,7 +6,7 @@ WORKDIR /app
 
 ARG DEBUG_TOOLS
 RUN if [ "$DEBUG_TOOLS" = "true" ]; then \
-      GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@latest; \
+      GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.25.2; \
     fi
 
 COPY go.mod go.sum ./
