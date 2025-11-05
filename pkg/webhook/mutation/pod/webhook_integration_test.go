@@ -443,7 +443,6 @@ func TestOTLPWebhook(t *testing.T) {
 
 	t.Run("otlp exporter activegate - certificate secret missing", func(t *testing.T) {
 		const dataIngestToken = "test-token"
-		const agCertData = "ag-cert-data"
 
 		apiURL := "https://example.live.dynatrace.com"
 		tenantUUID := uuid.NewString()
