@@ -11,6 +11,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -28,12 +29,9 @@ const (
 	testAPIToken  = "test-api-token"
 )
 
-var testCacheKey = client.ObjectKey{Name: cacheName, Namespace: testNamespace}
-
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("Create node and then delete it", func(t *testing.T) {
+		ctx := t.Context()
 		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
 
 		fakeClient := fake.NewClient(
@@ -74,16 +72,15 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 
-		var cm corev1.ConfigMap
+		nodesCache, err := cache.New(ctx, fakeClient, testNamespace, nil)
+		require.NoError(t, err)
 
-		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
-		nodesCache := &Cache{Obj: &cm}
-
-		_, err = nodesCache.Get("node1")
+		_, err = nodesCache.GetEntry("node1")
 		require.Error(t, err)
 	})
 
 	t.Run("Create two nodes and then delete one", func(t *testing.T) {
+		ctx := t.Context()
 		node1 := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
 		fakeClient := createDefaultFakeClient()
 
@@ -102,18 +99,17 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 
-		var cm corev1.ConfigMap
+		nodesCache, err := cache.New(ctx, fakeClient, testNamespace, nil)
+		require.NoError(t, err)
 
-		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
-		nodesCache := &Cache{Obj: &cm}
-
-		_, err = nodesCache.Get("node1")
+		_, err = nodesCache.GetEntry("node1")
 		require.Error(t, err)
-		_, err = nodesCache.Get("node2")
+		_, err = nodesCache.GetEntry("node2")
 		require.NoError(t, err)
 	})
 
 	t.Run("Node has taint", func(t *testing.T) {
+		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -140,7 +136,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, c)
 
-		node, err := c.Get("node1")
+		node, err := c.GetEntry("node1")
 		require.NoError(t, err)
 		assert.NotNil(t, node)
 
@@ -151,41 +147,48 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("Server error when removing node", func(t *testing.T) {
+		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", ErrNotFound)
+		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), mock.Anything).Return("", cache.ErrEntryNotFound)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
-		require.ErrorIs(t, ctrl.reconcileNodeDeletion(ctx, "node1"), ErrNotFound)
+		// Get node from cache
+		c, err := ctrl.getCache(ctx)
+		require.NoError(t, err)
+
+		require.ErrorIs(t, ctrl.reconcileNodeDeletion(ctx, c, "node1"), cache.ErrEntryNotFound)
 	})
 
 	t.Run("Remove host from cache even if server error: host not found", func(t *testing.T) {
+		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return("", dtclient.HostEntityNotFoundErr{IP: "1.2.3.4"})
+		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), mock.Anything).Return("", dtclient.HostEntityNotFoundErr{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
 		reconcileAllNodes(t, ctrl, fakeClient)
-
-		require.NoError(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
 
 		// Get node from cache
 		c, err := ctrl.getCache(ctx)
 		require.NoError(t, err)
 		assert.NotNil(t, c)
 
+		require.NoError(t, ctrl.reconcileNodeDeletion(ctx, c, "node1"))
+
 		// should return not found for key inside configmap
-		_, err = c.Get("node1")
-		require.ErrorIs(t, err, ErrNotFound)
+		_, err = c.GetEntry("node1")
+		require.ErrorIs(t, err, cache.ErrEntryNotFound)
 	})
 
 	t.Run("Handle outdated cache", func(t *testing.T) {
+		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
@@ -196,18 +199,15 @@ func TestReconcile(t *testing.T) {
 		reconcileAllNodes(t, ctrl, fakeClient)
 
 		// Emulate error by explicitly removing node1 from cache
-		var cm corev1.ConfigMap
-
-		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
-		nodesCache := &Cache{Obj: &cm}
+		nodesCache, err := cache.New(ctx, fakeClient, testNamespace, nil)
+		require.NoError(t, err)
 
 		// delete node from kube api
 		node1 := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
-		err := fakeClient.Delete(ctx, node1)
+		err = fakeClient.Delete(ctx, node1)
 		require.NoError(t, err)
 
-		// run another request reconcile
-		require.NoError(t, ctrl.handleOutdatedCache(ctx, nodesCache))
+		require.NoError(t, ctrl.pruneCache(ctx, nodesCache))
 	})
 }
 
@@ -260,8 +260,8 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclientmock.Cl
 
 func createDTMockClient(t *testing.T, ip, host string) *dtclientmock.Client {
 	dtClient := dtclientmock.NewClient(t)
-	dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("context.backgroundCtx"), ip).Return(host, nil)
-	dtClient.On("SendEvent", mock.AnythingOfType("context.backgroundCtx"), mock.MatchedBy(func(e *dtclient.EventData) bool {
+	dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), ip).Return(host, nil)
+	dtClient.On("SendEvent", mock.AnythingOfType("*context.cancelCtx"), mock.MatchedBy(func(e *dtclient.EventData) bool {
 		return e.EventType == "MARKED_FOR_TERMINATION"
 	})).Return(nil)
 
