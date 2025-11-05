@@ -34,6 +34,17 @@ func IsIn(envVars []corev1.EnvVar, envVarToCheck string) bool {
 	return false
 }
 
+func Append(envVars []corev1.EnvVar, envVarToAppend corev1.EnvVar) ([]corev1.EnvVar, bool) {
+	added := false
+
+	if !IsIn(envVars, envVarToAppend.Name) {
+		envVars = append(envVars, envVarToAppend)
+		added = true
+	}
+
+	return envVars, added
+}
+
 func AddOrUpdate(envVars []corev1.EnvVar, desiredEnvVar corev1.EnvVar) []corev1.EnvVar {
 	targetEnvVar := FindEnvVar(envVars, desiredEnvVar.Name)
 	if targetEnvVar != nil {

@@ -9,6 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -52,9 +54,12 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
-	workloadInfo, err := retrieveWorkload(mut.metaClient, request)
+	workloadInfo, err := workload.FindRootOwnerOfPod(request.Context, mut.metaClient, *request.BaseRequest, log)
 	if err != nil {
-		return err
+		return dtwebhook.MutatorError{
+			Err:      errors.WithStack(err),
+			Annotate: setNotInjectedAnnotationFunc(OwnerLookupFailedReason),
+		}
 	}
 
 	attrs := podattr.Attributes{}
@@ -124,7 +129,7 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	}
 }
 
-func setWorkloadAnnotations(pod *corev1.Pod, workload *workloadInfo) {
+func setWorkloadAnnotations(pod *corev1.Pod, workload *workload.Info) {
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
 	}
