@@ -36,6 +36,12 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 									Tag:        "b",
 								},
 							},
+							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
+							},
 						},
 					},
 				}))
@@ -138,6 +144,12 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 								UseEphemeralVolume:    false,
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 							},
+							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
+							},
 						},
 					},
 				}))
@@ -163,6 +175,12 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 									Tag:        "b",
 								},
 								UseEphemeralVolume: true,
+							},
+							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
 							},
 						},
 					},
@@ -226,6 +244,12 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: imgRef,
+				},
+				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+					ImageRef: image.Ref{
+						Repository: "otc/repo",
+						Tag:        "otc-tag",
+					},
 				},
 			},
 			ActiveGate: agSpec,

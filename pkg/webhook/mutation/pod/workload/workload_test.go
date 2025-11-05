@@ -1,11 +1,12 @@
-package metadata
+package workload
 
 import (
 	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
+
+var testLogger = logd.Get()
 
 func TestFindRootOwnerOfPod(t *testing.T) {
 	ctx := context.Background()
@@ -70,9 +73,11 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
+		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+
 		client := fake.NewClient(&pod, &deployment, &daemonSet, &namespace)
 
-		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 		assert.Equal(t, "daemonset", workloadInfo.Kind)
@@ -88,8 +93,17 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Name:            resourceName,
 			},
 		}
+
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespaceName,
+			},
+		}
+
+		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+
 		client := fake.NewClient(&pod)
-		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 		assert.Equal(t, "pod", workloadInfo.Kind)
@@ -118,8 +132,17 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Namespace: namespaceName,
 			},
 		}
+
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespaceName,
+			},
+		}
+
+		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+
 		client := fake.NewClient(&pod, &secret)
-		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 		assert.Equal(t, "pod", workloadInfo.Kind)
@@ -143,8 +166,17 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Name: resourceName,
 			},
 		}
+
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespaceName,
+			},
+		}
+
+		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+
 		client := fake.NewClient(&pod)
-		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
 		require.NoError(t, err)
 		assert.Equal(t, namespaceName, workloadInfo.Name)
 		assert.Equal(t, "pod", workloadInfo.Kind)
@@ -200,9 +232,11 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
+		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+
 		client := fake.NewClient(&pod, &deployment, &secret, &namespace)
 
-		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 		assert.Equal(t, "deployment", workloadInfo.Kind)
@@ -223,9 +257,17 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespaceName,
+			},
+		}
+
+		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+
 		client := createFailK8sClient(t)
 
-		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
 	})
@@ -245,9 +287,18 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 				Namespace: namespaceName,
 			},
 		}
+
+		namespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespaceName,
+			},
+		}
+
+		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+
 		client := createFailK8sClient(t)
-		_, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
-		require.ErrorAs(t, err, new(dtwebhook.MutatorError))
+		_, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
+		require.Error(t, err)
 	})
 }
 

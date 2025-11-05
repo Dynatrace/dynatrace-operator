@@ -24,6 +24,7 @@
 
 ## General
 
+- Consider the [Effective Go](https://go.dev/doc/effective_go#package-names) guidelines when naming packages
 - Use descriptive (variable) names
   - Shortnames for known Kubernetes Objects are fine. (`ns` for namespace)
   - Avoid "stuttering". (In the `beepboop` package don't call you `struct` `BeepBoopController`, but just `Controller`)
