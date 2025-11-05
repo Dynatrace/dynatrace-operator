@@ -37,6 +37,7 @@ func TestCache(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, Entry{
+			NodeName:  "node1",
 			IPAddress: "10.128.0.48",
 		}, entry)
 	})
