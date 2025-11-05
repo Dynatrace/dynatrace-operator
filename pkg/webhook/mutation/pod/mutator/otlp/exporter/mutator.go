@@ -122,7 +122,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		},
 	}
 
-	shouldAddCertificate := request.DynaKube.ActiveGate().HasCaCert()
+	shouldAddCertificate := request.DynaKube.ActiveGate().HasCaCert() || request.DynaKube.Spec.TrustedCAs != ""
 
 	override := otlpExporterConfig.IsOverrideEnvVarsEnabled()
 
@@ -232,7 +232,7 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 }
 
 func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
-	if !dk.ActiveGate().HasCaCert() {
+	if !dk.ActiveGate().HasCaCert() && dk.Spec.TrustedCAs == "" {
 		return
 	}
 
