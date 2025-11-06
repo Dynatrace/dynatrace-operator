@@ -1,24 +1,23 @@
-package metadata
+package workload
 
 import (
 	"context"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	kubeobjects "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type workloadInfo struct {
+type Info struct {
 	Name string
 	Kind string
 }
 
-func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *workloadInfo {
-	return &workloadInfo{
+func NewInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *Info {
+	return &Info{
 		Name: partialObjectMetadata.Name,
 
 		// workload kind in lower case according to dt semantic-dictionary
@@ -27,41 +26,29 @@ func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *workl
 	}
 }
 
-func retrieveWorkload(metaClient client.Client, request *dtwebhook.MutationRequest) (*workloadInfo, error) {
-	workload, err := findRootOwnerOfPod(request.Context, metaClient, request.Pod, request.Namespace.Name)
+func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhook.BaseRequest, log logd.Logger) (*Info, error) {
+	podPartialMetadata := &metav1.PartialObjectMetadata{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: request.Pod.APIVersion,
+			Kind:       request.Pod.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kubeobjects.GetName(*request.Pod),
+			// pod.Namespace is empty yet
+			Namespace:       request.Namespace.Name,
+			OwnerReferences: request.Pod.OwnerReferences,
+		},
+	}
+
+	rootOwner, err := findRootOwner(ctx, clt, podPartialMetadata, log) // default owner of the pod is the pod itself
 	if err != nil {
 		return nil, err
 	}
 
-	return workload, nil
+	return NewInfo(rootOwner), nil
 }
 
-func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod, namespace string) (*workloadInfo, error) {
-	podPartialMetadata := &metav1.PartialObjectMetadata{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: pod.APIVersion,
-			Kind:       pod.Kind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: kubeobjects.GetName(*pod),
-			// pod.Namespace is empty yet
-			Namespace:       namespace,
-			OwnerReferences: pod.OwnerReferences,
-		},
-	}
-
-	rootOwner, err := findRootOwner(ctx, clt, podPartialMetadata) // default owner of the pod is the pod itself
-	if err != nil {
-		return nil, dtwebhook.MutatorError{
-			Err:      errors.WithStack(err),
-			Annotate: setNotInjectedAnnotationFunc(OwnerLookupFailedReason),
-		}
-	}
-
-	return newWorkloadInfo(rootOwner), nil
-}
-
-func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
+func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *metav1.PartialObjectMetadata, log logd.Logger) (parentObjectMetadata *metav1.PartialObjectMetadata, err error) {
 	objectMetadata := childObjectMetadata.ObjectMeta
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {
@@ -88,7 +75,7 @@ func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *
 				return childObjectMetadata, err
 			}
 
-			parentObjectMetadata, err = findRootOwner(ctx, clt, parentObjectMetadata)
+			parentObjectMetadata, err = findRootOwner(ctx, clt, parentObjectMetadata, log)
 			if err != nil {
 				return childObjectMetadata, err
 			}

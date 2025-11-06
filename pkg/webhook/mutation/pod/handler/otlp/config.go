@@ -9,5 +9,6 @@ var (
 )
 
 const (
-	NoOTLPExporterConfigSecretReason = "NoOTLPExporterConfigSecret"
+	NoOTLPExporterConfigSecretReason         = "NoOTLPExporterConfigSecret"
+	NoOTLPExporterActiveGateCertSecretReason = "NoOTLPExporterActiveGateCertSecret"
 )

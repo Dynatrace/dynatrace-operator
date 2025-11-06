@@ -46,6 +46,8 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Contains(t, attr.NodeName, K8sNodeNameEnv)
 		assert.Equal(t, request.Pod.Namespace, attr.NamespaceName)
 
+		assertDeprecatedAttributes(t, attr)
+
 		require.Len(t, request.InstallContainer.Env, 3)
 		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, K8sPodNameEnv))
 		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, K8sPodUIDEnv))

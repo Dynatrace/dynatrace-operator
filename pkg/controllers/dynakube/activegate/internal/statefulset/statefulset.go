@@ -231,6 +231,20 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			FailureThreshold:    3,
 			TimeoutSeconds:      2,
 		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/rest/state",
+					Port:   intstr.IntOrString{IntVal: consts.HTTPSContainerPort},
+					Scheme: "HTTPS",
+				},
+			},
+			InitialDelaySeconds: 90,
+			PeriodSeconds:       30,
+			FailureThreshold:    2,
+			TimeoutSeconds:      1,
+			SuccessThreshold:    1,
+		},
 		SecurityContext: modifiers.GetSecurityContext(false),
 		VolumeMounts:    statefulSetBuilder.buildVolumeMounts(),
 	}
