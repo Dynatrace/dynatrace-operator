@@ -11,6 +11,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -30,6 +31,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -58,6 +60,10 @@ var (
 	}
 	HTTPSProxySpec = &value.Source{
 		Value: "https://squid.proxy.svc.cluster.local:3128",
+	}
+	EdgeConnectProxySpec = &proxy.Spec{
+		Host: "squid.proxy",
+		Port: 3128,
 	}
 )
 
@@ -119,6 +125,8 @@ func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube d
 }
 
 func isNetworkTrafficCutOff(builder *features.FeatureBuilder, directionName, podName, podNamespaceName, targetURL string) {
+	// Pod might take a while to delete, so instead of waiting for them to be deleted just create a new one for each check.
+	podName += "-" + rand.String(6) //nolint:mnd // One-off, don't need a constant for this
 	builder.Assess(directionName+" - query namespace", curl.InstallCutOffCurlPod(podName, podNamespaceName, targetURL))
 	builder.Assess(directionName+" - namespace is cutoff", curl.WaitForCutOffCurlPod(podName, podNamespaceName))
 	builder.Teardown(curl.DeleteCutOffCurlPod(podName, podNamespaceName, targetURL))
