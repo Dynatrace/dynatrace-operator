@@ -31,19 +31,19 @@ if [ "$running_pods" -gt 0 ]; then
   echo ""
   echo "Make sure that no DynaKube is deployed and all monitored pods were restarted before running this cleanup script."
   echo ""
-  
+
   if [ "$SKIP_RUNNING_PODS_WARNING" = true ]; then
     echo "Skipping running pods warning. Continuing with cleanup..."
   else
     read -p "Do you want to continue anyway? (yes/no): " response
     case "$response" in
-      [yY][eE][sS]|[yY])
-        echo "Continuing with cleanup..."
-        ;;
-      *)
-        echo "Cleanup cancelled."
-        exit 0
-        ;;
+    [yY][eE][sS] | [yY])
+      echo "Continuing with cleanup..."
+      ;;
+    *)
+      echo "Cleanup cancelled."
+      exit 0
+      ;;
     esac
   fi
 fi
@@ -98,9 +98,9 @@ spec:
           - |
             set +e  # Don't exit on errors, we'll handle them ourselves
             exit_code=0
-            
+
             echo 'Starting node filesystem cleanup...';
-            
+
             if [ -f /mnt/root/opt/dynatrace/oneagent/agent/uninstall.sh ]; then
                 echo 'Executing OneAgent uninstall script...';
                 chroot /mnt/root /opt/dynatrace/oneagent/agent/uninstall.sh
@@ -142,7 +142,7 @@ spec:
                 echo 'ERROR: Failed to remove CSI driver directory.';
                 exit_code=1
             fi
-            
+
             if [ \$exit_code -eq 0 ]; then
                 echo 'SUCCESS: Node filesystem cleanup completed successfully.';
                 echo 'SUCCESS' > /dev/termination-log
@@ -150,7 +150,7 @@ spec:
                 echo 'FAILURE: Node filesystem cleanup completed with errors.';
                 echo 'FAILURE' > /dev/termination-log
             fi
-            
+
             # Always exit 0 to prevent restarts - we'll check termination log for SUCCESS/FAILURE
             exit 0
         volumeMounts:
@@ -192,15 +192,15 @@ while [ $elapsed -lt $MAX_WAIT_SECONDS ]; do
   desired=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.desiredNumberScheduled}' 2>/dev/null || echo "0")
   ready=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.numberReady}' 2>/dev/null || echo "0")
   current=$(kubectl get daemonset "$DAEMONSET_NAME" -n "$NAMESPACE" -o jsonpath='{.status.currentNumberScheduled}' 2>/dev/null || echo "0")
-  
+
   printf "\rDaemonSet status: Ready: %s/%s (Current scheduled: %s) - %ss elapsed" "$ready" "$desired" "$current" "$elapsed"
-  
+
   if [ "$ready" -eq "$desired" ] && [ "$desired" -gt "0" ]; then
     echo ""
     echo "✅ All $desired DaemonSet pods are ready - cleanup completed successfully!"
     break
   fi
-  
+
   sleep 5
   elapsed=$((elapsed + 5))
 done
@@ -225,11 +225,11 @@ for pod in $(kubectl get pods -n "$NAMESPACE" -l app="$DAEMONSET_NAME" --no-head
   total_pods=$((total_pods + 1))
   # Check if init container completed (it always exits 0 to prevent restarts)
   init_status=$(kubectl get pod "$pod" -n "$NAMESPACE" -o jsonpath='{.status.initContainerStatuses[0].state}' 2>/dev/null)
-  
+
   if echo "$init_status" | grep -q "terminated"; then
     # Check termination message for SUCCESS or FAILURE marker
     termination_message=$(kubectl get pod "$pod" -n "$NAMESPACE" -o jsonpath='{.status.initContainerStatuses[0].state.terminated.message}' 2>/dev/null)
-    
+
     if [ "$termination_message" = "SUCCESS" ]; then
       successful_inits=$((successful_inits + 1))
     elif [ "$termination_message" = "FAILURE" ]; then
@@ -276,4 +276,4 @@ echo "Restarting CSI driver pods in case they are deployed..."
 kubectl -n $NAMESPACE delete pod -l app.kubernetes.io/component=csi-driver,app.kubernetes.io/name=dynatrace-operator
 
 echo ""
-echo "Cleanup process completed." 
+echo "Cleanup process completed."
