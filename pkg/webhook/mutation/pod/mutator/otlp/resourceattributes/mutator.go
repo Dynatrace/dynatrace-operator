@@ -97,7 +97,7 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		"k8s.namespace.name":         request.Pod.Namespace,
 		"k8s.cluster.uid":            request.DynaKube.Status.KubeSystemUUID,
 		"dt.kubernetes.cluster.id":   request.DynaKube.Status.KubeSystemUUID,
-		"k8s.cluster.name":           request.DynaKube.Status.KubeSystemUUID,
+		"k8s.cluster.name":           request.DynaKube.Status.KubernetesClusterName,
 		"dt.kubernetes.cluster.name": request.DynaKube.Status.KubernetesClusterName,
 		"k8s.container.name":         c.Name,
 		"k8s.pod.name":               "$(K8S_PODNAME)",

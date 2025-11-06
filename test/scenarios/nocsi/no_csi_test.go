@@ -84,6 +84,10 @@ func TestNoCSI_edgeconnect_install_provisioner(t *testing.T) {
 	testEnv.Test(t, edgeconnect.ProvisionerModeFeature(t))
 }
 
+func TestNoCSI_edgeconnect_install_proxy(t *testing.T) {
+	testEnv.Test(t, edgeconnect.WithProxy(t))
+}
+
 func TestNoCSI_custom_edgeconnect(t *testing.T) {
 	testEnv.Test(t, edgeconnect.AutomationModeFeature(t))
 }
