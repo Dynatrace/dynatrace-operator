@@ -9,13 +9,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	ecComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/google/uuid"
@@ -28,6 +31,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
+
+const caConfigMapName = "proxy-ca"
 
 func NormalModeFeature(t *testing.T) features.Feature {
 	builder := features.New("edgeconnect-install")
@@ -87,6 +92,66 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 		ecComponents.WithProvisionerMode(true),
 		ecComponents.WithHostPattern(testHostPattern),
 	)
+
+	// Register operator install
+	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
+
+	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
+	builder.Assess("get EC status", ecComponents.Get(&testEdgeConnect))
+
+	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckEcExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
+	builder.Assess("check hostPatterns on the tenant - testHostPattern", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern }))
+	builder.Assess("update hostPatterns", updateHostPatterns(&testEdgeConnect, testHostPattern2))
+	builder.Assess("check hostPatterns on the tenant - testHostPattern2", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern2 }))
+	builder.Assess("delete EC custom resource", ecComponents.Delete(testEdgeConnect))
+	builder.Assess("check if EC configuration is deleted on the tenant", checkEcNotExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
+
+	builder.Teardown(tenant.DeleteTenantSecret(ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+
+	return builder.Feature()
+}
+
+func WithProxy(t *testing.T) features.Feature {
+	builder := features.New("edgeconnect-install-proxy")
+
+	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
+
+	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
+
+	testECname := uuid.NewString()
+	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
+	testHostPattern2 := fmt.Sprintf("%s.e2eTestHostPattern2.internal.org", testECname)
+
+	testEdgeConnect := *ecComponents.New(
+		// this tenantConfigName should match with tenant edge connect tenantConfigName
+		ecComponents.WithName(testECname),
+		ecComponents.WithAPIServer(secretConfig.APIServer),
+		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
+		ecComponents.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		ecComponents.WithOAuthResource(secretConfig.Resource),
+		ecComponents.WithProvisionerMode(true),
+		ecComponents.WithHostPattern(testHostPattern),
+		ecComponents.WithEnvValue("HTTPS_PROXY", proxy.HTTPSProxySpec.Value),
+		ecComponents.WithCACert(caConfigMapName),
+	)
+
+	proxyCert, proxyPk, err := proxy.CreateProxyTLSCertAndKey()
+	require.NoError(t, err, "failed to create proxy TLS secret")
+
+	// Add customCA config map
+	caConfigMap := configmap.New(caConfigMapName, testEdgeConnect.Namespace,
+		map[string]string{dynakube.TrustedCAKey: string(proxyCert)})
+	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
+	builder.Teardown(configmap.Delete(caConfigMap))
+
+	dummyDynakube := dynakube.DynaKube{}
+	dummyDynakube.Namespace = testEdgeConnect.Namespace
+	dummyDynakube.Spec.Proxy = proxy.HTTPSProxySpec
+
+	// Register proxy create and delete
+	proxy.SetupProxyWithCustomCAandTeardown(t, builder, dummyDynakube, proxyCert, proxyPk)
+	proxy.CutOffDynatraceNamespace(builder, proxy.HTTPSProxySpec)
+	proxy.IsDynatraceNamespaceCutOff(builder, dummyDynakube)
 
 	// Register operator install
 	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
