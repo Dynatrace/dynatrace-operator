@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm/onbuild:0.12.7@sha256:1ab1f757b3a959b1167876ccc044f28d6283e9c7e7d9f8a94003c21c350efe91
+FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm/onbuild
 
 COPY schema.yaml /data-test/schema.yaml
