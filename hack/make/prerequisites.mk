@@ -92,13 +92,13 @@ prerequisites/envtest:
 
 ## Setup envtest binaries for the specified Kubernetes version
 prerequisites/setup-envtest: prerequisites/envtest
-	@echo "Setting up envtest binaries for Kubernetes version $(envtest_k8s_version)..."
-	@$(SETUP_ENVTEST) use $(envtest_k8s_version) --bin-dir $(LOCALBIN) -p path || { \
-		echo "Error: Failed to set up envtest binaries for version $(envtest_k8s_version)."; \
+	@echo "Setting up envtest binaries for Kubernetes version $(ENVTEST_K8S_VERSION)..."
+	@$(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path || { \
+		echo "Error: Failed to set up envtest binaries for version $(ENVTEST_K8S_VERSION)."; \
 		exit 1; \
 	}
 	@echo
-	@$(SETUP_ENVTEST) cleanup "<$(envtest_k8s_version)" --bin-dir $(LOCALBIN)
+	@$(SETUP_ENVTEST) cleanup "<$(ENVTEST_K8S_VERSION)" --bin-dir $(LOCALBIN)
 	@echo "Setup of envtest binaries completed."
 
 ## Install 'helm' if it is missing
