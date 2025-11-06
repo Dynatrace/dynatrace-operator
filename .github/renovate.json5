@@ -43,7 +43,7 @@
         "(^|/|\\.)third-party-licenses.sh$",
       ],
       matchStrings: [
-        "depName=(?<depName>.*?)\\s.*?_VERSION\\s\\?=\\s(?<currentValue>.*)",
+        "depName=(?<depName>.*?)\\s.*?_VERSION\\s?\\??=\\s?(?<currentValue>.*)",
         "depName=(?<depName>.*?)\\s.*?go\\sinstall\\s.*?@(?<currentValue>.*?);?\\s",
       ],
       datasourceTemplate: "go",
