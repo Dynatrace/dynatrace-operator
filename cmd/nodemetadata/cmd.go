@@ -1,10 +1,10 @@
 package nodemetadata
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -21,17 +21,11 @@ var (
 )
 
 func New() *cobra.Command {
-	fs := afero.NewOsFs()
-
-	return newCmd(fs)
-}
-
-func newCmd(fs afero.Fs) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          use,
 		Short:        "Generate node-level metadata file",
 		Long:         "Generates a properties file containing Kubernetes node-level metadata attributes",
-		RunE:         run(afero.Afero{Fs: fs}),
+		RunE:         run(),
 		SilenceUsage: true,
 	}
 
@@ -48,7 +42,7 @@ func addFlags(cmd *cobra.Command) {
 	_ = cmd.MarkPersistentFlagRequired(nodeAttributesFlagName)
 }
 
-func run(fs afero.Afero) func(cmd *cobra.Command, args []string) error {
+func run() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		log.Info("generating node metadata file", "path", nodeMetadataFileFlagValue, "attributes", nodeAttributesFlagValue)
 
@@ -59,7 +53,7 @@ func run(fs afero.Afero) func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		err = writeMetadataFile(fs, nodeMetadataFileFlagValue, content)
+		err = writeMetadataFile(nodeMetadataFileFlagValue, content)
 		if err != nil {
 			log.Error(err, "failed to write metadata file")
 
@@ -72,17 +66,18 @@ func run(fs afero.Afero) func(cmd *cobra.Command, args []string) error {
 	}
 }
 
-func writeMetadataFile(fs afero.Afero, filePath string, content string) error {
+func writeMetadataFile(filePath string, content string) error {
 	dirPath := filepath.Dir(filePath)
 
 	if dirPath != "" {
-		err := fs.MkdirAll(dirPath, 0755)
+		err := os.MkdirAll(dirPath, 0755)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 	}
 
-	err := fs.WriteFile(filePath, []byte(content), 0644)
+	// #nosec G306 -- node metadata file is not sensitive, 0644 is intentional
+	err := os.WriteFile(filePath, []byte(content), 0644)
 	if err != nil {
 		return errors.WithStack(err)
 	}
