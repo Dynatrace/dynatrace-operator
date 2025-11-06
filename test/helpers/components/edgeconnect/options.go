@@ -4,6 +4,7 @@ package edgeconnect
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -86,5 +87,17 @@ func WithHostPattern(hostPattern string) Option {
 func WithServiceAccount(serviceAccountName string) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
 		ec.Spec.ServiceAccountName = &serviceAccountName
+	}
+}
+
+func WithEnvValue(key, value string) Option {
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.Env = append(ec.Spec.Env, corev1.EnvVar{Name: key, Value: value})
+	}
+}
+
+func WithCACert(refName string) Option {
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.CaCertsRef = refName
 	}
 }
