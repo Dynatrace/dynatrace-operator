@@ -6,8 +6,8 @@ const (
 	EdgeConnectAnnotationSecretHash  = api.InternalFlagPrefix + "secret-hash"
 	EdgeConnectUserProvisioned       = "user-provisioned"
 	EdgeConnectContainerName         = "edge-connect"
-	EdgeConnectMountPath             = "/etc/ssl"
-	EdgeConnectCustomCertificateName = "certificate.cer"
+	EdgeConnectMountPath             = "/etc/edge_connect_certs"
+	EdgeConnectCustomCertificateName = "certificate.pem"
 	EdgeConnectCustomCAVolumeName    = "ca-certs"
 	EdgeConnectConfigFileName        = "edgeConnect.yaml"
 	EdgeConnectConfigPath            = "/" + EdgeConnectConfigFileName
