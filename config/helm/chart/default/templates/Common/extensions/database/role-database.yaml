@@ -4,6 +4,8 @@ kind: Role
 metadata:
   name:  dynatrace-database-extensions
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.databaseDatasourceLabels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources: ["pods"]
@@ -14,7 +16,6 @@ rules:
     resourceNames:
       - privileged
       - nonroot-v2
-      - hostmount-anyuid
     resources:
       - securitycontextconstraints
     verbs:
@@ -26,9 +27,11 @@ kind: RoleBinding
 metadata:
   name:  dynatrace-database-extensions
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.databaseDatasourceLabels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-extensions-controller
+    name: dynatrace-database-extensions-executor
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role

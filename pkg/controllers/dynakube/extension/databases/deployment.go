@@ -264,9 +264,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
-		RunAsNonRoot: ptr.To(true),
-		RunAsGroup:   ptr.To(userGroupID),
-		RunAsUser:    ptr.To(userGroupID),
+		FSGroup: ptr.To(userGroupID),
 	}
 }
 
@@ -275,10 +273,16 @@ func buildContainerSecurityContext() *corev1.SecurityContext {
 		Privileged:               ptr.To(false),
 		AllowPrivilegeEscalation: ptr.To(false),
 		ReadOnlyRootFilesystem:   ptr.To(true),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsGroup:               ptr.To(userGroupID),
+		RunAsUser:                ptr.To(userGroupID),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
 			},
+		},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
 }
