@@ -5,9 +5,8 @@ FROM --platform=$BUILDPLATFORM golang:1.25.4@sha256:5d73b7b83dd6e0258ff62832c93b
 WORKDIR /app
 
 ARG DEBUG_TOOLS
-RUN if [ "$DEBUG_TOOLS" = "true" ]; then \
-      GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@latest; \
-    fi
+# renovate depName=github.com/go-delve/delve/cmd/dlv
+RUN if [ "$DEBUG_TOOLS" = "true" ]; then GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.25.2; fi
 
 COPY go.mod go.sum ./
 RUN go mod download -x
