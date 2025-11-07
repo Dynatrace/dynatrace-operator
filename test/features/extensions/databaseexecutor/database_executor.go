@@ -1,53 +1,36 @@
 //go:build e2e
 
-package extensions
+package dbexecutor
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	componentActiveGate "github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("extensions-components-rollout")
+	builder := features.New("extensions-database-executor-rollout")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
-		componentDynakube.WithExtensionsEnabledSpec(true),
+		componentDynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+		componentDynakube.WithExtensionsEnabledSpec(false),
 		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
+		componentDynakube.WithExtensionsDatabases([]extensions.DatabaseSpec{{ID: "mysql"}}),
+		componentDynakube.WithExtensionsDBExecutorImageRefSpec(consts.DBExecutorImageRepo, consts.DBExecutorImageTag),
 		componentDynakube.WithActiveGate(),
-		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
-		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
 	}
 
 	testDynakube := *componentDynakube.New(options...)
-
-	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
-	require.NoError(t, err)
-
-	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
-	require.NoError(t, err)
-
-	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,
-		map[string][]byte{
-			dynakube.ServerCertKey:                 agCrt,
-			consts.AgCertificateAndPrivateKeyField: agP12,
-		})
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
@@ -55,13 +38,11 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension database datasource started", statefulset.WaitFor(testDynakube.Extensions().GetDatabaseDatasourceName("mysql"), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
-
-	builder.WithTeardown("deleted ag secret", secret.Delete(agSecret))
 
 	return builder.Feature()
 }

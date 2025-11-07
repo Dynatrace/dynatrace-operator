@@ -260,3 +260,27 @@ func WithOTelCollectorImageRefSpec(repo, tag string) Option {
 		}
 	}
 }
+
+func WithExtensionsDatabases(databases []extensions.DatabaseSpec) Option {
+	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.Extensions == nil {
+			dk.Spec.Extensions = &extensions.Spec{}
+		}
+		dk.Spec.Extensions.Databases = databases
+	}
+}
+
+func WithExtensionsDBExecutorImageRefSpec(repo, tag string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.DatabaseExecutor.ImageRef = image.Ref{
+			Repository: repo,
+			Tag:        tag,
+		}
+	}
+}
+
+func WithCustomPullSecret(secretName string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.CustomPullSecret = secretName
+	}
+}

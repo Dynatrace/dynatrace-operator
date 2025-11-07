@@ -18,7 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
+	componentActiveGate "github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
@@ -27,7 +27,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -75,7 +74,7 @@ func Feature(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
+	builder.Assess("active gate pod is running", componentActiveGate.CheckContainer(&testDynakube))
 
 	builder.Assess("log agent started", daemonset.WaitForDaemonset(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
@@ -117,7 +116,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	componentDynakube.InstallWithoutSettingsScopes(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
+	builder.Assess("active gate pod is running", componentActiveGate.CheckContainer(&testDynakube))
 
 	builder.Assess("log agent started", daemonset.WaitForDaemonset(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
@@ -136,20 +135,6 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
 	return builder.Feature()
-}
-
-func checkActiveGateContainer(dk *dynakube.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-
-		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, "activegate"), dk.Namespace, &activeGatePod))
-
-		require.NotNil(t, activeGatePod.Spec)
-		require.NotEmpty(t, activeGatePod.Spec.Containers)
-
-		return ctx
-	}
 }
 
 func checkConditions(name string, namespace string, scopesEnabled bool) features.Func {
