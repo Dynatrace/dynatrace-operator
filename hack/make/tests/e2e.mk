@@ -145,15 +145,15 @@ test/e2e/supportarchive: manifests/crd/helm
 
 ## Runs Edgeconnect e2e tests
 test/e2e/edgeconnect: manifests/crd/helm
-	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "edgeconnect"  $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "edgeconnect" $(SKIPCLEANUP)
 
 ## Runs Edgeconnect e2e base test cases
 test/e2e/edgeconnect/normal: manifests/crd/helm
-	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "TestNoCSI_edgeconnect_install"  $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "TestNoCSI_edgeconnect_install" $(SKIPCLEANUP)
 
 ## Runs Edgeconnect e2e proxy test cases
 test/e2e/edgeconnect/proxy: manifests/crd/helm
-	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_proxy" -args  $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m  ./test/scenarios/nocsi -run "TestNoCSI_edgeconnect_install_proxy" $(SKIPCLEANUP)
 
 ## Runs e2e tests on gke-autopilot
 test/e2e/gke-autopilot: manifests/crd/helm
