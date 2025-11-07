@@ -103,6 +103,19 @@ tests:
               args:
               - csi-init
               env:
+              - name: modules.json
+                value: |
+                  {
+                    "csiDriver": true,
+                    "activeGate": true,
+                    "oneAgent": true,
+                    "extensions": true,
+                    "logMonitoring": true,
+                    "edgeConnect": true,
+                    "supportability": true,
+                    "kubernetesMonitoring": true,
+                    "kspm": true
+                  }
               - name: GOMEMLIMIT
                 value: 90MiB
               terminationMessagePath: /dev/termination-log
@@ -182,6 +195,19 @@ tests:
                       fieldRef:
                         apiVersion: v1
                         fieldPath: spec.nodeName
+                  - name: modules.json
+                    value: |
+                      {
+                        "csiDriver": true,
+                        "activeGate": true,
+                        "oneAgent": true,
+                        "extensions": true,
+                        "logMonitoring": true,
+                        "edgeConnect": true,
+                        "supportability": true,
+                        "kubernetesMonitoring": true,
+                        "kspm": true
+                      }
                   - name: GOMEMLIMIT
                     value: 90MiB
                 image: image-name
