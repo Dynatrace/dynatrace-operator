@@ -1,10 +1,13 @@
 name: GCR Deployer image
+
 on:
   pull_request:
     branches:
-      - csv-*
+      - release-*
     paths:
       - config/helm/schema.yaml
+    types:
+      - closed
   workflow_dispatch:
     inputs:
       ref:
@@ -18,6 +21,7 @@ env:
 
 jobs:
   build-gcr-deployer:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request_merged == true
     name: Build GCR deployer image
     environment: Release
     runs-on: ubuntu-24.04
