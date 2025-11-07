@@ -57,11 +57,14 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 
 	log.Debug("injecting OTLP resource attributes")
 
+	var ownerInfo *workload.Info
 	// fetch workload information once per pod
-	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, *request, log)
-	if err != nil {
-		// log error but continue (best effort)
-		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	if request.Pod.OwnerReferences != nil && len(request.Pod.OwnerReferences) > 0 {
+		var err error
+		if ownerInfo, err = workload.FindRootOwnerOfPod(ctx, m.kubeClient, *request, log); err != nil {
+			// log error but continue (best effort)
+			log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
+		}
 	}
 
 	for i := range request.Pod.Spec.Containers {
