@@ -1,6 +1,6 @@
 name: GCR Deployer image
 on:
-  push:
+  pull_request:
     branches:
       - csv-*
     paths:
@@ -14,7 +14,6 @@ on:
 
 env:
   GOOGLE_MARKETPLACE_ANNOTATION: com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
-  PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
   DEPLOYER_PLATFORMS: linux/amd64
 
 jobs:
@@ -26,15 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          ref: ${{ github.event_name == 'push' && github.ref || inputs.ref }}
+          ref: ${{ github.event.pull_request.head.sha || inputs.ref }}
       - name: Prepare build parameters
-        id: params
         run: |
-          hack/build/ci/prepare-build-variables.sh
-      - name: Set environment variables
-        run: |
-          echo IMAGE=gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ steps.params.outputs.docker_image_tag }} >> $GITHUB_ENV
-          echo IMAGE_NO_PREFIX=gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ steps.params.outputs.docker_image_tag_without_prefix }} >> $GITHUB_ENV
+          image_tag=$(yq -e '.x-google-marketplace.publishedVersion' config/helm/schema.yaml)
+          echo IMAGE=gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:$image_tag >> $GITHUB_ENV
       - name: Login to Docker Hub
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
@@ -53,6 +48,6 @@ jobs:
           context: ./config/helm
           file: ./config/helm/Dockerfile
           push: true
-          tags: ${{ env.IMAGE }},${{ env.IMAGE_NO_PREFIX }}
+          tags: ${{ env.IMAGE }}
           annotations: |
             ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
