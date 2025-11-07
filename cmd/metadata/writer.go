@@ -1,4 +1,4 @@
-package nodemetadata
+package metadata
 
 import (
 	"strings"

@@ -24,7 +24,7 @@ import (
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/cmd/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/cmd/csi/registrar"
 	csiServer "github.com/Dynatrace/dynatrace-operator/cmd/csi/server"
-	"github.com/Dynatrace/dynatrace-operator/cmd/nodemetadata"
+	"github.com/Dynatrace/dynatrace-operator/cmd/metadata"
 	"github.com/Dynatrace/dynatrace-operator/cmd/operator"
 	startupProbe "github.com/Dynatrace/dynatrace-operator/cmd/startupprobe"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/cmd/supportarchive"
@@ -71,7 +71,7 @@ func main() {
 		livenessprobe.New(),
 		registrar.New(),
 		bootstrapper.New(),
-		nodemetadata.New(),
+		metadata.New(),
 	)
 
 	err := cmd.Execute()

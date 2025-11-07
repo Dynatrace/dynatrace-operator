@@ -1,4 +1,4 @@
-package nodemetadata
+package metadata
 
 import (
 	"os"
@@ -98,7 +98,7 @@ func Test_writeMetadataFile(t *testing.T) {
 
 		err = os.MkdirAll(filepath.Dir(filePath), 0755)
 		require.NoError(t, err)
-		// #nosec G306 -- node metadata file is not sensitive, 0644 is intentional
+		// #nosec G306 -- metadata file is not sensitive, 0644 is intentional
 		err = os.WriteFile(filePath, []byte("old=content\n"), 0644)
 		require.NoError(t, err)
 
@@ -138,8 +138,8 @@ func Test_run(t *testing.T) {
 
 		filePath := filepath.Join(tmpDir, "metadata.properties")
 
-		nodeMetadataFileFlagValue = filePath
-		nodeAttributesFlagValue = "k8s.node.name=test-node,k8s.cluster.uid=test-uid"
+		metadataFileFlagValue = filePath
+		attributesFlagValue = "k8s.node.name=test-node,k8s.cluster.uid=test-uid"
 
 		runFunc := run()
 		err = runFunc(nil, nil)
@@ -156,8 +156,8 @@ func Test_run(t *testing.T) {
 		require.NoError(t, err)
 		defer os.RemoveAll(tmpDir)
 
-		nodeMetadataFileFlagValue = filepath.Join(tmpDir, "metadata.properties")
-		nodeAttributesFlagValue = ""
+		metadataFileFlagValue = filepath.Join(tmpDir, "metadata.properties")
+		attributesFlagValue = ""
 
 		runFunc := run()
 		err = runFunc(nil, nil)
@@ -171,8 +171,8 @@ func Test_run(t *testing.T) {
 		require.NoError(t, err)
 		defer os.RemoveAll(tmpDir)
 
-		nodeMetadataFileFlagValue = filepath.Join(tmpDir, "metadata.properties")
-		nodeAttributesFlagValue = "invalid-without-equals"
+		metadataFileFlagValue = filepath.Join(tmpDir, "metadata.properties")
+		attributesFlagValue = "invalid-without-equals"
 
 		runFunc := run()
 		err = runFunc(nil, nil)
