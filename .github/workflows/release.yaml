@@ -8,7 +8,6 @@ on:
 env:
   GOOGLE_MARKETPLACE_ANNOTATION: com.googleapis.cloudmarketplace.product.service.name=services/dynatrace-operator-dynatrace-marketplace-prod.cloudpartnerservices.goog
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
-  DEPLOYER_PLATFORMS: linux/amd64
 
 jobs:
   prepare:
