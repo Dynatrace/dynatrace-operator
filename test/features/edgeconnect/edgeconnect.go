@@ -58,7 +58,6 @@ func NormalModeFeature(t *testing.T) features.Feature {
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
 	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
-	// Register operator install
 	ecComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
 
 	builder.Assess("check EC configuration on the tenant", ecComponents.CheckEcExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
@@ -83,7 +82,6 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 	testHostPattern2 := fmt.Sprintf("%s.e2eTestHostPattern2.internal.org", testECname)
 
 	testEdgeConnect := *ecComponents.New(
-		// this tenantConfigName should match with tenant edge connect tenantConfigName
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -93,7 +91,6 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 		ecComponents.WithHostPattern(testHostPattern),
 	)
 
-	// Register operator install
 	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
@@ -136,12 +133,10 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 	dummyDynakube.Namespace = testEdgeConnect.Namespace
 	dummyDynakube.Spec.Proxy = proxy.ProxySpec
 
-	// Register proxy create and delete
 	proxy.SetupProxyWithTeardown(t, builder, dummyDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxy.ProxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, dummyDynakube)
 
-	// Register operator install
 	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
@@ -192,12 +187,10 @@ func WithHTTPSProxy(t *testing.T) features.Feature {
 	dummyDynakube.Namespace = testEdgeConnect.Namespace
 	dummyDynakube.Spec.Proxy = proxy.HTTPSProxySpec
 
-	// Register proxy create and delete
 	proxy.SetupProxyWithCustomCAandTeardown(t, builder, dummyDynakube, proxyCert, proxyPk)
 	proxy.CutOffDynatraceNamespace(builder, proxy.HTTPSProxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, dummyDynakube)
 
-	// Register operator install
 	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
@@ -226,7 +219,6 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 	testECname := uuid.NewString()
 
 	testEdgeConnect := *ecComponents.New(
-		// this tenantConfigName should match with tenant edge connect tenantConfigName
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -239,7 +231,6 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 
 	builder.Assess("create ServiceAccount", createServiceAccount())
 
-	// Register operator install
 	ecComponents.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
@@ -276,7 +267,7 @@ func getTenantConfig(ecName string, clientSecret tenant.EdgeConnectSecret, edgeC
 		assert.Equal(t, ecName, ecs.EdgeConnects[0].Name, "expected EC object not found on the tenant")
 		assert.True(t, ecs.EdgeConnects[0].ManagedByDynatraceOperator)
 
-		// the id of EC configuration on the tenant is important only
+		// the ID of EC configuration on the tenant is important only
 		// the OAuth clientSecret used by the test and the OAuth secret used by the operator are the same
 		edgeConnectTenantConfig.ID = ecs.EdgeConnects[0].ID
 
