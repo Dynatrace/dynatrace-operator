@@ -16,6 +16,7 @@ import (
 	controller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	ecComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
@@ -111,6 +112,19 @@ func ProvisionerModeFeature(t *testing.T) features.Feature {
 func WithHTTPProxy(t *testing.T) features.Feature {
 	builder := features.New("edgeconnect-install-http-proxy")
 
+	builder.Setup(func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ctx, err := istio.AssertIstioNamespace()(ctx, envConfig, t)
+		require.NoError(t, err)
+
+		return ctx
+	})
+	builder.Setup(func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ctx, err := istio.AssertIstiodDeployment()(ctx, envConfig, t)
+		require.NoError(t, err)
+
+		return ctx
+	})
+
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
@@ -152,6 +166,19 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 
 func WithHTTPSProxy(t *testing.T) features.Feature {
 	builder := features.New("edgeconnect-install-https-proxy")
+
+	builder.Setup(func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ctx, err := istio.AssertIstioNamespace()(ctx, envConfig, t)
+		require.NoError(t, err)
+
+		return ctx
+	})
+	builder.Setup(func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		ctx, err := istio.AssertIstiodDeployment()(ctx, envConfig, t)
+		require.NoError(t, err)
+
+		return ctx
+	})
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
