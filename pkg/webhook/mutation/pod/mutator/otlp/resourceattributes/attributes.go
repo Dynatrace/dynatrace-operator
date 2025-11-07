@@ -60,17 +60,19 @@ func (a attributes) merge(other attributes) bool {
 }
 
 func (a attributes) String() string {
-	result := ""
-
 	first := true
+
+	var result strings.Builder
+
 	for key, value := range a {
 		if !first {
-			result += ","
+			result.WriteString(",")
 		}
 
-		result += key + "=" + value
+		result.WriteString(key + "=" + value)
+
 		first = false
 	}
 
-	return result
+	return result.String()
 }

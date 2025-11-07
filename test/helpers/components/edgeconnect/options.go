@@ -3,6 +3,7 @@
 package edgeconnect
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,5 +100,11 @@ func WithEnvValue(key, value string) Option {
 func WithCACert(refName string) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
 		ec.Spec.CaCertsRef = refName
+	}
+}
+
+func WithProxy(spec *proxy.Spec) Option {
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.Proxy = spec
 	}
 }
