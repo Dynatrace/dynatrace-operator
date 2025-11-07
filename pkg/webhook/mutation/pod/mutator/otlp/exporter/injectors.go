@@ -2,8 +2,11 @@ package exporter
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	corev1 "k8s.io/api/core/v1"
@@ -101,6 +104,52 @@ func (li *logsInjector) Inject(c *corev1.Container, apiURL string, addCertificat
 	}
 
 	return true
+}
+
+// noProxyInjector injects ActiveGate service into NO_PROXY env var when feature flag and ActiveGate enabled.
+type noProxyInjector struct {
+	dk dynakube.DynaKube
+}
+
+func (npi *noProxyInjector) isEnabled() bool {
+	if !npi.dk.ActiveGate().IsEnabled() || !npi.dk.FF().IsOTLPInjectionSetNoProxy() || !npi.dk.HasProxy() {
+		return false
+	}
+
+	return true
+}
+
+func (npi *noProxyInjector) Inject(c *corev1.Container, _ string, _ bool) bool {
+	if !npi.isEnabled() {
+		return false
+	}
+
+	agServiceFQDN := activegate.GetServiceFQDN(&npi.dk)
+
+	noProxyEnvVar := env.FindEnvVar(c.Env, NoProxyEnv)
+
+	if noProxyEnvVar == nil {
+		noProxyEnvVar = env.FindEnvVar(c.Env, strings.ToLower(NoProxyEnv))
+	}
+
+	if noProxyEnvVar != nil { // append to existing env var
+		if noProxyEnvVar.Value != "" && !strings.Contains(noProxyEnvVar.Value, agServiceFQDN) {
+			noProxyEnvVar.Value = fmt.Sprintf("%s,%s", noProxyEnvVar.Value, agServiceFQDN)
+
+			return true
+		} else if noProxyEnvVar.Value == "" {
+			noProxyEnvVar.Value = agServiceFQDN
+
+			return true
+		}
+	} else {
+		// add NO_PROXY env var
+		c.Env = env.AddOrUpdate(c.Env, corev1.EnvVar{Name: NoProxyEnv, Value: agServiceFQDN})
+
+		return true
+	}
+
+	return false
 }
 
 func addEnvVarLiteralValue(c *corev1.Container, name string, value string) {

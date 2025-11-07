@@ -7,8 +7,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	otelcactivegate "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -589,6 +591,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// Enable ActiveGate capability + TLS secret so HasCaCert() is true
 		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "dummy-uuid"
+		dk.Spec.Proxy = &value.Source{Value: "proxy"}
 
 		override := true
 		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override
@@ -633,6 +636,11 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 			assert.True(t, env.IsIn(c.Env, OTLPTraceCertificateEnv))
 			assert.True(t, env.IsIn(c.Env, OTLPMetricsCertificateEnv))
 			assert.True(t, env.IsIn(c.Env, OTLPLogsCertificateEnv))
+
+			// assert NO_PROXY is set
+			noProxyEnv := env.FindEnvVar(c.Env, NoProxyEnv)
+			require.NotNil(t, noProxyEnv)
+			assert.Equal(t, otelcactivegate.GetServiceFQDN(&request.DynaKube), noProxyEnv.Value)
 		}
 		// Init containers should not have the mount
 		for _, c := range request.Pod.Spec.InitContainers {
