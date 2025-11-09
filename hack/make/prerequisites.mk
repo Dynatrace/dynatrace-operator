@@ -9,7 +9,7 @@ GOBIN ?= $(LOCALBIN)
 LOCALBIN_NPM ?= $(shell pwd)/node_modules/.bin
 
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-KUSTOMIZE_VERSION ?= v5.7.1
+KUSTOMIZE_VERSION ?= v5.8.0
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 CONTROLLER_GEN_VERSION ?= v0.19.0
 # renovate depName=github.com/golangci/golangci-lint/v2
