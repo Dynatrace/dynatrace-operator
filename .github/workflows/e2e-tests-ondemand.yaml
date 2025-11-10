@@ -113,6 +113,7 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: webhook-trigger
           payload-templated: true
+          errors: true
           payload: |
             "message": "${{ env.SLACK_MESSAGE }}"
             "run_id": "${{ github.run_id }}"

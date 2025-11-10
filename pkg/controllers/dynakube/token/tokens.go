@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"maps"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -84,14 +85,14 @@ func concatErrors(errs []error) error {
 		return nil
 	}
 
-	concatenatedError := ""
 	apiStatus := dynatraceapi.NoError
 
+	var concatenatedError strings.Builder
 	for index, err := range errs {
-		concatenatedError += err.Error()
+		concatenatedError.WriteString(err.Error())
 
 		if index < len(errs)-1 {
-			concatenatedError += "\n\t"
+			concatenatedError.WriteString("\n\t")
 		}
 
 		if apiStatus == dynatraceapi.NoError && dynatraceapi.IsUnreachable(err) {
@@ -102,11 +103,11 @@ func concatErrors(errs []error) error {
 	if apiStatus != dynatraceapi.NoError {
 		return dtclient.ServerError{
 			Code:    apiStatus,
-			Message: concatenatedError,
+			Message: concatenatedError.String(),
 		}
 	}
 
-	return errors.New(concatenatedError)
+	return errors.New(concatenatedError.String())
 }
 
 func CheckForDataIngestToken(tokens Tokens) bool {
