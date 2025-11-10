@@ -202,7 +202,6 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		containsNoProxy     bool
 		activeGateEnabled   bool
 		featureFlagDisabled bool
-		hasProxy            bool
 		noProxyValue        string
 		alreadyContainsFQDN bool
 	}
@@ -249,7 +248,6 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 			args: args{
 				containsNoProxy:     false,
 				activeGateEnabled:   true,
-				hasProxy:            true,
 				noProxyValue:        "",
 				alreadyContainsFQDN: false,
 			},
@@ -261,7 +259,6 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 			args: args{
 				containsNoProxy:     true,
 				activeGateEnabled:   true,
-				hasProxy:            true,
 				noProxyValue:        "",
 				alreadyContainsFQDN: false,
 			},
@@ -273,7 +270,6 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 			args: args{
 				containsNoProxy:     true,
 				activeGateEnabled:   true,
-				hasProxy:            true,
 				noProxyValue:        "foo,bar",
 				alreadyContainsFQDN: false,
 			},
@@ -285,7 +281,6 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 			args: args{
 				containsNoProxy:     true,
 				activeGateEnabled:   true,
-				hasProxy:            true,
 				noProxyValue:        agFQDN,
 				alreadyContainsFQDN: true,
 			},
@@ -297,7 +292,6 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 			args: args{
 				activeGateEnabled:   true,
 				featureFlagDisabled: true,
-				hasProxy:            true,
 				noProxyValue:        "foo",
 				alreadyContainsFQDN: false,
 			},
@@ -307,17 +301,6 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 			name: "ActiveGate disabled",
 			args: args{
 				activeGateEnabled:   false,
-				hasProxy:            true,
-				noProxyValue:        "foo",
-				alreadyContainsFQDN: false,
-			},
-			expectMutated: false,
-		},
-		{
-			name: "no proxy configured in Dynakube",
-			args: args{
-				activeGateEnabled:   true,
-				hasProxy:            false,
 				noProxyValue:        "foo",
 				alreadyContainsFQDN: false,
 			},

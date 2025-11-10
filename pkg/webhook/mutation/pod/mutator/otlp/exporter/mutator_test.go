@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcactivegate "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
@@ -591,7 +590,6 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// Enable ActiveGate capability + TLS secret so HasCaCert() is true
 		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
 		dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "dummy-uuid"
-		dk.Spec.Proxy = &value.Source{Value: "proxy"}
 
 		override := true
 		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override

@@ -112,11 +112,7 @@ type noProxyInjector struct {
 }
 
 func (npi *noProxyInjector) isEnabled() bool {
-	if !npi.dk.ActiveGate().IsEnabled() || !npi.dk.FF().IsOTLPInjectionSetNoProxy() || !npi.dk.HasProxy() {
-		return false
-	}
-
-	return true
+	return npi.dk.ActiveGate().IsEnabled() && npi.dk.FF().IsOTLPInjectionSetNoProxy()
 }
 
 func (npi *noProxyInjector) Inject(c *corev1.Container, _ string, _ bool) bool {
