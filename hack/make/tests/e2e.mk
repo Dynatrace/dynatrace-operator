@@ -113,7 +113,7 @@ test/e2e/extensions/upgrade: manifests/crd/helm
 
 ## Runs DatabaseExecutor related e2e tests
 test/e2e/extensions/dbexecutor: manifests/crd/helm
-	$(GOTESTCMD) -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/nocsi -run "extensions_db_executor" -args $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "extensions_db_executor" $(SKIPCLEANUP)
 
 ## Runs Application Monitoring metadata-enrichment e2e test only
 test/e2e/applicationmonitoring/metadataenrichment: manifests/crd/helm
