@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -183,8 +182,6 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Affinity)
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
-		require.Len(t, daemonset.Annotations, 1)
-		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 		require.Len(t, daemonset.Spec.Template.Annotations, 1)
 		assert.Contains(t, daemonset.Spec.Template.Annotations, annotationTenantTokenHash)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)

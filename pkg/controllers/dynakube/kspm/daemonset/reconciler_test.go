@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -120,8 +119,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Affinity)
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
-		require.Len(t, daemonset.Annotations, 1)
-		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
+		require.Empty(t, daemonset.Annotations)
 		require.Len(t, daemonset.Spec.Template.Annotations, 1)
 		assert.Contains(t, daemonset.Spec.Template.Annotations, tokenSecretHashAnnotation)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)
