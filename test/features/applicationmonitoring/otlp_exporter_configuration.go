@@ -172,10 +172,10 @@ func assertOTLPEnvVarsPresent(t *testing.T, podItem *corev1.Pod, expectedBase st
 	}
 
 	for name, suffix := range map[string]string{exporter.OTLPTraceEndpointEnv: "/v1/traces", exporter.OTLPLogsEndpointEnv: "/v1/logs", exporter.OTLPMetricsEndpointEnv: "/v1/metrics"} {
-		v, ok := envMap[name]
-		assert.True(t, ok, "%s env var missing", name)
-		if ok {
-			assert.Equal(t, expectedBase+suffix, v.Value, "%s value", name)
+		envVar := env.FindEnvVar(appContainer.Env, name)
+		assert.NotNil(t, envVar, "%s env var missing", name)
+		if envVar != nil {
+			assert.Equal(t, expectedBase+suffix, envVar.Value, "%s value", name)
 		}
 	}
 	for _, name := range []string{exporter.OTLPTraceHeadersEnv, exporter.OTLPLogsHeadersEnv, exporter.OTLPMetricsHeadersEnv} {
