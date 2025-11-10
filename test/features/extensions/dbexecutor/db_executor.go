@@ -16,16 +16,16 @@ import (
 )
 
 func Feature(t *testing.T) features.Feature {
-	builder := features.New("extensions-database-executor-rollout")
+	builder := features.New("extensions-db-executor-rollout")
+	testDatabaseID := "mysql"
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
-		componentDynakube.WithExtensionsEnabledSpec(false),
 		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
-		componentDynakube.WithExtensionsDatabases([]extensions.DatabaseSpec{{ID: "mysql"}}),
+		componentDynakube.WithExtensionsDatabases([]extensions.DatabaseSpec{{ID: testDatabaseID}}...),
 		componentDynakube.WithExtensionsDBExecutorImageRefSpec(consts.DBExecutorImageRepo, consts.DBExecutorImageTag),
 		componentDynakube.WithActiveGate(),
 	}
@@ -38,7 +38,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension database datasource started", statefulset.WaitFor(testDynakube.Extensions().GetDatabaseDatasourceName("mysql"), testDynakube.Namespace))
+	builder.Assess("extension database datasource started", statefulset.WaitFor(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 

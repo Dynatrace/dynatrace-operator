@@ -13,7 +13,7 @@ import (
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/standard"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
-	dbexecutor "github.com/Dynatrace/dynatrace-operator/test/features/extensions/databaseexecutor"
+	"github.com/Dynatrace/dynatrace-operator/test/features/extensions/dbexecutor"
 	"github.com/Dynatrace/dynatrace-operator/test/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/kspm"
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
@@ -138,6 +138,6 @@ func TestNoCSI_kspm(t *testing.T) {
 	testEnv.Test(t, kspm.Feature(t))
 }
 
-func TestNoCSI_extensions_database_executor(t *testing.T) {
+func TestNoCSI_extensions_db_executor(t *testing.T) {
 	testEnv.Test(t, dbexecutor.Feature(t))
 }
