@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	componentActiveGate "github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -38,7 +39,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension database datasource started", statefulset.WaitFor(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace))
+	builder.Assess("extensions db datasource deployment started", deployment.WaitForReplicas(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
