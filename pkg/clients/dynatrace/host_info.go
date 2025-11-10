@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
@@ -22,9 +21,6 @@ type hostInfoResponse struct {
 	EntityID      string   `json:"entityId"`
 	NetworkZoneID string   `json:"networkZoneId"`
 	IPAddresses   []string `json:"ipAddresses"`
-
-	// LastSeenTimestamp is a timestamp in UTC milliseconds.
-	LastSeenTimestamp int64 `json:"lastSeenTimestamp"`
 }
 
 // hostEntityMap maps IPs to their respective HOST entityID according to the Dynatrace API
@@ -108,33 +104,12 @@ func (dtc *dynatraceClient) createHostEntityMapFromResponse(response []byte) (ho
 		return nil, err
 	}
 
-	now := dtc.now
-	if now.IsZero() {
-		now = time.Now().UTC()
-	}
-
-	var inactive []string
-
 	for _, info := range hostInfoResponses {
-		// If we haven't seen this host in the last 30 minutes, ignore it.
-		lastSeen := time.UnixMilli(info.LastSeenTimestamp).UTC()
-
-		isInActive := lastSeen.Sub(now) < -30*time.Minute
-		if isInActive {
-			inactive = append(inactive, info.EntityID)
-
-			continue
-		}
-
 		nz := info.NetworkZoneID
 
 		if (dtc.networkZone != "" && nz == dtc.networkZone) || (dtc.networkZone == "" && (nz == "default" || nz == "")) {
 			ipHostMapping.Update(info, info.EntityID)
 		}
-	}
-
-	if len(inactive) > 0 {
-		log.Info("hosts cache: ignoring inactive hosts", "ids", inactive)
 	}
 
 	return ipHostMapping, nil
