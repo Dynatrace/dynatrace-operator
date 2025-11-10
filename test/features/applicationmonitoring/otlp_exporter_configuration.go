@@ -6,10 +6,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -42,7 +40,6 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
-		dynakubeComponents.WithAnnotations(map[string]string{exp.InjectionAutomaticKey: "true"}),
 	)
 	// configure OTLP exporter signals + namespace selector
 	testDynakube.Spec.OTLPExporterConfiguration = &otlp.ExporterConfigurationSpec{
@@ -198,7 +195,7 @@ func assertOTLPEnvVarsPresent(t *testing.T, podItem *corev1.Pod, expectedBase st
 	}
 }
 
-func assertOTLPEnvVarsAbsent(t *testing.T, podItem *corev1.Pod) { //nolint:revive
+func assertOTLPEnvVarsAbsent(t *testing.T, podItem *corev1.Pod) {
 	require.NotNil(t, podItem)
 	require.NotEmpty(t, podItem.Spec.Containers)
 	appContainer := podItem.Spec.Containers[0]
@@ -210,39 +207,11 @@ func assertOTLPEnvVarsAbsent(t *testing.T, podItem *corev1.Pod) { //nolint:reviv
 }
 
 func assertOTLPEnvVarsPresentWithResourceAttributes(t *testing.T, podItem *corev1.Pod, expectedBase string) {
-	assertOTLPEnvVarsPresent(t, podItem, expectedBase) // reuse existing checks from original file
-	envMap := map[string]corev1.EnvVar{}
-	for _, e := range podItem.Spec.Containers[0].Env {
-		envMap[e.Name] = e
-	}
-	raEnv, ok := envMap["OTEL_RESOURCE_ATTRIBUTES"]
-	assert.True(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing")
-	if ok {
-		parsed := parseResourceAttributes(raEnv.Value)
-		assert.Equal(t, url.QueryEscape("checkout service"), parsed["service.name"])       // annotation encoded
-		assert.Equal(t, url.QueryEscape("value:with/special chars"), parsed["custom.key"]) // annotation encoded
-		assert.Equal(t, podItem.Namespace, parsed["k8s.namespace.name"])                   // base attribute
-	}
-}
+	assertOTLPEnvVarsPresent(t, podItem, expectedBase)
+	gotResourceAttributes, ok := resourceattributes.NewAttributesFromEnv(podItem.Spec.Containers[0].Env, resourceattributes.OTELResourceAttributesEnv)
 
-func parseResourceAttributes(value string) map[string]string {
-	res := map[string]string{}
-	for _, p := range strings.Split(value, ",") {
-		p = strings.TrimSpace(p)
-		if p == "" || !strings.Contains(p, "=") {
-			continue
-		}
-		key, val, ok := strings.Cut(p, "=")
-		if !ok {
-			continue
-		}
-
-		key = strings.TrimSpace(key)
-		val = strings.TrimSpace(val)
-
-		if key != "" && val != "" {
-			res[key] = val
-		}
-	}
-	return res
+	require.True(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing")
+	assert.Equal(t, url.QueryEscape("checkout service"), gotResourceAttributes["service.name"])       // annotation encoded
+	assert.Equal(t, url.QueryEscape("value:with/special chars"), gotResourceAttributes["custom.key"]) // annotation encoded
+	assert.Equal(t, podItem.Namespace, gotResourceAttributes["k8s.namespace.name"])
 }

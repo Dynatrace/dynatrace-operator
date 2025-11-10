@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -304,12 +303,13 @@ func TestOTLPWebhook(t *testing.T) {
 
 		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
 
-		parsed := parseResourceAttributes(raEnv.Value)
+		gotResourceAttributes, b := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+		require.True(t, b, "OTEL_RESOURCE_ATTRIBUTES missing")
 
-		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/service.name"]), parsed["service.name"])
-		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/custom.key"]), parsed["custom.key"])
-		assert.Equal(t, testNamespace, parsed["k8s.namespace.name"])
-		assert.Equal(t, "app", parsed["k8s.container.name"])
+		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/service.name"]), gotResourceAttributes["service.name"])
+		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/custom.key"]), gotResourceAttributes["custom.key"])
+		assert.Equal(t, testNamespace, gotResourceAttributes["k8s.namespace.name"])
+		assert.Equal(t, "app", gotResourceAttributes["k8s.container.name"])
 	})
 
 	t.Run("data ingest token secret missing", func(t *testing.T) {
@@ -601,26 +601,4 @@ func createDynaKube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
 	createObject(t, clt, dk)
 	dk.Status = status
 	dk.UpdateStatus(t.Context(), clt)
-}
-
-func parseResourceAttributes(value string) map[string]string {
-	res := map[string]string{}
-	for _, p := range strings.Split(value, ",") {
-		p = strings.TrimSpace(p)
-		if p == "" || !strings.Contains(p, "=") {
-			continue
-		}
-		key, val, ok := strings.Cut(p, "=")
-		if !ok {
-			continue
-		}
-
-		key = strings.TrimSpace(key)
-		val = strings.TrimSpace(val)
-
-		if key != "" && val != "" {
-			res[key] = val
-		}
-	}
-	return res
 }
