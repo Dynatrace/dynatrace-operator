@@ -50,13 +50,13 @@ func TestGetHostEntityIDForIP(t *testing.T) {
 		testEntities := []hostInfoResponse{
 			{
 				EntityID:          "HOST-42",
-				LastSeenTimestamp: time.Now().UTC().Unix() * 1000,
+				LastSeenTimestamp: time.Now().UTC().UnixMilli(),
 				NetworkZoneID:     "default",
 				IPAddresses:       []string{"1.1.1.1"},
 			},
 			{
 				EntityID:          "HOST-11",
-				LastSeenTimestamp: time.Now().UTC().Unix() * 1000,
+				LastSeenTimestamp: time.Now().UTC().UnixMilli(),
 				NetworkZoneID:     "default",
 				IPAddresses:       []string{"1.1.1.2"},
 			},
@@ -82,7 +82,7 @@ func TestGetHostEntityIDForIP(t *testing.T) {
 		testEntities := []hostInfoResponse{
 			{
 				EntityID:          "HOST-11",
-				LastSeenTimestamp: time.Now().UTC().Unix() * 1000,
+				LastSeenTimestamp: time.Now().UTC().UnixMilli(),
 				NetworkZoneID:     "default",
 				IPAddresses:       []string{"1.1.1.2"},
 			},

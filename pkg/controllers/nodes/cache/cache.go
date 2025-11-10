@@ -41,7 +41,7 @@ func (entry *Entry) IsMarkableForTermination(now time.Time) bool {
 	// Zero value for time.Time is 0001-01-01, so first mark is also executed
 	lastMarked := entry.LastMarkedForTermination
 
-	return lastMarked.UTC().Add(time.Hour).Before(now)
+	return now.Sub(lastMarked.UTC()) > time.Hour
 }
 
 func (entry *Entry) SetLastMarkedForTerminationTimestamp(now time.Time) {
@@ -59,7 +59,7 @@ func (entry *Entry) SetLastMarkedForTerminationTimestamp(now time.Time) {
 type Cache struct {
 	obj    *corev1.ConfigMap
 	create bool
-	upd    bool
+	update bool
 }
 
 func New(ctx context.Context, apiReader client.Reader, ns string, owner client.Object) (*Cache, error) {
@@ -100,10 +100,6 @@ func newCache(data *corev1.ConfigMap, create bool) *Cache {
 
 // GetEntry returns the information about node, or error if not found or failed to unmarshall the data.
 func (cache *Cache) GetEntry(node string) (Entry, error) {
-	if cache.obj.Data == nil {
-		return Entry{}, ErrEntryNotFound
-	}
-
 	raw, ok := cache.obj.Data[node]
 	if !ok {
 		return Entry{}, ErrEntryNotFound
@@ -131,7 +127,7 @@ func (cache *Cache) SetEntry(node string, entry Entry) error {
 	}
 
 	cache.obj.Data[node] = string(raw)
-	cache.upd = true
+	cache.update = true
 
 	return nil
 }
@@ -140,7 +136,7 @@ func (cache *Cache) SetEntry(node string, entry Entry) error {
 func (cache *Cache) DeleteEntry(node string) {
 	if cache.obj.Data != nil {
 		delete(cache.obj.Data, node)
-		cache.upd = true
+		cache.update = true
 	}
 }
 
@@ -160,7 +156,7 @@ func (cache *Cache) Keys() []string {
 
 // Changed returns true if changes have been made to the cache instance.
 func (cache *Cache) Changed() bool {
-	return cache.create || cache.upd
+	return cache.create || cache.update
 }
 
 func (cache *Cache) Store(ctx context.Context, client client.Client) error {
@@ -178,7 +174,7 @@ func (cache *Cache) Store(ctx context.Context, client client.Client) error {
 func (cache *Cache) IsOutdated(now time.Time) bool {
 	if lastUpdated, ok := cache.obj.Annotations[lastUpdatedAnnotation]; ok {
 		if lastUpdatedTime, err := time.Parse(time.RFC3339, lastUpdated); err == nil {
-			return lastUpdatedTime.Add(pruneInterval).Before(now)
+			return now.Sub(lastUpdatedTime.UTC()) > pruneInterval
 		} else {
 			return false
 		}
@@ -193,12 +189,12 @@ func (cache *Cache) UpdateTimestamp(now time.Time) {
 	}
 
 	cache.obj.Annotations[lastUpdatedAnnotation] = now.Format(time.RFC3339)
-	cache.upd = true
+	cache.update = true
 }
 
 // Prune will collect the nodeNames from the Cache that do not have a corresponding k8s Node in cluster.
 // - We return these nodeNames to the Controller, to send a mark for termination if need, just in case.
-// It will also remove the Entries that have a corresponding k8s Node in cluster, but have not had a OneAgent on them for a while.
+// It will also remove the Entries that have a corresponding k8s Node in cluster, but have not had a OneAgent on them for a over an hour.
 func (cache *Cache) Prune(ctx context.Context, client client.Client, now time.Time) ([]string, error) {
 	var nodeLst corev1.NodeList
 	if err := client.List(ctx, &nodeLst); err != nil {
@@ -209,29 +205,18 @@ func (cache *Cache) Prune(ctx context.Context, client client.Client, now time.Ti
 
 	for _, cachedNodeName := range cache.Keys() {
 		if slices.ContainsFunc(nodeLst.Items, func(clusterNode corev1.Node) bool { return clusterNode.Name == cachedNodeName }) {
-			_ = cache.removeStaleEntry(now, cachedNodeName)
+			// err can be ignored, as the ContainsFunc checks that the `cache` contains that `cachedNodeName`
+			entry, _ := cache.GetEntry(cachedNodeName)
+
+			isNodeDeletable := now.Sub(entry.LastSeen).Hours() > 1 || entry.IPAddress == ""
+
+			if isNodeDeletable {
+				cache.DeleteEntry(entry.NodeName)
+			}
 		} else {
 			toBePruned = append(toBePruned, cachedNodeName)
 		}
 	}
 
 	return toBePruned, nil
-}
-
-// removeStaleEntry will remove the entries from the Cache, where we haven't seen a OneAgent fro more than an hour.
-func (cache *Cache) removeStaleEntry(now time.Time, nodeName string) bool {
-	entry, err := cache.GetEntry(nodeName)
-	if err != nil {
-		return false
-	}
-
-	isNodeDeletable := now.Sub(entry.LastSeen).Hours() > 1 || entry.IPAddress == ""
-
-	if isNodeDeletable {
-		cache.DeleteEntry(entry.NodeName)
-
-		return true
-	}
-
-	return false
 }

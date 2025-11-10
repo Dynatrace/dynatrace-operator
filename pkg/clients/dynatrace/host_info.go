@@ -19,10 +19,12 @@ func (e HostEntityNotFoundErr) Error() string {
 }
 
 type hostInfoResponse struct {
-	EntityID          string
-	NetworkZoneID     string
-	IPAddresses       []string
-	LastSeenTimestamp int64
+	EntityID      string   `json:"entityId"`
+	NetworkZoneID string   `json:"networkZoneId"`
+	IPAddresses   []string `json:"ipAddresses"`
+
+	// LastSeenTimestamp is a timestamp in UTC milliseconds.
+	LastSeenTimestamp int64 `json:"lastSeenTimestamp"`
 }
 
 // hostEntityMap maps IPs to their respective HOST entityID according to the Dynatrace API
@@ -115,7 +117,10 @@ func (dtc *dynatraceClient) createHostEntityMapFromResponse(response []byte) (ho
 
 	for _, info := range hostInfoResponses {
 		// If we haven't seen this host in the last 30 minutes, ignore it.
-		if tm := time.Unix(info.LastSeenTimestamp/1000, 0).UTC(); tm.Before(now.Add(-30 * time.Minute)) {
+		lastSeen := time.UnixMilli(info.LastSeenTimestamp).UTC()
+
+		isInActive := lastSeen.Sub(now) < -30*time.Minute
+		if isInActive {
 			inactive = append(inactive, info.EntityID)
 
 			continue
