@@ -180,15 +180,15 @@ func assertOTLPEnvVarsPresent(t *testing.T, podItem *corev1.Pod, expectedBase st
 		}
 	}
 	for _, name := range []string{exporter.OTLPTraceHeadersEnv, exporter.OTLPLogsHeadersEnv, exporter.OTLPMetricsHeadersEnv} {
-		v, ok := envMap[name]
-		assert.True(t, ok, "%s env var missing", name)
-		if ok {
-			assert.Equal(t, exporter.OTLPAuthorizationHeader, v.Value, "%s header", name)
+		envVar := env.FindEnvVar(appContainer.Env, name)
+		assert.NotNil(t, envVar, "%s env var missing", name)
+		if envVar != nil {
+			assert.Equal(t, exporter.OTLPAuthorizationHeader, envVar.Value, "%s header", name)
 		}
 	}
-	tokenEnv, ok := envMap[exporter.DynatraceAPITokenEnv]
-	assert.True(t, ok, "DT_API_TOKEN missing")
-	if ok {
+	tokenEnv := env.FindEnvVar(appContainer.Env, exporter.DynatraceAPITokenEnv)
+	assert.NotNil(t, tokenEnv, "%s env var missing", exporter.DynatraceAPITokenEnv)
+	if tokenEnv != nil {
 		require.NotNil(t, tokenEnv.ValueFrom)
 		require.NotNil(t, tokenEnv.ValueFrom.SecretKeyRef)
 		assert.Equal(t, consts.OTLPExporterSecretName, tokenEnv.ValueFrom.SecretKeyRef.Name)
