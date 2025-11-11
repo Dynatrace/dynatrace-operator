@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -90,6 +91,7 @@ func TestReconcile(t *testing.T) {
 		}, &daemonset)
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, daemonset)
+		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 	})
 
 	t.Run("Create and update works with ME not set", func(t *testing.T) {

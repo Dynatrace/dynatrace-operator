@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,6 +59,7 @@ func TestReconcile(t *testing.T) {
 		}, &daemonset)
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, daemonset)
+		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 	})
 	t.Run("Only runs when required, and cleans up condition + daemonset", func(t *testing.T) {
 		dk := createDynakube(false)
