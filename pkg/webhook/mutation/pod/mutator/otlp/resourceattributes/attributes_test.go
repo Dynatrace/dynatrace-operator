@@ -75,7 +75,7 @@ func Test_attributes_merge(t *testing.T) {
 }
 
 func Test_attributes_toString(t *testing.T) {
-	attrs := attributes{"a": "1", "b": "2", "c": "3"}
+	attrs := attributes{"a": "1", "b": "2", "c": "3", "d": ""}
 	result := attrs.String()
 	parts := strings.Split(result, ",")
 	require.Len(t, parts, 3)
