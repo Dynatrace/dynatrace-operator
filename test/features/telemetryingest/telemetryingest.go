@@ -216,16 +216,9 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 
 	return builder.Feature()
 }
-
 func checkActiveGateContainer(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-
-		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, componentActiveGate.GetActiveGatePodName(dk, activeGateComponent), dk.Namespace, &activeGatePod))
-
-		require.NotNil(t, activeGatePod.Spec)
-		require.NotEmpty(t, activeGatePod.Spec.Containers)
+		componentActiveGate.CheckContainer(dk)
 
 		assertTelemetryIngestActiveGateModulesAreActive(ctx, t, envConfig, dk)
 
