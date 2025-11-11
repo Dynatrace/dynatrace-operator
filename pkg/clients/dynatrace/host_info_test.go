@@ -74,7 +74,7 @@ func TestGetHostEntityIDForIP(t *testing.T) {
 		assert.Equal(t, "HOST-42", id)
 	})
 
-	t.Run("not found path", func(t *testing.T) {
+	t.Run("host entity not found path", func(t *testing.T) {
 		ctx := t.Context()
 		testEntities := []hostInfoResponse{
 			{
@@ -114,5 +114,22 @@ func TestGetHostEntityIDForIP(t *testing.T) {
 		id, err := dtc.GetHostEntityIDForIP(ctx, "1.1.1.1")
 		require.Error(t, err)
 		assert.Empty(t, id)
+	})
+
+	t.Run("api not found 404 error", func(t *testing.T) {
+		ctx := t.Context()
+		testEntities := []hostInfoResponse{}
+
+		dynatraceServer := httptest.NewServer(mockHostEntityAPI(http.StatusNotFound, testEntities...))
+
+		dtc := dynatraceClient{
+			apiToken:   apiToken,
+			paasToken:  paasToken,
+			httpClient: dynatraceServer.Client(),
+			url:        dynatraceServer.URL,
+		}
+
+		_, err := dtc.GetHostEntityIDForIP(ctx, "1.1.1.1")
+		require.ErrorAs(t, err, &V1HostEntityAPINotAvailableErr{})
 	})
 }

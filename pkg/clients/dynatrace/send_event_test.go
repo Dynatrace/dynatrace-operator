@@ -83,6 +83,30 @@ func TestSendEvent(t *testing.T) {
 					dynatraceServer.URL+
 					"/v1/events\""))
 	})
+
+	t.Run("SendEvent 404 request error", func(t *testing.T) {
+		testValidEventData := []byte(`{
+			"eventType": "MARKED_FOR_TERMINATION",
+			"start": 20,
+			"end": 20,
+			"description": "K8s node was marked unschedulable. Node is likely being drained",
+			"attachRules": {
+				"entityIds": [ "HOST-CA78D78BBC6687D3" ]
+			},
+			"source": "OneAgent Operator"
+		}`)
+
+		var testEventData EventData
+		err := json.Unmarshal(testValidEventData, &testEventData)
+		require.NoError(t, err)
+
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, sendEventHandler404Error(), "")
+
+		err = dynatraceClient.SendEvent(ctx, &testEventData)
+		require.ErrorAs(t, err, &V1EventsAPINotAvailableErr{})
+
+		dynatraceServer.Close()
+	})
 }
 
 func sendEventHandlerStub() http.HandlerFunc {
@@ -92,6 +116,12 @@ func sendEventHandlerStub() http.HandlerFunc {
 func sendEventHandlerError() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writeError(writer, http.StatusInternalServerError)
+	}
+}
+
+func sendEventHandler404Error() http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writeError(writer, http.StatusNotFound)
 	}
 }
 

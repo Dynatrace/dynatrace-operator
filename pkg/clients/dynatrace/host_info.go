@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
@@ -15,6 +16,14 @@ type HostEntityNotFoundErr struct {
 
 func (e HostEntityNotFoundErr) Error() string {
 	return fmt.Sprintf("HOST entity not found for ip: %v", e.IP)
+}
+
+type V1HostEntityAPINotAvailableErr struct {
+	APIURL string
+}
+
+func (e V1HostEntityAPINotAvailableErr) Error() string {
+	return fmt.Sprintf("the api/v1/entity/infrastructure/hosts endpoint is not available (error 404) on the tenant (%s) ", e.APIURL)
 }
 
 type hostInfoResponse struct {
@@ -64,7 +73,7 @@ func (dtc *dynatraceClient) GetHostEntityIDForIP(ctx context.Context, ip string)
 func (dtc *dynatraceClient) getHostEntityIDForIP(ctx context.Context, ip string) (string, error) {
 	ipHostMapping, err := dtc.buildHostEntityMap(ctx)
 	if err != nil {
-		return "", errors.WithMessage(err, "error building host-cache from dynatrace cluster")
+		return "", err
 	}
 
 	switch entityID, ok := ipHostMapping[ip]; {
@@ -78,10 +87,13 @@ func (dtc *dynatraceClient) getHostEntityIDForIP(ctx context.Context, ip string)
 func (dtc *dynatraceClient) buildHostEntityMap(ctx context.Context) (hostEntityMap, error) {
 	resp, err := dtc.makeRequest(ctx, dtc.getHostsURL(), dynatraceAPIToken)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.WithMessage(err, fmt.Sprintf("failed to request known host entities from the tenant (%s)", dtc.url))
 	}
-
 	defer utils.CloseBodyAfterRequest(resp)
+
+	if resp != nil && resp.StatusCode == http.StatusNotFound {
+		return nil, V1HostEntityAPINotAvailableErr{APIURL: dtc.url}
+	}
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {

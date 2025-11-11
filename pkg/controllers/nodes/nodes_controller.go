@@ -182,6 +182,12 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 			return nil
 		}
 
+		if errors.As(err, &dtclient.V1HostEntityAPINotAvailableErr{}) {
+			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+
+			return nil
+		}
+
 		log.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
 
@@ -190,7 +196,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 
 	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond) //nolint:gosec
 
-	return dynatraceClient.SendEvent(ctx, &dtclient.EventData{
+	err = dynatraceClient.SendEvent(ctx, &dtclient.EventData{
 		EventType:     dtclient.MarkedForTerminationEvent,
 		Source:        "Dynatrace Operator",
 		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",
@@ -200,6 +206,13 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 			EntityIDs: []string{entityID},
 		},
 	})
+	if errors.As(err, &dtclient.V1EventsAPINotAvailableErr{}) {
+		log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+
+		return nil
+	}
+
+	return err
 }
 
 func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cacheEntry *cache.Entry) error {

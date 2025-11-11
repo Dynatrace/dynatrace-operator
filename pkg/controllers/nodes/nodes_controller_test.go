@@ -78,6 +78,94 @@ func TestReconcile(t *testing.T) {
 		_, err = nodesCache.GetEntry("node1")
 		require.Error(t, err)
 	})
+	t.Run("No error if v1 host entity api is not present on tenant ", func(t *testing.T) {
+		ctx := t.Context()
+		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+
+		fakeClient := fake.NewClient(
+			node,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						Instances: map[string]oneagent.Instance{node.Name: {IPAddress: "1.2.3.4"}},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oneagent1",
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					dtclient.APIToken: []byte(testAPIToken),
+				},
+			},
+		)
+
+		dtClient := dtclientmock.NewClient(t)
+		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), mock.Anything).Return("", dtclient.V1HostEntityAPINotAvailableErr{APIURL: "test"})
+
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		// delete node from kube api
+		err = fakeClient.Delete(ctx, node)
+		require.NoError(t, err)
+
+		// run another request reconcile
+		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run("No error if v1 events api is not present on tenant ", func(t *testing.T) {
+		ctx := t.Context()
+		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+
+		fakeClient := fake.NewClient(
+			node,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						Instances: map[string]oneagent.Instance{node.Name: {IPAddress: "1.2.3.4"}},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oneagent1",
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					dtclient.APIToken: []byte(testAPIToken),
+				},
+			},
+		)
+
+		dtClient := dtclientmock.NewClient(t)
+		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), "1.2.3.4").Return("HOST-42", nil)
+		dtClient.On("SendEvent", mock.AnythingOfType("*context.cancelCtx"), mock.MatchedBy(func(e *dtclient.EventData) bool {
+			return e.EventType == "MARKED_FOR_TERMINATION"
+		})).Return(dtclient.V1EventsAPINotAvailableErr{APIURL: "test"})
+
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		// delete node from kube api
+		err = fakeClient.Delete(ctx, node)
+		require.NoError(t, err)
+
+		// run another request reconcile
+		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
 
 	t.Run("Create two nodes and then delete one", func(t *testing.T) {
 		ctx := t.Context()
