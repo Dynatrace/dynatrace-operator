@@ -26,7 +26,7 @@ func Feature(t *testing.T) features.Feature {
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
-		componentDynakube.WithExtensionsDatabases([]extensions.DatabaseSpec{{ID: testDatabaseID}}...),
+		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID}),
 		componentDynakube.WithExtensionsDBExecutorImageRefSpec(consts.DBExecutorImageRepo, consts.DBExecutorImageTag),
 		componentDynakube.WithActiveGate(),
 	}
