@@ -290,7 +290,7 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 				noProxyValue:      "foo," + agFQDN + ",bar",
 			},
 			expectMutated: false,
-			expectValue:   agFQDN,
+			expectValue:   "foo," + agFQDN + ",bar",
 		},
 		{
 			name: "feature flag disabled",
