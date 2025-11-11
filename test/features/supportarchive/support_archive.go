@@ -71,7 +71,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
 		dynakubeComponents.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
-		dynakubeComponents.WithExtensionsEnabledSpec(true),
+		dynakubeComponents.WithExtensionsPrometheusEnabledSpec(true),
 		dynakubeComponents.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
 	)
 
