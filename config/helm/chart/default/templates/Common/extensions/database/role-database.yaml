@@ -14,8 +14,8 @@ rules:
   - apiGroups:
       - security.openshift.io
     resourceNames:
+      - privileged
       - nonroot-v2
-      - hostmount-anyuid
     resources:
       - securitycontextconstraints
     verbs:
