@@ -122,11 +122,7 @@ func (npi *noProxyInjector) Inject(c *corev1.Container, _ string, _ bool) bool {
 
 	agServiceFQDN := activegate.GetServiceFQDN(&npi.dk)
 
-	noProxyEnvVar := env.FindEnvVar(c.Env, NoProxyEnv)
-
-	if noProxyEnvVar == nil {
-		noProxyEnvVar = env.FindEnvVar(c.Env, strings.ToLower(NoProxyEnv))
-	}
+	noProxyEnvVar := env.FindEnvVarCaseInsensitive(c.Env, NoProxyEnv)
 
 	if noProxyEnvVar != nil { // append to existing env var
 		if noProxyEnvVar.Value != "" && !strings.Contains(noProxyEnvVar.Value, agServiceFQDN) {

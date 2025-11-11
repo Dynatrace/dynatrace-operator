@@ -203,7 +203,6 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		activeGateEnabled   bool
 		featureFlagDisabled bool
 		noProxyValue        string
-		alreadyContainsFQDN bool
 	}
 
 	const agFQDN = "dynakube-activegate.dynatrace"
@@ -246,10 +245,9 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		{
 			name: "NO_PROXY not present",
 			args: args{
-				containsNoProxy:     false,
-				activeGateEnabled:   true,
-				noProxyValue:        "",
-				alreadyContainsFQDN: false,
+				containsNoProxy:   false,
+				activeGateEnabled: true,
+				noProxyValue:      "",
 			},
 			expectMutated: true,
 			expectValue:   agFQDN,
@@ -257,10 +255,9 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		{
 			name: "NO_PROXY present, empty",
 			args: args{
-				containsNoProxy:     true,
-				activeGateEnabled:   true,
-				noProxyValue:        "",
-				alreadyContainsFQDN: false,
+				containsNoProxy:   true,
+				activeGateEnabled: true,
+				noProxyValue:      "",
 			},
 			expectMutated: true,
 			expectValue:   agFQDN,
@@ -268,10 +265,9 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		{
 			name: "NO_PROXY present, value not containing FQDN",
 			args: args{
-				containsNoProxy:     true,
-				activeGateEnabled:   true,
-				noProxyValue:        "foo,bar",
-				alreadyContainsFQDN: false,
+				containsNoProxy:   true,
+				activeGateEnabled: true,
+				noProxyValue:      "foo,bar",
 			},
 			expectMutated: true,
 			expectValue:   "foo,bar," + agFQDN,
@@ -279,10 +275,19 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		{
 			name: "NO_PROXY present, value already contains FQDN",
 			args: args{
-				containsNoProxy:     true,
-				activeGateEnabled:   true,
-				noProxyValue:        agFQDN,
-				alreadyContainsFQDN: true,
+				containsNoProxy:   true,
+				activeGateEnabled: true,
+				noProxyValue:      agFQDN,
+			},
+			expectMutated: false,
+			expectValue:   agFQDN,
+		},
+		{
+			name: "NO_PROXY present, value already contains FQDN and other entries",
+			args: args{
+				containsNoProxy:   true,
+				activeGateEnabled: true,
+				noProxyValue:      "foo," + agFQDN + ",bar",
 			},
 			expectMutated: false,
 			expectValue:   agFQDN,
@@ -293,16 +298,14 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 				activeGateEnabled:   true,
 				featureFlagDisabled: true,
 				noProxyValue:        "foo",
-				alreadyContainsFQDN: false,
 			},
 			expectMutated: false,
 		},
 		{
 			name: "ActiveGate disabled",
 			args: args{
-				activeGateEnabled:   false,
-				noProxyValue:        "foo",
-				alreadyContainsFQDN: false,
+				activeGateEnabled: false,
+				noProxyValue:      "foo",
 			},
 			expectMutated: false,
 		},
