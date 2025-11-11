@@ -61,6 +61,10 @@ func TestNoCSI_metadata_enrichment(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.MetadataEnrichment(t))
 }
 
+func TestNoCSI_otlp_exporter_configuration(t *testing.T) {
+	testEnv.Test(t, applicationmonitoring.OTLPExporterConfiguration(t))
+}
+
 func TestNoCSI_labelversion(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.LabelVersionDetection(t))
 }
