@@ -50,7 +50,7 @@ func WaitForReplicas(name string, namespace string) features.Func {
 			deployment, isDeployment := object.(*appsv1.Deployment)
 
 			return isDeployment && deployment.Status.Replicas == deployment.Status.ReadyReplicas
-		}), wait.WithTimeout(10*time.Minute))
+		}), wait.WithTimeout(DeploymentAvailableTimeout))
 
 		require.NoError(t, err)
 
