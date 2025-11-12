@@ -3,13 +3,14 @@ package nodes
 import (
 	"context"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -17,10 +18,8 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -32,12 +31,6 @@ type Controller struct {
 	timeProvider           *timeprovider.Provider
 	podNamespace           string
 	runLocal               bool
-}
-
-type CachedNodeInfo struct {
-	cachedNode CacheEntry
-	nodeCache  *Cache
-	nodeName   string
 }
 
 func Add(mgr manager.Manager, _ string) error {
@@ -78,72 +71,75 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	var node corev1.Node
-	if err := controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
-		if k8serrors.IsNotFound(err) {
-			// if there is no node it means it get deleted
-			return reconcile.Result{}, controller.reconcileNodeDeletion(ctx, nodeName)
-		}
 
-		return reconcile.Result{}, err
-	}
-
-	// Node is found in the cluster, add or update to cache
-	if dk != nil {
-		ipAddress := dk.Status.OneAgent.Instances[nodeName].IPAddress
-		cacheEntry := CacheEntry{
-			Instance:  dk.Name,
-			IPAddress: ipAddress,
-			LastSeen:  controller.timeProvider.Now().UTC(),
-		}
-
-		if cached, err := nodeCache.Get(nodeName); err == nil {
-			cacheEntry.LastMarkedForTermination = cached.LastMarkedForTermination
-		}
-
-		if err := nodeCache.Set(nodeName, cacheEntry); err != nil {
+	err = controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node)
+	if err != nil {
+		if !k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, err
 		}
 
-		// Handle unschedulable Nodes, if they have a OneAgent instance
-		if controller.isUnschedulable(&node) {
-			cachedNodeData := CachedNodeInfo{
-				cachedNode: cacheEntry,
-				nodeCache:  nodeCache,
-				nodeName:   nodeName,
-			}
+		err := controller.reconcileNodeDeletion(ctx, nodeCache, nodeName)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 
-			if err := controller.markForTermination(ctx, dk, cachedNodeData); err != nil {
-				return reconcile.Result{}, err
-			}
+		return reconcile.Result{}, nodeCache.Store(ctx, controller.client)
+	} else if dk != nil { // Node is found in the cluster, add or update to cache
+		err := controller.reconcileNodeUpdate(ctx, dk, nodeCache, &node)
+		if err != nil {
+			return reconcile.Result{}, err
 		}
 	}
 
 	// check node cache for outdated nodes and remove them, to keep cache clean
-	if nodeCache.IsCacheOutdated() {
-		if err := controller.handleOutdatedCache(ctx, nodeCache); err != nil {
+	if nodeCache.IsOutdated(controller.timeProvider.Now().UTC()) {
+		if err := controller.pruneCache(ctx, nodeCache); err != nil {
 			return reconcile.Result{}, err
 		}
 
-		nodeCache.UpdateTimestamp()
+		nodeCache.UpdateTimestamp(controller.timeProvider.Now().UTC())
 	}
 
-	return reconcile.Result{}, controller.updateCache(ctx, nodeCache)
+	return reconcile.Result{}, nodeCache.Store(ctx, controller.client)
 }
 
-func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeName string) error {
-	nodeCache, err := controller.getCache(ctx)
-	if err != nil {
+func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynakube.DynaKube, nodeCache *cache.Cache, node *corev1.Node) error {
+	nodeName := node.Name
+	ipAddress := dk.Status.OneAgent.Instances[nodeName].IPAddress
+	cacheEntry := cache.Entry{
+		NodeName:     nodeName,
+		DynaKubeName: dk.Name,
+		IPAddress:    ipAddress,
+		LastSeen:     controller.timeProvider.Now().UTC(),
+	}
+
+	if cached, err := nodeCache.GetEntry(nodeName); err == nil {
+		cacheEntry.SetLastMarkedForTerminationTimestamp(cached.LastMarkedForTermination)
+	}
+
+	// Handle unschedulable Nodes, if they have a OneAgent instance
+	if isUnschedulable(node) {
+		if err := controller.markForTermination(ctx, dk, &cacheEntry); err != nil {
+			return err
+		}
+	}
+
+	if err := nodeCache.SetEntry(nodeName, cacheEntry); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeCache *cache.Cache, nodeName string) error {
 	dynakube, err := controller.determineDynakubeForNode(nodeName)
 	if err != nil {
 		return err
 	}
 
-	cachedNodeInfo, err := nodeCache.Get(nodeName)
+	cacheEntry, err := nodeCache.GetEntry(nodeName)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, cache.ErrEntryNotFound) {
 			// uncached node -> ignoring
 			return nil
 		}
@@ -152,127 +148,17 @@ func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeNam
 	}
 
 	if dynakube != nil {
-		cachedNodeData := CachedNodeInfo{
-			cachedNode: cachedNodeInfo,
-			nodeCache:  nodeCache,
-			nodeName:   nodeName,
-		}
-
-		if err := controller.markForTermination(ctx, dynakube, cachedNodeData); err != nil {
+		if err := controller.markForTermination(ctx, dynakube, &cacheEntry); err != nil {
 			return err
 		}
 	}
 
-	nodeCache.Delete(nodeName)
-
-	if err := controller.updateCache(ctx, nodeCache); err != nil {
-		return err
-	}
+	nodeCache.DeleteEntry(nodeName)
 
 	return nil
 }
 
-func (controller *Controller) getCache(ctx context.Context) (*Cache, error) {
-	var cm corev1.ConfigMap
-
-	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: cacheName, Namespace: controller.podNamespace}, &cm)
-	if err == nil {
-		return &Cache{Obj: &cm, timeProvider: controller.timeProvider}, nil
-	}
-
-	if k8serrors.IsNotFound(err) {
-		cm := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      cacheName,
-				Namespace: controller.podNamespace,
-			},
-			Data: map[string]string{},
-		}
-		// If running locally, don't set the controller.
-		if !controller.runLocal {
-			deploy, err := deployment.GetDeployment(controller.client, os.Getenv(env.PodName), controller.podNamespace)
-			if err != nil {
-				return nil, err
-			}
-
-			if err = controllerutil.SetControllerReference(deploy, cm, scheme.Scheme); err != nil {
-				return nil, err
-			}
-		}
-
-		return &Cache{Create: true, Obj: cm, timeProvider: controller.timeProvider}, nil
-	}
-
-	return nil, err
-}
-
-func (controller *Controller) updateCache(ctx context.Context, nodeCache *Cache) error {
-	if !nodeCache.Changed() {
-		return nil
-	}
-
-	if nodeCache.Create {
-		return controller.client.Create(ctx, nodeCache.Obj)
-	}
-
-	if err := controller.client.Update(ctx, nodeCache.Obj); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (controller *Controller) handleOutdatedCache(ctx context.Context, nodeCache *Cache) error {
-	var nodeLst corev1.NodeList
-	if err := controller.client.List(ctx, &nodeLst); err != nil {
-		return err
-	}
-
-	for _, cachedNodeName := range nodeCache.Keys() {
-		cachedNodeInCluster := false
-
-		for _, clusterNode := range nodeLst.Items {
-			if clusterNode.Name == cachedNodeName {
-				// We ignore errors because we always ask ONLY existing key from the cache,
-				// because of the loop (range nodeCache.Keys()) in few lines early
-				cachedNodeInfo, _ := nodeCache.Get(cachedNodeName)
-				cachedNodeInCluster = true
-				// Check if node was seen less than an hour ago, otherwise do not remove from cache
-				controller.removeNodeFromCache(nodeCache, cachedNodeInfo, cachedNodeName)
-
-				break
-			}
-		}
-
-		// if node is not in cluster -> probably deleted
-		if !cachedNodeInCluster {
-			log.Info("Removing missing cached node from cluster", "node", cachedNodeName)
-
-			err := controller.reconcileNodeDeletion(ctx, cachedNodeName)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (controller *Controller) removeNodeFromCache(nodeCache *Cache, cachedNode CacheEntry, nodeName string) {
-	if controller.isNodeDeletable(cachedNode) {
-		nodeCache.Delete(nodeName)
-	}
-}
-
-func (controller *Controller) isNodeDeletable(cachedNode CacheEntry) bool {
-	if controller.timeProvider.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 || cachedNode.IPAddress == "" {
-		return true
-	}
-
-	return false
-}
-
-func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode CacheEntry) error {
+func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNode *cache.Entry) error {
 	tokenReader := token.NewReader(controller.apiReader, dk)
 
 	tokens, err := tokenReader.ReadTokens(ctx)
@@ -288,9 +174,15 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	entityID, err := dynatraceClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
+	entityID, err := dynatraceClient.GetHostEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {
-		if errors.As(err, &dtclient.HostNotFoundErr{}) {
+		if errors.As(err, &dtclient.HostEntityNotFoundErr{}) {
+			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+
+			return nil
+		}
+
+		if errors.As(err, &dtclient.V1HostEntityAPINotAvailableErr{}) {
 			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 			return nil
@@ -304,7 +196,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 
 	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond) //nolint:gosec
 
-	return dynatraceClient.SendEvent(ctx, &dtclient.EventData{
+	err = dynatraceClient.SendEvent(ctx, &dtclient.EventData{
 		EventType:     dtclient.MarkedForTerminationEvent,
 		Source:        "Dynatrace Operator",
 		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",
@@ -314,44 +206,70 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 			EntityIDs: []string{entityID},
 		},
 	})
-}
+	if errors.As(err, &dtclient.V1EventsAPINotAvailableErr{}) {
+		log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
-func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cachedNodeData CachedNodeInfo) error {
-	if !controller.isMarkableForTermination(&cachedNodeData.cachedNode) {
 		return nil
 	}
 
-	if err := cachedNodeData.nodeCache.updateLastMarkedForTerminationTimestamp(cachedNodeData.cachedNode, cachedNodeData.nodeName); err != nil {
-		return err
+	return err
+}
+
+func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cacheEntry *cache.Entry) error {
+	if !cacheEntry.IsMarkableForTermination(controller.timeProvider.Now().UTC()) {
+		return nil
 	}
 
-	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cachedNodeData.cachedNode.IPAddress,
-		"node", cachedNodeData.nodeName)
+	cacheEntry.SetLastMarkedForTerminationTimestamp(controller.timeProvider.Now().UTC())
 
-	return controller.sendMarkedForTermination(ctx, dk, cachedNodeData.cachedNode)
+	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress,
+		"node", cacheEntry.NodeName)
+
+	return controller.sendMarkedForTermination(ctx, dk, cacheEntry)
 }
 
-func (controller *Controller) isUnschedulable(node *corev1.Node) bool {
-	return node.Spec.Unschedulable || controller.hasUnschedulableTaint(node)
+func isUnschedulable(node *corev1.Node) bool {
+	return node.Spec.Unschedulable || hasUnschedulableTaint(node)
 }
 
-func (controller *Controller) hasUnschedulableTaint(node *corev1.Node) bool {
+func hasUnschedulableTaint(node *corev1.Node) bool {
 	for _, taint := range node.Spec.Taints {
-		for _, unschedulableTaint := range unschedulableTaints {
-			if taint.Key == unschedulableTaint {
-				return true
-			}
+		if slices.Contains(unschedulableTaints, taint.Key) {
+			return true
 		}
 	}
 
 	return false
 }
 
-// isMarkableForTermination checks if the timestamp from last mark is at least one hour old
-func (controller *Controller) isMarkableForTermination(nodeInfo *CacheEntry) bool {
-	// If the last mark was an hour ago, mark again
-	// Zero value for time.Time is 0001-01-01, so first mark is also executed
-	lastMarked := nodeInfo.LastMarkedForTermination
+func (controller *Controller) getCache(ctx context.Context) (*cache.Cache, error) {
+	var owner client.Object
+	if !controller.runLocal {
+		deploy, err := deployment.GetDeployment(controller.client, os.Getenv(env.PodName), controller.podNamespace)
+		if err != nil {
+			return nil, err
+		}
 
-	return lastMarked.UTC().Add(time.Hour).Before(controller.timeProvider.Now().UTC())
+		owner = deploy
+	}
+
+	return cache.New(ctx, controller.apiReader, controller.podNamespace, owner)
+}
+
+func (controller *Controller) pruneCache(ctx context.Context, nodeCache *cache.Cache) error {
+	missingCachedNodes, err := nodeCache.Prune(ctx, controller.client, controller.timeProvider.Now().UTC())
+	if err != nil {
+		return err
+	}
+
+	for _, nodeName := range missingCachedNodes {
+		log.Info("Removing missing cached node from cluster", "node", nodeName)
+
+		err := controller.reconcileNodeDeletion(ctx, nodeCache, nodeName)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

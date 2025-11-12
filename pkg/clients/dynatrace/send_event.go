@@ -4,11 +4,21 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
+
+// V1EventsAPINotAvailableErr is for more gracefully handling the scenario where the v1 events APIs are no longer present on the specified API url.
+type V1EventsAPINotAvailableErr struct {
+	APIURL string
+}
+
+func (e V1EventsAPINotAvailableErr) Error() string {
+	return fmt.Sprintf("the api/v1/events endpoint is not available (error 404) on the tenant (%s) ", e.APIURL)
+}
 
 const (
 	MarkedForTerminationEvent = "MARKED_FOR_TERMINATION"
@@ -54,10 +64,20 @@ func (dtc *dynatraceClient) SendEvent(ctx context.Context, eventData *EventData)
 	if err != nil {
 		return errors.WithMessage(err, "error making post request to dynatrace api")
 	}
-
 	defer utils.CloseBodyAfterRequest(response)
 
-	_, err = dtc.getServerResponseData(response)
+	if response != nil && response.StatusCode == http.StatusNotFound {
+		return V1EventsAPINotAvailableErr{APIURL: dtc.url}
+	}
 
-	return errors.WithStack(err)
+	_, err = dtc.getServerResponseData(response)
+	if err != nil {
+		if hasServerErrorCode(err, http.StatusNotFound) {
+			return V1EventsAPINotAvailableErr{APIURL: dtc.url}
+		}
+
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
