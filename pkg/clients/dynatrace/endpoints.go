@@ -54,7 +54,7 @@ func (dtc *dynatraceClient) getActiveGateConnectionInfoURL() string {
 }
 
 func (dtc *dynatraceClient) getHostsURL() string {
-	return dtc.url + "/v1/entity/infrastructure/hosts?includeDetails=false"
+	return dtc.url + "/v1/entity/infrastructure/hosts?relativeTime=30mins&includeDetails=false"
 }
 
 func (dtc *dynatraceClient) getSettingsURL(validate bool) string {
