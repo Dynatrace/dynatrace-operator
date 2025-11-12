@@ -69,7 +69,7 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 	// We should skip tags that are technology-specific or sha digests,
 	// e.g., "latest", "1.327.30.20251107-111521-python", "sha256:abcd1234..."
 	// and find maximum among the remaining tags.
-	endsWithTech, _ := regexp.Compile("[a-z-]+$")
+	endsWithTech := regexp.MustCompile("[a-z-]+$")
 	filteredTags := []string{}
 	for _, tag := range tags {
 		if !strings.HasPrefix(tag, "sha") && !endsWithTech.MatchString(tag) {
