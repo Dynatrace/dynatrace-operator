@@ -4,6 +4,7 @@ package registry
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -64,13 +65,18 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 	require.NoError(t, err)
 
 	tags, err := remote.List(repo)
+
+	// We should skip tags that are not technology-specific or sha digests,
+	// e.g., "latest", "1.327.30.20251107-111521-python", "sha256:abcd1234..."
+	// and find maximum among the remaining tags.
+	endsWithTech, _ := regexp.Compile("[a-z-]+$")
+	filteredTags := []string{}
+	for _, tag := range tags {
+		if !strings.HasPrefix(tag, "sha") && !endsWithTech.MatchString(tag) {
+			filteredTags = append(filteredTags, tag)
+		}
+	}
 	slices.SortFunc(tags, func(a, b string) int {
-		if strings.HasPrefix(a, "sha") {
-			return -1
-		}
-		if strings.HasPrefix(b, "sha") {
-			return 1
-		}
 		semverA, _ := dtversion.ToSemver(a)
 		semverB, _ := dtversion.ToSemver(b)
 
