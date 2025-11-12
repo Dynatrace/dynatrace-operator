@@ -153,7 +153,7 @@ func buildContainerEnvs() []corev1.EnvVar {
 	}
 }
 
-func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+func GetDefaultVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      userDataVolumeName,
@@ -178,6 +178,12 @@ func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []
 			ReadOnly:  true,
 		})
 	}
+
+	return volumeMounts
+}
+
+func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+	volumeMounts := GetDefaultVolumeMounts(dk)
 
 	return append(volumeMounts, dbSpec.VolumeMounts...)
 }
