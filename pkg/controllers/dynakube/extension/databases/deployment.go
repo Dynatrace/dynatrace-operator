@@ -134,7 +134,7 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev
 
 func buildContainerArgs(dk *dynakube.DynaKube) []string {
 	return []string{
-		"--podid=$(POD_NAME)",
+		"--podid=$(POD_UID)",
 		fmt.Sprintf("--url=https://%s:%d", dk.Extensions().GetServiceNameFQDN(), consts.ExtensionsDatasourceTargetPort),
 		"--idtoken=" + tokenMountPath + "/" + tokenVolumeName,
 	}
@@ -143,10 +143,10 @@ func buildContainerArgs(dk *dynakube.DynaKube) []string {
 func buildContainerEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
-			Name: "POD_NAME",
+			Name: "POD_UID",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
+					FieldPath: "metadata.uid",
 				},
 			},
 		},
