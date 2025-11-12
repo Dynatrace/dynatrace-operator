@@ -685,12 +685,12 @@ func (_c *Client_GetCommunicationHostForClient_Call) RunAndReturn(run func() (dy
 	return _c
 }
 
-// GetEntityIDForIP provides a mock function for the type Client
-func (_mock *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
+// GetHostEntityIDForIP provides a mock function for the type Client
+func (_mock *Client) GetHostEntityIDForIP(ctx context.Context, ip string) (string, error) {
 	ret := _mock.Called(ctx, ip)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetEntityIDForIP")
+		panic("no return value specified for GetHostEntityIDForIP")
 	}
 
 	var r0 string
@@ -711,19 +711,19 @@ func (_mock *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, e
 	return r0, r1
 }
 
-// Client_GetEntityIDForIP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEntityIDForIP'
-type Client_GetEntityIDForIP_Call struct {
+// Client_GetHostEntityIDForIP_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetHostEntityIDForIP'
+type Client_GetHostEntityIDForIP_Call struct {
 	*mock.Call
 }
 
-// GetEntityIDForIP is a helper method to define mock.On call
+// GetHostEntityIDForIP is a helper method to define mock.On call
 //   - ctx context.Context
 //   - ip string
-func (_e *Client_Expecter) GetEntityIDForIP(ctx interface{}, ip interface{}) *Client_GetEntityIDForIP_Call {
-	return &Client_GetEntityIDForIP_Call{Call: _e.mock.On("GetEntityIDForIP", ctx, ip)}
+func (_e *Client_Expecter) GetHostEntityIDForIP(ctx interface{}, ip interface{}) *Client_GetHostEntityIDForIP_Call {
+	return &Client_GetHostEntityIDForIP_Call{Call: _e.mock.On("GetHostEntityIDForIP", ctx, ip)}
 }
 
-func (_c *Client_GetEntityIDForIP_Call) Run(run func(ctx context.Context, ip string)) *Client_GetEntityIDForIP_Call {
+func (_c *Client_GetHostEntityIDForIP_Call) Run(run func(ctx context.Context, ip string)) *Client_GetHostEntityIDForIP_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -741,12 +741,12 @@ func (_c *Client_GetEntityIDForIP_Call) Run(run func(ctx context.Context, ip str
 	return _c
 }
 
-func (_c *Client_GetEntityIDForIP_Call) Return(s string, err error) *Client_GetEntityIDForIP_Call {
+func (_c *Client_GetHostEntityIDForIP_Call) Return(s string, err error) *Client_GetHostEntityIDForIP_Call {
 	_c.Call.Return(s, err)
 	return _c
 }
 
-func (_c *Client_GetEntityIDForIP_Call) RunAndReturn(run func(ctx context.Context, ip string) (string, error)) *Client_GetEntityIDForIP_Call {
+func (_c *Client_GetHostEntityIDForIP_Call) RunAndReturn(run func(ctx context.Context, ip string) (string, error)) *Client_GetHostEntityIDForIP_Call {
 	_c.Call.Return(run)
 	return _c
 }
