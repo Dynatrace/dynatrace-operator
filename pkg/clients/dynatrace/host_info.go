@@ -97,6 +97,10 @@ func (dtc *dynatraceClient) buildHostEntityMap(ctx context.Context) (hostEntityM
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
+		if hasServerErrorCode(err, http.StatusNotFound) {
+			return nil, V1HostEntityAPINotAvailableErr{APIURL: dtc.url}
+		}
+
 		return nil, errors.WithStack(err)
 	}
 

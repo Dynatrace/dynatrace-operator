@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -110,17 +112,17 @@ func TestSendEvent(t *testing.T) {
 }
 
 func sendEventHandlerStub() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {}
+	return func(writer http.ResponseWriter, _ *http.Request) {}
 }
 
 func sendEventHandlerError() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, _ *http.Request) {
 		writeError(writer, http.StatusInternalServerError)
 	}
 }
 
 func sendEventHandler404Error() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, _ *http.Request) {
 		writeError(writer, http.StatusNotFound)
 	}
 }
@@ -200,4 +202,91 @@ func handleSendEvent(request *http.Request, writer http.ResponseWriter) {
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}
+}
+
+func TestSendEvent_StatusInError(t *testing.T) {
+	// This test is needed because the DT API will put the actual 404 error inside the error response, and not the header's status
+	mockEventAPI := func(respStatus, errorStatus int) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+
+			if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
+				writeError(w, http.StatusUnauthorized)
+			}
+
+			if r.Method != http.MethodPost {
+				writeError(w, http.StatusMethodNotAllowed)
+			}
+
+			switch r.URL.Path {
+			case "/v1/events":
+				w.WriteHeader(respStatus)
+				writeError(w, errorStatus)
+
+			default:
+				writeError(w, http.StatusBadRequest)
+			}
+		}
+	}
+
+	testValidEventData := []byte(`{
+			"eventType": "MARKED_FOR_TERMINATION",
+			"start": 20,
+			"end": 20,
+			"description": "K8s node was marked unschedulable. Node is likely being drained",
+			"attachRules": {
+				"entityIds": [ "HOST-CA78D78BBC6687D3" ]
+			},
+			"source": "OneAgent Operator"
+		}`)
+
+	var testEventData EventData
+	err := json.Unmarshal(testValidEventData, &testEventData)
+	require.NoError(t, err)
+
+	t.Run("error code 404 -> specific error", func(t *testing.T) {
+		ctx := t.Context()
+		dynatraceServer := httptest.NewServer(mockEventAPI(http.StatusBadGateway, http.StatusNotFound))
+
+		dtc := dynatraceClient{
+			apiToken:   apiToken,
+			paasToken:  paasToken,
+			httpClient: dynatraceServer.Client(),
+			url:        dynatraceServer.URL,
+		}
+
+		err := dtc.SendEvent(ctx, &testEventData)
+		require.ErrorAs(t, err, &V1EventsAPINotAvailableErr{})
+	})
+
+	t.Run("status code 404 -> specific error", func(t *testing.T) {
+		ctx := t.Context()
+		dynatraceServer := httptest.NewServer(mockEventAPI(http.StatusNotFound, http.StatusBadGateway))
+
+		dtc := dynatraceClient{
+			apiToken:   apiToken,
+			paasToken:  paasToken,
+			httpClient: dynatraceServer.Client(),
+			url:        dynatraceServer.URL,
+		}
+
+		err := dtc.SendEvent(ctx, &testEventData)
+		require.ErrorAs(t, err, &V1EventsAPINotAvailableErr{})
+	})
+
+	t.Run("random codes -> non-specific error", func(t *testing.T) {
+		ctx := t.Context()
+		dynatraceServer := httptest.NewServer(mockEventAPI(http.StatusBadGateway, http.StatusBadGateway))
+
+		dtc := dynatraceClient{
+			apiToken:   apiToken,
+			paasToken:  paasToken,
+			httpClient: dynatraceServer.Client(),
+			url:        dynatraceServer.URL,
+		}
+
+		err := dtc.SendEvent(ctx, &testEventData)
+		require.Error(t, err)
+		assert.False(t, errors.As(err, &V1EventsAPINotAvailableErr{}))
+	})
 }

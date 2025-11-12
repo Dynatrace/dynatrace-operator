@@ -70,6 +70,13 @@ func (dtc *dynatraceClient) SendEvent(ctx context.Context, eventData *EventData)
 	}
 
 	_, err = dtc.getServerResponseData(response)
+	if err != nil {
+		if hasServerErrorCode(err, http.StatusNotFound) {
+			return V1EventsAPINotAvailableErr{APIURL: dtc.url}
+		}
 
-	return errors.WithStack(err)
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
