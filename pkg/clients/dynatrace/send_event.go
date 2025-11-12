@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// V1EventsAPINotAvailableErr is for more gracefully handling the scenario where the v1 events APIs are no longer present on the specified API url.
 type V1EventsAPINotAvailableErr struct {
 	APIURL string
 }

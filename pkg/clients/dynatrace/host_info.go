@@ -18,6 +18,7 @@ func (e HostEntityNotFoundErr) Error() string {
 	return fmt.Sprintf("HOST entity not found for ip: %v", e.IP)
 }
 
+// V1HostEntityAPINotAvailableErr is for more gracefully handling the scenario where the v1 host entity APIs are no longer present on the specified API url.
 type V1HostEntityAPINotAvailableErr struct {
 	APIURL string
 }
