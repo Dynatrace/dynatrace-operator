@@ -91,6 +91,7 @@ func TestReconcile(t *testing.T) {
 		}, &daemonset)
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, daemonset)
+		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 	})
 
 	t.Run("Create and update works with ME not set", func(t *testing.T) {
@@ -183,8 +184,6 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Affinity)
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
-		require.Len(t, daemonset.Annotations, 1)
-		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 		require.Len(t, daemonset.Spec.Template.Annotations, 1)
 		assert.Contains(t, daemonset.Spec.Template.Annotations, annotationTenantTokenHash)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)
