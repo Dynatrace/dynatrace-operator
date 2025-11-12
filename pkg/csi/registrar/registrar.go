@@ -1,6 +1,7 @@
 package registrar
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/connection"
 	"github.com/kubernetes-csi/csi-lib-utils/rpc"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
