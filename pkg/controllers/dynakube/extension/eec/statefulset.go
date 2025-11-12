@@ -109,12 +109,6 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	if err := hasher.AddAnnotation(desiredSts); err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
-
-		return err
-	}
-
 	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
