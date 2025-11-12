@@ -278,6 +278,7 @@ func TestOTLPWebhook(t *testing.T) {
 		for i := range appContainer.Env {
 			if appContainer.Env[i].Name == exporter.DynatraceAPITokenEnv {
 				dtTokenEnv = &appContainer.Env[i]
+
 				break
 			}
 		}
