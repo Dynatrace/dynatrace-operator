@@ -84,5 +84,5 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 	})
 	require.NoError(t, err)
 
-	return fmt.Sprintf("%s:%s", repoURI, filteredTags[len(tags)-1])
+	return fmt.Sprintf("%s:%s", repoURI, filteredTags[len(filteredTags)-1])
 }
