@@ -76,7 +76,7 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 			filteredTags = append(filteredTags, tag)
 		}
 	}
-	slices.SortFunc(tags, func(a, b string) int {
+	slices.SortFunc(filteredTags, func(a, b string) int {
 		semverA, _ := dtversion.ToSemver(a)
 		semverB, _ := dtversion.ToSemver(b)
 
@@ -84,5 +84,5 @@ func getLatestImageURI(t *testing.T, repoURI string) string {
 	})
 	require.NoError(t, err)
 
-	return fmt.Sprintf("%s:%s", repoURI, tags[len(tags)-1])
+	return fmt.Sprintf("%s:%s", repoURI, filteredTags[len(tags)-1])
 }
