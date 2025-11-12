@@ -138,6 +138,7 @@ func podHasNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) features.Fun
 		pods := app.GetPods(ctx, t, envConfig.Client().Resources())
 		require.NotEmpty(t, pods.Items)
 		assertOTLPEnvVarsAbsent(t, &pods.Items[0])
+
 		return ctx
 	}
 }
@@ -158,6 +159,7 @@ func deploymentPodsHaveNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) 
 		query := deployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
 		err := query.ForEachPod(func(p corev1.Pod) { assertOTLPEnvVarsAbsent(t, &p) })
 		require.NoError(t, err)
+
 		return ctx
 	}
 }
