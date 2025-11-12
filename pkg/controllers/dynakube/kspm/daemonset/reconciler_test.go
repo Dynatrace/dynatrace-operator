@@ -59,6 +59,7 @@ func TestReconcile(t *testing.T) {
 		}, &daemonset)
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, daemonset)
+		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 	})
 	t.Run("Only runs when required, and cleans up condition + daemonset", func(t *testing.T) {
 		dk := createDynakube(false)
@@ -120,8 +121,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Affinity)
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
-		require.Len(t, daemonset.Annotations, 1)
-		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
+		require.Empty(t, daemonset.Annotations)
 		require.Len(t, daemonset.Spec.Template.Annotations, 1)
 		assert.Contains(t, daemonset.Spec.Template.Annotations, tokenSecretHashAnnotation)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)

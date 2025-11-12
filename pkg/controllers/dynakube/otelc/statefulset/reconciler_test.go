@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -65,6 +66,7 @@ func TestReconcile(t *testing.T) {
 		}, &sts)
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, sts)
+		assert.Contains(t, sts.Annotations, hasher.AnnotationHash)
 	})
 	t.Run("Only runs when required, and cleans up condition + statefulset", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()

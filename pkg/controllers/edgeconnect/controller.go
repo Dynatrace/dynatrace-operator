@@ -54,7 +54,7 @@ type oauthCredentialsType struct {
 	clientSecret string
 }
 
-type edgeConnectClientBuilderType func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnectClient.Client, error)
+type edgeConnectClientBuilderType func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.Client, error)
 
 // Controller reconciles an EdgeConnect object
 type Controller struct {
@@ -464,7 +464,12 @@ func (controller *Controller) buildEdgeConnectClient(ctx context.Context, ec *ed
 		return nil, errors.WithStack(err)
 	}
 
-	return controller.edgeConnectClientBuilder(ctx, ec, oauthCredentials)
+	customCA, err := ec.TrustedCAs(ctx, controller.client)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return controller.edgeConnectClientBuilder(ctx, ec, oauthCredentials, customCA)
 }
 
 func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgeconnect.EdgeConnect) (oauthCredentialsType, error) {
@@ -489,8 +494,8 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgec
 	return oauthCredentialsType{clientID: oauthClientID, clientSecret: oauthClientSecret}, nil
 }
 
-func newEdgeConnectClient() func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnectClient.Client, error) {
-	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnectClient.Client, error) {
+func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
+	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.Client, error) {
 		oauthScopes := []string{
 			"app-engine:edge-connects:read",
 			"app-engine:edge-connects:write",
@@ -508,6 +513,7 @@ func newEdgeConnectClient() func(ctx context.Context, ec *edgeconnect.EdgeConnec
 			edgeconnectClient.WithTokenURL(ec.Spec.OAuth.Endpoint),
 			edgeconnectClient.WithOauthScopes(oauthScopes),
 			edgeconnectClient.WithContext(ctx),
+			edgeconnectClient.WithCustomCA(customCA),
 		)
 		if err != nil {
 			return nil, errors.WithStack(err)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
@@ -105,11 +104,6 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		}),
 		daemonset.SetVolumes(getVolumes(r.dk.Name)),
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	err = hasher.AddAnnotation(ds)
 	if err != nil {
 		return nil, err
 	}

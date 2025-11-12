@@ -81,7 +81,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 		capabilityArgs = append(capabilityArgs, "extension_controller")
 	}
 
-	if dk.TelemetryIngest().IsEnabled() {
+	if dk.TelemetryIngest().IsEnabled() || dk.OTLPExporterConfiguration().IsEnabled() {
 		capabilityArgs = append(capabilityArgs, "log_analytics_collector", "generic_ingest", "otlp_ingest")
 	}
 

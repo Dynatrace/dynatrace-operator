@@ -16,6 +16,7 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -245,7 +246,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 		request := createTestMutationRequest(nil, nil)
 
 		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
-		setWorkloadAnnotations(request.Pod, &workloadInfo{Name: workloadInfoName, Kind: workloadInfoKind})
+		setWorkloadAnnotations(request.Pod, &workload.Info{Name: workloadInfoName, Kind: workloadInfoKind})
 		require.Len(t, request.Pod.Annotations, 2)
 		assert.Equal(t, workloadInfoName, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
 		assert.Equal(t, workloadInfoKind, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadKind, "not-found"))
@@ -257,7 +258,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 			TypeMeta:   metav1.TypeMeta{Kind: "SuperWorkload"},
 		}
 
-		setWorkloadAnnotations(request.Pod, newWorkloadInfo(objectMeta))
+		setWorkloadAnnotations(request.Pod, workload.NewInfo(objectMeta))
 		assert.Contains(t, request.Pod.Annotations, AnnotationWorkloadKind)
 		assert.Equal(t, "superworkload", request.Pod.Annotations[AnnotationWorkloadKind])
 	})
@@ -351,10 +352,14 @@ func TestMutate(t *testing.T) {
 
 		kindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.kind", strings.ToLower(request.Pod.OwnerReferences[0].Kind))
 		nameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.name", strings.ToLower(request.Pod.OwnerReferences[0].Name))
+		depKindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, deprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind))
+		depNameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, deprecatedWorkloadNameKey, strings.ToLower(request.Pod.OwnerReferences[0].Name))
 		metaFromNsAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, nsMetaAnnotationKey, nsMetaAnnotationValue)
 
 		assert.Contains(t, request.InstallContainer.Args, kindAttr)
 		assert.Contains(t, request.InstallContainer.Args, nameAttr)
+		assert.Contains(t, request.InstallContainer.Args, depKindAttr)
+		assert.Contains(t, request.InstallContainer.Args, depNameAttr)
 		assert.Contains(t, request.InstallContainer.Args, metaFromNsAttr)
 		assert.Contains(t, request.InstallContainer.Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 

@@ -1,6 +1,7 @@
 package registrar
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -14,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"golang.org/x/net/nettest"
 	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
 )

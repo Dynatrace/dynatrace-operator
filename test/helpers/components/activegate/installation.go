@@ -11,6 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -29,4 +31,18 @@ func GetActiveGatePodName(dk *dynakube.DynaKube, component string) string {
 
 func ReadActiveGateLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube, component string) string {
 	return logs.ReadLog(ctx, t, envConfig, dk.Namespace, GetActiveGatePodName(dk, component), consts.ActiveGateContainerName)
+}
+
+func CheckContainer(dk *dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		var activeGatePod corev1.Pod
+		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, GetActiveGatePodName(dk, "activegate"), dk.Namespace, &activeGatePod))
+
+		require.NotNil(t, activeGatePod.Spec)
+		require.NotEmpty(t, activeGatePod.Spec.Containers)
+
+		return ctx
+	}
 }

@@ -5,9 +5,8 @@ ENV GOEXPERIMENT=systemcrypto
 WORKDIR /app
 
 ARG DEBUG_TOOLS
-RUN if [ "$DEBUG_TOOLS" = "true" ]; then \
-      GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@latest; \
-    fi
+# renovate depName=github.com/go-delve/delve/cmd/dlv
+RUN if [ "$DEBUG_TOOLS" = "true" ]; then GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.25.2; fi
 
 COPY go.mod go.sum ./
 RUN go mod download -x
@@ -31,8 +30,8 @@ RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.9.0
 RUN CGO_ENABLED=1 cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM registry.access.redhat.com/ubi9-micro:9.6-1760515026@sha256:aff810919642215e15c993b9bbc110dbcc446608730ad24499dafd9df7a8f8f4 AS base
-FROM registry.access.redhat.com/ubi9:9.6-1760340943@sha256:dec374e05cc13ebbc0975c9f521f3db6942d27f8ccdf06b180160490eef8bdbc AS dependency
+FROM registry.access.redhat.com/ubi9-micro:9.7-1762200779@sha256:11e2cc207dc895c0cce721e556e38b8ad5e6e29a983fd57fe9d4aebf0840a502 AS base
+FROM registry.access.redhat.com/ubi9:9.7-1762180182@sha256:5ff7f5e56f4826ca8413765e57f8a5bad4bf42b73f958f3d0c2668a0f870316c AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \

@@ -70,7 +70,8 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithCloudNativeSpec(&oneagent.CloudNativeFullStackSpec{}),
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithActiveGateTLSSecret(consts.AgSecretName),
-		dynakubeComponents.WithExtensionsEnabledSpec(true),
+		dynakubeComponents.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
+		dynakubeComponents.WithExtensionsPrometheusEnabledSpec(true),
 		dynakubeComponents.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
 	)
 
@@ -102,7 +103,7 @@ func Feature(t *testing.T) features.Feature {
 
 	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,
 		map[string][]byte{
-			dynakube.TLSCertKey:                    agCrt,
+			dynakube.ServerCertKey:                 agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", secret.Create(agSecret))
