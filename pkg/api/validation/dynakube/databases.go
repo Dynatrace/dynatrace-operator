@@ -16,7 +16,7 @@ const (
 	errorConflictingDatabasesVolumeMounts = `Database volume mount (%s) in conflict with a default database volume mount (%s) detected. Please make sure to avoid such conflicts.`
 	errorInvalidDatabasesVolumeMount      = `Invalid database volume mount detected: %s. No matching database volume found.`
 	errorUnusedDatabasesVolumes           = `Unused database volume(s) found (%s). Make sure to mount all database volumes defined in the DynaKube.`
-	errorFailedToValidateVolumeMount      = `Failed to validate database volume mount at %s.`
+	errorInvalidDatabasesVolumeMountPath  = `Invalid database volume mount path detected (%s). Make sure to use absolute paths.`
 
 	warningHostPathDatabaseVolumeDetected = `Host path database volume detected. If you're on OpenShift, mounting host path volumes will be prohibited by the SCC and cause silent failures. If you still want to do this, make sure to create and bind corresponding roles.`
 )
@@ -41,7 +41,7 @@ func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *Validator, 
 			for _, defaultVolumeMount := range defaultVolumeMounts {
 				rel, err := filepath.Rel(defaultVolumeMount.MountPath, volumeMount.MountPath)
 				if err != nil {
-					return fmt.Sprintf(errorFailedToValidateVolumeMount, volumeMount.MountPath)
+					return fmt.Sprintf(errorInvalidDatabasesVolumeMountPath, volumeMount.MountPath)
 				}
 
 				if !strings.HasPrefix(rel, "../") {
