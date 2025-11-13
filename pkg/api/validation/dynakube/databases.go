@@ -18,7 +18,7 @@ const (
 	errorUnusedDatabasesVolumes           = `Unused database volume(s) found (%s). Make sure to mount all database volumes defined in the DynaKube.`
 	errorFailedToValidateVolumeMount      = `Failed to validate database volume mount at %s.`
 
-	warningHostPathDatabaseVolumeDetected = `Host path database volume detected. If you're on OCP, mounting host path volumes will be prohibited by the SCC and cause silent failures. If still want to do this, make sure to create and bind corresponding roles.`
+	warningHostPathDatabaseVolumeDetected = `Host path database volume detected. If you're on OpenShift, mounting host path volumes will be prohibited by the SCC and cause silent failures. If you still want to do this, make sure to create and bind corresponding roles.`
 )
 
 func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -64,7 +64,7 @@ func hostPathDatabaseVolumeFound(_ context.Context, _ *Validator, dk *dynakube.D
 	for _, database := range dk.Spec.Extensions.Databases {
 		for _, volume := range database.Volumes {
 			if volume.HostPath != nil {
-				log.Info("host path volume detected, this may cause issues on OCP", "volumeName", volume.Name)
+				log.Info("host path volume detected, this may cause issues on openshift", "volumeName", volume.Name)
 
 				return warningHostPathDatabaseVolumeDetected
 			}
