@@ -59,10 +59,10 @@
     },
     {
       fileMatch: [
-        "(^|/|\\.)action.yaml$",
+        ".*\\.ya?ml$",
       ],
       matchStrings: [
-        "depName=(?<depName>.*?)\\s.*?PREFLIGHT_VERSION\\:\\s(?<currentValue>.*)\\s",
+        "# ?renovate github-releases depName=(?<depName>[^\\s]+)[^\\n]*\\n[ \\t]*.*?(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)",
       ],
       datasourceTemplate: "github-releases",
     },
