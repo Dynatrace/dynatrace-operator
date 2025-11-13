@@ -100,7 +100,7 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
 		for _, vol := range deploy.Spec.Template.Spec.Volumes {
 			switch vol.Name {
-			case userDataVolumeName:
+			case tmpVolumeName:
 				assert.NotNil(t, vol.EmptyDir)
 			case tokenVolumeName:
 				assert.NotNil(t, vol.Secret)
@@ -133,8 +133,8 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Len(t, container.VolumeMounts, 4)
 		for _, mnt := range container.VolumeMounts {
 			switch mnt.Name {
-			case userDataVolumeName:
-				assert.Equal(t, userDataMountPath, mnt.MountPath)
+			case tmpVolumeName:
+				assert.Equal(t, tmpMountPath, mnt.MountPath)
 			case tokenVolumeName:
 				assert.Equal(t, tokenMountPath, mnt.MountPath)
 			case certsVolumeName:
