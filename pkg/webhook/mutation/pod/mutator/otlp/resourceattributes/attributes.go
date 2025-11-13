@@ -65,6 +65,10 @@ func (a Attributes) String() string {
 	var result strings.Builder
 
 	for key, value := range a {
+		if key == "" || value == "" {
+			// do not add empty values
+			continue
+		}
 		if !first {
 			result.WriteString(",")
 		}
