@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestConflictingVolumeMounts(t *testing.T) {
+func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 	baseDk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -77,6 +77,27 @@ func TestConflictingVolumeMounts(t *testing.T) {
 		actualError := conflictingOrInvalidDatabasesVolumeMounts(t.Context(), nil, dk)
 
 		assert.Equal(t, expectedError, actualError)
+	})
+
+	t.Run("invalid volume mount path => error", func(t *testing.T) {
+		volumeName := "vol123"
+		volumeMountPath := "not/absolute"
+
+		dbSpec := extensions.DatabaseSpec{
+			ID: testName,
+			Volumes: []corev1.Volume{
+				{Name: volumeName},
+			},
+			VolumeMounts: []corev1.VolumeMount{
+				{Name: volumeName, MountPath: volumeMountPath},
+			},
+		}
+
+		dk := baseDk.DeepCopy()
+		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
+		response := conflictingOrInvalidDatabasesVolumeMounts(t.Context(), nil, dk)
+
+		assert.Equal(t, fmt.Sprintf(errorInvalidDatabasesVolumeMountPath, volumeMountPath), response)
 	})
 }
 
