@@ -8,8 +8,8 @@ const (
 	TelemetryIngestTLSSecretName    = "telemetry-ingest-tls"
 	DevRegistryPullSecretName       = "devregistry"
 
-	EecImageRepo           = "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-eec"
-	EecImageTag            = "1.329.0.20251113-072946"
+	EecImageRepo           = "public.ecr.aws/dynatrace/dynatrace-eec"
+	EecImageTag            = "1.327.30.20251107-111521"
 	LogMonitoringImageRepo = "public.ecr.aws/dynatrace/dynatrace-logmodule"
 	LogMonitoringImageTag  = "1.309.59.20250319-140247"
 	KSPMImageRepo          = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector"
