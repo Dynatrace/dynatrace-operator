@@ -32,7 +32,3 @@ undeploy:
 
 	helm uninstall dynatrace-operator \
 			--namespace dynatrace
-
-## Remove all Dynatrace Operator resources from the cluster
-cleanup:
-	@./hack/cluster/cleanup-dynatrace-objects.sh
