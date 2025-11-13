@@ -6,7 +6,7 @@ set -eu
 IMAGE="${1:?Image name required (e.g. dynatrace/dynatrace-operator)}"
 TAG="${2:?Tag required}"
 TIMEOUT="${3:-600}"
-INTERVAL="${4:-10}"
+INTERVAL="${4:-30}"
 ELAPSED=0
 
 echo "Checking if image ${IMAGE}:${TAG} is available on quay.io"
