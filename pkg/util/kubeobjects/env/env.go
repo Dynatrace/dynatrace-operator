@@ -2,6 +2,7 @@ package env
 
 import (
 	"os"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -16,6 +17,17 @@ const (
 func FindEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 	for i, envVar := range envVars {
 		if envVar.Name == name {
+			// returning reference to env var to ease later manipulation of it
+			return &envVars[i]
+		}
+	}
+
+	return nil
+}
+
+func FindEnvVarCaseInsensitive(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
+	for i, envVar := range envVars {
+		if strings.ToLower(envVar.Name) == strings.ToLower(name) {
 			// returning reference to env var to ease later manipulation of it
 			return &envVars[i]
 		}
