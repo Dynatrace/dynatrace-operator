@@ -123,3 +123,54 @@ func TestAppend(t *testing.T) {
 		}, envVars)
 	})
 }
+
+func TestFindEnvVarCaseInsensitive(t *testing.T) {
+	type args struct {
+		envVars []corev1.EnvVar
+		name    string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *corev1.EnvVar
+	}{
+		{
+			name: "found with same case",
+			args: args{
+				envVars: []corev1.EnvVar{
+					{Name: "KEY_ONE", Value: "value1"},
+					{Name: "key_two", Value: "value2"},
+				},
+				name: "KEY_ONE",
+			},
+			want: &corev1.EnvVar{Name: "KEY_ONE", Value: "value1"},
+		},
+		{
+			name: "found with different case",
+			args: args{
+				envVars: []corev1.EnvVar{
+					{Name: "KEY_ONE", Value: "value1"},
+					{Name: "key_two", Value: "value2"},
+				},
+				name: "key_one",
+			},
+			want: &corev1.EnvVar{Name: "KEY_ONE", Value: "value1"},
+		},
+		{
+			name: "not found",
+			args: args{
+				envVars: []corev1.EnvVar{
+					{Name: "KEY_ONE", Value: "value1"},
+					{Name: "key_two", Value: "value2"},
+				},
+				name: "key_three",
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, FindEnvVarCaseInsensitive(tt.args.envVars, tt.args.name), "FindEnvVarCaseInsensitive(%v, %v)", tt.args.envVars, tt.args.name)
+		})
+	}
+}
