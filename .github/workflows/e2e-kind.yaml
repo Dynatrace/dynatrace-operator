@@ -90,14 +90,10 @@ jobs:
           TENANT2_NAME: ${{ secrets.TENANT2_NAME }}
           TENANT2_APITOKEN: ${{ secrets.TENANT2_APITOKEN }}
           TENANT2_DATAINGESTTOKEN: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-      - name: Prepare build parameters
-        id: prep
-        run: |
-          ./hack/build/ci/prepare-build-variables.sh
       - name: Check and wait for image availability
         run: |
           IMAGE="dynatrace/dynatrace-operator"
-          TAG="${{ steps.prep.outputs.docker_image_tag }}"
+          TAG="snapshot-$(hack/build/ci/sanitize-branch-name.sh "${{ needs.check-comment.outputs.pr_ref }}")"
 
           ./hack/build/ci/check-image-available.sh "$IMAGE" "$TAG"
       - name: Start kind cluster
@@ -111,9 +107,6 @@ jobs:
           # The latest image build for this branch will be used
           export BRANCH="${{ needs.check-comment.outputs.pr_ref }}"
           echo The branch is $BRANCH
-
-          echo Check if deploying works and all pods are running
-          kubectl get pods -n dynatrace --watch | sed 's/^/[kind-dynatrace-ns-watcher] /' &
 
           make test/e2e/edgeconnect/normal
       - name: Comment on PR - Success
