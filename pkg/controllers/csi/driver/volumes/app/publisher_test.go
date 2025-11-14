@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -138,7 +139,12 @@ func TestPublishVolume(t *testing.T) {
 		assert.True(t, isMountPoint)
 
 		bindMount := mounter.MountPoints[1]
-		assert.Equal(t, mappedDir, bindMount.Device)
+		if runtime.GOOS == "darwin" {
+			assert.Equal(t, mappedDir, bindMount.Device)
+		} else {
+			// this is what linux does, and what we actually care about
+			assert.Equal(t, "overlay", bindMount.Device)
+		}
 		assert.Equal(t, volumeCfg.TargetPath, bindMount.Path)
 	})
 }
