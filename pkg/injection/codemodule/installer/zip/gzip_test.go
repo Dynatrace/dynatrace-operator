@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/klauspost/compress/gzip"
@@ -37,9 +36,6 @@ func TestExtractGzip(t *testing.T) {
 	})
 
 	t.Run("extract gzip with symlinks", func(t *testing.T) {
-		if runtime.GOOS == "darwin" {
-			t.Skip()
-		}
 		tmpDir := t.TempDir()
 
 		gzipFile := SetupTestArchive(t, TestRawGzipWithSymlinks)
@@ -89,10 +85,6 @@ func TestExtractGzip(t *testing.T) {
 	})
 
 	t.Run("extract gzip with nested directories and symlinks", func(t *testing.T) {
-		if runtime.GOOS == "darwin" {
-			t.Skip()
-		}
-
 		tmpDir := t.TempDir()
 
 		gzipFile := SetupTestArchive(t, TestRawGzipWithNestedSymlinks)
