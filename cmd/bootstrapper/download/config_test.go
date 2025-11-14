@@ -83,7 +83,7 @@ func TestConfigFromFs(t *testing.T) {
 		tmpDir := t.TempDir()
 		inputDir := filepath.Join(tmpDir, "input")
 		inputFile := filepath.Join(inputDir, InputFileName)
-		os.WriteFile(inputFile, []byte("-------"), 600)
+		os.WriteFile(inputFile, []byte("-------"), 0600)
 
 		config, err := configFromFs(inputDir)
 		require.Error(t, err)
@@ -125,7 +125,7 @@ func setupConfig(t *testing.T, inputDir string, config Config) {
 	require.NoError(t, err)
 
 	os.Mkdir(inputDir, os.ModePerm)
-	err = os.WriteFile(filepath.Join(inputDir, InputFileName), raw, os.ModePerm)
+	err = os.WriteFile(filepath.Join(inputDir, InputFileName), raw, 0600)
 	require.NoError(t, err)
 }
 

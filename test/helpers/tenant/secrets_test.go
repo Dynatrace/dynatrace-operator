@@ -20,7 +20,7 @@ func TestNewFromConfig(t *testing.T) {
 	require.NoError(t, os.MkdirAll(secretsPath, 0655))
 
 	require.NoError(t, os.WriteFile(filepath.Join(secretsPath, "Secrets-test.yaml"),
-		[]byte(testSecretFileContent), 0755))
+		[]byte(testSecretFileContent), 0600))
 
 	tenantSecrets, err := newFromConfig(filepath.Join(secretsPath, "Secrets-test.yaml"))
 
