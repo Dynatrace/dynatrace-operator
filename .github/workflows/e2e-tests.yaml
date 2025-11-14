@@ -136,38 +136,11 @@ jobs:
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
-      - name: Set Slack message
-        id: set_slack_message
-        env:
-          TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
-        run: |
-          set -ex
-          get_status() {
-            if [ "$1" = "skipped" ]; then
-              echo "cluster creation failed and skipped tests :large_yellow_circle:"
-            elif [ "$2" = "success" ]; then
-              echo "tests passed :white_check_mark:"
-            else
-              echo "tests failed :red_circle:"
-            fi
-          }
-
-          K8S_STATUS=$(get_status "${{ needs.run-in-k8s.outputs.cluster_status }}" "${{ needs.run-in-k8s.result }}")
-          OCP_STATUS=$(get_status "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
-          OCP_FIPS_STATUS=$(get_status "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
-
-          MESSAGE="${K8S_STATUS} on kubernetes :kubernetes:\n${OCP_STATUS} on openshift :openshift:\n${OCP_FIPS_STATUS} on FIPS openshift :lock:\nusing *${TARGET_BRANCH}* branch\n${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
-          echo "SLACK_MESSAGE=$MESSAGE" >> $GITHUB_ENV
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           errors: true
-          payload: |
-            text: "e2e test results:"
-            blocks:
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: ${{env.SLACK_MESSAGE}}
+          payload-templated: true
+          payload-file-path: ./slack-e2e-payload.json
