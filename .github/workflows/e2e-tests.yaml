@@ -31,6 +31,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Get Job ID from GH API
+        id: get-job-id
+        run: |
+          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
+          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
+          echo "job_id=$job_id" >> $GITHUB_OUTPUT
       - name: Run e2e test
         id: run_e2e_test
         run: |
@@ -53,6 +59,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Get Job ID from GH API
+        id: get-job-id
+        run: |
+          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
+          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
+          echo "job_id=$job_id" >> $GITHUB_OUTPUT
       - name: Run e2e test
         id: run_e2e_test
         run: |
@@ -75,6 +87,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Get Job ID from GH API
+        id: get-job-id
+        run: |
+          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
+          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
+          echo "job_id=$job_id" >> $GITHUB_OUTPUT
       - name: Run e2e test
         id: run_e2e_test
         run: |
@@ -114,22 +132,12 @@ jobs:
           OCP_FIPS_STATUS=$(get_emoji "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
 
           echo "K8S_STATUS=$K8S_STATUS" >> $GITHUB_ENV
+          echo "K8S_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-k8s.outputs.job_id }}" >> $GITHUB_ENV
           echo "OCP_STATUS=$OCP_STATUS" >> $GITHUB_ENV
+          echo "OCP_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-ocp.outputs.job_id }}" >> $GITHUB_ENV
           echo "OCP_FIPS_STATUS=$OCP_FIPS_STATUS" >> $GITHUB_ENV
+          echo "OCP_FIPS_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-ocp-fips.outputs.job_id }}" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
-      - name: Get Job ID from GH API
-        id: get-job-id
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -x
-          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
-          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
-          echo "job_id=$job_id" >> $GITHUB_OUTPUT
-      - name: Display Job ID
-        run: |
-          echo Job ID: ${{ steps.get-job-id.outputs.job_id }}
-          echo My full job URL is ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.get-job-id.outputs.job_id }}
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:

@@ -65,7 +65,8 @@
                 "type": "rich_text_section",
                 "elements": [
                   {
-                    "type": "text",
+                    "type": "link",
+                    "url": "${{ env.K8S_JOB_ID }}",
                     "text": "tests "
                   },
                   {
