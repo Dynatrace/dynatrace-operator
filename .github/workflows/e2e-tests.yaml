@@ -136,6 +136,8 @@ jobs:
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
