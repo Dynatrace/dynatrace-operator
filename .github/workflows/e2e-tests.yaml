@@ -28,12 +28,15 @@ jobs:
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ steps.get-job-id.outputs.job_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Get Job ID from GH API
         id: get-job-id
         run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
           jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
           job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
           echo "job_id=$job_id" >> $GITHUB_OUTPUT
@@ -56,12 +59,15 @@ jobs:
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ steps.get-job-id.outputs.job_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Get Job ID from GH API
         id: get-job-id
         run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
           jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
           job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
           echo "job_id=$job_id" >> $GITHUB_OUTPUT
@@ -84,12 +90,15 @@ jobs:
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ steps.get-job-id.outputs.job_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Get Job ID from GH API
         id: get-job-id
         run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
           jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
           job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
           echo "job_id=$job_id" >> $GITHUB_OUTPUT
