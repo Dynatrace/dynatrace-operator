@@ -29,8 +29,8 @@ const (
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
 
-	userDataVolumeName    = "user-data"
-	userDataMountPath     = "/var/userdata"
+	tmpVolumeName         = "tmp-data"
+	tmpMountPath          = "/tmp"
 	tokenVolumeName       = "auth-token"
 	tokenMountPath        = "/var/run/dynatrace/executor/token"
 	certsVolumeName       = "https-certs"
@@ -153,11 +153,11 @@ func buildContainerEnvs() []corev1.EnvVar {
 	}
 }
 
-func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+func GetDefaultVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
-			Name:      userDataVolumeName,
-			MountPath: userDataMountPath,
+			Name:      tmpVolumeName,
+			MountPath: tmpMountPath,
 		},
 		{
 			Name:      tokenVolumeName,
@@ -179,13 +179,19 @@ func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []
 		})
 	}
 
+	return volumeMounts
+}
+
+func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+	volumeMounts := GetDefaultVolumeMounts(dk)
+
 	return append(volumeMounts, dbSpec.VolumeMounts...)
 }
 
 func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
-			Name: userDataVolumeName,
+			Name: tmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
