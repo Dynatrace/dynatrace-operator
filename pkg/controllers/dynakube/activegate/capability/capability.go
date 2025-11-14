@@ -94,8 +94,8 @@ func BuildServiceName(dynakubeName string) string {
 	return dynakubeName + "-" + consts.MultiActiveGateName
 }
 
-// BuilDNSEntryPoint will create a string listing of the full DNS entry points for the Service of the ActiveGate in the provided DynaKube
-// example: https://34.118.233.238:443,https://dynakube-activegate.dynatrace:443
+// BuildDNSEntryPoint will create a string listing of the full DNS entry points for the Service of the ActiveGate in the provided DynaKube.
+// Example: https://34.118.233.238:443,https://dynakube-activegate.dynatrace:443
 func BuildDNSEntryPoint(dk dynakube.DynaKube) string {
 	entries := []string{}
 

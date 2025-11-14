@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -40,19 +41,13 @@ func (ag *Spec) apiURLHost() string {
 	return parsedURL.Host
 }
 
-// NeedsActiveGate returns true when a feature requires ActiveGate instances.
+// IsEnabled returns true when a feature requires ActiveGate instances.
 func (ag *Spec) IsEnabled() bool {
 	return len(ag.Capabilities) > 0 || ag.enabledDependencies.Any()
 }
 
 func (ag *Spec) IsMode(mode CapabilityDisplayName) bool {
-	for _, capability := range ag.Capabilities {
-		if capability == mode {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(ag.Capabilities, mode)
 }
 
 func (ag *Spec) GetServiceAccountOwner() string {
@@ -145,7 +140,7 @@ func (ag *Spec) GetDefaultImage(version string) string {
 	return apiURLHost + DefaultImageRegistrySubPath + ":" + tag
 }
 
-// CustomActiveGateImage provides the image reference for the ActiveGate provided in the Spec.
+// GetCustomImage provides the image reference for the ActiveGate provided in the Spec.
 func (ag *Spec) GetCustomImage() string {
 	return ag.Image
 }

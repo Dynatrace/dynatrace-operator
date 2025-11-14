@@ -15,7 +15,7 @@ CONTROLLER_GEN_VERSION ?= v0.19.0
 # renovate depName=github.com/golangci/golangci-lint/v2
 GOLANGCI_LINT_VERSION ?= v2.6.1
 # renovate depName=golang.org/x/tools
-GOLANG_TOOLS_VERSION ?= v0.38.0
+GOLANG_TOOLS_VERSION ?= v0.39.0
 # renovate depName=github.com/vektra/mockery
 MOCKERY_VERSION ?= v3.5.5
 # renovate depName=github.com/igorshubovych/markdownlint-cli
@@ -27,7 +27,7 @@ CYCLONEDX_GOMOD_VERSION ?= v1.9.0
 # renovate depName=github.com/mikefarah/yq/v4
 YQ_VERSION ?= v4.48.1
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.17.1
+GO_TEST_COVERAGE_VERSION ?= v2.18.0
 #SETUP_ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 SETUP_ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
 

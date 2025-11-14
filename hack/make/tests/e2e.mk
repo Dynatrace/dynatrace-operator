@@ -111,11 +111,19 @@ test/e2e/cloudnative/upgrade: manifests/crd/helm
 test/e2e/extensions/upgrade: manifests/crd/helm
 	$(GOTESTCMD) -timeout 20m ./test/scenarios/release -run "extensions_upgrade" $(SKIPCLEANUP)
 
+## Runs DatabaseExecutor related e2e tests
+test/e2e/extensions/dbexecutor: manifests/crd/helm
+	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "extensions_db_executor" $(SKIPCLEANUP)
+
 ## Runs Application Monitoring metadata-enrichment e2e test only
 test/e2e/applicationmonitoring/metadataenrichment: manifests/crd/helm
 	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "metadata_enrichment" $(SKIPCLEANUP)
 
-## Runs Application Monitoring label versio detection e2e test only
+## Runs Application Monitoring otlp-exporter-configuration e2e test only
+test/e2e/applicationmonitoring/otlpexporterconfiguration: manifests/crd/helm
+	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "otlp_exporter_configuration" $(SKIPCLEANUP)
+
+## Runs Application Monitoring label version detection e2e test only
 test/e2e/applicationmonitoring/labelversion: manifests/crd/helm
 	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "label_version" $(SKIPCLEANUP)
 

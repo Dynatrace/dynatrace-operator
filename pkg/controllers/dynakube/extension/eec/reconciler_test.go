@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -187,6 +188,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
 		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
+		assert.Contains(t, statefulSet.Annotations, hasher.AnnotationHash)
 	})
 	t.Run("annotation is set with tlsRefName", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -195,6 +197,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		require.Len(t, statefulSet.Spec.Template.Annotations, 1)
 		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash])
+		assert.Contains(t, statefulSet.Annotations, hasher.AnnotationHash)
 	})
 	t.Run("annotation is updated when TLS Secret gets updated", func(t *testing.T) {
 		statefulSet := &appsv1.StatefulSet{}

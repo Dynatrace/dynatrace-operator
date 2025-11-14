@@ -56,9 +56,9 @@ type Client interface {
 	// SendEvent posts events to dynatrace API
 	SendEvent(ctx context.Context, eventData *EventData) error
 
-	// GetEntityIDForIP returns the entity id for a given IP address.
+	// GetHostEntityIDForIP returns the host entity id for a given IP address.
 	// Returns an error in case the lookup failed.
-	GetEntityIDForIP(ctx context.Context, ip string) (string, error)
+	GetHostEntityIDForIP(ctx context.Context, ip string) (string, error)
 
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(ctx context.Context, token string) (TokenScopes, error)
@@ -172,7 +172,6 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		apiToken:  apiToken,
 		paasToken: paasToken,
 
-		hostCache: make(map[string]hostInfo),
 		httpClient: &http.Client{
 			Transport: http.DefaultTransport.(*http.Transport).Clone(),
 			Timeout:   15 * time.Minute,
