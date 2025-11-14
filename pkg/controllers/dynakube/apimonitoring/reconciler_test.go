@@ -239,8 +239,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 	t.Run("don't create app setting due to empty MonitoredEntitys", func(t *testing.T) {
 		r := createReconciler(t, dtclient.K8sClusterME{}, dtclient.GetSettingsResponse{}, "", "")
 
-		_, err := r.handleKubernetesAppEnabled(context.Background(), dtclient.K8sClusterME{})
-
+		err := r.handleKubernetesAppEnabled(context.Background(), dtclient.K8sClusterME{})
 		require.NoError(t, err)
 	})
 
@@ -248,16 +247,14 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		entities := createMonitoredEntities()
 		r := createReconciler(t, entities, dtclient.GetSettingsResponse{TotalCount: 1}, "", "")
 
-		_, err := r.handleKubernetesAppEnabled(context.Background(), entities)
-
+		err := r.handleKubernetesAppEnabled(context.Background(), entities)
 		require.NoError(t, err)
 	})
 
 	t.Run("don't create app setting when get entities api response is error", func(t *testing.T) {
 		r := createReconcilerWithError(t, nil, errors.New("could not get monitored entities"), nil, nil)
 
-		_, err := r.handleKubernetesAppEnabled(context.Background(), dtclient.K8sClusterME{})
-
+		err := r.handleKubernetesAppEnabled(context.Background(), dtclient.K8sClusterME{})
 		require.Error(t, err)
 	})
 
@@ -266,8 +263,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		meID := "KUBERNETES_CLUSTER-0E30FE4BF2007587"
 		entity := dtclient.K8sClusterME{ID: meID, Name: "operator test entity newest"}
 
-		_, err := r.handleKubernetesAppEnabled(context.Background(), entity)
-
+		err := r.handleKubernetesAppEnabled(context.Background(), entity)
 		require.Error(t, err)
 	})
 
@@ -277,9 +273,8 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 			ID: meID, Name: "operator test entity newest",
 		}
 		r := createReconciler(t, entities, dtclient.GetSettingsResponse{}, "", meID)
-		id, err := r.handleKubernetesAppEnabled(context.Background(), entities)
+		err := r.handleKubernetesAppEnabled(context.Background(), entities)
 		require.NoError(t, err)
-		assert.Equal(t, "transitionSchemaObjectID", id)
 	})
 }
 
