@@ -116,6 +116,10 @@ spec:
         - name: LOG_LEVEL
           value: "debug"
         {{- end }}
+        {{- if .Values.enableProfiling }}
+        - name: PPROF_BIND_ADDRESS
+          value: ":6060"
+        {{- end }}
         {{- if and (not .Values.debug) .Values.csidriver.server.livenessProbe.enabled }}
         livenessProbe:
           failureThreshold: {{ .Values.csidriver.server.livenessProbe.failureThreshold }}
@@ -181,6 +185,10 @@ spec:
           {{- if .Values.debugLogs }}
           - name: LOG_LEVEL
             value: "debug"
+          {{- end }}
+          {{- if .Values.enableProfiling }}
+          - name: PPROF_BIND_ADDRESS
+            value: ":6061"
           {{- end }}
           {{- if .Values.csidriver.cleanupPeriod }}
           - name: CLEANUP_PERIOD

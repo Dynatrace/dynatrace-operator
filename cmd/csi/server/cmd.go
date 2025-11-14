@@ -96,7 +96,8 @@ func createManager(config *rest.Config, namespace string) (manager.Manager, erro
 		Metrics: server.Options{
 			BindAddress: metricsBindAddress,
 		},
-		Scheme: scheme.Scheme,
+		PprofBindAddress: os.Getenv("PPROF_BIND_ADDRESS"),
+		Scheme:           scheme.Scheme,
 	}
 
 	mgr, err := manager.New(config, options)
