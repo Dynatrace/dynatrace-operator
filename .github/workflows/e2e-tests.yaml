@@ -57,6 +57,7 @@ jobs:
         id: run_e2e_test
         run: |
           echo "Running E2E tests in OCP latest"
+          exit 1
       - name: Determine cluster status
         if: failure()
         run: |
@@ -99,21 +100,36 @@ jobs:
         env:
           TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
         run: |
-          get_status() {
+          get_emoji() {
             if [ "$1" = "skipped" ]; then
-              echo "tests skipped :large_yellow_circle: due to cluster creation failure"
+              echo "large_yellow_circle"
             elif [ "$2" = "success" ]; then
-              echo "tests passed :green_heavy_check_mark:"
+              echo "white_check_mark"
             else
-              echo "tests failed :red_circle:"
+              echo "red_circle"
             fi
           }
-          K8S_STATUS=$(get_status "${{ needs.run-in-k8s.outputs.cluster_status }}" "${{ needs.run-in-k8s.result }}")
-          OCP_STATUS=$(get_status "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
-          OCP_FIPS_STATUS=$(get_status "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
+          K8S_STATUS=$(get_emoji "${{ needs.run-in-k8s.outputs.cluster_status }}" "${{ needs.run-in-k8s.result }}")
+          OCP_STATUS=$(get_emoji "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
+          OCP_FIPS_STATUS=$(get_emoji "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
+
           echo "K8S_STATUS=$K8S_STATUS" >> $GITHUB_ENV
           echo "OCP_STATUS=$OCP_STATUS" >> $GITHUB_ENV
           echo "OCP_FIPS_STATUS=$OCP_FIPS_STATUS" >> $GITHUB_ENV
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
+      - name: Get Job ID from GH API
+        id: get-job-id
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
+          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
+          echo "job_id=$job_id" >> $GITHUB_OUTPUT
+      - name: Display Job ID
+        run: |
+          echo Job ID: ${{ steps.get-job-id.outputs.job_id }}
+          echo My full job URL is ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.get-job-id.outputs.job_id }}
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:

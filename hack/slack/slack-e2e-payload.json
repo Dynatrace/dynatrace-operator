@@ -4,7 +4,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "E2E daily test results for `${{ github.sha }}`"
+        "text": "E2E daily test results for `${{ env.TARGET_BRANCH }}` `${{ github.sha }}` "
       }
     },
     {
@@ -65,13 +65,12 @@
                 "type": "rich_text_section",
                 "elements": [
                   {
-                    "type": "emoji",
-                    "name": "white_check_mark"
+                    "type": "text",
+                    "text": "tests "
                   },
                   {
-                    "type": "link",
-                    "text": " ${{ env.K8S_STATUS }} ",
-                    "url": "https://api.slack.com"
+                    "type": "emoji",
+                    "name": "${{ env.K8S_STATUS }}"
                   }
                 ]
               }
@@ -101,7 +100,11 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "${{ env.OCP_STATUS }}"
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.OCP_STATUS }}"
                   }
                 ]
               }
@@ -131,7 +134,11 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "${{ env.OCP_FIPS_STATUS }}"
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.OCP_FIPS_STATUS }}"
                   }
                 ]
               }
@@ -148,6 +155,7 @@
           "elements": [
             {
               "type": "link",
+              "text": "detailed logs of run #${{ github.runNumber }}",
               "url": "https://github.com/${{ github.payload.repository.full_name }}/actions/runs/${{ github.runId }}"
             }
           ]
