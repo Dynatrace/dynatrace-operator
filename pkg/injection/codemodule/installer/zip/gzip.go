@@ -99,7 +99,7 @@ func extractLink(targetDir, target string, header *tar.Header) error {
 }
 
 func extractSymlink(targetDir, target string, header *tar.Header) error {
-	if err := os.Symlink(header.Linkname, target); err != nil {
+	if err := os.Symlink(filepath.Join(targetDir, header.Linkname), target); err != nil {
 		return errors.WithStack(err)
 	}
 
