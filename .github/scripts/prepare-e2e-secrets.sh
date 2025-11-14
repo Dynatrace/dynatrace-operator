@@ -4,7 +4,7 @@ set -eu -o pipefail
 
 mkdir -p test/testdata/secrets/
 
-pushd test/testdata/secrets/
+cd test/testdata/secrets/
 
 cat << EOF > single-tenant.yaml
 tenantUid: $TENANT1_NAME
@@ -34,5 +34,3 @@ oAuthClientId: $TENANT1_OAUTH_CLIENT_ID
 oAuthClientSecret: $TENANT1_OAUTH_SECRET
 resource: $TENANT1_OAUTH_URN
 EOF
-
-popd
