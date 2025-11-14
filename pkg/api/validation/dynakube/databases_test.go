@@ -2,11 +2,13 @@ package validation
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +36,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 
 	t.Run("non-conflicting paths => no error", func(t *testing.T) {
 		volumeName := "foo"
+
 		dbSpec := extensions.DatabaseSpec{
 			ID: "some-db",
 			Volumes: []corev1.Volume{
@@ -58,22 +61,23 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 	})
 
 	t.Run("default volume mount used => conflicts => fail", func(t *testing.T) {
-		volumeName := "secret-user-data"
-		volumeMountPath := "/var/userdata/top-secret"
 		dbSpec := extensions.DatabaseSpec{
-			ID: testName,
-			Volumes: []corev1.Volume{
-				{Name: volumeName},
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{Name: volumeName, MountPath: volumeMountPath},
-			},
+			ID:           testName,
+			Volumes:      []corev1.Volume{},
+			VolumeMounts: []corev1.VolumeMount{},
 		}
 		dk := baseDk.DeepCopy()
+
+		defaultVolumeMount := databases.GetDefaultVolumeMounts(dk)[0]
+		volumeNamePrefix := "illegal"
+		volumeName := fmt.Sprintf("%s-%s", volumeNamePrefix, defaultVolumeMount.Name)
+		volumeMountPath := filepath.Join(defaultVolumeMount.MountPath, "some", "sub", "path")
+		dbSpec.Volumes = append(dbSpec.Volumes, corev1.Volume{Name: volumeName})
+		dbSpec.VolumeMounts = append(dbSpec.VolumeMounts, corev1.VolumeMount{Name: volumeName, MountPath: volumeMountPath})
+
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
-		defaultVolumeMountPath := "/var/userdata"
-		expectedError := fmt.Sprintf(errorConflictingDatabasesVolumeMounts, volumeMountPath, defaultVolumeMountPath)
+		expectedError := fmt.Sprintf(errorConflictingDatabasesVolumeMounts, volumeMountPath, defaultVolumeMount.MountPath)
 		actualError := conflictingOrInvalidDatabasesVolumeMounts(t.Context(), nil, dk)
 
 		assert.Equal(t, expectedError, actualError)
