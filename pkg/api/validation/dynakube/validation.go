@@ -65,6 +65,8 @@ var (
 		forbiddenTelemetryIngestServiceNameSuffix,
 		conflictingTelemetryIngestServiceNames,
 		missingOtelCollectorImage,
+		conflictingOrInvalidDatabasesVolumeMounts,
+		unusedDatabasesVolume,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -78,6 +80,7 @@ var (
 		kspmWithoutK8SMonitoring,
 		noMappedHostPaths,
 		extensionsWithoutK8SMonitoring,
+		hostPathDatabaseVolumeFound,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
