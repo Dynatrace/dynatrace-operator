@@ -1,5 +1,6 @@
 ENABLE_CSI ?= true
 DEBUG_LOGS ?= true
+PROFILING ?= true
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 
@@ -22,6 +23,7 @@ deploy: manifests/crd/helm
 			--set manifests=true \
 			--set image=$(IMAGE_URI) \
 			--set debugLogs=$(DEBUG_LOGS) \
+			--set enableProfiling=$(PROFILING) \
 			--set debug=$(DEBUG)
 
 ## Undeploy the current operator installation

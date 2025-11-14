@@ -75,6 +75,7 @@ func createOptions(namespace string) ctrl.Options {
 		Metrics: server.Options{
 			BindAddress: metricsBindAddress,
 		},
+		PprofBindAddress:           os.Getenv("PPROF_BIND_ADDRESS"),
 		LeaderElection:             true,
 		LeaderElectionID:           leaderElectionID,
 		LeaderElectionResourceLock: leaderElectionResourceLock,

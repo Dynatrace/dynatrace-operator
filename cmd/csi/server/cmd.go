@@ -1,6 +1,8 @@
 package server
 
 import (
+	"os"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
@@ -87,7 +89,8 @@ func createManager(config *rest.Config, namespace string) (manager.Manager, erro
 		Metrics: server.Options{
 			BindAddress: metricsBindAddress,
 		},
-		Scheme: scheme.Scheme,
+		PprofBindAddress: os.Getenv("PPROF_BIND_ADDRESS"),
+		Scheme:           scheme.Scheme,
 	}
 
 	mgr, err := manager.New(config, options)
