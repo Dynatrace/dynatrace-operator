@@ -143,4 +143,4 @@ jobs:
           webhook-type: incoming-webhook
           errors: true
           payload-templated: true
-          payload-file-path: ./slack-e2e-payload.json
+          payload-file-path: ./hack/slack/slack-e2e-payload.json
