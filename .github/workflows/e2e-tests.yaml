@@ -164,9 +164,10 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           errors: true
-          payload-templated: true
           payload: |
-            text: "Greetings!"
-#          payload: |
-#            "message": "${{ env.SLACK_MESSAGE }}"
-#            "run_id": "${{ github.run_id }}"
+            text: "e2e test results:"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: ${{env.SLACK_MESSAGE}}
