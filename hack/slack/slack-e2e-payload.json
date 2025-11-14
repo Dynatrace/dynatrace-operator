@@ -19,7 +19,24 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "environ",
+                    "text": "environment",
+                    "style": {
+                      "bold": true
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "result",
                     "style": {
                       "bold": true
                     }
@@ -66,6 +83,21 @@
                 "elements": [
                   {
                     "type": "text",
+                    "text": "${{ env.K8S_STATUS }}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
                     "text": "link"
                   }
                 ]
@@ -96,6 +128,20 @@
                 "elements": [
                   {
                     "type": "text",
+                    "text": "${{ env.OCP_STATUS }}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
                     "text": "link"
                   }
                 ]
@@ -113,6 +159,20 @@
                   {
                     "type": "text",
                     "text": "ocp-fips"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "${{ env.OCP_FIPS_STATUS }}"
                   }
                 ]
               }
