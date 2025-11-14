@@ -29,9 +29,9 @@ func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *Validator, 
 	defaultVolumeMounts := databases.GetDefaultVolumeMounts(dk)
 	for _, database := range dk.Spec.Extensions.Databases {
 		for _, volumeMount := range database.VolumeMounts {
-			volumeFound := slices.IndexFunc(database.Volumes, func(volume corev1.Volume) bool {
+			volumeFound := slices.ContainsFunc(database.Volumes, func(volume corev1.Volume) bool {
 				return volume.Name == volumeMount.Name
-			}) >= 0
+			})
 			if !volumeFound {
 				log.Info("invalid database volume mount detected; no matching volume found", "volume", volumeMount.Name)
 
@@ -83,15 +83,9 @@ func unusedDatabasesVolume(_ context.Context, _ *Validator, dk *dynakube.DynaKub
 
 	for _, database := range dk.Spec.Extensions.Databases {
 		for _, volume := range database.Volumes {
-			volumeUsed := false
-
-			for _, volumeMount := range database.VolumeMounts {
-				if volumeMount.Name == volume.Name {
-					volumeUsed = true
-
-					break
-				}
-			}
+			volumeUsed := slices.ContainsFunc(database.VolumeMounts, func(volumeMount corev1.VolumeMount) bool {
+				return volumeMount.Name == volume.Name
+			})
 
 			if !volumeUsed {
 				log.Info("unmounted database volume detected", "volume", volume.Name)
