@@ -3,13 +3,13 @@ package app
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/mount-utils"
@@ -17,14 +17,21 @@ import (
 
 func TestPublishVolume(t *testing.T) {
 	ctx := context.Background()
-	path := metadata.PathResolver{}
 
 	t.Run("early return - FS problem during timeout check == skip mounting", func(t *testing.T) {
-		fs := getFailFs(t)
+		problematicFolder := filepath.Join(t.TempDir(), "boom")
+		require.NoError(t, os.MkdirAll(problematicFolder, 0444)) // r--r--r--, "readonly"
+
+		t.Cleanup(func() {
+			// needed, otherwise the `problematicFolder` wont be cleaned up after the test
+			os.Chmod(problematicFolder, 0755)
+		})
+
+		path := metadata.PathResolver{RootDir: problematicFolder}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
 
-		pub := NewPublisher(fs, mounter, path)
+		pub := NewPublisher(mounter, path)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.NoError(t, err)
@@ -32,15 +39,14 @@ func TestPublishVolume(t *testing.T) {
 	})
 
 	t.Run("early return - retry limit reached", func(t *testing.T) {
-		fs := getTestFs(t)
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
-		require.NoError(t, fs.Mkdir(path.AppMountForID(volumeCfg.VolumeID), os.ModePerm))
+		require.NoError(t, os.MkdirAll(path.AppMountForID(volumeCfg.VolumeID), os.ModePerm))
 
 		pastTime := timeprovider.New()
 		pastTime.Set(time.Now().Add(2 * volumeCfg.RetryTimeout))
 		pub := Publisher{
-			fs:      fs,
 			mounter: mounter,
 			path:    path,
 			time:    pastTime,
@@ -54,11 +60,11 @@ func TestPublishVolume(t *testing.T) {
 	})
 
 	t.Run("early return (with error) - no binary present", func(t *testing.T) {
-		fs := getTestFs(t)
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
 
-		pub := NewPublisher(fs, mounter, path)
+		pub := NewPublisher(mounter, path)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.Error(t, err)
@@ -68,14 +74,15 @@ func TestPublishVolume(t *testing.T) {
 	})
 
 	t.Run("early return (with error) - binary is just a file", func(t *testing.T) {
-		fs := getTestFs(t)
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
-		file, err := fs.Create(path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName))
+		require.NoError(t, os.MkdirAll(filepath.Dir(path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)), os.ModePerm))
+		file, err := os.Create(path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName))
 		require.NoError(t, err)
 		require.NoError(t, file.Close())
 
-		pub := NewPublisher(fs, mounter, path)
+		pub := NewPublisher(mounter, path)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.Error(t, err)
@@ -85,65 +92,55 @@ func TestPublishVolume(t *testing.T) {
 	})
 
 	t.Run("happy path", func(t *testing.T) {
-		fs := getTestFs(t)
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
 
 		// Binary present
 		binaryDir := path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
-		require.NoError(t, fs.MkdirAll(binaryDir, os.ModePerm))
+		testBinary := path.AgentSharedBinaryDirForAgent("test")
+		require.NoError(t, os.MkdirAll(filepath.Dir(binaryDir), os.ModePerm))
+		require.NoError(t, os.MkdirAll(testBinary, os.ModePerm))
+		require.NoError(t, os.Symlink(testBinary, binaryDir))
 
-		pub := NewPublisher(fs, mounter, path)
+		pub := NewPublisher(mounter, path)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
 		// Directories created correctly
-		targetDirExists, _ := fs.IsDir(volumeCfg.TargetPath)
-		assert.True(t, targetDirExists)
+		assert.DirExists(t, volumeCfg.TargetPath)
 
 		varDir := path.AppMountVarDir(volumeCfg.VolumeID)
-		varDirExits, _ := fs.IsDir(varDir)
-		assert.True(t, varDirExits)
+		assert.DirExists(t, varDir)
 
 		mappedDir := path.AppMountMappedDir(volumeCfg.VolumeID)
-		mappedDirExits, _ := fs.IsDir(mappedDir)
-		assert.True(t, mappedDirExits)
+		assert.DirExists(t, mappedDir)
 
 		workDir := path.AppMountWorkDir(volumeCfg.VolumeID)
-		workDirExits, _ := fs.IsDir(workDir)
-		assert.True(t, workDirExits)
+		assert.DirExists(t, workDir)
 
-		// Mount happened
-		// mounter.IsMountPoint can't be used as it uses os.Stat
-		require.Len(t, mounter.MountPoints, 2)
+		isMountPoint, err := mounter.IsMountPoint(mappedDir)
+		require.NoError(t, err)
+		assert.True(t, isMountPoint)
+
 		overlayMount := mounter.MountPoints[0]
 		assert.Equal(t, "overlay", overlayMount.Device)
-		assert.Equal(t, mappedDir, overlayMount.Path)
+		assert.Contains(t, overlayMount.Path, mappedDir)
 		require.Len(t, overlayMount.Opts, 3)
-		assert.Contains(t, overlayMount.Opts[0], binaryDir) // lowerdir
-		assert.Contains(t, overlayMount.Opts[1], varDir)    // upperdir
-		assert.Contains(t, overlayMount.Opts[2], workDir)   // workdir
+		assert.Contains(t, overlayMount.Opts[0], testBinary) // lowerdir
+		assert.Contains(t, overlayMount.Opts[1], varDir)     // upperdir
+		assert.Contains(t, overlayMount.Opts[2], workDir)    // workdir
+
+		isMountPoint, err = mounter.IsMountPoint(volumeCfg.TargetPath)
+		require.NoError(t, err)
+		assert.True(t, isMountPoint)
 
 		bindMount := mounter.MountPoints[1]
-		assert.Equal(t, "overlay", bindMount.Device) // this is set to "overlay" by the FakeMounter to mimic a linux FS
+		assert.Equal(t, mappedDir, bindMount.Device)
 		assert.Equal(t, volumeCfg.TargetPath, bindMount.Path)
 	})
-}
-
-func getTestFs(t *testing.T) afero.Afero {
-	t.Helper()
-
-	return afero.Afero{Fs: afero.NewMemMapFs()}
-}
-
-func getFailFs(t *testing.T) afero.Afero {
-	t.Helper()
-
-	afero.NewReadOnlyFs(getTestFs(t))
-
-	return afero.Afero{Fs: afero.NewReadOnlyFs(getTestFs(t))}
 }
 
 func getTestVolumeConfig(t *testing.T) csivolumes.VolumeConfig {

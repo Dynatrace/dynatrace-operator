@@ -10,12 +10,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/klauspost/compress/zip"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 )
 
-func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir string) error {
+func (extractor OneAgentExtractor) ExtractZip(sourceFile *os.File, targetDir string) error {
 	extractor.cleanTempZipDir()
-	fs := extractor.fs
 
 	if sourceFile == nil {
 		return errors.New("file is nil")
@@ -40,7 +38,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 		extractDest = targetDir
 	}
 
-	err = extractFilesFromZip(fs, extractDest, reader)
+	err = extractFilesFromZip(extractDest, reader)
 	if err != nil {
 		log.Info("failed to extract files from zip", "err", err)
 
@@ -59,8 +57,8 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 	return nil
 }
 
-func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) error {
-	if err := fs.MkdirAll(targetDir, common.MkDirFileMode); err != nil {
+func extractFilesFromZip(targetDir string, reader *zip.Reader) error {
+	if err := os.MkdirAll(targetDir, common.MkDirFileMode); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -75,7 +73,7 @@ func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) erro
 		mode := file.Mode()
 
 		if file.FileInfo().IsDir() {
-			err := fs.MkdirAll(path, mode)
+			err := os.MkdirAll(path, mode)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -87,11 +85,11 @@ func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) erro
 			mode = common.ReadWriteAllFileMode
 		}
 
-		if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), mode); err != nil {
 			return errors.WithStack(err)
 		}
 
-		dstFile, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+		dstFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 		if err != nil {
 			return errors.WithStack(err)
 		}

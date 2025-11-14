@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -20,7 +21,6 @@ import (
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -195,7 +195,7 @@ func areFsDirsCreated(t *testing.T, prov OneAgentProvisioner, dk *dynakube.DynaK
 		prov.path.AgentSharedBinaryDirBase(),
 	}
 	for _, folder := range neededFolders {
-		stat, err := prov.fs.Stat(folder)
+		stat, err := os.Stat(folder)
 		if err != nil || stat == nil || !stat.IsDir() {
 			return false
 		}
@@ -207,15 +207,13 @@ func areFsDirsCreated(t *testing.T, prov OneAgentProvisioner, dk *dynakube.DynaK
 func createProvisioner(t *testing.T, objs ...client.Object) OneAgentProvisioner {
 	t.Helper()
 
-	fs := afero.NewMemMapFs()
-	path := metadata.PathResolver{}
+	path := metadata.PathResolver{RootDir: t.TempDir()}
 	apiReader := fake.NewClient(objs...)
 
 	return OneAgentProvisioner{
-		fs:        fs,
 		path:      path,
 		apiReader: apiReader,
-		cleaner:   cleanup.New(afero.Afero{Fs: fs}, apiReader, path, mount.NewFakeMounter(nil)),
+		cleaner:   cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
 	}
 }
 
@@ -330,7 +328,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) urlInstallerBuilder {
 	t.Helper()
 
-	return func(f afero.Fs, _ dtclient.Client, _ *url.Properties) installer.Installer {
+	return func(_ dtclient.Client, _ *url.Properties) installer.Installer {
 		return mockedInstaller
 	}
 }
@@ -338,7 +336,7 @@ func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Instal
 func mockImageInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) imageInstallerBuilder {
 	t.Helper()
 
-	return func(_ context.Context, _ afero.Fs, _ *image.Properties) (installer.Installer, error) {
+	return func(_ context.Context, _ *image.Properties) (installer.Installer, error) {
 		return mockedInstaller, nil
 	}
 }
@@ -346,7 +344,7 @@ func mockImageInstallerBuilder(t *testing.T, mockedInstaller *installermock.Inst
 func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer, pullSecret string) jobInstallerBuilder {
 	t.Helper()
 
-	return func(_ context.Context, _ afero.Fs, props *job.Properties) installer.Installer {
+	return func(_ context.Context, props *job.Properties) installer.Installer {
 		if pullSecret != "" {
 			assert.Contains(t, props.PullSecrets, pullSecret)
 		} else {

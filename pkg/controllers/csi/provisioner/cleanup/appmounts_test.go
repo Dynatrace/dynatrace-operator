@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,10 +30,9 @@ func TestRemoveDeprecatedMounts(t *testing.T) {
 			cleaner.createDeprecatedDirs(t, folder, i, i*2)
 
 			expectedDir := cleaner.path.AgentRunDir(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			require.DirExists(t, expectedDir)
 
-			subdirs, err := cleaner.fs.ReadDir(expectedDir)
+			subdirs, err := os.ReadDir(expectedDir)
 			require.NoError(t, err)
 			require.Len(t, subdirs, i+i*2)
 		}
@@ -44,13 +44,12 @@ func TestRemoveDeprecatedMounts(t *testing.T) {
 		for i, folder := range deprecateDir {
 			expectedDir := cleaner.path.AgentRunDir(folder)
 
-			exists, _ := cleaner.fs.Exists(expectedDir)
 			if i == 0 {
-				require.False(t, exists)
+				assert.NoDirExists(t, expectedDir)
 			} else {
-				require.True(t, exists)
+				require.DirExists(t, expectedDir)
 
-				subdirs, err := cleaner.fs.ReadDir(expectedDir)
+				subdirs, err := os.ReadDir(expectedDir)
 				require.NoError(t, err)
 				require.Len(t, subdirs, i)
 			}
@@ -62,14 +61,14 @@ func (c *Cleaner) createDeprecatedDirs(t *testing.T, name string, subDirAmount, 
 	t.Helper()
 
 	runDir := c.path.AgentRunDir(name)
-	err := c.fs.MkdirAll(runDir, os.ModePerm)
+	err := os.MkdirAll(runDir, os.ModePerm)
 	require.NoError(t, err)
 
 	for i := range subDirAmount {
 		mappedDir := c.path.OverlayMappedDir(name, fmt.Sprintf("volume-%d", i))
-		err := c.fs.MkdirAll(mappedDir, os.ModePerm)
+		err := os.MkdirAll(mappedDir, os.ModePerm)
 		require.NoError(t, err)
-		file, err := c.fs.Create(filepath.Join(mappedDir, "something"))
+		file, err := os.Create(filepath.Join(mappedDir, "something"))
 		require.NoError(t, err)
 		_, err = file.WriteString("something")
 		require.NoError(t, err)
@@ -77,7 +76,7 @@ func (c *Cleaner) createDeprecatedDirs(t *testing.T, name string, subDirAmount, 
 
 	for i := range emptySubDirAmount {
 		mappedDir := c.path.OverlayMappedDir(name, fmt.Sprintf("volume-%d", i+subDirAmount))
-		err := c.fs.MkdirAll(mappedDir, os.ModePerm)
+		err := os.MkdirAll(mappedDir, os.ModePerm)
 		require.NoError(t, err)
 	}
 }

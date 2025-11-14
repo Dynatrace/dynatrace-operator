@@ -1,6 +1,7 @@
 package bootstrapper
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -101,17 +101,10 @@ func TestBootstrapArgs(t *testing.T) {
 }
 
 func TestBootstrapConfigurationStep(t *testing.T) {
-	const (
-		targetPath = "/mnt/bin"
-		configPath = "/mnt/config"
-		inputPath  = "/mnt/input"
-	)
-
-	setupFS := func(t *testing.T) afero.Afero {
+	setupFS := func(t *testing.T, inputPath, targetPath string) {
 		t.Helper()
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 
-		createFile(t, fs, filepath.Join(inputPath, "ruxitagentproc.json"), `
+		createFile(t, filepath.Join(inputPath, "ruxitagentproc.json"), `
 {
   "properties": [
     {
@@ -124,18 +117,20 @@ func TestBootstrapConfigurationStep(t *testing.T) {
 }
 `)
 
-		createFile(t, fs, filepath.Join(targetPath, "agent/conf/ruxitagentproc.conf"), "[general]\n")
+		createFile(t, filepath.Join(targetPath, "agent/conf/ruxitagentproc.conf"), "[general]\n")
 
-		createFile(t, fs, filepath.Join(inputPath, "endpoint.properties"), `DT_METRICS_INGEST_URL=http://ingest-url
+		createFile(t, filepath.Join(inputPath, "endpoint.properties"), `DT_METRICS_INGEST_URL=http://ingest-url
 	DT_METRICS_INGEST_API_TOKEN=apitoken`)
-
-		return fs
 	}
 
 	t.Run("only OA", func(t *testing.T) {
-		fs := setupFS(t)
+		tmpDir := t.TempDir()
+		targetPath := filepath.Join(tmpDir, "/mnt", "bin")
+		configPath := filepath.Join(tmpDir, "/mnt", "config")
+		inputPath := filepath.Join(tmpDir, "/mnt", "input")
+		setupFS(t, inputPath, targetPath)
 
-		cmd := newCmd(fs)
+		cmd := newCmd()
 		cmd.SetArgs([]string{
 			"bootstrap",
 			"--metadata-enrichment=false",
@@ -152,25 +147,22 @@ func TestBootstrapConfigurationStep(t *testing.T) {
 		err := cmd.Execute()
 		require.NoError(t, err)
 
-		exists, err := fs.Exists(filepath.Join(configPath, preload.ConfigPath))
-		require.NoError(t, err)
-		assert.True(t, exists)
+		assert.FileExists(t, filepath.Join(configPath, preload.ConfigPath))
 
 		containerConfigPath := filepath.Join(configPath, "test-container")
+		assert.FileExists(t, pmc.GetDestinationRuxitAgentProcFilePath(containerConfigPath))
 
-		exists, err = fs.Exists(pmc.GetDestinationRuxitAgentProcFilePath(containerConfigPath))
-		require.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = fs.Exists(filepath.Join(containerConfigPath, "enrichment/endpoint/endpoint.properties"))
-		require.NoError(t, err)
-		assert.False(t, exists)
+		assert.NoFileExists(t, filepath.Join(containerConfigPath, "enrichment/endpoint/endpoint.properties"))
 	})
 
 	t.Run("only metadata", func(t *testing.T) {
-		fs := setupFS(t)
+		tmpDir := t.TempDir()
+		targetPath := filepath.Join(tmpDir, "/mnt", "bin")
+		configPath := filepath.Join(tmpDir, "/mnt", "config")
+		inputPath := filepath.Join(tmpDir, "/mnt", "input")
+		setupFS(t, inputPath, targetPath)
 
-		cmd := newCmd(fs)
+		cmd := newCmd()
 		cmd.SetArgs([]string{
 			"bootstrap",
 			"--metadata-enrichment",
@@ -183,25 +175,22 @@ func TestBootstrapConfigurationStep(t *testing.T) {
 		err := cmd.Execute()
 		require.NoError(t, err)
 
-		exists, err := fs.Exists(filepath.Join(configPath, preload.ConfigPath))
-		require.NoError(t, err)
-		assert.False(t, exists)
+		assert.NoFileExists(t, filepath.Join(configPath, preload.ConfigPath))
 
 		containerConfigPath := filepath.Join(configPath, "test-container")
+		assert.NoFileExists(t, pmc.GetDestinationRuxitAgentProcFilePath(containerConfigPath))
 
-		exists, err = fs.Exists(pmc.GetDestinationRuxitAgentProcFilePath(containerConfigPath))
-		require.NoError(t, err)
-		assert.False(t, exists)
-
-		exists, err = fs.Exists(filepath.Join(containerConfigPath, "enrichment/endpoint/endpoint.properties"))
-		require.NoError(t, err)
-		assert.True(t, exists)
+		assert.FileExists(t, filepath.Join(containerConfigPath, "enrichment/endpoint/endpoint.properties"))
 	})
 
 	t.Run("OA + metadata", func(t *testing.T) {
-		fs := setupFS(t)
+		tmpDir := t.TempDir()
+		targetPath := filepath.Join(tmpDir, "/mnt", "bin")
+		configPath := filepath.Join(tmpDir, "/mnt", "config")
+		inputPath := filepath.Join(tmpDir, "/mnt", "input")
+		setupFS(t, inputPath, targetPath)
 
-		cmd := newCmd(fs)
+		cmd := newCmd()
 		cmd.SetArgs([]string{
 			"bootstrap",
 			"--metadata-enrichment",
@@ -218,28 +207,25 @@ func TestBootstrapConfigurationStep(t *testing.T) {
 		err := cmd.Execute()
 		require.NoError(t, err)
 
-		exists, err := fs.Exists(filepath.Join(configPath, preload.ConfigPath))
-		require.NoError(t, err)
-		assert.True(t, exists)
+		assert.FileExists(t, filepath.Join(configPath, preload.ConfigPath))
 
 		containerConfigPath := filepath.Join(configPath, "test-container")
+		assert.FileExists(t, pmc.GetDestinationRuxitAgentProcFilePath(containerConfigPath))
 
-		exists, err = fs.Exists(pmc.GetDestinationRuxitAgentProcFilePath(containerConfigPath))
-		require.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = fs.Exists(filepath.Join(containerConfigPath, "enrichment/endpoint/endpoint.properties"))
-		require.NoError(t, err)
-		assert.True(t, exists)
+		assert.FileExists(t, filepath.Join(containerConfigPath, "enrichment/endpoint/endpoint.properties"))
 	})
 }
 
-func createFile(t *testing.T, fs afero.Fs, filePath string, content string) {
-	file, err := fs.Create(filePath)
+func createFile(t *testing.T, filePath string, content string) {
+	t.Helper()
+
+	require.NoError(t, os.MkdirAll(filepath.Dir(filePath), os.ModePerm))
+
+	file, err := os.Create(filePath)
 	require.NoError(t, err)
 
 	if content != "" {
-		_, err = file.Write([]byte(content))
+		_, err = file.WriteString(content)
 		require.NoError(t, err)
 	}
 
