@@ -8,8 +8,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
-	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -21,6 +21,15 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+			Templates: dynakube.TemplatesSpec{
+				ExtensionExecutionController: extensions.ExecutionControllerSpec{
+					ImageRef: image.Ref{
+						Repository: "some-repo",
+						Tag:        "some-tag",
+					},
+				},
+			},
 			Extensions: &extensions.Spec{
 				Databases: []extensions.DatabaseSpec{},
 			},
@@ -29,9 +38,8 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 
 	t.Run("no databases defined => no error", func(t *testing.T) {
 		dk := baseDk.DeepCopy()
-		response := conflictingOrInvalidDatabasesVolumeMounts(t.Context(), nil, dk)
 
-		assert.Empty(t, response)
+		assertAllowedWithoutWarnings(t, dk)
 	})
 
 	t.Run("non-conflicting paths => no error", func(t *testing.T) {
@@ -55,9 +63,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 		dk := baseDk.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
-		response := conflictingOrInvalidDatabasesVolumeMounts(t.Context(), nil, dk)
-
-		assert.Empty(t, response)
+		assertAllowedWithWarnings(t, 2, dk)
 	})
 
 	t.Run("default volume mount used => conflicts => fail", func(t *testing.T) {
@@ -76,10 +82,10 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
-		expectedError := fmt.Sprintf(errorConflictingDatabasesVolumeMounts, volumeMountPath, defaultVolumeMount.MountPath)
-		actualError := conflictingOrInvalidDatabasesVolumeMounts(t.Context(), nil, dk)
-
-		assert.Equal(t, expectedError, actualError)
+		expectedErrors := []string{
+			fmt.Sprintf(errorConflictingDatabasesVolumeMounts, volumeMountPath, defaultVolumeMount.MountPath),
+		}
+		assertDenied(t, expectedErrors, dk)
 	})
 
 	t.Run("invalid volume mount path => error", func(t *testing.T) {
@@ -98,9 +104,11 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 
 		dk := baseDk.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
-		response := conflictingOrInvalidDatabasesVolumeMounts(t.Context(), nil, dk)
 
-		assert.Equal(t, fmt.Sprintf(errorInvalidDatabasesVolumeMountPath, volumeMountPath), response)
+		expectedErrors := []string{
+			fmt.Sprintf(errorInvalidDatabasesVolumeMountPath, volumeMountPath),
+		}
+		assertDenied(t, expectedErrors, dk)
 	})
 }
 
@@ -111,6 +119,15 @@ func TestUnusedVolumes(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+			Templates: dynakube.TemplatesSpec{
+				ExtensionExecutionController: extensions.ExecutionControllerSpec{
+					ImageRef: image.Ref{
+						Repository: "some-repo",
+						Tag:        "some-tag",
+					},
+				},
+			},
 			Extensions: &extensions.Spec{
 				Databases: []extensions.DatabaseSpec{},
 			},
@@ -128,10 +145,10 @@ func TestUnusedVolumes(t *testing.T) {
 		dk := baseDk.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
-		expectedError := fmt.Sprintf(errorUnusedDatabasesVolumes, strings.Join(volumeNames, ", "))
-		actualError := unusedDatabasesVolume(t.Context(), nil, dk)
-
-		assert.Equal(t, expectedError, actualError)
+		expectedErrors := []string{
+			fmt.Sprintf(errorUnusedDatabasesVolumes, strings.Join(volumeNames, ", ")),
+		}
+		assertDenied(t, expectedErrors, dk)
 	})
 
 	t.Run("no unused volumes => no error", func(t *testing.T) {
@@ -147,9 +164,7 @@ func TestUnusedVolumes(t *testing.T) {
 		dk := baseDk.DeepCopy()
 		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, dbSpec)
 
-		response := unusedDatabasesVolume(t.Context(), nil, dk)
-
-		assert.Empty(t, response)
+		assertAllowedWithWarnings(t, 2, dk)
 	})
 }
 
@@ -163,6 +178,15 @@ func TestHostPathDatabaseVolume(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				Templates: dynakube.TemplatesSpec{
+					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						ImageRef: image.Ref{
+							Repository: "some-repo",
+							Tag:        "some-tag",
+						},
+					},
+				},
 				Extensions: &extensions.Spec{
 					Databases: []extensions.DatabaseSpec{
 						{
@@ -189,8 +213,6 @@ func TestHostPathDatabaseVolume(t *testing.T) {
 			},
 		}
 
-		response := hostPathDatabaseVolumeFound(t.Context(), nil, dk)
-
-		assert.Equal(t, warningHostPathDatabaseVolumeDetected, response)
+		assertAllowedWithWarnings(t, 3, dk)
 	})
 }
