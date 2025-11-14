@@ -4,7 +4,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "E2E daily test results"
+        "text": "E2E daily test results for `${{ github.sha }}`"
       }
     },
     {
@@ -19,10 +19,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "environment",
-                    "style": {
-                      "bold": true
-                    }
+                    "text": "environment"
                   }
                 ]
               }
@@ -40,20 +37,6 @@
                     "style": {
                       "bold": true
                     }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "link to test run"
                   }
                 ]
               }
@@ -82,23 +65,13 @@
                 "type": "rich_text_section",
                 "elements": [
                   {
-                    "type": "text",
-                    "text": "${{ env.K8S_STATUS }}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
+                    "type": "emoji",
+                    "name": "white_check_mark"
+                  },
                   {
                     "type": "link",
-                    "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                    "text": "link"
+                    "text": " ${{ env.K8S_STATUS }} ",
+                    "url": "https://api.slack.com"
                   }
                 ]
               }
@@ -133,20 +106,6 @@
                 ]
               }
             ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "link"
-                  }
-                ]
-              }
-            ]
           }
         ],
         [
@@ -177,22 +136,22 @@
                 ]
               }
             ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "link"
-                  }
-                ]
-              }
-            ]
           }
         ]
+      ]
+    },
+    {
+      "type": "rich_text",
+      "elements": [
+        {
+          "type": "rich_text_section",
+          "elements": [
+            {
+              "type": "link",
+              "url": "https://github.com/${{ github.payload.repository.full_name }}/actions/runs/${{ github.runId }}"
+            }
+          ]
+        }
       ]
     }
   ]
