@@ -69,8 +69,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 		dk := baseDk.DeepCopy()
 
 		defaultVolumeMount := databases.GetDefaultVolumeMounts(dk)[0]
-		volumeNamePrefix := "illegal"
-		volumeName := fmt.Sprintf("%s-%s", volumeNamePrefix, defaultVolumeMount.Name)
+		volumeName := "some-volume"
 		volumeMountPath := filepath.Join(defaultVolumeMount.MountPath, "some", "sub", "path")
 		dbSpec.Volumes = append(dbSpec.Volumes, corev1.Volume{Name: volumeName})
 		dbSpec.VolumeMounts = append(dbSpec.VolumeMounts, corev1.VolumeMount{Name: volumeName, MountPath: volumeMountPath})
