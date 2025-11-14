@@ -27,6 +27,21 @@ const (
 	// - link_to_test.txt (symlink to test.txt)
 	// - link_to_dir (symlink to testdir)
 	TestRawGzipWithSymlinks = `H4sIAAMnF2kC/+3ZzWrCQBiF4ax7FXMFcX4zuih02WXvQIJObKgaSMZi774TLLRVpLhICuZ9NkoIBDTfOX4mn+Wzp5fy+BzKdWizQciTa69SGvv9vj+upFY6E8dsBIculm26fDZNei52sd6FR+ULo7RdLFzulVlYVzxkuHsxdDGPxzjkNfqhLuxpxn3hTrOuf8y8UZlySrpCGyvTcWWKNJBCjjn/u7Jdhe0278L7qqvfLs5Lp1XV/X3/H81BVM1hvxbxNYhQdjG0Imw2DP805PQ//X/R/1Z5PScCJtL/67qdDd3/3rnr/Z+m76z/Xfq5IBz9T/6T//+R/+nzt+T/hPK/qrdBD7QI/rn/aX2W/86w/42j3Ddp8WtFfx+I/iZg6tn/6H/6n/6n/+l/+h/0P/0/tf43ynmSYAK29f5tGZvlkM+Bb///10tTZEKP8XCa/3/Jf/L/PP+tNJr8n1D+px1wsGvcnv/O9/uf/lpO2f8AAAAAAAAAAAAAAAAAAPjtEyBMCpgAUAAA`
+
+	// TestRawGzipWithNestedSymlinks is a gzip archive with multiple levels of subdirectories containing symlinks:
+	// - root.txt (regular file at root)
+	// - level1/ (directory)
+	//   - file1.txt (regular file)
+	//   - link_to_root.txt (symlink to ../root.txt)
+	//   - level2/ (directory)
+	//     - file2.txt (regular file)
+	//     - link_to_level1.txt (symlink to ../file1.txt)
+	//     - link_to_root.txt (symlink to ../../root.txt)
+	//     - level3/ (directory)
+	//       - file3.txt (regular file)
+	//       - link_to_level2.txt (symlink to ../file2.txt)
+	//       - link_to_level1_dir (symlink to ../../..)
+	TestRawGzipWithNestedSymlinks = `H4sIAJs0F2kC/+2c3Y6aUBRGue5T8ARwzj5/eNGkl73sGxjjYGIGNUE68fHLT9tpxzENjmDqWSsmGCXhAvf6+ADJ8iz/8m11+lqunso6mQQ1cGmplLGv77vPtRItSXpKZuD7sVnV7eaTOJEi3TXbXflZB2+0FDa4TIxRhfefEnh46sOhyZpTM+U2uqH2dpjx4N0w6/LHzIsk2mnlvJH2t9fOv/HKJqmac/53q3pdVlV2LF/Wx+3z2XrtapvNY+7/dLOtynR92DflvmHqoyIj/8n/8/y3QS8wQQRU5UtZ6XzSbfS579zl/G+n703+i/NJ6sj/SPxvzv2v8f8s/g/v+t8oh/4j8n/XAPRUPfCf/U+7N/53bQTQ/2bb/6nuKyATT/+j/9H/WgcXEiw6iCf/+4Xk083/uP5nrQ30P/yP/+/kf7eQgP+j83/XAuTmNXB8//OiHP1vvv4n9D/6H/lP/v/Mf6tFcf9PfPnfL0w+wfyP63/OW03/w//4/079b2E8FwCj9X9XBsztauD4/hdsO5D0v9n6n6H/0f/If/L/d//TC87/Rpv/1Xb/vGwOy+HL5dO2/vD8j+p/Ilr5JJWstVP3Iv8f3P/c/3k3/797/6dVRtA//u8//XARHO9/I14N/p/miiT+5/gf/18+/jc+BE0AxOf/vw78b6XdK47/lbev/tf4H//j/zn9H5wq8H+0/r/tU0Gu8X+7+q/zP9M+ogT/43/8f/b/36Lg/H9M/p9E/Ff7X1mnB/9P/nyqyP0PAAAAAAAAAAAAAAAAAAAAAAAAAP8fPwBLDPj1AHgAAA==`
 )
 
 func SetupInvalidTestZip(t *testing.T, tmpDir string) *os.File {

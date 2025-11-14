@@ -76,7 +76,7 @@ func extract(targetDir string, reader *tar.Reader, header *tar.Header, target st
 			return errors.WithStack(err)
 		}
 	case tar.TypeSymlink:
-		if err := extractSymlink(targetDir, target, header); err != nil {
+		if err := extractSymlink(target, header); err != nil {
 			return errors.WithStack(err)
 		}
 	case tar.TypeReg:
@@ -98,12 +98,31 @@ func extractLink(targetDir, target string, header *tar.Header) error {
 	return nil
 }
 
-func extractSymlink(targetDir, target string, header *tar.Header) error {
-	if err := os.Symlink(filepath.Join(targetDir, header.Linkname), target); err != nil {
-		return errors.WithStack(err)
+func extractSymlink(target string, header *tar.Header) error {
+	if isRel(header.Linkname, target) && isRel(header.Name, target) {
+		if err := os.Symlink(header.Linkname, target); err != nil {
+			return errors.WithStack(err)
+		}
 	}
 
 	return nil
+}
+
+func isRel(candidate, target string) bool {
+	if filepath.IsAbs(candidate) {
+		return false
+	}
+
+	path := filepath.Join(target, candidate)
+
+	realpath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return false
+	}
+
+	relpath, err := filepath.Rel(target, realpath)
+
+	return err == nil && !strings.HasPrefix(filepath.Clean(relpath), "..")
 }
 
 func extractFile(target string, header *tar.Header, tarReader *tar.Reader) error {
