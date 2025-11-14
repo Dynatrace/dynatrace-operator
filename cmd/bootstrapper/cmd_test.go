@@ -130,7 +130,7 @@ func TestBootstrapConfigurationStep(t *testing.T) {
 		inputPath := filepath.Join(tmpDir, "/mnt", "input")
 		setupFS(t, inputPath, targetPath)
 
-		cmd := newCmd()
+		cmd := New()
 		cmd.SetArgs([]string{
 			"bootstrap",
 			"--metadata-enrichment=false",
@@ -162,7 +162,7 @@ func TestBootstrapConfigurationStep(t *testing.T) {
 		inputPath := filepath.Join(tmpDir, "/mnt", "input")
 		setupFS(t, inputPath, targetPath)
 
-		cmd := newCmd()
+		cmd := New()
 		cmd.SetArgs([]string{
 			"bootstrap",
 			"--metadata-enrichment",
@@ -190,7 +190,7 @@ func TestBootstrapConfigurationStep(t *testing.T) {
 		inputPath := filepath.Join(tmpDir, "/mnt", "input")
 		setupFS(t, inputPath, targetPath)
 
-		cmd := newCmd()
+		cmd := New()
 		cmd.SetArgs([]string{
 			"bootstrap",
 			"--metadata-enrichment",

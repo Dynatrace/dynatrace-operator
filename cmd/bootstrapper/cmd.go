@@ -40,10 +40,6 @@ var (
 )
 
 func New() *cobra.Command {
-	return newCmd()
-}
-
-func newCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                Use,
 		RunE:               run,
