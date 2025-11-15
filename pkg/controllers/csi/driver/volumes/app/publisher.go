@@ -28,15 +28,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	mount "k8s.io/mount-utils"
 )
 
-func NewPublisher(fs afero.Afero, mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
+func NewPublisher(mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
 	return &Publisher{
-		fs:      fs,
 		mounter: mounter,
 		path:    path,
 		time:    timeprovider.New(),
@@ -44,7 +42,6 @@ func NewPublisher(fs afero.Afero, mounter mount.Interface, path metadata.PathRes
 }
 
 type Publisher struct {
-	fs      afero.Afero
 	mounter mount.Interface
 	time    *timeprovider.Provider
 	path    metadata.PathResolver
@@ -76,10 +73,10 @@ func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.V
 func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) bool {
 	appDir := pub.path.AppMountForID(volumeCfg.VolumeID)
 
-	stat, err := pub.fs.Stat(appDir)
+	stat, err := os.Stat(appDir)
 	if errors.Is(err, os.ErrNotExist) {
 		// First run, create folder, to keep track of time
-		err := pub.fs.MkdirAll(appDir, os.ModePerm)
+		err := os.MkdirAll(appDir, os.ModePerm)
 		if err != nil {
 			log.Error(err, "failed to create base dir for app mount, skipping injection", "dir", appDir)
 
@@ -103,7 +100,7 @@ func (pub *Publisher) hasRetryLimitReached(volumeCfg *csivolumes.VolumeConfig) b
 func (pub *Publisher) isCodeModuleAvailable(volumeCfg *csivolumes.VolumeConfig) bool {
 	binDir := pub.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
 
-	stat, err := pub.fs.Stat(binDir)
+	stat, err := os.Stat(binDir)
 	if errors.Is(err, os.ErrNotExist) {
 		log.Info("no CodeModule is available to mount yet, will retry later", "dynakube", volumeCfg.DynakubeName)
 
@@ -120,7 +117,7 @@ func (pub *Publisher) isCodeModuleAvailable(volumeCfg *csivolumes.VolumeConfig) 
 func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error {
 	mappedDir := pub.path.AppMountMappedDir(volumeCfg.VolumeID)
 
-	err := pub.fs.MkdirAll(mappedDir, os.ModePerm)
+	err := os.MkdirAll(mappedDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -132,21 +129,16 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 
 	workDir := pub.path.AppMountWorkDir(volumeCfg.VolumeID)
 
-	err = pub.fs.MkdirAll(workDir, os.ModePerm)
+	err = os.MkdirAll(workDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	lowerDir := pub.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)
+	lowerDir, err := os.Readlink(pub.path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName))
+	if err != nil {
+		log.Info("failed to read symlink for latest CodeModule", "symlink", lowerDir)
 
-	linker, ok := pub.fs.Fs.(afero.LinkReader)
-	if ok { // will only be !ok during unit testing
-		lowerDir, err = linker.ReadlinkIfPossible(lowerDir)
-		if err != nil {
-			log.Info("failed to read symlink for latest CodeModule", "symlink", lowerDir)
-
-			return err
-		}
+		return err
 	}
 
 	overlayOptions := []string{
@@ -155,7 +147,7 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 		"workdir=" + workDir,
 	}
 
-	if err := pub.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -179,17 +171,17 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 
 func (pub *Publisher) addPodInfoSymlink(volumeCfg *csivolumes.VolumeConfig) error {
 	appMountPodInfoDir := pub.path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
-	if err := pub.fs.MkdirAll(appMountPodInfoDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(appMountPodInfoDir, os.ModePerm); err != nil {
 		return err
 	}
 
 	targetDir := pub.path.AppMountForID(volumeCfg.VolumeID)
 
-	if err := symlink.Remove(pub.fs.Fs, appMountPodInfoDir); err != nil {
+	if err := symlink.Remove(appMountPodInfoDir); err != nil {
 		return err
 	}
 
-	err := symlink.Create(pub.fs.Fs, targetDir, appMountPodInfoDir)
+	err := symlink.Create(targetDir, appMountPodInfoDir)
 	if err != nil {
 		return err
 	}
@@ -200,7 +192,7 @@ func (pub *Publisher) addPodInfoSymlink(volumeCfg *csivolumes.VolumeConfig) erro
 func (pub *Publisher) prepareUpperDir(volumeCfg *csivolumes.VolumeConfig) (string, error) {
 	upperDir := pub.path.AppMountVarDir(volumeCfg.VolumeID)
 
-	err := pub.fs.MkdirAll(upperDir, os.ModePerm)
+	err := os.MkdirAll(upperDir, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
@@ -217,7 +209,7 @@ func (pub *Publisher) preparePodInfoUpperDir(volumeCfg *csivolumes.VolumeConfig)
 	content := pub.path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
 	destPath := pub.path.OverlayVarPodInfo(volumeCfg.VolumeID)
 
-	destFile, err := pub.fs.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	destFile, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to open destination pod-info file, path: %s", destPath)
 	}

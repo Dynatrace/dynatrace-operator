@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	certsutils "github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,7 +29,6 @@ const (
 
 type CertificateWatcher struct {
 	apiReader             client.Reader
-	fs                    afero.Fs
 	certificateDirectory  string
 	namespace             string
 	certificateSecretName string
@@ -44,7 +42,6 @@ func NewCertificateWatcher(mgr manager.Manager, namespace string, secretName str
 
 	return &CertificateWatcher{
 		apiReader:             mgr.GetAPIReader(),
-		fs:                    afero.NewOsFs(),
 		certificateDirectory:  webhookServer.Options.CertDir,
 		namespace:             namespace,
 		certificateSecretName: secretName,
@@ -73,8 +70,8 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 		return false, err
 	}
 
-	if _, err = watcher.fs.Stat(watcher.certificateDirectory); os.IsNotExist(err) {
-		err = watcher.fs.MkdirAll(watcher.certificateDirectory, permDirUser)
+	if _, err = os.Stat(watcher.certificateDirectory); os.IsNotExist(err) {
+		err = os.MkdirAll(watcher.certificateDirectory, permDirUser)
 		if err != nil {
 			return false, errors.WithMessage(err, "could not create cert directory")
 		}
@@ -99,9 +96,9 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 func (watcher *CertificateWatcher) ensureCertificateFile(secret corev1.Secret, filename string) (bool, error) {
 	f := filepath.Join(watcher.certificateDirectory, filename)
 
-	data, err := afero.ReadFile(watcher.fs, f)
+	data, err := os.ReadFile(f)
 	if os.IsNotExist(err) || !bytes.Equal(data, secret.Data[filename]) {
-		if err := afero.WriteFile(watcher.fs, f, secret.Data[filename], permAll); err != nil {
+		if err := os.WriteFile(f, secret.Data[filename], permAll); err != nil {
 			return false, err
 		}
 	} else {

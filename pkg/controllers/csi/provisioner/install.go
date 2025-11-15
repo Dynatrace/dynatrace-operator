@@ -60,7 +60,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 			PathResolver: provisioner.path,
 		}
 
-		imageInstaller, err := provisioner.imageInstallerBuilder(ctx, provisioner.fs, props)
+		imageInstaller, err := provisioner.imageInstallerBuilder(ctx, props)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func (provisioner *OneAgentProvisioner) getInstaller(ctx context.Context, dk dyn
 			PathResolver:  provisioner.path,
 		}
 
-		urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, props)
+		urlInstaller := provisioner.urlInstallerBuilder(dtc, props)
 
 		return urlInstaller, nil
 	}
@@ -110,7 +110,7 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		CSIJob:       csijob.GetSettings(),
 	}
 
-	return provisioner.jobInstallerBuilder(ctx, provisioner.fs, props)
+	return provisioner.jobInstallerBuilder(ctx, props)
 }
 
 func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) string {
@@ -129,11 +129,11 @@ func (provisioner *OneAgentProvisioner) getTargetDir(dk dynakube.DynaKube) strin
 
 func (provisioner *OneAgentProvisioner) createLatestVersionSymlink(dk dynakube.DynaKube, targetDir string) error {
 	symlinkPath := provisioner.path.LatestAgentBinaryForDynaKube(dk.GetName())
-	if err := symlink.Remove(provisioner.fs, symlinkPath); err != nil {
+	if err := symlink.Remove(symlinkPath); err != nil {
 		return err
 	}
 
-	err := symlink.Create(provisioner.fs, targetDir, symlinkPath)
+	err := symlink.Create(targetDir, symlinkPath)
 	if err != nil {
 		return err
 	}

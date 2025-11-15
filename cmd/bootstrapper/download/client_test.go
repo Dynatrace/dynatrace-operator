@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	dtclientmocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -46,8 +45,7 @@ func TestNew(t *testing.T) {
 		require.NotNil(t, dtClient)
 		require.IsType(t, &dtclientmocks.Client{}, dtClient)
 
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
-		installer := client.newInstaller(fs, dtClient, props)
+		installer := client.newInstaller(dtClient, props)
 		require.NotNil(t, installer)
 		require.IsType(t, &installermock.Installer{}, installer)
 	})
@@ -55,11 +53,11 @@ func TestNew(t *testing.T) {
 
 func TestDo(t *testing.T) {
 	ctx := context.Background()
-	inputDir := "input"
-	targetDir := "target"
 
 	t.Run("no config ==> error", func(t *testing.T) {
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
+		tmpDir := t.TempDir()
+		inputDir := filepath.Join(tmpDir, "input")
+		targetDir := filepath.Join(tmpDir, "target")
 
 		opts := []Option{
 			WithDTClient(dtClientTester(t, []dtclient.Option{}...)),
@@ -67,18 +65,20 @@ func TestDo(t *testing.T) {
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, fs, inputDir, targetDir, url.Properties{})
+		err := client.Do(ctx, inputDir, targetDir, url.Properties{})
 		require.Error(t, err)
 	})
 
 	t.Run("happy path", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		inputDir := filepath.Join(tmpDir, "input")
+		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 		props := &url.Properties{
 			Os:   "os",
 			Arch: "arch",
 		}
-		setupConfig(t, &fs, inputDir, config)
+		setupConfig(t, inputDir, config)
 
 		opts := []Option{
 			WithDTClient(dtClientTester(t, config.toDTClientOptions()...)),
@@ -88,21 +88,24 @@ func TestDo(t *testing.T) {
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, fs, inputDir, targetDir, *props)
+		err := client.Do(ctx, inputDir, targetDir, *props)
 		require.NoError(t, err)
 	})
 
 	t.Run("certs available ==> extra option", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		inputDir := filepath.Join(tmpDir, "input")
+		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 		props := &url.Properties{
 			Os:   "os",
 			Arch: "arch",
 		}
-		err := fs.WriteFile(filepath.Join(inputDir, ca.TrustedCertsInputFile), []byte("cert"), os.ModePerm)
+		os.MkdirAll(inputDir, os.ModePerm)
+		err := os.WriteFile(filepath.Join(inputDir, ca.TrustedCertsInputFile), []byte("cert"), 0600)
 		require.NoError(t, err)
 
-		setupConfig(t, &fs, inputDir, config)
+		setupConfig(t, inputDir, config)
 
 		expectedOpts := config.toDTClientOptions()
 		expectedOpts = append(expectedOpts, dtclient.Certs([]byte("cert")))
@@ -115,18 +118,20 @@ func TestDo(t *testing.T) {
 		}
 		client := New(opts...)
 
-		err = client.Do(ctx, fs, inputDir, targetDir, *props)
+		err = client.Do(ctx, inputDir, targetDir, *props)
 		require.NoError(t, err)
 	})
 
 	t.Run("installer error ==> error", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		inputDir := filepath.Join(tmpDir, "input")
+		targetDir := filepath.Join(tmpDir, "target")
 		config := testConfig(t)
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 		props := &url.Properties{
 			Os:   "os",
 			Arch: "arch",
 		}
-		setupConfig(t, &fs, inputDir, config)
+		setupConfig(t, inputDir, config)
 
 		expectedErr := errors.New("boom")
 
@@ -138,7 +143,7 @@ func TestDo(t *testing.T) {
 		}
 		client := New(opts...)
 
-		err := client.Do(ctx, fs, inputDir, targetDir, *props)
+		err := client.Do(ctx, inputDir, targetDir, *props)
 		require.Error(t, err)
 		require.ErrorIs(t, err, expectedErr)
 	})
@@ -149,8 +154,7 @@ type mockConfigFunc func(*installermock.Installer)
 func installerTester(t *testing.T, expectedProps *url.Properties, mockFunc mockConfigFunc) url.NewFunc {
 	t.Helper()
 
-	return func(fs afero.Fs, dtc dtclient.Client, props *url.Properties) installer.Installer {
-		require.NotNil(t, fs)
+	return func(dtc dtclient.Client, props *url.Properties) installer.Installer {
 		require.NotNil(t, dtc)
 		require.NotEmpty(t, props)
 		require.Equal(t, *expectedProps, *props)

@@ -3,12 +3,12 @@ package job
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
@@ -20,36 +20,30 @@ import (
 func TestIsAlreadyPresent(t *testing.T) {
 	testImageURL := "test:5000/repo@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 	testVersion := "1.2.3"
-	pathResolver := metadata.PathResolver{}
 
 	t.Run("returns early if path doesn't exist", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 		installer := Installer{
-			fs: afero.NewMemMapFs(),
 			props: &Properties{
-				PathResolver: pathResolver,
+				PathResolver: path,
 				ImageURI:     testImageURL,
 			},
 		}
-		isDownloaded := installer.isAlreadyPresent(pathResolver.AgentSharedBinaryDirForAgent(testVersion))
+		isDownloaded := installer.isAlreadyPresent(path.AgentSharedBinaryDirForAgent(testVersion))
 		assert.False(t, isDownloaded)
 	})
 	t.Run("returns true if path present", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
+		_ = os.MkdirAll(path.AgentSharedBinaryDirForAgent(testVersion), 0777)
+
 		installer := Installer{
-			fs: testFileSystemWithSharedDirPresent(pathResolver, testVersion),
 			props: &Properties{
-				PathResolver: pathResolver,
+				PathResolver: path,
 			},
 		}
-		isDownloaded := installer.isAlreadyPresent(pathResolver.AgentSharedBinaryDirForAgent(testVersion))
+		isDownloaded := installer.isAlreadyPresent(path.AgentSharedBinaryDirForAgent(testVersion))
 		assert.True(t, isDownloaded)
 	})
-}
-
-func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imageDigest string) afero.Fs {
-	fs := afero.NewMemMapFs()
-	_ = fs.MkdirAll(pathResolver.AgentSharedBinaryDirForAgent(imageDigest), 0777)
-
-	return fs
 }
 
 func TestIsReady(t *testing.T) {
@@ -61,21 +55,22 @@ func TestIsReady(t *testing.T) {
 		},
 	}
 	name := "job-1"
-	targetDir := "/download/here/1.2.3"
 	nodeName := "node-1"
 
 	t.Run("nothing present -> create job", func(t *testing.T) {
 		cl := fake.NewClient()
 		props := &Properties{
-			APIReader: cl,
-			Client:    cl,
-			Owner:     &owner,
+			APIReader:    cl,
+			Client:       cl,
+			Owner:        &owner,
+			PathResolver: metadata.PathResolver{RootDir: t.TempDir()},
 		}
 		inst := &Installer{
-			fs:       afero.NewMemMapFs(),
 			nodeName: nodeName,
 			props:    props,
 		}
+
+		targetDir := filepath.Join(t.TempDir(), "download", "here", "1.2.3")
 
 		ready, err := inst.isReady(ctx, targetDir, name)
 		require.NoError(t, err)
@@ -90,15 +85,17 @@ func TestIsReady(t *testing.T) {
 	t.Run("job present, target not present -> return not ready, no error", func(t *testing.T) {
 		cl := fake.NewClient()
 		props := &Properties{
-			APIReader: setupInCompleteJob(t, name, owner.Namespace),
-			Client:    cl,
-			Owner:     &owner,
+			APIReader:    setupInCompleteJob(t, name, owner.Namespace),
+			Client:       cl,
+			Owner:        &owner,
+			PathResolver: metadata.PathResolver{RootDir: t.TempDir()},
 		}
 		inst := &Installer{
-			fs:       afero.NewMemMapFs(),
 			nodeName: nodeName,
 			props:    props,
 		}
+
+		targetDir := filepath.Join(t.TempDir(), "download", "here", "1.2.3")
 
 		ready, err := inst.isReady(ctx, targetDir, name)
 		require.NoError(t, err)
@@ -112,18 +109,21 @@ func TestIsReady(t *testing.T) {
 
 	t.Run("job present, target present -> return ready, cleanup job", func(t *testing.T) {
 		cl := setupCompleteJob(t, name, owner.Namespace)
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 		props := &Properties{
-			APIReader: cl,
-			Client:    cl,
-			Owner:     &owner,
+			APIReader:    cl,
+			Client:       cl,
+			Owner:        &owner,
+			PathResolver: path,
 		}
 		inst := &Installer{
-			fs:       afero.NewMemMapFs(),
 			nodeName: nodeName,
 			props:    props,
 		}
 
-		setupTargetDir(t, inst.fs, targetDir)
+		targetDir := filepath.Join(t.TempDir(), "download", "here", "1.2.3")
+
+		require.NoError(t, os.MkdirAll(targetDir, os.ModePerm))
 
 		ready, err := inst.isReady(ctx, targetDir, name)
 		require.NoError(t, err)
@@ -166,10 +166,4 @@ func setupInCompleteJob(t *testing.T, name, namespace string) client.Client {
 	}
 
 	return fake.NewClient(&fakeJob)
-}
-
-func setupTargetDir(t *testing.T, fs afero.Fs, targetDir string) {
-	t.Helper()
-
-	require.NoError(t, fs.MkdirAll(targetDir, os.ModePerm))
 }

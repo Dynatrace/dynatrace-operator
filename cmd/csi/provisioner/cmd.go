@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 	"k8s.io/client-go/rest"
@@ -69,7 +68,7 @@ func run() func(*cobra.Command, []string) error {
 
 		signalHandler := ctrl.SetupSignalHandler()
 
-		err = createCSIDataPath(afero.NewOsFs())
+		err = createCSIDataPath()
 		if err != nil {
 			return err
 		}
@@ -85,8 +84,8 @@ func run() func(*cobra.Command, []string) error {
 	}
 }
 
-func createCSIDataPath(fs afero.Fs) error {
-	return errors.WithStack(fs.MkdirAll(dtcsi.DataPath, os.ModePerm))
+func createCSIDataPath() error {
+	return errors.WithStack(os.MkdirAll(dtcsi.DataPath, os.ModePerm))
 }
 
 func createManager(config *rest.Config, namespace string) (manager.Manager, error) {

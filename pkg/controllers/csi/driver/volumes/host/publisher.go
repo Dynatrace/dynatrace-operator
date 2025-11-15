@@ -23,22 +23,19 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/spf13/afero"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/mount-utils"
 )
 
-func NewPublisher(fs afero.Afero, mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
+func NewPublisher(mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
 	return &Publisher{
-		fs:      fs,
 		mounter: mounter,
 		path:    path,
 	}
 }
 
 type Publisher struct {
-	fs      afero.Afero
 	mounter mount.Interface
 	path    metadata.PathResolver
 }
@@ -61,12 +58,12 @@ func (pub *Publisher) mountStorageVolume(volumeCfg *csivolumes.VolumeConfig) err
 		return err
 	}
 
-	err = pub.fs.MkdirAll(oaStorageDir, os.ModePerm)
+	err = os.MkdirAll(oaStorageDir, os.ModePerm)
 	if err != nil && !os.IsExist(err) {
 		return err
 	}
 
-	if err := pub.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
 		log.Info("failed to create directory for osagent-storage mount", "directory", oaStorageDir)
 
 		return err

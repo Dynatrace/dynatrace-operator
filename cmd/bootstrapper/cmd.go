@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,15 +40,9 @@ var (
 )
 
 func New() *cobra.Command {
-	fs := afero.NewOsFs()
-
-	return newCmd(fs)
-}
-
-func newCmd(fs afero.Fs) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                Use,
-		RunE:               run(afero.Afero{Fs: fs}),
+		RunE:               run,
 		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
 		SilenceUsage:       true,
 	}
@@ -79,61 +72,59 @@ func AddFlags(cmd *cobra.Command) {
 	configure.AddFlags(cmd)
 }
 
-func run(fs afero.Afero) func(cmd *cobra.Command, _ []string) error {
-	return func(cmd *cobra.Command, _ []string) error {
-		unix.Umask(0000)
+func run(cmd *cobra.Command, _ []string) error {
+	unix.Umask(0000)
 
-		if targetVersion != "" {
-			inputDir, _ := cmd.Flags().GetString(configure.InputFolderFlag)
+	if targetVersion != "" {
+		inputDir, _ := cmd.Flags().GetString(configure.InputFolderFlag)
 
-			props := url.Properties{
-				Os:            dtclient.OsUnix,
-				Type:          dtclient.InstallerTypePaaS,
-				Flavor:        flavor,
-				Arch:          arch.Arch,
-				Technologies:  technologies,
-				TargetVersion: targetVersion,
-				URL:           "",
-				SkipMetadata:  false,
-				PathResolver:  metadata.PathResolver{RootDir: targetFolder},
-			}
-
-			client := download.New()
-
-			signalHandler := ctrl.SetupSignalHandler()
-
-			err := client.Do(signalHandler, fs, inputDir, targetFolder, props)
-			if err != nil {
-				if areErrorsSuppressed {
-					log.Error(err, "error during download, the error was suppressed")
-
-					return nil
-				}
-
-				log.Info("error during download")
-
-				return err
-			}
+		props := url.Properties{
+			Os:            dtclient.OsUnix,
+			Type:          dtclient.InstallerTypePaaS,
+			Flavor:        flavor,
+			Arch:          arch.Arch,
+			Technologies:  technologies,
+			TargetVersion: targetVersion,
+			URL:           "",
+			SkipMetadata:  false,
+			PathResolver:  metadata.PathResolver{RootDir: targetFolder},
 		}
 
-		err := runConfigure(fs)
+		client := download.New()
+
+		signalHandler := ctrl.SetupSignalHandler()
+
+		err := client.Do(signalHandler, inputDir, targetFolder, props)
 		if err != nil {
 			if areErrorsSuppressed {
-				log.Error(err, "error during configuration, the error was suppressed")
+				log.Error(err, "error during download, the error was suppressed")
 
 				return nil
 			}
 
+			log.Info("error during download")
+
 			return err
 		}
-
-		return nil
 	}
+
+	err := runConfigure()
+	if err != nil {
+		if areErrorsSuppressed {
+			log.Error(err, "error during configuration, the error was suppressed")
+
+			return nil
+		}
+
+		return err
+	}
+
+	return nil
 }
 
-func runConfigure(fs afero.Afero) error {
+func runConfigure() error {
 	if targetFolder != "" {
-		err := configure.SetupOneAgent(log.Logger, fs, targetFolder)
+		err := configure.SetupOneAgent(log.Logger, targetFolder)
 		if err != nil {
 			log.Info("error during oneagent configuration")
 
@@ -142,7 +133,7 @@ func runConfigure(fs afero.Afero) error {
 	}
 
 	if needsMetadataEnrichment {
-		err := configure.EnrichWithMetadata(log.Logger, fs)
+		err := configure.EnrichWithMetadata(log.Logger)
 		if err != nil {
 			log.Info("error during metadata enrichment")
 

@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,33 +70,34 @@ func TestToDTClientOptions(t *testing.T) {
 }
 
 func TestConfigFromFs(t *testing.T) {
-	inputDir := "in"
-	inputFile := filepath.Join(inputDir, InputFileName)
-
 	t.Run("missing file -> error", func(t *testing.T) {
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
+		tmpDir := t.TempDir()
+		inputDir := filepath.Join(tmpDir, "input")
 
-		config, err := configFromFs(fs, inputDir)
+		config, err := configFromFs(inputDir)
 		require.Error(t, err)
 		require.Nil(t, config)
 	})
 
 	t.Run("not json -> error", func(t *testing.T) {
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
-		fs.WriteFile(inputFile, []byte("-------"), os.ModePerm)
+		tmpDir := t.TempDir()
+		inputDir := filepath.Join(tmpDir, "input")
+		inputFile := filepath.Join(inputDir, InputFileName)
+		os.WriteFile(inputFile, []byte("-------"), 0600)
 
-		config, err := configFromFs(fs, inputDir)
+		config, err := configFromFs(inputDir)
 		require.Error(t, err)
 		require.Nil(t, config)
 	})
 
 	t.Run("happy path", func(t *testing.T) {
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
+		tmpDir := t.TempDir()
+		inputDir := filepath.Join(tmpDir, "input")
 
 		expected := testConfig(t)
-		setupConfig(t, &fs, inputDir, expected)
+		setupConfig(t, inputDir, expected)
 
-		config, err := configFromFs(fs, inputDir)
+		config, err := configFromFs(inputDir)
 		require.NoError(t, err)
 		require.NotNil(t, config)
 		assert.Equal(t, expected, *config)
@@ -118,14 +118,14 @@ func testConfig(t *testing.T) Config {
 	}
 }
 
-func setupConfig(t *testing.T, fs *afero.Afero, inputDir string, config Config) {
+func setupConfig(t *testing.T, inputDir string, config Config) {
 	t.Helper()
 
 	raw, err := json.Marshal(config)
 	require.NoError(t, err)
 
-	fs.Mkdir(inputDir, os.ModePerm)
-	err = fs.WriteFile(filepath.Join(inputDir, InputFileName), raw, os.ModePerm)
+	os.Mkdir(inputDir, os.ModePerm)
+	err = os.WriteFile(filepath.Join(inputDir, InputFileName), raw, 0600)
 	require.NoError(t, err)
 }
 

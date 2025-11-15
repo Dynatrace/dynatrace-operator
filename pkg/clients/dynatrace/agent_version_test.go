@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -76,9 +76,8 @@ func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client)
 
 func TestGetLatestAgent(t *testing.T) {
 	ctx := context.Background()
-	fs := afero.NewMemMapFs()
 
-	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{fs}, "")
+	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{t: t}, "")
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
@@ -89,19 +88,19 @@ func TestGetLatestAgent(t *testing.T) {
 	}
 
 	t.Run("file download successful", func(t *testing.T) {
-		file, err := afero.TempFile(fs, "client", "installer")
+		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 
 		err = dtc.GetLatestAgent(ctx, OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
 		require.NoError(t, err)
 
-		resp, err := afero.ReadFile(fs, file.Name())
+		resp, err := os.ReadFile(file.Name())
 		require.NoError(t, err)
 
 		assert.Equal(t, agentResponse, string(resp))
 	})
 	t.Run("missing agent error", func(t *testing.T) {
-		file, err := afero.TempFile(fs, "client", "installer")
+		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 
 		err = dtc.GetLatestAgent(ctx, OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "invalid", nil, false, file)
@@ -198,7 +197,7 @@ func (m *memoryReadWriter) Write(p []byte) (n int, err error) {
 }
 
 type ipHandler struct {
-	fs afero.Fs
+	t *testing.T
 }
 
 func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -221,10 +220,10 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 			// write to temp file and write content to response
 			writer.Header().Set("Content-Type", "application/octet-stream")
 
-			file, _ := afero.TempFile(ipHandler.fs, "server", "installer")
+			file, _ := os.CreateTemp(ipHandler.t.TempDir(), "installer")
 			_, _ = file.WriteString(agentResponse)
 
-			resp, _ = afero.ReadFile(ipHandler.fs, file.Name())
+			resp, _ = os.ReadFile(file.Name())
 		}
 
 		_, _ = writer.Write(resp)

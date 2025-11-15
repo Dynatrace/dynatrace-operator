@@ -32,7 +32,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -68,7 +67,6 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,
-		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		config:                 config,
 		operatorNamespace:      os.Getenv(env.PodNamespace),
 		clusterID:              clusterID,
@@ -107,7 +105,6 @@ type Controller struct {
 	// that reads objects from the cache and writes to the api-server
 	client    client.Client
 	apiReader client.Reader
-	fs        afero.Afero
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config

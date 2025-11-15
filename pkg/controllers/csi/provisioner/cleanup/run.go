@@ -6,13 +6,11 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Cleaner struct {
-	fs        afero.Afero
 	apiReader client.Reader
 	mounter   mount.Interface
 	path      metadata.PathResolver
@@ -28,9 +26,8 @@ type fsState struct {
 	hostDks []string
 }
 
-func New(fs afero.Afero, apiReader client.Reader, path metadata.PathResolver, mounter mount.Interface) *Cleaner {
+func New(apiReader client.Reader, path metadata.PathResolver, mounter mount.Interface) *Cleaner {
 	return &Cleaner{
-		fs:        fs,
 		apiReader: apiReader,
 		path:      path,
 		mounter:   mounter,
@@ -77,7 +74,7 @@ func (c *Cleaner) run(ctx context.Context) error {
 }
 
 func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:revive
-	rootSubDirs, err := c.fs.ReadDir(c.path.RootDir)
+	rootSubDirs, err := os.ReadDir(c.path.RootDir)
 	if err != nil {
 		log.Info("failed to list the contents of the root directory of the csi-provisioner", "rootDir", c.path.RootDir)
 
@@ -89,7 +86,7 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 	defer func() {
 		for _, unknown := range unknownDirs {
 			log.Info("removing unknown path", "path", unknown)
-			_ = c.fs.RemoveAll(unknown)
+			_ = os.RemoveAll(unknown)
 		}
 	}()
 
@@ -102,13 +99,19 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 			continue
 		}
 
-		deprecatedExists, _ := c.fs.Exists(c.path.AgentRunDir(fileInfo.Name()))
-		if deprecatedExists {
+		var deprecatedExists, hostExists bool
+
+		_, err := os.Stat(c.path.AgentRunDir(fileInfo.Name()))
+		if err == nil {
+			deprecatedExists = true
+
 			fsState.deprecatedDks = append(fsState.deprecatedDks, fileInfo.Name())
 		}
 
-		hostExists, _ := c.fs.Exists(c.path.OldOsAgentDir(fileInfo.Name()))
-		if hostExists {
+		_, err = os.Stat(c.path.OldOsAgentDir(fileInfo.Name()))
+		if err == nil {
+			hostExists = true
+
 			fsState.hostDks = append(fsState.hostDks, fileInfo.Name())
 		}
 
@@ -117,7 +120,7 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 		}
 	}
 
-	dkDirs, err := c.fs.ReadDir(c.path.DynaKubesBaseDir())
+	dkDirs, err := os.ReadDir(c.path.DynaKubesBaseDir())
 	if os.IsNotExist(err) {
 		return fsState, nil
 	} else if err != nil {
@@ -131,13 +134,19 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 			continue
 		}
 
-		binExists, _ := c.fs.Exists(c.path.LatestAgentBinaryForDynaKube(fileInfo.Name()))
-		if binExists {
+		var binExists, hostExists bool
+
+		_, err := os.Stat(c.path.LatestAgentBinaryForDynaKube(fileInfo.Name()))
+		if err == nil {
+			binExists = true
+
 			fsState.binDks = append(fsState.binDks, fileInfo.Name())
 		}
 
-		hostExists, _ := c.fs.Exists(c.path.OsAgentDir(fileInfo.Name()))
-		if hostExists {
+		_, err = os.Stat(c.path.OsAgentDir(fileInfo.Name()))
+		if err == nil {
+			hostExists = true
+
 			fsState.hostDks = append(fsState.hostDks, fileInfo.Name())
 		}
 
@@ -154,7 +163,7 @@ func (c *Cleaner) getFilesystemState() (fsState fsState, err error) { //nolint:r
 // Trying to follow a path that is not a symlink will case an error.
 // Should be used for paths that are "maybe" symlinks, more expensive then its addRelevantPath.
 func (c *Cleaner) safeAddRelevantPath(path string, relevantPaths map[string]bool) {
-	fInfo, err := c.fs.Stat(path)
+	fInfo, err := os.Stat(path)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			log.Error(err, "failed to check if host mount directory is a symlink")
@@ -176,19 +185,12 @@ func (c *Cleaner) safeAddRelevantPath(path string, relevantPaths map[string]bool
 // does no checking for the existence of the path and does not verify if it is a symlink.
 // Should be used for paths that are 100% to be symlinks to save on IO.
 func (c *Cleaner) addRelevantPath(path string, relevantPaths map[string]bool) {
-	linker, ok := c.fs.Fs.(afero.LinkReader)
-	if ok {
-		actualPath, err := linker.ReadlinkIfPossible(path)
-		if err != nil {
-			log.Error(err, "failed to follow symlink", "path", path)
+	actualPath, err := os.Readlink(path)
+	if err != nil {
+		log.Error(err, "failed to follow symlink", "path", path)
 
-			return
-		}
-
-		relevantPaths[actualPath] = true
-	} else { // only should happen during tests
-		log.Info("following symlinks not possible, unexpected behavior")
-
-		relevantPaths[path] = true
+		return
 	}
+
+	relevantPaths[actualPath] = true
 }

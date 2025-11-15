@@ -3,6 +3,7 @@ package image
 import (
 	"context"
 	"encoding/base64"
+	"os"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
@@ -66,7 +67,7 @@ func (installer *Installer) pullOCIimage(image containerv1.Image, imageName stri
 
 	log.Info("pullOciImage", "ref_identifier", ref.Identifier(), "ref.Name", ref.Name(), "ref.String", ref.String())
 
-	err = installer.fs.MkdirAll(imageCacheDir, common.MkDirFileMode)
+	err = os.MkdirAll(imageCacheDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create cache dir", "dir", imageCacheDir, "err", err)
 

@@ -9,7 +9,6 @@ import (
 
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/mount-utils"
@@ -17,22 +16,24 @@ import (
 
 func TestPublishVolume(t *testing.T) {
 	ctx := context.Background()
-	pathResolver := metadata.PathResolver{}
 
 	t.Run("happy path", func(t *testing.T) {
-		fs := getTestFs(t)
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
-		pub := NewPublisher(fs, mounter, pathResolver)
+		pub := NewPublisher(mounter, path)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		expectedHostDir := pathResolver.OsAgentDir(volumeCfg.DynakubeName)
-		hostDirExists, _ := fs.IsDir(expectedHostDir)
-		assert.True(t, hostDirExists)
-		// mounter.IsMountPoint can't be used as it uses os.Stat
+		expectedHostDir := path.OsAgentDir(volumeCfg.DynakubeName)
+		assert.DirExists(t, expectedHostDir)
+
+		isMountPoint, err := mounter.IsMountPoint(volumeCfg.TargetPath)
+		require.NoError(t, err)
+		assert.True(t, isMountPoint)
+
 		require.Len(t, mounter.MountPoints, 1)
 		hostMount := mounter.MountPoints[0]
 		assert.Equal(t, expectedHostDir, hostMount.Device)
@@ -40,11 +41,19 @@ func TestPublishVolume(t *testing.T) {
 	})
 
 	t.Run("sad path", func(t *testing.T) {
-		fs := getFailFs(t)
+		problematicFolder := filepath.Join(t.TempDir(), "boom")
+		require.NoError(t, os.MkdirAll(problematicFolder, 0444)) // r--r--r--, "readonly"
+
+		t.Cleanup(func() {
+			// needed, otherwise the `problematicFolder` wont be cleaned up after the test
+			os.Chmod(problematicFolder, 0755)
+		})
+
+		path := metadata.PathResolver{RootDir: problematicFolder}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
 
-		pub := NewPublisher(fs, mounter, pathResolver)
+		pub := NewPublisher(mounter, path)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.Error(t, err)
@@ -52,52 +61,36 @@ func TestPublishVolume(t *testing.T) {
 	})
 
 	t.Run("handles dangling fs path", func(t *testing.T) {
-		base := t.TempDir()
-		pathResolver := metadata.PathResolver{RootDir: base}
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 
-		fs := afero.Afero{Fs: afero.NewOsFs()}
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		volumeCfg := getTestVolumeConfig(t)
 
 		// Create dir to be symlinked
-		oldDir := pathResolver.OldOsAgentDir(volumeCfg.DynakubeName)
+		oldDir := path.OldOsAgentDir(volumeCfg.DynakubeName)
 		require.NoError(t, os.MkdirAll(oldDir, os.ModePerm))
 
 		// Create symlink to dir
-		newDir := pathResolver.OsAgentDir(volumeCfg.DynakubeName)
+		newDir := path.OsAgentDir(volumeCfg.DynakubeName)
 		require.NoError(t, os.MkdirAll(filepath.Dir(newDir), os.ModePerm))
 		require.NoError(t, os.Symlink(oldDir, newDir))
 
 		// Remove dir where the symlink was pointing to -> create dangling symlink
 		require.NoError(t, os.Remove(oldDir))
 
-		_, err := fs.Stat(newDir)
+		_, err := os.Stat(newDir)
 		require.Error(t, err)
 
-		pub := NewPublisher(fs, mounter, pathResolver)
+		pub := NewPublisher(mounter, path)
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		info, err := fs.Stat(newDir)
+		info, err := os.Stat(newDir)
 		require.NoError(t, err)
 		require.NotNil(t, info)
 	})
-}
-
-func getTestFs(t *testing.T) afero.Afero {
-	t.Helper()
-
-	return afero.Afero{Fs: afero.NewMemMapFs()}
-}
-
-func getFailFs(t *testing.T) afero.Afero {
-	t.Helper()
-
-	afero.NewReadOnlyFs(getTestFs(t))
-
-	return afero.Afero{Fs: afero.NewReadOnlyFs(getTestFs(t))}
 }
 
 func getTestVolumeConfig(t *testing.T) csivolumes.VolumeConfig {

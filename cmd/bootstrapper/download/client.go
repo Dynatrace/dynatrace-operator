@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/ca"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/spf13/afero"
 )
 
 type Client struct {
@@ -43,14 +42,13 @@ func New(options ...Option) *Client {
 	return cl
 }
 
-func (cl *Client) Do(ctx context.Context, fs afero.Afero, inputDir string, targetDir string, props url.Properties) error {
-	client, err := cl.createDTClientFromFs(fs, inputDir)
+func (cl *Client) Do(ctx context.Context, inputDir string, targetDir string, props url.Properties) error {
+	client, err := cl.createDTClientFromFs(inputDir)
 	if err != nil {
 		return err
 	}
 
 	oneAgentInstaller := cl.newInstaller(
-		fs.Fs,
 		client,
 		&props,
 	)
@@ -60,15 +58,15 @@ func (cl *Client) Do(ctx context.Context, fs afero.Afero, inputDir string, targe
 	return err
 }
 
-func (cl *Client) createDTClientFromFs(fs afero.Afero, inputDir string) (dtclient.Client, error) {
-	config, err := configFromFs(fs, inputDir)
+func (cl *Client) createDTClientFromFs(inputDir string) (dtclient.Client, error) {
+	config, err := configFromFs(inputDir)
 	if err != nil {
 		return nil, err
 	}
 
 	caFile := filepath.Join(inputDir, ca.TrustedCertsInputFile) // TODO: Replace with ca.GetFromFs
 
-	certs, err := fs.ReadFile(caFile)
+	certs, err := os.ReadFile(caFile)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}

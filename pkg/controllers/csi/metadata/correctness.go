@@ -10,13 +10,11 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/spf13/afero"
 	"k8s.io/mount-utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CorrectnessChecker struct {
-	fs        afero.Afero
 	apiReader client.Reader
 	mounter   mount.Interface
 	path      PathResolver
@@ -32,7 +30,6 @@ type OverlayMount struct {
 func NewCorrectnessChecker(apiReader client.Reader, opts dtcsi.CSIOptions) *CorrectnessChecker {
 	return &CorrectnessChecker{
 		apiReader: apiReader,
-		fs:        afero.Afero{Fs: afero.NewOsFs()},
 		mounter:   mount.New(""),
 		path:      PathResolver{RootDir: opts.RootDir},
 	}
@@ -64,19 +61,19 @@ func (checker *CorrectnessChecker) migrateAppMounts() {
 		}
 	}
 
-	checker.fs.MkdirAll(checker.path.AppMountsBaseDir(), os.ModePerm)
+	os.MkdirAll(checker.path.AppMountsBaseDir(), os.ModePerm)
 
 	for _, appMount := range oldAppMounts {
 		oldPath := filepath.Dir(appMount.Path)
 		volumeID := filepath.Base(oldPath)
 		newPath := checker.path.AppMountForID(volumeID)
 
-		exists, _ := checker.fs.DirExists(newPath)
-		if exists {
+		stat, err := os.Stat(newPath)
+		if err == nil && stat.IsDir() {
 			continue
 		}
 
-		err := symlink.Create(checker.fs.Fs, oldPath, newPath)
+		err = symlink.Create(oldPath, newPath)
 		if err != nil {
 			log.Error(err, "failed to symlink old app mount to new location", "old-path", oldPath, "new-path", newPath)
 		} else {
@@ -98,12 +95,12 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			continue
 		}
 
-		checker.fs.MkdirAll(checker.path.DynaKubeDir(dk.Name), os.ModePerm)
+		os.MkdirAll(checker.path.DynaKubeDir(dk.Name), os.ModePerm)
 
 		newPath := checker.path.OsAgentDir(dk.Name)
 
-		newExists, _ := checker.fs.DirExists(newPath)
-		if newExists {
+		stat, err := os.Stat(newPath)
+		if err == nil && stat.IsDir() {
 			continue
 		}
 
@@ -116,18 +113,18 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 
 		oldPath := checker.path.OldOsAgentDir(tenantUUID)
 
-		oldExists, err := checker.fs.DirExists(oldPath)
+		_, err = os.Stat(oldPath)
 		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+
 			log.Error(err, "failed to check deprecated host dir existence, skipping host dir migration for it", "dk", dk.Name, "apiUrl", dk.APIURL())
 
 			continue
 		}
 
-		if !oldExists {
-			continue
-		}
-
-		err = symlink.Create(checker.fs.Fs, oldPath, newPath)
+		err = symlink.Create(oldPath, newPath)
 		if err != nil {
 			log.Error(err, "failed to symlink old host mount to new location", "old-path", oldPath, "new-path", newPath)
 		} else {
