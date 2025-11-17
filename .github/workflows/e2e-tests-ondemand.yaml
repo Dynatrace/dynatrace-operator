@@ -116,6 +116,7 @@ jobs:
           }
           echo '${{ toJSON(needs.run-matrix.outputs) }}'
           echo "K8S_1_28_RUN_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
+          echo "TARGET_BRANCH=$BRANCH" >> $GITHUB_ENV
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
