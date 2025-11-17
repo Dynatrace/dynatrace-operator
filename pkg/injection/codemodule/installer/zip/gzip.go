@@ -99,7 +99,7 @@ func extractLink(targetDir, target string, header *tar.Header) error {
 }
 
 func extractSymlink(targetDir, target string, header *tar.Header) error {
-	if isSafeToSymlink(header.Linkname, targetDir, target) {
+	if isSafeToSymlink(header.Linkname, targetDir, target) && isSafeToSymlink(header.Name, targetDir, target) {
 		if err := os.Symlink(header.Linkname, target); err != nil {
 			return errors.WithStack(err)
 		}
@@ -110,7 +110,7 @@ func extractSymlink(targetDir, target string, header *tar.Header) error {
 	return nil
 }
 
-// isSafeToSymlink checks that the provided relative symlink is NOT pointing outside of the `targetDir`.
+// isSafeToSymlink checks that the provided relative symlink is NOT pointing outside of the `targetDir`
 func isSafeToSymlink(symlink, targetDir, target string) bool {
 	if filepath.IsAbs(symlink) {
 		return false
