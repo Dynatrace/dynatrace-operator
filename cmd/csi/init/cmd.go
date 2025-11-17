@@ -26,59 +26,57 @@ var nodeID, endpoint string
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          use,
-		RunE:         run(),
+		RunE:         run,
 		SilenceUsage: true,
 	}
 
 	return cmd
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		unix.Umask(dtcsi.UnixUmask)
-		installconfig.ReadModules()
-		version.LogVersion()
-		logd.LogBaseLoggerSettings()
+func run(*cobra.Command, []string) error {
+	unix.Umask(dtcsi.UnixUmask)
+	installconfig.ReadModules()
+	version.LogVersion()
+	logd.LogBaseLoggerSettings()
 
-		err := createCSIDataPath()
-		if err != nil {
-			return err
-		}
-
-		signalHandler := ctrl.SetupSignalHandler()
-
-		csiOptions := dtcsi.CSIOptions{
-			NodeID:   nodeID,
-			Endpoint: endpoint,
-			RootDir:  dtcsi.DataPath,
-		}
-
-		managerOptions := ctrl.Options{
-			Cache: cache.Options{
-				DefaultNamespaces: map[string]cache.Config{
-					env.DefaultNamespace(): {},
-				},
-			},
-			Scheme: scheme.Scheme,
-		}
-
-		kubeconfig, err := config.GetConfig()
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		mgr, err := manager.New(kubeconfig, managerOptions)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		err = metadata.NewCorrectnessChecker(mgr.GetAPIReader(), csiOptions).CorrectCSI(signalHandler)
-		if err != nil {
-			return err
-		}
-
-		return nil
+	err := createCSIDataPath()
+	if err != nil {
+		return err
 	}
+
+	signalHandler := ctrl.SetupSignalHandler()
+
+	csiOptions := dtcsi.CSIOptions{
+		NodeID:   nodeID,
+		Endpoint: endpoint,
+		RootDir:  dtcsi.DataPath,
+	}
+
+	managerOptions := ctrl.Options{
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				env.DefaultNamespace(): {},
+			},
+		},
+		Scheme: scheme.Scheme,
+	}
+
+	kubeconfig, err := config.GetConfig()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	mgr, err := manager.New(kubeconfig, managerOptions)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	err = metadata.NewCorrectnessChecker(mgr.GetAPIReader(), csiOptions).CorrectCSI(signalHandler)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func createCSIDataPath() error {

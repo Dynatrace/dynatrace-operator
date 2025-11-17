@@ -32,30 +32,28 @@ const (
 func New() *cobra.Command {
 	return &cobra.Command{
 		Use:          use,
-		RunE:         run(),
+		RunE:         run,
 		SilenceUsage: true,
 	}
 }
 
-func run() func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		installconfig.ReadModules()
-		version.LogVersion()
-		logd.LogBaseLoggerSettings()
+func run(cmd *cobra.Command, args []string) error {
+	installconfig.ReadModules()
+	version.LogVersion()
+	logd.LogBaseLoggerSettings()
 
-		kubeCfg, err := config.GetConfig()
-		if err != nil {
-			return err
-		}
-
-		if kubesystem.IsRunLocally() {
-			log.Info("running locally in debug mode")
-
-			return runLocally(kubeCfg)
-		}
-
-		return runInPod(kubeCfg)
+	kubeCfg, err := config.GetConfig()
+	if err != nil {
+		return err
 	}
+
+	if kubesystem.IsRunLocally() {
+		log.Info("running locally in debug mode")
+
+		return runLocally(kubeCfg)
+	}
+
+	return runInPod(kubeCfg)
 }
 
 func runInPod(kubeCfg *rest.Config) error {

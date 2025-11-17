@@ -32,7 +32,7 @@ var nodeID, endpoint string
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          use,
-		RunE:         run(),
+		RunE:         run,
 		SilenceUsage: true,
 	}
 
@@ -46,39 +46,37 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		unix.Umask(dtcsi.UnixUmask)
-		installconfig.ReadModules()
-		version.LogVersion()
-		logd.LogBaseLoggerSettings()
+func run(*cobra.Command, []string) error {
+	unix.Umask(dtcsi.UnixUmask)
+	installconfig.ReadModules()
+	version.LogVersion()
+	logd.LogBaseLoggerSettings()
 
-		kubeConfig, err := config.GetConfig()
-		if err != nil {
-			return err
-		}
-
-		csiManager, err := createManager(kubeConfig, env.DefaultNamespace())
-		if err != nil {
-			return err
-		}
-
-		signalHandler := ctrl.SetupSignalHandler()
-
-		err = createCSIDataPath()
-		if err != nil {
-			return err
-		}
-
-		err = csidriver.NewServer(createCsiOptions()).SetupWithManager(csiManager)
-		if err != nil {
-			return err
-		}
-
-		err = csiManager.Start(signalHandler)
-
-		return errors.WithStack(err)
+	kubeConfig, err := config.GetConfig()
+	if err != nil {
+		return err
 	}
+
+	csiManager, err := createManager(kubeConfig, env.DefaultNamespace())
+	if err != nil {
+		return err
+	}
+
+	signalHandler := ctrl.SetupSignalHandler()
+
+	err = createCSIDataPath()
+	if err != nil {
+		return err
+	}
+
+	err = csidriver.NewServer(createCsiOptions()).SetupWithManager(csiManager)
+	if err != nil {
+		return err
+	}
+
+	err = csiManager.Start(signalHandler)
+
+	return errors.WithStack(err)
 }
 
 func createCSIDataPath() error {
