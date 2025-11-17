@@ -205,6 +205,7 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, over
 		OTLPMetricsHeadersEnv,
 		OTLPMetricsCertificateEnv,
 		OTLPMetricsProtocolEnv,
+		OTLPMetricsExporterTemporalityPreference,
 		// logs exporter env var
 		OTLPLogsEndpointEnv,
 		OTLPLogsHeadersEnv,

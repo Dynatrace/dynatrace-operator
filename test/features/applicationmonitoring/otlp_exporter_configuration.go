@@ -188,6 +188,11 @@ func assertOTLPEnvVarsPresent(t *testing.T, podItem *corev1.Pod, expectedBase st
 			assert.Equal(t, exporter.OTLPAuthorizationHeader, envVar.Value, "%s header", name)
 		}
 	}
+	temporalityPreferenceEnv := env.FindEnvVar(appContainer.Env, exporter.OTLPMetricsExporterTemporalityPreference)
+	assert.NotNil(t, temporalityPreferenceEnv, "%s env var missing", exporter.OTLPMetricsExporterTemporalityPreference)
+	if temporalityPreferenceEnv != nil {
+		assert.Equal(t, exporter.OTLPMetricsExporterAggregationTemporalityDelta, temporalityPreferenceEnv.Value, "%s value", exporter.OTLPMetricsExporterTemporalityPreference)
+	}
 	tokenEnv := env.FindEnvVar(appContainer.Env, exporter.DynatraceAPITokenEnv)
 	assert.NotNil(t, tokenEnv, "%s env var missing", exporter.DynatraceAPITokenEnv)
 	if tokenEnv != nil {
