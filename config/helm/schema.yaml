@@ -15,15 +15,12 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.7.1
+  publishedVersion: 1.7.2
   publishedVersionMetadata:
-    releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
-      at v1.7.1 -->
-
-
-
-
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.7.0...v1.7.1'
+    releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
+      \ at v1.7.2 -->\n\n## What's Changed\n### Core changes \U0001F389\n* Bugfix/otelc\
+      \ noproxy backport by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/5602\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.7.1...v1.7.2"
     releaseTypes:
     - Feature
     recommended: true
