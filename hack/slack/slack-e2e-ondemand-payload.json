@@ -11,14 +11,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "${{ toJSON(github.context) }}"
-      }
-    },
-    {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "${{ toJSON(github.payload) }}"
+        "text": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_28_run_id }}"
       }
     },
     {
