@@ -11,7 +11,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_28_run_id }}"
+        "text": "${{ env.K8S_1_28_RUN_ID }}"
       }
     },
     {
