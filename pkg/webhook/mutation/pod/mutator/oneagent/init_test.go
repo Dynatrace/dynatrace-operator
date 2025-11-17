@@ -118,6 +118,7 @@ func TestMutateInitContainer(t *testing.T) {
 		}
 
 		err := mutateInitContainer(request, installPath)
+		require.ErrorAs(t, err, &webhook.MutatorError{})
 		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
 	})
 
