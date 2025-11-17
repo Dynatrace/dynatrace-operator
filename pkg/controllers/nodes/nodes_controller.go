@@ -244,6 +244,7 @@ func hasUnschedulableTaint(node *corev1.Node) bool {
 
 func (controller *Controller) getCache(ctx context.Context) (*cache.Cache, error) {
 	var owner client.Object
+
 	if !controller.runLocal {
 		deploy, err := deployment.GetDeployment(controller.client, os.Getenv(env.PodName), controller.podNamespace)
 		if err != nil {
