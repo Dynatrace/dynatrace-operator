@@ -76,7 +76,7 @@ func extract(targetDir string, reader *tar.Reader, header *tar.Header, target st
 			return errors.WithStack(err)
 		}
 	case tar.TypeSymlink:
-		if err := extractSymlink(target, header); err != nil {
+		if err := extractSymlink(targetDir, target, header); err != nil {
 			return errors.WithStack(err)
 		}
 	case tar.TypeReg:
@@ -98,29 +98,26 @@ func extractLink(targetDir, target string, header *tar.Header) error {
 	return nil
 }
 
-func extractSymlink(target string, header *tar.Header) error {
-	if isRel(header.Linkname, target) && isRel(header.Name, target) {
+func extractSymlink(targetDir, target string, header *tar.Header) error {
+	if isSafeToSymlink(header.Linkname, targetDir, target) {
 		if err := os.Symlink(header.Linkname, target); err != nil {
 			return errors.WithStack(err)
 		}
+	} else {
+		log.Info("found unsafe symlink that would point outside of the target dir", "linkName", header.Linkname)
 	}
 
 	return nil
 }
 
-func isRel(candidate, target string) bool {
-	if filepath.IsAbs(candidate) {
+// isSafeToSymlink checks that the provided relative symlink is NOT pointing outside of the `targetDir`.
+func isSafeToSymlink(symlink, targetDir, target string) bool {
+	if filepath.IsAbs(symlink) {
 		return false
 	}
 
-	path := filepath.Join(target, candidate)
-
-	realpath, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return false
-	}
-
-	relpath, err := filepath.Rel(target, realpath)
+	finalPath := filepath.Join(target, symlink)
+	relpath, err := filepath.Rel(targetDir, finalPath)
 
 	return err == nil && !strings.HasPrefix(filepath.Clean(relpath), "..")
 }
