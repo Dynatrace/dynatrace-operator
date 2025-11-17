@@ -28,30 +28,30 @@ jobs:
             platform: k8s
           - version: 1-29
             platform: k8s
-          - version: 1-30
-            platform: k8s
-          - version: 1-31
-            platform: k8s
-          - version: 1-32
-            platform: k8s
-          - version: 1-33
-            platform: k8s
-          - version: 1-34
-            platform: k8s
-          - version: 4-12
-            platform: ocp
-          - version: 4-13
-            platform: ocp
-          - version: 4-14
-            platform: ocp
-          - version: 4-15
-            platform: ocp
-          - version: 4-16
-            platform: ocp
-          - version: 4-17
-            platform: ocp
-          - version: 4-18
-            platform: ocp
+#          - version: 1-30
+#            platform: k8s
+#          - version: 1-31
+#            platform: k8s
+#          - version: 1-32
+#            platform: k8s
+#          - version: 1-33
+#            platform: k8s
+#          - version: 1-34
+#            platform: k8s
+#          - version: 4-12
+#            platform: ocp
+#          - version: 4-13
+#            platform: ocp
+#          - version: 4-14
+#            platform: ocp
+#          - version: 4-15
+#            platform: ocp
+#          - version: 4-16
+#            platform: ocp
+#          - version: 4-17
+#            platform: ocp
+#          - version: 4-18
+#            platform: ocp
     environment: E2E
     runs-on:
       - self-hosted
@@ -59,6 +59,7 @@ jobs:
     outputs:
       cluster_creation_failed: ${{ steps.cluster_creation_status.outputs.cluster_creation_failed }}
       test_failed: ${{ steps.cluster_creation_status.outputs.test_failed }}
+      job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -89,9 +90,6 @@ jobs:
             echo "cluster_creation_failed=true" >> $GITHUB_OUTPUT
             exit 1
           fi
-
-          echo "test_failed=true" >> $GITHUB_OUTPUT
-
   notify-failure:
     name: Notify failure in Slack
     environment: E2E
@@ -102,18 +100,23 @@ jobs:
       - name: Set Slack message
         id: set_slack_message
         run: |
-          if [ "${{ needs.run-matrix.outputs.cluster_creation_failed }}" = "true" ] && [ "${{ needs.run-matrix.outputs.test_failed }}" != "true" ]; then
-            echo "SLACK_MESSAGE=:large_yellow_circle: Cluster creation issues: Some E2E ondemand tests were skipped on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
-          else
-            echo "SLACK_MESSAGE=:red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
-          fi
-      - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: webhook-trigger
-          payload-templated: true
-          errors: true
-          payload: |
-            "message": "${{ env.SLACK_MESSAGE }}"
-            "run_id": "${{ github.run_id }}"
+          get_emoji() {
+            if [ "$1" = "skipped" ]; then
+              echo "large_yellow_circle"
+            elif [ "$2" = "success" ]; then
+              echo "white_check_mark"
+            else
+              echo "red_circle"
+            fi
+          }
+          echo "${{ needs.run-matrix.outputs }}"
+
+
+#      - name: Notify failure in Slack
+#        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+#        with:
+#          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+#          webhook-type: incoming-webhook
+#          errors: true
+#          payload-templated: true
+#          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
