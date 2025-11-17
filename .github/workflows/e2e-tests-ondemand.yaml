@@ -95,13 +95,15 @@ jobs:
             echo "cluster_creation_failed=true" >> $GITHUB_OUTPUT
             exit 1
           fi
-  notify-failure:
-    name: Notify failure in Slack
+  notify-slack:
+    name: Notify test results in Slack
     environment: E2E
     needs: [run-matrix]
-    if: ${{ always() }}
     runs-on: ubuntu-24.04
+    if: ${{ always() }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Set Slack message
         id: set_slack_message
         run: |
