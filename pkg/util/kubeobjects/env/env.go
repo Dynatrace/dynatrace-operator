@@ -27,7 +27,7 @@ func FindEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 
 func FindEnvVarCaseInsensitive(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 	for i, envVar := range envVars {
-		if strings.ToLower(envVar.Name) == strings.ToLower(name) {
+		if strings.EqualFold(envVar.Name, name) {
 			// returning reference to env var to ease later manipulation of it
 			return &envVars[i]
 		}
