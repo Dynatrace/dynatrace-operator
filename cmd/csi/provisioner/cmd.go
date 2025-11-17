@@ -1,8 +1,6 @@
 package provisioner
 
 import (
-	"os"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner"
@@ -67,7 +65,7 @@ func run(*cobra.Command, []string) error {
 
 	signalHandler := ctrl.SetupSignalHandler()
 
-	err = createCSIDataPath()
+	err = dtcsi.CreateDataPath()
 	if err != nil {
 		return err
 	}
@@ -80,10 +78,6 @@ func run(*cobra.Command, []string) error {
 	err = csiManager.Start(signalHandler)
 
 	return errors.WithStack(err)
-}
-
-func createCSIDataPath() error {
-	return errors.WithStack(os.MkdirAll(dtcsi.DataPath, os.ModePerm))
 }
 
 func createManager(config *rest.Config, namespace string) (manager.Manager, error) {

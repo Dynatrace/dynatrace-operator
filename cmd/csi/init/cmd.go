@@ -1,8 +1,6 @@
 package init
 
 import (
-	"os"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -39,7 +37,7 @@ func run(*cobra.Command, []string) error {
 	version.LogVersion()
 	logd.LogBaseLoggerSettings()
 
-	err := createCSIDataPath()
+	err := dtcsi.CreateDataPath()
 	if err != nil {
 		return err
 	}
@@ -77,8 +75,4 @@ func run(*cobra.Command, []string) error {
 	}
 
 	return nil
-}
-
-func createCSIDataPath() error {
-	return errors.WithStack(os.MkdirAll(dtcsi.DataPath, os.ModePerm))
 }
