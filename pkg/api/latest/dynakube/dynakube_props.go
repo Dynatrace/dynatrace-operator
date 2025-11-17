@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -133,7 +134,7 @@ func (dk *DynaKube) IsCodeModulesStatusReady() bool {
 
 			return false
 		}
-	} else if dk.OneAgent().GetCodeModulesVersion() == "" {
+	} else if dk.OneAgent().GetCodeModulesVersion() == "" || dk.OneAgent().GetCodeModulesVersion() == string(status.CustomImageVersionSource) {
 		log.Info("dynakube's codemodules status is not yet ready, codemodules 'version' status is missing", "dynakube", dk.Name)
 
 		return false
