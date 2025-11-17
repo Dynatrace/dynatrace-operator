@@ -155,13 +155,28 @@ jobs:
 
           K8S_1_29_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_29_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_29_result }}")
           echo "K8S_1_29_STATUS=$K8S_1_29_STATUS" >> $GITHUB_ENV
+
+          K8S_1_30_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_30_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_30_result }}")
+          echo "K8S_1_30_STATUS=$K8S_1_30_STATUS" >> $GITHUB_ENV
+
+          K8S_1_31_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_31_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_31_result }}")
+          echo "K8S_1_31_STATUS=$K8S_1_31_STATUS" >> $GITHUB_ENV
+
+          K8S_1_32_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_32_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_32_result }}")
+          echo "K8S_1_32_STATUS=$K8S_1_32_STATUS" >> $GITHUB_ENV
+
+          K8S_1_33_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_33_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_33_result }}")
+          echo "K8S_1_33_STATUS=$K8S_1_33_STATUS" >> $GITHUB_ENV
+
+          K8S_1_34_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_34_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_34_result }}")
+          echo "K8S_1_34_STATUS=$K8S_1_34_STATUS" >> $GITHUB_ENV
       - name: debug
         run: echo "$GITHUB_ENV"
-#      - name: Notify failure in Slack
-#        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-#        with:
-#          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-#          webhook-type: incoming-webhook
-#          errors: true
-#          payload-templated: true
-#          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
+      - name: Notify failure in Slack
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          errors: true
+          payload-templated: true
+          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
