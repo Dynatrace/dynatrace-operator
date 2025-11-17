@@ -11,14 +11,14 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "${{ toJSON(github.context)"
+        "text": "${{ toJSON(github.context) }}"
       }
     },
     {
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "${{ toJSON(github.payload)"
+        "text": "${{ toJSON(github.payload) }}"
       }
     },
     {
