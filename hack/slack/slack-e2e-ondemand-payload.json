@@ -8,147 +8,18 @@
       }
     },
     {
-      "type": "table",
-      "rows": [
-        [
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "environment"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "result",
-                    "style": {
-                      "bold": true
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        [
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "k8s-latest"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "link",
-                    "url": "${{ env.K8S_JOB_ID }}",
-                    "text": "tests "
-                  },
-                  {
-                    "type": "emoji",
-                    "name": "${{ env.K8S_STATUS }}"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        [
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "ocp-latest"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "link",
-                    "url": "${{ env.OCP_JOB_ID }}",
-                    "text": "tests "
-                  },
-                  {
-                    "type": "emoji",
-                    "name": "${{ env.OCP_STATUS }}"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        [
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "ocp-fips"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "link",
-                    "url": "${{ env.OCP_FIPS_JOB_ID }}",
-                    "text": "tests "
-                  },
-                  {
-                    "type": "emoji",
-                    "name": "${{ env.OCP_FIPS_STATUS }}"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      ]
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "${{ toJSON(github.context)"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "${{ toJSON(github.payload)"
+      }
     },
     {
       "type": "rich_text",
