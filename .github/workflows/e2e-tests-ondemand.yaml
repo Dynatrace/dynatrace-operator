@@ -68,8 +68,8 @@ jobs:
         id: run_e2e_test
         run: |
           echo "Running e2e tests for platform: ${{matrix.platform}}, version: ${{ matrix.version }}"
-          VERSION="${{ matrix.version//-/_ }}"
-          echo "${{ matrix.platform }}_$VERSION_run_id=${{ job.check_run_id }}" >> $GITHUB_OUTPUT
+          VERSION="${{ matrix.version }}"
+          echo "${{ matrix.platform }}_${VERSION//-/_}_run_id=${{ job.check_run_id }}" >> $GITHUB_OUTPUT
 #        uses: ./.github/actions/run-e2e
 #        with:
 #          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
