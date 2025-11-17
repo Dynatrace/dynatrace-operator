@@ -57,8 +57,8 @@ jobs:
       - self-hosted
       - operator-e2e
     outputs:
-      cluster_creation_failed: ${{ steps.cluster_creation_status.outputs.cluster_creation_failed }}
-      test_failed: ${{ steps.cluster_creation_status.outputs.test_failed }}
+      k8s_1_28_result: ${{ steps.run_e2e_test.outputs.k8s_1_28_result }}
+      k8s_1_28_cluster_status: ${{ steps.run_e2e_test.outputs.k8s_1_28_cluster_status }}
       k8s_1_28_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_28_run_id }}
       k8s_1_29_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_29_run_id }}
       k8s_1_30_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_30_run_id }}
@@ -93,11 +93,14 @@ jobs:
 #          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Determine cluster status
         id: cluster_creation_status
-        if: failure()
+        if: always()
         run: |
-          echo "cluster_status=${{ steps.run_e2e_test.outputs.cluster_status }}"
+          PLATFORM_VERSION=${"${{ matrix.platform }}_${{ matrix.version }}"//-/_}
+
+          echo "$PLATFORM_VERSION_result=${{ steps.run_e2e_test.result}}" >> $GITHUB_OUTPUT
+          echo "$PLATFORM_VERSION_cluster_status=${{ steps.run_e2e_test.outputs.cluster_status }}" >> $GITHUB_OUTPUT
+
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
-            echo "cluster_creation_failed=true" >> $GITHUB_OUTPUT
             exit 1
           fi
   notify-slack:
@@ -121,9 +124,14 @@ jobs:
               echo "red_circle"
             fi
           }
-          echo ${{ toJSON(needs.run-matrix) }}
           echo "K8S_1_28_RUN_ID_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
           echo "K8S_1_29_RUN_ID_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_29_run_id }}" >> $GITHUB_ENV
+
+          K8S_1_28_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_28_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_28_result }}")
+          echo "K8S_1_28_STATUS=$K8S_1_28_STATUS" >> $GITHUB_ENV
+
+          K8S_1_29_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_29_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_29_result }}")
+          echo "K8S_1_29_STATUS=$K8S_1_29_STATUS" >> $GITHUB_ENV
       - name: debug
         run: echo "$GITHUB_ENV"
 #      - name: Notify failure in Slack
