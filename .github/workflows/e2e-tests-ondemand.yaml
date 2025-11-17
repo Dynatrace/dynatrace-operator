@@ -60,6 +60,7 @@ jobs:
       cluster_creation_failed: ${{ steps.cluster_creation_status.outputs.cluster_creation_failed }}
       test_failed: ${{ steps.cluster_creation_status.outputs.test_failed }}
       k8s_1-28_run_id: ${{ steps.output.outputs.k8s_1-28_run_id }}
+      k8s_1-29_run_id: ${{ steps.output.outputs.k8s_1-29_run_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -68,8 +69,6 @@ jobs:
         run: |
           echo "Running e2e tests for platform: ${{matrix.platform}}, version: ${{ matrix.version }}"
           echo "${{ matrix.platform }}_${{ matrix.version }}_run_id=${{ job.check_run_id }}" >> $GITHUB_OUTPUT
-          echo "${{ toJSON(matrix) }}"
-          echo "${{ toJSON(job) }}"
 #        uses: ./.github/actions/run-e2e
 #        with:
 #          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
@@ -114,7 +113,8 @@ jobs:
               echo "red_circle"
             fi
           }
-          echo '${{ toJSON(needs.run-matrix) }}'
+          echo '${{ toJSON(needs.run-matrix.outputs) }}'
+          echo '${{ toJSON(needs.run-matrix.outputs.k8s_1-28_run_id) }}'
 
 
 #      - name: Notify failure in Slack
