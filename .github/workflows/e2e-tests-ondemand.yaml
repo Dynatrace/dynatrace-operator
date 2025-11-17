@@ -58,7 +58,21 @@ jobs:
       - operator-e2e
     outputs:
       k8s_1_28_result: ${{ steps.prepare_outputs.outputs.k8s_1_28_result }}
+      k8s_1_29_result: ${{ steps.prepare_outputs.outputs.k8s_1_29_result }}
+      k8s_1_30_result: ${{ steps.prepare_outputs.outputs.k8s_1_30_result }}
+      k8s_1_31_result: ${{ steps.prepare_outputs.outputs.k8s_1_31_result }}
+      k8s_1_32_result: ${{ steps.prepare_outputs.outputs.k8s_1_32_result }}
+      k8s_1_33_result: ${{ steps.prepare_outputs.outputs.k8s_1_33_result }}
+      k8s_1_34_result: ${{ steps.prepare_outputs.outputs.k8s_1_34_result }}
+
       k8s_1_28_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_28_cluster_status }}
+      k8s_1_29_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_29_cluster_status }}
+      k8s_1_30_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_30_cluster_status }}
+      k8s_1_31_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_31_cluster_status }}
+      k8s_1_32_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_32_cluster_status }}
+      k8s_1_33_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_33_cluster_status }}
+      k8s_1_34_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_34_cluster_status }}
+
       k8s_1_28_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_28_run_id }}
       k8s_1_29_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_29_run_id }}
       k8s_1_30_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_30_run_id }}
@@ -128,8 +142,13 @@ jobs:
             fi
           }
           BASE_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs/"
-          echo "K8S_1_28_RUN_ID_URL=$BASE_URL${{ needs.run-matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
-          echo "K8S_1_29_RUN_ID_URL=$BASE_URL${{ needs.run-matrix.outputs.k8s_1_29_run_id }}" >> $GITHUB_ENV
+          echo "K8S_1_28_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
+          echo "K8S_1_29_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_29_run_id }}" >> $GITHUB_ENV
+          echo "K8S_1_30_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_30_run_id }}" >> $GITHUB_ENV
+          echo "K8S_1_31_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_31_run_id }}" >> $GITHUB_ENV
+          echo "K8S_1_32_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_32_run_id }}" >> $GITHUB_ENV
+          echo "K8S_1_33_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_33_run_id }}" >> $GITHUB_ENV
+          echo "K8S_1_34_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_34_run_id }}" >> $GITHUB_ENV
 
           K8S_1_28_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_28_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_28_result }}")
           echo "K8S_1_28_STATUS=$K8S_1_28_STATUS" >> $GITHUB_ENV
