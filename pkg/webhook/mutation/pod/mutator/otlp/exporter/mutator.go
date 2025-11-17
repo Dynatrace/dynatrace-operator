@@ -20,7 +20,7 @@ import (
 
 const (
 	activeGateTrustedCertVolumeName = "otlp-dynatrace-certs"
-	exporterCertsMountPath          = "/otlp-dynatrace-certs"
+	exporterCertsMountPath          = "/etc/dynatrace/certs"
 )
 
 var (
