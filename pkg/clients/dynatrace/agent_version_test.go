@@ -219,11 +219,7 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 		if strings.HasSuffix(request.URL.Path, "/latest") {
 			// write to temp file and write content to response
 			writer.Header().Set("Content-Type", "application/octet-stream")
-
-			file, _ := os.CreateTemp(ipHandler.t.TempDir(), "installer")
-			_, _ = file.WriteString(agentResponse)
-
-			resp, _ = os.ReadFile(file.Name())
+			resp = []byte(agentResponse)
 		}
 
 		_, _ = writer.Write(resp)
