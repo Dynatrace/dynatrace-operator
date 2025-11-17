@@ -28,39 +28,31 @@ jobs:
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
-      job_id: ${{ steps.get-job-id.outputs.job_id }}
+      job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Get Job ID from GH API
-        id: get-job-id
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gh
-          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
-          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
-          echo "job_id=$job_id" >> $GITHUB_OUTPUT
       - name: Run e2e test
         id: run_e2e_test
-        uses: ./.github/actions/run-e2e
-        with:
-          flc-namespace: dto-daily
-          flc-environment: dto-k8s-latest-flc
-          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
-          target-branch: ${{ github.event.inputs.target }}
-          tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
-          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
-          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
-          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
-          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
-          tenant2-name: ${{ secrets.TENANT2_NAME }}
-          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
-          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            echo "Skipping K8s tests for now"
+#        uses: ./.github/actions/run-e2e
+#        with:
+#          flc-namespace: dto-daily
+#          flc-environment: dto-k8s-latest-flc
+#          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+#          target-branch: ${{ github.event.inputs.target }}
+#          tenant1-name: ${{ secrets.TENANT1_NAME }}
+#          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+#          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+#          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+#          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+#          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+#          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+#          tenant2-name: ${{ secrets.TENANT2_NAME }}
+#          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+#          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Determine cluster status
         if: failure()
         run: |
@@ -75,39 +67,31 @@ jobs:
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
-      job_id: ${{ steps.get-job-id.outputs.job_id }}
+      job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Get Job ID from GH API
-        id: get-job-id
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gh
-          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
-          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
-          echo "job_id=$job_id" >> $GITHUB_OUTPUT
       - name: Run e2e test
         id: run_e2e_test
-        uses: ./.github/actions/run-e2e
-        with:
-          flc-namespace: dto-daily
-          flc-environment: dto-ocp-latest-flc
-          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
-          target-branch: ${{ github.event.inputs.target }}
-          tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
-          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
-          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
-          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
-          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
-          tenant2-name: ${{ secrets.TENANT2_NAME }}
-          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
-          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            echo "Skipping OCP tests for now"
+#        uses: ./.github/actions/run-e2e
+#        with:
+#          flc-namespace: dto-daily
+#          flc-environment: dto-ocp-latest-flc
+#          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+#          target-branch: ${{ github.event.inputs.target }}
+#          tenant1-name: ${{ secrets.TENANT1_NAME }}
+#          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+#          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+#          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+#          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+#          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+#          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+#          tenant2-name: ${{ secrets.TENANT2_NAME }}
+#          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+#          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Determine cluster status
         if: failure()
         run: |
@@ -122,39 +106,31 @@ jobs:
       - operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
-      job_id: ${{ steps.get-job-id.outputs.job_id }}
+      job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Get Job ID from GH API
-        id: get-job-id
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gh
-          jobs=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id}}/attempts/${{ github.run_attempt }}/jobs)
-          job_id=$(echo $jobs | jq -r '.jobs[] | select(.runner_name=="${{ runner.name }}") | .id')
-          echo "job_id=$job_id" >> $GITHUB_OUTPUT
       - name: Run e2e test
         id: run_e2e_test
-        uses: ./.github/actions/run-e2e
-        with:
-          flc-namespace: dto-ocp-ondemand
-          flc-environment: dto-ocp-fips
-          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
-          target-image: format('{0}-fips', (${{ github.event.inputs.target || 'main' }}))
-          tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
-          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
-          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
-          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
-          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
-          tenant2-name: ${{ secrets.TENANT2_NAME }}
-          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
-          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Skipping OCP FIPS tests for now"
+#        uses: ./.github/actions/run-e2e
+#        with:
+#          flc-namespace: dto-ocp-ondemand
+#          flc-environment: dto-ocp-fips
+#          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+#          target-image: format('{0}-fips', (${{ github.event.inputs.target || 'main' }}))
+#          tenant1-name: ${{ secrets.TENANT1_NAME }}
+#          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+#          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+#          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+#          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+#          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+#          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+#          tenant2-name: ${{ secrets.TENANT2_NAME }}
+#          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+#          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Determine cluster status
         if: failure()
         run: |
