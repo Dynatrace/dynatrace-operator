@@ -57,15 +57,15 @@ jobs:
       - self-hosted
       - operator-e2e
     outputs:
-      k8s_1_28_result: ${{ steps.run_e2e_test.outputs.k8s_1_28_result }}
-      k8s_1_28_cluster_status: ${{ steps.run_e2e_test.outputs.k8s_1_28_cluster_status }}
-      k8s_1_28_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_28_run_id }}
-      k8s_1_29_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_29_run_id }}
-      k8s_1_30_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_30_run_id }}
-      k8s_1_31_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_31_run_id }}
-      k8s_1_32_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_32_run_id }}
-      k8s_1_33_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_33_run_id }}
-      k8s_1_34_run_id: ${{ steps.run_e2e_test.outputs.k8s_1_34_run_id }}
+      k8s_1_28_result: ${{ steps.prepare_outputs.outputs.k8s_1_28_result }}
+      k8s_1_28_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_28_cluster_status }}
+      k8s_1_28_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_28_run_id }}
+      k8s_1_29_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_29_run_id }}
+      k8s_1_30_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_30_run_id }}
+      k8s_1_31_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_31_run_id }}
+      k8s_1_32_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_32_run_id }}
+      k8s_1_33_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_33_run_id }}
+      k8s_1_34_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_34_run_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
