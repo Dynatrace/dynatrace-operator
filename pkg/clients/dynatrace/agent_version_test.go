@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -115,17 +116,17 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, agentRequestHandler)
 		defer dynatraceServer.Close()
 
-		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
+		readWriter := bytes.NewBuffer([]byte{})
 		err := dtc.GetAgent(ctx, OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
 
 		require.NoError(t, err)
-		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
+		assert.Equal(t, versionedAgentResponse, readWriter.String())
 	})
 	t.Run("handle server error", func(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
-		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
+		readWriter := bytes.NewBuffer([]byte{})
 		err := dtc.GetAgent(ctx, OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
@@ -182,18 +183,6 @@ func agentRequestHandler(response http.ResponseWriter, request *http.Request) {
 func errorHandler(response http.ResponseWriter, _ *http.Request) {
 	response.WriteHeader(http.StatusBadRequest)
 	_, _ = response.Write([]byte(testErrorMessage))
-}
-
-type memoryReadWriter struct {
-	data []byte
-}
-
-func (m *memoryReadWriter) Read(p []byte) (n int, err error) {
-	return copy(p, m.data), nil
-}
-
-func (m *memoryReadWriter) Write(p []byte) (n int, err error) {
-	return copy(m.data, p), nil
 }
 
 type ipHandler struct {
