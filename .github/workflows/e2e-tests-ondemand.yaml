@@ -116,13 +116,15 @@ jobs:
               echo "red_circle"
             fi
           }
-          echo "K8S_1_28_RUN_ID_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
-          echo "K8S_1_29_RUN_ID_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.matrix.outputs.k8s_1_29_run_id }}" >> $GITHUB_ENV
-      - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          errors: true
-          payload-templated: true
-          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
+          echo "K8S_1_28_RUN_ID_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
+          echo "K8S_1_29_RUN_ID_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_29_run_id }}" >> $GITHUB_ENV
+      - name: debug
+        run: echo "$GITHUB_ENV"
+#      - name: Notify failure in Slack
+#        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+#        with:
+#          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+#          webhook-type: incoming-webhook
+#          errors: true
+#          payload-templated: true
+#          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
