@@ -127,11 +127,12 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 	var agCert []byte
 	var err error
 
-	if dk.ActiveGate().HasCaCert() {
+	switch {
+	case dk.ActiveGate().HasCaCert():
 		agCert, err = dk.ActiveGateTLSCert(ctx, s.apiReader)
-	} else if dk.Spec.TrustedCAs != "" {
+	case dk.Spec.TrustedCAs != "":
 		agCert, err = dk.TrustedCAs(ctx, s.apiReader)
-	} else {
+	default:
 		return data, nil
 	}
 
