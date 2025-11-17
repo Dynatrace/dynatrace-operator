@@ -96,7 +96,7 @@ jobs:
     name: Notify failure in Slack
     environment: E2E
     needs: [run-matrix]
-    if: ${{ failure() || cancelled() }}
+    if: ${{ always() }}
     runs-on: ubuntu-24.04
     steps:
       - name: Set Slack message
