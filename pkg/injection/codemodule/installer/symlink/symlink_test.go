@@ -13,8 +13,9 @@ func TestFindVersionFromFileSystem(t *testing.T) {
 	const testVersion = "1.239.14.20220325-164521"
 
 	t.Run("get version from directory in file system", func(t *testing.T) {
-		testPath := filepath.Join(t.TempDir(), "path", testVersion)
-		err := os.MkdirAll(testPath, 0755)
+		testPath := filepath.Join(t.TempDir(), "path")
+		versionSubDir := filepath.Join(testPath, testVersion)
+		err := os.MkdirAll(versionSubDir, 0755)
 		require.NoError(t, err)
 
 		version, err := findVersionFromFileSystem(testPath)

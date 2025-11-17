@@ -1,7 +1,6 @@
 package symlink
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -56,29 +55,18 @@ func Remove(symlinkPath string) error {
 func findVersionFromFileSystem(targetDir string) (string, error) {
 	var version string
 
-	walkFunc := func(path string, entry fs.DirEntry, err error) error {
-		if entry == nil {
-			log.Info(
-				"dir does not exist, are you using a correct codeModules image?",
-				"path", path)
-
-			return fs.ErrNotExist
-		}
-
-		folderName := filepath.Base(path)
-		if regexp.MustCompile(versionRegexp).Match([]byte(folderName)) {
-			log.Info("found version", "version", folderName)
-			version = folderName
-
-			return fs.SkipAll
-		}
-
-		return nil
-	}
-
-	err := filepath.WalkDir(targetDir, walkFunc)
+	entries, err := os.ReadDir(targetDir)
 	if err != nil {
 		return "", errors.WithStack(err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() && regexp.MustCompile(versionRegexp).Match([]byte(entry.Name())) {
+			log.Info("found version", "version", entry.Name())
+			version = entry.Name()
+
+			break
+		}
 	}
 
 	return version, nil
