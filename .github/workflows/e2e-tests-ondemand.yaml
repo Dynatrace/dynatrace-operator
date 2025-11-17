@@ -111,7 +111,7 @@ jobs:
               echo "red_circle"
             fi
           }
-          echo "${{ needs.run-matrix.outputs }}"
+          echo '${{ toJSON(needs.run-matrix) }}'
 
 
 #      - name: Notify failure in Slack
