@@ -8,13 +8,6 @@
       }
     },
     {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "${{ env.K8S_1_28_RUN_ID }}"
-      }
-    },
-    {
       "type": "rich_text",
       "elements": [
         {
