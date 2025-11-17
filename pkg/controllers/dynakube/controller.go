@@ -156,6 +156,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
 	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
+	log.Info("dummy change")
 
 	return result, err
 }
