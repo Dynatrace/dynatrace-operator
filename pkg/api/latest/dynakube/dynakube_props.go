@@ -125,3 +125,19 @@ func (dk *DynaKube) APIRequestThreshold() time.Duration {
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
 	return timeProvider.IsOutdated(&dk.Status.DynatraceAPI.LastTokenScopeRequest, dk.APIRequestThreshold())
 }
+
+func (dk *DynaKube) IsCodeModulesStatusReady() bool {
+	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsPublicRegistry() {
+		if dk.OneAgent().GetCodeModulesImage() == "" {
+			log.Info("dynakube's codemodules status is not yet ready, codemodules 'imageID' status is missing", "dynakube", dk.Name)
+
+			return false
+		}
+	} else if dk.OneAgent().GetCodeModulesVersion() == "" {
+		log.Info("dynakube's codemodules status is not yet ready, codemodules 'version' status is missing", "dynakube", dk.Name)
+
+		return false
+	}
+
+	return true
+}

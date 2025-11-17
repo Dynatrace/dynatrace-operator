@@ -69,6 +69,20 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
+	t.Run("dynakube status not ready, status has version, but images would be needed => only setup base fs, no error, short requeue", func(t *testing.T) {
+		dk := createDynaKubeWithImage(t)
+		dk.Status.CodeModules.Version = dk.Status.CodeModules.ImageID
+		dk.Status.CodeModules.ImageID = ""
+		prov := createProvisioner(t, dk)
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+	})
+
 	t.Run("dynakube with version => url installer used, no error", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
