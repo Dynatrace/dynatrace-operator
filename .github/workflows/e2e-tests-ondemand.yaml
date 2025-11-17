@@ -73,6 +73,7 @@ jobs:
         id: run_e2e_test
         run: |
           echo "Running e2e tests for platform: ${{matrix.platform}}, version: ${{ matrix.version }}"
+          echo "cluster_status=success" >> $GITHUB_OUTPUT
 #        uses: ./.github/actions/run-e2e
 #        with:
 #          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
@@ -93,6 +94,8 @@ jobs:
         id: prepare_outputs
         if: always()
         run: |
+          echo "${{ toJSON(steps.run_e2e_test) }}"
+
           PLATFORM_VERSION="${{ matrix.platform }}_${{ matrix.version }}"
           PLATFORM_VERSION_CLEAN=${PLATFORM_VERSION//-/_}
 
