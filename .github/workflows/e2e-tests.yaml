@@ -138,6 +138,8 @@ jobs:
     steps:
       - name: Set Slack message
         id: set_slack_message
+        env:
+          TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
         run: |
           get_status() {
             if [ "$1" = "skipped" ]; then
@@ -153,13 +155,14 @@ jobs:
           OCP_STATUS=$(get_status "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
           OCP_FIPS_STATUS=$(get_status "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
 
-          MESSAGE="${K8S_STATUS} on kubernetes :kubernetes:\n${OCP_STATUS} on openshift :openshift:\n${OCP_FIPS_STATUS} on FIPS openshift :lock:\nusing ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          MESSAGE="${K8S_STATUS} on kubernetes :kubernetes:\n${OCP_STATUS} on openshift :openshift:\n${OCP_FIPS_STATUS} on FIPS openshift :lock:\nusing ${TARGET_BRANCH} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           echo "SLACK_MESSAGE=$MESSAGE" >> $GITHUB_ENV
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: webhook-trigger
+          errors: true
           payload-templated: true
           payload: |
             "message": "${{ env.SLACK_MESSAGE }}"

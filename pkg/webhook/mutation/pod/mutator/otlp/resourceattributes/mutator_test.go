@@ -43,7 +43,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 		wantAttributes map[string][]string
 	}{
 		{
-			name:    "adds attributes with deployment workload via replicaset lookup",
+			name:    "adds Attributes with deployment workload via replicaset lookup",
 			objects: []runtime.Object{replicaSetOwned, deployment},
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -65,7 +65,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.namespace.name=ns",
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
-					"k8s.cluster.name=cluster-uid",
+					"k8s.cluster.name=cluster-name",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c1",
 					"k8s.pod.name=$(K8S_PODNAME)",
@@ -78,7 +78,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			},
 		},
 		{
-			name:    "preserves existing attributes and appends new ones (statefulset)",
+			name:    "preserves existing Attributes and appends new ones (statefulset)",
 			objects: []runtime.Object{&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "db", Namespace: "ns"}}},
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -101,7 +101,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.namespace.name=ns",
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
-					"k8s.cluster.name=cluster-uid",
+					"k8s.cluster.name=cluster-name",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c1",
 					"k8s.pod.name=$(K8S_PODNAME)",
@@ -124,7 +124,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.namespace.name=ns",
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
-					"k8s.cluster.name=cluster-uid",
+					"k8s.cluster.name=cluster-name",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c1",
 				},
@@ -152,7 +152,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.namespace.name=ns",
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
-					"k8s.cluster.name=cluster-uid",
+					"k8s.cluster.name=cluster-name",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c1",
 					"k8s.workload.kind=job",
@@ -162,7 +162,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.namespace.name=ns",
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
-					"k8s.cluster.name=cluster-uid",
+					"k8s.cluster.name=cluster-name",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c2",
 					"k8s.workload.kind=job",
@@ -171,7 +171,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			},
 		},
 		{
-			name:    "RS owner missing (no deployment) - add other attributes",
+			name:    "RS owner missing (no deployment) - add other Attributes",
 			objects: nil,
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -192,7 +192,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.namespace.name=ns",
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
-					"k8s.cluster.name=cluster-uid",
+					"k8s.cluster.name=cluster-name",
 					"dt.kubernetes.cluster.name=cluster-name",
 					"k8s.container.name=c1",
 				},
@@ -245,7 +245,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 				}
 
 				if len(tt.wantAttributes[container.Name]) == 0 {
-					assert.Empty(t, val, "container should be skipped, no attributes injected")
+					assert.Empty(t, val, "container should be skipped, no Attributes injected")
 					// also check pod/node env vars are not injected
 					for _, envName := range []string{"K8S_PODNAME", "K8S_PODUID", "K8S_NODE_NAME"} {
 						assert.False(t, env.IsIn(container.Env, envName), "env var %s should not be injected", envName)
@@ -265,7 +265,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 							count++
 						}
 					}
-					// ensure that expected attributes appear exactly once
+					// ensure that expected Attributes appear exactly once
 					assert.Equal(t, 1, count, "expected attr %s to appear exactly once; got %v", expected, attrs)
 				}
 				// verify env vars for pod/node references present with correct field paths

@@ -9,9 +9,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type attributes map[string]string
+type Attributes map[string]string
 
-func newAttributesFromEnv(envs []corev1.EnvVar, name string) (attributes, bool) {
+func NewAttributesFromEnv(envs []corev1.EnvVar, name string) (Attributes, bool) {
 	res := make(map[string]string)
 	found := false
 
@@ -29,7 +29,7 @@ func newAttributesFromEnv(envs []corev1.EnvVar, name string) (attributes, bool) 
 	return res, found
 }
 
-func newAttributesFromMap(input map[string]string) attributes {
+func NewAttributesFromMap(input map[string]string) Attributes {
 	metadataAnnotationPrefix := metadataenrichment.Annotation + "/"
 
 	res := make(map[string]string)
@@ -46,7 +46,7 @@ func newAttributesFromMap(input map[string]string) attributes {
 	return res
 }
 
-func (a attributes) merge(other attributes) bool {
+func (a Attributes) Merge(other Attributes) bool {
 	mutated := false
 
 	for key, value := range other {
@@ -59,18 +59,24 @@ func (a attributes) merge(other attributes) bool {
 	return mutated
 }
 
-func (a attributes) String() string {
-	result := ""
-
+func (a Attributes) String() string {
 	first := true
+
+	var result strings.Builder
+
 	for key, value := range a {
+		if key == "" || value == "" {
+			// do not add empty values
+			continue
+		}
 		if !first {
-			result += ","
+			result.WriteString(",")
 		}
 
-		result += key + "=" + value
+		result.WriteString(key + "=" + value)
+
 		first = false
 	}
 
-	return result
+	return result.String()
 }

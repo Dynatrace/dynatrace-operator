@@ -105,7 +105,7 @@ oauth:
     client_secret: created-client-secret
     resource: urn:dtenvironment:test12345
 root_certificate_paths:
-    - /etc/ssl/certificate.cer
+    - /etc/edge_connect_certs/certificate.pem
     - /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 proxy:
     auth:

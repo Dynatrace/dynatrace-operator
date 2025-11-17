@@ -132,3 +132,11 @@ KSPM labels
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: kspm
 {{- end -}}
+
+{{/*
+Database Extensions Executor labels
+*/}}
+{{- define "dynatrace-operator.databaseDatasourceLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: dynatrace-database-datasource
+{{- end -}}

@@ -17,7 +17,7 @@ var (
 )
 
 const (
-	otlpResourceAttributesEnvVar = "OTEL_RESOURCE_ATTRIBUTES"
+	OTELResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES"
 )
 
 type Mutator struct {
@@ -55,7 +55,7 @@ func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bool {
 	mutated := false
 
-	log.Debug("injecting OTLP resource attributes")
+	log.Debug("injecting OTLP resource Attributes")
 
 	// fetch workload information once per pod
 	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, *request, log)
@@ -82,22 +82,22 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info) bool {
 	var mutated bool
 
-	existingAttributes, ok := newAttributesFromEnv(c.Env, otlpResourceAttributesEnvVar)
+	existingAttributes, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 	if ok {
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
 		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
-			return e.Name == otlpResourceAttributesEnvVar
+			return e.Name == OTELResourceAttributesEnv
 		})
 	}
 
 	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
 	envVarSourcesAdded := ensureEnvVarSourcesSet(c)
 
-	attributesToAdd := attributes{
+	attributesToAdd := Attributes{
 		"k8s.namespace.name":         request.Pod.Namespace,
 		"k8s.cluster.uid":            request.DynaKube.Status.KubeSystemUUID,
 		"dt.kubernetes.cluster.id":   request.DynaKube.Status.KubeSystemUUID,
-		"k8s.cluster.name":           request.DynaKube.Status.KubeSystemUUID,
+		"k8s.cluster.name":           request.DynaKube.Status.KubernetesClusterName,
 		"dt.kubernetes.cluster.name": request.DynaKube.Status.KubernetesClusterName,
 		"k8s.container.name":         c.Name,
 		"k8s.pod.name":               "$(K8S_PODNAME)",
@@ -105,24 +105,24 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		"k8s.node.name":              "$(K8S_NODE_NAME)",
 	}
 
-	// add workload attributes (only once fetched per pod, but appended per container to env var if not already present)
+	// add workload Attributes (only once fetched per pod, but appended per container to env var if not already present)
 	if ownerInfo != nil {
-		workloadAttributesToAdd := attributes{
+		workloadAttributesToAdd := Attributes{
 			"k8s.workload.kind": ownerInfo.Kind,
 			"k8s.workload.name": ownerInfo.Name,
 		}
-		_ = attributesToAdd.merge(workloadAttributesToAdd)
+		_ = attributesToAdd.Merge(workloadAttributesToAdd)
 	}
-	// add attributes from annotations - these have the highest precedence, i.e. users can potentially overwrite the above attributes
-	attributesFromAnnotations := newAttributesFromMap(request.Pod.Annotations)
-	_ = attributesFromAnnotations.merge(attributesToAdd)
+	// add Attributes from annotations - these have the highest precedence, i.e. users can potentially overwrite the above Attributes
+	attributesFromAnnotations := NewAttributesFromMap(request.Pod.Annotations)
+	_ = attributesFromAnnotations.Merge(attributesToAdd)
 
-	mutated = existingAttributes.merge(attributesFromAnnotations)
+	mutated = existingAttributes.Merge(attributesFromAnnotations)
 
 	finalValue := existingAttributes.String()
 
 	if finalValue != "" {
-		c.Env = append(c.Env, corev1.EnvVar{Name: otlpResourceAttributesEnvVar, Value: finalValue})
+		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: finalValue})
 	}
 
 	return envVarSourcesAdded || mutated
