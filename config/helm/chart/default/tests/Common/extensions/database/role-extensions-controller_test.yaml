@@ -1,33 +1,20 @@
-suite: test role for database extensions
+suite: test role for the extensions controller for database extensions
 templates:
-  - Common/extensions/database/role-database.yaml
+  - Common/extensions/database/role-extensions-controller.yaml
 tests:
-  - it: should create Role
-    documentIndex: 0
+  - it: Role and RoleBinding exists
     asserts:
-      - isKind:
-          of: Role
-      - equal:
-          path: .metadata.name
-          value: dynatrace-database-extensions
+      - hasDocuments:
+          count: 2
 
-  - it: should create RoleBinding
-    documentIndex: 1
-    asserts:
-      - isKind:
-          of: RoleBinding
-      - equal:
-          path: .metadata.name
-          value: dynatrace-database-extensions
-
-  - it: Role has correct permissions for finding database pods
+  - it: Role has correct permissions for finding database executor pods
     documentIndex: 0
     asserts:
       - isKind:
           of: Role
       - equal:
           path: metadata.name
-          value: dynatrace-database-extensions
+          value: dynatrace-extensions-controller-database
       - isNotEmpty:
           path: metadata.labels
       - isNotEmpty:
@@ -51,7 +38,7 @@ tests:
           of: Role
       - equal:
           path: metadata.name
-          value: dynatrace-database-extensions
+          value: dynatrace-extensions-controller-database
       - isNotEmpty:
           path: metadata.labels
       - contains:
@@ -66,18 +53,29 @@ tests:
             verbs:
               - use
 
-  - it: should not render if main extensions are disabled
+  - it: shouldn't exist if neither extensions nor prometheus extensions are enabled
     set:
-      rbac.extensions.database.create: true
+      platform: openshift
       rbac.extensions.create: false
+      rbac.extensions.database.create: false
     asserts:
       - hasDocuments:
           count: 0
 
-  - it: should not render if database extensions are disabled
+  - it: shouldn't exist if only extensions are turned enabled
     set:
-      rbac.extensions.database.create: false
+      platform: openshift
       rbac.extensions.create: true
+      rbac.extensions.database.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if only prometheus extensions are enabled
+    set:
+      platform: openshift
+      rbac.extensions.create: false
+      rbac.extensions.database.create: true
     asserts:
       - hasDocuments:
           count: 0
