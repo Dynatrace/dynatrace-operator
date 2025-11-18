@@ -268,6 +268,9 @@ linters:
           - dupl
           - perfsprint
           - wsl_v5
+          - goconst
+          - dupl
+          - govet
         path: _(test|gen)\.go
       - linters:
           - govet
@@ -276,10 +279,6 @@ linters:
           - thelper
           - wsl_v5
         path: (test/*)
-      - linters:
-          - dupl
-          - govet
-        path: _(test|gen)\.go
       - linters:
           - gosec
         path: pkg/webhook/validation/proxy_url_test.go
@@ -295,9 +294,6 @@ linters:
       - linters:
           - godot
         path-except: pkg/api/(.+)\.go
-      - linters:
-          - goconst
-        path: (.+)_test\.go
     paths:
       - pkg/api/v1alpha1/dynakube
       - pkg/api/v1alpha1/edgeconnect
