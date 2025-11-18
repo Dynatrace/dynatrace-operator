@@ -114,7 +114,6 @@ jobs:
           PLATFORM_VERSION_CLEAN=${PLATFORM_VERSION//-/_}
 
           echo "${PLATFORM_VERSION_CLEAN}_run_id=${{ job.check_run_id }}" >> $GITHUB_OUTPUT
-          echo "_${PLATFORM_VERSION_CLEAN}_run_id=${{ job.check_run_id }}" >> $GITHUB_ENV
 
           echo "${PLATFORM_VERSION_CLEAN}_result=${{ steps.run_e2e_test.outcome}}" >> $GITHUB_OUTPUT
           echo "${PLATFORM_VERSION_CLEAN}_cluster_status=${{ steps.run_e2e_test.outputs.cluster_status }}" >> $GITHUB_OUTPUT
