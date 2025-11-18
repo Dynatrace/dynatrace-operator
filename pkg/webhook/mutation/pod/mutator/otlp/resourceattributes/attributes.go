@@ -69,6 +69,7 @@ func (a Attributes) String() string {
 			// do not add empty values
 			continue
 		}
+
 		if !first {
 			result.WriteString(",")
 		}
