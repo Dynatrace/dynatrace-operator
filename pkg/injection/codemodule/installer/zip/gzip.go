@@ -58,6 +58,15 @@ func extractFilesFromGzip(targetDir string, reader *tar.Reader) error {
 			return errors.Errorf("illegal file path: %s", target)
 		}
 
+		rel, err := filepath.Rel(targetDir, target)
+		if err != nil {
+			return err
+		}
+
+		if strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+			return errors.Errorf("%q is outside of %q", header.Name, targetDir)
+		}
+
 		err = extract(targetDir, reader, header, target)
 		if err != nil {
 			return err
