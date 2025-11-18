@@ -460,7 +460,6 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		namespace := clientInjectedNamespace(testNamespace, testDynakube)
 
 		trustedCAConfigMap := &corev1.ConfigMap{
-			TypeMeta:   metav1.TypeMeta{APIVersion: "core/v1", Kind: "ConfigMap"},
 			ObjectMeta: metav1.ObjectMeta{Name: trustedCAName, Namespace: testNamespaceDynatrace},
 			Data:       map[string]string{dynakube.TrustedCAKey: testCrt},
 		}
