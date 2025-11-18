@@ -29,8 +29,8 @@ const (
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
 
-	userDataVolumeName    = "user-data"
-	userDataMountPath     = "/var/userdata"
+	tmpVolumeName         = "tmp-data"
+	tmpMountPath          = "/tmp"
 	tokenVolumeName       = "auth-token"
 	tokenMountPath        = "/var/run/dynatrace/executor/token"
 	certsVolumeName       = "https-certs"
@@ -134,7 +134,7 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev
 
 func buildContainerArgs(dk *dynakube.DynaKube) []string {
 	return []string{
-		"--podid=$(POD_NAME)",
+		"--podid=$(POD_UID)",
 		fmt.Sprintf("--url=https://%s:%d", dk.Extensions().GetServiceNameFQDN(), consts.ExtensionsDatasourceTargetPort),
 		"--idtoken=" + tokenMountPath + "/" + tokenVolumeName,
 	}
@@ -143,21 +143,21 @@ func buildContainerArgs(dk *dynakube.DynaKube) []string {
 func buildContainerEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
-			Name: "POD_NAME",
+			Name: "POD_UID",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
+					FieldPath: "metadata.uid",
 				},
 			},
 		},
 	}
 }
 
-func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+func GetDefaultVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
-			Name:      userDataVolumeName,
-			MountPath: userDataMountPath,
+			Name:      tmpVolumeName,
+			MountPath: tmpMountPath,
 		},
 		{
 			Name:      tokenVolumeName,
@@ -179,13 +179,19 @@ func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []
 		})
 	}
 
+	return volumeMounts
+}
+
+func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+	volumeMounts := GetDefaultVolumeMounts(dk)
+
 	return append(volumeMounts, dbSpec.VolumeMounts...)
 }
 
 func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
-			Name: userDataVolumeName,
+			Name: tmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},

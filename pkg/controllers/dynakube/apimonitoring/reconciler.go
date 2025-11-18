@@ -82,8 +82,7 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 	}
 
 	if settings.TotalCount > 0 {
-		_, err = r.handleKubernetesAppEnabled(ctx, k8sEntity)
-		if err != nil {
+		if err := r.handleKubernetesAppEnabled(ctx, k8sEntity); err != nil {
 			return "", err
 		}
 
@@ -107,11 +106,11 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 	return objectID, nil
 }
 
-func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity dtclient.K8sClusterME) (string, error) {
+func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity dtclient.K8sClusterME) error {
 	if r.dk.FF().IsK8sAppEnabled() {
 		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.AppTransitionSchemaID)
 		if err != nil {
-			return "", errors.WithMessage(err, "error trying to check if app setting exists")
+			return errors.WithMessage(err, "error trying to check if app setting exists")
 		}
 
 		if appSettings.TotalCount == 0 {
@@ -121,15 +120,13 @@ func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity d
 				if err != nil {
 					log.Info("schema app-transition.kubernetes failed to set", "meID", meID, "err", err)
 
-					return "", err
-				} else {
-					log.Info("schema app-transition.kubernetes set to true", "meID", meID, "transitionSchemaObjectID", transitionSchemaObjectID)
-
-					return transitionSchemaObjectID, nil
+					return err
 				}
+
+				log.Info("schema app-transition.kubernetes set to true", "meID", meID, "transitionSchemaObjectID", transitionSchemaObjectID)
 			}
 		}
 	}
 
-	return "", nil
+	return nil
 }
