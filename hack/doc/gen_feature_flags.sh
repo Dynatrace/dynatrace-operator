@@ -10,7 +10,7 @@ output=""
 mkdir ${doc_dir}/tmp
 cp ${doc_dir}/feature_flags.go ${doc_dir}/tmp
 
-output="${output}$(gomarkdoc --repository.url "https://github.com/Dynatrace/dynatrace-operator" --repository.path "/" --repository.default-branch "main" ${doc_dir}/tmp | sed 's/\\//g')"
+output="${output}$(./bin/gomarkdoc --repository.url "https://github.com/Dynatrace/dynatrace-operator" --repository.path "/" --repository.default-branch "main" ${doc_dir}/tmp | sed 's/\\//g')"
 
 # remove gomarkdoc footer
 output=$(echo "${output}" | sed '$d')
@@ -25,7 +25,7 @@ mkdir -p $output_dir
 echo "$output" > $output_dir/$output_file
 
 # fix linting issues
-markdownlint -f $output_dir/$output_file
+./node_modules/.bin/markdownlint -f $output_dir/$output_file
 
 # remove tmp dir
 rm -r ${doc_dir}/tmp
