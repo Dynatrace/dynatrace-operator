@@ -758,7 +758,7 @@ func TestOneAgentArguments(t *testing.T) {
 				"--set-server=foo",
 				"--set-server=bar",
 			},
-			expectedError: fmt.Sprintf(errorDuplicateOneAgentArgument, "--set-server"),
+			expectedError: fmt.Sprintf(errorDuplicateOneAgentArgument, "--set-server", setHostPropertyArgument, setHostTagArgument),
 		},
 		{
 			testName: "duplicate arguments with same value are rejected",
@@ -766,7 +766,7 @@ func TestOneAgentArguments(t *testing.T) {
 				"--set-server=foo",
 				"--set-server=foo",
 			},
-			expectedError: fmt.Sprintf(errorDuplicateOneAgentArgument, "--set-server"),
+			expectedError: fmt.Sprintf(errorDuplicateOneAgentArgument, "--set-server", setHostPropertyArgument, setHostTagArgument),
 		},
 		{
 			testName: "no duplicate arguments",
@@ -810,7 +810,7 @@ func TestOneAgentArguments(t *testing.T) {
 				"--set-host-tag=bar",
 				"--set-host-tag=foo=1",
 			},
-			expectedError: fmt.Sprintf(errorSameHostTagMultipleTimes, "[foo=1 bar]"),
+			expectedError: fmt.Sprintf(errorSameHostTagMultipleTimes, "[foo=1 bar]", setHostTagArgument),
 		},
 		{
 			testName: "arguments without value",
@@ -829,7 +829,7 @@ func TestOneAgentArguments(t *testing.T) {
 				"--enable-feature-a",
 				"--enable-feature-c",
 			},
-			expectedError: fmt.Sprintf(errorDuplicateOneAgentArgument, "--enable-feature-a"),
+			expectedError: fmt.Sprintf(errorDuplicateOneAgentArgument, "--enable-feature-a", setHostPropertyArgument, setHostTagArgument),
 		},
 	}
 
@@ -889,7 +889,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 					},
 				},
 			},
-			expectedError: errorHostIDSourceArgumentInCloudNative,
+			expectedError: fmt.Sprintf(errorHostIDSourceArgumentInCloudNative, setHostIDSourceArgument),
 		},
 		{
 			testName: "no host id source argument in cloud native full stack",

@@ -261,9 +261,12 @@ linters:
       min-len: 2
       # Default: 3
       min-occurrences: 2
-      ignore-tests: true
-      ignore-strings-values:
+      ignore-string-values:
         - "true"
+        - "false"
+        - "default"
+        - "linux"
+        - "http*"
   exclusions:
     generated: lax
     presets:

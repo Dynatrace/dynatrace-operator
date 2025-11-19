@@ -18,7 +18,8 @@ import (
 )
 
 const (
-	contentTypeJSON = "application/json"
+	contentTypeJSON    = "application/json"
+	unknownServerError = "unknown server error"
 )
 
 type client struct {
@@ -134,7 +135,7 @@ type ConstraintViolations struct {
 // Error formats the server error code and message.
 func (e ServerError) Error() string {
 	if len(e.Message) == 0 && e.Code == 0 {
-		return "unknown server error"
+		return unknownServerError
 	}
 
 	return fmt.Sprintf("edgeconnect server error %d: %s: details: %s", int64(e.Code), e.Message, e.Details)
@@ -162,7 +163,7 @@ type SettingsAPIError struct {
 
 func (e SettingsAPIError) Error() string {
 	if len(e.Message) == 0 && e.Code == 0 {
-		return "unknown server error"
+		return unknownServerError
 	}
 
 	return fmt.Sprintf("edgeconnect Settings API error: code=%d, message=%s, ConstraintViolations=%v", int64(e.Code), e.Message, e.ConstraintViolations)

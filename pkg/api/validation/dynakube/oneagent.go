@@ -14,6 +14,11 @@ import (
 )
 
 const (
+	setHostPropertyArgument = "--set-host-property"
+	setHostTagArgument      = "--set-host-tag"
+	setHostGroupArgument    = "--set-host-group"
+	setHostIDSourceArgument = "--set-host-id-source"
+
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
 
 	errorImageFieldSetWithoutCSIFlag = `The DynaKube specification attempts to enable ApplicationMonitoring/CloudNativeFullstack mode and retrieve the respective codeModules image, but the CSI driver and/or node image pull is not enabled.`
@@ -27,7 +32,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	warningOneAgentInstallerEnvVars = `The environment variables ONEAGENT_INSTALLER_SCRIPT_URL and ONEAGENT_INSTALLER_TOKEN are only relevant for an unsupported image type. Please ensure you are using a supported image.`
 
-	warningHostGroupConflict = `The DynaKube specification sets the host group using the --set-host-group parameter. Instead, specify the new spec.oneagent.hostGroup field. If both settings are used, the new field takes precedence over the parameter.`
+	warningHostGroupConflict = `The DynaKube specification sets the host group using the %s parameter. Instead, specify the new spec.oneagent.hostGroup field. If both settings are used, the new field takes precedence over the parameter.`
 
 	warningDeprecatedAutoUpdate = `AutoUpdate field is deprecated. The feature is still available by configuring the DynaTrace tenant. Please visit our documentation for more details.`
 
@@ -35,11 +40,11 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	versionInvalidMessage = "The OneAgent's version is only valid in the format 'major.minor.patch.timestamp', e.g. 1.0.0.20240101-000000"
 
-	errorDuplicateOneAgentArgument = "%s has been provided multiple times. Only --set-host-property and --set-host-tag arguments may be provided multiple times."
+	errorDuplicateOneAgentArgument = "%s has been provided multiple times. Only %s and %s arguments may be provided multiple times."
 
-	errorHostIDSourceArgumentInCloudNative = "Setting --set-host-id-source in CloudNativFullstack mode is not allowed."
+	errorHostIDSourceArgumentInCloudNative = "Setting %s in CloudNativFullstack mode is not allowed."
 
-	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
+	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with %s is not allowed."
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -193,7 +198,7 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, d
 
 func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().GetHostGroupAsParam() != "" {
-		return warningHostGroupConflict
+		return fmt.Sprintf(warningHostGroupConflict, setHostGroupArgument)
 	}
 
 	return ""
@@ -242,11 +247,11 @@ func duplicateOneAgentArguments(_ context.Context, _ *Validator, dk *dynakube.Dy
 	}
 
 	for key, values := range args {
-		if key != "--set-host-property" && key != "--set-host-tag" && len(values) > 1 {
-			return fmt.Sprintf(errorDuplicateOneAgentArgument, key)
-		} else if key == "--set-host-tag" {
+		if key != setHostPropertyArgument && key != setHostTagArgument && len(values) > 1 {
+			return fmt.Sprintf(errorDuplicateOneAgentArgument, key, setHostPropertyArgument, setHostTagArgument)
+		} else if key == setHostTagArgument {
 			if duplicatedTags := findDuplicates(values); len(duplicatedTags) > 0 {
-				return fmt.Sprintf(errorSameHostTagMultipleTimes, duplicatedTags)
+				return fmt.Sprintf(errorSameHostTagMultipleTimes, duplicatedTags, setHostTagArgument)
 			}
 		}
 	}
@@ -261,8 +266,8 @@ func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 	}
 
 	for key := range args {
-		if dk.OneAgent().IsCloudNativeFullstackMode() && key == "--set-host-id-source" {
-			return errorHostIDSourceArgumentInCloudNative
+		if dk.OneAgent().IsCloudNativeFullstackMode() && key == setHostIDSourceArgument {
+			return fmt.Sprintf(errorHostIDSourceArgumentInCloudNative, setHostIDSourceArgument)
 		}
 	}
 
