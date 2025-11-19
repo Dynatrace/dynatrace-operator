@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
@@ -59,6 +60,33 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("dynakube status not ready => only setup base fs, no error, short requeue", func(t *testing.T) {
 		dk := createNotReadyDynaKube(t)
+		prov := createProvisioner(t, dk)
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+	})
+
+	t.Run("dynakube status not ready, status has version, but images would be needed => only setup base fs, no error, short requeue", func(t *testing.T) {
+		dk := createDynaKubeWithImage(t)
+		dk.Status.CodeModules.Version = dk.Status.CodeModules.ImageID
+		dk.Status.CodeModules.ImageID = ""
+		prov := createProvisioner(t, dk)
+
+		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
+
+		assert.True(t, areFsDirsCreated(t, prov, dk))
+	})
+
+	t.Run("dynakube status not ready, status needs version, but still set to `custom-image` => only setup base fs, no error, short requeue", func(t *testing.T) {
+		dk := createDynaKubeWithVersion(t)
+		dk.Status.CodeModules.Version = string(status.CustomImageVersionSource)
 		prov := createProvisioner(t, dk)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})

@@ -63,6 +63,14 @@ test/e2e/classic/switchmodes: manifests/crd/helm
 test/e2e/cloudnative/codemodules: manifests/crd/helm
 	$(GOTESTCMD) -timeout 20m ./test/scenarios/standard -run "cloudnative_codemodules_image" $(SKIPCLEANUP)
 
+## Runs CloudNative codemodules e2e migrate to image only
+test/e2e/cloudnative/codemodules-migrate-to-image: manifests/crd/helm
+	$(GOTESTCMD) -timeout 20m ./test/scenarios/standard -run "codemodules_migrate_to_image" $(SKIPCLEANUP)
+
+## Runs CloudNative codemodules e2e migrate to node-image-pull only
+test/e2e/cloudnative/codemodules-migrate-to-node-image-pull: manifests/crd/helm
+	$(GOTESTCMD) -timeout 20m ./test/scenarios/standard -run "codemodules_migrate_to_node_image_pull" $(SKIPCLEANUP)
+
 ## Runs CloudNative codemodules-with-proxy e2e test only
 test/e2e/cloudnative/codemodules-with-proxy: manifests/crd/helm
 	$(GOTESTCMD) -timeout 20m ./test/scenarios/istio -run "codemodules_with_proxy_no_certs" $(SKIPCLEANUP)

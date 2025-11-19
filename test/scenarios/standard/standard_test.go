@@ -58,6 +58,14 @@ func TestStandard_cloudnative_codemodules_image(t *testing.T) {
 	testEnv.Test(t, codemodules.InstallFromImage(t))
 }
 
+func TestStandard_cloudnative_codemodules_migrate_to_image(t *testing.T) {
+	testEnv.Test(t, codemodules.MigrateToImage(t))
+}
+
+func TestStandard_cloudnative_codemodules_migrate_to_node_image_pull(t *testing.T) {
+	testEnv.Test(t, codemodules.MigrateToNodeImagePull(t))
+}
+
 func TestStandard_public_registry_images(t *testing.T) {
 	testEnv.Test(t, publicregistry.Feature(t))
 }
