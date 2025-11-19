@@ -1,12 +1,14 @@
 package cleanup
 
+import "os"
+
 func (c *Cleaner) removeDeprecatedMounts(fsState fsState) {
 	stillMountedCounter := 0
 
 	for _, depDir := range fsState.deprecatedDks {
 		runDir := c.path.AgentRunDir(depDir)
 
-		volumeDirs, err := c.fs.ReadDir(runDir)
+		volumeDirs, err := os.ReadDir(runDir)
 		if err != nil {
 			log.Info("couldn't list volume dirs", "path", runDir)
 
@@ -16,11 +18,11 @@ func (c *Cleaner) removeDeprecatedMounts(fsState fsState) {
 		for _, volumeDir := range volumeDirs {
 			mappedDir := c.path.OverlayMappedDir(depDir, volumeDir.Name())
 
-			isEmpty, _ := c.fs.IsEmpty(mappedDir)
-			if isEmpty {
+			subDirs, _ := os.ReadDir(mappedDir)
+			if len(subDirs) == 0 {
 				volumeDirPath := c.path.AgentRunDirForVolume(depDir, volumeDir.Name())
 
-				err := c.fs.RemoveAll(volumeDirPath)
+				err := os.RemoveAll(volumeDirPath)
 				if err == nil {
 					log.Info("removed unused volume", "path", volumeDirPath)
 
@@ -31,12 +33,12 @@ func (c *Cleaner) removeDeprecatedMounts(fsState fsState) {
 			stillMountedCounter++
 		}
 
-		isEmpty, _ := c.fs.IsEmpty(runDir)
-		if !isEmpty {
+		subDirs, _ := os.ReadDir(runDir)
+		if len(subDirs) > 0 {
 			continue
 		}
 
-		err = c.fs.RemoveAll(runDir)
+		err = os.RemoveAll(runDir)
 		if err == nil {
 			log.Info("removed empty deprecated run dir", "path", runDir)
 		} else {
@@ -45,7 +47,7 @@ func (c *Cleaner) removeDeprecatedMounts(fsState fsState) {
 
 		tenantDir := c.path.TenantDir(depDir)
 
-		err = c.fs.RemoveAll(c.path.DynaKubeDir(tenantDir))
+		err = os.RemoveAll(c.path.DynaKubeDir(tenantDir))
 		if err == nil {
 			log.Info("removed empty deprecated dir", "path", tenantDir)
 		}

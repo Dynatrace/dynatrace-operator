@@ -27,9 +27,7 @@ func TestRemoveHostMounts(t *testing.T) {
 		for _, folder := range hostFolders {
 			cleaner.createHostDirs(t, folder)
 
-			expectedDir := cleaner.path.OsAgentDir(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			assert.DirExists(t, cleaner.path.OsAgentDir(folder))
 		}
 
 		cleaner.removeHostMounts(dks, fsState{
@@ -37,8 +35,7 @@ func TestRemoveHostMounts(t *testing.T) {
 		})
 
 		for _, folder := range hostFolders {
-			exists, _ := cleaner.fs.Exists(cleaner.path.OsAgentDir(folder))
-			require.False(t, exists)
+			assert.NoDirExists(t, cleaner.path.OsAgentDir(folder))
 		}
 	})
 
@@ -57,7 +54,7 @@ func TestRemoveHostMounts(t *testing.T) {
 		}
 
 		for _, folder := range folders {
-			err := cleaner.fs.MkdirAll(folder, os.ModePerm)
+			err := os.MkdirAll(folder, os.ModePerm)
 			require.NoError(t, err)
 		}
 
@@ -66,13 +63,11 @@ func TestRemoveHostMounts(t *testing.T) {
 		})
 
 		for _, folder := range folders[:3] {
-			exists, _ := cleaner.fs.Exists(folder)
-			require.True(t, exists)
+			assert.DirExists(t, folder)
 		}
 
 		for _, folder := range folders[3:] {
-			exists, _ := cleaner.fs.Exists(folder)
-			require.False(t, exists)
+			assert.NoDirExists(t, folder)
 		}
 	})
 
@@ -87,8 +82,7 @@ func TestRemoveHostMounts(t *testing.T) {
 			cleaner.createHostDirs(t, folder)
 
 			expectedDir := cleaner.path.OsAgentDir(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			assert.DirExists(t, expectedDir)
 
 			fakeMounter.MountCheckErrors[expectedDir] = nil
 		}
@@ -100,8 +94,7 @@ func TestRemoveHostMounts(t *testing.T) {
 		})
 
 		for _, folder := range hostFolders {
-			exists, _ := cleaner.fs.Exists(cleaner.path.OsAgentDir(folder))
-			require.True(t, exists)
+			assert.DirExists(t, cleaner.path.OsAgentDir(folder))
 		}
 	})
 }
