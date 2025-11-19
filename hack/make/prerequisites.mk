@@ -1,31 +1,46 @@
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+GOBIN ?= $(LOCALBIN)
+
+# Location to install npm binaries to
+LOCALBIN_NPM ?= $(shell pwd)/node_modules/.bin
+
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-kustomize_version=v5.7.1
+KUSTOMIZE_VERSION ?= v5.7.1
 #renovate depName=sigs.k8s.io/controller-tools/cmd
-controller_gen_version=v0.18.0
+CONTROLLER_GEN_VERSION ?= v0.18.0
 # renovate depName=github.com/golangci/golangci-lint/v2
-golang_ci_cmd_version=v2.4.0
-# renovate depName=github.com/daixiang0/gci
-gci_version=v0.13.7
+GOLANGCI_LINT_VERSION ?= v2.4.0
 # renovate depName=golang.org/x/tools
-golang_tools_version=v0.36.0
+GOLANG_TOOLS_VERSION ?= v0.36.0
 # renovate depName=github.com/vektra/mockery
-mockery_version=v3.5.5
+MOCKERY_VERSION ?= v3.5.5
 # renovate depName=github.com/igorshubovych/markdownlint-cli
-markdownlint_cli_version=v0.45.0
+MARKDOWNLINT_CLI_VERSION ?= v0.45.0
 # renovate depName=github.com/helm-unittest/helm-unittest
-helmunittest_version=v1.0.3
+HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
-cyclonedx_gomod_version=v1.9.0
+CYCLONEDX_GOMOD_VERSION ?= v1.9.0
+
+## Tool Binaries
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+DEADCODE ?= $(LOCALBIN)/deadcode
+GOIMPORTS ?= $(LOCALBIN)/goimports
+MOCKERY ?= $(LOCALBIN)/mockery
+CYCLONEDX_GOMOD ?= $(LOCALBIN)/cyclonedx-gomod
+BETTERALIGN ?= $(LOCALBIN)/betteralign
+GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
+SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
+PYTHON ?= $(LOCALBIN)/.venv/bin/python3
+MARKDOWNLINT ?= $(LOCALBIN_NPM)/markdownlint
 
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
-
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
 
 ## Install all prerequisites
 prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint
@@ -35,61 +50,80 @@ prerequisites/setup-go-dev-dependencies: prerequisites/kustomize prerequisites/c
 
 ## Install 'controller-gen' if it is missing
 prerequisites/controller-gen:
-	go install "sigs.k8s.io/controller-tools/cmd/controller-gen@$(controller_gen_version)"
-CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
+	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_GEN_VERSION))
 
 ## Install go linters
 prerequisites/go-linting: prerequisites/go-deadcode
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(golang_ci_cmd_version)
-	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
-	go install github.com/dkorunic/betteralign/cmd/betteralign@latest
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	$(call go-install-tool,$(GOIMPORTS),golang.org/x/tools/cmd/goimports,$(GOLANG_TOOLS_VERSION))
+	$(call go-install-tool,$(BETTERALIGN),github.com/dkorunic/betteralign/cmd/betteralign,latest)
+
 
 ## Install go deadcode
 prerequisites/go-deadcode:
-	go install golang.org/x/tools/cmd/deadcode@$(golang_tools_version)
+	$(call go-install-tool,$(DEADCODE),golang.org/x/tools/cmd/deadcode,$(GOLANG_TOOLS_VERSION))
 
 ## Install go test coverage
 prerequisites/go-test-coverage:
-	go install github.com/vladopajic/go-test-coverage/v2@latest
+	$(call go-install-tool,$(GO_TEST_COVERAGE),github.com/vladopajic/go-test-coverage/v2,latest)
+
+## Installs 'kustomize' if it is missing
+prerequisites/kustomize:
+	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+
+## Install verktra/mockery
+prerequisites/mockery:
+	$(call go-install-tool,$(MOCKERY),github.com/vektra/mockery/v3,$(MOCKERY_VERSION))
+
+## Install 'cyclonedx-gomod' if it is missing
+prerequisites/cyclonedx-gomod:
+	$(call go-install-tool,$(CYCLONEDX_GOMOD),github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod,$(CYCLONEDX_GOMOD_VERSION))
 
 ## Install setup-envtest locally
 prerequisites/envtest:
-	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	$(call go-install-tool,$(SETUP_ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
 
+## Setup envtest binaries for the specified Kubernetes version
 prerequisites/setup-envtest: prerequisites/envtest
 	@echo "Setting up envtest binaries for Kubernetes version $(ENVTEST_K8S_VERSION)..."
-	setup-envtest use $(ENVTEST_K8S_VERSION) --bin-dir $(GOBIN) -p path || { \
+	@$(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path || { \
 		echo "Error: Failed to set up envtest binaries for version $(ENVTEST_K8S_VERSION)."; \
 		exit 1; \
 	}
+	@echo
+	@$(SETUP_ENVTEST) cleanup "<$(ENVTEST_K8S_VERSION)" --bin-dir $(LOCALBIN)
+	@echo "Setup of envtest binaries completed."
 
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?
 prerequisites/helm-unittest:
-	hack/helm/install-unittest-plugin.sh $(helmunittest_version)
-
-## Installs 'kustomize' if it is missing
-prerequisites/kustomize:
-	go install "sigs.k8s.io/kustomize/kustomize/v5@$(kustomize_version)"
-KUSTOMIZE=$(shell hack/build/command.sh kustomize)
+	hack/helm/install-unittest-plugin.sh $(HELMUNITTEST_VERSION)
 
 ## Install 'markdownlint' if it is missing
 prerequisites/markdownlint:
-	npm install -g --force markdownlint-cli@$(markdownlint_cli_version)
+	npm install --force markdownlint-cli@$(MARKDOWNLINT_CLI_VERSION)
 
-## Install verktra/mockery
-prerequisites/mockery:
-	go install github.com/vektra/mockery/v3@$(mockery_version)
+## Install python dependencies
+prerequisites/python:
+	python3 -m venv $(LOCALBIN)/.venv && source $(LOCALBIN)/.venv/bin/activate && pip3 install -r hack/requirements.txt
 
 ## Install 'pre-commit' if it is missing
 prerequisites/setup-pre-commit:
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
 
-## Install python dependencies
-prerequisites/python:
-	python3 -m venv local/.venv && source local/.venv/bin/activate && pip3 install -r hack/requirements.txt
-
-## Install 'cyclonedx-gomod' if it is missing
-prerequisites/cyclonedx-gomod:
-	go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@$(cyclonedx_gomod_version)
+# go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
+# $1 - target path with name of binary
+# $2 - package url which can be installed
+# $3 - specific version of package
+define go-install-tool
+@[ -f "$(1)-$(3)" ] && [ "$$(readlink -- "$(1)" 2>/dev/null)" = "$(1)-$(3)" ] || { \
+set -e; \
+package=$(2)@$(3) ;\
+echo "Downloading $${package}" ;\
+rm -f $(1) ;\
+GOBIN=$(LOCALBIN) go install $${package} ;\
+mv $(1) $(1)-$(3) ;\
+} ;\
+ln -sf $$(realpath $(1)-$(3)) $(1)
+endef
