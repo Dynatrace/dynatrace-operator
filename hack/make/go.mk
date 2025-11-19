@@ -1,6 +1,6 @@
 ## Runs golangci-lint
 go/golangci:
-	$(GOLANGCI_LINT) run --fix --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s
+	$(GOLANGCI_LINT) run --fix --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s --verbose
 
 ## Runs all the linting tools
 go/lint: prerequisites/go-linting go/golangci go/deadcode

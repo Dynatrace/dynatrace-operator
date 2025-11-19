@@ -64,10 +64,6 @@ linters:
     - wsl_v5
     - zerologlint
   settings:
-    goconst:
-      ignore-string-values:
-        - "true"
-        - "false"
     depguard:
       rules:
         all:
@@ -272,6 +268,7 @@ linters:
           - dupl
           - perfsprint
           - wsl_v5
+          - goconst
         path: _(test|gen)\.go
       - linters:
           - govet
@@ -299,9 +296,6 @@ linters:
       - linters:
           - godot
         path-except: pkg/api/(.+)\.go
-      - linters:
-          - goconst
-        path: (.+)_test\.go
     paths:
       - pkg/api/v1alpha1/dynakube
       - pkg/api/v1alpha1/edgeconnect
