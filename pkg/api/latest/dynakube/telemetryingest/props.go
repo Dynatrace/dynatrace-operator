@@ -1,6 +1,10 @@
 package telemetryingest
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+import (
+	"slices"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+)
 
 const (
 	ServiceNameSuffix = "-telemetry-ingest"
@@ -46,4 +50,44 @@ func (ts *TelemetryIngest) GetServiceName() string {
 
 func (ts *TelemetryIngest) IsEnabled() bool {
 	return ts.Spec != nil
+}
+
+func (ts *TelemetryIngest) IsOtlpEnabled() bool {
+	if !ts.IsEnabled() {
+		return false
+	}
+
+	protocols := ts.GetProtocols()
+
+	return slices.Contains(protocols, otelcgen.OtlpProtocol)
+}
+
+func (ts *TelemetryIngest) IsJaegerEnabled() bool {
+	if !ts.IsEnabled() {
+		return false
+	}
+
+	protocols := ts.GetProtocols()
+
+	return slices.Contains(protocols, otelcgen.JaegerProtocol)
+}
+
+func (ts *TelemetryIngest) IsZipkinEnabled() bool {
+	if !ts.IsEnabled() {
+		return false
+	}
+
+	protocols := ts.GetProtocols()
+
+	return slices.Contains(protocols, otelcgen.ZipkinProtocol)
+}
+
+func (ts *TelemetryIngest) IsStatsdEnabled() bool {
+	if !ts.IsEnabled() {
+		return false
+	}
+
+	protocols := ts.GetProtocols()
+
+	return slices.Contains(protocols, otelcgen.StatsdProtocol)
 }
