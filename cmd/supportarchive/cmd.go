@@ -62,7 +62,7 @@ func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
 		Long: "Pack logs and manifests useful for troubleshooting into single tarball",
-		RunE: run(),
+		RunE: run,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if archiveToStdoutFlagValue {
 				return nil
@@ -91,31 +91,29 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().IntVar(&NumEventsFlagValue, numEventsFlagName, DefaultNumEvents, fmt.Sprintf("Number of events to be fetched (default %d)", DefaultNumEvents))
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		time.Sleep(time.Duration(delayFlagValue) * time.Second)
+func run(cmd *cobra.Command, args []string) error {
+	time.Sleep(time.Duration(delayFlagValue) * time.Second)
 
-		logBuffer := bytes.Buffer{}
-		log := newSupportArchiveLogger(&logBuffer)
-		installconfig.ReadModulesToLogger(log)
-		version.LogVersionToLogger(log)
+	logBuffer := bytes.Buffer{}
+	log := newSupportArchiveLogger(&logBuffer)
+	installconfig.ReadModulesToLogger(log)
+	version.LogVersionToLogger(log)
 
-		archiveTargetFile := os.Stdout
-		supportArchive := newZipArchive(archiveTargetFile)
+	archiveTargetFile := os.Stdout
+	supportArchive := newZipArchive(archiveTargetFile)
 
-		defer archiveTargetFile.Close()
-		defer supportArchive.Close()
+	defer archiveTargetFile.Close()
+	defer supportArchive.Close()
 
-		err := runCollectors(log, supportArchive)
-		if err != nil {
-			return err
-		}
-
-		// make sure to run this collector at the very end
-		newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
-
-		return nil
+	err := runCollectors(log, supportArchive)
+	if err != nil {
+		return err
 	}
+
+	// make sure to run this collector at the very end
+	newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
+
+	return nil
 }
 
 func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) string {

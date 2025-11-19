@@ -47,7 +47,7 @@ func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 		}
 
 		for _, hostDir := range possibleHostDirs {
-			_, err := c.fs.Stat(hostDir)
+			_, err := os.Stat(hostDir)
 			if os.IsNotExist(err) {
 				log.Debug("host dir path doesn't exist, moving to the next one", "path", hostDir)
 
@@ -60,7 +60,7 @@ func (c *Cleaner) removeHostMounts(dks []dynakube.DynaKube, fsState fsState) {
 
 			isMountPoint, err := c.isMountPoint(hostDir)
 			if err == nil && !isMountPoint && !relevantHostDirs[hostDir] {
-				err = c.fs.RemoveAll(hostDir)
+				err = os.RemoveAll(hostDir)
 				if err == nil {
 					log.Info("removed old host mount directory", "path", hostDir)
 				}

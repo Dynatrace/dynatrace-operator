@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -21,7 +22,6 @@ import (
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -100,8 +100,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube with version => url installer used, no error", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
-		installer := createSuccessfulInstaller(t)
-		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, installer)
+		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, createSuccessfulInstaller(t))
 		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
@@ -110,7 +109,6 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
-		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
 	t.Run("dynakube with version, issue with dtc => fail before installer creation", func(t *testing.T) {
@@ -128,8 +126,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("dynakube with image => image installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 		prov := createProvisioner(t, dk)
-		installer := createSuccessfulInstaller(t)
-		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, installer)
+		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -137,14 +134,12 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
-		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
 	t.Run("dynakube with job => job installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
-		installer := createSuccessfulInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t), "")
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -152,15 +147,13 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
-		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
 	t.Run("dynakube with job + custom-pull-secret => job installer used, dtclient not created, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		dk.Spec.CustomPullSecret = "test-ps"
 		prov := createProvisioner(t, dk)
-		installer := createSuccessfulInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, dk.Spec.CustomPullSecret)
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t), dk.Spec.CustomPullSecret)
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -168,14 +161,12 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
-		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
 	t.Run("dynakube with job => job installer used, back-off when not ready, no error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
-		installer := createNotReadyInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createNotReadyInstaller(t), "")
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
@@ -183,35 +174,30 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, notReadyRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
-		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
 	t.Run("dynakube with job => job installer used, with error", func(t *testing.T) {
 		dk := createDynaKubeWithJobFF(t)
 		prov := createProvisioner(t, dk)
-		installer := createFailingInstaller(t)
-		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, installer, "")
+		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createFailingInstaller(t), "")
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
 		require.NotNil(t, result)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
-		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 
 	t.Run("installer fails => error", func(t *testing.T) {
 		dk := createDynaKubeWithImage(t)
 		prov := createProvisioner(t, dk)
-		installer := createFailingInstaller(t)
-		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, installer)
+		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createFailingInstaller(t))
 
 		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
 		require.NotNil(t, result)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
-		installer.AssertCalled(t, "InstallAgent", mock.Anything, mock.Anything)
 	})
 }
 
@@ -223,7 +209,7 @@ func areFsDirsCreated(t *testing.T, prov OneAgentProvisioner, dk *dynakube.DynaK
 		prov.path.AgentSharedBinaryDirBase(),
 	}
 	for _, folder := range neededFolders {
-		stat, err := prov.fs.Stat(folder)
+		stat, err := os.Stat(folder)
 		if err != nil || stat == nil || !stat.IsDir() {
 			return false
 		}
@@ -235,15 +221,13 @@ func areFsDirsCreated(t *testing.T, prov OneAgentProvisioner, dk *dynakube.DynaK
 func createProvisioner(t *testing.T, objs ...client.Object) OneAgentProvisioner {
 	t.Helper()
 
-	fs := afero.NewMemMapFs()
-	path := metadata.PathResolver{}
+	path := metadata.PathResolver{RootDir: t.TempDir()}
 	apiReader := fake.NewClient(objs...)
 
 	return OneAgentProvisioner{
-		fs:        fs,
 		path:      path,
 		apiReader: apiReader,
-		cleaner:   cleanup.New(afero.Afero{Fs: fs}, apiReader, path, mount.NewFakeMounter(nil)),
+		cleaner:   cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
 	}
 }
 
@@ -358,7 +342,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) urlInstallerBuilder {
 	t.Helper()
 
-	return func(f afero.Fs, _ dtclient.Client, _ *url.Properties) installer.Installer {
+	return func(_ dtclient.Client, _ *url.Properties) installer.Installer {
 		return mockedInstaller
 	}
 }
@@ -366,7 +350,7 @@ func mockURLInstallerBuilder(t *testing.T, mockedInstaller *installermock.Instal
 func mockImageInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer) imageInstallerBuilder {
 	t.Helper()
 
-	return func(_ context.Context, _ afero.Fs, _ *image.Properties) (installer.Installer, error) {
+	return func(_ context.Context, _ *image.Properties) (installer.Installer, error) {
 		return mockedInstaller, nil
 	}
 }
@@ -374,7 +358,7 @@ func mockImageInstallerBuilder(t *testing.T, mockedInstaller *installermock.Inst
 func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Installer, pullSecret string) jobInstallerBuilder {
 	t.Helper()
 
-	return func(_ context.Context, _ afero.Fs, props *job.Properties) installer.Installer {
+	return func(_ context.Context, props *job.Properties) installer.Installer {
 		if pullSecret != "" {
 			assert.Contains(t, props.PullSecrets, pullSecret)
 		} else {

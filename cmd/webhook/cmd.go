@@ -49,7 +49,7 @@ func addFlags(cmd *cobra.Command) {
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          use,
-		RunE:         run(),
+		RunE:         run,
 		SilenceUsage: true,
 	}
 
@@ -58,72 +58,70 @@ func New() *cobra.Command {
 	return cmd
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		installconfig.ReadModules()
-		version.LogVersion()
-		logd.LogBaseLoggerSettings()
+func run(cmd *cobra.Command, args []string) error {
+	installconfig.ReadModules()
+	version.LogVersion()
+	logd.LogBaseLoggerSettings()
 
-		podName := os.Getenv(env.PodName)
-		namespace := os.Getenv(env.PodNamespace)
+	podName := os.Getenv(env.PodName)
+	namespace := os.Getenv(env.PodNamespace)
 
-		kubeConfig, err := config.GetConfig()
-		if err != nil {
-			return err
-		}
-
-		isOpenShift := false
-
-		client, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
-		if err != nil {
-			logd.Get().WithName("platform").Error(err, "failed to detect platform, due to discovery client issues")
-		} else {
-			_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
-			if !k8serrors.IsNotFound(err) {
-				logd.Get().WithName("platform").Info("detected platform", "platform", "openshift")
-
-				isOpenShift = true
-			} else {
-				logd.Get().WithName("platform").Info("detected platform", "platform", "kubernetes")
-			}
-		}
-
-		webhookManager, err := createManager(kubeConfig, namespace, certificateDirectory, certificateFileName, certificateKeyFileName)
-		if err != nil {
-			return err
-		}
-
-		signalHandler := ctrl.SetupSignalHandler()
-
-		err = startCertificateWatcher(webhookManager, namespace, podName)
-		if err != nil {
-			return err
-		}
-
-		err = namespacemutator.AddWebhookToManager(webhookManager, namespace)
-		if err != nil {
-			return err
-		}
-
-		err = podmutator.AddWebhookToManager(signalHandler, webhookManager, namespace, isOpenShift)
-		if err != nil {
-			return err
-		}
-
-		err = dynakubevalidation.SetupWebhookWithManager(webhookManager)
-		if err != nil {
-			return err
-		}
-
-		err = edgeconnectvalidation.SetupWebhookWithManager(webhookManager)
-		if err != nil {
-			return err
-		}
-
-		err = webhookManager.Start(signalHandler)
-
-		return errors.WithStack(err)
+	kubeConfig, err := config.GetConfig()
+	if err != nil {
+		return err
 	}
+
+	isOpenShift := false
+
+	client, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
+	if err != nil {
+		logd.Get().WithName("platform").Error(err, "failed to detect platform, due to discovery client issues")
+	} else {
+		_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
+		if !k8serrors.IsNotFound(err) {
+			logd.Get().WithName("platform").Info("detected platform", "platform", "openshift")
+
+			isOpenShift = true
+		} else {
+			logd.Get().WithName("platform").Info("detected platform", "platform", "kubernetes")
+		}
+	}
+
+	webhookManager, err := createManager(kubeConfig, namespace, certificateDirectory, certificateFileName, certificateKeyFileName)
+	if err != nil {
+		return err
+	}
+
+	signalHandler := ctrl.SetupSignalHandler()
+
+	err = startCertificateWatcher(webhookManager, namespace, podName)
+	if err != nil {
+		return err
+	}
+
+	err = namespacemutator.AddWebhookToManager(webhookManager, namespace)
+	if err != nil {
+		return err
+	}
+
+	err = podmutator.AddWebhookToManager(signalHandler, webhookManager, namespace, isOpenShift)
+	if err != nil {
+		return err
+	}
+
+	err = dynakubevalidation.SetupWebhookWithManager(webhookManager)
+	if err != nil {
+		return err
+	}
+
+	err = edgeconnectvalidation.SetupWebhookWithManager(webhookManager)
+	if err != nil {
+		return err
+	}
+
+	err = webhookManager.Start(signalHandler)
+
+	return errors.WithStack(err)
 }
 
 func startCertificateWatcher(webhookManager manager.Manager, namespace string, podName string) error {

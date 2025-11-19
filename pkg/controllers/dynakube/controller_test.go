@@ -32,7 +32,6 @@ import (
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -376,7 +375,6 @@ func TestReconcileComponents(t *testing.T) {
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
-			fs:        afero.Afero{Fs: afero.NewMemMapFs()},
 
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			injectionReconcilerBuilder:     createInjectionReconcilerBuilder(mockInjectionReconciler),
@@ -414,7 +412,6 @@ func TestReconcileComponents(t *testing.T) {
 		controller := &Controller{
 			client:                         fakeClient,
 			apiReader:                      fakeClient,
-			fs:                             afero.Afero{Fs: afero.NewMemMapFs()},
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
 			logMonitoringReconcilerBuilder: createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
 			extensionReconcilerBuilder:     createExtensionReconcilerBuilder(mockExtensionReconciler),
