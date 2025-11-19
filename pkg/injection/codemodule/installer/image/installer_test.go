@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -28,40 +27,33 @@ const (
 
 func TestIsAlreadyPresent(t *testing.T) {
 	imageDigest := "test"
-	pathResolver := metadata.PathResolver{}
 
 	t.Run("returns early if path doesn't exist", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
 		installer := Installer{
-			fs: afero.NewMemMapFs(),
 			props: &Properties{
-				PathResolver: pathResolver,
+				PathResolver: path,
 			},
 		}
-		isDownloaded := installer.isAlreadyPresent(pathResolver.AgentSharedBinaryDirForAgent(imageDigest))
+		isDownloaded := installer.isAlreadyPresent(path.AgentSharedBinaryDirForAgent(imageDigest))
 		assert.False(t, isDownloaded)
 	})
 	t.Run("returns true if path present", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
+		_ = os.MkdirAll(path.AgentSharedBinaryDirForAgent(imageDigest), 0777)
 		installer := Installer{
-			fs: testFileSystemWithSharedDirPresent(pathResolver, imageDigest),
 			props: &Properties{
-				PathResolver: pathResolver,
+				PathResolver: path,
 			},
 		}
-		isDownloaded := installer.isAlreadyPresent(pathResolver.AgentSharedBinaryDirForAgent(imageDigest))
+		isDownloaded := installer.isAlreadyPresent(path.AgentSharedBinaryDirForAgent(imageDigest))
 		assert.True(t, isDownloaded)
 	})
 }
 
-func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imageDigest string) afero.Fs {
-	fs := afero.NewMemMapFs()
-	_ = fs.MkdirAll(pathResolver.AgentSharedBinaryDirForAgent(imageDigest), 0777)
-
-	return fs
-}
-
 func TestNewImageInstaller(t *testing.T) {
 	ctx := context.Background()
-	testFS := afero.NewMemMapFs()
+	path := metadata.PathResolver{RootDir: t.TempDir()}
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -81,13 +73,13 @@ func TestNewImageInstaller(t *testing.T) {
 	fakeClient := fake.NewClientWithIndex(&pullSecret)
 
 	props := &Properties{
-		PathResolver: metadata.PathResolver{RootDir: "/tmp"},
+		PathResolver: path,
 		ImageURI:     testImageURL,
 		Dynakube:     dk,
 		ImageDigest:  testImageDigest,
 		APIReader:    fakeClient,
 	}
-	in, err := NewImageInstaller(ctx, testFS, props)
+	in, err := NewImageInstaller(ctx, props)
 	require.NoError(t, err)
 	assert.NotNil(t, in)
 	assert.NotNil(t, in)
@@ -103,7 +95,6 @@ func TestInstaller_InstallAgent(t *testing.T) {
 	ctx := context.Background()
 
 	type fields struct {
-		fs        afero.Fs
 		extractor zip.Extractor
 		props     *Properties
 		transport http.RoundTripper
@@ -113,8 +104,6 @@ func TestInstaller_InstallAgent(t *testing.T) {
 		targetDir string
 	}
 
-	testFS := afero.NewMemMapFs()
-	_, _ = afero.TempFile(testFS, "/dummy", "ioutil-test")
 	transport := RoundTripFunc(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
@@ -132,10 +121,9 @@ func TestInstaller_InstallAgent(t *testing.T) {
 		{
 			name: "Successfully install agent",
 			fields: fields{
-				fs:        testFS,
 				extractor: nil,
 				props: &Properties{
-					PathResolver: metadata.PathResolver{RootDir: "/tmp"},
+					PathResolver: metadata.PathResolver{RootDir: t.TempDir()},
 					ImageURI:     testImageURL,
 					Dynakube: &dynakube.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
@@ -148,14 +136,13 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				},
 				transport: transport,
 			},
-			args: args{targetDir: consts.AgentInitBinDirMount},
+			args: args{targetDir: t.TempDir()},
 			want: true, wantErr: require.NoError,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			installer := &Installer{
-				fs:        tt.fields.fs,
 				extractor: tt.fields.extractor,
 				props:     tt.fields.props,
 				transport: tt.fields.transport,

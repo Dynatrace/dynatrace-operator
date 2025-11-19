@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,7 +27,7 @@ type Properties struct {
 	ImageDigest  string
 }
 
-func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (installer.Installer, error) {
+func NewImageInstaller(ctx context.Context, props *Properties) (installer.Installer, error) {
 	defaultTransport := http.DefaultTransport.(*http.Transport).Clone()
 
 	transport, err := registry.PrepareTransportForDynaKube(ctx, props.APIReader, defaultTransport, props.Dynakube)
@@ -42,8 +41,7 @@ func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (ins
 	}
 
 	return &Installer{
-		fs:        fs,
-		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
+		extractor: zip.NewOneAgentExtractor(props.PathResolver),
 		props:     props,
 		transport: transport,
 		keychain:  keychain,
@@ -51,7 +49,6 @@ func NewImageInstaller(ctx context.Context, fs afero.Fs, props *Properties) (ins
 }
 
 type Installer struct {
-	fs        afero.Fs
 	extractor zip.Extractor
 	props     *Properties
 	transport http.RoundTripper
@@ -67,7 +64,7 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 		return true, nil
 	}
 
-	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
+	err := os.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create the base shared agent directory", "err", err)
 
@@ -77,15 +74,15 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 	log.Info("installing agent", "image", installer.props.ImageURI, "target dir", targetDir)
 
 	if err := installer.installAgentFromImage(targetDir); err != nil {
-		_ = installer.fs.RemoveAll(targetDir)
+		_ = os.RemoveAll(targetDir)
 
 		log.Info("failed to install agent from image", "err", err)
 
 		return false, errors.WithStack(err)
 	}
 
-	if err := symlink.CreateForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
-		_ = installer.fs.RemoveAll(targetDir)
+	if err := symlink.CreateForCurrentVersionIfNotExists(targetDir); err != nil {
+		_ = os.RemoveAll(targetDir)
 
 		log.Info("failed to create symlink for agent installation", "err", err)
 
@@ -96,9 +93,9 @@ func (installer *Installer) InstallAgent(_ context.Context, targetDir string) (b
 }
 
 func (installer *Installer) installAgentFromImage(targetDir string) error {
-	defer func() { _ = installer.fs.RemoveAll(CacheDir) }()
+	defer func() { _ = os.RemoveAll(CacheDir) }()
 
-	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
+	err := os.MkdirAll(CacheDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create cache dir", "err", err)
 
@@ -123,7 +120,7 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 }
 
 func (installer *Installer) isAlreadyPresent(targetDir string) bool {
-	_, err := installer.fs.Stat(targetDir)
+	_, err := os.Stat(targetDir)
 
 	return !os.IsNotExist(err)
 }

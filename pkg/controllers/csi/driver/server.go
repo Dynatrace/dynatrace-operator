@@ -36,7 +36,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -52,7 +51,6 @@ type Server struct {
 	csi.UnimplementedIdentityServer
 	csi.UnimplementedNodeServer
 
-	fs      afero.Afero
 	mounter mount.Interface
 
 	publishers map[string]csivolumes.Publisher
@@ -66,7 +64,6 @@ var _ csi.NodeServer = &Server{}
 func NewServer(opts dtcsi.CSIOptions) *Server {
 	return &Server{
 		opts:    opts,
-		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
 		path:    metadata.PathResolver{RootDir: opts.RootDir},
 	}
@@ -85,14 +82,14 @@ func (srv *Server) Start(ctx context.Context) error {
 	addr := endpoint.Host + endpoint.Path
 
 	if endpoint.Scheme == "unix" {
-		if err := srv.fs.Remove(addr); err != nil && !os.IsNotExist(err) {
+		if err := os.Remove(addr); err != nil && !os.IsNotExist(err) {
 			return errors.WithMessage(err, fmt.Sprintf("failed to remove old endpoint on '%s'", addr))
 		}
 	}
 
 	srv.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode:  appvolumes.NewPublisher(srv.fs, srv.mounter, srv.path),
-		hostvolumes.Mode: hostvolumes.NewPublisher(srv.fs, srv.mounter, srv.path),
+		appvolumes.Mode:  appvolumes.NewPublisher(srv.mounter, srv.path),
+		hostvolumes.Mode: hostvolumes.NewPublisher(srv.mounter, srv.path),
 	}
 
 	log.Info("starting listener", "scheme", endpoint.Scheme, "address", addr)
@@ -208,9 +205,9 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 
 	mappedDir := srv.path.AppMountMappedDir(volumeInfo.VolumeID) // Unmount follows symlinks, so no need to check for them here
 
-	_, err := srv.fs.Stat(mappedDir)
+	_, err := os.Stat(mappedDir)
 	if os.IsNotExist(err) { // case for timed out mounts
-		_ = srv.fs.RemoveAll(appMountDir)
+		_ = os.RemoveAll(appMountDir)
 
 		return
 	} else if err != nil {
@@ -230,29 +227,29 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		for _, path := range needsCleanUp {
 			podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
 			if podInfoSymlinkPath != "" {
-				_ = srv.fs.Remove(podInfoSymlinkPath)
+				_ = os.Remove(podInfoSymlinkPath)
 
 				podInfoSymlinkDir := filepath.Dir(podInfoSymlinkPath)
 
-				if isEmpty, _ := srv.fs.IsEmpty(podInfoSymlinkDir); isEmpty {
-					_ = srv.fs.Remove(podInfoSymlinkDir)
+				if entries, _ := os.ReadDir(podInfoSymlinkDir); len(entries) == 0 {
+					_ = os.Remove(podInfoSymlinkDir)
 				}
 			}
 
-			err := srv.fs.RemoveAll(path) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
+			err := os.RemoveAll(path) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
 			if err != nil {
 				log.Error(err, "failed to clean up unmounted volume dir", "path", path)
 			}
 		}
 
-		_ = srv.fs.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
+		_ = os.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
 	}
 }
 
 func (srv *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
 	podInfoPath := srv.path.OverlayVarPodInfo(volumeInfo.VolumeID)
 
-	podInfoBytes, err := srv.fs.ReadFile(srv.path.OverlayVarPodInfo(volumeInfo.VolumeID))
+	podInfoBytes, err := os.ReadFile(srv.path.OverlayVarPodInfo(volumeInfo.VolumeID))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return ""

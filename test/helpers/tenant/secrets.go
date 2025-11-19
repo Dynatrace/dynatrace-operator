@@ -4,12 +4,12 @@ package tenant
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -46,8 +46,8 @@ type EdgeConnectSecret struct {
 	Resource          string `yaml:"resource"`
 }
 
-func manyFromConfig(fs afero.Fs, path string) ([]Secret, error) {
-	secretConfigFile, err := afero.ReadFile(fs, path)
+func manyFromConfig(path string) ([]Secret, error) {
+	secretConfigFile, err := os.ReadFile(path)
 
 	if err != nil {
 		return []Secret{}, errors.WithStack(err)
@@ -59,8 +59,8 @@ func manyFromConfig(fs afero.Fs, path string) ([]Secret, error) {
 	return result.Tenants, errors.WithStack(err)
 }
 
-func newFromConfig(fs afero.Fs, path string) (Secret, error) {
-	secretConfigFile, err := afero.ReadFile(fs, path)
+func newFromConfig(path string) (Secret, error) {
+	secretConfigFile, err := os.ReadFile(path)
 
 	if err != nil {
 		return Secret{}, errors.WithStack(err)
@@ -73,7 +73,7 @@ func newFromConfig(fs afero.Fs, path string) (Secret, error) {
 }
 
 func GetSingleTenantSecret(t *testing.T) Secret {
-	secret, err := newFromConfig(afero.NewOsFs(), defaultSingleTenant)
+	secret, err := newFromConfig(defaultSingleTenant)
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
 	}
@@ -82,7 +82,7 @@ func GetSingleTenantSecret(t *testing.T) Secret {
 }
 
 func GetMultiTenantSecret(t *testing.T) []Secret {
-	secrets, err := manyFromConfig(afero.NewOsFs(), defaultMultiTenant)
+	secrets, err := manyFromConfig(defaultMultiTenant)
 	if err != nil {
 		t.Fatal("Couldn't read tenant secret from filesystem", err)
 	}
@@ -91,7 +91,7 @@ func GetMultiTenantSecret(t *testing.T) []Secret {
 }
 
 func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
-	secretConfigFile, err := afero.ReadFile(afero.NewOsFs(), defaultEdgeConnectTenant)
+	secretConfigFile, err := os.ReadFile(defaultEdgeConnectTenant)
 
 	if err != nil {
 		t.Fatal("Couldn't read edgeconnect tenant secret from filesystem", err)

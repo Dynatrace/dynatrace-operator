@@ -18,6 +18,7 @@ package csiprovisioner
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -32,7 +33,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/mount-utils"
@@ -48,15 +48,14 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
-type imageInstallerBuilder func(context.Context, afero.Fs, *image.Properties) (installer.Installer, error)
-type jobInstallerBuilder func(context.Context, afero.Fs, *job.Properties) installer.Installer
+type urlInstallerBuilder func(dtclient.Client, *url.Properties) installer.Installer
+type imageInstallerBuilder func(context.Context, *image.Properties) (installer.Installer, error)
+type jobInstallerBuilder func(context.Context, *job.Properties) installer.Installer
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
 	apiReader  client.Reader
 	kubeClient client.Client
-	fs         afero.Fs
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	urlInstallerBuilder    urlInstallerBuilder
@@ -68,19 +67,17 @@ type OneAgentProvisioner struct {
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
 func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisioner {
-	fs := afero.NewOsFs()
 	path := metadata.PathResolver{RootDir: opts.RootDir}
 
 	return &OneAgentProvisioner{
 		apiReader:              mgr.GetAPIReader(),
 		kubeClient:             mgr.GetClient(),
-		fs:                     fs,
 		path:                   path,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		urlInstallerBuilder:    url.NewURLInstaller,
 		imageInstallerBuilder:  image.NewImageInstaller,
 		jobInstallerBuilder:    job.NewInstaller,
-		cleaner:                cleanup.New(afero.Afero{Fs: fs}, mgr.GetAPIReader(), path, mount.New("")),
+		cleaner:                cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
 	}
 }
 
@@ -130,8 +127,8 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
-	if dk.OneAgent().GetCodeModulesImage() == "" && dk.OneAgent().GetCodeModulesVersion() == "" {
-		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
+	if !dk.IsCodeModulesStatusReady() {
+		log.Info("dynakube's codemodule version status is not yet ready, requeuing", "dynakube", dk.Name)
 
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
@@ -156,12 +153,12 @@ func isProvisionerNeeded(dk *dynakube.DynaKube) bool {
 
 func (provisioner *OneAgentProvisioner) setupFileSystem(dk dynakube.DynaKube) error {
 	dynakubeDir := provisioner.path.DynaKubeDir(dk.GetName())
-	if err := provisioner.fs.MkdirAll(dynakubeDir, 0755); err != nil {
+	if err := os.MkdirAll(dynakubeDir, 0755); err != nil {
 		return errors.WithMessagef(err, "failed to create directory %s", dynakubeDir)
 	}
 
 	agentBinaryDir := provisioner.path.AgentSharedBinaryDirBase()
-	if err := provisioner.fs.MkdirAll(agentBinaryDir, 0755); err != nil {
+	if err := os.MkdirAll(agentBinaryDir, 0755); err != nil {
 		return errors.WithMessagef(err, "failed to create directory %s", agentBinaryDir)
 	}
 

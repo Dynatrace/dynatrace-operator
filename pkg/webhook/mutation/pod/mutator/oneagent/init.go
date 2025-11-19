@@ -1,6 +1,8 @@
 package oneagent
 
 import (
+	"fmt"
+
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/move"
@@ -13,7 +15,22 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+type CodeModulesStatusNotReadyErr struct {
+	dkName string
+}
+
+func (err CodeModulesStatusNotReadyErr) Error() string {
+	return fmt.Sprintf("the dynakube's (%s) codemodules version status is not yet ready, skipping mutation", err.dkName)
+}
+
 func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath string) error {
+	if !mutationRequest.DynaKube.IsCodeModulesStatusReady() {
+		return dtwebhook.MutatorError{
+			Err:      CodeModulesStatusNotReadyErr{dkName: mutationRequest.DynaKube.Name},
+			Annotate: setNotInjectedAnnotationFunc(DynaKubeStatusNotReadyReason),
+		}
+	}
+
 	if isCSIVolume(mutationRequest.BaseRequest) {
 		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
 		addCSIBinVolume(

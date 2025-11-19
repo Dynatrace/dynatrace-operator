@@ -36,7 +36,7 @@ var (
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
-		RunE: run(),
+		RunE: run,
 	}
 
 	addFlags(cmd)
@@ -53,22 +53,20 @@ func clusterOptions(opts *cluster.Options) {
 	opts.Scheme = scheme.Scheme
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		version.LogVersion()
-		logd.LogBaseLoggerSettings()
+func run(cmd *cobra.Command, args []string) error {
+	version.LogVersion()
+	logd.LogBaseLoggerSettings()
 
-		kubeConfig, err := config.GetConfig()
-		if err != nil {
-			return err
-		}
-
-		log := NewTroubleshootLoggerToWriter(os.Stdout)
-
-		RunTroubleshootCmd(cmd.Context(), log, namespaceFlagValue, kubeConfig)
-
-		return nil
+	kubeConfig, err := config.GetConfig()
+	if err != nil {
+		return err
 	}
+
+	log := NewTroubleshootLoggerToWriter(os.Stdout)
+
+	RunTroubleshootCmd(cmd.Context(), log, namespaceFlagValue, kubeConfig)
+
+	return nil
 }
 
 func RunTroubleshootCmd(ctx context.Context, log logd.Logger, namespaceName string, kubeConfig *rest.Config) {

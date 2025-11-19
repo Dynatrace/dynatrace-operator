@@ -17,7 +17,7 @@ var csiAddress, kubeletRegistrationPath, pluginRegistrationPath string
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
-		RunE: run(),
+		RunE: run,
 	}
 
 	addFlags(cmd)
@@ -31,14 +31,12 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&kubeletRegistrationPath, "kubelet-registration-path", "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock", "Kubelet registration path.")
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		version.LogVersion()
-		logd.LogBaseLoggerSettings()
+func run(*cobra.Command, []string) error {
+	version.LogVersion()
+	logd.LogBaseLoggerSettings()
 
-		signalHandler := ctrl.SetupSignalHandler()
-		err := registrar.NewServer(dtcsi.DriverName, csiAddress, kubeletRegistrationPath, pluginRegistrationPath, []string{"v1.0.0"}).Start(signalHandler)
+	signalHandler := ctrl.SetupSignalHandler()
+	err := registrar.NewServer(dtcsi.DriverName, csiAddress, kubeletRegistrationPath, pluginRegistrationPath, []string{"v1.0.0"}).Start(signalHandler)
 
-		return errors.WithStack(err)
-	}
+	return errors.WithStack(err)
 }
