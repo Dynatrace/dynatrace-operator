@@ -1,6 +1,6 @@
 suite: test role for database extensions
 templates:
-  - Common/extensions/database/role-database.yaml
+  - Common/extensions/database/role-extensions-database.yaml
 tests:
   - it: should create Role
     documentIndex: 0

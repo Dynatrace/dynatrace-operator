@@ -1,6 +1,6 @@
 suite: test role for the extensions controller for prometheus
 templates:
-  - Common/extensions/prometheus/role-extensions-controller.yaml
+  - Common/extensions/prometheus/role-extensions-controller-prometheus.yaml
 tests:
   - it: should not exist by default
     asserts:

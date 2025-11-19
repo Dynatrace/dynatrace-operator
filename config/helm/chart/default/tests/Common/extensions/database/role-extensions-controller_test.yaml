@@ -1,6 +1,6 @@
 suite: test role for the extensions controller for database extensions
 templates:
-  - Common/extensions/database/role-extensions-controller.yaml
+  - Common/extensions/database/role-extensions-controller-database.yaml
 tests:
   - it: Role and RoleBinding exists
     asserts:
