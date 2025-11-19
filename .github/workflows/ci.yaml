@@ -150,7 +150,6 @@ jobs:
       - name: Run Linting
         id: helm-linting
         run: |
-          echo "Hello"
           make test/helm/lint
 
   tests:
