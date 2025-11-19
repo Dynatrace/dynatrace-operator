@@ -261,7 +261,7 @@ jobs:
         with:
           config: .markdownlint.json
           # renovate depName=github.com/igorshubovych/markdownlint-cli
-          version: v0.45.0
+          version: v0.46.0
 
   prepare:
     name: Prepare properties
