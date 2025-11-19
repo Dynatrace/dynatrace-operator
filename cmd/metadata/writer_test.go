@@ -141,8 +141,7 @@ func Test_run(t *testing.T) {
 		metadataFileFlagValue = filePath
 		attributesFlagValue = "k8s.node.name=test-node,k8s.cluster.uid=test-uid"
 
-		runFunc := run()
-		err = runFunc(nil, nil)
+		err = run(nil, nil)
 
 		require.NoError(t, err)
 
@@ -159,8 +158,7 @@ func Test_run(t *testing.T) {
 		metadataFileFlagValue = filepath.Join(tmpDir, "metadata.properties")
 		attributesFlagValue = ""
 
-		runFunc := run()
-		err = runFunc(nil, nil)
+		err = run(nil, nil)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot be empty")
@@ -174,8 +172,7 @@ func Test_run(t *testing.T) {
 		metadataFileFlagValue = filepath.Join(tmpDir, "metadata.properties")
 		attributesFlagValue = "invalid-without-equals"
 
-		runFunc := run()
-		err = runFunc(nil, nil)
+		err = run(nil, nil)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid attribute format")

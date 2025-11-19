@@ -1,11 +1,12 @@
 package url
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 )
 
-func (installer Installer) unpackOneAgentZip(targetDir string, tmpFile afero.File) error {
+func (installer Installer) unpackOneAgentZip(targetDir string, tmpFile *os.File) error {
 	var fileSize int64
 	if stat, err := tmpFile.Stat(); err == nil {
 		fileSize = stat.Size()

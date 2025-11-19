@@ -26,7 +26,7 @@ var (
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
-		RunE: run(),
+		RunE: run,
 	}
 
 	addFlags(cmd)
@@ -40,14 +40,12 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&healthPort, "health-port", "9808", "health port")
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		version.LogVersion()
-		logd.LogBaseLoggerSettings()
+func run(*cobra.Command, []string) error {
+	version.LogVersion()
+	logd.LogBaseLoggerSettings()
 
-		signalHandler := ctrl.SetupSignalHandler()
-		err := livenessprobe.NewServer(dtcsi.DriverName, csiAddress, healthPort, probeTimeout).Start(signalHandler)
+	signalHandler := ctrl.SetupSignalHandler()
+	err := livenessprobe.NewServer(dtcsi.DriverName, csiAddress, healthPort, probeTimeout).Start(signalHandler)
 
-		return errors.WithStack(err)
-	}
+	return errors.WithStack(err)
 }
