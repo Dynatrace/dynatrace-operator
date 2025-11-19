@@ -33,6 +33,7 @@ jobs:
       is_snyk_authorized: ${{ steps.is-snyk-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
+      golangci_lint_changed: ${{ steps.golangci_lint.outputs.any_changed == 'true' && 'true' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -95,6 +96,13 @@ jobs:
       - name: Detect markdown changes
         uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: markdown
+        with:
+          files: |
+            **/*.md
+          base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
+      - name: Detect markdown changes
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
+        id: golangci_lint
         with:
           files: |
             **/*.md
@@ -169,7 +177,7 @@ jobs:
 
   linting:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.golangci_lint_changed
     name: Run linting
     runs-on: ubuntu-24.04
     steps:

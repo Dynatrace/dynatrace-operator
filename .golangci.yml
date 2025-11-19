@@ -264,11 +264,13 @@ linters:
       - legacy
       - std-error-handling
     rules:
+      - path: '(.+)_test\.go'
+        linters:
+          - goconst
       - linters:
           - dupl
           - perfsprint
           - wsl_v5
-          - goconst
         path: _(test|gen)\.go
       - linters:
           - govet
