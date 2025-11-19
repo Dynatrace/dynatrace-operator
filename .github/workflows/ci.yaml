@@ -100,12 +100,12 @@ jobs:
           files: |
             **/*.md
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
-      - name: Detect markdown changes
+      - name: Detect golangci_lint config changes
         uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: golangci_lint
         with:
           files: |
-            **/*.md
+            .golangci.yml
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
       - name: List Changed Files
         run: |
