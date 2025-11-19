@@ -2,12 +2,12 @@ package url
 
 import (
 	"context"
+	"os"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 )
 
-func (installer Installer) downloadOneAgentFromURL(ctx context.Context, tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentFromURL(ctx context.Context, tmpFile *os.File) error {
 	switch {
 	case installer.props.URL != "":
 		if err := installer.downloadOneAgentViaInstallerURL(ctx, tmpFile); err != nil {
@@ -26,7 +26,7 @@ func (installer Installer) downloadOneAgentFromURL(ctx context.Context, tmpFile 
 	return nil
 }
 
-func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile afero.File) error {
+func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile *os.File) error {
 	log.Info("downloading latest OneAgent package", "props", installer.props)
 
 	return installer.dtc.GetLatestAgent(ctx,
@@ -40,7 +40,7 @@ func (installer Installer) downloadLatestOneAgent(ctx context.Context, tmpFile a
 	)
 }
 
-func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpFile *os.File) error {
 	log.Info("downloading specific OneAgent package", "version", installer.props.TargetVersion)
 
 	err := installer.dtc.GetAgent(ctx,
@@ -73,7 +73,7 @@ func (installer Installer) downloadOneAgentWithVersion(ctx context.Context, tmpF
 	return nil
 }
 
-func (installer Installer) downloadOneAgentViaInstallerURL(ctx context.Context, tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentViaInstallerURL(ctx context.Context, tmpFile *os.File) error {
 	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.URL)
 
 	return installer.dtc.GetAgentViaInstallerURL(ctx, installer.props.URL, tmpFile)

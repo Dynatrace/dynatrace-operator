@@ -2,10 +2,10 @@ package download
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/spf13/afero"
 )
 
 const (
@@ -46,10 +46,10 @@ func (c Config) toDTClientOptions() []dtclient.Option {
 	return options
 }
 
-func configFromFs(fs afero.Afero, inputDir string) (*Config, error) {
+func configFromFs(inputDir string) (*Config, error) {
 	inputFile := filepath.Join(inputDir, InputFileName)
 
-	content, err := fs.ReadFile(inputFile)
+	content, err := os.ReadFile(inputFile)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package cleanup
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -13,9 +14,80 @@ import (
 )
 
 func TestRemoveUnusedBinaries(t *testing.T) {
-	// Not possible to test, as parts of it rely on turning symlinks into actual paths, and clearing up according to these paths.
-	// each individual part is testable
-	t.SkipNow()
+	t.Run("happy path", func(t *testing.T) {
+		cleaner := createCleaner(t)
+
+		// Setup latest bin -> should NOT be removed
+		dk := createAppMonDk(t, "appmon", "url")
+		relevantBin := cleaner.path.AgentSharedBinaryDirForAgent("1.2.3")
+		require.NoError(t, os.MkdirAll(relevantBin, os.ModePerm))
+		require.NoError(t, os.MkdirAll(cleaner.path.DynaKubeDir(dk.Name), os.ModePerm))
+		require.NoError(t, os.Symlink(relevantBin, cleaner.path.LatestAgentBinaryForDynaKube(dk.Name)))
+
+		// Setup still mounted bin -> should NOT be removed
+		expectedPath := cleaner.path.AppMountForID("example")
+		stillMountedBin := cleaner.path.AgentSharedBinaryDirForAgent("1.1.1")
+		require.NoError(t, os.MkdirAll(expectedPath, os.ModePerm))
+		require.NoError(t, os.MkdirAll(stillMountedBin, os.ModePerm))
+		relevantMountPoint := mount.MountPoint{
+			Device: "overlay",
+			Path:   expectedPath,
+			Type:   "overlay",
+			Opts: []string{
+				"lowerdir=" + stillMountedBin,
+				"upperdir=...",
+				"workdir=...",
+			},
+		}
+		mockMountPoints(t, cleaner, relevantMountPoint)
+
+		// Setup unused bins -> should be removed
+		unusedVersions := []string{"1.0.0", "1.0.1", "1.1.0"}
+		for _, version := range unusedVersions {
+			require.NoError(t, os.MkdirAll(cleaner.path.AgentSharedBinaryDirForAgent(version), os.ModePerm))
+		}
+
+		// Setup fsState, with old dks -> unused dks should be removed
+		state := fsState{
+			binDks: []string{
+				dk.Name, "dk1", "dk2", "dk3", // dk.Name is the only one the will remain
+			},
+			deprecatedDks: []string{
+				"tenant1", "tenant2", "tenant3",
+			},
+		}
+		for _, dkName := range state.binDks {
+			require.NoError(t, os.MkdirAll(cleaner.path.LatestAgentBinaryForDynaKube(dkName), os.ModePerm))
+		}
+		for _, tenantName := range state.deprecatedDks {
+			require.NoError(t, os.MkdirAll(cleaner.path.LatestAgentBinaryForDynaKube(tenantName), os.ModePerm))
+		}
+
+		cleaner.removeUnusedBinaries([]dynakube.DynaKube{dk}, state)
+
+		for _, version := range unusedVersions {
+			assert.NoDirExists(t, cleaner.path.AgentSharedBinaryDirForAgent(version))
+		}
+
+		// Exists because there is a dk for it
+		assert.DirExists(t, cleaner.path.AgentSharedBinaryDirForAgent("1.2.3"))
+
+		// Exists because there is a mount still using it
+		assert.DirExists(t, cleaner.path.AgentSharedBinaryDirForAgent("1.1.1"))
+
+		for _, dkName := range state.binDks {
+			if dkName == dk.Name {
+				// Exists because there is a dk for it
+				assert.FileExists(t, cleaner.path.LatestAgentBinaryForDynaKube(dkName))
+
+				continue
+			}
+			assert.NoFileExists(t, cleaner.path.LatestAgentBinaryForDynaKube(dkName))
+		}
+		for _, tenantName := range state.deprecatedDks {
+			assert.NoDirExists(t, cleaner.path.LatestAgentBinaryForDynaKube(tenantName))
+		}
+	})
 }
 
 func TestRemoveOldSharedBinaries(t *testing.T) {
@@ -28,7 +100,7 @@ func TestRemoveOldSharedBinaries(t *testing.T) {
 	})
 	t.Run("empty shared dir -> no panic", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		cleaner.fs.MkdirAll(cleaner.path.AgentSharedBinaryDirBase(), os.ModePerm)
+		os.MkdirAll(cleaner.path.AgentSharedBinaryDirBase(), os.ModePerm)
 
 		keptBins := map[string]bool{}
 
@@ -37,7 +109,7 @@ func TestRemoveOldSharedBinaries(t *testing.T) {
 
 	t.Run("empty keptBins -> remove all", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		cleaner.fs.MkdirAll(cleaner.path.AgentSharedBinaryDirBase(), os.ModePerm)
+		os.MkdirAll(cleaner.path.AgentSharedBinaryDirBase(), os.ModePerm)
 
 		keptBins := map[string]bool{}
 		agentVersions := []string{"test1", "test2"}
@@ -46,22 +118,20 @@ func TestRemoveOldSharedBinaries(t *testing.T) {
 			cleaner.createSharedBinDir(t, folder)
 
 			expectedDir := cleaner.path.AgentSharedBinaryDirForAgent(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			assert.DirExists(t, expectedDir)
 		}
 
 		cleaner.removeOldSharedBinaries(keptBins)
 
 		for _, folder := range agentVersions {
 			expectedDir := cleaner.path.AgentSharedBinaryDirForAgent(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.False(t, exists)
+			assert.NoDirExists(t, expectedDir)
 		}
 	})
 
 	t.Run("keptBins set -> only remove orphans", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		cleaner.fs.MkdirAll(cleaner.path.AgentSharedBinaryDirBase(), os.ModePerm)
+		os.MkdirAll(cleaner.path.AgentSharedBinaryDirBase(), os.ModePerm)
 
 		keptBins := map[string]bool{
 			cleaner.path.AgentSharedBinaryDirForAgent("test1"): true,
@@ -74,22 +144,19 @@ func TestRemoveOldSharedBinaries(t *testing.T) {
 			cleaner.createSharedBinDir(t, version)
 
 			expectedDir := cleaner.path.AgentSharedBinaryDirForAgent(version)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			assert.DirExists(t, expectedDir)
 		}
 
 		cleaner.removeOldSharedBinaries(keptBins)
 
 		for _, folder := range agentVersions {
 			expectedDir := cleaner.path.AgentSharedBinaryDirForAgent(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			assert.DirExists(t, expectedDir)
 		}
 
 		for _, folder := range orphans {
 			expectedDir := cleaner.path.AgentSharedBinaryDirForAgent(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.False(t, exists)
+			assert.NoDirExists(t, expectedDir)
 		}
 	})
 }
@@ -105,9 +172,9 @@ func TestCollectStillMountedBins(t *testing.T) {
 	})
 	t.Run("get mounted bins", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		cleaner.path.RootDir = "special"
-		expectedPath := cleaner.path.RootDir + "/something"
-		expectedLowerDir := expectedPath + "/else"
+		cleaner.path.RootDir = filepath.Join(cleaner.path.RootDir, "special")
+		expectedPath := filepath.Join(cleaner.path.RootDir, "something")
+		expectedLowerDir := filepath.Join(cleaner.path.RootDir, "else")
 
 		relevantMountPoint := mount.MountPoint{
 			Device: "overlay",
@@ -150,12 +217,18 @@ func TestCollectRelevantLatestBins(t *testing.T) {
 
 	t.Run("relevant dk -> try to resolve symlink", func(t *testing.T) {
 		cleaner := createCleaner(t)
+		dk := createAppMonDk(t, "appmon", "url")
+		relevantBin := cleaner.path.AgentSharedBinaryDirForAgent("1.2.3")
+		require.NoError(t, os.MkdirAll(relevantBin, os.ModePerm))
+		require.NoError(t, os.MkdirAll(cleaner.path.DynaKubeDir(dk.Name), os.ModePerm))
+		require.NoError(t, os.Symlink(relevantBin, cleaner.path.LatestAgentBinaryForDynaKube(dk.Name)))
 
 		relevantBins := cleaner.collectRelevantLatestBins([]dynakube.DynaKube{
-			createAppMonDk(t, "appmon", "url"),
+			dk,
 		})
 
 		require.NotEmpty(t, relevantBins)
+		assert.Contains(t, relevantBins, relevantBin)
 	})
 }
 
@@ -170,8 +243,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 			cleaner.createBinDirs(t, folder)
 
 			expectedDir := cleaner.path.LatestAgentBinaryForDynaKube(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			assert.DirExists(t, expectedDir)
 		}
 
 		cleaner.removeOldBinarySymlinks(dks, fsState{
@@ -179,8 +251,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 		})
 
 		for _, folder := range binDirs {
-			exists, _ := cleaner.fs.Exists(cleaner.path.LatestAgentBinaryForDynaKube(folder))
-			require.False(t, exists)
+			assert.NoDirExists(t, cleaner.path.LatestAgentBinaryForDynaKube(folder))
 		}
 	})
 
@@ -197,8 +268,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 			cleaner.createBinDirs(t, folder)
 
 			expectedDir := cleaner.path.LatestAgentBinaryForDynaKube(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			assert.DirExists(t, expectedDir)
 		}
 
 		cleaner.removeOldBinarySymlinks(dks, fsState{
@@ -206,13 +276,11 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 		})
 
 		for _, folder := range binDirs[:2] {
-			exists, _ := cleaner.fs.Exists(cleaner.path.LatestAgentBinaryForDynaKube(folder))
-			require.True(t, exists)
+			assert.DirExists(t, cleaner.path.LatestAgentBinaryForDynaKube(folder))
 		}
 
 		for _, folder := range binDirs[2:] {
-			exists, _ := cleaner.fs.Exists(cleaner.path.LatestAgentBinaryForDynaKube(folder))
-			require.False(t, exists)
+			assert.NoDirExists(t, cleaner.path.LatestAgentBinaryForDynaKube(folder))
 		}
 	})
 
@@ -229,8 +297,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 			cleaner.createBinDirs(t, folder)
 
 			expectedDir := cleaner.path.LatestAgentBinaryForDynaKube(folder)
-			exists, _ := cleaner.fs.Exists(expectedDir)
-			require.True(t, exists)
+			assert.DirExists(t, expectedDir)
 		}
 
 		cleaner.removeOldBinarySymlinks(dks, fsState{
@@ -238,13 +305,11 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 		})
 
 		for _, folder := range binDirs[:2] {
-			exists, _ := cleaner.fs.Exists(cleaner.path.LatestAgentBinaryForDynaKube(folder))
-			require.True(t, exists)
+			assert.DirExists(t, cleaner.path.LatestAgentBinaryForDynaKube(folder))
 		}
 
 		for _, folder := range binDirs[2:] {
-			exists, _ := cleaner.fs.Exists(cleaner.path.LatestAgentBinaryForDynaKube(folder))
-			require.False(t, exists)
+			assert.NoDirExists(t, cleaner.path.LatestAgentBinaryForDynaKube(folder))
 		}
 	})
 }
@@ -281,6 +346,6 @@ func (c *Cleaner) createSharedBinDir(t *testing.T, version string) {
 	t.Helper()
 
 	binDir := c.path.AgentSharedBinaryDirForAgent(version)
-	err := c.fs.MkdirAll(binDir, os.ModePerm)
+	err := os.MkdirAll(binDir, os.ModePerm)
 	require.NoError(t, err)
 }

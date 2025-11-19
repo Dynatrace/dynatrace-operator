@@ -16,6 +16,12 @@ limitations under the License.
 
 package dtcsi
 
+import (
+	"os"
+
+	"github.com/pkg/errors"
+)
+
 const (
 	DataPath       = "/data"
 	DriverName     = "csi.oneagent.dynatrace.com"
@@ -40,4 +46,8 @@ type CSIOptions struct {
 	NodeID   string
 	Endpoint string
 	RootDir  string
+}
+
+func CreateDataPath() error {
+	return errors.WithStack(os.MkdirAll(DataPath, os.ModePerm))
 }
