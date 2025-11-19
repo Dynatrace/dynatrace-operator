@@ -168,8 +168,7 @@ jobs:
 
   linting:
     needs: [detect-changes]
-#    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
-    if: always()
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
     name: Run linting
     runs-on: ubuntu-24.04
     steps:
@@ -177,7 +176,7 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
-          go-version: "1.25.4"
+          go-version-file: "${{ github.workspace }}/go.mod"
       - name: Run lint
         run: |
           make go/lint
