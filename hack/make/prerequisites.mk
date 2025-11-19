@@ -73,14 +73,6 @@ prerequisites/go-deadcode:
 prerequisites/go-test-coverage:
 	$(call go-install-tool,$(GO_TEST_COVERAGE),github.com/vladopajic/go-test-coverage/v2,latest)
 
-## Installs 'kustomize' if it is missing
-prerequisites/kustomize:
-	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
-
-## Install 'cyclonedx-gomod' if it is missing
-prerequisites/cyclonedx-gomod:
-	$(call go-install-tool,$(CYCLONEDX_GOMOD),github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod,$(CYCLONEDX_GOMOD_VERSION))
-
 ## Install setup-envtest locally
 prerequisites/envtest:
 	$(call go-install-tool,$(SETUP_ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
@@ -101,6 +93,10 @@ prerequisites/setup-envtest: prerequisites/envtest
 prerequisites/helm-unittest:
 	hack/helm/install-unittest-plugin.sh $(HELMUNITTEST_VERSION)
 
+## Installs 'kustomize' if it is missing
+prerequisites/kustomize:
+	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+
 ## Install 'markdownlint' if it is missing
 prerequisites/markdownlint:
 	npm install --force markdownlint-cli@$(MARKDOWNLINT_CLI_VERSION)
@@ -118,6 +114,9 @@ prerequisites/setup-pre-commit:
 prerequisites/python:
 	python3 -m venv $(LOCALBIN)/.venv && source $(LOCALBIN)/.venv/bin/activate && pip3 install -r hack/requirements.txt
 
+## Install 'cyclonedx-gomod' if it is missing
+prerequisites/cyclonedx-gomod:
+	$(call go-install-tool,$(CYCLONEDX_GOMOD),github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod,$(CYCLONEDX_GOMOD_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
