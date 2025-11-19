@@ -103,7 +103,7 @@ prerequisites/markdownlint:
 
 ## Install verktra/mockery
 prerequisites/mockery:
-	go install github.com/vektra/mockery/v2@$(MOCKERY_VERSION)
+	$(call go-install-tool,$(MOCKERY),github.com/vektra/mockery/v2,$(MOCKERY_VERSION))
 
 ## Install 'pre-commit' if it is missing
 prerequisites/setup-pre-commit:
