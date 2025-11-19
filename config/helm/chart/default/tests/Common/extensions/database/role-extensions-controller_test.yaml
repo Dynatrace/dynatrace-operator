@@ -53,7 +53,7 @@ tests:
             verbs:
               - use
 
-  - it: shouldn't exist if neither extensions nor prometheus extensions are enabled
+  - it: shouldn't exist if neither extensions nor database extensions are enabled
     set:
       platform: openshift
       rbac.extensions.create: false
@@ -71,7 +71,7 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: shouldn't exist if only prometheus extensions are enabled
+  - it: shouldn't exist if only database extensions are enabled
     set:
       platform: openshift
       rbac.extensions.create: false
