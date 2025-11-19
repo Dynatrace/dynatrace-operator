@@ -78,12 +78,13 @@ func run(cmd *cobra.Command, args []string) error {
 		logd.Get().WithName("platform").Error(err, "failed to detect platform, due to discovery client issues")
 	} else {
 		_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
-		if !k8serrors.IsNotFound(err) {
+		if err == nil {
 			logd.Get().WithName("platform").Info("detected platform", "platform", "openshift")
-
 			isOpenShift = true
-		} else {
+		} else if k8serrors.IsNotFound(err) {
 			logd.Get().WithName("platform").Info("detected platform", "platform", "kubernetes")
+		} else {
+			logd.Get().WithName("platform").Error(err, "failed to detect platform, defaulting to kubernetes")
 		}
 	}
 
