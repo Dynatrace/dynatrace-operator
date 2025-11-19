@@ -20,7 +20,7 @@ type CodeModulesStatusNotReadyErr struct {
 }
 
 func (err CodeModulesStatusNotReadyErr) Error() string {
-	return fmt.Sprintf("the dynakube's (%s) codemodules status is not yet ready, skipping mutation", err.dkName)
+	return fmt.Sprintf("the dynakube's (%s) codemodules version status is not yet ready, skipping mutation", err.dkName)
 }
 
 func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath string) error {

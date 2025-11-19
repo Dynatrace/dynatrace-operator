@@ -130,13 +130,9 @@ func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.P
 func (dk *DynaKube) IsCodeModulesStatusReady() bool {
 	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsPublicRegistry() {
 		if dk.OneAgent().GetCodeModulesImage() == "" {
-			log.Info("dynakube's codemodules status is not yet ready, codemodules 'imageID' status is missing", "dynakube", dk.Name)
-
 			return false
 		}
 	} else if dk.OneAgent().GetCodeModulesVersion() == "" || dk.OneAgent().GetCodeModulesVersion() == string(status.CustomImageVersionSource) {
-		log.Info("dynakube's codemodules status is not yet ready, codemodules 'version' status is missing", "dynakube", dk.Name)
-
 		return false
 	}
 
