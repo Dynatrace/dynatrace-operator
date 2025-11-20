@@ -122,7 +122,7 @@ func (h *Handler) isTokenSecretPresent(mutationRequest *dtwebhook.MutationReques
 }
 
 func (h *Handler) isExporterActiveGateCertSecretPresent(mutationRequest *dtwebhook.MutationRequest, sourceSecretName string) bool {
-	if !mutationRequest.DynaKube.ActiveGate().HasCaCert() {
+	if !mutationRequest.DynaKube.ActiveGate().HasCaCert() && mutationRequest.DynaKube.Spec.TrustedCAs == "" {
 		// no ActiveGate, no certs needed
 		return true
 	}
