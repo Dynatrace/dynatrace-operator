@@ -3,9 +3,9 @@ module github.com/Dynatrace/dynatrace-operator
 go 1.25.0
 
 require (
-	github.com/Dynatrace/dynatrace-bootstrapper v1.1.1
+	github.com/Dynatrace/dynatrace-bootstrapper v1.1.3
 	github.com/container-storage-interface/spec v1.12.0
-	github.com/docker/cli v29.0.1+incompatible
+	github.com/docker/cli v29.0.2+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-containerregistry v0.20.6
@@ -15,15 +15,14 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
-	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.45.0
 	go.opentelemetry.io/collector/config/configtls v1.45.0
 	go.opentelemetry.io/collector/confmap v1.45.0
-	go.opentelemetry.io/collector/pipeline v1.45.0
+	go.opentelemetry.io/collector/pipeline v1.46.0
 	go.opentelemetry.io/collector/service v0.139.0
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/mod v0.30.0
 	golang.org/x/net v0.47.0

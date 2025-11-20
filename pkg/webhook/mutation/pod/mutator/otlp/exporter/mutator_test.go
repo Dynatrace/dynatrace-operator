@@ -208,6 +208,11 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 			Value: "http/protobuf",
 		})
 
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPMetricsExporterTemporalityPreference,
+			Value: OTLPMetricsExporterAggregationTemporalityDelta,
+		})
+
 		// verify logs exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsEndpointEnv,

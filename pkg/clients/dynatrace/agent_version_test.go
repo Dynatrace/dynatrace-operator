@@ -1,14 +1,15 @@
 package dynatrace
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -76,9 +77,8 @@ func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client)
 
 func TestGetLatestAgent(t *testing.T) {
 	ctx := context.Background()
-	fs := afero.NewMemMapFs()
 
-	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{fs}, "")
+	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{t: t}, "")
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
@@ -89,19 +89,19 @@ func TestGetLatestAgent(t *testing.T) {
 	}
 
 	t.Run("file download successful", func(t *testing.T) {
-		file, err := afero.TempFile(fs, "client", "installer")
+		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 
 		err = dtc.GetLatestAgent(ctx, OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
 		require.NoError(t, err)
 
-		resp, err := afero.ReadFile(fs, file.Name())
+		resp, err := os.ReadFile(file.Name())
 		require.NoError(t, err)
 
 		assert.Equal(t, agentResponse, string(resp))
 	})
 	t.Run("missing agent error", func(t *testing.T) {
-		file, err := afero.TempFile(fs, "client", "installer")
+		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 
 		err = dtc.GetLatestAgent(ctx, OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "invalid", nil, false, file)
@@ -116,17 +116,17 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, agentRequestHandler)
 		defer dynatraceServer.Close()
 
-		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
+		readWriter := bytes.NewBuffer([]byte{})
 		err := dtc.GetAgent(ctx, OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
 
 		require.NoError(t, err)
-		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
+		assert.Equal(t, versionedAgentResponse, readWriter.String())
 	})
 	t.Run("handle server error", func(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
-		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
+		readWriter := bytes.NewBuffer([]byte{})
 		err := dtc.GetAgent(ctx, OsUnix, InstallerTypePaaS, "", "", "", nil, false, readWriter)
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
@@ -185,20 +185,8 @@ func errorHandler(response http.ResponseWriter, _ *http.Request) {
 	_, _ = response.Write([]byte(testErrorMessage))
 }
 
-type memoryReadWriter struct {
-	data []byte
-}
-
-func (m *memoryReadWriter) Read(p []byte) (n int, err error) {
-	return copy(p, m.data), nil
-}
-
-func (m *memoryReadWriter) Write(p []byte) (n int, err error) {
-	return copy(m.data, p), nil
-}
-
 type ipHandler struct {
-	fs afero.Fs
+	t *testing.T
 }
 
 func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -220,11 +208,7 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 		if strings.HasSuffix(request.URL.Path, "/latest") {
 			// write to temp file and write content to response
 			writer.Header().Set("Content-Type", "application/octet-stream")
-
-			file, _ := afero.TempFile(ipHandler.fs, "server", "installer")
-			_, _ = file.WriteString(agentResponse)
-
-			resp, _ = afero.ReadFile(ipHandler.fs, file.Name())
+			resp = []byte(agentResponse)
 		}
 
 		_, _ = writer.Write(resp)

@@ -1,6 +1,7 @@
 package cleanup
 
 import (
+	"os"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -26,7 +27,7 @@ func (c *Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState)
 }
 
 func (c *Cleaner) removeOldSharedBinaries(keptBins map[string]bool) {
-	sharedBins, err := c.fs.ReadDir(c.path.AgentSharedBinaryDirBase())
+	sharedBins, err := os.ReadDir(c.path.AgentSharedBinaryDirBase())
 	if err != nil {
 		log.Info("failed to list the shared binaries directory, skipping unused binaries cleanup")
 
@@ -38,7 +39,7 @@ func (c *Cleaner) removeOldSharedBinaries(keptBins map[string]bool) {
 
 		_, ok := keptBins[sharedBinPath]
 		if !ok {
-			err := c.fs.RemoveAll(sharedBinPath)
+			err := os.RemoveAll(sharedBinPath)
 			if err != nil {
 				log.Error(err, "failed to remove shared binary", "path", sharedBinPath)
 
@@ -59,7 +60,7 @@ func (c *Cleaner) removeOldBinarySymlinks(dks []dynakube.DynaKube, fsState fsSta
 	for _, dkDir := range fsState.binDks {
 		if _, ok := shouldBePresent[dkDir]; !ok {
 			latest := c.path.LatestAgentBinaryForDynaKube(dkDir)
-			if err := c.fs.Remove(latest); err == nil {
+			if err := os.Remove(latest); err == nil {
 				log.Info("removed old latest bin symlink", "path", latest)
 			}
 		}
@@ -68,7 +69,7 @@ func (c *Cleaner) removeOldBinarySymlinks(dks []dynakube.DynaKube, fsState fsSta
 	for _, depDir := range fsState.deprecatedDks {
 		if _, ok := shouldBePresent[depDir]; !ok { // for the rare case where dk.Name == tenantUUID
 			latest := c.path.LatestAgentBinaryForDynaKube(depDir)
-			if err := c.fs.Remove(latest); err == nil {
+			if err := os.Remove(latest); err == nil {
 				log.Info("removed old deprecated latest bin symlink", "path", latest)
 			}
 		}

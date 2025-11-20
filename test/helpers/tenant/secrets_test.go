@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,18 +14,15 @@ import (
 const testSecretFileContent = "apiUrl: apiUrl\napiToken: apiToken"
 
 func TestNewFromConfig(t *testing.T) {
-	fs := afero.NewMemMapFs()
-	workingDir, err := os.Getwd()
-
-	require.NoError(t, err)
+	workingDir := t.TempDir()
 
 	secretsPath := filepath.Join(workingDir, "..", "testdata", "Secrets")
-	require.NoError(t, fs.MkdirAll(secretsPath, 0655))
+	require.NoError(t, os.MkdirAll(secretsPath, 0655))
 
-	require.NoError(t, afero.WriteFile(fs, filepath.Join(secretsPath, "Secrets-test.yaml"),
-		[]byte(testSecretFileContent), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(secretsPath, "Secrets-test.yaml"),
+		[]byte(testSecretFileContent), 0600))
 
-	tenantSecrets, err := newFromConfig(fs, filepath.Join(secretsPath, "Secrets-test.yaml"))
+	tenantSecrets, err := newFromConfig(filepath.Join(secretsPath, "Secrets-test.yaml"))
 
 	require.NoError(t, err)
 	assert.Equal(t, "apiUrl", tenantSecrets.APIURL)

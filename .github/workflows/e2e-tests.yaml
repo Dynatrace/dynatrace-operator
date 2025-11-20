@@ -31,7 +31,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - name: Run e2e test
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
@@ -68,7 +68,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - name: Run e2e test
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
@@ -105,7 +105,7 @@ jobs:
       job_id: ${{ job.check_run_id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - name: Run e2e test
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
@@ -140,7 +140,7 @@ jobs:
     if: ${{ always() }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - name: Set Slack message
         id: set_slack_message
         env:

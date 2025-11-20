@@ -25,7 +25,7 @@ func New() *cobra.Command {
 		Use:          use,
 		Short:        "Generates a metadata file",
 		Long:         "Generates a metadata file containing attributes in key=value format. One attribute per line",
-		RunE:         run(),
+		RunE:         run,
 		SilenceUsage: true,
 	}
 
@@ -42,28 +42,26 @@ func addFlags(cmd *cobra.Command) {
 	_ = cmd.MarkPersistentFlagRequired(attributesFlagName)
 }
 
-func run() func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		log.Info("generating metadata file", "path", metadataFileFlagValue, "attributes", attributesFlagValue)
+func run(cmd *cobra.Command, args []string) error {
+	log.Info("generating metadata file", "path", metadataFileFlagValue, "attributes", attributesFlagValue)
 
-		content, err := parseAttributes(attributesFlagValue)
-		if err != nil {
-			log.Error(err, "failed to parse attributes")
+	content, err := parseAttributes(attributesFlagValue)
+	if err != nil {
+		log.Error(err, "failed to parse attributes")
 
-			return err
-		}
-
-		err = writeMetadataFile(metadataFileFlagValue, content)
-		if err != nil {
-			log.Error(err, "failed to write metadata file")
-
-			return err
-		}
-
-		log.Info("successfully generated metadata file")
-
-		return nil
+		return err
 	}
+
+	err = writeMetadataFile(metadataFileFlagValue, content)
+	if err != nil {
+		log.Error(err, "failed to write metadata file")
+
+		return err
+	}
+
+	log.Info("successfully generated metadata file")
+
+	return nil
 }
 
 func writeMetadataFile(filePath string, content string) error {

@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 )
 
 type Properties struct {
@@ -36,21 +35,19 @@ func (props *Properties) fillEmptyWithDefaults() {
 }
 
 type Installer struct {
-	fs        afero.Fs
 	dtc       dtclient.Client
 	extractor zip.Extractor
 	props     *Properties
 }
 
-type NewFunc func(afero.Fs, dtclient.Client, *Properties) installer.Installer
+type NewFunc func(dtclient.Client, *Properties) installer.Installer
 
 var _ NewFunc = NewURLInstaller
 
-func NewURLInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) installer.Installer {
+func NewURLInstaller(dtc dtclient.Client, props *Properties) installer.Installer {
 	return &Installer{
-		fs:        fs,
 		dtc:       dtc,
-		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
+		extractor: zip.NewOneAgentExtractor(props.PathResolver),
 		props:     props,
 	}
 }
@@ -64,7 +61,7 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 		return true, nil
 	}
 
-	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
+	err := os.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create the base shared agent directory", "err", err)
 
@@ -75,14 +72,14 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 	installer.props.fillEmptyWithDefaults()
 
 	if err := installer.installAgent(ctx, targetDir); err != nil {
-		_ = installer.fs.RemoveAll(targetDir)
+		_ = os.RemoveAll(targetDir)
 		log.Info("failed to install agent", "targetDir", targetDir)
 
 		return false, err
 	}
 
-	if err := symlink.CreateForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
-		_ = installer.fs.RemoveAll(targetDir)
+	if err := symlink.CreateForCurrentVersionIfNotExists(targetDir); err != nil {
+		_ = os.RemoveAll(targetDir)
 		log.Info("failed to create symlink for agent installation", "targetDir", targetDir)
 
 		return false, err
@@ -92,8 +89,6 @@ func (installer Installer) InstallAgent(ctx context.Context, targetDir string) (
 }
 
 func (installer Installer) installAgent(ctx context.Context, targetDir string) error {
-	fs := installer.fs
-
 	var path string
 	if installer.isInitContainerMode() {
 		path = targetDir
@@ -101,7 +96,7 @@ func (installer Installer) installAgent(ctx context.Context, targetDir string) e
 		path = filepath.Dir(targetDir)
 	}
 
-	tmpFile, err := afero.TempFile(fs, path, "download")
+	tmpFile, err := os.CreateTemp(path, "download")
 	if err != nil {
 		log.Info("failed to create temp file download", "err", err)
 
@@ -111,7 +106,7 @@ func (installer Installer) installAgent(ctx context.Context, targetDir string) e
 	defer func() {
 		_ = tmpFile.Close()
 
-		if err := fs.Remove(tmpFile.Name()); err != nil {
+		if err := os.Remove(tmpFile.Name()); err != nil {
 			log.Error(err, "failed to delete downloaded file", "path", tmpFile.Name())
 		}
 	}()
@@ -136,7 +131,7 @@ func (installer Installer) isAlreadyDownloaded(targetDir string) bool {
 		return false
 	}
 
-	_, err := installer.fs.Stat(targetDir)
+	_, err := os.Stat(targetDir)
 
 	return !os.IsNotExist(err)
 }

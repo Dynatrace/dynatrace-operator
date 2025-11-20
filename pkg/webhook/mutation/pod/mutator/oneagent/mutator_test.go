@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -299,6 +300,7 @@ func TestMutate(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
 		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		request.DynaKube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "example"
+		request.DynaKube.Status.CodeModules.Version = "1.2.3"
 
 		err := mut.Mutate(request)
 		require.NoError(t, err)
@@ -423,6 +425,22 @@ func createTestMutationRequestWithoutInjectedContainers() *dtwebhook.MutationReq
 						{
 							Name:  "sample-container-2",
 							Image: "sample-image-2",
+						},
+					},
+				},
+			},
+			DynaKube: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
+							CodeModulesImage: "testimage",
+						},
+					},
+				}},
+				Status: dynakube.DynaKubeStatus{
+					CodeModules: oneagent.CodeModulesStatus{
+						VersionStatus: status.VersionStatus{
+							ImageID: "testimage",
 						},
 					},
 				},
