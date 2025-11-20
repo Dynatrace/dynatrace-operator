@@ -135,8 +135,7 @@ jobs:
       - name: Set Slack message
         id: set_slack_message
         run: |
-          echo $GITHUB_ENV
-          for s in $(echo '${{ toJSON(needs.run-matrix.outputs) }}' | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" ); do
+          for s in $(echo '${{ toJSON(needs.run-matrix.outputs) }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
             echo "$s" >> $GITHUB_ENV
           done
           echo $GITHUB_ENV
