@@ -10,37 +10,39 @@
     {
       "type": "table",
       "rows": [
-        {
-          "type": "rich_text",
-          "elements": [
-            {
-              "type": "rich_text_section",
-              "elements": [
-                {
-                  "type": "text",
-                  "text": "environment"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "rich_text",
-          "elements": [
-            {
-              "type": "rich_text_section",
-              "elements": [
-                {
-                  "type": "text",
-                  "text": "result",
-                  "style": {
-                    "bold": true
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "environment"
                   }
-                }
-              ]
-            }
-          ]
-        },
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "result",
+                    "style": {
+                      "bold": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
         [
           {
             "type": "rich_text",

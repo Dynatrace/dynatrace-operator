@@ -69,7 +69,7 @@ single_row_template = [
     },
 ]
 
-rows = table_header
+rows = [table_header]
 
 with open("./hack/slack/slack-e2e-ondemand-payload.json", "r+") as f:
     payload = json.loads(f.read())

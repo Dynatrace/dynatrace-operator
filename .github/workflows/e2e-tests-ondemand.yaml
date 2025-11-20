@@ -161,4 +161,7 @@ jobs:
           webhook-type: incoming-webhook
           errors: true
           payload-templated: true
+          # Note:
+          # to update the payload when we add new matrix entries run:
+          # python3 hack/slack/update_e2e_ondemand.py
           payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
