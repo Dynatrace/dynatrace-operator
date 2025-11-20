@@ -1,4 +1,4 @@
-{{- if and .Values.rbac.extensions.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+{{- if (and .Values.rbac.extensions.prometheus.create .Values.rbac.extensions.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true")) }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-extensions-controller
+  name: dynatrace-extensions-controller-prometheus
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
@@ -32,7 +32,7 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-extensions-controller
+  name: dynatrace-extensions-controller-prometheus
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
@@ -41,6 +41,6 @@ subjects:
     name: dynatrace-extensions-controller
 roleRef:
   kind: Role
-  name: dynatrace-extensions-controller
+  name: dynatrace-extensions-controller-prometheus
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
