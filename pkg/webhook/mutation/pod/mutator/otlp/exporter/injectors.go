@@ -69,6 +69,7 @@ func (mi *metricsInjector) Inject(c *corev1.Container, apiURL string, addCertifi
 	addEnvVarLiteralValue(c, OTLPMetricsEndpointEnv, apiURL+"/v1/metrics")
 	addEnvVarLiteralValue(c, OTLPMetricsProtocolEnv, "http/protobuf")
 	addEnvVarLiteralValue(c, OTLPMetricsHeadersEnv, OTLPAuthorizationHeader)
+	addEnvVarLiteralValue(c, OTLPMetricsExporterTemporalityPreference, OTLPMetricsExporterAggregationTemporalityDelta)
 
 	if addCertificate {
 		addEnvVarLiteralValue(c, OTLPMetricsCertificateEnv, getCertificatePath())

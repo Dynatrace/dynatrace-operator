@@ -16,6 +16,9 @@ const (
 	OTLPMetricsHeadersEnv  = "OTEL_EXPORTER_OTLP_METRICS_HEADERS"
 	OTLPExporterHeadersEnv = "OTLP_EXPORTER_OTLP_HEADERS"
 
+	OTLPMetricsExporterTemporalityPreference       = "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE"
+	OTLPMetricsExporterAggregationTemporalityDelta = "delta"
+
 	OTLPTraceCertificateEnv    = "OTEL_EXPORTER_OTLP_TRACES_CERTIFICATE"
 	OTLPLogsCertificateEnv     = "OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE"
 	OTLPMetricsCertificateEnv  = "OTEL_EXPORTER_OTLP_METRICS_CERTIFICATE"
