@@ -24,6 +24,8 @@ const (
 	testObjectID = "test-objectid"
 )
 
+var mockCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestNewDefaultReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
@@ -183,6 +185,30 @@ func TestReconcile(t *testing.T) {
 		conditions.SetOptionalScopeMissing(&r.dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite, "not available")
 		err := r.Reconcile(context.Background())
 
+		require.NoError(t, err)
+	})
+
+	t.Run("app-transition schema not found", func(t *testing.T) {
+		testME := dtclient.K8sClusterME{ID: "test-MEID"}
+
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.EXPECT().
+			GetSettingsForMonitoredEntity(mockCtx, testME, dtclient.KubernetesSettingsSchemaID).
+			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
+		mockClient.EXPECT().
+			GetSettingsForMonitoredEntity(mockCtx, testME, dtclient.AppTransitionSchemaID).
+			Return(dtclient.GetSettingsResponse{}, dtclient.ServerError{Code: 404}).Once()
+
+		dk := newDynaKube()
+		passMonitoredEntities := createPassingReconciler(t)
+		r := Reconciler{
+			dtc:                 mockClient,
+			dk:                  dk,
+			k8sEntityReconciler: passMonitoredEntities,
+			clusterLabel:        testName,
+		}
+
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 	})
 }

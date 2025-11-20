@@ -110,6 +110,12 @@ func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity d
 	if r.dk.FF().IsK8sAppEnabled() {
 		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.AppTransitionSchemaID)
 		if err != nil {
+			if dtclient.IsNotFound(err) {
+				log.Info("requested schema could not be found", "meID", k8sEntity.ID, "schemaID", dtclient.AppTransitionSchemaID)
+
+				return nil
+			}
+
 			return errors.WithMessage(err, "error trying to check if app setting exists")
 		}
 
