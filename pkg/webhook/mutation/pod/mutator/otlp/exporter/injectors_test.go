@@ -106,7 +106,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv},
+			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsExporterTemporalityPreference},
 		},
 		{
 			name:           "config with metrics -> enabled and injects (with cert)",
@@ -114,7 +114,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 			addCertificate: true,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsCertificateEnv},
+			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsCertificateEnv, OTLPMetricsExporterTemporalityPreference},
 		},
 	}
 

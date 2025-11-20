@@ -340,6 +340,9 @@ func TestOTLPWebhook(t *testing.T) {
 		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPLogsEndpointEnv, Value: baseEndpoint + "/v1/logs"})
 		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPTraceEndpointEnv, Value: baseEndpoint + "/v1/traces"})
 
+		// metrics temporality preference should be set to delta
+		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsExporterTemporalityPreference, Value: exporter.OTLPMetricsExporterAggregationTemporalityDelta})
+
 		raEnv := env.FindEnvVar(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
 
 		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")

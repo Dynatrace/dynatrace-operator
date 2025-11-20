@@ -35,14 +35,14 @@ const (
 )
 
 func TestNewSecretGenerator(t *testing.T) {
-	client := fake.NewClient()
+	c := fake.NewClient()
 	mockDTClient := dtclientmock.NewClient(t)
 
-	secretGenerator := NewSecretGenerator(client, client, mockDTClient)
+	secretGenerator := NewSecretGenerator(c, c, mockDTClient)
 	assert.NotNil(t, secretGenerator)
 
-	assert.Equal(t, client, secretGenerator.client)
-	assert.Equal(t, client, secretGenerator.apiReader)
+	assert.Equal(t, c, secretGenerator.client)
+	assert.Equal(t, c, secretGenerator.apiReader)
 	assert.Equal(t, mockDTClient, secretGenerator.dtClient)
 }
 
@@ -445,6 +445,55 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 		assertSecretNotFound(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
 		assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
+	})
+
+	t.Run("generate certs from TrustedCAs when activegate disabled", func(t *testing.T) {
+		trustedCAName := "trusted-ca-config"
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
+			Spec: dynakube.DynaKubeSpec{
+				TrustedCAs:                trustedCAName, // ActiveGate disabled (no capabilities) -> use TrustedCAs
+				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{}},
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		trustedCAConfigMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: trustedCAName, Namespace: testNamespaceDynatrace},
+			Data:       map[string]string{dynakube.TrustedCAKey: testCrt},
+		}
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			namespace,
+			trustedCAConfigMap,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{dtclient.DataIngestToken: []byte(testDataIngestToken)}),
+		)
+
+		mockDTClient := dtclientmock.NewClient(t)
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		require.NoError(t, secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace}))
+
+		// config secret replicated
+		assertSecretExists(t, clt, consts.OTLPExporterSecretName, testNamespace)
+		assertSecretExists(t, clt, GetSourceConfigSecretName(dk.Name), testNamespaceDynatrace)
+
+		// cert secrets from TrustedCAs replicated
+		assertSecretExists(t, clt, consts.OTLPExporterCertsSecretName, testNamespace)
+		assertSecretExists(t, clt, GetSourceCertsSecretName(dk.Name), testNamespaceDynatrace)
+
+		var certSecret corev1.Secret
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: consts.OTLPExporterCertsSecretName, Namespace: testNamespace}, &certSecret))
+		assert.Equal(t, testCrt, string(certSecret.Data[ActiveGateCertDataName]))
+
+		var sourceCertSecret corev1.Secret
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: GetSourceCertsSecretName(dk.Name), Namespace: dk.Namespace}, &sourceCertSecret))
+		assert.Equal(t, testCrt, string(sourceCertSecret.Data[ActiveGateCertDataName]))
+
+		c := meta.FindStatusCondition(*dk.Conditions(), CertsConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionTrue, c.Status)
 	})
 }
 
