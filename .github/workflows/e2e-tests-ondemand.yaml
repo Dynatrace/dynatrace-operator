@@ -105,7 +105,7 @@ jobs:
           PLATFORM_VERSION="${{ matrix.platform }}_${{ matrix.version }}"
           PLATFORM_VERSION_CLEAN=${PLATFORM_VERSION//-/_}
 
-          echo "${PLATFORM_VERSION_CLEAN}_run_id=${{ job.check_run_id }}" >> $GITHUB_OUTPUT
+          echo "${PLATFORM_VERSION_CLEAN}_run_id_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}" >> $GITHUB_OUTPUT
 
           get_emoji() {
             if [ "$1" = "skipped" ]; then
@@ -132,31 +132,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-#      - name: Set Slack message
-#        id: set_slack_message
-#        run: |
-#          BASE_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_28_run_id }}"
-#
-#          echo "K8S_1_28_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
-#          echo "K8S_1_29_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_29_run_id }}" >> $GITHUB_ENV
-#          echo "K8S_1_30_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_30_run_id }}" >> $GITHUB_ENV
-#          echo "K8S_1_31_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_31_run_id }}" >> $GITHUB_ENV
-#          echo "K8S_1_32_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_32_run_id }}" >> $GITHUB_ENV
-#          echo "K8S_1_33_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_33_run_id }}" >> $GITHUB_ENV
-#          echo "K8S_1_34_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_34_run_id }}" >> $GITHUB_ENV
-#
-#          echo "K8S_1_28_EMOJI=${{ needs.run-matrix.outputs.k8s_1_28_emoji }}" >> $GITHUB_ENV
-#          echo "K8S_1_29_EMOJI=${{ needs.run-matrix.outputs.k8s_1_29_emoji }}" >> $GITHUB_ENV
-#          echo "K8S_1_30_EMOJI=${{ needs.run-matrix.outputs.k8s_1_30_emoji }}" >> $GITHUB_ENV
-#          echo "K8S_1_31_EMOJI=${{ needs.run-matrix.outputs.k8s_1_31_emoji }}" >> $GITHUB_ENV
-#          echo "K8S_1_32_EMOJI=${{ needs.run-matrix.outputs.k8s_1_32_emoji }}" >> $GITHUB_ENV
-#          echo "K8S_1_33_EMOJI=${{ needs.run-matrix.outputs.k8s_1_33_emoji }}" >> $GITHUB_ENV
-#          echo "K8S_1_34_EMOJI=${{ needs.run-matrix.outputs.k8s_1_34_emoji }}" >> $GITHUB_ENV
-
-      - name: debug
-        env:
-          K8S_1_28_RUN_ID_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_28_run_id }}
-          K8S_1_28_EMOJI: ${{ needs.run-matrix.outputs.k8s_1_28_emoji }}
+      - name: Set Slack message
+        id: set_slack_message
         run: |
           set -x
           echo "$GITHUB_ENV"
