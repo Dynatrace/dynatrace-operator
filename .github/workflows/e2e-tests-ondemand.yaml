@@ -38,20 +38,20 @@ jobs:
             platform: k8s
           - version: 1-34
             platform: k8s
-#          - version: 4-12
-#            platform: ocp
-#          - version: 4-13
-#            platform: ocp
-#          - version: 4-14
-#            platform: ocp
-#          - version: 4-15
-#            platform: ocp
-#          - version: 4-16
-#            platform: ocp
-#          - version: 4-17
-#            platform: ocp
-#          - version: 4-18
-#            platform: ocp
+          - version: 4-12
+            platform: ocp
+          - version: 4-13
+            platform: ocp
+          - version: 4-14
+            platform: ocp
+          - version: 4-15
+            platform: ocp
+          - version: 4-16
+            platform: ocp
+          - version: 4-17
+            platform: ocp
+          - version: 4-18
+            platform: ocp
     environment: E2E
     runs-on:
       - self-hosted
@@ -72,6 +72,22 @@ jobs:
       k8s_1_32_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_32_run_id }}
       k8s_1_33_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_33_run_id }}
       k8s_1_34_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_34_run_id }}
+
+      ocp_4_12_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_12_emoji }}
+      ocp_4_13_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_13_emoji }}
+      ocp_4_14_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_14_emoji }}
+      ocp_4_15_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_15_emoji }}
+      ocp_4_16_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_16_emoji }}
+      ocp_4_17_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_17_emoji }}
+      ocp_4_18_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_18_emoji }}
+
+      ocp_4_12_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_12_run_id }}
+      ocp_4_13_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_13_run_id }}
+      ocp_4_14_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_14_run_id }}
+      ocp_4_15_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_15_run_id }}
+      ocp_4_16_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_16_run_id }}
+      ocp_4_17_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_17_run_id }}
+      ocp_4_18_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_18_run_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -117,8 +133,8 @@ jobs:
             fi
           }
 
-          emoji=$(get_emoji "${{ steps.run_e2e_test.outcome }}" "${{ steps.run_e2e_test.outputs.cluster_status }}")
-          echo "${PLATFORM_VERSION_CLEAN}_emoji=${{ steps.run_e2e_test.outcome}}" >> $GITHUB_OUTPUT
+          emoji=$(get_emoji "${{ steps.run_e2e_test.outputs.cluster_status}}" "${{ steps.run_e2e_test.outcome }}")
+          echo "${PLATFORM_VERSION_CLEAN}_emoji=$emoji" >> $GITHUB_OUTPUT
 
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
