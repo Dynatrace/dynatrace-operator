@@ -160,7 +160,8 @@ jobs:
         run: |
           set -x
           echo "$GITHUB_ENV"
-          $(echo '${{ toJSON(needs.run-matrix.outputs) }}' | jq -r 'keys[] as $k | "echo \($k)=\(.[$k]) >> $GITHUB_ENV"')
+          echo '${{ toJSON(needs.run-matrix.outputs) }}' | jq -r 'keys[] as $k | "echo \($k)=\(.[$k]) >> $GITHUB_ENV"' >> set_env.sh
+          bash -x set_env.sh
           jq --version
           echo "$GITHUB_ENV"
 #      - name: Notify failure in Slack
