@@ -65,13 +65,13 @@ jobs:
       k8s_1_33_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_33_emoji }}
       k8s_1_34_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_34_emoji }}
 
-      k8s_1_28_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_28_run_id }}
-      k8s_1_29_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_29_run_id }}
-      k8s_1_30_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_30_run_id }}
-      k8s_1_31_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_31_run_id }}
-      k8s_1_32_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_32_run_id }}
-      k8s_1_33_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_33_run_id }}
-      k8s_1_34_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_34_run_id }}
+      k8s_1_28_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_28_run_id_url }}
+      k8s_1_29_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_29_run_id_url }}
+      k8s_1_30_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_30_run_id_url }}
+      k8s_1_31_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_31_run_id_url }}
+      k8s_1_32_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_32_run_id_url }}
+      k8s_1_33_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_33_run_id_url }}
+      k8s_1_34_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_34_run_id_url }}
 
       ocp_4_12_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_12_emoji }}
       ocp_4_13_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_13_emoji }}
@@ -81,13 +81,13 @@ jobs:
       ocp_4_17_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_17_emoji }}
       ocp_4_18_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_18_emoji }}
 
-      ocp_4_12_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_13_run_id }}
-      ocp_4_13_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_14_run_id }}
-      ocp_4_14_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_15_run_id }}
-      ocp_4_15_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_12_run_id }}
-      ocp_4_16_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_16_run_id }}
-      ocp_4_17_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_17_run_id }}
-      ocp_4_18_run_id: ${{ steps.prepare_outputs.outputs.ocp_4_18_run_id }}
+      ocp_4_12_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_13_run_id_url }}
+      ocp_4_13_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_14_run_id_url }}
+      ocp_4_14_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_15_run_id_url }}
+      ocp_4_15_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_12_run_id_url }}
+      ocp_4_16_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_16_run_id_url }}
+      ocp_4_17_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_17_run_id_url }}
+      ocp_4_18_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_18_run_id_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -156,7 +156,7 @@ jobs:
           done
       - name: debug env
         run: |
-          printenv
+          printenv | grep 'K8S_\|OCP_'
 #      - name: Notify failure in Slack
 #        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
 #        with:
