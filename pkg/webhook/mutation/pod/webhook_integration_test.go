@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -120,6 +121,11 @@ func TestWebhook(t *testing.T) {
 						},
 					},
 				},
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.2.3",
+					},
+				},
 			},
 		}
 		createDynaKube(t, clt, dk)
@@ -142,6 +148,13 @@ func TestWebhook(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.2.3",
+					},
+				},
+			},
 		}
 		createDynaKube(t, clt, dk)
 
@@ -150,6 +163,33 @@ func TestWebhook(t *testing.T) {
 		})
 
 		assert.Contains(t, pod.Annotations, oneagentmutator.AnnotationReason)
+	})
+
+	t.Run("oneagent mutator failure -> status not ready", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{},
+				},
+			},
+		}
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Annotations[oneagentmutator.AnnotationInject] = "true"
+		})
+
+		require.Contains(t, pod.Annotations, oneagentmutator.AnnotationReason)
+		assert.Contains(t, pod.Annotations[oneagentmutator.AnnotationReason], oneagentmutator.DynaKubeStatusNotReadyReason)
 	})
 
 	t.Run("metadata mutator failure", func(t *testing.T) {
