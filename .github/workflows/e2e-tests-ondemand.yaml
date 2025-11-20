@@ -154,14 +154,17 @@ jobs:
           for s in $(echo '${{ toJSON(needs.run-matrix.outputs) }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
             echo "$s" >> $GITHUB_ENV
           done
-      - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          errors: true
-          payload-templated: true
-          # Note:
-          # to update the payload when we add new matrix entries run:
-          # python3 hack/slack/update_e2e_ondemand.py
-          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
+      - name: debug env
+        run: |
+          printenv
+#      - name: Notify failure in Slack
+#        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+#        with:
+#          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+#          webhook-type: incoming-webhook
+#          errors: true
+#          payload-templated: true
+#          # Note:
+#          # to update the payload when we add new matrix entries run:
+#          # python3 hack/slack/update_e2e_ondemand.py
+#          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
