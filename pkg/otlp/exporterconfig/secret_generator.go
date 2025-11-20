@@ -124,8 +124,10 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
-	var agCert []byte
-	var err error
+	var (
+		agCert []byte
+		err    error
+	)
 
 	switch {
 	case dk.ActiveGate().HasCaCert():
