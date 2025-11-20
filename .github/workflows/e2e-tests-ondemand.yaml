@@ -57,21 +57,13 @@ jobs:
       - self-hosted
       - operator-e2e
     outputs:
-      k8s_1_28_result: ${{ steps.prepare_outputs.outputs.k8s_1_28_result }}
-      k8s_1_29_result: ${{ steps.prepare_outputs.outputs.k8s_1_29_result }}
-      k8s_1_30_result: ${{ steps.prepare_outputs.outputs.k8s_1_30_result }}
-      k8s_1_31_result: ${{ steps.prepare_outputs.outputs.k8s_1_31_result }}
-      k8s_1_32_result: ${{ steps.prepare_outputs.outputs.k8s_1_32_result }}
-      k8s_1_33_result: ${{ steps.prepare_outputs.outputs.k8s_1_33_result }}
-      k8s_1_34_result: ${{ steps.prepare_outputs.outputs.k8s_1_34_result }}
-
-      k8s_1_28_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_28_cluster_status }}
-      k8s_1_29_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_29_cluster_status }}
-      k8s_1_30_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_30_cluster_status }}
-      k8s_1_31_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_31_cluster_status }}
-      k8s_1_32_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_32_cluster_status }}
-      k8s_1_33_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_33_cluster_status }}
-      k8s_1_34_cluster_status: ${{ steps.prepare_outputs.outputs.k8s_1_34_cluster_status }}
+      k8s_1_29_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_29_emoji }}
+      k8s_1_30_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_30_emoji }}
+      k8s_1_31_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_31_emoji }}
+      k8s_1_28_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_28_emoji }}
+      k8s_1_32_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_32_emoji }}
+      k8s_1_33_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_33_emoji }}
+      k8s_1_34_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_34_emoji }}
 
       k8s_1_28_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_28_run_id }}
       k8s_1_29_run_id: ${{ steps.prepare_outputs.outputs.k8s_1_29_run_id }}
@@ -115,8 +107,18 @@ jobs:
 
           echo "${PLATFORM_VERSION_CLEAN}_run_id=${{ job.check_run_id }}" >> $GITHUB_OUTPUT
 
-          echo "${PLATFORM_VERSION_CLEAN}_result=${{ steps.run_e2e_test.outcome}}" >> $GITHUB_OUTPUT
-          echo "${PLATFORM_VERSION_CLEAN}_cluster_status=${{ steps.run_e2e_test.outputs.cluster_status }}" >> $GITHUB_OUTPUT
+          get_emoji() {
+            if [ "$1" = "skipped" ]; then
+              echo "large_yellow_circle"
+            elif [ "$2" = "success" ]; then
+              echo "white_check_mark"
+            else
+              echo "red_circle"
+            fi
+          }
+
+          emoji=$(get_emoji "${{ steps.run_e2e_test.outcome }}" "${{ steps.run_e2e_test.outputs.cluster_status }}")
+          echo "${PLATFORM_VERSION_CLEAN}_emoji=${{ steps.run_e2e_test.outcome}}" >> $GITHUB_OUTPUT
 
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
@@ -130,48 +132,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Set Slack message
-        id: set_slack_message
-        run: |
-          get_emoji() {
-            if [ "$1" = "skipped" ]; then
-              echo "large_yellow_circle"
-            elif [ "$2" = "success" ]; then
-              echo "white_check_mark"
-            else
-              echo "red_circle"
-            fi
-          }
-          BASE_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/"
-          echo "K8S_1_28_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
-          echo "K8S_1_29_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_29_run_id }}" >> $GITHUB_ENV
-          echo "K8S_1_30_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_30_run_id }}" >> $GITHUB_ENV
-          echo "K8S_1_31_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_31_run_id }}" >> $GITHUB_ENV
-          echo "K8S_1_32_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_32_run_id }}" >> $GITHUB_ENV
-          echo "K8S_1_33_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_33_run_id }}" >> $GITHUB_ENV
-          echo "K8S_1_34_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_34_run_id }}" >> $GITHUB_ENV
+#      - name: Set Slack message
+#        id: set_slack_message
+#        run: |
+#          BASE_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_28_run_id }}"
+#
+#          echo "K8S_1_28_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_28_run_id }}" >> $GITHUB_ENV
+#          echo "K8S_1_29_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_29_run_id }}" >> $GITHUB_ENV
+#          echo "K8S_1_30_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_30_run_id }}" >> $GITHUB_ENV
+#          echo "K8S_1_31_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_31_run_id }}" >> $GITHUB_ENV
+#          echo "K8S_1_32_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_32_run_id }}" >> $GITHUB_ENV
+#          echo "K8S_1_33_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_33_run_id }}" >> $GITHUB_ENV
+#          echo "K8S_1_34_RUN_ID_URL=${BASE_URL}${{ needs.run-matrix.outputs.k8s_1_34_run_id }}" >> $GITHUB_ENV
+#
+#          echo "K8S_1_28_EMOJI=${{ needs.run-matrix.outputs.k8s_1_28_emoji }}" >> $GITHUB_ENV
+#          echo "K8S_1_29_EMOJI=${{ needs.run-matrix.outputs.k8s_1_29_emoji }}" >> $GITHUB_ENV
+#          echo "K8S_1_30_EMOJI=${{ needs.run-matrix.outputs.k8s_1_30_emoji }}" >> $GITHUB_ENV
+#          echo "K8S_1_31_EMOJI=${{ needs.run-matrix.outputs.k8s_1_31_emoji }}" >> $GITHUB_ENV
+#          echo "K8S_1_32_EMOJI=${{ needs.run-matrix.outputs.k8s_1_32_emoji }}" >> $GITHUB_ENV
+#          echo "K8S_1_33_EMOJI=${{ needs.run-matrix.outputs.k8s_1_33_emoji }}" >> $GITHUB_ENV
+#          echo "K8S_1_34_EMOJI=${{ needs.run-matrix.outputs.k8s_1_34_emoji }}" >> $GITHUB_ENV
 
-          K8S_1_28_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_28_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_28_result }}")
-          echo "K8S_1_28_STATUS=$K8S_1_28_STATUS" >> $GITHUB_ENV
-
-          K8S_1_29_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_29_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_29_result }}")
-          echo "K8S_1_29_STATUS=$K8S_1_29_STATUS" >> $GITHUB_ENV
-
-          K8S_1_30_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_30_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_30_result }}")
-          echo "K8S_1_30_STATUS=$K8S_1_30_STATUS" >> $GITHUB_ENV
-
-          K8S_1_31_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_31_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_31_result }}")
-          echo "K8S_1_31_STATUS=$K8S_1_31_STATUS" >> $GITHUB_ENV
-
-          K8S_1_32_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_32_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_32_result }}")
-          echo "K8S_1_32_STATUS=$K8S_1_32_STATUS" >> $GITHUB_ENV
-
-          K8S_1_33_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_33_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_33_result }}")
-          echo "K8S_1_33_STATUS=$K8S_1_33_STATUS" >> $GITHUB_ENV
-
-          K8S_1_34_STATUS=$(get_emoji "${{ needs.run-matrix.outputs.k8s_1_34_cluster_status }}" "${{ needs.run-matrix.outputs.k8s_1_34_result }}")
-          echo "K8S_1_34_STATUS=$K8S_1_34_STATUS" >> $GITHUB_ENV
       - name: debug
+        env:
+          K8S_1_28_RUN_ID_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-matrix.outputs.k8s_1_28_run_id }}
+          K8S_1_28_EMOJI: ${{ needs.run-matrix.outputs.k8s_1_28_emoji }}
         run: echo "$GITHUB_ENV"
 #      - name: Notify failure in Slack
 #        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1

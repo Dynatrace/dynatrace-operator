@@ -71,7 +71,7 @@
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_34_STATUS}}"
+                    "name": "${{ env.K8S_1_34_EMOJI}}"
                   }
                 ]
               }
@@ -106,7 +106,7 @@
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_29_STATUS }}"
+                    "name": "${{ env.K8S_1_29_EMOJI }}"
                   }
                 ]
               }
@@ -141,7 +141,7 @@
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_30_STATUS }}"
+                    "name": "${{ env.K8S_1_30_EMOJI }}"
                   }
                 ]
               }
@@ -176,7 +176,7 @@
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_31_STATUS }}"
+                    "name": "${{ env.K8S_1_31_EMOJI }}"
                   }
                 ]
               }
@@ -211,7 +211,7 @@
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_32_STATUS }}"
+                    "name": "${{ env.K8S_1_32_EMOJI }}"
                   }
                 ]
               }
@@ -246,7 +246,7 @@
                 },
                 {
                   "type": "emoji",
-                  "name": "${{ env.K8S_1_33_STATUS }}"
+                  "name": "${{ env.K8S_1_33_EMOJI }}"
                 }
               ]
             }
@@ -281,7 +281,7 @@
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_34_STATUS }}"
+                    "name": "${{ env.K8S_1_34_EMOJI }}"
                   }
                 ]
               }
