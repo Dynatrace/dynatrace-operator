@@ -63,6 +63,9 @@ type DynaKubeStatus struct { //nolint:revive
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// OperatorImage contains container image name get from the "operator" POD/container
+	OperatorImage string `json:"operatorImage,omitempty"`
 }
 
 type DynatraceAPIStatus struct {

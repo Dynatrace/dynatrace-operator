@@ -43,6 +43,11 @@ const (
 	hostStorageVolumeName = "volume-storage"
 	storageVolumeMount    = "/mnt/volume_storage_mount"
 
+	nodeMetadataVolumeName          = "dynatrace-operator"
+	nodeMetadataVolumeMountSubPath  = "dt_node_metadata.properties"
+	nodeMetadataInitVolumeMountPath = "/var/lib/dynatrace/enrichment"
+	nodeMetadataVolumeMountPath     = nodeMetadataInitVolumeMountPath + "/" + nodeMetadataVolumeMountSubPath
+
 	podName = "dynatrace-oneagent"
 
 	inframonHostIDSource = "k8s-node-name"
@@ -52,6 +57,8 @@ const (
 	probeDefaultSuccessThreshold = int32(1)
 
 	readOnlyRootFsConstraint = "v1.291"
+
+	userGroupID int64 = 1000
 )
 
 type hostMonitoring struct {
@@ -208,6 +215,9 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 	affinity := b.affinity()
 
 	podSpec := corev1.PodSpec{
+		InitContainers: []corev1.Container{
+			b.initContainerSpec(),
+		},
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
@@ -241,6 +251,57 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 	}
 
 	return podSpec, nil
+}
+
+func (b *builder) initContainerSpec() corev1.Container {
+	return corev1.Container{
+		Image:           b.dk.Status.OperatorImage,
+		ImagePullPolicy: corev1.PullAlways,
+		Name:            "dynatrace-operator",
+		Env: []corev1.EnvVar{
+			{
+				Name: dtNodeName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "spec.nodeName",
+					},
+				},
+			},
+		},
+		Args: []string{
+			"generate-metadata",
+			"--file",
+			nodeMetadataVolumeMountPath,
+			"--attributes",
+			"k8s.cluster.name=" + b.dk.Status.KubernetesClusterName + "," +
+				"k8s.cluster.uid=" + b.dk.Status.KubeSystemUUID + "," +
+				"k8s.node.name=$(DT_K8S_NODE_NAME)" + "," +
+				"dt.entity.kubernetes_cluster=" + b.dk.Status.KubernetesClusterMEID,
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      nodeMetadataVolumeName,
+				MountPath: nodeMetadataInitVolumeMountPath,
+				ReadOnly:  false,
+			},
+		},
+		SecurityContext: &corev1.SecurityContext{
+			Privileged:               ptr.To(false),
+			AllowPrivilegeEscalation: ptr.To(false),
+			RunAsNonRoot:             ptr.To(true),
+			RunAsUser:                ptr.To(userGroupID),
+			RunAsGroup:               ptr.To(userGroupID),
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{
+					"ALL",
+				},
+			},
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+			ReadOnlyRootFilesystem: ptr.To(true),
+		},
+	}
 }
 
 func (b *builder) immutableOneAgentImage() string {
@@ -325,8 +386,8 @@ func (b *builder) securityContext() *corev1.SecurityContext {
 	var securityContext corev1.SecurityContext
 	if b.dk != nil && b.dk.OneAgent().IsReadOnlyFSSupported() {
 		securityContext.RunAsNonRoot = ptr.To(true)
-		securityContext.RunAsUser = ptr.To(int64(1000))
-		securityContext.RunAsGroup = ptr.To(int64(1000))
+		securityContext.RunAsUser = ptr.To(userGroupID)
+		securityContext.RunAsGroup = ptr.To(userGroupID)
 		securityContext.ReadOnlyRootFilesystem = ptr.To(b.isRootFsReadonly())
 	} else {
 		securityContext.ReadOnlyRootFilesystem = ptr.To(false)
