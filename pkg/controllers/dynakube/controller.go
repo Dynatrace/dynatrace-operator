@@ -29,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -227,6 +228,8 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakube.DynaKube) error {
+	controller.setOperatorImage(ctx, controller.client, controller.apiReader, dk)
+
 	var istioClient *istio.Client
 
 	var err error
@@ -320,6 +323,29 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	controller.setConditionTokenReady(dk, token.CheckForDataIngestToken(tokens))
 
 	return dynatraceClient, nil
+}
+
+func (controller *Controller) setOperatorImage(ctx context.Context, clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) {
+	if dk.Status.OperatorImage == "" {
+		operatorPod, err := pod.Get(ctx, apiReader, os.Getenv("POD_NAME"), os.Getenv("POD_NAMESPACE"))
+		if err != nil {
+			log.Error(err, "failed to get operator pod")
+
+			return
+		}
+
+		for _, container := range operatorPod.Status.ContainerStatuses {
+			if container.Name == "operator" {
+				dk.Status.OperatorImage = container.Image
+
+				if err := dk.UpdateStatus(ctx, clt); err != nil {
+					log.Error(err, "failed to update operator image field in the status")
+				}
+
+				return
+			}
+		}
+	}
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) error {

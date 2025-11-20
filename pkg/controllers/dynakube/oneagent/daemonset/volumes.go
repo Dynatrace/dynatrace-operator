@@ -12,15 +12,7 @@ import (
 )
 
 func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
-	var volumeMounts []corev1.VolumeMount
-
-	volumeMounts = append(volumeMounts, getOneAgentSecretVolumeMount())
-
-	if dk == nil {
-		volumeMounts = append(volumeMounts, getRootMount())
-
-		return volumeMounts
-	}
+	volumeMounts := []corev1.VolumeMount{getOneAgentSecretVolumeMount(), getNodeMetadataVolumeMount()}
 
 	if dk.OneAgent().IsReadOnlyFSSupported() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
@@ -46,6 +38,15 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	return volumeMounts
+}
+
+func getNodeMetadataVolumeMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      nodeMetadataVolumeName,
+		ReadOnly:  true,
+		MountPath: nodeMetadataVolumeMountPath,
+		SubPath:   nodeMetadataVolumeMountSubPath,
+	}
 }
 
 func getClusterCaCertVolumeMount() corev1.VolumeMount {
@@ -108,13 +109,7 @@ func getHTTPProxyMount() corev1.VolumeMount {
 }
 
 func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
-	volumes := []corev1.Volume{getRootVolume()}
-
-	if dk == nil {
-		return volumes
-	}
-
-	volumes = append(volumes, getOneAgentSecretVolume(dk))
+	volumes := []corev1.Volume{getRootVolume(), getNodeMetadataVolume(), getOneAgentSecretVolume(dk)}
 
 	if dk.OneAgent().IsReadOnlyFSSupported() {
 		if dk.OneAgent().IsCSIAvailable() {
@@ -137,6 +132,15 @@ func prepareVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	}
 
 	return volumes
+}
+
+func getNodeMetadataVolume() corev1.Volume {
+	return corev1.Volume{
+		Name: nodeMetadataVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
 }
 
 func getCertificateVolume(dk *dynakube.DynaKube) corev1.Volume {

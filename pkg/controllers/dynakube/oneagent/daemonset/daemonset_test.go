@@ -273,8 +273,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
 		assert.NotNil(t, securityContext)
-		assert.Equal(t, ptr.To(int64(1000)), securityContext.RunAsUser)
-		assert.Equal(t, ptr.To(int64(1000)), securityContext.RunAsGroup)
+		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsGroup)
 		assert.Equal(t, ptr.To(true), securityContext.RunAsNonRoot)
 		assert.NotEmpty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
@@ -363,8 +363,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
 		assert.NotNil(t, securityContext)
-		assert.Equal(t, ptr.To(int64(1000)), securityContext.RunAsUser)
-		assert.Equal(t, ptr.To(int64(1000)), securityContext.RunAsGroup)
+		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsGroup)
 		assert.Equal(t, ptr.To(true), securityContext.RunAsNonRoot)
 		assert.Equal(t, ptr.To(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)

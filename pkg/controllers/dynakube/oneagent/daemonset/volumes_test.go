@@ -16,12 +16,7 @@ import (
 )
 
 func TestPrepareVolumes(t *testing.T) {
-	t.Run("has defaults if dk is nil", func(t *testing.T) {
-		volumes := prepareVolumes(nil)
-
-		assert.Contains(t, volumes, getRootVolume())
-	})
-	t.Run("has root volume", func(t *testing.T) {
+	t.Run("has always present volumeMounts", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -32,6 +27,8 @@ func TestPrepareVolumes(t *testing.T) {
 		volumes := prepareVolumes(dk)
 
 		assert.Contains(t, volumes, getRootVolume())
+		assert.Contains(t, volumes, getNodeMetadataVolume())
+		assert.Contains(t, volumes, getOneAgentSecretVolume(dk))
 		assert.NotContains(t, volumes, getCertificateVolume(dk))
 	})
 	t.Run("has tenant secret volume", func(t *testing.T) {
@@ -154,11 +151,6 @@ func TestPrepareVolumes(t *testing.T) {
 }
 
 func TestPrepareVolumeMounts(t *testing.T) {
-	t.Run("has defaults if dk is nil", func(t *testing.T) {
-		volumeMounts := prepareVolumeMounts(nil)
-
-		assert.Contains(t, volumeMounts, getRootMount())
-	})
 	t.Run("has root volume mount", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -168,6 +160,9 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			},
 		}
 		volumeMounts := prepareVolumeMounts(dk)
+
+		assert.Contains(t, volumeMounts, getOneAgentSecretVolumeMount())
+		assert.Contains(t, volumeMounts, getNodeMetadataVolumeMount())
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.NotContains(t, volumeMounts, getClusterCaCertVolumeMount())
