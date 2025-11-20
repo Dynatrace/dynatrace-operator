@@ -93,25 +93,22 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - name: Run e2e test
         id: run_e2e_test
-        run: |
-          echo "Running e2e tests for platform: ${{matrix.platform}}, version: ${{ matrix.version }}"
-          echo "cluster_status=success" >> $GITHUB_OUTPUT
-#        uses: ./.github/actions/run-e2e
-#        with:
-#          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
-#          flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
-#          target-branch: ${{ env.branch }}
-#          tenant1-name: ${{ secrets.TENANT1_NAME }}
-#          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
-#          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
-#          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
-#          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-#          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
-#          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
-#          tenant2-name: ${{ secrets.TENANT2_NAME }}
-#          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
-#          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
+          flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
+          target-branch: ${{ env.branch }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Prepare outputs
         id: prepare_outputs
         if: always()
