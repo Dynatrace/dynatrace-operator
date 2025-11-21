@@ -57,9 +57,7 @@ func (ts *TelemetryIngest) IsOtlpEnabled() bool {
 		return false
 	}
 
-	protocols := ts.GetProtocols()
-
-	return slices.Contains(protocols, otelcgen.OtlpProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcgen.OtlpProtocol)
 }
 
 func (ts *TelemetryIngest) IsJaegerEnabled() bool {
@@ -67,9 +65,7 @@ func (ts *TelemetryIngest) IsJaegerEnabled() bool {
 		return false
 	}
 
-	protocols := ts.GetProtocols()
-
-	return slices.Contains(protocols, otelcgen.JaegerProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcgen.JaegerProtocol)
 }
 
 func (ts *TelemetryIngest) IsZipkinEnabled() bool {
@@ -77,9 +73,7 @@ func (ts *TelemetryIngest) IsZipkinEnabled() bool {
 		return false
 	}
 
-	protocols := ts.GetProtocols()
-
-	return slices.Contains(protocols, otelcgen.ZipkinProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcgen.ZipkinProtocol)
 }
 
 func (ts *TelemetryIngest) IsStatsdEnabled() bool {
@@ -87,7 +81,5 @@ func (ts *TelemetryIngest) IsStatsdEnabled() bool {
 		return false
 	}
 
-	protocols := ts.GetProtocols()
-
-	return slices.Contains(protocols, otelcgen.StatsdProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcgen.StatsdProtocol)
 }
