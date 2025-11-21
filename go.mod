@@ -28,7 +28,7 @@ require (
 	golang.org/x/net v0.47.0
 	golang.org/x/oauth2 v0.33.0
 	golang.org/x/sys v0.38.0
-	google.golang.org/grpc v1.76.0
+	google.golang.org/grpc v1.77.0
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.28.0
 	istio.io/client-go v1.28.0
@@ -104,7 +104,7 @@ require (
 	github.com/vbatts/tar-split v0.12.1 // indirect
 	github.com/vladimirvivien/gexe v0.2.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.140.0 // indirect
 	go.opentelemetry.io/collector/component/componenttest v0.140.0 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.46.0 // indirect
@@ -169,8 +169,8 @@ require (
 	golang.org/x/time v0.11.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250825161204-c5933d9347a5 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250825161204-c5933d9347a5 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20251022142026-3a174f9686a8 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
