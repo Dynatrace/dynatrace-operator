@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/service"
@@ -20,11 +22,12 @@ type Reconciler struct {
 	serviceReconciler       *service.Reconciler
 	endpointReconciler      *endpoint.Reconciler
 	configurationReconciler *configuration.Reconciler
+	k8sEntityReconciler     controllers.Reconciler
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(dtc dynatrace.Client, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
 
-func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler { //nolint
+func NewReconciler(dtc dynatrace.Client, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler { //nolint
 	return &Reconciler{
 		client:                  client,
 		apiReader:               apiReader,
@@ -33,11 +36,17 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 		serviceReconciler:       service.NewReconciler(client, apiReader, dk),
 		endpointReconciler:      endpoint.NewReconciler(client, apiReader, dk),
 		configurationReconciler: configuration.NewReconciler(client, apiReader, dk),
+		k8sEntityReconciler:     k8sentity.NewReconciler(dtc, dk),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.serviceReconciler.Reconcile(ctx)
+	err := r.k8sEntityReconciler.Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = r.serviceReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}
