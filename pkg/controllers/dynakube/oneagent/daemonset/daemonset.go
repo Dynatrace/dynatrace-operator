@@ -1,6 +1,8 @@
 package daemonset
 
 import (
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -255,6 +257,13 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 }
 
 func (b *builder) initContainerSpec() corev1.Container {
+	attributes := []string{
+		"k8s.cluster.name=" + b.dk.Status.KubernetesClusterName,
+		"k8s.cluster.uid=" + b.dk.Status.KubeSystemUUID,
+		"k8s.node.name=$(DT_K8S_NODE_NAME)",
+		"dt.entity.kubernetes_cluster=" + b.dk.Status.KubernetesClusterMEID,
+	}
+
 	return corev1.Container{
 		Image:           b.dk.Status.OperatorImage,
 		ImagePullPolicy: corev1.PullAlways,
@@ -274,10 +283,7 @@ func (b *builder) initContainerSpec() corev1.Container {
 			"--file",
 			nodeMetadataVolumeMountPath,
 			"--attributes",
-			"k8s.cluster.name=" + b.dk.Status.KubernetesClusterName + "," +
-				"k8s.cluster.uid=" + b.dk.Status.KubeSystemUUID + "," +
-				"k8s.node.name=$(DT_K8S_NODE_NAME)" + "," +
-				"dt.entity.kubernetes_cluster=" + b.dk.Status.KubernetesClusterMEID,
+			strings.Join(attributes, ","),
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{

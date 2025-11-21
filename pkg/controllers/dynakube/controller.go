@@ -326,20 +326,20 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 }
 
 func (controller *Controller) setOperatorImage(ctx context.Context, clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) {
-	if dk.Status.OperatorImage == "" {
-		operatorPod, err := pod.Get(ctx, apiReader, os.Getenv("POD_NAME"), os.Getenv("POD_NAMESPACE"))
-		if err != nil {
-			log.Error(err, "failed to get operator pod")
+	operatorPod, err := pod.Get(ctx, apiReader, os.Getenv("POD_NAME"), dk.Namespace)
+	if err != nil {
+		log.Error(err, "failed to get operator pod")
 
-			return
-		}
+		return
+	}
 
-		for _, container := range operatorPod.Status.ContainerStatuses {
-			if container.Name == "operator" {
+	for _, container := range operatorPod.Status.ContainerStatuses {
+		if container.Name == "operator" {
+			if dk.Status.OperatorImage == "" || dk.Status.OperatorImage != container.Image {
 				dk.Status.OperatorImage = container.Image
 
 				if err := dk.UpdateStatus(ctx, clt); err != nil {
-					log.Error(err, "failed to update operator image field in the status")
+					log.Error(err, "failed to update operator image field in the dynakube status")
 				}
 
 				return
