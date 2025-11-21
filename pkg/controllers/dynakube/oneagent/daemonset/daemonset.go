@@ -61,6 +61,8 @@ const (
 	readOnlyRootFsConstraint = "v1.291"
 
 	userGroupID int64 = 1000
+
+	initContainerName = "dynatrace-operator"
 )
 
 type hostMonitoring struct {
@@ -256,6 +258,31 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 }
 
 func (b *builder) initContainerSpec() corev1.Container {
+	return corev1.Container{
+		Image:           b.dk.Status.OperatorImage,
+		ImagePullPolicy: corev1.PullAlways,
+		Name:            initContainerName,
+		Env:             b.initContainerEnvVars(),
+		Args:            b.initContainerArguments(),
+		VolumeMounts:    b.initContainerVolumeMounts(),
+		SecurityContext: b.initContainerSecurityContext(),
+	}
+}
+
+func (b *builder) initContainerEnvVars() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: dtNodeName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "spec.nodeName",
+				},
+			},
+		},
+	}
+}
+
+func (b *builder) initContainerArguments() []string {
 	attributes := []string{
 		"k8s.cluster.name=" + b.dk.Status.KubernetesClusterName,
 		"k8s.cluster.uid=" + b.dk.Status.KubeSystemUUID,
@@ -263,50 +290,41 @@ func (b *builder) initContainerSpec() corev1.Container {
 		"dt.entity.kubernetes_cluster=" + b.dk.Status.KubernetesClusterMEID,
 	}
 
-	return corev1.Container{
-		Image:           b.dk.Status.OperatorImage,
-		ImagePullPolicy: corev1.PullAlways,
-		Name:            "dynatrace-operator",
-		Env: []corev1.EnvVar{
-			{
-				Name: dtNodeName,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "spec.nodeName",
-					},
-				},
+	return []string{
+		"generate-metadata",
+		"--file",
+		nodeMetadataVolumeMountPath,
+		"--attributes",
+		strings.Join(attributes, ","),
+	}
+}
+
+func (b *builder) initContainerVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      nodeMetadataVolumeName,
+			MountPath: nodeMetadataInitVolumeMountPath,
+			ReadOnly:  false,
+		},
+	}
+}
+
+func (b *builder) initContainerSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               ptr.To(false),
+		AllowPrivilegeEscalation: ptr.To(false),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsUser:                ptr.To(userGroupID),
+		RunAsGroup:               ptr.To(userGroupID),
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"ALL",
 			},
 		},
-		Args: []string{
-			"generate-metadata",
-			"--file",
-			nodeMetadataVolumeMountPath,
-			"--attributes",
-			strings.Join(attributes, ","),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      nodeMetadataVolumeName,
-				MountPath: nodeMetadataInitVolumeMountPath,
-				ReadOnly:  false,
-			},
-		},
-		SecurityContext: &corev1.SecurityContext{
-			Privileged:               ptr.To(false),
-			AllowPrivilegeEscalation: ptr.To(false),
-			RunAsNonRoot:             ptr.To(true),
-			RunAsUser:                ptr.To(userGroupID),
-			RunAsGroup:               ptr.To(userGroupID),
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-			},
-			SeccompProfile: &corev1.SeccompProfile{
-				Type: corev1.SeccompProfileTypeRuntimeDefault,
-			},
-			ReadOnlyRootFilesystem: ptr.To(true),
-		},
+		ReadOnlyRootFilesystem: ptr.To(true),
 	}
 }
 

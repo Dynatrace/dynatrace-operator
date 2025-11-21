@@ -25,6 +25,11 @@ import (
 const (
 	testImageTag  = "1.203.0.0-0"
 	testTokenHash = "test-token-hash"
+
+	testKubernetesClusterName = "cluster-name"
+	testKubernetesClusterUID  = "cluster-uid"
+	testKubernetesClusterMEID = "cluster-meid"
+	testOperatorImageName     = "operator-image-name"
 )
 
 func TestUseImmutableImage(t *testing.T) {
@@ -1025,4 +1030,93 @@ func TestDefaultArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
 	})
+}
+
+func TestInitContainerSpec(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		Status: dynakube.DynaKubeStatus{
+			OperatorImage: testOperatorImageName,
+		},
+	}
+
+	dsBuilder := builder{
+		dk: dk,
+	}
+
+	spec := dsBuilder.initContainerSpec()
+
+	assert.Equal(t, testOperatorImageName, spec.Image)
+	assert.Equal(t, initContainerName, spec.Name)
+	assert.Equal(t, corev1.PullAlways, spec.ImagePullPolicy)
+}
+
+func TestInitContainerEnvVars(t *testing.T) {
+	dsBuilder := builder{}
+
+	envVars := dsBuilder.initContainerEnvVars()
+
+	assert.Len(t, envVars, 1)
+	assert.Equal(t, dtNodeName, envVars[0].Name)
+	assert.Equal(t, &corev1.EnvVarSource{
+		FieldRef: &corev1.ObjectFieldSelector{
+			FieldPath: "spec.nodeName",
+		},
+	}, envVars[0].ValueFrom)
+}
+
+func TestInitContainerArguments(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID:        testKubernetesClusterUID,
+			KubernetesClusterMEID: testKubernetesClusterMEID,
+			KubernetesClusterName: testKubernetesClusterName,
+		},
+	}
+
+	dsBuilder := builder{
+		dk: dk,
+	}
+
+	arguments := dsBuilder.initContainerArguments()
+	assert.Equal(t, "generate-metadata", arguments[0])
+	assert.Equal(t, "--file", arguments[1])
+	assert.Equal(t, nodeMetadataVolumeMountPath, arguments[2])
+	assert.Equal(t, "--attributes", arguments[3])
+
+	attributes := strings.Split(arguments[4], ",")
+
+	assert.Equal(t, "k8s.cluster.name="+testKubernetesClusterName, attributes[0])
+	assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
+	assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
+	assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
+}
+
+func TestInitContainerVolumeMounts(t *testing.T) {
+	dsBuilder := builder{}
+
+	volumeMounts := dsBuilder.initContainerVolumeMounts()
+
+	assert.Len(t, volumeMounts, 1)
+	assert.Contains(t, volumeMounts, corev1.VolumeMount{
+		Name:      nodeMetadataVolumeName,
+		MountPath: nodeMetadataInitVolumeMountPath,
+		ReadOnly:  false,
+	})
+}
+
+func TestInitContainerSecurityContext(t *testing.T) {
+	dsBuilder := builder{}
+
+	securityContext := dsBuilder.initContainerSecurityContext()
+
+	assert.False(t, *securityContext.Privileged)
+	assert.False(t, *securityContext.AllowPrivilegeEscalation)
+	assert.True(t, *securityContext.RunAsNonRoot)
+	assert.Equal(t, userGroupID, *securityContext.RunAsUser)
+	assert.Equal(t, userGroupID, *securityContext.RunAsGroup)
+	assert.Empty(t, securityContext.Capabilities.Add)
+	assert.Len(t, securityContext.Capabilities.Drop, 1)
+	assert.Contains(t, securityContext.Capabilities.Drop, corev1.Capability("ALL"))
+	assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, securityContext.SeccompProfile.Type)
+	assert.True(t, *securityContext.ReadOnlyRootFilesystem)
 }
