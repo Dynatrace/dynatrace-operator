@@ -9198,8 +9198,6 @@ spec:
                   version:
                     type: string
                 type: object
-              operatorImage:
-                type: string
               phase:
                 type: string
               proxyURLHash:

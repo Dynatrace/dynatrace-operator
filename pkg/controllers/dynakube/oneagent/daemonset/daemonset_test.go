@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -1034,20 +1035,24 @@ func TestDefaultArguments(t *testing.T) {
 
 func TestInitContainerSpec(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		Status: dynakube.DynaKubeStatus{
-			OperatorImage: testOperatorImageName,
-		},
+		Status: dynakube.DynaKubeStatus{},
 	}
 
 	dsBuilder := builder{
 		dk: dk,
 	}
 
+	require.NoError(t, os.Setenv(dtOperatorImageEnvName, testOperatorImageName))
 	spec := dsBuilder.initContainerSpec()
+	require.NoError(t, os.Unsetenv(dtOperatorImageEnvName))
 
 	assert.Equal(t, testOperatorImageName, spec.Image)
 	assert.Equal(t, initContainerName, spec.Name)
 	assert.Equal(t, corev1.PullAlways, spec.ImagePullPolicy)
+	assert.NotEmpty(t, spec.Env)
+	assert.NotEmpty(t, spec.Args)
+	assert.NotEmpty(t, spec.VolumeMounts)
+	assert.NotNil(t, spec.SecurityContext)
 }
 
 func TestInitContainerEnvVars(t *testing.T) {

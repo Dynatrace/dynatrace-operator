@@ -3,7 +3,6 @@ package dynakube
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -68,10 +67,6 @@ const (
 	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
 
 	testMessage = "test-message"
-
-	testOperatorImageName  = "operator-image-name"
-	testOperatorImageName2 = "operator-image-name-2"
-	testOperatorPodName    = "dynatrace-operator-12"
 )
 
 func TestGetDynakubeOrCleanup(t *testing.T) {
@@ -1054,81 +1049,4 @@ func createAPISecret() *corev1.Secret {
 			dtclient.APIToken: []byte(testAPIToken),
 		},
 	}
-}
-
-func TestSetOperatorImage(t *testing.T) {
-	ctx := t.Context()
-
-	t.Run("set operator image name", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-		}
-
-		fakeClient := fake.NewClient(dk, &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testOperatorPodName,
-				Namespace: testNamespace,
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:  "operator",
-						Image: testOperatorImageName,
-					},
-				},
-			},
-		})
-
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-
-		require.NoError(t, os.Setenv("POD_NAME", testOperatorPodName))
-		controller.setOperatorImage(ctx, controller.client, controller.apiReader, dk)
-		require.NoError(t, os.Unsetenv("POD_NAME"))
-
-		assert.Equal(t, testOperatorImageName, dk.Status.OperatorImage)
-	})
-
-	t.Run("update operator image name", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Status: dynakube.DynaKubeStatus{
-				OperatorImage: testOperatorImageName,
-			},
-		}
-
-		fakeClient := fake.NewClient(dk, &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testOperatorPodName,
-				Namespace: testNamespace,
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:  "operator",
-						Image: testOperatorImageName2,
-					},
-				},
-			},
-		})
-
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-
-		require.NoError(t, os.Setenv("POD_NAME", testOperatorPodName))
-		controller.setOperatorImage(ctx, controller.client, controller.apiReader, dk)
-		require.NoError(t, os.Unsetenv("POD_NAME"))
-
-		assert.Equal(t, testOperatorImageName2, dk.Status.OperatorImage)
-	})
 }
