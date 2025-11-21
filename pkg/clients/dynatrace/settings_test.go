@@ -220,12 +220,9 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 	})
 
 	t.Run("no settings found for because of an api error", func(t *testing.T) {
-		// arrange
 		k8sEntity := createKubernetesClusterEntityForTesting()
-		// it is immaterial what we put here since the http request is producing an error
-		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(totalCount, "", http.StatusBadRequest)))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerV2Handler(createKubernetesSettingsMockParams(-1, "", http.StatusNotFound)))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -233,11 +230,9 @@ func TestDynatraceClient_GetSettingsForMonitoredEntity(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, dtc)
 
-		// act
 		actual, err := dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, KubernetesSettingsSchemaID)
-
-		// assert
 		require.Error(t, err)
+		assert.True(t, IsNotFound(err))
 		assert.Empty(t, actual.TotalCount)
 	})
 }

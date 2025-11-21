@@ -2,6 +2,7 @@ package apimonitoring
 
 import (
 	"context"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -110,7 +111,15 @@ func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity d
 	if r.dk.FF().IsK8sAppEnabled() {
 		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.AppTransitionSchemaID)
 		if err != nil {
-			return errors.WithMessage(err, "error trying to check if app setting exists")
+			if !dtclient.IsNotFound(err) {
+				return errors.WithMessage(err, "error trying to check if app setting exists")
+			}
+
+			if shouldLogMissingAppTransitionSchema(k8sEntity.ID) {
+				log.Info("skipping app-transition creation due to missing schema", "meID", k8sEntity.ID, "schemaID", dtclient.AppTransitionSchemaID)
+			}
+
+			return nil
 		}
 
 		if appSettings.TotalCount == 0 {
@@ -129,4 +138,27 @@ func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity d
 	}
 
 	return nil
+}
+
+const logCacheTimeout = 5 * time.Minute
+
+var logCache = make(map[string]time.Time)
+var timeNow = time.Now
+
+// NOT THREAD-SAFE!!!
+func shouldLogMissingAppTransitionSchema(meID string) bool {
+	// Limit cache size to prevent excessive memory usage at the cost of potentially spamming the logs.
+	const maxCacheSize = 100
+	if len(logCache) >= maxCacheSize {
+		return true
+	}
+
+	lastLog, exists := logCache[meID]
+	if !exists || timeNow().Sub(lastLog) > logCacheTimeout {
+		logCache[meID] = timeNow()
+
+		return true
+	}
+
+	return false
 }
