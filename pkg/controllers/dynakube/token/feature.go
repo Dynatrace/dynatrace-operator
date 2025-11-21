@@ -79,6 +79,24 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			},
 		},
 		{
+			Name: "TelemetryIngest",
+			OptionalScopes: []string{
+				dtclient.TokenScopeSettingsRead,
+			},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.TelemetryIngest().IsEnabled()
+			},
+		},
+		{
+			Name: "PrometheusExtensions",
+			OptionalScopes: []string{
+				dtclient.TokenScopeSettingsRead,
+			},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.Extensions().IsPrometheusEnabled()
+			},
+		},
+		{
 			Name:           "Automatic ActiveGate Token Creation",
 			RequiredScopes: []string{dtclient.TokenScopeActiveGateTokenCreate},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
@@ -97,6 +115,13 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.MetadataEnrichment().IsEnabled()
+			},
+		},
+		{
+			Name:           "OTLP Auto-configuration",
+			OptionalScopes: []string{dtclient.TokenScopeSettingsRead},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.OTLPExporterConfiguration().IsEnabled()
 			},
 		},
 	}
@@ -121,6 +146,44 @@ func getFeaturesForDataIngest() []Feature {
 			RequiredScopes: []string{dtclient.TokenScopeMetricsIngest},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.ActiveGate().IsMetricsIngestEnabled()
+			},
+		},
+		{
+			Name: "Telemetry Ingest OTLP",
+			RequiredScopes: []string{
+				dtclient.TokenScopeMetricsIngest,
+				dtclient.TokenScopeOpenTelemetryTraceIngest,
+				dtclient.TokenScopeLogsIngest,
+			},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.TelemetryIngest().IsOtlpEnabled()
+			},
+		},
+		{
+			Name: "Telemetry Ingest Zipkin",
+			RequiredScopes: []string{
+				dtclient.TokenScopeOpenTelemetryTraceIngest,
+			},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.TelemetryIngest().IsZipkinEnabled()
+			},
+		},
+		{
+			Name: "Telemetry Ingest Jaeger",
+			RequiredScopes: []string{
+				dtclient.TokenScopeOpenTelemetryTraceIngest,
+			},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.TelemetryIngest().IsZipkinEnabled()
+			},
+		},
+		{
+			Name: "Telemetry Ingest StatsD",
+			RequiredScopes: []string{
+				dtclient.TokenScopeMetricsIngest,
+			},
+			IsEnabled: func(dk dynakube.DynaKube) bool {
+				return dk.TelemetryIngest().IsZipkinEnabled()
 			},
 		},
 		{
