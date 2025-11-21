@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"os"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -63,7 +64,8 @@ const (
 
 	userGroupID int64 = 1000
 
-	initContainerName = "dynatrace-operator"
+	initContainerName      = "dynatrace-operator"
+	dtOperatorImageEnvName = "DT_OPERATOR_IMAGE"
 )
 
 type hostMonitoring struct {
@@ -260,7 +262,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 
 func (b *builder) initContainerSpec() corev1.Container {
 	return corev1.Container{
-		Image:           b.dk.Status.OperatorImage,
+		Image:           os.Getenv(dtOperatorImageEnvName),
 		ImagePullPolicy: corev1.PullAlways,
 		Name:            initContainerName,
 		Env:             b.initContainerEnvVars(),
