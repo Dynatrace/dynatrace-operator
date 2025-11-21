@@ -16,7 +16,7 @@ import (
 )
 
 func TestPrepareVolumes(t *testing.T) {
-	t.Run("has always present volumeMounts", func(t *testing.T) {
+	t.Run("has root, nodeMetadata and tenant secret volumes", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -30,16 +30,6 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getNodeMetadataVolume())
 		assert.Contains(t, volumes, getOneAgentSecretVolume(dk))
 		assert.NotContains(t, volumes, getCertificateVolume(dk))
-	})
-	t.Run("has tenant secret volume", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: corev1.ObjectMeta{
-				Name: testName,
-			},
-		}
-		volumes := prepareVolumes(dk)
-
-		assert.Contains(t, volumes, getOneAgentSecretVolume(dk))
 	})
 	t.Run("has certificate volume", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -151,7 +141,23 @@ func TestPrepareVolumes(t *testing.T) {
 }
 
 func TestPrepareVolumeMounts(t *testing.T) {
-	t.Run("has root volume mount", func(t *testing.T) {
+	t.Run("has root, nodeMetadata and tenant secret volume mounts", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+		volumeMounts := prepareVolumeMounts(dk)
+
+		assert.Contains(t, volumeMounts, getOneAgentSecretVolumeMount())
+		assert.Contains(t, volumeMounts, getNodeMetadataVolumeMount())
+		assert.Contains(t, volumeMounts, getRootMount())
+		assert.NotContains(t, volumeMounts, getClusterCaCertVolumeMount())
+		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
+	})
+	t.Run("has read only root, nodeMetadata and tenant secret volume mounts", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -163,7 +169,6 @@ func TestPrepareVolumeMounts(t *testing.T) {
 
 		assert.Contains(t, volumeMounts, getOneAgentSecretVolumeMount())
 		assert.Contains(t, volumeMounts, getNodeMetadataVolumeMount())
-
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.NotContains(t, volumeMounts, getClusterCaCertVolumeMount())
 		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())

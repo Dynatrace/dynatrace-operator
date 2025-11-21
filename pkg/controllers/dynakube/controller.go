@@ -333,7 +333,7 @@ func (controller *Controller) setOperatorImage(ctx context.Context, clt client.C
 		return
 	}
 
-	for _, container := range operatorPod.Status.ContainerStatuses {
+	for _, container := range operatorPod.Spec.Containers {
 		if container.Name == "operator" {
 			if dk.Status.OperatorImage == "" || dk.Status.OperatorImage != container.Image {
 				dk.Status.OperatorImage = container.Image
