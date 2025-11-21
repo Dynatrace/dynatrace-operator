@@ -33,7 +33,7 @@ type Controller struct {
 	runLocal               bool
 }
 
-func Add(mgr manager.Manager, _ string) error {
+func Add(mgr manager.Manager, _ string, _ *corev1.Pod) error {
 	return NewController(mgr).SetupWithManager(mgr)
 }
 

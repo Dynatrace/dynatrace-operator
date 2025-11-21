@@ -86,8 +86,6 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: DT_OPERATOR_IMAGE
-                    value: image-name
                   - name: DT_HOST_AVAILABILITY_DETECTION
                     value: "true"
                   - name: modules.json
@@ -285,8 +283,6 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: DT_OPERATOR_IMAGE
-                    value: image-name
                   - name: DT_HOST_AVAILABILITY_DETECTION
                     value: "true"
                   - name: modules.json

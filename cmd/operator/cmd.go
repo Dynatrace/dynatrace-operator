@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -79,7 +80,7 @@ func runInPod(kubeCfg *rest.Config) error {
 		}
 	}
 
-	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
+	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM, operatorPod)
 	if err != nil {
 		return err
 	}
@@ -106,7 +107,7 @@ func runLocally(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	operatorManager, err := createOperatorManager(kubeCfg, namespace, false)
+	operatorManager, err := createOperatorManager(kubeCfg, namespace, false, &corev1.Pod{Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "operator"}}}})
 	if err != nil {
 		return err
 	}

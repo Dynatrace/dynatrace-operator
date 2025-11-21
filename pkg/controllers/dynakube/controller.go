@@ -50,25 +50,26 @@ const (
 	defaultUpdateInterval = 30 * time.Minute
 )
 
-func Add(mgr manager.Manager, _ string) error {
+func Add(mgr manager.Manager, _ string, operatorPod *corev1.Pod) error {
 	kubeSysUID, err := kubesystem.GetUID(context.Background(), mgr.GetAPIReader())
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	return NewController(mgr, string(kubeSysUID)).SetupWithManager(mgr)
+	return NewController(mgr, string(kubeSysUID), operatorPod.Spec.Containers[0].Image).SetupWithManager(mgr)
 }
 
-func NewController(mgr manager.Manager, clusterID string) *Controller {
-	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetConfig(), clusterID)
+func NewController(mgr manager.Manager, clusterID string, operatorImageName string) *Controller {
+	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetConfig(), clusterID, operatorImageName)
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, config *rest.Config, clusterID string) *Controller {
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, config *rest.Config, clusterID string, operatorImageName string) *Controller {
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,
 		config:                 config,
 		operatorNamespace:      os.Getenv(env.PodNamespace),
+		operatorImageName:      operatorImageName,
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
@@ -124,6 +125,7 @@ type Controller struct {
 
 	tokens            token.Tokens
 	operatorNamespace string
+	operatorImageName string
 	clusterID         string
 
 	requeueAfter time.Duration
@@ -403,6 +405,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		dk,
 		controller.tokens,
 		controller.clusterID,
+		controller.operatorImageName,
 	).
 		Reconcile(ctx)
 	if err != nil {

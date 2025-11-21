@@ -26,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,7 +70,7 @@ type Controller struct {
 	secrets                  k8ssecret.QueryObject
 }
 
-func Add(mgr manager.Manager, _ string) error {
+func Add(mgr manager.Manager, _ string, _ *corev1.Pod) error {
 	return NewController(mgr).SetupWithManager(mgr)
 }
 

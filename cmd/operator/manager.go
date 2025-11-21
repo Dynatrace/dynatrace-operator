@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for running operator locally
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
-type controllerSetupFunc func(manager.Manager, string) error
+type controllerSetupFunc func(manager.Manager, string, *corev1.Pod) error
 
 func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 	funcs := []controllerSetupFunc{
@@ -41,7 +42,7 @@ func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 	return funcs
 }
 
-func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool) (manager.Manager, error) {
+func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool, operatorPod *corev1.Pod) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, createOptions(namespace))
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -55,7 +56,7 @@ func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool) (mana
 	addFuncs := getControllerAddFuncs(isOLM)
 
 	for _, add := range addFuncs {
-		err = add(mgr, namespace)
+		err = add(mgr, namespace, operatorPod)
 		if err != nil {
 			return nil, err
 		}

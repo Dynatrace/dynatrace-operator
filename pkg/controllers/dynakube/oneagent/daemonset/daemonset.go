@@ -1,7 +1,6 @@
 package daemonset
 
 import (
-	"os"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -77,45 +76,49 @@ type classicFullStack struct {
 }
 
 type builder struct {
-	dk             *dynakube.DynaKube
-	hostInjectSpec *oneagent.HostInjectSpec
-	clusterID      string
-	deploymentType string
+	dk                *dynakube.DynaKube
+	hostInjectSpec    *oneagent.HostInjectSpec
+	clusterID         string
+	deploymentType    string
+	operatorImageName string
 }
 
 type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewHostMonitoring(dk *dynakube.DynaKube, clusterID string, operatorImageName string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
+			dk:                dk,
+			hostInjectSpec:    dk.Spec.OneAgent.HostMonitoring,
+			clusterID:         clusterID,
+			deploymentType:    deploymentmetadata.HostMonitoringDeploymentType,
+			operatorImageName: operatorImageName,
 		},
 	}
 }
 
-func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID string, operatorImageName string) Builder {
 	return &hostMonitoring{
 		builder{
-			dk:             dk,
-			hostInjectSpec: &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
+			dk:                dk,
+			hostInjectSpec:    &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			clusterID:         clusterID,
+			deploymentType:    deploymentmetadata.CloudNativeDeploymentType,
+			operatorImageName: operatorImageName,
 		},
 	}
 }
 
-func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
+func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string, operatorImageName string) Builder {
 	return &classicFullStack{
 		builder{
-			dk:             dk,
-			hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
-			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
+			dk:                dk,
+			hostInjectSpec:    dk.Spec.OneAgent.ClassicFullStack,
+			clusterID:         clusterID,
+			deploymentType:    deploymentmetadata.ClassicFullStackDeploymentType,
+			operatorImageName: operatorImageName,
 		},
 	}
 }
@@ -262,7 +265,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 
 func (b *builder) initContainerSpec() corev1.Container {
 	return corev1.Container{
-		Image:           os.Getenv(dtOperatorImageEnvName),
+		Image:           b.operatorImageName,
 		ImagePullPolicy: corev1.PullAlways,
 		Name:            initContainerName,
 		Env:             b.initContainerEnvVars(),

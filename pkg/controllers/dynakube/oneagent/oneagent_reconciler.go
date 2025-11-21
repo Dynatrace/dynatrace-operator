@@ -51,6 +51,7 @@ type ReconcilerBuilder func(
 	dynakube *dynakube.DynaKube,
 	tokens token.Tokens,
 	clusterID string,
+	operatorImageName string,
 ) controllers.Reconciler
 
 // NewReconciler initializes a new ReconcileOneAgent instance
@@ -61,6 +62,7 @@ func NewReconciler( //nolint
 	dk *dynakube.DynaKube,
 	tokens token.Tokens,
 	clusterID string,
+	operatorImageName string,
 ) controllers.Reconciler {
 	return &Reconciler{
 		client:                   client,
@@ -70,6 +72,7 @@ func NewReconciler( //nolint
 		connectionInfoReconciler: oaconnectioninfo.NewReconciler(client, apiReader, dtClient, dk),
 		versionReconciler:        version.NewReconciler(apiReader, dtClient, timeprovider.New().Freeze()),
 		tokens:                   tokens,
+		operatorImageName:        operatorImageName,
 	}
 }
 
@@ -83,6 +86,7 @@ type Reconciler struct {
 	dk                       *dynakube.DynaKube
 	tokens                   token.Tokens
 	clusterID                string
+	operatorImageName        string
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -309,11 +313,11 @@ func (r *Reconciler) buildDesiredDaemonSet(dk *dynakube.DynaKube) (*appsv1.Daemo
 
 	switch {
 	case dk.OneAgent().IsClassicFullStackMode():
-		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID, r.operatorImageName).BuildDaemonSet()
 	case dk.OneAgent().IsHostMonitoringMode():
-		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewHostMonitoring(dk, r.clusterID, r.operatorImageName).BuildDaemonSet()
 	case dk.OneAgent().IsCloudNativeFullstackMode():
-		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewCloudNativeFullStack(dk, r.clusterID, r.operatorImageName).BuildDaemonSet()
 	}
 
 	if err != nil {

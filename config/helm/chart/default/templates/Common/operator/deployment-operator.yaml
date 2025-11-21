@@ -67,8 +67,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: DT_OPERATOR_IMAGE
-              value: {{ include "dynatrace-operator.image" . }}
             - name: DT_HOST_AVAILABILITY_DETECTION
               value: "{{ .Values.operator.hostAvailabilityDetection }}"
             {{- if .Values.debugLogs }}

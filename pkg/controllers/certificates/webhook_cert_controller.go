@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,7 +29,7 @@ const (
 	errorCertificatesSecretEmpty = "certificates secret is empty"
 )
 
-func Add(mgr manager.Manager, ns string) error {
+func Add(mgr manager.Manager, ns string, _ *corev1.Pod) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Named("webhook-cert-controller").
