@@ -17,24 +17,24 @@ Set the GOMEMLIMIT envvar to 90% of the configured memory limit. So the go garba
 */}}
 {{- define "dynatrace-operator.gomemlimit" -}}
 {{- $limit := (.limits).memory -}}
-{{- $number := 0 -}}
+{{- $number := 0.0 -}}
 {{- if not $limit -}}
-  {{- $number := -1 -}}
+  {{- $number := -1.0 -}}
 {{- else if hasSuffix "Gi" $limit -}}
-  {{- $number = int64 (trimSuffix "Gi" $limit) -}}
-  {{- $number = mul $number 1024 -}}
+  {{- $number = float64 (trimSuffix "Gi" $limit) -}}
+  {{- $number = mulf $number 1024 -}}
 {{- else if hasSuffix "G" $limit -}}
-  {{- $number = int64 (trimSuffix "G" $limit) -}}
-  {{- $number = mul $number 1000 -}}
-  {{- $number = int64 (ceil (mulf 0.931323 (float64 $number))) -}}
+  {{- $number = float64 (trimSuffix "G" $limit) -}}
+  {{- $number = mulf $number 1000 -}}
+  {{- $number = ceil (mulf 0.931323 $number) -}}
 {{- else if hasSuffix "Mi" $limit -}}
-  {{- $number = int64 (trimSuffix "Mi" $limit) -}}
+  {{- $number = float64 (trimSuffix "Mi" $limit) -}}
 {{- else if hasSuffix "M" $limit -}}
-  {{- $number = int64 (trimSuffix "M" $limit) -}}
-  {{- $number = int64 (ceil (mulf 0.953674 (float64 $number))) -}}
+  {{- $number = float64 (trimSuffix "M" $limit) -}}
+  {{- $number = ceil (mulf 0.953674 $number) -}}
 {{- end -}}
-{{- if gt $number 0 -}}
+{{- if gt $number 0.0 -}}
 - name: GOMEMLIMIT
-  value: {{ printf "%dMiB" (int64 (ceil (mulf 0.9 (float64 $number)))) }}
+  value: {{ printf "%dMiB" (int64 (ceil (mulf 0.9 $number))) }}
 {{- end -}}
 {{- end -}}
