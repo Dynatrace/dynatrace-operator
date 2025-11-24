@@ -373,6 +373,7 @@ func Test_logCache(t *testing.T) {
 		}
 
 		require.Len(t, logCache, 100)
-		require.NotContains(t, logCache, "101")
+		require.Contains(t, logCache, "99")
+		require.NotContains(t, logCache, "100")
 	})
 }
