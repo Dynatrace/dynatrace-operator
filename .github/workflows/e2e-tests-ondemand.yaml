@@ -28,66 +28,34 @@ jobs:
             platform: k8s
           - version: 1-29
             platform: k8s
-#          - version: 1-30
-#            platform: k8s
-#          - version: 1-31
-#            platform: k8s
-#          - version: 1-32
-#            platform: k8s
-#          - version: 1-33
-#            platform: k8s
-#          - version: 1-34
-#            platform: k8s
-#          - version: 4-12
-#            platform: ocp
-#          - version: 4-13
-#            platform: ocp
-#          - version: 4-14
-#            platform: ocp
-#          - version: 4-15
-#            platform: ocp
-#          - version: 4-16
-#            platform: ocp
-#          - version: 4-17
-#            platform: ocp
-#          - version: 4-18
-#            platform: ocp
+          - version: 1-30
+            platform: k8s
+          - version: 1-31
+            platform: k8s
+          - version: 1-32
+            platform: k8s
+          - version: 1-33
+            platform: k8s
+          - version: 1-34
+            platform: k8s
+          - version: 4-12
+            platform: ocp
+          - version: 4-13
+            platform: ocp
+          - version: 4-14
+            platform: ocp
+          - version: 4-15
+            platform: ocp
+          - version: 4-16
+            platform: ocp
+          - version: 4-17
+            platform: ocp
+          - version: 4-18
+            platform: ocp
     environment: E2E
     runs-on:
       - self-hosted
       - operator-e2e
-#    outputs:
-#      k8s_1_29_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_29_emoji }}
-#      k8s_1_30_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_30_emoji }}
-#      k8s_1_31_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_31_emoji }}
-#      k8s_1_28_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_28_emoji }}
-#      k8s_1_32_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_32_emoji }}
-#      k8s_1_33_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_33_emoji }}
-#      k8s_1_34_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_34_emoji }}
-#
-#      k8s_1_28_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_28_run_id_url }}
-#      k8s_1_29_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_29_run_id_url }}
-#      k8s_1_30_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_30_run_id_url }}
-#      k8s_1_31_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_31_run_id_url }}
-#      k8s_1_32_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_32_run_id_url }}
-#      k8s_1_33_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_33_run_id_url }}
-#      k8s_1_34_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_34_run_id_url }}
-#
-#      ocp_4_12_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_12_emoji }}
-#      ocp_4_13_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_13_emoji }}
-#      ocp_4_14_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_14_emoji }}
-#      ocp_4_15_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_15_emoji }}
-#      ocp_4_16_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_16_emoji }}
-#      ocp_4_17_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_17_emoji }}
-#      ocp_4_18_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_18_emoji }}
-#
-#      ocp_4_12_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_13_run_id_url }}
-#      ocp_4_13_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_14_run_id_url }}
-#      ocp_4_14_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_15_run_id_url }}
-#      ocp_4_15_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_12_run_id_url }}
-#      ocp_4_16_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_16_run_id_url }}
-#      ocp_4_17_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_17_run_id_url }}
-#      ocp_4_18_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_18_run_id_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -138,11 +106,7 @@ jobs:
           fi
       - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@1127e708e4072515056a4b0d26bcb0653646cedc # 0.30.0
         with:
-          # The matrix output to set.
-          # This input is required.
           value: "${{ steps.prepare_outputs.outputs.matrix }}"
-          # The name of the artifact to upload.
-          # This input is required.
           artifact-name: "run-matrix-artifact"
   notify-slack:
     name: Notify test results in Slack
@@ -168,14 +132,15 @@ jobs:
       - name: debug
         run: |
           printenv | grep 'K8S_'
-#      - name: Notify failure in Slack
-#        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-#        with:
-#          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-#          webhook-type: incoming-webhook
-#          errors: true
-#          payload-templated: true
-#          # Note:
-#          # to update the payload when we add new matrix entries run:
-#          # python3 hack/slack/update_e2e_ondemand.py
-#          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
+          printenv | grep 'OCP_'
+      - name: Notify failure in Slack
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          errors: true
+          payload-templated: true
+          # Note:
+          # to update the payload when we add new matrix entries run:
+          # python3 hack/slack/update_e2e_ondemand.py
+          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json

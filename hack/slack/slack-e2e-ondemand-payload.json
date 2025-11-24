@@ -83,7 +83,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-1.28"
+                    "text": "k8s_1-28"
                   }
                 ]
               }
@@ -116,7 +116,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-4.12"
+                    "text": "ocp_4-12"
                   }
                 ]
               }
@@ -151,7 +151,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-1.29"
+                    "text": "k8s_1-29"
                   }
                 ]
               }
@@ -184,7 +184,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-4.13"
+                    "text": "ocp_4-13"
                   }
                 ]
               }
@@ -219,7 +219,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-1.30"
+                    "text": "k8s_1-30"
                   }
                 ]
               }
@@ -252,7 +252,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-4.14"
+                    "text": "ocp_4-14"
                   }
                 ]
               }
@@ -287,7 +287,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-1.31"
+                    "text": "k8s_1-31"
                   }
                 ]
               }
@@ -320,7 +320,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-4.15"
+                    "text": "ocp_4-15"
                   }
                 ]
               }
@@ -355,7 +355,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-1.32"
+                    "text": "k8s_1-32"
                   }
                 ]
               }
@@ -388,7 +388,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-4.16"
+                    "text": "ocp_4-16"
                   }
                 ]
               }
@@ -423,7 +423,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-1.33"
+                    "text": "k8s_1-33"
                   }
                 ]
               }
@@ -456,7 +456,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-4.17"
+                    "text": "ocp_4-17"
                   }
                 ]
               }
@@ -491,7 +491,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s-1.34"
+                    "text": "k8s_1-34"
                   }
                 ]
               }
@@ -524,7 +524,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp-4.18"
+                    "text": "ocp_4-18"
                   }
                 ]
               }
