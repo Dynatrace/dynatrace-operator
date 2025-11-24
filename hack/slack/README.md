@@ -18,10 +18,10 @@ or create a new one:
 ```bash
 # local dev repo - direct call
 # Create python virtual env
-python3 -m venv venv
+python3 -m venv bin/.venv
 # activate virtual env
-source venv/bin/activate
-pip install pyyaml
+source bin/.venv/bin/activate
+pip install ruamel.yaml
 ```
 
 Run script to generate e2e on-demand Slack payload:
