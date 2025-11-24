@@ -163,10 +163,13 @@ jobs:
       - name: Set Slack message
         id: set_slack_message
         run: |
-          echo "${{ toJSON(steps.get-matrix-outputs.outputs) }}"
-#          for s in $(echo '${{ toJSON(needs.run-matrix.outputs) }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
-#            echo "$s" >> $GITHUB_ENV
-#          done
+          echo "${{ steps.get-matrix-outputs.outputs }}"
+          for s in $(echo '${{ steps.get-matrix-outputs.outputs }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
+            echo "$s" >> $GITHUB_ENV
+          done
+      - name: debug
+        run: |
+          printenv
 #      - name: Notify failure in Slack
 #        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
 #        with:
