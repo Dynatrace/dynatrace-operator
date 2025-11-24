@@ -132,7 +132,7 @@ jobs:
 
           emoji=$(get_emoji "${{ steps.run_e2e_test.outputs.cluster_status}}" "${{ steps.run_e2e_test.outcome }}")
 
-          echo "result={\"${PLATFORM_VERSION_CLEAN}\": {\"emoji\": \"${emoji}\", \"run_id_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}\"}}" >> $GITHUB_OUTPUT
+          echo "matrix={\"${PLATFORM_VERSION_CLEAN}\": {\"emoji\": \"${emoji}\", \"run_id_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}\"}}" >> $GITHUB_OUTPUT
 
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
@@ -141,7 +141,7 @@ jobs:
         with:
           # The matrix output to set.
           # This input is required.
-          value: "${{ fromJSON(steps.prepare_outputs.outputs.result) }}"
+          value: "${{ fromJSON(steps.prepare_outputs.outputs.matrix) }}"
           # The name of the artifact to upload.
           # This input is required.
           artifact-name: "run-matrix-artifact"
