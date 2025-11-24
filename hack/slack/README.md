@@ -3,14 +3,14 @@
 ### Pre-requisites
 
 - python3
-- pyyaml
+- ruamel.yaml
 
 Activate virtual environment:
 > [!NOTE]
 > We use the same virtual environment as other hack scripts
 
 ```bash
-source local/.venv/bin/activate
+source bin/.venv/bin/activate
 ```
 
 or create a new one:
