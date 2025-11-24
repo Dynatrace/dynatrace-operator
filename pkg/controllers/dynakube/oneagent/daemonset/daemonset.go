@@ -40,9 +40,8 @@ const (
 	activeGateCaCertVolumeMountPath = "/mnt/dynatrace/certs/activegate/"
 
 	csiStorageVolumeName  = "osagent-storage"
-	csiStorageVolumeMount = "/mnt/volume_storage_mount"
-
-	storageVolumeName = "volume-storage"
+	hostStorageVolumeName = "volume-storage"
+	storageVolumeMount    = "/mnt/volume_storage_mount"
 
 	podName = "dynatrace-oneagent"
 

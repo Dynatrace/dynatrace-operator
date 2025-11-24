@@ -25,7 +25,7 @@ HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 CYCLONEDX_GOMOD_VERSION ?= v1.9.0
 # renovate depName=github.com/mikefarah/yq/v4
-YQ_VERSION ?= v4.48.2
+YQ_VERSION ?= v4.49.1
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
 GO_TEST_COVERAGE_VERSION ?= v2.18.0
 #SETUP_ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)

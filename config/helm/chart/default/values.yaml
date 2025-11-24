@@ -195,7 +195,6 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
-    builtIn: true
   livenessprobe:
     securityContext:
       runAsUser: 0
@@ -212,7 +211,6 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
-    builtIn: true
   job:
     securityContext:
       runAsUser: 0

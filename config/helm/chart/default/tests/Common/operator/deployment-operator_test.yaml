@@ -550,6 +550,30 @@ tests:
             name: GOMEMLIMIT
             value: 1677MiB
 
+  - it: should set GOMEMLIMIT to 90% of the limit - convert from Gi float
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 1.5Gi
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 1383MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - convert from G float
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 1.5G
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 1258MiB
+
   - it: should set GOMEMLIMIT to 90% of the limit - small value
     set:
       platform: kubernetes

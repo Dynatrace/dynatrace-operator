@@ -33,6 +33,9 @@ const (
 	testNamespaceName         = "dynatrace"
 	testOtelPullSecret        = "otelc-pull-secret"
 	testTelemetryIngestSecret = "test-ts-secret"
+	testKubeSystemUUID        = "123e4567-e89b-12d3-a456-426614174000"
+	testKubernetesClusterName = "test-cluster"
+	testKubernetesClusterMEID = "12345678901234567890"
 )
 
 func TestReconcile(t *testing.T) {
@@ -365,6 +368,11 @@ func getTestDynakubeWithExtensions() *dynakube.DynaKube {
 			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID:        testKubeSystemUUID,
+			KubernetesClusterMEID: testKubernetesClusterMEID,
+			KubernetesClusterName: testKubernetesClusterName,
+		},
 	}
 }
 
@@ -376,6 +384,11 @@ func getTestDynakube() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID:        testKubeSystemUUID,
+			KubernetesClusterMEID: testKubernetesClusterMEID,
+			KubernetesClusterName: testKubernetesClusterName,
+		},
 	}
 
 	return dk
