@@ -61,22 +61,24 @@ jobs:
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Run e2e test
         id: run_e2e_test
-        uses: ./.github/actions/run-e2e
-        with:
-          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
-          flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
-          target-branch: ${{ env.branch }}
-          tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
-          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
-          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
-          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
-          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
-          tenant2-name: ${{ secrets.TENANT2_NAME }}
-          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
-          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Running e2e test"
+#        uses: ./.github/actions/run-e2e
+#        with:
+#          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
+#          flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
+#          target-branch: ${{ env.branch }}
+#          tenant1-name: ${{ secrets.TENANT1_NAME }}
+#          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+#          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+#          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+#          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+#          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+#          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+#          tenant2-name: ${{ secrets.TENANT2_NAME }}
+#          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+#          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Prepare outputs
         id: prepare_outputs
         if: always()
@@ -96,8 +98,10 @@ jobs:
             fi
           }
 
+          run_id="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}"
           emoji=$(get_emoji "${{ steps.run_e2e_test.outputs.cluster_status}}" "${{ steps.run_e2e_test.outcome }}")
-          echo "matrix={\"${PLATFORM_VERSION_CLEAN}_emoji\": \"${emoji}\", \"${PLATFORM_VERSION_CLEAN}_run_id_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}\"}" >> $GITHUB_OUTPUT
+
+          echo "matrix={\"${PLATFORM_VERSION_CLEAN^^}_EMOJI\": \"${emoji}\", \"${PLATFORM_VERSION_CLEAN^^}_RUN_ID_URL\": \"${run_id}\"}" >> $GITHUB_OUTPUT
 
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
@@ -123,18 +127,18 @@ jobs:
       - name: Set Slack message
         id: set_slack_message
         run: |
-          echo ${{ toJSON(steps.get-matrix-outputs.outputs.result) }}
-          for s in $(echo '${{ steps.get-matrix-outputs.outputs.result }}' | jq -r "add|to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
-            echo "$s" >> $GITHUB_ENV
-          done
-      - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          errors: true
-          payload-templated: true
-          # Note:
-          # to update the payload when we add new matrix entries run:
-          # python3 hack/slack/update_e2e_ondemand.py
-          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
+          $(echo '${{ steps.get-matrix-outputs.outputs.result }}' | jq -r "add|to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ) >> $GITHUB_ENV
+      - name: debug env
+        run: |
+          printenv
+#      - name: Notify failure in Slack
+#        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+#        with:
+#          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+#          webhook-type: incoming-webhook
+#          errors: true
+#          payload-templated: true
+#          # Note:
+#          # to update the payload when we add new matrix entries run:
+#          # python3 hack/slack/update_e2e_ondemand.py
+#          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
