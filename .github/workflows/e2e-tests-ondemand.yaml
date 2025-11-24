@@ -127,7 +127,7 @@ jobs:
       - name: Set Slack message
         id: set_slack_message
         run: |
-          echo '${{ steps.get-matrix-outputs.outputs.result }}' | jq -r "add|to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" >> $GITHUB_ENV
+          echo '${{ steps.get-matrix-outputs.outputs.result }}' | jq -r "add|to_entries|map(\"\(.key)=\(.value)\")|.[]" >> $GITHUB_ENV
       - name: debug env
         run: |
           printenv
