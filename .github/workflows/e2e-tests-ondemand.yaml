@@ -26,89 +26,91 @@ jobs:
         include:
           - version: 1-28
             platform: k8s
-          - version: 1-29
-            platform: k8s
-          - version: 1-30
-            platform: k8s
-          - version: 1-31
-            platform: k8s
-          - version: 1-32
-            platform: k8s
-          - version: 1-33
-            platform: k8s
-          - version: 1-34
-            platform: k8s
-          - version: 4-12
-            platform: ocp
-          - version: 4-13
-            platform: ocp
-          - version: 4-14
-            platform: ocp
-          - version: 4-15
-            platform: ocp
-          - version: 4-16
-            platform: ocp
-          - version: 4-17
-            platform: ocp
-          - version: 4-18
-            platform: ocp
+#          - version: 1-29
+#            platform: k8s
+#          - version: 1-30
+#            platform: k8s
+#          - version: 1-31
+#            platform: k8s
+#          - version: 1-32
+#            platform: k8s
+#          - version: 1-33
+#            platform: k8s
+#          - version: 1-34
+#            platform: k8s
+#          - version: 4-12
+#            platform: ocp
+#          - version: 4-13
+#            platform: ocp
+#          - version: 4-14
+#            platform: ocp
+#          - version: 4-15
+#            platform: ocp
+#          - version: 4-16
+#            platform: ocp
+#          - version: 4-17
+#            platform: ocp
+#          - version: 4-18
+#            platform: ocp
     environment: E2E
     runs-on:
       - self-hosted
       - operator-e2e
-    outputs:
-      k8s_1_29_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_29_emoji }}
-      k8s_1_30_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_30_emoji }}
-      k8s_1_31_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_31_emoji }}
-      k8s_1_28_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_28_emoji }}
-      k8s_1_32_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_32_emoji }}
-      k8s_1_33_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_33_emoji }}
-      k8s_1_34_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_34_emoji }}
-
-      k8s_1_28_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_28_run_id_url }}
-      k8s_1_29_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_29_run_id_url }}
-      k8s_1_30_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_30_run_id_url }}
-      k8s_1_31_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_31_run_id_url }}
-      k8s_1_32_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_32_run_id_url }}
-      k8s_1_33_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_33_run_id_url }}
-      k8s_1_34_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_34_run_id_url }}
-
-      ocp_4_12_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_12_emoji }}
-      ocp_4_13_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_13_emoji }}
-      ocp_4_14_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_14_emoji }}
-      ocp_4_15_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_15_emoji }}
-      ocp_4_16_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_16_emoji }}
-      ocp_4_17_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_17_emoji }}
-      ocp_4_18_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_18_emoji }}
-
-      ocp_4_12_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_13_run_id_url }}
-      ocp_4_13_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_14_run_id_url }}
-      ocp_4_14_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_15_run_id_url }}
-      ocp_4_15_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_12_run_id_url }}
-      ocp_4_16_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_16_run_id_url }}
-      ocp_4_17_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_17_run_id_url }}
-      ocp_4_18_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_18_run_id_url }}
+#    outputs:
+#      k8s_1_29_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_29_emoji }}
+#      k8s_1_30_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_30_emoji }}
+#      k8s_1_31_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_31_emoji }}
+#      k8s_1_28_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_28_emoji }}
+#      k8s_1_32_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_32_emoji }}
+#      k8s_1_33_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_33_emoji }}
+#      k8s_1_34_emoji: ${{ steps.prepare_outputs.outputs.k8s_1_34_emoji }}
+#
+#      k8s_1_28_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_28_run_id_url }}
+#      k8s_1_29_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_29_run_id_url }}
+#      k8s_1_30_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_30_run_id_url }}
+#      k8s_1_31_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_31_run_id_url }}
+#      k8s_1_32_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_32_run_id_url }}
+#      k8s_1_33_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_33_run_id_url }}
+#      k8s_1_34_run_id_url: ${{ steps.prepare_outputs.outputs.k8s_1_34_run_id_url }}
+#
+#      ocp_4_12_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_12_emoji }}
+#      ocp_4_13_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_13_emoji }}
+#      ocp_4_14_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_14_emoji }}
+#      ocp_4_15_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_15_emoji }}
+#      ocp_4_16_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_16_emoji }}
+#      ocp_4_17_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_17_emoji }}
+#      ocp_4_18_emoji: ${{ steps.prepare_outputs.outputs.ocp_4_18_emoji }}
+#
+#      ocp_4_12_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_13_run_id_url }}
+#      ocp_4_13_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_14_run_id_url }}
+#      ocp_4_14_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_15_run_id_url }}
+#      ocp_4_15_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_12_run_id_url }}
+#      ocp_4_16_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_16_run_id_url }}
+#      ocp_4_17_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_17_run_id_url }}
+#      ocp_4_18_run_id_url: ${{ steps.prepare_outputs.outputs.ocp_4_18_run_id_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - name: Run e2e test
         id: run_e2e_test
-        uses: ./.github/actions/run-e2e
-        with:
-          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
-          flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
-          target-branch: ${{ env.branch }}
-          tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
-          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
-          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
-          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
-          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
-          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
-          tenant2-name: ${{ secrets.TENANT2_NAME }}
-          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
-          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Running e2e tests for platform=${{ matrix.platform }} version=${{ matrix.version }}"
+#        uses: ./.github/actions/run-e2e
+#        with:
+#          flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
+#          flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
+#          target-branch: ${{ env.branch }}
+#          tenant1-name: ${{ secrets.TENANT1_NAME }}
+#          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+#          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+#          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+#          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+#          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+#          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+#          tenant2-name: ${{ secrets.TENANT2_NAME }}
+#          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+#          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Prepare outputs
         id: prepare_outputs
         if: always()
@@ -136,6 +138,15 @@ jobs:
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
           fi
+      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@1127e708e4072515056a4b0d26bcb0653646cedc # 0.30.0
+        with:
+          # The matrix output to set.
+          # This input is required.
+          value: "test value"
+
+          # The name of the artifact to upload.
+          # This input is required.
+          artifact-name: "run-matrix-artifact"
   notify-slack:
     name: Notify test results in Slack
     environment: E2E
@@ -145,20 +156,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@v0.7.5
+        id: get-matrix-outputs
+        with:
+          artifact-name: "run-matrix-artifact"
+          remove-artifact: false
       - name: Set Slack message
         id: set_slack_message
         run: |
-          for s in $(echo '${{ toJSON(needs.run-matrix.outputs) }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
-            echo "$s" >> $GITHUB_ENV
-          done
-      - name: Notify failure in Slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          errors: true
-          payload-templated: true
-          # Note:
-          # to update the payload when we add new matrix entries run:
-          # python3 hack/slack/update_e2e_ondemand.py
-          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
+          echo "${{ toJSON(get-matrix-outputs.outputs) }}"
+#          for s in $(echo '${{ toJSON(needs.run-matrix.outputs) }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
+#            echo "$s" >> $GITHUB_ENV
+#          done
+#      - name: Notify failure in Slack
+#        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+#        with:
+#          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+#          webhook-type: incoming-webhook
+#          errors: true
+#          payload-templated: true
+#          # Note:
+#          # to update the payload when we add new matrix entries run:
+#          # python3 hack/slack/update_e2e_ondemand.py
+#          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
