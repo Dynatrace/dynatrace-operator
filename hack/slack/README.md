@@ -32,5 +32,5 @@ python3 hack/slack/update_e2e_ondemand.py > hack/slack/slack-e2e-ondemand-payloa
 
 ### How to validate payloads using Slack's Block Kit Builder
 
-- Open [Block Kit Builder](https://app.slack.com/block-kit-builder/)
+Open [Block Kit Builder](https://app.slack.com/block-kit-builder/)
 and paste the content of `hack/slack/slack-e2e-ondemand-payload.json` into the left panel
