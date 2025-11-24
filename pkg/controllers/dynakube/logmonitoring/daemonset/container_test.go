@@ -14,11 +14,9 @@ import (
 )
 
 func TestGetContainer(t *testing.T) {
-	tenantUUID := "test-uuid"
-
 	t.Run("get main container", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		mainContainer := getContainer(dk, tenantUUID)
+		mainContainer := getContainer(dk)
 
 		require.NotEmpty(t, mainContainer)
 
@@ -43,7 +41,7 @@ func TestGetContainer(t *testing.T) {
 				Tag:        expectedTag,
 			},
 		}
-		mainContainer := getContainer(dk, tenantUUID)
+		mainContainer := getContainer(dk)
 
 		require.NotEmpty(t, mainContainer)
 		assert.NotEmpty(t, mainContainer.Image)
@@ -66,7 +64,7 @@ func TestGetContainer(t *testing.T) {
 				Limits:   limits,
 			},
 		}
-		mainContainer := getContainer(dk, tenantUUID)
+		mainContainer := getContainer(dk)
 
 		require.NotEmpty(t, mainContainer)
 		assert.NotEmpty(t, mainContainer.Resources)
@@ -76,14 +74,12 @@ func TestGetContainer(t *testing.T) {
 }
 
 func TestGetInitContainer(t *testing.T) {
-	tenantUUID := "test-uuid"
-
 	t.Run("get main container", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk)
 
 		require.NotEmpty(t, initContainer)
 
@@ -110,7 +106,7 @@ func TestGetInitContainer(t *testing.T) {
 				Tag:        expectedTag,
 			},
 		}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk)
 
 		require.NotEmpty(t, initContainer)
 		assert.NotEmpty(t, initContainer.Image)
@@ -133,7 +129,7 @@ func TestGetInitContainer(t *testing.T) {
 				Limits:   limits,
 			},
 		}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk)
 
 		require.NotEmpty(t, initContainer)
 		assert.NotEmpty(t, initContainer.Resources)
@@ -143,7 +139,7 @@ func TestGetInitContainer(t *testing.T) {
 
 	t.Run("get main container without the use of metadata", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		initContainer := getInitContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk)
 
 		require.NotEmpty(t, initContainer)
 
@@ -155,8 +151,6 @@ func TestGetInitContainer(t *testing.T) {
 }
 
 func TestSecurityContext(t *testing.T) {
-	tenantUUID := "test-uuid"
-
 	t.Run("get base securityContext", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		sc := getBaseSecurityContext(dk)
@@ -191,8 +185,8 @@ func TestSecurityContext(t *testing.T) {
 
 	t.Run("main and init container securityContext differ only in capabilities", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
-		initContainer := getInitContainer(dk, tenantUUID)
-		mainContainer := getContainer(dk, tenantUUID)
+		initContainer := getInitContainer(dk)
+		mainContainer := getContainer(dk)
 
 		require.NotNil(t, initContainer)
 		require.NotNil(t, mainContainer)

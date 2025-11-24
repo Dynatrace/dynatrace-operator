@@ -428,9 +428,11 @@ func testVolumeMountsVsCSIDriver(t *testing.T, dk *dynakube.DynaKube, csi bool, 
 	}
 
 	if storageVolume {
-		assert.Contains(t, volumeMounts, getStorageVolumeMount(dk))
+		storageVolumeMount := getStorageVolumeMount()
+		assert.Contains(t, volumeMounts, storageVolumeMount)
+		assert.Empty(t, storageVolumeMount.SubPath)
 	} else {
-		assert.NotContains(t, volumeMounts, getStorageVolumeMount(dk))
+		assert.NotContains(t, volumeMounts, getStorageVolumeMount())
 	}
 
 	if rootReadOnlyVolumeMount {
