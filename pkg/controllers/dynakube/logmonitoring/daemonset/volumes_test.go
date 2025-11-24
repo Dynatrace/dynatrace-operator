@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,10 +14,8 @@ const (
 )
 
 func TestGetVolumeMounts(t *testing.T) {
-	tenantUUID := "test-uuid"
-
 	t.Run("get volume mounts", func(t *testing.T) {
-		mounts := getVolumeMounts(tenantUUID)
+		mounts := getVolumeMounts()
 
 		require.NotEmpty(t, mounts)
 		assert.Len(t, mounts, expectedMountLen)
@@ -24,22 +23,29 @@ func TestGetVolumeMounts(t *testing.T) {
 		for _, mount := range mounts {
 			assert.NotEmpty(t, mount.Name)
 			assert.NotEmpty(t, mount.MountPath)
+			if mount.Name == dtLibVolumeName {
+				assert.Empty(t, mount.SubPath)
+			}
 		}
 	})
 }
 
 func TestGetVolumes(t *testing.T) {
 	dkName := "test-dk"
+	tenantUUID := "test-uuid"
 
 	t.Run("get volumes", func(t *testing.T) {
-		volumes := getVolumes(dkName)
+		volumes := getVolumes(dkName, tenantUUID)
 
 		require.NotEmpty(t, volumes)
 		assert.Len(t, volumes, expectedMountLen)
 
 		for _, volume := range volumes {
 			assert.NotEmpty(t, volume.Name)
-			assert.NotEmpty(t, volume.VolumeSource)
+			require.NotEmpty(t, volume.VolumeSource)
+			if volume.Name == dtLibVolumeName {
+				assert.Equal(t, tenantUUID, filepath.Base(volume.HostPath.Path))
+			}
 		}
 	})
 }
