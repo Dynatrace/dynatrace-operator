@@ -332,19 +332,21 @@ func (oa *OneAgent) GetArgumentsMap() map[string][]string {
 // GetHostPath provides the host path for the storage volume if CSI driver is absent.
 func (oa *OneAgent) GetHostPath(tenant string) string {
 	if oa.IsCloudNativeFullstackMode() {
+		storagePath := StorageVolumeDefaultHostPath
 		if oa.CloudNativeFullStack.StorageHostPath != "" {
-			return filepath.Join(oa.CloudNativeFullStack.StorageHostPath, tenant)
+			storagePath = oa.CloudNativeFullStack.StorageHostPath
 		}
 
-		return filepath.Join(StorageVolumeDefaultHostPath, tenant)
+		return filepath.Join(storagePath, tenant)
 	}
 
 	if oa.IsHostMonitoringMode() {
+		storagePath := StorageVolumeDefaultHostPath
 		if oa.HostMonitoring.StorageHostPath != "" {
-			return filepath.Join(oa.HostMonitoring.StorageHostPath, tenant)
+			storagePath = oa.HostMonitoring.StorageHostPath
 		}
 
-		return filepath.Join(StorageVolumeDefaultHostPath, tenant)
+		return filepath.Join(storagePath, tenant)
 	}
 
 	return ""
