@@ -86,8 +86,8 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 
 	maxUnavailable := intstr.FromInt(r.dk.FF().GetOneAgentMaxUnavailable())
 
-	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
-		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
+	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk),
+		daemonset.SetInitContainer(getInitContainer(*r.dk)),
 		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
 		daemonset.SetAllAnnotations(nil, r.getAnnotations()),
 		daemonset.SetServiceAccount(serviceAccountName),
@@ -102,7 +102,7 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 				MaxUnavailable: &maxUnavailable,
 			},
 		}),
-		daemonset.SetVolumes(getVolumes(r.dk.Name)),
+		daemonset.SetVolumes(getVolumes(r.dk.Name, tenantUUID)),
 	)
 	if err != nil {
 		return nil, err
