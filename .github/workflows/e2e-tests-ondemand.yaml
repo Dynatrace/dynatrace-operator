@@ -162,12 +162,12 @@ jobs:
         id: set_slack_message
         run: |
           echo ${{ toJSON(steps.get-matrix-outputs.outputs.result) }}
-          for s in $(echo '${{ toJSON(steps.get-matrix-outputs.outputs.result) }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
+          for s in $(echo '${{ toJSON(steps.get-matrix-outputs.outputs.result) }}' | jq -r "add|to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
             echo "$s" >> $GITHUB_ENV
           done
       - name: debug
         run: |
-          printenv
+          printenv | grep 'K8S_'
 #      - name: Notify failure in Slack
 #        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
 #        with:
