@@ -162,7 +162,7 @@ jobs:
       - name: Set Slack message
         id: set_slack_message
         run: |
-          echo ${{ steps.get-matrix-outputs.outputs }}
+          echo ${{ toJSON(steps.get-matrix-outputs.outputs) }}
 #          for s in $(echo '${{ steps.get-matrix-outputs.outputs.artifacts }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
 #            echo "$s" >> $GITHUB_ENV
 #          done
