@@ -120,8 +120,6 @@ jobs:
           PLATFORM_VERSION="${{ matrix.platform }}_${{ matrix.version }}"
           PLATFORM_VERSION_CLEAN=${PLATFORM_VERSION//-/_}
 
-          echo "${PLATFORM_VERSION_CLEAN}_run_id_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}" >> $GITHUB_OUTPUT
-
           get_emoji() {
             if [ "$1" = "skipped" ]; then
               echo "large_yellow_circle"
@@ -133,7 +131,8 @@ jobs:
           }
 
           emoji=$(get_emoji "${{ steps.run_e2e_test.outputs.cluster_status}}" "${{ steps.run_e2e_test.outcome }}")
-          echo "${PLATFORM_VERSION_CLEAN}_emoji=$emoji" >> $GITHUB_OUTPUT
+
+          echo "result={\"${PLATFORM_VERSION_CLEAN}\": {\"emoji\": \"${emoji}\", \"run_id_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}\"}}" >> $GITHUB_OUTPUT
 
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
@@ -142,7 +141,7 @@ jobs:
         with:
           # The matrix output to set.
           # This input is required.
-          value: "${{ steps.prepare_outputs.outputs }}"
+          value: "${{ fromJSON(steps.prepare_outputs.outputs.result) }}"
           # The name of the artifact to upload.
           # This input is required.
           artifact-name: "run-matrix-artifact"
@@ -163,8 +162,7 @@ jobs:
       - name: Set Slack message
         id: set_slack_message
         run: |
-          echo ${{ toJSON(steps.get-matrix-outputs.outputs) }}
-          echo ${{ toJSON(needs.run-matrix.outputs) }}
+          echo ${{ steps.get-matrix-outputs.outputs }}
 #          for s in $(echo '${{ steps.get-matrix-outputs.outputs.artifacts }}' | jq -r "to_entries|map(\"\(.key|ascii_upcase)=\(.value|tostring)\")|.[]" ); do
 #            echo "$s" >> $GITHUB_ENV
 #          done
