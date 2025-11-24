@@ -131,8 +131,7 @@ jobs:
           }
 
           emoji=$(get_emoji "${{ steps.run_e2e_test.outputs.cluster_status}}" "${{ steps.run_e2e_test.outcome }}")
-
-          echo "matrix={\"${PLATFORM_VERSION_CLEAN}\": {\"emoji\": \"${emoji}\", \"run_id_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}\"}}" >> $GITHUB_OUTPUT
+          echo "matrix={\"${PLATFORM_VERSION_CLEAN}_emoji\": \"${emoji}\", \"${PLATFORM_VERSION_CLEAN}_run_id_url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}\"}" >> $GITHUB_OUTPUT
 
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
