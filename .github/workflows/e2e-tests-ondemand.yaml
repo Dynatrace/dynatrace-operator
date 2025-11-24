@@ -141,7 +141,7 @@ jobs:
         with:
           # The matrix output to set.
           # This input is required.
-          value: "${{ fromJSON(steps.prepare_outputs.outputs.matrix) }}"
+          value: "${{ steps.prepare_outputs.outputs.matrix }}"
           # The name of the artifact to upload.
           # This input is required.
           artifact-name: "run-matrix-artifact"
