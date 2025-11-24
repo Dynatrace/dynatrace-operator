@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -15,9 +16,10 @@ const (
 	configVolumeMountPath = "/var/lib/dynatrace/oneagent/agent/config/deployment.conf"
 
 	// for the logmonitoring configurations to read/write
-	dtLibVolumeName      = "dynatrace-lib"
-	dtLibVolumeMountPath = "/var/lib/dynatrace"
-	dtLibVolumeHostPath  = oneagent.StorageVolumeDefaultHostPath
+	dtLibVolumeName                = "dynatrace-lib"
+	dtLibVolumeMountPath           = "/var/lib/dynatrace"
+	dtLibVolumeHostPath            = oneagent.StorageVolumeDefaultHostPath
+	dtLibVolumeHostSubPathTemplate = "logmonitoring-%s"
 
 	// for the logmonitoring logs to read/write
 	dtLogVolumeName      = "dynatrace-logs"
@@ -74,7 +76,7 @@ func getDTVolumes(tenantUUID string) []corev1.Volume {
 			Name: dtLibVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: filepath.Join(dtLibVolumeHostPath, tenantUUID),
+					Path: filepath.Join(dtLibVolumeHostPath, fmt.Sprintf(dtLibVolumeHostSubPathTemplate, tenantUUID)),
 					Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 				},
 			},

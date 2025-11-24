@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -44,7 +45,7 @@ func TestGetVolumes(t *testing.T) {
 			assert.NotEmpty(t, volume.Name)
 			require.NotEmpty(t, volume.VolumeSource)
 			if volume.Name == dtLibVolumeName {
-				assert.Equal(t, tenantUUID, filepath.Base(volume.HostPath.Path))
+				assert.Equal(t, fmt.Sprintf(dtLibVolumeHostSubPathTemplate, tenantUUID), filepath.Base(volume.HostPath.Path))
 			}
 		}
 	})
