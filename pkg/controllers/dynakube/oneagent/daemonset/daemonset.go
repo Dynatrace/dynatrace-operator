@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"golang.org/x/mod/semver"
@@ -142,7 +142,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 	versionLabelValue := dk.OneAgent().GetVersion()
 
-	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dk.Name,
+	appLabels := k8slabel.NewAppLabels(k8slabel.OneAgentComponentLabel, dk.Name,
 		b.deploymentType, versionLabelValue)
 	labels := maputils.MergeMap(
 		appLabels.BuildLabels(),

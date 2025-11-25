@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,7 +57,7 @@ func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKu
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
 // Do NOT modify maps produced by this function.
 func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
-	appLabels := labels.NewAppLabels(labels.DatabaseDatasourceLabel, dk.Name, labels.DatabaseDatasourceLabel, dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag)
+	appLabels := k8slabel.NewAppLabels(k8slabel.DatabaseDatasourceLabel, dk.Name, k8slabel.DatabaseDatasourceLabel, dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag)
 
 	deploymentLabels := appLabels.BuildLabels()
 	matchLabels := appLabels.BuildMatchLabels()
@@ -319,7 +319,7 @@ func sanitizedListLabels(deploymentLabels map[string]string) client.MatchingLabe
 	// Remove instance-specific keys to ensure we get all related deployments.
 	delete(deploymentLabels, executorIDLabelKey)
 	delete(deploymentLabels, consts.DatasourceLabelKey)
-	delete(deploymentLabels, labels.AppVersionLabel)
+	delete(deploymentLabels, k8slabel.AppVersionLabel)
 
 	return deploymentLabels
 }

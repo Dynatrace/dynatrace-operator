@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	latestdynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -248,7 +248,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					assert.Empty(t, val, "container should be skipped, no Attributes injected")
 					// also check pod/node env vars are not injected
 					for _, envName := range []string{"K8S_PODNAME", "K8S_PODUID", "K8S_NODE_NAME"} {
-						assert.False(t, env.IsIn(container.Env, envName), "env var %s should not be injected", envName)
+						assert.False(t, k8senv.Contains(container.Env, envName), "env var %s should not be injected", envName)
 					}
 
 					continue

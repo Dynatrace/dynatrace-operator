@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -132,8 +132,8 @@ func TestService(t *testing.T) {
 				Name:      dk.TelemetryIngest().GetDefaultServiceName(),
 				Namespace: dk.Namespace,
 				Labels: map[string]string{
-					labels.AppComponentLabel: labels.OtelCComponentLabel,
-					labels.AppCreatedByLabel: dk.Name,
+					k8slabel.AppComponentLabel: k8slabel.OtelCComponentLabel,
+					k8slabel.AppCreatedByLabel: dk.Name,
 				},
 			},
 		})
@@ -163,8 +163,8 @@ func TestService(t *testing.T) {
 				Name:      testServiceName,
 				Namespace: dk.Namespace,
 				Labels: map[string]string{
-					labels.AppComponentLabel: labels.OtelCComponentLabel,
-					labels.AppCreatedByLabel: dk.Name,
+					k8slabel.AppComponentLabel: k8slabel.OtelCComponentLabel,
+					k8slabel.AppCreatedByLabel: dk.Name,
 				},
 			},
 		})

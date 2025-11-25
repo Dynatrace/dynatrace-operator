@@ -2,9 +2,9 @@ package job
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sjob"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	batchv1 "k8s.io/api/batch/v1"
@@ -30,7 +30,7 @@ func (inst *Installer) buildJobName() string {
 }
 
 func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
-	appLabels := labels.NewAppLabels(labels.CodeModuleComponentLabel, inst.props.Owner.GetName(), "", "")
+	appLabels := k8slabel.NewAppLabels(k8slabel.CodeModuleComponentLabel, inst.props.Owner.GetName(), "", "")
 
 	container := corev1.Container{
 		Name:            "codemodule-download",
@@ -50,7 +50,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		Name: volumeName,
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: env.GetCSIDataDir(),
+				Path: k8senv.GetCSIDataDir(),
 			},
 		},
 	}
@@ -61,20 +61,20 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		webhook.AnnotationDynatraceInject: "false",
 	})
 
-	return jobutil.Build(inst.props.Owner, name, container,
-		jobutil.SetAnnotations(inst.props.CSIJob.Annotations),
-		jobutil.SetPodAnnotations(annotations),
-		jobutil.SetNodeName(inst.nodeName),
-		jobutil.SetPullSecret(inst.props.PullSecrets...),
-		jobutil.SetTolerations(inst.props.CSIJob.Tolerations),
-		jobutil.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), inst.props.CSIJob.Labels),
-		jobutil.AddLabels(inst.props.CSIJob.Labels),
-		jobutil.SetVolumes([]corev1.Volume{hostVolume}),
-		jobutil.SetOnFailureRestartPolicy(),
-		jobutil.SetAutomountServiceAccountToken(false),
-		jobutil.SetActiveDeadlineSeconds(activeDeadlineSeconds),
-		jobutil.SetTTLSecondsAfterFinished(ttlSecondsAfterFinished),
-		jobutil.SetServiceAccount(provisionerServiceAccount),
+	return k8sjob.Build(inst.props.Owner, name, container,
+		k8sjob.SetAnnotations(inst.props.CSIJob.Annotations),
+		k8sjob.SetPodAnnotations(annotations),
+		k8sjob.SetNodeName(inst.nodeName),
+		k8sjob.SetPullSecret(inst.props.PullSecrets...),
+		k8sjob.SetTolerations(inst.props.CSIJob.Tolerations),
+		k8sjob.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), inst.props.CSIJob.Labels),
+		k8sjob.AddLabels(inst.props.CSIJob.Labels),
+		k8sjob.SetVolumes([]corev1.Volume{hostVolume}),
+		k8sjob.SetOnFailureRestartPolicy(),
+		k8sjob.SetAutomountServiceAccountToken(false),
+		k8sjob.SetActiveDeadlineSeconds(activeDeadlineSeconds),
+		k8sjob.SetTTLSecondsAfterFinished(ttlSecondsAfterFinished),
+		k8sjob.SetServiceAccount(provisionerServiceAccount),
 	)
 }
 

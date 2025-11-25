@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,13 +47,13 @@ func (lc logCollector) Do() error {
 
 	logInfof(lc.log, "Starting log collection")
 
-	podList, err := lc.getPodList(labels.AppNameLabel)
+	podList, err := lc.getPodList(k8slabel.AppNameLabel)
 	if err != nil {
 		return err
 	}
 
 	if lc.collectManagedLogs {
-		managedByOperatorPodList, err := lc.getPodList(labels.AppManagedByLabel)
+		managedByOperatorPodList, err := lc.getPodList(k8slabel.AppManagedByLabel)
 		if err != nil {
 			return err
 		}

@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -142,7 +142,7 @@ func setupDataDir(t *testing.T) string {
 
 	dataDir := "test/data"
 
-	t.Setenv(env.CSIDataDir, dataDir)
+	t.Setenv(k8senv.CSIDataDir, dataDir)
 
 	return dataDir
 }

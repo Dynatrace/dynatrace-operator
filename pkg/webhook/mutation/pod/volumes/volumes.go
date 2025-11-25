@@ -3,8 +3,8 @@ package volumes
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -35,7 +35,7 @@ const (
 )
 
 func AddConfigVolume(pod *corev1.Pod) {
-	if volumes.IsIn(pod.Spec.Volumes, ConfigVolumeName) {
+	if k8svolume.Contains(pod.Spec.Volumes, ConfigVolumeName) {
 		return
 	}
 
@@ -77,7 +77,7 @@ func AddConfigVolumeMount(container *corev1.Container, request *dtwebhook.BaseRe
 }
 
 func addCommonConfigVolumeMount(container *corev1.Container) {
-	if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPath) {
+	if !k8smount.ContainsPath(container.VolumeMounts, ConfigMountPath) {
 		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      ConfigVolumeName,
@@ -89,7 +89,7 @@ func addCommonConfigVolumeMount(container *corev1.Container) {
 }
 
 func addOneAgentConfigVolumeMount(container *corev1.Container) {
-	if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathOneAgent) {
+	if !k8smount.ContainsPath(container.VolumeMounts, ConfigMountPathOneAgent) {
 		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      ConfigVolumeName,
@@ -101,7 +101,7 @@ func addOneAgentConfigVolumeMount(container *corev1.Container) {
 }
 
 func addEnrichmentConfigVolumeMount(container *corev1.Container) {
-	if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathEnrichment) {
+	if !k8smount.ContainsPath(container.VolumeMounts, ConfigMountPathEnrichment) {
 		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      ConfigVolumeName,
@@ -113,7 +113,7 @@ func addEnrichmentConfigVolumeMount(container *corev1.Container) {
 }
 
 func AddInitConfigVolumeMount(container *corev1.Container) {
-	if mounts.IsPathIn(container.VolumeMounts, InitConfigMountPath) {
+	if k8smount.ContainsPath(container.VolumeMounts, InitConfigMountPath) {
 		return
 	}
 
@@ -126,7 +126,7 @@ func AddInitConfigVolumeMount(container *corev1.Container) {
 }
 
 func AddInputVolume(pod *corev1.Pod) {
-	if volumes.IsIn(pod.Spec.Volumes, InputVolumeName) {
+	if k8svolume.Contains(pod.Spec.Volumes, InputVolumeName) {
 		return
 	}
 
@@ -160,7 +160,7 @@ func AddInputVolume(pod *corev1.Pod) {
 }
 
 func AddInitInputVolumeMount(container *corev1.Container) {
-	if mounts.IsPathIn(container.VolumeMounts, InitInputMountPath) {
+	if k8smount.ContainsPath(container.VolumeMounts, InitInputMountPath) {
 		return
 	}
 

@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
@@ -59,8 +59,8 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, supportarchive.OperatorVersionFileName)
 	requiredFiles = append(requiredFiles, supportarchive.TroublshootOutputFileName)
 	requiredFiles = append(requiredFiles, supportarchive.SupportArchiveOutputFileName)
-	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(labels.AppNameLabel, true)...)
-	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(labels.AppManagedByLabel, r.collectManaged)...)
+	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(k8slabel.AppNameLabel, true)...)
+	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(k8slabel.AppManagedByLabel, r.collectManaged)...)
 	requiredFiles = append(requiredFiles, r.getRequiredPodDiagnosticLogFiles(r.collectManaged)...)
 	requiredFiles = append(requiredFiles, r.getRequiredReplicaSetFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredServiceFiles()...)
@@ -115,8 +115,8 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 
 	podList := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
-		appNamelabel, okAppNamelabel := podItem.Labels[labels.AppNameLabel]
-		appManagedByLabel, okAppManagedByLabel := podItem.Labels[labels.AppManagedByLabel]
+		appNamelabel, okAppNamelabel := podItem.Labels[k8slabel.AppNameLabel]
+		appManagedByLabel, okAppManagedByLabel := podItem.Labels[k8slabel.AppManagedByLabel]
 
 		return okAppNamelabel && appNamelabel == supportarchive.LabelEecPodName && okAppManagedByLabel && appManagedByLabel == operator.DeploymentName
 	})

@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/stretchr/testify/assert"
@@ -49,9 +49,9 @@ func TestAddPodAttributes(t *testing.T) {
 		assertDeprecatedAttributes(t, attr)
 
 		require.Len(t, request.InstallContainer.Env, 3)
-		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, K8sPodNameEnv))
-		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, K8sPodUIDEnv))
-		assert.NotNil(t, env.FindEnvVar(request.InstallContainer.Env, K8sNodeNameEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodNameEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodUIDEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sNodeNameEnv))
 
 		return attr
 	}

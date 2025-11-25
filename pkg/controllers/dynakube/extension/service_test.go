@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -20,16 +20,16 @@ func TestReconciler_prepareService(t *testing.T) {
 		svc, err := r.buildService()
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			labels.AppComponentLabel: labels.ExtensionComponentLabel,
-			labels.AppCreatedByLabel: dk.Name,
-			labels.AppNameLabel:      version.AppName,
-			labels.AppVersionLabel:   version.Version,
+			k8slabel.AppComponentLabel: k8slabel.ExtensionComponentLabel,
+			k8slabel.AppCreatedByLabel: dk.Name,
+			k8slabel.AppNameLabel:      version.AppName,
+			k8slabel.AppVersionLabel:   version.Version,
 		}, svc.Labels)
 
 		assert.Equal(t, map[string]string{
-			labels.AppManagedByLabel: version.AppName,
-			labels.AppCreatedByLabel: dk.Name,
-			labels.AppNameLabel:      labels.ExtensionComponentLabel,
+			k8slabel.AppManagedByLabel: version.AppName,
+			k8slabel.AppCreatedByLabel: dk.Name,
+			k8slabel.AppNameLabel:      k8slabel.ExtensionComponentLabel,
 		}, svc.Spec.Selector)
 	})
 }

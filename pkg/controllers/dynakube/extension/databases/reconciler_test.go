@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -92,9 +92,9 @@ func TestReconcileSpec(t *testing.T) {
 			executorIDLabelKey:        db.ID,
 			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
 		})
-		assert.Contains(t, deploy.Labels, labels.AppComponentLabel)
-		assert.Contains(t, deploy.Labels, labels.AppManagedByLabel)
-		assert.Contains(t, deploy.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppComponentLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppManagedByLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppVersionLabel)
 		assert.Equal(t, deploy.Labels, deploy.Spec.Template.Labels)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)

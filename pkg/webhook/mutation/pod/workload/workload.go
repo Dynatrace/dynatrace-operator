@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	kubeobjects "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +33,7 @@ func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhoo
 			Kind:       request.Pod.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: kubeobjects.GetName(*request.Pod),
+			Name: k8spod.GetName(*request.Pod),
 			// pod.Namespace is empty yet
 			Namespace:       request.Namespace.Name,
 			OwnerReferences: request.Pod.OwnerReferences,

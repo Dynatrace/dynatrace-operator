@@ -15,10 +15,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	agutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -188,7 +187,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
+		appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
@@ -208,7 +207,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
+		appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 
@@ -384,22 +383,22 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		capEnv := env.FindEnvVar(envs, consts.EnvDtCapabilities)
+		capEnv := k8senv.Find(envs, consts.EnvDtCapabilities)
 		require.NotNil(t, capEnv)
 		assert.Equal(t, multiCapability.ArgName(), capEnv.Value)
 
-		namespaceEnv := env.FindEnvVar(envs, consts.EnvDtIDSeedNamespace)
+		namespaceEnv := k8senv.Find(envs, consts.EnvDtIDSeedNamespace)
 		require.NotNil(t, namespaceEnv)
 		assert.Equal(t, dk.Namespace, namespaceEnv.Value)
 
-		idEnv := env.FindEnvVar(envs, consts.EnvDtIDSeedClusterID)
+		idEnv := k8senv.Find(envs, consts.EnvDtIDSeedClusterID)
 		require.NotNil(t, idEnv)
 		assert.Equal(t, testKubeUID, idEnv.Value)
 
-		dtHTTPPortEnv := env.FindEnvVar(envs, consts.EnvDtHTTPPort)
+		dtHTTPPortEnv := k8senv.Find(envs, consts.EnvDtHTTPPort)
 		require.NotNil(t, dtHTTPPortEnv)
 
-		metadataEnv := env.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
+		metadataEnv := k8senv.Find(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
 		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
 		assert.Equal(t, deploymentmetadata.ActiveGateMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
@@ -450,7 +449,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		groupEnv := env.FindEnvVar(envs, consts.EnvDtGroup)
+		groupEnv := k8senv.Find(envs, consts.EnvDtGroup)
 		require.NotNil(t, groupEnv)
 		assert.Equal(t, multiCapability.Properties().Group, groupEnv.Value)
 	})
@@ -458,8 +457,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("metrics-ingest env", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		agutil.SwitchCapability(&dk, activegate.RoutingCapability, false)
-		agutil.SwitchCapability(&dk, activegate.MetricsIngestCapability, true)
+		capability.SwitchCapability(&dk, activegate.RoutingCapability, false)
+		capability.SwitchCapability(&dk, activegate.MetricsIngestCapability, true)
 
 		multiCapability := capability.NewMultiCapability(&dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
@@ -467,7 +466,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		dtHTTPPortEnv := env.FindEnvVar(envs, consts.EnvDtHTTPPort)
+		dtHTTPPortEnv := k8senv.Find(envs, consts.EnvDtHTTPPort)
 		require.NotNil(t, dtHTTPPortEnv)
 		assert.Equal(t, strconv.Itoa(consts.HTTPContainerPort), dtHTTPPortEnv.Value)
 	})
@@ -482,7 +481,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		zoneEnv := env.FindEnvVar(envs, consts.EnvDtNetworkZone)
+		zoneEnv := k8senv.Find(envs, consts.EnvDtNetworkZone)
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dk.Spec.NetworkZone, zoneEnv.Value)
 	})
@@ -628,10 +627,10 @@ func TestTempVolume(t *testing.T) {
 				assert.Equal(t, consts.GatewayTmpVolumeName, sts.Spec.VolumeClaimTemplates[0].Name)
 				assert.Equal(t, defaultPVCRetentionPolicy(), sts.Spec.PersistentVolumeClaimRetentionPolicy)
 
-				assert.Contains(t, sts.Annotations, statefulset.AnnotationPVCHash)
+				assert.Contains(t, sts.Annotations, k8sstatefulset.AnnotationPVCHash)
 			} else {
 				require.Empty(t, sts.Spec.VolumeClaimTemplates)
-				assert.NotContains(t, sts.Annotations, statefulset.AnnotationPVCHash)
+				assert.NotContains(t, sts.Annotations, k8sstatefulset.AnnotationPVCHash)
 			}
 		})
 	}
