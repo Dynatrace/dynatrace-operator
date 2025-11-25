@@ -14,7 +14,7 @@ const (
 	testAppVersion = "snapshot"
 )
 
-func TestFindEnvVar(t *testing.T) {
+func TestFind(t *testing.T) {
 	envVars := []corev1.EnvVar{
 		{Name: testKey1, Value: testAppVersion},
 		{Name: testKey2, Value: testAppName},
@@ -34,7 +34,7 @@ func TestFindEnvVar(t *testing.T) {
 	assert.Nil(t, envVar)
 }
 
-func TestEnvVarIsIn(t *testing.T) {
+func TestContains(t *testing.T) {
 	envVars := []corev1.EnvVar{
 		{Name: testKey1, Value: testAppVersion},
 		{Name: testKey2, Value: testAppName},
@@ -124,7 +124,7 @@ func TestAppend(t *testing.T) {
 	})
 }
 
-func TestFindEnvVarCaseInsensitive(t *testing.T) {
+func TestFindCaseInsensitive(t *testing.T) {
 	type args struct {
 		envVars []corev1.EnvVar
 		name    string

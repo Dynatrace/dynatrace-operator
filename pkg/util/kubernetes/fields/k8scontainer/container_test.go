@@ -29,7 +29,7 @@ var pod = corev1.Pod{
 	Spec: podSpec,
 }
 
-func TestFindContainerInPod(t *testing.T) {
+func TestFindInPod(t *testing.T) {
 	t.Run("container is found in pod", func(t *testing.T) {
 		containerInPod, err := FindInPod(pod, containerName)
 		require.NoError(t, err)
@@ -42,7 +42,7 @@ func TestFindContainerInPod(t *testing.T) {
 	})
 }
 
-func TestFindContainerInPodSpec(t *testing.T) {
+func TestFindInPodSpec(t *testing.T) {
 	t.Run("container is found in podSpec", func(t *testing.T) {
 		containerInPodSpec := FindInPodSpec(&podSpec, containerName)
 		require.NotNil(t, containerInPodSpec)
