@@ -22,9 +22,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -194,7 +194,7 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context) error {
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
 	configMapData := extractPublicData(r.dk)
 
-	configMap, err := configmap.Build(r.dk,
+	configMap, err := k8sconfigmap.Build(r.dk,
 		r.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		configMapData,
 	)
@@ -202,7 +202,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 		return errors.WithStack(err)
 	}
 
-	query := configmap.Query(r.client, r.apiReader, log)
+	query := k8sconfigmap.Query(r.client, r.apiReader, log)
 
 	_, err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {
@@ -216,11 +216,11 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 }
 
 func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Context) error {
-	cm, _ := configmap.Build(r.dk,
+	cm, _ := k8sconfigmap.Build(r.dk,
 		r.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		nil,
 	)
-	query := configmap.Query(r.client, r.apiReader, log)
+	query := k8sconfigmap.Query(r.client, r.apiReader, log)
 
 	return query.Delete(ctx, cm)
 }
@@ -290,7 +290,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 
 func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
 	agentVersion := dk.OneAgent().GetVersion()
-	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dk.Name,
+	appLabels := k8slabel.NewAppLabels(k8slabel.OneAgentComponentLabel, dk.Name,
 		feature, agentVersion)
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{

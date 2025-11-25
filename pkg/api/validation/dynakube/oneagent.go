@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -166,7 +166,7 @@ func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
 }
 
 func hasOneAgentVolumeStorageEnabled(dk *dynakube.DynaKube) (isEnabled bool, isSet bool) {
-	envVar := env.FindEnvVar(dk.OneAgent().GetEnvironment(), oneagentEnableVolumeStorageEnvVarName)
+	envVar := k8senv.Find(dk.OneAgent().GetEnvironment(), oneagentEnableVolumeStorageEnvVarName)
 	isSet = envVar != nil
 	isEnabled = isSet && envVar.Value == "true"
 
@@ -174,8 +174,8 @@ func hasOneAgentVolumeStorageEnabled(dk *dynakube.DynaKube) (isEnabled bool, isS
 }
 
 func unsupportedOneAgentImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if env.FindEnvVar(dk.OneAgent().GetEnvironment(), oneagentInstallerScriptURLEnvVarName) != nil ||
-		env.FindEnvVar(dk.OneAgent().GetEnvironment(), oneagentInstallerTokenEnvVarName) != nil {
+	if k8senv.Find(dk.OneAgent().GetEnvironment(), oneagentInstallerScriptURLEnvVarName) != nil ||
+		k8senv.Find(dk.OneAgent().GetEnvironment(), oneagentInstallerTokenEnvVarName) != nil {
 		return warningOneAgentInstallerEnvVars
 	}
 

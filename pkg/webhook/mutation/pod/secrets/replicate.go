@@ -2,7 +2,7 @@ package secrets
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,9 +21,9 @@ func EnsureReplicated(mutationRequest *dtwebhook.MutationRequest, kubeClient cli
 	if k8serrors.IsNotFound(err) {
 		logger.Info(targetSecretName+" is not available, trying to replicate", "pod", mutationRequest.PodName())
 
-		return secret.Replicate(
+		return k8ssecret.Replicate(
 			mutationRequest.Context,
-			secret.Query(kubeClient, apiReader, logger),
+			k8ssecret.Query(kubeClient, apiReader, logger),
 			client.ObjectKey{
 				Name:      sourceSecretName,
 				Namespace: mutationRequest.DynaKube.Namespace,

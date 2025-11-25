@@ -18,8 +18,8 @@ import (
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -238,7 +238,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
 		appLabels := buildAppLabels(dk.Name)
-		assert.Equal(t, topology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		assert.Equal(t, k8stopology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
@@ -560,7 +560,7 @@ func TestAffinity(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		expectedAffinity := node.Affinity()
+		expectedAffinity := k8saffinity.NewMultiArchNodeAffinity()
 		assert.Equal(t, expectedAffinity, *statefulSet.Spec.Template.Spec.Affinity)
 	})
 }

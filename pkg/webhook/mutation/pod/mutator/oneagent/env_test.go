@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -70,7 +70,7 @@ func createContainerWithPreloadEnv(existingPath string) *corev1.Container {
 
 func verifyContainerWithPreloadEnv(t *testing.T, container *corev1.Container, expectedPath string) {
 	require.NotEmpty(t, container.Env)
-	containerEnv := env.FindEnvVar(container.Env, PreloadEnv)
+	containerEnv := k8senv.Find(container.Env, PreloadEnv)
 	require.NotNil(t, containerEnv)
 	assert.Contains(t, containerEnv.Value, expectedPath)
 }

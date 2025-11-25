@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -15,7 +15,7 @@ func NewAttributesFromEnv(envs []corev1.EnvVar, name string) (Attributes, bool) 
 	res := make(map[string]string)
 	found := false
 
-	if ev := env.FindEnvVar(envs, name); ev != nil {
+	if ev := k8senv.Find(envs, name); ev != nil {
 		found = true
 
 		split := strings.Split(ev.Value, ",")

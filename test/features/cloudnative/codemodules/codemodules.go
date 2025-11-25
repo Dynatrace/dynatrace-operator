@@ -18,7 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -659,7 +659,7 @@ func checkEnvVarsInContainer(t *testing.T, podItem corev1.Pod, containerName str
 	for _, container := range podItem.Spec.Containers {
 		if container.Name == containerName {
 			require.NotNil(t, container.Env)
-			require.True(t, env.IsIn(container.Env, envVar))
+			require.True(t, k8senv.Contains(container.Env, envVar))
 			for _, env := range container.Env {
 				if env.Name == envVar {
 					require.NotNil(t, env.Value)

@@ -1,26 +1,35 @@
 # Coding style guide
 
-- [General](#general)
-- [Function Parameter and Return-Value Order](#function-parameter-and-return-value-order)
-- [Cuddling of statements](#cuddling-of-statements)
-- [Reconciler vs Controller](#reconciler-vs-controller)
-  - [A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests](#a-controller-is-a-struct-that-directly-handles-the-reconcile-requests)
-  - [A **Reconciler** is a struct that **INDIRECTLY** handles the reconcile Requests](#a-reconciler-is-a-struct-that-indirectly-handles-the-reconcile-requests)
-- [Errors](#errors)
-  - [Do's](#dos)
-  - [Don'ts](#donts)
-- [Naming](#naming)
-  - [Do's](#dos-1)
-  - [Don'ts](#donts-1)
-- [Logging](#logging)
-  - [Do's](#dos-1)
-  - [Don'ts](#donts-1)
-  - [Debug logs](#debug-logs)
-- [Testing](#testing)
-  - [Do's](#dos-2)
-  - [Don'ts](#donts-2)
-- [E2E testing guide](#e2e-testing-guide)
-- [Code Review](#code-review)
+- [Coding style guide](#coding-style-guide)
+  - [General](#general)
+  - [Function Parameter and Return-Value Order](#function-parameter-and-return-value-order)
+  - [Cuddling of statements](#cuddling-of-statements)
+  - [Go struct field alignment](#go-struct-field-alignment)
+  - [K8s utils packages](#k8s-utils-packages)
+  - [Reconciler vs Controller](#reconciler-vs-controller)
+    - [A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests](#a-controller-is-a-struct-that-directly-handles-the-reconcile-requests)
+    - [A **Reconciler** is a struct that **INDIRECTLY** handles the reconcile Requests](#a-reconciler-is-a-struct-that-indirectly-handles-the-reconcile-requests)
+  - [Secret/ConfigMap handling](#secretconfigmap-handling)
+    - [Example](#example)
+  - [Errors](#errors)
+    - [Do's](#dos)
+    - [Don'ts](#donts)
+  - [Naming](#naming)
+    - [Do's](#dos-1)
+    - [Don'ts](#donts-1)
+  - [Logging](#logging)
+    - [Do's](#dos-2)
+    - [Don'ts](#donts-2)
+    - [Debug logs](#debug-logs)
+      - [Show the flow](#show-the-flow)
+      - [Something's wrong](#somethings-wrong)
+      - [Logging additional info](#logging-additional-info)
+      - [Pre-configured local logger](#pre-configured-local-logger)
+  - [Testing](#testing)
+    - [Do's](#dos-3)
+    - [Don'ts](#donts-3)
+  - [E2E testing guide](#e2e-testing-guide)
+  - [Code Review](#code-review)
 
 ## General
 
@@ -108,6 +117,17 @@ And why you do not need to use it:
 When to use it:
 
 - If you have a scenario (for specific `structs`), where you **can back it up with benchmarks** that it makes a significant difference.
+
+## K8s utils packages
+
+We have a few utils packages for k8s objects, that we use to avoid code duplication. They can be found in the `pkg/util/kubernetes` folder. It has 2 subfolders:
+
+- `objects` contains utils for k8s objects, example "object": `pod`, `deployment`, etc
+- `fields` contains utils for k8s fields, example "field": `env`, `container`, etc
+
+Each package within these folders should have a single responsibility, and be self-contained.
+
+- To avoid name conflicts with variables/functions (example: `env`, `pod`, `container` are popular variable names), we prefix the package names with `k8s`. (example: `k8senv`, `k8spod`, `k8scontainer`, etc)
 
 ## Reconciler vs Controller
 

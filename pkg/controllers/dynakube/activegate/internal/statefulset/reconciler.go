@@ -13,8 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -67,7 +67,7 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 		return err
 	}
 
-	updated, err := statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	updated, err := k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
@@ -145,14 +145,14 @@ func (r *Reconciler) getAuthTokenValue(ctx context.Context) (string, error) {
 
 func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, customProperties *value.Source) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context) (string, error) {
-	return secret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName, log)
+	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: r.dk.Namespace, Name: r.dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
 func needsCustomPropertyHash(customProperties *value.Source) bool {

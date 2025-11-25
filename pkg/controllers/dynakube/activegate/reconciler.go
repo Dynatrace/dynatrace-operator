@@ -19,7 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -157,7 +157,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 
 	configMapData := extractPublicData(r.dk)
 
-	configMap, err := configmap.Build(r.dk,
+	configMap, err := k8sconfigmap.Build(r.dk,
 		r.dk.ActiveGate().GetConnectionInfoConfigMapName(),
 		configMapData,
 	)
@@ -165,7 +165,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 		return errors.WithStack(err)
 	}
 
-	query := configmap.Query(r.client, r.apiReader, log)
+	query := k8sconfigmap.Query(r.client, r.apiReader, log)
 
 	_, err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {

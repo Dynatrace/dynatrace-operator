@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,7 +64,7 @@ func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapData map[string]string) error {
-	configMap, err := configmap.Build(&r.dk,
+	configMap, err := k8sconfigmap.Build(&r.dk,
 		GetDeploymentMetadataConfigMapName(r.dk.Name),
 		configMapData,
 	)
@@ -72,7 +72,7 @@ func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapDat
 		return errors.WithStack(err)
 	}
 
-	configMapQuery := configmap.Query(r.client, r.apiReader, log)
+	configMapQuery := k8sconfigmap.Query(r.client, r.apiReader, log)
 
 	if len(configMapData) > 0 {
 		_, err := configMapQuery.CreateOrUpdate(ctx, configMap)
