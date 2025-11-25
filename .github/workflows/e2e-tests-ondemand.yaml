@@ -81,8 +81,6 @@ jobs:
         id: prepare_outputs
         if: always()
         run: |
-          echo "${{ toJSON(steps.run_e2e_test) }}"
-
           PLATFORM_VERSION="${{ matrix.platform }}_${{ matrix.version }}"
           PLATFORM_VERSION_CLEAN=${PLATFORM_VERSION//-/_}
 
