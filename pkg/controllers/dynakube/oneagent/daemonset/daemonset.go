@@ -293,7 +293,10 @@ func (b *builder) initContainerArguments() []string {
 		"k8s.cluster.name=" + b.dk.Status.KubernetesClusterName,
 		"k8s.cluster.uid=" + b.dk.Status.KubeSystemUUID,
 		"k8s.node.name=$(DT_K8S_NODE_NAME)",
-		"dt.entity.kubernetes_cluster=" + b.dk.Status.KubernetesClusterMEID,
+	}
+
+	if b.dk.Status.KubernetesClusterMEID != "" {
+		attributes = append(attributes, "dt.entity.kubernetes_cluster="+b.dk.Status.KubernetesClusterMEID)
 	}
 
 	return []string{
