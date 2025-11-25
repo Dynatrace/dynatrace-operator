@@ -109,6 +109,16 @@ When to use it:
 
 - If you have a scenario (for specific `structs`), where you **can back it up with benchmarks** that it makes a significant difference.
 
+## K8s utils packages
+
+We have a few utils packages for k8s objects, that we use to avoid code duplication. They can be found in the `pkg/util/kubernetes` folder. It has 2 subfolders:
+
+- `objects` contains utils for k8s objects, example "object": `pod`, `deployment`, etc
+- `fields` contains utils for k8s fields, example "field": `env`, `container`, etc
+
+Each package within these folders should have a single responsibility, and be self-contained.
+- To avoid name conflicts with variables/functions (example: `env`, `pod`, `container` are popular variable names), we prefix the package names with `k8s`. (example: `k8senv`, `k8spod`, `k8scontainer`, etc)
+
 ## Reconciler vs Controller
 
 ### A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests
