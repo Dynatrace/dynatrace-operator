@@ -2,7 +2,9 @@ package apimonitoring
 
 import (
 	"context"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -23,6 +25,8 @@ const (
 	testName     = "test-clusterLabel"
 	testObjectID = "test-objectid"
 )
+
+var mockCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestNewDefaultReconiler(t *testing.T) {
 	createDefaultReconciler(t)
@@ -185,6 +189,30 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 	})
+
+	t.Run("app-transition schema not found", func(t *testing.T) {
+		testME := dtclient.K8sClusterME{ID: "test-MEID"}
+
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.EXPECT().
+			GetSettingsForMonitoredEntity(mockCtx, testME, dtclient.KubernetesSettingsSchemaID).
+			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
+		mockClient.EXPECT().
+			GetSettingsForMonitoredEntity(mockCtx, testME, dtclient.AppTransitionSchemaID).
+			Return(dtclient.GetSettingsResponse{}, dtclient.ServerError{Code: 404}).Once()
+
+		dk := newDynaKube()
+		passMonitoredEntities := createPassingReconciler(t)
+		r := Reconciler{
+			dtc:                 mockClient,
+			dk:                  dk,
+			k8sEntityReconciler: passMonitoredEntities,
+			clusterLabel:        testName,
+		}
+
+		err := r.Reconcile(t.Context())
+		require.NoError(t, err)
+	})
 }
 
 func TestReconcileErrors(t *testing.T) {
@@ -313,4 +341,39 @@ func createPassingReconciler(t *testing.T) *controllermock.Reconciler {
 	passMock.On("Reconcile", mock.Anything).Return(nil).Maybe()
 
 	return passMock
+}
+
+func Test_logCache(t *testing.T) {
+	reset := func() {
+		logCache = make(map[string]time.Time)
+	}
+
+	t.Run("lookup", func(t *testing.T) {
+		t.Cleanup(reset)
+
+		fixedTime := time.Now()
+		timeNow = func() time.Time { return fixedTime }
+
+		assert.True(t, shouldLogMissingAppTransitionSchema("test"))
+		assert.False(t, shouldLogMissingAppTransitionSchema("test"))
+
+		// advance time to just before timeout
+		fixedTime = fixedTime.Add(logCacheTimeout)
+		assert.False(t, shouldLogMissingAppTransitionSchema("test"))
+		// advance time to after timeout
+		fixedTime = fixedTime.Add(1 * time.Second)
+		assert.True(t, shouldLogMissingAppTransitionSchema("test"))
+	})
+
+	t.Run("limit size", func(t *testing.T) {
+		t.Cleanup(reset)
+
+		for i := range 101 {
+			require.True(t, shouldLogMissingAppTransitionSchema(strconv.Itoa(i)))
+		}
+
+		require.Len(t, logCache, 100)
+		require.Contains(t, logCache, "99")
+		require.NotContains(t, logCache, "100")
+	})
 }
