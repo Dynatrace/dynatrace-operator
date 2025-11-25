@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
@@ -197,7 +197,7 @@ func TestHandleImpl(t *testing.T) {
 		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
 		require.False(t, ok)
 
-		installContainer := container.FindInitContainerInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
+		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
 		require.NotNil(t, installContainer)
 		assert.NotEmpty(t, installContainer.Env, 3)
 		assert.NotEmpty(t, installContainer.Args, 15)
@@ -225,7 +225,7 @@ func TestHandleImpl(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, NoMutationNeededReason, reason)
 
-		installContainer := container.FindInitContainerInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
+		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
 		require.Nil(t, installContainer)
 	})
 

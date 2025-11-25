@@ -11,8 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -50,7 +50,7 @@ func NewController(mgr manager.Manager) *Controller {
 		apiReader:              mgr.GetAPIReader(),
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		runLocal:               kubesystem.IsRunLocally(),
-		podNamespace:           os.Getenv(env.PodNamespace),
+		podNamespace:           os.Getenv(k8senv.PodNamespace),
 		timeProvider:           timeprovider.New(),
 	}
 }
@@ -246,7 +246,7 @@ func (controller *Controller) getCache(ctx context.Context) (*cache.Cache, error
 	var owner client.Object
 
 	if !controller.runLocal {
-		deploy, err := deployment.GetDeployment(controller.client, os.Getenv(env.PodName), controller.podNamespace)
+		deploy, err := k8sdeployment.GetDeployment(controller.client, os.Getenv(k8senv.PodName), controller.podNamespace)
 		if err != nil {
 			return nil, err
 		}

@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -179,7 +179,7 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 func checkPullSecretExists(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) (corev1.Secret, error) {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	query := secret.Query(nil, apiReader, log)
+	query := k8ssecret.Query(nil, apiReader, log)
 
 	pullSecret, err := query.Get(ctx, types.NamespacedName{Namespace: dk.Namespace, Name: dk.PullSecretName()})
 	if err != nil {
@@ -194,7 +194,7 @@ func checkPullSecretExists(ctx context.Context, baseLog logd.Logger, apiReader c
 func checkPullSecretHasRequiredTokens(baseLog logd.Logger, dk *dynakube.DynaKube, pullSecret corev1.Secret) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	if _, err := secret.ExtractToken(&pullSecret, dtpullsecret.DockerConfigJSON); err != nil {
+	if _, err := k8ssecret.ExtractToken(&pullSecret, dtpullsecret.DockerConfigJSON); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dk.Namespace, dk.PullSecretName())
 	}
 

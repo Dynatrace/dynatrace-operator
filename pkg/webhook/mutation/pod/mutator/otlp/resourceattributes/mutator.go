@@ -5,7 +5,7 @@ import (
 	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -139,25 +139,25 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool
 func ensureEnvVarSourcesSet(c *corev1.Container) bool {
 	mutated := false
 
-	if envs, added := env.Append(c.Env, corev1.EnvVar{
+	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
 		Name:      "K8S_PODNAME",
-		ValueFrom: env.NewEnvVarSourceForField("metadata.name"),
+		ValueFrom: k8senv.NewSourceForField("metadata.name"),
 	}); added {
 		c.Env = envs
 		mutated = true
 	}
 
-	if envs, added := env.Append(c.Env, corev1.EnvVar{
+	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
 		Name:      "K8S_PODUID",
-		ValueFrom: env.NewEnvVarSourceForField("metadata.uid"),
+		ValueFrom: k8senv.NewSourceForField("metadata.uid"),
 	}); added {
 		c.Env = envs
 		mutated = true
 	}
 
-	if envs, added := env.Append(c.Env, corev1.EnvVar{
+	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
 		Name:      "K8S_NODE_NAME",
-		ValueFrom: env.NewEnvVarSourceForField("spec.nodeName"),
+		ValueFrom: k8senv.NewSourceForField("spec.nodeName"),
 	}); added {
 		c.Env = envs
 		mutated = true

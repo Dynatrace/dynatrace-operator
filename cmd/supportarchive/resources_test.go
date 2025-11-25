@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -302,7 +302,7 @@ func objectMeta(name string) metav1.ObjectMeta {
 		Name:      name,
 		Namespace: testOperatorNamespace,
 		Labels: map[string]string{
-			labels.AppNameLabel: "dynatrace-operator",
+			k8slabel.AppNameLabel: "dynatrace-operator",
 		},
 	}
 }

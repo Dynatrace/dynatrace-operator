@@ -6,8 +6,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -90,18 +90,18 @@ func TestLabels(t *testing.T) {
 		deployment := New(ec)
 
 		require.Len(t, deployment.Spec.Template.Labels, 5)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppNameLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppCreatedByLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppManagedByLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppNameLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppCreatedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppManagedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppVersionLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppComponentLabel)
 
 		require.Len(t, deployment.Labels, 5)
-		assert.Contains(t, deployment.Labels, labels.AppNameLabel)
-		assert.Contains(t, deployment.Labels, labels.AppCreatedByLabel)
-		assert.Contains(t, deployment.Labels, labels.AppManagedByLabel)
-		assert.Contains(t, deployment.Labels, labels.AppVersionLabel)
-		assert.Contains(t, deployment.Labels, labels.AppComponentLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppNameLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppCreatedByLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppManagedByLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppVersionLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppComponentLabel)
 	})
 
 	t.Run("Check custom label set correctly", func(t *testing.T) {
@@ -123,21 +123,21 @@ func TestLabels(t *testing.T) {
 		deployment := New(ec)
 
 		assert.Len(t, deployment.Spec.Template.Labels, 6)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppNameLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppCreatedByLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppManagedByLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppVersionLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, labels.AppComponentLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppNameLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppCreatedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppManagedByLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppVersionLabel)
+		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppComponentLabel)
 
 		assert.Contains(t, deployment.Spec.Template.Labels, testLabelKey)
 		assert.Equal(t, testLabelValue, deployment.Spec.Template.Labels[testLabelKey])
 
 		require.Len(t, deployment.Labels, 5)
-		assert.Contains(t, deployment.Labels, labels.AppNameLabel)
-		assert.Contains(t, deployment.Labels, labels.AppCreatedByLabel)
-		assert.Contains(t, deployment.Labels, labels.AppManagedByLabel)
-		assert.Contains(t, deployment.Labels, labels.AppVersionLabel)
-		assert.Contains(t, deployment.Labels, labels.AppComponentLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppNameLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppCreatedByLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppManagedByLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppVersionLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.AppComponentLabel)
 	})
 }
 
@@ -218,23 +218,23 @@ func Test_prepareResourceRequirements(t *testing.T) {
 
 	t.Run("Check limits requirements are set correctly", func(t *testing.T) {
 		customResources := corev1.ResourceRequirements{
-			Limits: resources.NewResourceList("500m", "256Mi"),
+			Limits: k8sresource.NewResourceList("500m", "256Mi"),
 		}
 		ec.Spec.Resources = customResources
 		resourceRequirements := prepareResourceRequirements(ec)
 		assert.Equal(t, customResources.Limits, resourceRequirements.Limits)
 		// check that we use default requests when not provided
-		assert.Equal(t, resources.NewResourceList("100m", "128Mi"), resourceRequirements.Requests)
+		assert.Equal(t, k8sresource.NewResourceList("100m", "128Mi"), resourceRequirements.Requests)
 	})
 
 	t.Run("Check requests in requirements are set correctly", func(t *testing.T) {
 		customResources := corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("500m", "256Mi"),
+			Requests: k8sresource.NewResourceList("500m", "256Mi"),
 		}
 		ec.Spec.Resources = customResources
 		resourceRequirements := prepareResourceRequirements(ec)
 		assert.Equal(t, customResources.Requests, resourceRequirements.Requests)
 		// check that we use default requests when not provided
-		assert.Equal(t, resources.NewResourceList("100m", "128Mi"), resourceRequirements.Limits)
+		assert.Equal(t, k8sresource.NewResourceList("100m", "128Mi"), resourceRequirements.Limits)
 	})
 }

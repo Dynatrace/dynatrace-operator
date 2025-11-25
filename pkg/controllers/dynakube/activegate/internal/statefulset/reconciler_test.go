@@ -17,7 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -224,7 +224,7 @@ func TestManageStatefulSet(t *testing.T) {
 		err = r.manageStatefulSet(ctx)
 		require.NoError(t, err)
 
-		actualStatefulSet, err := statefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
+		actualStatefulSet, err := k8sstatefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
 		require.NoError(t, err)
 		assert.NotNil(t, actualStatefulSet)
 
@@ -235,7 +235,7 @@ func TestManageStatefulSet(t *testing.T) {
 		err = r.manageStatefulSet(ctx)
 		require.NoError(t, err)
 
-		actualStatefulSet, err = statefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
+		actualStatefulSet, err = k8sstatefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
 		require.NoError(t, err)
 		assert.NotNil(t, actualStatefulSet)
 		assert.Contains(t, actualStatefulSet.Labels, testName)
@@ -249,7 +249,7 @@ func TestManageStatefulSet(t *testing.T) {
 		err = r.manageStatefulSet(ctx)
 		require.NoError(t, err)
 
-		actualStatefulSet, err := statefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
+		actualStatefulSet, err := k8sstatefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
 		require.NoError(t, err)
 		assert.NotNil(t, actualStatefulSet)
 
@@ -261,7 +261,7 @@ func TestManageStatefulSet(t *testing.T) {
 		err = r.manageStatefulSet(ctx)
 		require.NoError(t, err)
 
-		actualStatefulSet, err = statefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
+		actualStatefulSet, err = k8sstatefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
 		require.NoError(t, err)
 
 		labelValue, ok := actualStatefulSet.Spec.Selector.MatchLabels["activegate"]

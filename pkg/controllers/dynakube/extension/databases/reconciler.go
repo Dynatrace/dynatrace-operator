@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,7 +29,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	log.Debug("reconciling deployments")
 
-	query := deployment.Query(r.client, r.apiReader, log)
+	query := k8sdeployment.Query(r.client, r.apiReader, log)
 	ext := r.dk.Extensions()
 	expectedDeploymentNames := make([]string, len(ext.Databases))
 
@@ -51,20 +51,20 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		deploy, err := deployment.Build(
+		deploy, err := k8sdeployment.Build(
 			r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
-			deployment.SetReplicas(replicas),
-			deployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
-			deployment.SetAllAnnotations(nil, dbSpec.Annotations),
-			deployment.SetAffinity(dbSpec.Affinity),
-			deployment.SetTolerations(r.dk.Spec.Templates.DatabaseExecutor.Tolerations),
-			deployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),
-			deployment.SetNodeSelector(dbSpec.NodeSelector),
-			deployment.SetImagePullSecrets(r.dk.ImagePullSecretReferences()),
-			deployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
-			deployment.SetSecurityContext(buildPodSecurityContext()),
-			deployment.SetContainer(buildContainer(r.dk, dbSpec)),
-			deployment.SetVolumes(buildVolumes(r.dk, dbSpec)),
+			k8sdeployment.SetReplicas(replicas),
+			k8sdeployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
+			k8sdeployment.SetAllAnnotations(nil, dbSpec.Annotations),
+			k8sdeployment.SetAffinity(dbSpec.Affinity),
+			k8sdeployment.SetTolerations(r.dk.Spec.Templates.DatabaseExecutor.Tolerations),
+			k8sdeployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),
+			k8sdeployment.SetNodeSelector(dbSpec.NodeSelector),
+			k8sdeployment.SetImagePullSecrets(r.dk.ImagePullSecretReferences()),
+			k8sdeployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
+			k8sdeployment.SetSecurityContext(buildPodSecurityContext()),
+			k8sdeployment.SetContainer(buildContainer(r.dk, dbSpec)),
+			k8sdeployment.SetVolumes(buildVolumes(r.dk, dbSpec)),
 		)
 		if err != nil {
 			// This error indicates that the scheme is missing required types and is unrecoverable.
@@ -100,7 +100,7 @@ func (r *Reconciler) getReplicas(ctx context.Context, name string, defaultReplic
 		return *defaultReplicas, nil
 	}
 
-	deploy, err := deployment.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Namespace: r.dk.Namespace, Name: name})
+	deploy, err := k8sdeployment.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKey{Namespace: r.dk.Namespace, Name: name})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return 1, nil
