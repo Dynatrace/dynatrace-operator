@@ -257,11 +257,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Lint markdown files
-        uses: articulate/actions-markdownlint@87f495d21507d6844dc917a01e742eaaa45049c0 # v1.1.0
-        with:
-          config: .markdownlint.json
-          # renovate depName=github.com/igorshubovych/markdownlint-cli
-          version: v0.46.0
+        id: lint-markdown
+        run: |
+          make markdown/lint
 
   prepare:
     name: Prepare properties
