@@ -1085,7 +1085,7 @@ func TestInitContainerArguments(t *testing.T) {
 	arguments := dsBuilder.initContainerArguments()
 	assert.Equal(t, "generate-metadata", arguments[0])
 	assert.Equal(t, "--file", arguments[1])
-	assert.Equal(t, nodeMetadataVolumeMountPath, arguments[2])
+	assert.Equal(t, nodeMetadataFilePath, arguments[2])
 	assert.Equal(t, "--attributes", arguments[3])
 
 	attributes := strings.Split(arguments[4], ",")
@@ -1104,7 +1104,7 @@ func TestInitContainerVolumeMounts(t *testing.T) {
 	assert.Len(t, volumeMounts, 1)
 	assert.Contains(t, volumeMounts, corev1.VolumeMount{
 		Name:      nodeMetadataVolumeName,
-		MountPath: nodeMetadataInitVolumeMountPath,
+		MountPath: nodeMetadataFolderPath,
 		ReadOnly:  false,
 	})
 }

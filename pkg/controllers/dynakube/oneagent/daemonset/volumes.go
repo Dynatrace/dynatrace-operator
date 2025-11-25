@@ -44,8 +44,8 @@ func getNodeMetadataVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      nodeMetadataVolumeName,
 		ReadOnly:  true,
-		MountPath: nodeMetadataVolumeMountPath,
-		SubPath:   nodeMetadataVolumeMountSubPath,
+		MountPath: nodeMetadataFilePath,
+		SubPath:   nodeMetadataFilename,
 	}
 }
 

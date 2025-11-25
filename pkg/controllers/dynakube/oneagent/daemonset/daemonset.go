@@ -2,6 +2,7 @@ package daemonset
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -46,10 +47,9 @@ const (
 	hostStorageVolumeName = "volume-storage"
 	storageVolumeMount    = "/mnt/volume_storage_mount"
 
-	nodeMetadataVolumeName          = "dynatrace-operator"
-	nodeMetadataVolumeMountSubPath  = "dt_node_metadata.properties"
-	nodeMetadataInitVolumeMountPath = "/var/lib/dynatrace/enrichment"
-	nodeMetadataVolumeMountPath     = nodeMetadataInitVolumeMountPath + "/" + nodeMetadataVolumeMountSubPath
+	nodeMetadataVolumeName = "dynatrace-operator"
+	nodeMetadataFilename   = "dt_node_metadata.properties"
+	nodeMetadataFolderPath = "/var/lib/dynatrace/enrichment"
 
 	podName = "dynatrace-oneagent"
 
@@ -65,6 +65,10 @@ const (
 
 	initContainerName      = "dynatrace-operator"
 	dtOperatorImageEnvName = "DT_OPERATOR_IMAGE"
+)
+
+var (
+	nodeMetadataFilePath = filepath.Join(nodeMetadataFolderPath, nodeMetadataFilename)
 )
 
 type hostMonitoring struct {
@@ -295,7 +299,7 @@ func (b *builder) initContainerArguments() []string {
 	return []string{
 		"generate-metadata",
 		"--file",
-		nodeMetadataVolumeMountPath,
+		nodeMetadataFilePath,
 		"--attributes",
 		strings.Join(attributes, ","),
 	}
@@ -305,7 +309,7 @@ func (b *builder) initContainerVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      nodeMetadataVolumeName,
-			MountPath: nodeMetadataInitVolumeMountPath,
+			MountPath: nodeMetadataFolderPath,
 			ReadOnly:  false,
 		},
 	}
