@@ -99,7 +99,7 @@ func createBaseRequest(ctx context.Context, url, method, apiToken string, body i
 func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error reading response")
+		return nil, errors.WithMessage(err, "error reading response body")
 	}
 
 	if response.StatusCode != http.StatusOK &&
@@ -174,7 +174,7 @@ func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCo
 	if err := json.Unmarshal(response, &se); err != nil {
 		var sb strings.Builder
 
-		sb.WriteString(fmt.Sprintf("Server returned status code %d", statusCode))
+		sb.WriteString(fmt.Sprintf("server returned status code %d", statusCode))
 
 		if proxy != "" {
 			sb.WriteString(fmt.Sprintf(" (via proxy %s)", proxy))
