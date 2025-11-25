@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -372,7 +372,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		init := daemonset.Spec.Template.Spec.InitContainers[0]
 		require.NotContains(t, init.Args, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 
-		require.Nil(t, env.FindEnvVar(init.Env, entityEnv))
+		require.Nil(t, k8senv.Find(init.Env, entityEnv))
 	})
 }
 

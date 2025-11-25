@@ -14,7 +14,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +37,7 @@ func TestConfigMapCreation(t *testing.T) {
 	t.Run("creates config map if it does not exist", func(t *testing.T) {
 		dk := createDynaKube(true)
 
-		testConfigMap, err := configmap.Build(&dk, dk.Name, map[string]string{
+		testConfigMap, err := k8sconfigmap.Build(&dk, dk.Name, map[string]string{
 			dtclient.APIToken: testAPIToken,
 		})
 		require.NoError(t, err)

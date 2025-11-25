@@ -7,8 +7,8 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -154,7 +154,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 }
 
 func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretName, conditionType string, nsList []corev1.Namespace, dk *dynakube.DynaKube, data map[string][]byte) error { //nolint:revive
-	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
@@ -177,7 +177,7 @@ func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretN
 }
 
 func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, name string, conditionType string, data map[string][]byte) error {
-	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
 
 	secret, err := k8ssecret.BuildForNamespace(name, dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {

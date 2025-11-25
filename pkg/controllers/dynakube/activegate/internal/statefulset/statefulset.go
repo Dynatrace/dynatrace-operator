@@ -10,9 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -110,10 +110,10 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 	sts.Spec.Template.Labels = maputils.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
 }
 
-func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
+func (statefulSetBuilder Builder) buildAppLabels() *k8slabel.AppLabels {
 	version := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 
-	return labels.NewAppLabels(labels.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, consts.MultiActiveGateName, version)
+	return k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, consts.MultiActiveGateName, version)
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
@@ -289,9 +289,9 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 	var affinity corev1.Affinity
 	if statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.TenantRegistryVersionSource || statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.CustomVersionVersionSource {
-		affinity = node.AMDOnlyAffinity()
+		affinity = k8saffinity.NewAMDOnlyNodeAffinity()
 	} else {
-		affinity = node.Affinity()
+		affinity = k8saffinity.NewMultiArchNodeAffinity()
 	}
 
 	return &affinity
@@ -325,7 +325,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 		sts.Spec.PersistentVolumeClaimRetentionPolicy = defaultPVCRetentionPolicy()
 	}
 
-	statefulset.SetPVCAnnotation()(sts)
+	k8sstatefulset.SetPVCAnnotation()(sts)
 }
 
 func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {

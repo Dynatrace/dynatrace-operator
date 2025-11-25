@@ -5,7 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -59,8 +59,8 @@ func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
 
 func defaultInitContainerResources() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
-		Requests: resources.NewResourceList("30m", "30Mi"),
-		Limits:   resources.NewResourceList("100m", "60Mi"),
+		Requests: k8sresource.NewResourceList("30m", "30Mi"),
+		Limits:   k8sresource.NewResourceList("100m", "60Mi"),
 	}
 }
 

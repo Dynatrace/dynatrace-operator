@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -59,7 +59,7 @@ func (req *BaseRequest) PodName() string {
 		return ""
 	}
 
-	return pod.GetName(*req.Pod)
+	return k8spod.GetName(*req.Pod)
 }
 
 func (req *BaseRequest) IsSplitMountsEnabled() bool {

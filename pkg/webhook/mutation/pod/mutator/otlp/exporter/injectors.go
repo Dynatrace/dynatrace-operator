@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -123,7 +123,7 @@ func (npi *noProxyInjector) Inject(c *corev1.Container, _ string, _ bool) bool {
 
 	agServiceFQDN := activegate.GetServiceFQDN(&npi.dk)
 
-	noProxyEnvVar := env.FindEnvVarCaseInsensitive(c.Env, NoProxyEnv)
+	noProxyEnvVar := k8senv.FindCaseInsensitive(c.Env, NoProxyEnv)
 
 	if noProxyEnvVar != nil { // append to existing env var
 		if noProxyEnvVar.Value != "" && !strings.Contains(noProxyEnvVar.Value, agServiceFQDN) {
@@ -137,7 +137,7 @@ func (npi *noProxyInjector) Inject(c *corev1.Container, _ string, _ bool) bool {
 		}
 	} else {
 		// add NO_PROXY env var
-		c.Env = env.AddOrUpdate(c.Env, corev1.EnvVar{Name: NoProxyEnv, Value: agServiceFQDN})
+		c.Env = k8senv.AddOrUpdate(c.Env, corev1.EnvVar{Name: NoProxyEnv, Value: agServiceFQDN})
 
 		return true
 	}
@@ -146,7 +146,7 @@ func (npi *noProxyInjector) Inject(c *corev1.Container, _ string, _ bool) bool {
 }
 
 func addEnvVarLiteralValue(c *corev1.Container, name string, value string) {
-	c.Env = env.AddOrUpdate(c.Env, corev1.EnvVar{Name: name, Value: value})
+	c.Env = k8senv.AddOrUpdate(c.Env, corev1.EnvVar{Name: name, Value: value})
 }
 
 func getCertificatePath() string {

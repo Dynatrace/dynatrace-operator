@@ -18,7 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	podmutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
@@ -73,7 +73,7 @@ func TestWebhook(t *testing.T) {
 				},
 			}
 			require.NoError(t, mgr.GetClient().Create(t.Context(), pod))
-			t.Setenv(env.PodName, pod.Name)
+			t.Setenv(k8senv.PodName, pod.Name)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
@@ -258,7 +258,7 @@ func TestOTLPWebhook(t *testing.T) {
 				},
 			}
 			require.NoError(t, mgr.GetClient().Create(t.Context(), pod))
-			t.Setenv(env.PodName, pod.Name)
+			t.Setenv(k8senv.PodName, pod.Name)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
@@ -347,7 +347,7 @@ func TestOTLPWebhook(t *testing.T) {
 		// metrics temporality preference should be set to delta
 		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsExporterTemporalityPreference, Value: exporter.OTLPMetricsExporterAggregationTemporalityDelta})
 
-		raEnv := env.FindEnvVar(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+		raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
 
 		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
 

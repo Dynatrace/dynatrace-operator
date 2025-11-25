@@ -11,8 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -100,7 +100,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 		return nil, err
 	}
 
-	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogMonitoringComponentLabel).BuildLabels()
+	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.LogMonitoringComponentLabel).BuildLabels()
 
 	newSecret, err := k8ssecret.Build(r.dk,
 		GetSecretName(r.dk.Name),

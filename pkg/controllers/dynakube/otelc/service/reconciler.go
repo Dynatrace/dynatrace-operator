@@ -6,8 +6,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/service"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -76,8 +76,8 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 	listOps := []client.ListOption{
 		client.InNamespace(r.dk.Namespace),
 		client.MatchingLabels{
-			labels.AppComponentLabel: labels.OtelCComponentLabel,
-			labels.AppCreatedByLabel: r.dk.Name,
+			k8slabel.AppComponentLabel: k8slabel.OtelCComponentLabel,
+			k8slabel.AppCreatedByLabel: r.dk.Name,
 		},
 	}
 
@@ -106,7 +106,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
+	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update telemetry service")
 		conditions.SetKubeAPIError(r.dk.Conditions(), serviceConditionType, err)
@@ -120,15 +120,15 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 }
 
 func (r *Reconciler) buildService() (*corev1.Service, error) {
-	coreLabels := labels.NewCoreLabels(r.dk.Name, labels.OtelCComponentLabel)
-	appLabels := labels.NewAppLabels(labels.OtelCComponentLabel, r.dk.Name, labels.OtelCComponentLabel, "")
+	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.OtelCComponentLabel)
+	appLabels := k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, r.dk.Name, k8slabel.OtelCComponentLabel, "")
 
-	return service.Build(r.dk,
+	return k8sservice.Build(r.dk,
 		r.dk.TelemetryIngest().GetServiceName(),
 		appLabels.BuildMatchLabels(),
 		buildServicePortList(r.dk.TelemetryIngest().GetProtocols()),
-		service.SetLabels(coreLabels.BuildLabels()),
-		service.SetType(corev1.ServiceTypeClusterIP),
+		k8sservice.SetLabels(coreLabels.BuildLabels()),
+		k8sservice.SetType(corev1.ServiceTypeClusterIP),
 	)
 }
 

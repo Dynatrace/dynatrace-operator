@@ -9,8 +9,8 @@ import (
 	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -63,8 +63,8 @@ func run(cmd *cobra.Command, args []string) error {
 	version.LogVersion()
 	logd.LogBaseLoggerSettings()
 
-	podName := os.Getenv(env.PodName)
-	namespace := os.Getenv(env.PodNamespace)
+	podName := os.Getenv(k8senv.PodName)
+	namespace := os.Getenv(k8senv.PodNamespace)
 
 	kubeConfig, err := config.GetConfig()
 	if err != nil {
@@ -125,7 +125,7 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func startCertificateWatcher(webhookManager manager.Manager, namespace string, podName string) error {
-	webhookPod, err := pod.Get(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
+	webhookPod, err := k8spod.Get(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
 	if err != nil {
 		return err
 	}

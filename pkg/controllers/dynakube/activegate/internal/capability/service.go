@@ -4,7 +4,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -26,7 +26,7 @@ func CreateService(dk *dynakube.DynaKube) *corev1.Service {
 			TargetPort: intstr.FromString(consts.HTTPServicePortName),
 		})
 
-	coreLabels := labels.NewCoreLabels(dk.Name, labels.ActiveGateComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -43,7 +43,7 @@ func CreateService(dk *dynakube.DynaKube) *corev1.Service {
 }
 
 func buildSelectorLabels(dynakubeName string) map[string]string {
-	appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, dynakubeName, "", "")
+	appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, dynakubeName, "", "")
 
 	return appLabels.BuildMatchLabels()
 }

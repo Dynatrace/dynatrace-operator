@@ -5,9 +5,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	agutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -56,17 +56,17 @@ func TestCreateService(t *testing.T) {
 		assert.Equal(t, dk.Namespace, service.Namespace)
 
 		expectedLabels := map[string]string{
-			labels.AppCreatedByLabel: testName,
-			labels.AppComponentLabel: labels.ActiveGateComponentLabel,
-			labels.AppNameLabel:      version.AppName,
-			labels.AppVersionLabel:   version.Version,
+			k8slabel.AppCreatedByLabel: testName,
+			k8slabel.AppComponentLabel: k8slabel.ActiveGateComponentLabel,
+			k8slabel.AppNameLabel:      version.AppName,
+			k8slabel.AppVersionLabel:   version.Version,
 		}
 		assert.Equal(t, expectedLabels, service.Labels)
 
 		expectedSelector := map[string]string{
-			labels.AppCreatedByLabel: testName,
-			labels.AppManagedByLabel: version.AppName,
-			labels.AppNameLabel:      labels.ActiveGateComponentLabel,
+			k8slabel.AppCreatedByLabel: testName,
+			k8slabel.AppManagedByLabel: version.AppName,
+			k8slabel.AppNameLabel:      k8slabel.ActiveGateComponentLabel,
 		}
 		serviceSpec := service.Spec
 		assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
@@ -75,7 +75,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics-ingest disabled", func(t *testing.T) {
 		dk := createTestDynaKube()
-		agutil.SwitchCapability(dk, activegate.RoutingCapability, true)
+		capability.SwitchCapability(dk, activegate.RoutingCapability, true)
 
 		service := CreateService(dk)
 		ports := service.Spec.Ports
@@ -85,7 +85,7 @@ func TestCreateService(t *testing.T) {
 	})
 	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
 		dk := createTestDynaKube()
-		agutil.SwitchCapability(dk, activegate.MetricsIngestCapability, true)
+		capability.SwitchCapability(dk, activegate.MetricsIngestCapability, true)
 
 		service := CreateService(dk)
 		ports := service.Spec.Ports
