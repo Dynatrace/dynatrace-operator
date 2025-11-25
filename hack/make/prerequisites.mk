@@ -44,7 +44,7 @@ SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 PYTHON ?= $(LOCALBIN)/.venv/bin/python3
 MARKDOWNLINT ?= $(LOCALBIN_NPM)/markdownlint
 
-ENVTEST_K8S_VERSION = $(shell go list -m -f "{{ .Version }}" k8s.io/api | sed 's/v0/1/' )
+ENVTEST_K8S_VERSION = $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 
 ## Install all prerequisites
 prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint
