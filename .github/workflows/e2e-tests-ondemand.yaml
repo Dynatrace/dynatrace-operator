@@ -56,9 +56,6 @@ jobs:
     runs-on:
       - self-hosted
       - operator-e2e
-    outputs:
-      cluster_creation_failed: ${{ steps.cluster_creation_status.outputs.cluster_creation_failed }}
-      test_failed: ${{ steps.cluster_creation_status.outputs.test_failed }}
     steps:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -80,40 +77,61 @@ jobs:
           tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
           tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Determine cluster status
-        id: cluster_creation_status
-        if: failure()
+      - name: Prepare outputs
+        id: prepare_outputs
+        if: always()
         run: |
-          echo "cluster_status=${{ steps.run_e2e_test.outputs.cluster_status }}"
+          PLATFORM_VERSION="${{ matrix.platform }}_${{ matrix.version }}"
+          PLATFORM_VERSION_CLEAN=${PLATFORM_VERSION//-/_}
+
+          get_emoji() {
+            if [ "$1" = "skipped" ]; then
+              echo "large_yellow_circle"
+            elif [ "$2" = "success" ]; then
+              echo "white_check_mark"
+            else
+              echo "red_circle"
+            fi
+          }
+
+          run_id="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}"
+          emoji=$(get_emoji "${{ steps.run_e2e_test.outputs.cluster_status}}" "${{ steps.run_e2e_test.outcome }}")
+
+          echo "matrix={\"${PLATFORM_VERSION_CLEAN^^}_EMOJI\": \"${emoji}\", \"${PLATFORM_VERSION_CLEAN^^}_RUN_ID_URL\": \"${run_id}\"}" >> $GITHUB_OUTPUT
+
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
-            echo "cluster_creation_failed=true" >> $GITHUB_OUTPUT
             exit 1
           fi
-
-          echo "test_failed=true" >> $GITHUB_OUTPUT
-
-  notify-failure:
-    name: Notify failure in Slack
+      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@1127e708e4072515056a4b0d26bcb0653646cedc # 0.30.0
+        with:
+          value: "${{ steps.prepare_outputs.outputs.matrix }}"
+          artifact-name: "run-matrix-artifact"
+  notify-slack:
+    name: Notify test results in Slack
     environment: E2E
     needs: [run-matrix]
-    if: ${{ failure() || cancelled() }}
     runs-on: ubuntu-24.04
+    if: ${{ always() }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@c314229c3ca6914f7023ffca7afc26753ab99b41 # 0.30.1
+        id: get-matrix-outputs
+        with:
+          artifact-name: "run-matrix-artifact"
+          remove-artifact: false
       - name: Set Slack message
         id: set_slack_message
         run: |
-          if [ "${{ needs.run-matrix.outputs.cluster_creation_failed }}" = "true" ] && [ "${{ needs.run-matrix.outputs.test_failed }}" != "true" ]; then
-            echo "SLACK_MESSAGE=:large_yellow_circle: Cluster creation issues: Some E2E ondemand tests were skipped on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
-          else
-            echo "SLACK_MESSAGE=:red_circle: E2E ondemand tests failed on ${{ env.branch }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_ENV
-          fi
+          echo '${{ steps.get-matrix-outputs.outputs.result }}' | jq -r "add|to_entries|map(\"\(.key)=\(.value)\")|.[]" >> $GITHUB_ENV
       - name: Notify failure in Slack
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: webhook-trigger
-          payload-templated: true
+          webhook-type: incoming-webhook
           errors: true
-          payload: |
-            "message": "${{ env.SLACK_MESSAGE }}"
-            "run_id": "${{ github.run_id }}"
+          payload-templated: true
+          # Note:
+          # to update the payload when we add new matrix entries run:
+          # python3 hack/slack/update_e2e_ondemand.py
+          payload-file-path: ./hack/slack/slack-e2e-ondemand-payload.json
