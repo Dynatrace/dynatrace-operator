@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -63,8 +64,7 @@ const (
 
 	userGroupID int64 = 1000
 
-	initContainerName      = "dynatrace-operator"
-	dtOperatorImageEnvName = "DT_OPERATOR_IMAGE"
+	initContainerName = "dynatrace-operator"
 )
 
 var (
@@ -265,7 +265,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 
 func (b *builder) initContainerSpec() corev1.Container {
 	return corev1.Container{
-		Image:           os.Getenv(dtOperatorImageEnvName),
+		Image:           os.Getenv(k8senv.DtOperatorImageEnvName),
 		ImagePullPolicy: corev1.PullAlways,
 		Name:            initContainerName,
 		Env:             b.initContainerEnvVars(),

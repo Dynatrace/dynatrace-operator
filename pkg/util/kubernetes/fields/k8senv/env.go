@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	NodeName     = "KUBE_NODE_NAME"
-	CSIDataDir   = "CSI_DATA_DIR"
-	PodNamespace = "POD_NAMESPACE"
-	PodName      = "POD_NAME"
+	NodeName               = "KUBE_NODE_NAME"
+	CSIDataDir             = "CSI_DATA_DIR"
+	PodNamespace           = "POD_NAMESPACE"
+	PodName                = "POD_NAME"
+	DtOperatorImageEnvName = "DT_OPERATOR_IMAGE"
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {

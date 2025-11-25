@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -1042,9 +1043,9 @@ func TestInitContainerSpec(t *testing.T) {
 		dk: dk,
 	}
 
-	require.NoError(t, os.Setenv(dtOperatorImageEnvName, testOperatorImageName))
+	require.NoError(t, os.Setenv(k8senv.DtOperatorImageEnvName, testOperatorImageName))
 	spec := dsBuilder.initContainerSpec()
-	require.NoError(t, os.Unsetenv(dtOperatorImageEnvName))
+	require.NoError(t, os.Unsetenv(k8senv.DtOperatorImageEnvName))
 
 	assert.Equal(t, testOperatorImageName, spec.Image)
 	assert.Equal(t, initContainerName, spec.Name)
