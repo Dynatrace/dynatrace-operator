@@ -2,8 +2,10 @@ package resourceattributes
 
 import (
 	"context"
+	"net/url"
 	"slices"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -115,7 +117,11 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 	}
 	// add Attributes from annotations - these have the highest precedence, i.e. users can potentially overwrite the above Attributes
 	attributesFromAnnotations := NewAttributesFromMap(request.Pod.Annotations)
-	_ = attributesFromAnnotations.Merge(attributesToAdd)
+
+	attributesFromEnrichmentRules := getAttributesFromEnrichmentRules(request)
+	_ = attributesFromEnrichmentRules.Merge(attributesToAdd)
+
+	_ = attributesFromAnnotations.Merge(attributesFromEnrichmentRules)
 
 	mutated = existingAttributes.Merge(attributesFromAnnotations)
 
@@ -164,4 +170,28 @@ func ensureEnvVarSourcesSet(c *corev1.Container) bool {
 	}
 
 	return mutated
+}
+
+func getAttributesFromEnrichmentRules(request *dtwebhook.BaseRequest) Attributes {
+	attributes := Attributes{}
+	for _, rule := range request.DynaKube.Status.MetadataEnrichment.Rules {
+		var valueFromNamespace string
+		var exists bool
+
+		switch rule.Type {
+		case metadataenrichment.LabelRule:
+			valueFromNamespace, exists = request.Namespace.Labels[rule.Source]
+		case metadataenrichment.AnnotationRule:
+			valueFromNamespace, exists = request.Namespace.Annotations[rule.Source]
+		}
+
+		if exists {
+			key := rule.Target
+			if len(rule.Target) == 0 {
+				key = metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)
+			}
+			attributes[key] = url.QueryEscape(valueFromNamespace)
+		}
+	}
+	return attributes
 }

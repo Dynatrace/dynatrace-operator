@@ -5,7 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	latestdynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 	_ = appsv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 
-	baseDK := latestdynakube.DynaKube{}
+	baseDK := dynakube.DynaKube{}
 	baseDK.Status.KubeSystemUUID = "cluster-uid"
 	baseDK.Status.KubernetesClusterName = "cluster-name"
 
@@ -40,6 +41,8 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 		name           string
 		objects        []runtime.Object
 		pod            *corev1.Pod
+		dk             *dynakube.DynaKube
+		namespace      *corev1.Namespace
 		wantAttributes map[string][]string
 	}{
 		{
@@ -212,6 +215,109 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 				"c1": {}, // should be empty, nothing injected
 			},
 		},
+		{
+			name: "enrichment rules are applied",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "ns"},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+			},
+			dk: &dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					KubeSystemUUID:        "cluster-uid",
+					KubernetesClusterName: "cluster-name",
+					MetadataEnrichment: metadataenrichment.Status{
+						Rules: []metadataenrichment.Rule{
+							{Type: metadataenrichment.LabelRule, Source: "l1", Target: "target_l1"},
+							{Type: metadataenrichment.AnnotationRule, Source: "a1", Target: "target_a1"},
+							{Type: metadataenrichment.LabelRule, Source: "l2"}, // no target
+						},
+					},
+				},
+			},
+			namespace: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "ns",
+					Labels:      map[string]string{"l1": "v1", "l2": "v2"},
+					Annotations: map[string]string{"a1": "v3"},
+				},
+			},
+			wantAttributes: map[string][]string{
+				"c1": {
+					"k8s.namespace.name=ns",
+					"k8s.cluster.uid=cluster-uid",
+					"dt.kubernetes.cluster.id=cluster-uid",
+					"k8s.cluster.name=cluster-name",
+					"dt.kubernetes.cluster.name=cluster-name",
+					"k8s.container.name=c1",
+					"target_l1=v1",
+					"target_a1=v3",
+					"k8s.namespace.label.l2=v2",
+				},
+			},
+		},
+		{
+			name: "precedence: annotation > rule > standard",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:   "ns",
+					Annotations: map[string]string{"metadata.dynatrace.com/k8s.workload.kind": "pod-annotation"},
+				},
+				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+			},
+			dk: &dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					KubeSystemUUID:        "cluster-uid",
+					KubernetesClusterName: "cluster-name",
+					MetadataEnrichment: metadataenrichment.Status{
+						Rules: []metadataenrichment.Rule{
+							{Type: metadataenrichment.LabelRule, Source: "l1", Target: "k8s.workload.name"}, // overrides standard
+						},
+					},
+				},
+			},
+			namespace: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "ns",
+					Labels: map[string]string{"l1": "rule-value"},
+				},
+			},
+			wantAttributes: map[string][]string{
+				"c1": {
+					"k8s.workload.name=rule-value",     // from rule
+					"k8s.workload.kind=pod-annotation", // from annotation
+				},
+			},
+		},
+		// add a test for an enrichment rule with an empty target
+		{
+			name: "enrichment rule with empty target adds prefixed attribute",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "ns"},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+			},
+			dk: &dynakube.DynaKube{
+				Status: dynakube.DynaKubeStatus{
+					KubeSystemUUID:        "cluster-uid",
+					KubernetesClusterName: "cluster-name",
+					MetadataEnrichment: metadataenrichment.Status{
+						Rules: []metadataenrichment.Rule{
+							{Type: metadataenrichment.AnnotationRule, Source: "a1"}, // no target
+						},
+					},
+				},
+			},
+			namespace: &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "ns",
+					Annotations: map[string]string{"a1": "v1"},
+				},
+			},
+			wantAttributes: map[string][]string{
+				"c1": {
+					"k8s.namespace.annotation.a1=v1",
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -223,12 +329,22 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			client := builder.Build()
 			mut := New(client)
 
+			dk := baseDK
+			if tt.dk != nil {
+				dk = *tt.dk
+			}
+
+			ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: tt.pod.Namespace}}
+			if tt.namespace != nil {
+				ns = *tt.namespace
+			}
+
 			req := dtwebhook.NewMutationRequest(
 				context.Background(),
-				corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: tt.pod.Namespace}},
+				ns,
 				nil,
 				tt.pod,
-				baseDK,
+				dk,
 			)
 			err := mut.Mutate(req)
 			require.NoError(t, err)
@@ -299,7 +415,7 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 	_ = appsv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 
-	baseDK := latestdynakube.DynaKube{}
+	baseDK := dynakube.DynaKube{}
 	baseDK.Status.KubeSystemUUID = "cluster-uid"
 	baseDK.Status.KubernetesClusterName = "cluster-name"
 
