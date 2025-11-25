@@ -27,7 +27,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		if dk.OneAgent().IsCSIAvailable() {
 			volumeMounts = append(volumeMounts, getCSIStorageMount())
 		} else {
-			volumeMounts = append(volumeMounts, getStorageVolumeMount(dk))
+			volumeMounts = append(volumeMounts, getStorageVolumeMount())
 		}
 	} else {
 		volumeMounts = append(volumeMounts, getRootMount())
@@ -88,18 +88,14 @@ func getReadOnlyRootMount() corev1.VolumeMount {
 func getCSIStorageMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      csiStorageVolumeName,
-		MountPath: csiStorageVolumeMount,
+		MountPath: storageVolumeMount,
 	}
 }
 
-func getStorageVolumeMount(dk *dynakube.DynaKube) corev1.VolumeMount {
-	// the TenantUUID is already set
-	tenant, _ := dk.TenantUUID()
-
+func getStorageVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      storageVolumeName,
-		SubPath:   tenant,
-		MountPath: csiStorageVolumeMount,
+		Name:      hostStorageVolumeName,
+		MountPath: storageVolumeMount,
 	}
 }
 
@@ -174,11 +170,14 @@ func getCSIStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 }
 
 func getStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
+	// the TenantUUID is already set
+	tenant, _ := dk.TenantUUID()
+
 	return corev1.Volume{
-		Name: storageVolumeName,
+		Name: hostStorageVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: dk.OneAgent().GetHostPath(),
+				Path: dk.OneAgent().GetHostPath(tenant),
 				Type: ptr.To(corev1.HostPathDirectoryOrCreate),
 			},
 		},

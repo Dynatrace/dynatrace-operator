@@ -81,10 +81,6 @@ COPY --from=dependency /tmp/rootfs-dependency /
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
-# csi binaries
-COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.15.0@sha256:11f199f6bec47403b03cb49c79a41f445884b213b382582a60710b8c6fdc316a /csi-node-driver-registrar /usr/local/bin
-COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.17.0@sha256:9b75b9ade162136291d5e8f13a1dfc3dec71ee61419b1bfc112e0796ff8a6aa9 /livenessprobe /usr/local/bin
-
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
 
