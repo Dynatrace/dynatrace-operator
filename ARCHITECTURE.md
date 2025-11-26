@@ -280,7 +280,7 @@ The main binary (`cmd/main.go`) is a multi-mode executable that behaves differen
 
 ```bash
 dynatrace-operator operator                  # Run the main operator
-dynatrace-operator webhook                   # Run the webhook server
+dynatrace-operator   webhook-server                   # Run the webhook server
 dynatrace-operator csi-server                # Run CSI driver server
 dynatrace-operator csi-init                  # Run CSI driver initialization
 dynatrace-operator csi-provisioner           # Run CSI driver provisioner
