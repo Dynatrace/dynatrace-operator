@@ -8,8 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	k8sconfigmap "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -75,7 +75,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
 	configMap, err := k8sconfigmap.Build(r.dk,
 		consts.OtlpAPIEndpointConfigMapName,
 		configMapData,
-		k8sconfigmap.SetLabels(k8slabels.NewCoreLabels(r.dk.Name, k8slabels.OtelCComponentLabel).BuildLabels()),
+		k8sconfigmap.SetLabels(k8slabel.NewCoreLabels(r.dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()),
 	)
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)

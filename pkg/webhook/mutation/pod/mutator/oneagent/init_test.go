@@ -13,9 +13,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +30,7 @@ func TestMutateInitContainer(t *testing.T) {
 		},
 		Image: "webhook-image",
 		Resources: corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("30m", "30Mi"), // add some defaults
+			Requests: k8sresource.NewResourceList("30m", "30Mi"), // add some defaults
 		},
 	}
 
@@ -129,7 +129,7 @@ func TestMutateInitContainer(t *testing.T) {
 		dk.Name = "csi-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("40m", "40Mi"),
+			Requests: k8sresource.NewResourceList("40m", "40Mi"),
 		}
 		dk.Status.CodeModules.Version = "1.2.3"
 		pod := &corev1.Pod{}
@@ -145,13 +145,13 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		csiVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		csiVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
 		require.NoError(t, err)
 		require.NotNil(t, csiVolume.CSI)
 		require.NotNil(t, csiVolume.CSI.ReadOnly)
 		require.True(t, *csiVolume.CSI.ReadOnly)
 
-		csiMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		csiMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
 		require.NoError(t, err)
 		require.True(t, csiMount.ReadOnly)
 
@@ -181,13 +181,13 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		csiVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		csiVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
 		require.NoError(t, err)
 		require.NotNil(t, csiVolume.CSI)
 		require.NotNil(t, csiVolume.CSI.ReadOnly)
 		require.True(t, *csiVolume.CSI.ReadOnly)
 
-		csiMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		csiMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
 		require.NoError(t, err)
 		require.True(t, csiMount.ReadOnly)
 
@@ -222,11 +222,11 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		emptyDirVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		emptyDirVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
 		require.NoError(t, err)
 		require.NotNil(t, emptyDirVolume.EmptyDir)
 
-		emptyDirMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		emptyDirMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
 		require.NoError(t, err)
 		require.False(t, emptyDirMount.ReadOnly)
 
@@ -264,11 +264,11 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		emptyDirVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		emptyDirVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
 		require.NoError(t, err)
 		require.NotNil(t, emptyDirVolume.EmptyDir)
 
-		emptyDirMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		emptyDirMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
 		require.NoError(t, err)
 		require.False(t, emptyDirMount.ReadOnly)
 
@@ -288,7 +288,7 @@ func TestMutateInitContainer(t *testing.T) {
 		dk.Name = "zip-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("40m", "40Mi"),
+			Requests: k8sresource.NewResourceList("40m", "40Mi"),
 		}
 		dk.Status.CodeModules.Version = version
 		pod := &corev1.Pod{}
@@ -321,7 +321,7 @@ func TestMutateInitContainer(t *testing.T) {
 		}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("40m", "40Mi"),
+			Requests: k8sresource.NewResourceList("40m", "40Mi"),
 		}
 		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 		dk.Status.CodeModules.ImageID = image

@@ -3,8 +3,8 @@ package deployment
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	appsv1 "k8s.io/api/apps/v1"
@@ -84,9 +84,9 @@ func prepareImagePullSecrets(ec *edgeconnect.EdgeConnect) []corev1.LocalObjectRe
 	return nil
 }
 
-func buildAppLabels(ec *edgeconnect.EdgeConnect) *labels.AppLabels {
-	return labels.NewAppLabels(
-		labels.EdgeConnectComponentLabel,
+func buildAppLabels(ec *edgeconnect.EdgeConnect) *k8slabel.AppLabels {
+	return k8slabel.NewAppLabels(
+		k8slabel.EdgeConnectComponentLabel,
 		ec.Name,
 		consts.EdgeConnectUserProvisioned,
 		ec.Status.Version.Version)
@@ -170,8 +170,8 @@ func prepareConfigVolume(ec *edgeconnect.EdgeConnect) corev1.Volume {
 }
 
 func prepareResourceRequirements(ec *edgeconnect.EdgeConnect) corev1.ResourceRequirements {
-	limits := resources.NewResourceList("100m", "128Mi")
-	requests := resources.NewResourceList("100m", "128Mi")
+	limits := k8sresource.NewResourceList("100m", "128Mi")
+	requests := k8sresource.NewResourceList("100m", "128Mi")
 
 	if ec.Spec.Resources.Limits != nil {
 		limits = ec.Spec.Resources.Limits

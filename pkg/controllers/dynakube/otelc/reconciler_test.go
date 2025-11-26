@@ -15,8 +15,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -64,13 +64,13 @@ func TestNoProxyConsistency(t *testing.T) {
 }
 
 func createClient(t *testing.T, dk *dynakube.DynaKube) client.WithWatch {
-	testTokensSecret, err := secret.Build(dk, dk.Name, map[string][]byte{
+	testTokensSecret, err := k8ssecret.Build(dk, dk.Name, map[string][]byte{
 		dtclient.APIToken:        []byte(testToken),
 		dtclient.DataIngestToken: []byte(testToken),
 	})
 	require.NoError(t, err)
 
-	testConfig, err := configmap.Build(dk, dk.Name+consts.TelemetryCollectorConfigmapSuffix, map[string]string{consts.ConfigFieldName: "test"})
+	testConfig, err := k8sconfigmap.Build(dk, dk.Name+consts.TelemetryCollectorConfigmapSuffix, map[string]string{consts.ConfigFieldName: "test"})
 	require.NoError(t, err)
 
 	return fake.NewFakeClient(testTokensSecret, testConfig)

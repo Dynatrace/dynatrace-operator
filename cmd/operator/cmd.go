@@ -11,8 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -62,10 +62,10 @@ func runInPod(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	podName := os.Getenv(env.PodName)
-	namespace := os.Getenv(env.PodNamespace)
+	podName := os.Getenv(k8senv.PodName)
+	namespace := os.Getenv(k8senv.PodNamespace)
 
-	operatorPod, err := pod.Get(context.Background(), clt, podName, namespace)
+	operatorPod, err := k8spod.Get(context.Background(), clt, podName, namespace)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func runInPod(kubeCfg *rest.Config) error {
 }
 
 func runLocally(kubeCfg *rest.Config) error {
-	namespace := os.Getenv(env.PodNamespace)
+	namespace := os.Getenv(k8senv.PodNamespace)
 
 	err := runCertInit(kubeCfg, namespace)
 	if err != nil {

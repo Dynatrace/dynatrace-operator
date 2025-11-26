@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
-	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	volumeutils "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
@@ -219,11 +219,11 @@ func TestAddInitContainerToPod(t *testing.T) {
 
 		assert.Contains(t, pod.Spec.InitContainers, initContainer)
 		require.Len(t, pod.Spec.Volumes, 2)
-		assert.True(t, volumeutils.IsIn(pod.Spec.Volumes, volumes.ConfigVolumeName))
-		assert.True(t, volumeutils.IsIn(pod.Spec.Volumes, volumes.InputVolumeName))
+		assert.True(t, volumeutils.Contains(pod.Spec.Volumes, volumes.ConfigVolumeName))
+		assert.True(t, volumeutils.Contains(pod.Spec.Volumes, volumes.InputVolumeName))
 		require.Len(t, initContainer.VolumeMounts, 2)
-		assert.True(t, mounts.IsPathIn(initContainer.VolumeMounts, volumes.InitConfigMountPath))
-		assert.True(t, mounts.IsPathIn(initContainer.VolumeMounts, volumes.InitInputMountPath))
+		assert.True(t, k8smount.ContainsPath(initContainer.VolumeMounts, volumes.InitConfigMountPath))
+		assert.True(t, k8smount.ContainsPath(initContainer.VolumeMounts, volumes.InitInputMountPath))
 	})
 }
 

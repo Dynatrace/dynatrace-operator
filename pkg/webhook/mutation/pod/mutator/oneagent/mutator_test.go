@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -261,7 +261,7 @@ func TestMutate(t *testing.T) {
 		assert.Contains(t, request.InstallContainer.Args, "--"+configure.InstallPathFlag+"="+expectedInstallPath)
 
 		for _, c := range request.Pod.Spec.Containers {
-			preload := env.FindEnvVar(c.Env, PreloadEnv)
+			preload := k8senv.Find(c.Env, PreloadEnv)
 			require.NotNil(t, preload)
 			assert.Contains(t, preload.Value, expectedInstallPath)
 		}
@@ -345,7 +345,7 @@ func TestReinvoke(t *testing.T) {
 		require.True(t, updated)
 
 		for _, c := range request.Pod.Spec.Containers {
-			preload := env.FindEnvVar(c.Env, PreloadEnv)
+			preload := k8senv.Find(c.Env, PreloadEnv)
 			require.NotNil(t, preload)
 			assert.Contains(t, preload.Value, expectedInstallPath)
 		}
@@ -389,19 +389,19 @@ func TestAddOneAgentToContainer(t *testing.T) {
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
-		dtMetaEnv := env.FindEnvVar(container.Env, DynatraceMetadataEnv)
+		dtMetaEnv := k8senv.Find(container.Env, DynatraceMetadataEnv)
 		require.NotNil(t, dtMetaEnv)
 		assert.Contains(t, dtMetaEnv.Value, kubeSystemUUID)
 
-		dtZoneEnv := env.FindEnvVar(container.Env, NetworkZoneEnv)
+		dtZoneEnv := k8senv.Find(container.Env, NetworkZoneEnv)
 		require.NotNil(t, dtZoneEnv)
 		assert.Equal(t, networkZone, dtZoneEnv.Value)
 
-		preload := env.FindEnvVar(container.Env, PreloadEnv)
+		preload := k8senv.Find(container.Env, PreloadEnv)
 		require.NotNil(t, preload)
 		assert.Contains(t, preload.Value, installPath)
 
-		storageEnv := env.FindEnvVar(container.Env, DtStorageEnv)
+		storageEnv := k8senv.Find(container.Env, DtStorageEnv)
 		require.NotNil(t, storageEnv)
 		assert.Contains(t, storageEnv.Value, DtStoragePath)
 

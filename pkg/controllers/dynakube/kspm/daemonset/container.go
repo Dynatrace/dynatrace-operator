@@ -2,7 +2,7 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 )
@@ -51,8 +51,8 @@ func getResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 		defaultMemory = "128Mi"
 	)
 
-	limits := resources.NewResourceList(defaultCPU, defaultMemory)
-	requests := resources.NewResourceList(defaultCPU, defaultMemory)
+	limits := k8sresource.NewResourceList(defaultCPU, defaultMemory)
+	requests := k8sresource.NewResourceList(defaultCPU, defaultMemory)
 
 	if dk.KSPM().Resources.Limits != nil {
 		limits = dk.KSPM().Resources.Limits

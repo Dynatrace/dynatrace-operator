@@ -9,12 +9,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -54,14 +54,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
-		sts, err := statefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), corev1.Container{})
+		sts, err := k8sstatefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), corev1.Container{})
 		if err != nil {
 			log.Error(err, "could not build "+r.dk.OtelCollectorStatefulsetName()+" during cleanup")
 
 			return err
 		}
 
-		err = statefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
+		err = k8sstatefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 		if err != nil {
 			log.Error(err, "failed to clean up "+r.dk.OtelCollectorStatefulsetName()+" statufulset")
 
@@ -91,22 +91,22 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	topologySpreadConstraints := topology.MaxOnePerNode(appLabels)
+	topologySpreadConstraints := k8stopology.MaxOnePerNode(appLabels)
 	if len(r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints) > 0 {
 		topologySpreadConstraints = r.dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
 	}
 
-	sts, err := statefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), getContainer(r.dk),
-		statefulset.SetReplicas(getReplicas(r.dk)),
-		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
-		statefulset.SetAllAnnotations(nil, templateAnnotations),
-		statefulset.SetAffinity(buildAffinity()),
-		statefulset.SetServiceAccount(serviceAccountName),
-		statefulset.SetTolerations(r.dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
-		statefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
-		statefulset.SetSecurityContext(buildPodSecurityContext()),
-		statefulset.SetRollingUpdateStrategyType(),
+	sts, err := k8sstatefulset.Build(r.dk, r.dk.OtelCollectorStatefulsetName(), getContainer(r.dk),
+		k8sstatefulset.SetReplicas(getReplicas(r.dk)),
+		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
+		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.OpenTelemetryCollector.Labels),
+		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),
+		k8sstatefulset.SetAffinity(buildAffinity()),
+		k8sstatefulset.SetServiceAccount(serviceAccountName),
+		k8sstatefulset.SetTolerations(r.dk.Spec.Templates.OpenTelemetryCollector.Tolerations),
+		k8sstatefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
+		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
+		k8sstatefulset.SetRollingUpdateStrategyType(),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
 	)
@@ -116,7 +116,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, sts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.OtelCollectorStatefulsetName() + " statefulset")
 		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
@@ -186,7 +186,7 @@ func (r *Reconciler) calculateSecretHash(ctx context.Context, secretName string)
 }
 
 func (r *Reconciler) calculateConfigMapHash(ctx context.Context, configMapName string) (string, error) {
-	query := configmap.Query(r.client, r.client, log)
+	query := k8sconfigmap.Query(r.client, r.client, log)
 
 	configConfigMap, err := query.Get(ctx, types.NamespacedName{
 		Name:      configMapName,
@@ -239,12 +239,12 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 	}
 }
 
-func buildAppLabels(dkName string) *labels.AppLabels {
-	return labels.NewAppLabels(labels.OtelCComponentLabel, dkName, labels.OtelCComponentLabel, "")
+func buildAppLabels(dkName string) *k8slabel.AppLabels {
+	return k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, dkName, k8slabel.OtelCComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {
-	return node.Affinity()
+	return k8saffinity.NewMultiArchNodeAffinity()
 }
 
 func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o *appsv1.StatefulSet) {

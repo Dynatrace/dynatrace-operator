@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sjob"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +32,7 @@ type Properties struct {
 func NewInstaller(ctx context.Context, props *Properties) installer.Installer {
 	return &Installer{
 		props:    props,
-		nodeName: env.GetNodeName(),
+		nodeName: k8senv.GetNodeName(),
 	}
 }
 
@@ -113,6 +113,6 @@ func (inst *Installer) isAlreadyPresent(targetDir string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (inst *Installer) query() jobutil.QueryObject {
-	return jobutil.Query(inst.props.Client, inst.props.APIReader, log)
+func (inst *Installer) query() k8sjob.QueryObject {
+	return k8sjob.Query(inst.props.Client, inst.props.APIReader, log)
 }
