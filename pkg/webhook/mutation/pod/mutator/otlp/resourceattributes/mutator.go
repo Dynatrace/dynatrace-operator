@@ -121,7 +121,7 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		_ = attributesToAdd.Merge(workloadAttributesToAdd)
 	}
 	// add Attributes from annotations - these have the highest precedence, i.e. users can potentially overwrite the above Attributes
-	attributesFromAnnotations := Attributes(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
+	attributesFromAnnotations := NewAttributesFromMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
 	_ = attributesFromAnnotations.Merge(attributesToAdd)
 
 	mutated = existingAttributes.Merge(attributesFromAnnotations)

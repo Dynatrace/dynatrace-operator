@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -30,17 +29,10 @@ func NewAttributesFromEnv(envs []corev1.EnvVar, name string) (Attributes, bool) 
 }
 
 func NewAttributesFromMap(input map[string]string) Attributes {
-	metadataAnnotationPrefix := metadataenrichment.Annotation + "/"
-
 	res := make(map[string]string)
 
 	for key, value := range input {
-		if strings.HasPrefix(key, metadataAnnotationPrefix) {
-			attrKey := strings.TrimPrefix(key, metadataAnnotationPrefix)
-			// apply percent encoding to prevent errors when passing attribute values with special characters to the OTEL SDKs
-			// see https://opentelemetry.io/docs/specs/otel/resource/sdk/#specifying-resource-information-via-an-environment-variable
-			res[attrKey] = url.QueryEscape(value)
-		}
+		res[key] = url.QueryEscape(value)
 	}
 
 	return res
