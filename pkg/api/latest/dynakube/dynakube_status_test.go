@@ -44,7 +44,7 @@ func TestStatus(t *testing.T) {
 		testCondition := metav1.Condition{
 		Type:    "dummy-type",
 		Status:  metav1.ConditionTrue,
-		Reason:  "dummy-reason",
+		Reason:  "dummyReason",
 		Message: "dummy-message",
 	}
 
@@ -54,6 +54,7 @@ func TestStatus(t *testing.T) {
 		assert.Len(t, *dk.Conditions(), 2)
 
 		createDynaKube(t, clt, dk)
+		assert.NoError(t, clt.Get(t.Context(), client.ObjectKeyFromObject(dk), dk))
 
 		assert.Len(t, *dk.Conditions(), 1)
 	})
@@ -72,5 +73,6 @@ func createDynaKube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
 	status := dk.Status
 	createObject(t, clt, dk)
 	dk.Status = status
-	dk.UpdateStatus(t.Context(), clt)
+	err := dk.UpdateStatus(t.Context(), clt)
+	require.NoError(t, err)
 }
