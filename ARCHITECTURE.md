@@ -266,7 +266,7 @@ This command(`cmd/metadata/`) generates metadata files containing Kubernetes att
 
 **Reconciler Pattern**: Each feature has its own reconciler that implements a `Reconcile()` method, composed together in the main controller
 
-**Status Subresource**: CRs maintain a status field tracking deployment state, versions, and conditions
+**Status Subresource**: CRs maintain a status field tracking deployment state, versions and conditions
 
 **Watch & Reconcile**: Controllers watch for changes to CRs and owned resources, triggering reconciliation with smart backoff intervals
 
