@@ -96,7 +96,7 @@ This is not the best pattern, it is the case mainly due to historical reasons, w
 **Certificates Controller** (`pkg/controllers/certificates/`):
 
 - Creates self-signed TLS certificates for our (mutating/validating/conversion) Webhooks. Really old, meant to make the install seamless for the user, and not require any additional dependencies. (like cert-manager)
-- The certs are created by the Operator pod, and is read by the Webhook pod. Not purely handled the webhook, as we don't want to have leader election for the webhook.
+- The certs are created by the Operator pod, and are read by the Webhook pod. Not purely handled by the webhook, as we don't want to have leader election for the webhook.
 
 Relevant links:
 
