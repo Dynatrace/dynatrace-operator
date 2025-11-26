@@ -1,0 +1,72 @@
+suite: test role for the extensions controller for prometheus
+templates:
+  - Common/extensions/role-extensions-controller-prometheus.yaml
+tests:
+  - it: should not exist by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: Role should exist for openshift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.name
+          value: dynatrace-extensions-controller-prometheus
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
+  - it: RoleBinding should exist for openshift
+    documentIndex: 1
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-extensions-controller-prometheus
+      - isNotEmpty:
+          path: metadata.labels
+
+  - it: shouldn't exist if neither extensions nor prometheus extensions are enabled
+    set:
+      platform: openshift
+      rbac.extensions.create: false
+      rbac.extensions.prometheus.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if only extensions are enabled
+    set:
+      platform: openshift
+      rbac.extensions.create: true
+      rbac.extensions.prometheus.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if only prometheus extensions are enabled
+    set:
+      platform: openshift
+      rbac.extensions.create: false
+      rbac.extensions.prometheus.create: true
+    asserts:
+      - hasDocuments:
+          count: 0

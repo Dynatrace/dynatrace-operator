@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -175,20 +175,25 @@ func assertOTLPEnvVarsPresent(t *testing.T, podItem *corev1.Pod, expectedBase st
 	}
 
 	for name, suffix := range map[string]string{exporter.OTLPTraceEndpointEnv: "/v1/traces", exporter.OTLPLogsEndpointEnv: "/v1/logs", exporter.OTLPMetricsEndpointEnv: "/v1/metrics"} {
-		envVar := env.FindEnvVar(appContainer.Env, name)
+		envVar := k8senv.Find(appContainer.Env, name)
 		assert.NotNil(t, envVar, "%s env var missing", name)
 		if envVar != nil {
 			assert.Equal(t, expectedBase+suffix, envVar.Value, "%s value", name)
 		}
 	}
 	for _, name := range []string{exporter.OTLPTraceHeadersEnv, exporter.OTLPLogsHeadersEnv, exporter.OTLPMetricsHeadersEnv} {
-		envVar := env.FindEnvVar(appContainer.Env, name)
+		envVar := k8senv.Find(appContainer.Env, name)
 		assert.NotNil(t, envVar, "%s env var missing", name)
 		if envVar != nil {
 			assert.Equal(t, exporter.OTLPAuthorizationHeader, envVar.Value, "%s header", name)
 		}
 	}
-	tokenEnv := env.FindEnvVar(appContainer.Env, exporter.DynatraceAPITokenEnv)
+	temporalityPreferenceEnv := k8senv.Find(appContainer.Env, exporter.OTLPMetricsExporterTemporalityPreference)
+	assert.NotNil(t, temporalityPreferenceEnv, "%s env var missing", exporter.OTLPMetricsExporterTemporalityPreference)
+	if temporalityPreferenceEnv != nil {
+		assert.Equal(t, exporter.OTLPMetricsExporterAggregationTemporalityDelta, temporalityPreferenceEnv.Value, "%s value", exporter.OTLPMetricsExporterTemporalityPreference)
+	}
+	tokenEnv := k8senv.Find(appContainer.Env, exporter.DynatraceAPITokenEnv)
 	assert.NotNil(t, tokenEnv, "%s env var missing", exporter.DynatraceAPITokenEnv)
 	if tokenEnv != nil {
 		require.NotNil(t, tokenEnv.ValueFrom)

@@ -6,7 +6,7 @@ import (
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -55,7 +55,7 @@ func run(*cobra.Command, []string) error {
 		return err
 	}
 
-	csiManager, err := createManager(kubeConfig, env.DefaultNamespace())
+	csiManager, err := createManager(kubeConfig, k8senv.DefaultNamespace())
 	if err != nil {
 		return err
 	}

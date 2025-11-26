@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"k8s.io/mount-utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -136,7 +136,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynakube.DynaKube, error) {
 	var dkList dynakube.DynaKubeList
 
-	err := apiReader.List(ctx, &dkList, client.InNamespace(env.DefaultNamespace()))
+	err := apiReader.List(ctx, &dkList, client.InNamespace(k8senv.DefaultNamespace()))
 	if err != nil {
 		return nil, err
 	}

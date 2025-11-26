@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/annotations"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -106,7 +106,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 }
 
 func (h *Handler) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
-	installContainer := container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
+	installContainer := k8scontainer.FindInitInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
 	if installContainer != nil {
 		log.Info("Dynatrace init-container already present, skipping mutation, doing reinvocation", "containerName", dtwebhook.InstallContainerName)
 
@@ -160,7 +160,7 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 }
 
 func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
-	mutationRequest.InstallContainer = container.FindInitContainerInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
+	mutationRequest.InstallContainer = k8scontainer.FindInitInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName)
 
 	// metadata enrichment does not need to be reinvoked, addContainerAttributes() does what is needed
 	hasNewContainers, err := addContainerAttributes(mutationRequest)

@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -119,7 +119,7 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 		return err
 	}
 
-	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ActiveGateComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.ActiveGateComponentLabel)
 	secretData := map[string][]byte{
 		consts.TLSCrtDataName: pemCert,
 		consts.TLSKeyDataName: pemPk,

@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcactivegate "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -208,6 +208,11 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 			Value: "http/protobuf",
 		})
 
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPMetricsExporterTemporalityPreference,
+			Value: OTLPMetricsExporterAggregationTemporalityDelta,
+		})
+
 		// verify logs exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsEndpointEnv,
@@ -301,10 +306,10 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		})
 
 		// verify no headers or token env vars were added due to skip
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("general otlp exporter user defined env vars present, do not add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -341,22 +346,22 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		})
 
 		// verify traces exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceProtocolEnv))
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsProtocolEnv))
 
 		// verify no headers or token env vars were added due to skip
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("general otlp exporter user defined env vars present, override enabled, add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -399,8 +404,8 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		})
 
 		// verify traces exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceProtocolEnv))
 
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -415,8 +420,8 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 
 		// headers for metrics are added, traces/logs are not
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{Name: OTLPMetricsHeadersEnv, Value: OTLPAuthorizationHeader})
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsHeadersEnv))
 
 		// verify DT_API_TOKEN secret ref env var
 		assertTokenEnvVarIsSet(t, containerEnvVars)
@@ -460,17 +465,17 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		})
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsProtocolEnv))
 
 		// verify no headers or token env vars were added due to skip
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("specific otlp exporter user defined env vars present, override enabled, add other specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -533,8 +538,8 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		})
 
 		// verify logs exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 	t.Run("one specific otlp exporter user defined env vars present, override disabled, do not add other specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -575,12 +580,12 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		})
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 	t.Run("activegate with ca cert and override enabled -> mounts cert volume and injects certificate env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -631,12 +636,12 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 				}
 			}
 
-			assert.True(t, env.IsIn(c.Env, OTLPTraceCertificateEnv))
-			assert.True(t, env.IsIn(c.Env, OTLPMetricsCertificateEnv))
-			assert.True(t, env.IsIn(c.Env, OTLPLogsCertificateEnv))
+			assert.True(t, k8senv.Contains(c.Env, OTLPTraceCertificateEnv))
+			assert.True(t, k8senv.Contains(c.Env, OTLPMetricsCertificateEnv))
+			assert.True(t, k8senv.Contains(c.Env, OTLPLogsCertificateEnv))
 
 			// assert NO_PROXY is set
-			noProxyEnv := env.FindEnvVar(c.Env, NoProxyEnv)
+			noProxyEnv := k8senv.Find(c.Env, NoProxyEnv)
 			require.NotNil(t, noProxyEnv)
 			assert.Equal(t, otelcactivegate.GetServiceFQDN(&request.DynaKube), noProxyEnv.Value)
 		}

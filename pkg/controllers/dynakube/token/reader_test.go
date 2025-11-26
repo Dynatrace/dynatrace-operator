@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -49,7 +49,7 @@ func testReadTokens(t *testing.T) {
 				Namespace: "dynatrace",
 			},
 		}
-		testSecret, err := secret.Build(&dk, "dynakube", map[string][]byte{
+		testSecret, err := k8ssecret.Build(&dk, "dynakube", map[string][]byte{
 			dtclient.APIToken:        []byte(testAPIToken),
 			dtclient.PaasToken:       []byte(testPaasToken),
 			dtclient.DataIngestToken: []byte(testDataIngestToken),

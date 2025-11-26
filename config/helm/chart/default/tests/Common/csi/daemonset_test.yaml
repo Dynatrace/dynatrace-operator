@@ -494,7 +494,7 @@ tests:
           count: 1
           any: true
 
-  - it: should use livenessprobe and csi-node-driver-registrar commands provided by the operator if they are preferred
+  - it: should always use builtIn livenessprobe and csi-node-driver-registrar even if the (deprecated) flags are set to false
     set:
       platform: kubernetes
       image: image-name
@@ -505,22 +505,20 @@ tests:
       - equal:
           path: spec.template.spec.containers[2].args
           value:
+          - "csi-node-driver-registrar"
           - "--csi-address=/csi/csi.sock"
           - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-      - equal:
+      - notExists:
           path: spec.template.spec.containers[2].command
-          value:
-            - csi-node-driver-registrar
       - equal:
           path: spec.template.spec.containers[3].args
           value:
+            - "livenessprobe"
             - "--csi-address=/csi/csi.sock"
             - "--health-port=9808"
             - "--probe-timeout=9s"
-      - equal:
+      - notExists:
           path: spec.template.spec.containers[3].command
-          value:
-          - livenessprobe
 
   - it: should have default updateStrategy
     set:

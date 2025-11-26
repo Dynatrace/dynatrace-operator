@@ -8,9 +8,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
@@ -20,7 +20,7 @@ import (
 
 const (
 	activeGateTrustedCertVolumeName = "otlp-dynatrace-certs"
-	exporterCertsMountPath          = "/otlp-dynatrace-certs"
+	exporterCertsMountPath          = "/etc/dynatrace/ssl"
 )
 
 var (
@@ -122,7 +122,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		},
 	}
 
-	shouldAddCertificate := request.DynaKube.ActiveGate().HasCaCert()
+	shouldAddCertificate := request.DynaKube.ActiveGate().HasCaCert() || request.DynaKube.Spec.TrustedCAs != ""
 
 	override := otlpExporterConfig.IsOverrideEnvVarsEnabled()
 
@@ -148,7 +148,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		}
 
 		// need to add the token env var first so that it can be used in other env vars
-		c.Env = env.AddOrUpdate(c.Env, dtAPITokenEnvVar)
+		c.Env = k8senv.AddOrUpdate(c.Env, dtAPITokenEnvVar)
 
 		for _, inj := range injectors {
 			if inj.Inject(c, apiURL, shouldAddCertificate) {
@@ -165,7 +165,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 }
 
 func ensureCertificateVolumeMounted(c *corev1.Container) {
-	if mounts.IsIn(c.VolumeMounts, activeGateTrustedCertVolumeName) {
+	if k8smount.Contains(c.VolumeMounts, activeGateTrustedCertVolumeName) {
 		return
 	}
 
@@ -205,6 +205,7 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, over
 		OTLPMetricsHeadersEnv,
 		OTLPMetricsCertificateEnv,
 		OTLPMetricsProtocolEnv,
+		OTLPMetricsExporterTemporalityPreference,
 		// logs exporter env var
 		OTLPLogsEndpointEnv,
 		OTLPLogsHeadersEnv,
@@ -213,7 +214,7 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, over
 	}
 
 	for _, envVar := range envVarsToCheck {
-		if env.IsIn(c.Env, envVar) {
+		if k8senv.Contains(c.Env, envVar) {
 			return true
 		}
 	}
@@ -233,12 +234,12 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 }
 
 func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
-	if !dk.ActiveGate().HasCaCert() {
+	if !dk.ActiveGate().HasCaCert() && dk.Spec.TrustedCAs == "" {
 		return
 	}
 
 	// avoid duplicate volume additions on reinvocation or multiple container matches
-	if volumes.IsIn(pod.Spec.Volumes, activeGateTrustedCertVolumeName) {
+	if k8svolume.Contains(pod.Spec.Volumes, activeGateTrustedCertVolumeName) {
 		return
 	}
 

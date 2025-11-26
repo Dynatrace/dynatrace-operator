@@ -28,7 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -68,7 +68,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		client:                 kubeClient,
 		apiReader:              apiReader,
 		config:                 config,
-		operatorNamespace:      os.Getenv(env.PodNamespace),
+		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
@@ -345,7 +345,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling otel-collector")
 
-	otelcReconciler := controller.otelcReconcilerBuilder(controller.client, controller.apiReader, dk)
+	otelcReconciler := controller.otelcReconcilerBuilder(dynatraceClient, controller.client, controller.apiReader, dk)
 
 	err = otelcReconciler.Reconcile(ctx)
 	if err != nil {

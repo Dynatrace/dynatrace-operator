@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	latestdynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,6 +27,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 	baseDK := latestdynakube.DynaKube{}
 	baseDK.Status.KubeSystemUUID = "cluster-uid"
 	baseDK.Status.KubernetesClusterName = "cluster-name"
+	baseDK.Status.KubernetesClusterMEID = "cluster-meid"
 
 	deployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "ns"}}
 	deploymentOwner := metav1.OwnerReference{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Controller: ptr.To(true)}
@@ -66,13 +67,15 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
 					"k8s.cluster.name=cluster-name",
-					"dt.kubernetes.cluster.name=cluster-name",
+					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c1",
 					"k8s.pod.name=$(K8S_PODNAME)",
 					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.node.name=$(K8S_NODE_NAME)",
 					"k8s.workload.kind=deployment",
+					"dt.kubernetes.workload.kind=deployment",
 					"k8s.workload.name=web",
+					"dt.kubernetes.workload.name=web",
 					"foo=bar",
 				},
 			},
@@ -102,13 +105,15 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
 					"k8s.cluster.name=cluster-name",
-					"dt.kubernetes.cluster.name=cluster-name",
+					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c1",
 					"k8s.pod.name=$(K8S_PODNAME)",
 					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.node.name=$(K8S_NODE_NAME)",
 					"k8s.workload.kind=statefulset",
+					"dt.kubernetes.workload.kind=statefulset",
 					"k8s.workload.name=db",
+					"dt.kubernetes.workload.name=db",
 				},
 			},
 		},
@@ -125,7 +130,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
 					"k8s.cluster.name=cluster-name",
-					"dt.kubernetes.cluster.name=cluster-name",
+					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c1",
 				},
 			},
@@ -153,20 +158,24 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
 					"k8s.cluster.name=cluster-name",
-					"dt.kubernetes.cluster.name=cluster-name",
+					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c1",
 					"k8s.workload.kind=job",
+					"dt.kubernetes.workload.kind=job",
 					"k8s.workload.name=jobx",
+					"dt.kubernetes.workload.name=jobx",
 				},
 				"c2": {
 					"k8s.namespace.name=ns",
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
 					"k8s.cluster.name=cluster-name",
-					"dt.kubernetes.cluster.name=cluster-name",
+					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c2",
 					"k8s.workload.kind=job",
+					"dt.kubernetes.workload.kind=job",
 					"k8s.workload.name=jobx",
+					"dt.kubernetes.workload.name=jobx",
 				},
 			},
 		},
@@ -193,7 +202,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
 					"k8s.cluster.name=cluster-name",
-					"dt.kubernetes.cluster.name=cluster-name",
+					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c1",
 				},
 			},
@@ -248,7 +257,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					assert.Empty(t, val, "container should be skipped, no Attributes injected")
 					// also check pod/node env vars are not injected
 					for _, envName := range []string{"K8S_PODNAME", "K8S_PODUID", "K8S_NODE_NAME"} {
-						assert.False(t, env.IsIn(container.Env, envName), "env var %s should not be injected", envName)
+						assert.False(t, k8senv.Contains(container.Env, envName), "env var %s should not be injected", envName)
 					}
 
 					continue

@@ -5,9 +5,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -44,7 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		query := daemonset.Query(r.client, r.apiReader, log)
+		query := k8sdaemonset.Query(r.client, r.apiReader, log)
 
 		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.LogMonitoring().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 		if err != nil {
@@ -61,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	updated, err := daemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
+	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), ConditionType, err)
 
@@ -82,27 +82,27 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.LogMonitoringComponentLabel)
+	labels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.LogMonitoringComponentLabel)
 
 	maxUnavailable := intstr.FromInt(r.dk.FF().GetOneAgentMaxUnavailable())
 
-	ds, err := daemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
-		daemonset.SetInitContainer(getInitContainer(*r.dk, tenantUUID)),
-		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
-		daemonset.SetAllAnnotations(nil, r.getAnnotations()),
-		daemonset.SetServiceAccount(serviceAccountName),
-		daemonset.SetDNSPolicy(r.dk.LogMonitoring().Template().DNSPolicy),
-		daemonset.SetAffinity(node.Affinity()),
-		daemonset.SetPriorityClass(r.dk.LogMonitoring().Template().PriorityClassName),
-		daemonset.SetNodeSelector(r.dk.LogMonitoring().Template().NodeSelector),
-		daemonset.SetTolerations(r.dk.LogMonitoring().Template().Tolerations),
-		daemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
-		daemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
+	ds, err := k8sdaemonset.Build(r.dk, r.dk.LogMonitoring().GetDaemonSetName(), getContainer(*r.dk),
+		k8sdaemonset.SetInitContainer(getInitContainer(*r.dk)),
+		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.LogMonitoring().Template().Labels),
+		k8sdaemonset.SetAllAnnotations(nil, r.getAnnotations()),
+		k8sdaemonset.SetServiceAccount(serviceAccountName),
+		k8sdaemonset.SetDNSPolicy(r.dk.LogMonitoring().Template().DNSPolicy),
+		k8sdaemonset.SetAffinity(k8saffinity.NewMultiArchNodeAffinity()),
+		k8sdaemonset.SetPriorityClass(r.dk.LogMonitoring().Template().PriorityClassName),
+		k8sdaemonset.SetNodeSelector(r.dk.LogMonitoring().Template().NodeSelector),
+		k8sdaemonset.SetTolerations(r.dk.LogMonitoring().Template().Tolerations),
+		k8sdaemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
+		k8sdaemonset.SetUpdateStrategy(appsv1.DaemonSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
 				MaxUnavailable: &maxUnavailable,
 			},
 		}),
-		daemonset.SetVolumes(getVolumes(r.dk.Name)),
+		k8sdaemonset.SetVolumes(getVolumes(r.dk.Name, tenantUUID)),
 	)
 	if err != nil {
 		return nil, err

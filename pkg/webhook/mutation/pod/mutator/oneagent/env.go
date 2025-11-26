@@ -7,12 +7,12 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func addDeploymentMetadataEnv(container *corev1.Container, dk dynakube.DynaKube) {
-	if env.IsIn(container.Env, DynatraceMetadataEnv) {
+	if k8senv.Contains(container.Env, DynatraceMetadataEnv) {
 		return
 	}
 
@@ -36,7 +36,7 @@ func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
 func addVersionDetectionEnvs(container *corev1.Container, namespace corev1.Namespace) {
 	labelMapping := NewVersionLabelMapping(namespace)
 	for envName, fieldPath := range labelMapping {
-		if env.IsIn(container.Env, envName) {
+		if k8senv.Contains(container.Env, envName) {
 			continue
 		}
 
@@ -56,7 +56,7 @@ func addVersionDetectionEnvs(container *corev1.Container, namespace corev1.Names
 func addPreloadEnv(container *corev1.Container, installPath string) {
 	preloadPath := filepath.Join(installPath, preload.LibAgentProcPath)
 
-	ldPreloadEnv := env.FindEnvVar(container.Env, PreloadEnv)
+	ldPreloadEnv := k8senv.Find(container.Env, PreloadEnv)
 	if ldPreloadEnv != nil {
 		if strings.Contains(ldPreloadEnv.Value, installPath) {
 			return
@@ -73,7 +73,7 @@ func addPreloadEnv(container *corev1.Container, installPath string) {
 }
 
 func addDtStorageEnv(container *corev1.Container) {
-	storageEnv := env.FindEnvVar(container.Env, DtStorageEnv)
+	storageEnv := k8senv.Find(container.Env, DtStorageEnv)
 	if storageEnv != nil {
 		return
 	}

@@ -13,11 +13,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	podmutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
@@ -72,7 +73,7 @@ func TestWebhook(t *testing.T) {
 				},
 			}
 			require.NoError(t, mgr.GetClient().Create(t.Context(), pod))
-			t.Setenv(env.PodName, pod.Name)
+			t.Setenv(k8senv.PodName, pod.Name)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
@@ -120,6 +121,11 @@ func TestWebhook(t *testing.T) {
 						},
 					},
 				},
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.2.3",
+					},
+				},
 			},
 		}
 		createDynaKube(t, clt, dk)
@@ -142,6 +148,13 @@ func TestWebhook(t *testing.T) {
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.2.3",
+					},
+				},
+			},
 		}
 		createDynaKube(t, clt, dk)
 
@@ -150,6 +163,33 @@ func TestWebhook(t *testing.T) {
 		})
 
 		assert.Contains(t, pod.Annotations, oneagentmutator.AnnotationReason)
+	})
+
+	t.Run("oneagent mutator failure -> status not ready", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{},
+				},
+			},
+		}
+		createDynaKube(t, clt, dk)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Annotations[oneagentmutator.AnnotationInject] = "true"
+		})
+
+		require.Contains(t, pod.Annotations, oneagentmutator.AnnotationReason)
+		assert.Contains(t, pod.Annotations[oneagentmutator.AnnotationReason], oneagentmutator.DynaKubeStatusNotReadyReason)
 	})
 
 	t.Run("metadata mutator failure", func(t *testing.T) {
@@ -218,7 +258,7 @@ func TestOTLPWebhook(t *testing.T) {
 				},
 			}
 			require.NoError(t, mgr.GetClient().Create(t.Context(), pod))
-			t.Setenv(env.PodName, pod.Name)
+			t.Setenv(k8senv.PodName, pod.Name)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
@@ -249,6 +289,10 @@ func TestOTLPWebhook(t *testing.T) {
 						Traces:  &otlpspec.TracesSignal{},
 					},
 				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "test-meid",
+				KubernetesClusterName: "test-cluster",
 			},
 		}
 
@@ -300,7 +344,10 @@ func TestOTLPWebhook(t *testing.T) {
 		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPLogsEndpointEnv, Value: baseEndpoint + "/v1/logs"})
 		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPTraceEndpointEnv, Value: baseEndpoint + "/v1/traces"})
 
-		raEnv := env.FindEnvVar(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+		// metrics temporality preference should be set to delta
+		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsExporterTemporalityPreference, Value: exporter.OTLPMetricsExporterAggregationTemporalityDelta})
+
+		raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
 
 		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
 
@@ -311,6 +358,9 @@ func TestOTLPWebhook(t *testing.T) {
 		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/custom.key"]), gotResourceAttributes["custom.key"])
 		assert.Equal(t, testNamespace, gotResourceAttributes["k8s.namespace.name"])
 		assert.Equal(t, "app", gotResourceAttributes["k8s.container.name"])
+		assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes["dt.kubernetes.cluster.id"])
+		assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
+		assert.Equal(t, dk.Status.KubernetesClusterName, gotResourceAttributes["k8s.cluster.name"])
 	})
 
 	t.Run("data ingest token secret missing", func(t *testing.T) {

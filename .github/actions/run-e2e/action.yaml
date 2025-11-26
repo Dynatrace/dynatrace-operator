@@ -63,18 +63,18 @@ runs:
         sudo apt-get update
         sudo apt-get install -y make
     - name: Checkout workflow scripts from ref branch
-      uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       with:
         path: ref
     - name: Checkout target branch
-      uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       with:
         ref: ${{ inputs.target-branch || 'main' }}
         path: target
     - name: Set up kubectl
       uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
     - name: Set up go
-      uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
       with:
         go-version-file: "${{ github.workspace }}/target/go.mod"
     - name: Set up helm

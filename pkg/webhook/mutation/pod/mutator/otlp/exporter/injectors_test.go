@@ -8,10 +8,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
@@ -69,7 +69,7 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Len(t, c.Env, len(tt.expectEnvVars))
 
 			for _, envName := range tt.expectEnvVars {
-				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
+				assert.True(t, k8senv.Contains(c.Env, envName), "expected env var %s to be injected", envName)
 			}
 		})
 	}
@@ -106,7 +106,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv},
+			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsExporterTemporalityPreference},
 		},
 		{
 			name:           "config with metrics -> enabled and injects (with cert)",
@@ -114,7 +114,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 			addCertificate: true,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsCertificateEnv},
+			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsCertificateEnv, OTLPMetricsExporterTemporalityPreference},
 		},
 	}
 
@@ -130,7 +130,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Len(t, c.Env, len(tt.expectEnvVars))
 
 			for _, envName := range tt.expectEnvVars {
-				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
+				assert.True(t, k8senv.Contains(c.Env, envName), "expected env var %s to be injected", envName)
 			}
 		})
 	}
@@ -191,7 +191,7 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Len(t, c.Env, len(tt.expectEnvVars))
 
 			for _, envName := range tt.expectEnvVars {
-				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
+				assert.True(t, k8senv.Contains(c.Env, envName), "expected env var %s to be injected", envName)
 			}
 		})
 	}
@@ -209,7 +209,7 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 
 	makeDynakube := func(activeGateEnabled, featureFlagDisabled, hasProxy bool) *dynakube.DynaKube {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      "dynakube",
 				Namespace: "dynatrace",
 			},
@@ -328,9 +328,9 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 			assert.Equal(t, tt.expectMutated, mutated)
 
 			if tt.expectValue != "" {
-				assert.Equal(t, tt.expectValue, env.FindEnvVar(c.Env, NoProxyEnv).Value)
+				assert.Equal(t, tt.expectValue, k8senv.Find(c.Env, NoProxyEnv).Value)
 			} else {
-				assert.Nil(t, env.FindEnvVar(c.Env, NoProxyEnv))
+				assert.Nil(t, k8senv.Find(c.Env, NoProxyEnv))
 			}
 		})
 	}

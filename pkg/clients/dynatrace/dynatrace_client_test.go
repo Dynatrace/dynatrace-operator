@@ -110,7 +110,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 
 		shortenedResponse := response[:getMaxResponseLen()]
 
-		assert.EqualError(t, err, fmt.Sprintf("Server returned status code 403; can't unmarshal response (content-type: unknown): %s", shortenedResponse))
+		assert.EqualError(t, err, fmt.Sprintf("server returned status code 403; can't unmarshal response (content-type: unknown): %s", shortenedResponse))
 	})
 
 	t.Run("non-JSON response exceeding custom character limit", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 		err := dc.handleErrorResponseFromAPI(response, http.StatusForbidden, http.Header{})
 		require.Error(t, err)
 
-		assert.EqualError(t, err, "Server returned status code 403; can't unmarshal response (content-type: unknown): really")
+		assert.EqualError(t, err, "server returned status code 403; can't unmarshal response (content-type: unknown): really")
 	})
 
 	t.Run("HTML response with proxy header set", func(t *testing.T) {
@@ -135,7 +135,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 		require.Error(t, err)
 
 		assert.EqualError(t, err,
-			"Server returned status code 403 (via proxy proxy.dynatrace.org); can't unmarshal response (content-type: text/html): <!doctype html><html>hi</html>")
+			"server returned status code 403 (via proxy proxy.dynatrace.org); can't unmarshal response (content-type: text/html): <!doctype html><html>hi</html>")
 	})
 }
 

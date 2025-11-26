@@ -127,8 +127,8 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
-	if dk.OneAgent().GetCodeModulesImage() == "" && dk.OneAgent().GetCodeModulesVersion() == "" {
-		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
+	if !dk.IsCodeModulesStatusReady() {
+		log.Info("dynakube's codemodule version status is not yet ready, requeuing", "dynakube", dk.Name)
 
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
