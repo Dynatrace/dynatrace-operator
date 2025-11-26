@@ -143,7 +143,11 @@ Relevant links:
 
 ### CSI Driver
 
-A Container Storage Interface driver (`cmd/csi/`) that provides volumes for OneAgent code modules. It consists of multiple components:
+A [Container Storage Interface](https://github.com/container-storage-interface/spec/blob/master/spec.md) driver (`cmd/csi/`) that provides volumes for OneAgent code modules.
+
+The CSI driver optimizes disk space usage by sharing OneAgent binaries across multiple pods on the same node and improves startup performance by caching downloads.
+
+It consists of multiple components:
 
 **CSI Server** (`csi/server/`):
 
@@ -168,7 +172,7 @@ It can provide 2 types of volumes:
 **Node Driver Registrar** (`csi/registrar/`):
 
 - Registers the CSI driver with the Kubelet
-- Has been reimplemented by us, instead of using the upstream implementation, due to go version inconsistencies causing complications when handling CVE related questions.
+- [Has been reimplemented by us](./cmd/csi/registrar), instead of using the upstream implementation, due to go version inconsistencies causing complications when handling CVE related questions.
 
 **CSI Init** (`csi/init/`):
 
@@ -177,9 +181,7 @@ It can provide 2 types of volumes:
 **Liveness Probe** (`csi/livenessprobe/`):
 
 - Monitors CSI driver health
-- Has been reimplemented by us, instead of using the upstream implementation, due to go version inconsistencies causing complications when handling CVE related questions.
-
-The CSI driver optimizes disk space usage by sharing OneAgent binaries across multiple pods on the same node and improves startup performance by caching downloads.
+- [Has been reimplemented by us](./cmd/csi/livenessprobe), instead of using the upstream implementation, due to go version inconsistencies causing complications when handling CVE related questions.
 
 Relevant links:
 
@@ -217,7 +219,7 @@ This command(`cmd/metadata/`) generates metadata files containing Kubernetes att
 
 **`pkg/api/`** - Custom Resource Definitions and API types
 
-- `latest/` - Current API version (symlink or main version)
+- `latest/` - Current API version
   - the purpose of this "hack" is to make the codebase easier to maintain, so when we introduce a new API version, we don't have to update the imports for every single file.
 - `v1alpha1/`, `v1alpha2/`, `v1beta3/`, etc. - Versioned APIs
 - `conversion/` - API version conversion logic
