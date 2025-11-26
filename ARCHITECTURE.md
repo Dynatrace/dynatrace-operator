@@ -82,7 +82,7 @@ The DynaKube is a rather large CR, therefore its controller has many feature-spe
 - `proxy`: Manages proxy configurations
 - `deploymentmetadata`: Manages deployment metadata enrichment
 
-This is not the best pattern, it is the case mainly due to historical reasons, we will try to improve this in the future.
+> [!WARNING] This is not the best pattern, it is the case mainly due to historical reasons, we will try to improve this in the future.
 
 **EdgeConnect Controller** (`pkg/controllers/edgeconnect/`):
 
