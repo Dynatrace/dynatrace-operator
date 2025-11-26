@@ -234,6 +234,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 				Status: dynakube.DynaKubeStatus{
 					KubeSystemUUID:        "cluster-uid",
 					KubernetesClusterName: "cluster-name",
+					KubernetesClusterMEID: "cluster-meid",
 					MetadataEnrichment: metadataenrichment.Status{
 						Rules: []metadataenrichment.Rule{
 							{Type: metadataenrichment.LabelRule, Source: "l1", Target: "target_l1"},
@@ -256,7 +257,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
 					"k8s.cluster.name=cluster-name",
-					"dt.kubernetes.cluster.name=cluster-name",
+					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c1",
 					"target_l1=v1",
 					"target_a1=v3",
@@ -297,7 +298,6 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 				},
 			},
 		},
-		// add a test for an enrichment rule with an empty target
 		{
 			name: "enrichment rule with empty target adds prefixed attribute",
 			pod: &corev1.Pod{
