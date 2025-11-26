@@ -56,7 +56,7 @@ The primary CRD for deploying and managing Dynatrace observability components. T
 
 ### EdgeConnect
 
-Manages Dynatrace EdgeConnect deployments for extending observability to remote locations. The latest API version is `v1alpha2` in `pkg/api/v1alpha2/edgeconnect/`.
+Manages Dynatrace EdgeConnect deployments for extending observability to remote locations. The latest API version is `v1alpha2` stored in `pkg/api/v1alpha2/edgeconnect/`.
 
 ## Dynatrace Operator Components
 
