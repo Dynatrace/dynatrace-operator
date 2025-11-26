@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -299,6 +300,32 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		client := createFailK8sClient(t)
 		_, err := FindRootOwnerOfPod(ctx, client, request, testLogger)
 		require.Error(t, err)
+	})
+}
+
+func TestWorkloadAnnotations(t *testing.T) {
+	workloadInfoName := "workload-name"
+	workloadInfoKind := "workload-kind"
+
+	t.Run("should add annotation to nil map", func(t *testing.T) {
+		pod := corev1.Pod{}
+
+		require.Equal(t, "not-found", maputils.GetField(pod.Annotations, AnnotationWorkloadName, "not-found"))
+		SetWorkloadAnnotations(&pod, &Info{Name: workloadInfoName, Kind: workloadInfoKind})
+		require.Len(t, pod.Annotations, 2)
+		assert.Equal(t, workloadInfoName, maputils.GetField(pod.Annotations, AnnotationWorkloadName, "not-found"))
+		assert.Equal(t, workloadInfoKind, maputils.GetField(pod.Annotations, AnnotationWorkloadKind, "not-found"))
+	})
+	t.Run("should lower case kind annotation", func(t *testing.T) {
+		pod := corev1.Pod{}
+		objectMeta := &metav1.PartialObjectMetadata{
+			ObjectMeta: metav1.ObjectMeta{Name: workloadInfoName},
+			TypeMeta:   metav1.TypeMeta{Kind: "SuperWorkload"},
+		}
+
+		SetWorkloadAnnotations(&pod, NewInfo(objectMeta))
+		assert.Contains(t, pod.Annotations, AnnotationWorkloadKind)
+		assert.Equal(t, "superworkload", pod.Annotations[AnnotationWorkloadKind])
 	})
 }
 

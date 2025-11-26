@@ -7,8 +7,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	// AnnotationWorkloadKind is added to any injected pods when the metadata-enrichment feature is enabled
+	AnnotationWorkloadKind = "metadata.dynatrace.com/k8s.workload.kind"
+	// AnnotationWorkloadName is added to any injected pods when the metadata-enrichment feature is enabled
+	AnnotationWorkloadName = "metadata.dynatrace.com/k8s.workload.name"
 )
 
 type Info struct {
@@ -107,4 +115,13 @@ func isWellKnownWorkload(ownerRef *metav1.PartialObjectMetadata) bool {
 	}
 
 	return false
+}
+
+func SetWorkloadAnnotations(pod *corev1.Pod, workload *Info) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+
+	pod.Annotations[AnnotationWorkloadKind] = workload.Kind
+	pod.Annotations[AnnotationWorkloadName] = workload.Name
 }

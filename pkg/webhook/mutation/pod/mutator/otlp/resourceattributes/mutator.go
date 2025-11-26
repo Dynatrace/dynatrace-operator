@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,6 +77,10 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 		}
 	}
 
+	if mutated {
+		workload.SetWorkloadAnnotations(request.Pod, ownerInfo)
+	}
+
 	return mutated
 }
 
@@ -116,7 +121,8 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		_ = attributesToAdd.Merge(workloadAttributesToAdd)
 	}
 	// add Attributes from annotations - these have the highest precedence, i.e. users can potentially overwrite the above Attributes
-	attributesFromAnnotations := NewAttributesFromMap(request.Pod.Annotations)
+	copiedAnnotations := metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+	attributesFromAnnotations := NewAttributesFromMap(copiedAnnotations)
 	_ = attributesFromAnnotations.Merge(attributesToAdd)
 
 	mutated = existingAttributes.Merge(attributesFromAnnotations)
