@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -25,6 +27,11 @@ import (
 const (
 	testImageTag  = "1.203.0.0-0"
 	testTokenHash = "test-token-hash"
+
+	testKubernetesClusterName = "cluster-name"
+	testKubernetesClusterUID  = "cluster-uid"
+	testKubernetesClusterMEID = "cluster-meid"
+	testOperatorImageName     = "operator-image-name"
 )
 
 func TestUseImmutableImage(t *testing.T) {
@@ -273,8 +280,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
 		assert.NotNil(t, securityContext)
-		assert.Equal(t, ptr.To(int64(1000)), securityContext.RunAsUser)
-		assert.Equal(t, ptr.To(int64(1000)), securityContext.RunAsGroup)
+		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsGroup)
 		assert.Equal(t, ptr.To(true), securityContext.RunAsNonRoot)
 		assert.NotEmpty(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.SeccompProfile)
@@ -363,8 +370,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
 		assert.NotNil(t, securityContext)
-		assert.Equal(t, ptr.To(int64(1000)), securityContext.RunAsUser)
-		assert.Equal(t, ptr.To(int64(1000)), securityContext.RunAsGroup)
+		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsUser)
+		assert.Equal(t, ptr.To(userGroupID), securityContext.RunAsGroup)
 		assert.Equal(t, ptr.To(true), securityContext.RunAsNonRoot)
 		assert.Equal(t, ptr.To(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
@@ -1025,4 +1032,97 @@ func TestDefaultArguments(t *testing.T) {
 		}
 		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
 	})
+}
+
+func TestInitContainerSpec(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		Status: dynakube.DynaKubeStatus{},
+	}
+
+	dsBuilder := builder{
+		dk: dk,
+	}
+
+	require.NoError(t, os.Setenv(k8senv.DtOperatorImageEnvName, testOperatorImageName))
+	spec := dsBuilder.initContainerSpec()
+	require.NoError(t, os.Unsetenv(k8senv.DtOperatorImageEnvName))
+
+	assert.Equal(t, testOperatorImageName, spec.Image)
+	assert.Equal(t, initContainerName, spec.Name)
+	assert.Equal(t, corev1.PullAlways, spec.ImagePullPolicy)
+	assert.NotEmpty(t, spec.Env)
+	assert.NotEmpty(t, spec.Args)
+	assert.NotEmpty(t, spec.VolumeMounts)
+	assert.NotNil(t, spec.SecurityContext)
+}
+
+func TestInitContainerEnvVars(t *testing.T) {
+	dsBuilder := builder{}
+
+	envVars := dsBuilder.initContainerEnvVars()
+
+	assert.Len(t, envVars, 1)
+	assert.Equal(t, dtNodeName, envVars[0].Name)
+	assert.Equal(t, &corev1.EnvVarSource{
+		FieldRef: &corev1.ObjectFieldSelector{
+			FieldPath: "spec.nodeName",
+		},
+	}, envVars[0].ValueFrom)
+}
+
+func TestInitContainerArguments(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID:        testKubernetesClusterUID,
+			KubernetesClusterMEID: testKubernetesClusterMEID,
+			KubernetesClusterName: testKubernetesClusterName,
+		},
+	}
+
+	dsBuilder := builder{
+		dk: dk,
+	}
+
+	arguments := dsBuilder.initContainerArguments()
+	assert.Equal(t, "generate-metadata", arguments[0])
+	assert.Equal(t, "--file", arguments[1])
+	assert.Equal(t, nodeMetadataFilePath, arguments[2])
+	assert.Equal(t, "--attributes", arguments[3])
+
+	attributes := strings.Split(arguments[4], ",")
+
+	assert.Equal(t, "k8s.cluster.name="+testKubernetesClusterName, attributes[0])
+	assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
+	assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
+	assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
+}
+
+func TestInitContainerVolumeMounts(t *testing.T) {
+	dsBuilder := builder{}
+
+	volumeMounts := dsBuilder.initContainerVolumeMounts()
+
+	assert.Len(t, volumeMounts, 1)
+	assert.Contains(t, volumeMounts, corev1.VolumeMount{
+		Name:      nodeMetadataVolumeName,
+		MountPath: nodeMetadataFolderPath,
+		ReadOnly:  false,
+	})
+}
+
+func TestInitContainerSecurityContext(t *testing.T) {
+	dsBuilder := builder{}
+
+	securityContext := dsBuilder.initContainerSecurityContext()
+
+	assert.False(t, *securityContext.Privileged)
+	assert.False(t, *securityContext.AllowPrivilegeEscalation)
+	assert.True(t, *securityContext.RunAsNonRoot)
+	assert.Equal(t, userGroupID, *securityContext.RunAsUser)
+	assert.Equal(t, userGroupID, *securityContext.RunAsGroup)
+	assert.Empty(t, securityContext.Capabilities.Add)
+	assert.Len(t, securityContext.Capabilities.Drop, 1)
+	assert.Contains(t, securityContext.Capabilities.Drop, corev1.Capability("ALL"))
+	assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, securityContext.SeccompProfile.Type)
+	assert.True(t, *securityContext.ReadOnlyRootFilesystem)
 }
