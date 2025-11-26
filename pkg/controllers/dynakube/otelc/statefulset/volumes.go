@@ -16,7 +16,7 @@ const (
 	agCertVolumeName  = "agcert"
 
 	customTLSCertVolumeName            = "telemetry-ingest-custom-tls"
-	extensionsControllerTLSVolumeName  = "extensions-controller-tls"
+	extensionsControllerTLSVolumeName  = "extension-controller-tls"
 	telemetryCollectorConfigVolumeName = "telemetry-collector-config"
 	telemetryCollectorConfigPath       = "/config"
 )

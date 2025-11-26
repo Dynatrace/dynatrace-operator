@@ -32,7 +32,7 @@ SDK_PARAMS=(
 --extra-service-accounts dynatrace-activegate
 --extra-service-accounts dynatrace-opentelemetry-collector
 --extra-service-accounts dynatrace-edgeconnect
---extra-service-accounts dynatrace-extensions-controller
+--extra-service-accounts dynatrace-extension-controller
 --extra-service-accounts dynatrace-logmonitoring
 --extra-service-accounts dynatrace-node-config-collector
 )

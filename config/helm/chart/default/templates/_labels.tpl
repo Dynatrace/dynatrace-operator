@@ -106,7 +106,7 @@ Extensions Controller (EEC) labels
 */}}
 {{- define "dynatrace-operator.extensionsControllerLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: dynatrace-extensions-controller
+app.kubernetes.io/component: dynatrace-extension-controller
 {{- end -}}
 
 {{/*

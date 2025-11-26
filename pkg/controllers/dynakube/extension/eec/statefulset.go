@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	containerName      = "extensions-controller"
-	serviceAccountName = "dynatrace-extensions-controller"
+	containerName      = "extension-controller"
+	serviceAccountName = "dynatrace-extension-controller"
 
 	// Env variable names
 	envTenantID                     = "TenantId"

@@ -21,7 +21,7 @@ const (
 	ActiveGateComponentLabel    = "activegate"
 	WebhookComponentLabel       = "webhook"
 	EdgeConnectComponentLabel   = "edgeconnect"
-	ExtensionComponentLabel     = "dynatrace-extensions-controller"
+	ExtensionComponentLabel     = "dynatrace-extension-controller"
 	OtelCComponentLabel         = "dynatrace-opentelemetry-collector"
 	DatabaseDatasourceLabel     = "dynatrace-database-datasource"
 )

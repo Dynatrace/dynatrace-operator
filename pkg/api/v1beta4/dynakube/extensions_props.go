@@ -29,7 +29,7 @@ func (dk *DynaKube) ExtensionsSelfSignedTLSSecretName() string {
 }
 
 func (dk *DynaKube) ExtensionsExecutionControllerStatefulsetName() string {
-	return dk.Name + "-extensions-controller"
+	return dk.Name + "-extension-controller"
 }
 
 func (dk *DynaKube) ExtensionsTokenSecretName() string {

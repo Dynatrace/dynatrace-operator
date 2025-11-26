@@ -41,7 +41,7 @@ func (e *Extensions) GetSelfSignedTLSSecretName() string {
 }
 
 func (e *Extensions) GetExecutionControllerStatefulsetName() string {
-	return e.name + "-extensions-controller"
+	return e.name + "-extension-controller"
 }
 
 func (e *Extensions) GetTokenSecretName() string {
