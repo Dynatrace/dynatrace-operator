@@ -60,7 +60,7 @@ Manages Dynatrace EdgeConnect deployments for extending observability to remote 
 
 ## Dynatrace Operator Components
 
-The `Dynatrace Operator` is not a single Pod—it consists of multiple components working together, encompassing several Kubernetes concepts.
+The `Dynatrace Operator` is not a single Pod — it consists of multiple components working together, encompassing several Kubernetes concepts.
 
 ### Main Operator Pod
 
