@@ -14,8 +14,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const testDynakubeName = "dynatrace"
-const testNamespace = "dynatrace"
+const (
+	testDynakubeName = "dynatrace"
+	testNamespace = "dynatrace"
+	
+	dummyConditionType = "dummyType"
+	dummyConditionReason = "dummyReason"
+	dummyConditionMessage = "dummyMessage"
+
+	duplicatedConditionErrorMessage = `DynaKube.dynatrace.com "dynatrace" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
+)
 
 func TestStatus(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
@@ -26,8 +34,31 @@ func TestStatus(t *testing.T) {
 		},
 	})
 
-	t.Run("dynakube status conditions are unique", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
+	t.Run("can't add duplicated conditions", func(t *testing.T) {
+		dk := buildDynaKube()
+		createDynaKube(t, clt, dk)
+		dummyCondition := buildCondition()
+		
+		// append first condition
+		*dk.Conditions() = append(*dk.Conditions(), dummyCondition)
+		require.NoError(t, dk.UpdateStatus(t.Context(), clt))
+
+		// check that condition was added
+		clt.Get(t.Context(), client.ObjectKeyFromObject(dk), dk)
+		assert.Len(t, *dk.Conditions(), 1)
+
+		// append duplicated condition
+		*dk.Conditions() = append(*dk.Conditions(), dummyCondition)
+		require.Error(t, dk.UpdateStatus(t.Context(), clt), duplicatedConditionErrorMessage)
+
+		// check that condition count is still 1
+		clt.Get(t.Context(), client.ObjectKeyFromObject(dk), dk)
+		assert.Len(t, *dk.Conditions(), 1)
+	})
+}
+
+func buildDynaKube() *dynakube.DynaKube{
+	return &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakubeName,
 				Namespace: testNamespace,
@@ -40,24 +71,16 @@ func TestStatus(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{},
 		}
+}
 
-		testCondition := metav1.Condition{
-		Type:    "dummy-type",
-		Status:  metav1.ConditionTrue,
-		Reason:  "dummyReason",
-		Message: "dummy-message",
+func buildCondition() metav1.Condition {
+	return metav1.Condition{
+		Type:               dummyConditionType,
+		Status:             metav1.ConditionTrue,
+		Reason:             dummyConditionReason,
+		Message:            dummyConditionMessage,
+		LastTransitionTime: metav1.Now(),
 	}
-
-		*dk.Conditions() = append(*dk.Conditions(), testCondition)
-		*dk.Conditions() = append(*dk.Conditions(), testCondition)
-		
-		assert.Len(t, *dk.Conditions(), 2)
-
-		createDynaKube(t, clt, dk)
-		assert.NoError(t, clt.Get(t.Context(), client.ObjectKeyFromObject(dk), dk))
-
-		assert.Len(t, *dk.Conditions(), 1)
-	})
 }
 
 func createObject(t *testing.T, clt client.Client, obj client.Object) {
