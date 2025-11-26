@@ -48,10 +48,10 @@ The primary CRD for deploying and managing Dynatrace observability components. T
   - `kubernetes-monitoring`: Monitors Kubernetes API
   - `metrics-ingest`: Routes enriched metrics through ActiveGate
 - **Additional Features:**
-  - Extension monitoring
-  - Log monitoring
-  - OpenTelemetry Collector integration
-  - KSPM (Kubernetes Security Posture Management)
+  - Extension deployment
+  - Log monitoring deployment
+  - OpenTelemetry Collector deployment
+  - KSPM deployment (Kubernetes Security Posture Management)
   - Metadata enrichment
 
 ### EdgeConnect
