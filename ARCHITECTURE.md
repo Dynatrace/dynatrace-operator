@@ -28,116 +28,286 @@ A bit more specifically:
 - The `Operator` not only deploys the different Dynatrace components, but also keeps them up to date.
   - The `CustomResource`(CR) defines a state, the `Dynatrace Operator` enforces it, makes it happen.
 
-### Dynatrace Operator components
+## Custom Resources
 
-The `Dynatrace Operator` is not a single Pod, it consists of multiple components, encompassing several Kubernetes concepts.
+The Dynatrace Operator supports two main Custom Resource Definitions (CRDs):
 
-#### Operator
+### DynaKube
 
-This component/pod is the one that _reacts to_ the creation/update/delete of our`CustomResource(s)`, causing the `Operator` to _reconcile_.
-A _reconcile_ just means that it will check what is in the `CustomResource(s)` and according to that creates/updates/deletes resources in the Kubernetes environment. (So the state of the Kubernetes Environment matches the state described in the `CR`)
+The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for backward compatibility (v1beta3, v1beta4, v1beta5).
+
+**Key Features:**
+
+- **OneAgent Modes:**
+  - `classicFullStack`: Pod per node for full-stack monitoring
+  - `applicationMonitoring`: Webhook-based app-only injection with optional CSI driver caching
+  - `hostMonitoring`: Node-only monitoring using CSI driver for read-only operation
+  - `cloudNativeFullStack`: Combined application and host monitoring
+- **ActiveGate Capabilities:**
+  - `routing`: Routes OneAgent traffic through ActiveGate
+  - `kubernetes-monitoring`: Monitors Kubernetes API
+  - `metrics-ingest`: Routes enriched metrics through ActiveGate
+- **Additional Features:**
+  - Extension monitoring
+  - Log monitoring
+  - OpenTelemetry Collector integration
+  - KSPM (Kubernetes Security Posture Management)
+  - Metadata enrichment
+
+### EdgeConnect
+
+Manages Dynatrace EdgeConnect deployments for extending observability to remote locations. The latest API version is `v1alpha2` in `pkg/api/v1alpha2/edgeconnect/`.
+
+## Dynatrace Operator Components
+
+The `Dynatrace Operator` is not a single Pod—it consists of multiple components working together, encompassing several Kubernetes concepts.
+
+### Main Operator Pod
+
+The central controller (`cmd/operator/`) that reconciles Custom Resources. It consists of multiple sub-reconcilers:
+
+**DynaKube Controller** (`pkg/controllers/dynakube/`):
+
+Handles DynaKube CR reconciliation with feature-specific sub-reconcilers:
+
+- `activegate`: Manages ActiveGate StatefulSets
+- `oneagent`: Handles OneAgent DaemonSets for host monitoring
+- `injection`: Manages code module / otlp injection into application pods
+- `extension`: Controls Dynatrace extensions deployment
+- `otelc`: Manages OpenTelemetry Collector deployment
+- `logmonitoring`: Handles log monitoring components
+- `kspm`: Manages Kubernetes Security Posture Management
+- `apimonitoring`: Monitors Kubernetes API
+- `istio`: Handles Istio service mesh integration
+- `proxy`: Manages proxy configurations
+- `deploymentmetadata`: Manages deployment metadata enrichment
+
+**EdgeConnect Controller** (`pkg/controllers/edgeconnect/`):
+
+- Manages EdgeConnect deployments for remote observability
+
+**Node Controller** (`pkg/controllers/nodes/`):
+
+- Monitors node lifecycle and maintains node-level state
+
+**Certificates Controller** (`pkg/controllers/certificates/`):
+
+- Manages TLS certificates for secure communication
+
+The operator uses a reconciliation loop pattern with smart update intervals (1m for fast changes, 5m for detected changes, 30m default) to efficiently manage resources while minimizing API calls.
 
 Relevant links:
 
 - [Operator Pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
 
-#### Webhook
+### Webhook Pod
 
-This component/pod is the one that _intercepts_ creation/update/delete of Kubernetes Resources (only those that are relevant), then either mutates or validates them.
+The webhook server (`cmd/webhook/`) intercepts creation/update/delete of Kubernetes Resources and either mutates or validates them.
 
-- Validation: We only use it for our `CustomResource(s)`, it's meant to catch known misconfigurations. If the validation webhook detects a problem, the user is warned, the change is denied and rolled back, like nothing happened.
-- Mutation: Used to modify Kubernetes Resources "in flight", so the Resource will be created/updated in the cluster like if it was applied with added modifications.
-  - We have 2 use-cases for this:
-    - Seamlessly modifying user resources with the necessary configuration needed for Dynatrace observability features to work.
-    - Handle time/timing sensitive minor modifications (labeling, annotating) of user resources, which is meant to help the `Operator` perform more reliably and timely.
+**Validation Webhooks** (`pkg/webhook/validation/`):
+
+- Validates DynaKube and EdgeConnect CRs to catch misconfigurations before they're applied
+- Prevents invalid changes from reaching the cluster
+
+**Mutation Webhooks** (`pkg/webhook/mutation/`):
+
+- **Pod Mutation** (`mutation/pod/`): Injects init containers, volumes, environment variables, and annotations into user pods for application monitoring
+- **Namespace Mutation** (`mutation/namespace/`): Labels and annotates namespaces to track injection status and configuration
+
+The webhook uses TLS 1.3 for secure communication and includes health/readiness probes for reliability.
 
 Relevant links:
 
 - [What are webhooks?](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks)
 
-#### Init Container
+### Bootstrapper (Init Container)
 
-Some configurations need to happen on the container filesystem level, like setting up a volume or creating/updating configuration files.
-To achieve this we add our init-container (using the `Webhook`) to user Pods. As init-containers run before any other container, we can setup the environment of user containers to enable Dynatrace observability features.
+The bootstrapper (`cmd/bootstrapper/`) runs as an init container injected into user pods via the webhook. It:
+
+- Downloads OneAgent code modules from Dynatrace or CSI volumes
+- Configures the OneAgent for the specific application
+- Sets up metadata enrichment
+- Prepares the filesystem for application monitoring
+
+It can operate in two modes:
+
+1. CSI-backed: Uses pre-downloaded code modules from the CSI driver
+2. Direct download: Fetches code modules directly from Dynatrace API
 
 Relevant links:
 
 - [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
 
-#### CSI-Driver
+### CSI Driver
 
-A component that is present on all nodes, meant to provide volumes (based on the node's filesystem) to make the capabilities provided by the `Operator` to use less disk space and be more performant.
+A Container Storage Interface driver (`cmd/csi/`) that provides volumes for OneAgent code modules. It consists of multiple components:
+
+**CSI Server** (`csi/server/`):
+
+- Main CSI driver implementation running on each node
+- Handles volume provisioning and mounting
+
+**CSI Provisioner** (`csi/provisioner/`):
+
+- Manages volume lifecycle and provisioning
+
+**Node Driver Registrar** (`csi/registrar/`):
+
+- Registers the CSI driver with the Kubelet
+
+**CSI Init** (`csi/init/`):
+
+- Initializes the CSI driver environment
+
+**Liveness Probe** (`csi/livenessprobe/`):
+
+- Monitors CSI driver health
+
+The CSI driver optimizes disk space usage by sharing OneAgent binaries across multiple pods on the same node and improves startup performance by caching downloads.
 
 Relevant links:
 
 - [CSI volume](https://kubernetes.io/docs/concepts/storage/volumes/#csi)
 
-## Code Map
+### Metadata Enrichment Service
 
-> TODO: Improve folder structure before documenting it more deeply, as its kind of a mess now. If I didn't mention it now, then I probably don't like its current location.
+A utility service (`cmd/metadata/`) that generates metadata files containing Kubernetes attributes (namespace, pod name, labels, etc.) for enriching telemetry data sent to Dynatrace.
 
-### `config`
+### Support Tools
 
-Contains the `.yaml` files that are need to deploy the `Operator` and it`s components into a Kubernetes cluster.
+**Support Archive** (`cmd/supportarchive/`):
 
-- most `.yaml` files are part of the Helm chart
-- other `.yaml` files are relevant for different marketplaces
+- Collects diagnostic information from the cluster
+- Gathers operator logs, DynaKube/EdgeConnect status, and resource states
+- Helps troubleshoot issues with Dynatrace support
 
-### `hack`
+**Troubleshoot** (`cmd/troubleshoot/`):
 
-Collection of scripts used for:
+- Command-line tool for diagnosing common deployment issues
+- Checks CRDs, namespaces, images, proxies, and configurations
+- Outdated, use support archive for comprehensive diagnostics
 
-- CI tasks
-- Development (build,push,deploy,test, etc...)
+**Startup Probe** (`cmd/startupprobe/`):
 
-### `hack/make`
+- Validates that OneAgent has started correctly in pods
 
-Where the `make` targets are defined. We don't have a single makefile with all the targets as it would be quite large.
+## Codebase Structure
 
-### `test`
+### Package Organization
 
-E2E testing code. Unit tests are NOT found here, they are in the same module that they are testing, as that is the Golang convention.
+The codebase follows a clear separation of concerns:
 
-### `cmd`
+**`cmd/`** - Entry points for all executables
 
-Where the entry points for every `Operator` subcommand is found. The `Operator` is not a single container, but we still use the same image for all our containers, to simplify the caching for Kubernetes and mirroring of the `Operator` image in private registries. So each component has its own subcommand.
+- Each subdirectory contains a CLI command that can be invoked
+- The main binary includes all commands as subcommands via Cobra
+- Examples: `operator`, `webhook`, `csi-server`, `bootstrap`, `troubleshoot`
 
-### `pkg/api`
+**`pkg/api/`** - Custom Resource Definitions and API types
 
-Contains the `CustomResourceDefinitions`(CRDs) as Golang `structs` that the `Operator` reacts to. The `CustomResourceDefinition` yaml files are generated based on these `structs`.
+- `latest/` - Current API version (symlink or main version)
+- `v1alpha1/`, `v1alpha2/`, `v1beta3/`, etc. - Versioned APIs
+- `conversion/` - API version conversion logic
+- `validation/` - CR validation logic
+- `scheme/` - Kubernetes scheme registration
 
-### `pkg/controllers`
+**`pkg/controllers/`** - Reconciliation logic
 
-A Controller is a component that listens/reacts to some Kubernetes Resource. The `Operator` has several of these.
+- `dynakube/` - DynaKube controller and sub-reconcilers
+- `edgeconnect/` - EdgeConnect controller
+- `nodes/` - Node lifecycle controller
+- `csi/` - CSI driver implementation
+- `certificates/` - Certificate management
 
-### `pkg/controllers/certificates`
+**`pkg/webhook/`** - Admission webhook handlers
 
-The `Operator` creates and maintains certificates that are meant to be used by the webhooks. Certificates are required for a webhook to work in kubernetes, and hard coding certificates into the release of the `Operator` is not an option, the same is true for requiring the user to setup `cert-manager` to create/manage certs for the webhooks.
+- `mutation/` - Mutating webhooks for pods and namespaces
+- `validation/` - Validating webhooks for CRs
 
-### `pkg/controllers/csi/driver`
+**`pkg/clients/`** - External API clients
 
-Main logic for the CSI-Driver's `server` container. Implements the CSI gRPC interface, and handles each mount request.
+- `dynatrace/` - Dynatrace API client
+- `edgeconnect/` - EdgeConnect API client
 
-### `pkg/controllers/csi/provisioner`
+**`pkg/injection/`** - Code module injection logic
 
-Main logic for the CSI-Driver's `provisioner` container. Handles the setting up the environment(filesystem) on the node, so the `server` container can complete its task quickly without making any external requests.
+- `codemodule/` - Code module installer and management
+- `namespace/` - Namespace injection mapper
 
-### `pkg/controllers/dynakube` and `src/controllers/edgeconnect`
+**`pkg/util/`** - Utility packages
 
-Main logic for the 2 `CustomResources`es the `Operator` currently has.
+- Common utilities for Kubernetes operations, hashing, tokens, conditions, etc.
 
-### `pkg/controllers/node`
+**`pkg/otelcgen/`** - OpenTelemetry Collector generation
 
-The `Operator` keeps track of the nodes in the Kubernetes cluster, this is necessary to notice intentional node shutdowns so the `Operator` can notify the `Dynatrace Environment` about it. Otherwise the `Dynatrace Environment` would produce warnings when a node is shutdown even when it was intentional.
+- Logic for generating OpenTelemetry Collector configurations and components
 
-### `pkg/webhook/mutation`
+**`pkg/logd/`** - Logging
 
-Mutation webhooks meant for intercepting user Kubernetes Resources, so they can be updated in the instant the updates are required.
+- Logging configuration and utilities
 
-### `pkg/webhook/validation`
+**`pkg/oci/`** - OCI Image Handling
 
-Validation webhooks meant for intercepting our `CustomResources` managed by the users, is they can be checked for well-know misconfigurations and warn the user if any problems found.
+- Utilities for interacting with OCI registries and images
 
-### `pkg/injection/startup`
+**`pkg/arch/`** - Architecture Constants
 
-Main logic for the init-container injected by the `Operator`.
+- CPU architecture specific constants and utilities
+
+### Key Design Patterns
+
+**Builder Pattern**: Used extensively for creating reconcilers and clients, allowing flexible configuration and testability
+
+**Reconciler Pattern**: Each feature has its own reconciler that implements a `Reconcile()` method, composed together in the main controller
+
+**Status Subresource**: CRs maintain a status field tracking deployment state, versions, and conditions
+
+**Watch & Reconcile**: Controllers watch for changes to CRs and owned resources, triggering reconciliation with smart backoff intervals
+
+## Development Workflow
+
+### Binary Modes
+
+The main binary (`cmd/main.go`) is a multi-mode executable that behaves differently based on the subcommand:
+
+```bash
+dynatrace-operator operator                  # Run the main operator
+dynatrace-operator webhook                   # Run the webhook server
+dynatrace-operator csi-server                # Run CSI driver server
+dynatrace-operator csi-init                  # Run CSI driver initialization
+dynatrace-operator csi-provisioner           # Run CSI driver provisioner
+dynatrace-operator csi-node-driver-registrar # Run CSI node driver registrar
+dynatrace-operator livenessprobe             # Run CSI liveness probe
+dynatrace-operator bootstrap                 # Run bootstrapper (init container)
+dynatrace-operator troubleshoot              # Run troubleshooting tool
+dynatrace-operator support-archive           # Generate support bundle
+dynatrace-operator startup-probe             # Run startup probe
+dynatrace-operator generate-metadata         # Generate metadata file
+```
+
+This design allows using a single container image with different entry points for different components.
+
+### Reconciliation Flow
+
+1. **Watch**: Controller watches DynaKube/EdgeConnect CRs and owned resources
+2. **Queue**: Changes trigger reconcile requests added to a work queue
+3. **Reconcile**: Controller processes the request:
+   - Fetches the current CR state
+   - Calls sub-reconcilers for each feature
+   - Updates Kubernetes resources (StatefulSets, DaemonSets, etc.)
+   - Updates CR status with results
+4. **Requeue**: Returns with a requeue interval (1m/5m/30m based on state)
+
+### Testing Strategy
+
+- **Unit Tests**: Test individual functions and components in isolation
+- **Integration Tests**: Test controller behavior with fake Kubernetes clients
+- **E2E Tests**: Full end-to-end testing in real clusters (test/scenarios/)
+- **Mocks**: Generated using mockery for external dependencies
+
+## Additional Resources
+
+- [HACKING.md](HACKING.md) - Development setup and guidelines
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+- [Official Documentation](https://www.dynatrace.com/support/help/shortlink/kubernetes-hub) - User-facing documentation
+- [API Samples](assets/samples/dynakube/) - Example DynaKube configurations
