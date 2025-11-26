@@ -48,7 +48,7 @@ The primary CRD for deploying and managing Dynatrace observability components. T
   - `kubernetes-monitoring`: Monitors Kubernetes API
   - `metrics-ingest`: Routes enriched metrics through ActiveGate
 - **Additional Features:**
-  - Extension deployment
+  - Extensions deployment
   - Log monitoring deployment
   - OpenTelemetry Collector deployment
   - KSPM deployment (Kubernetes Security Posture Management)
