@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"encoding/json"
+	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -33,7 +34,7 @@ func copyAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) map[stri
 
 	for key, value := range pod.Annotations {
 		if strings.HasPrefix(key, metadataenrichment.Prefix) {
-			metadataAnnotations[key] = value
+			metadataAnnotations[key] = url.QueryEscape(value)
 		}
 	}
 
@@ -59,10 +60,10 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 			if len(rule.Target) > 0 {
 				added := setPodAnnotationIfNotExists(pod, rule.ToAnnotationKey(), valueFromNamespace)
 				if added {
-					copiedAnnotations[rule.ToAnnotationKey()] = valueFromNamespace
+					copiedAnnotations[rule.ToAnnotationKey()] = url.QueryEscape(valueFromNamespace)
 				}
 			} else {
-				copiedAnnotations[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = valueFromNamespace
+				copiedAnnotations[metadataenrichment.GetEmptyTargetEnrichmentKey(string(rule.Type), rule.Source)] = url.QueryEscape(valueFromNamespace)
 			}
 		}
 	}
