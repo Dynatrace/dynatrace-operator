@@ -96,22 +96,24 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 	envVarSourcesAdded := ensureEnvVarSourcesSet(c)
 
 	attributesToAdd := Attributes{
-		"k8s.namespace.name":         request.Pod.Namespace,
-		"k8s.cluster.uid":            request.DynaKube.Status.KubeSystemUUID,
-		"dt.kubernetes.cluster.id":   request.DynaKube.Status.KubeSystemUUID,
-		"k8s.cluster.name":           request.DynaKube.Status.KubernetesClusterName,
-		"dt.kubernetes.cluster.name": request.DynaKube.Status.KubernetesClusterName,
-		"k8s.container.name":         c.Name,
-		"k8s.pod.name":               "$(K8S_PODNAME)",
-		"k8s.pod.uid":                "$(K8S_PODUID)",
-		"k8s.node.name":              "$(K8S_NODE_NAME)",
+		"k8s.namespace.name":           request.Pod.Namespace,
+		"k8s.cluster.uid":              request.DynaKube.Status.KubeSystemUUID,
+		"dt.kubernetes.cluster.id":     request.DynaKube.Status.KubeSystemUUID,
+		"k8s.cluster.name":             request.DynaKube.Status.KubernetesClusterName,
+		"dt.entity.kubernetes_cluster": request.DynaKube.Status.KubernetesClusterMEID,
+		"k8s.container.name":           c.Name,
+		"k8s.pod.name":                 "$(K8S_PODNAME)",
+		"k8s.pod.uid":                  "$(K8S_PODUID)",
+		"k8s.node.name":                "$(K8S_NODE_NAME)",
 	}
 
 	// add workload Attributes (only once fetched per pod, but appended per container to env var if not already present)
 	if ownerInfo != nil {
 		workloadAttributesToAdd := Attributes{
-			"k8s.workload.kind": ownerInfo.Kind,
-			"k8s.workload.name": ownerInfo.Name,
+			"k8s.workload.kind":           ownerInfo.Kind,
+			"dt.kubernetes.workload.kind": ownerInfo.Kind,
+			"k8s.workload.name":           ownerInfo.Name,
+			"dt.kubernetes.workload.name": ownerInfo.Name,
 		}
 		_ = attributesToAdd.Merge(workloadAttributesToAdd)
 	}

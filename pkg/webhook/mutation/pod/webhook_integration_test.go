@@ -290,6 +290,10 @@ func TestOTLPWebhook(t *testing.T) {
 					},
 				},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "test-meid",
+				KubernetesClusterName: "test-cluster",
+			},
 		}
 
 		apiTokenSecret := &corev1.Secret{
@@ -354,6 +358,9 @@ func TestOTLPWebhook(t *testing.T) {
 		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/custom.key"]), gotResourceAttributes["custom.key"])
 		assert.Equal(t, testNamespace, gotResourceAttributes["k8s.namespace.name"])
 		assert.Equal(t, "app", gotResourceAttributes["k8s.container.name"])
+		assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes["dt.kubernetes.cluster.id"])
+		assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
+		assert.Equal(t, dk.Status.KubernetesClusterName, gotResourceAttributes["k8s.cluster.name"])
 	})
 
 	t.Run("data ingest token secret missing", func(t *testing.T) {
