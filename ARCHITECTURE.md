@@ -72,7 +72,7 @@ The DynaKube is a rather large CR, therefore its controller has many feature-spe
 
 - `activegate`: Manages ActiveGate StatefulSets
 - `oneagent`: Handles OneAgent DaemonSets for host monitoring
-- `injection`: Manages code module / otlp injection into application pods
+- `injection`: Manages code module / otlp / metadata enrichment injection into application pods
 - `extension`: Controls Dynatrace extensions deployment
 - `otelc`: Manages OpenTelemetry Collector deployment
 - `logmonitoring`: Handles log monitoring components
