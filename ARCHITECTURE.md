@@ -68,7 +68,7 @@ The central controller (`cmd/operator/`) that reconciles Custom Resources. It co
 
 **DynaKube Controller** (`pkg/controllers/dynakube/`):
 
-Handles DynaKube CR reconciliation with feature-specific sub-reconcilers:
+The DynaKube is a rather large CR, therefore its controller has many feature-specific sub-reconcilers each having further sub-reconcilers. Here are the more top level sub-reconcilers:
 
 - `activegate`: Manages ActiveGate StatefulSets
 - `oneagent`: Handles OneAgent DaemonSets for host monitoring
@@ -82,19 +82,21 @@ Handles DynaKube CR reconciliation with feature-specific sub-reconcilers:
 - `proxy`: Manages proxy configurations
 - `deploymentmetadata`: Manages deployment metadata enrichment
 
+This is not the best pattern, it is the case mainly due to historical reasons, we will try to improve this in the future.
+
 **EdgeConnect Controller** (`pkg/controllers/edgeconnect/`):
 
-- Manages EdgeConnect deployments for remote observability
+- Manages EdgeConnect deployments.
 
 **Node Controller** (`pkg/controllers/nodes/`):
 
-- Monitors node lifecycle and maintains node-level state
+- Monitors node lifecycle and maintains node-level state. Used for notifying the Dynatrace Environment if a node goes down in an expected way. So the users will not see false positives in the Dynatrace UI.
+- Its future is uncertain, we will try to remove it in the future.
 
 **Certificates Controller** (`pkg/controllers/certificates/`):
 
-- Manages TLS certificates for secure communication
-
-The operator uses a reconciliation loop pattern with smart update intervals (1m for fast changes, 5m for detected changes, 30m default) to efficiently manage resources while minimizing API calls.
+- Creates self-signed TLS certificates for our (mutating/validating/conversion) Webhooks. Really old, meant to make the install seamless for the user, and not require any additional dependencies. (like cert-manager)
+- The certs are created by the Operator pod, and is read by the Webhook pod. Not purely handled the webhook, as we don't want to have leader election for the webhook.
 
 Relevant links:
 
@@ -107,12 +109,15 @@ The webhook server (`cmd/webhook/`) intercepts creation/update/delete of Kuberne
 **Validation Webhooks** (`pkg/webhook/validation/`):
 
 - Validates DynaKube and EdgeConnect CRs to catch misconfigurations before they're applied
+  - Normally, each API version of a CR has its own validation webhook, but we only have one webhook for all API versions. This is because of the high number of API versions we have, and we don't want to duplicate the code for each API version, as that would just make the codebase more complex without any real benefit.
+  - We solve this by calling the conversion logic in the validation webhook as well, so we can always validate the latest API version. This is not the most performant solution, but it's the simplest one.
 - Prevents invalid changes from reaching the cluster
 
 **Mutation Webhooks** (`pkg/webhook/mutation/`):
 
 - **Pod Mutation** (`mutation/pod/`): Injects init containers, volumes, environment variables, and annotations into user pods for application monitoring
-- **Namespace Mutation** (`mutation/namespace/`): Labels and annotates namespaces to track injection status and configuration
+- **Namespace Mutation** (`mutation/namespace/`): Labels namespaces to track/control which namespace should the Pod mutation webhook react to
+  - May be removed in the future, as we plan to move to a more fine-grained approach.
 
 The webhook uses TLS 1.3 for secure communication and includes health/readiness probes for reliability.
 
@@ -122,17 +127,15 @@ Relevant links:
 
 ### Bootstrapper (Init Container)
 
-The bootstrapper (`cmd/bootstrapper/`) runs as an init container injected into user pods via the webhook. It:
+The bootstrapper (`cmd/bootstrapper/`) runs as an init container injected into user pods via the webhook.
 
-- Downloads OneAgent code modules from Dynatrace or CSI volumes
-- Configures the OneAgent for the specific application
-- Sets up metadata enrichment
-- Prepares the filesystem for application monitoring
-
-It can operate in two modes:
+It can operate in three modes:
 
 1. CSI-backed: Uses pre-downloaded code modules from the CSI driver
 2. Direct download: Fetches code modules directly from Dynatrace API
+3. Metadata enrichment only: Only enriches the pod with metadata
+
+After downloading the code modules, it configures the OneAgent for the specific application and sets up metadata enrichment.
 
 Relevant links:
 
@@ -147,21 +150,34 @@ A Container Storage Interface driver (`cmd/csi/`) that provides volumes for OneA
 - Main CSI driver implementation running on each node
 - Handles volume provisioning and mounting
 
+It can provide 2 types of volumes:
+
+1. `app` volumes: These volumes contain a single OneAgent code module, and are used for application monitoring. Uses overlayfs to minimize disk space usage.
+2. `host` volumes: These volumes are just an empty directory on the node, and are used by the host OneAgents to persist their data.
+
 **CSI Provisioner** (`csi/provisioner/`):
 
-- Manages volume lifecycle and provisioning
+- Downloads the OneAgent code modules from the Dynatrace API and stores them on the host, to be used by the `server` container to provide volumes to the pods.
+  - It can download the code modules in 3 different ways:
+    - As a ZIP, from the Dynatrace Environments API, which it has to extract and move to the correct location.
+    - As a tar, from an OCI Image, which it has to extract and move to the correct location.
+      - This mostly likely will be removed in the future, in favor of the Job based approach.
+    - By scheduling a Job, which uses an OCI image that is a self extracting code module.
+- Manages the state of the filesystem, cleans up unused code modules.
 
 **Node Driver Registrar** (`csi/registrar/`):
 
 - Registers the CSI driver with the Kubelet
+- Has been reimplemented by us, instead of using the upstream implementation, due to go version inconsistencies causing complications when handling CVE related questions.
 
 **CSI Init** (`csi/init/`):
 
-- Initializes the CSI driver environment
+- Initializes the CSI driver environment. Handles possible migrations from previous versions.
 
 **Liveness Probe** (`csi/livenessprobe/`):
 
 - Monitors CSI driver health
+- Has been reimplemented by us, instead of using the upstream implementation, due to go version inconsistencies causing complications when handling CVE related questions.
 
 The CSI driver optimizes disk space usage by sharing OneAgent binaries across multiple pods on the same node and improves startup performance by caching downloads.
 
@@ -169,9 +185,9 @@ Relevant links:
 
 - [CSI volume](https://kubernetes.io/docs/concepts/storage/volumes/#csi)
 
-### Metadata Enrichment Service
+### Generate-metadata command
 
-A utility service (`cmd/metadata/`) that generates metadata files containing Kubernetes attributes (namespace, pod name, labels, etc.) for enriching telemetry data sent to Dynatrace.
+This command(`cmd/metadata/`) generates metadata files containing Kubernetes attributes (namespace, pod name, labels, etc.) for enriching host OneAgents.
 
 ### Support Tools
 
@@ -193,10 +209,6 @@ A utility service (`cmd/metadata/`) that generates metadata files containing Kub
 
 ## Codebase Structure
 
-### Package Organization
-
-The codebase follows a clear separation of concerns:
-
 **`cmd/`** - Entry points for all executables
 
 - Each subdirectory contains a CLI command that can be invoked
@@ -206,6 +218,7 @@ The codebase follows a clear separation of concerns:
 **`pkg/api/`** - Custom Resource Definitions and API types
 
 - `latest/` - Current API version (symlink or main version)
+  - the purpose of this "hack" is to make the codebase easier to maintain, so when we introduce a new API version, we don't have to update the imports for every single file.
 - `v1alpha1/`, `v1alpha2/`, `v1beta3/`, etc. - Versioned APIs
 - `conversion/` - API version conversion logic
 - `validation/` - CR validation logic
@@ -213,16 +226,9 @@ The codebase follows a clear separation of concerns:
 
 **`pkg/controllers/`** - Reconciliation logic
 
-- `dynakube/` - DynaKube controller and sub-reconcilers
-- `edgeconnect/` - EdgeConnect controller
-- `nodes/` - Node lifecycle controller
-- `csi/` - CSI driver implementation
-- `certificates/` - Certificate management
-
 **`pkg/webhook/`** - Admission webhook handlers
 
 - `mutation/` - Mutating webhooks for pods and namespaces
-- `validation/` - Validating webhooks for CRs
 
 **`pkg/clients/`** - External API clients
 
