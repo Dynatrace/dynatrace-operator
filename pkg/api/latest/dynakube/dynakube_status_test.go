@@ -16,10 +16,10 @@ import (
 
 const (
 	testDynakubeName = "dynatrace"
-	testNamespace = "dynatrace"
-	
-	dummyConditionType = "dummyType"
-	dummyConditionReason = "dummyReason"
+	testNamespace    = "dynatrace"
+
+	dummyConditionType    = "dummyType"
+	dummyConditionReason  = "dummyReason"
 	dummyConditionMessage = "dummyMessage"
 
 	duplicatedConditionErrorMessage = `DynaKube.dynatrace.com "dynatrace" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
@@ -38,7 +38,7 @@ func TestStatus(t *testing.T) {
 		dk := buildDynaKube()
 		createDynaKube(t, clt, dk)
 		dummyCondition := buildCondition()
-		
+
 		// append first condition
 		*dk.Conditions() = append(*dk.Conditions(), dummyCondition)
 		require.NoError(t, dk.UpdateStatus(t.Context(), clt))
@@ -57,20 +57,20 @@ func TestStatus(t *testing.T) {
 	})
 }
 
-func buildDynaKube() *dynakube.DynaKube{
+func buildDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakubeName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        testDynakubeName,
+			Namespace:   testNamespace,
+			Annotations: map[string]string{},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 			},
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{},
-		}
+		},
+		Status: dynakube.DynaKubeStatus{},
+	}
 }
 
 func buildCondition() metav1.Condition {
