@@ -61,7 +61,7 @@ The primary CRD for deploying and managing Dynatrace observability components. T
 - **OneAgent Modes:**
   - `classicFullStack`: Pod per node for full-stack monitoring
   - `applicationMonitoring`: Webhook-based app-only injection with optional CSI driver caching
-  - `hostMonitoring`: Node-only monitoring with optional CSI driver for read-only operation
+  - `hostMonitoring`: Node-only monitoring with [optional CSI driver](https://docs.dynatrace.com/docs/shortlink/how-it-works-k8s-operator#csidriver) for read-only operation
   - `cloudNativeFullStack`: Combined application and host monitoring
 - **ActiveGate Capabilities:**
   - `routing`: Routes OneAgent traffic through ActiveGate
