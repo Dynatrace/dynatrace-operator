@@ -3,6 +3,26 @@
 This document describes the high-level architecture of `Dynatrace Operator`.
 If you want to familiarize yourself with the code base, you are just in the right place!
 
+- [Architecture](#architecture)
+  - [Bird's Eye View](#birds-eye-view)
+  - [Custom Resources](#custom-resources)
+    - [DynaKube](#dynakube)
+    - [EdgeConnect](#edgeconnect)
+  - [Dynatrace Operator Components](#dynatrace-operator-components)
+    - [Main Operator Pod](#main-operator-pod)
+    - [Webhook Pod](#webhook-pod)
+    - [Bootstrapper (Init Container)](#bootstrapper-init-container)
+    - [CSI Driver](#csi-driver)
+    - [Generate-metadata command](#generate-metadata-command)
+    - [Support Tools](#support-tools)
+  - [Codebase Structure](#codebase-structure)
+    - [Key Design Patterns](#key-design-patterns)
+  - [Development Workflow](#development-workflow)
+    - [Binary Modes](#binary-modes)
+    - [Reconciliation Flow](#reconciliation-flow)
+    - [Testing Strategy](#testing-strategy)
+  - [Additional Resources](#additional-resources)
+
 ## Bird's Eye View
 
 ```mermaid
