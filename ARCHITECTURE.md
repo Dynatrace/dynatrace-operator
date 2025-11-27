@@ -102,7 +102,7 @@ The DynaKube is a rather large CR, therefore its controller has many feature-spe
 - [`istio`](./pkg/controllers/dynakube/istio/): Handles Istio service mesh integration
 - [`proxy`](./pkg/controllers/dynakube/proxy/): Manages proxy configurations
 - [`deploymentmetadata`](./pkg/controllers/dynakube/deploymentmetadata/): Manages deployment metadata. This is a small amount of metadata about the Operator and the OneAgent deployment mode, provided to the OneAgents.
-  - should be moved to the `oneagent` folder in the future
+  - should be moved to the [`oneagent`](./pkg/controllers/dynakube/oneagent/) folder in the future
 
 > [!WARNING]
 > This is not the best pattern, it is the case mainly due to historical reasons, we will try to improve this in the future.
@@ -331,7 +331,7 @@ This design allows using a single container image with different entry points fo
 
 - **Unit Tests**: Test individual functions and components in isolation
 - **Integration Tests**: Test controller behavior with fake Kubernetes clients
-- **E2E Tests**: Full end-to-end testing in real clusters (test/scenarios/)
+- **E2E Tests**: Full end-to-end testing in real clusters ([test/scenarios](./test/scenarios))
 - **Mocks**: Generated using mockery for external dependencies
 
 ## Additional Resources
