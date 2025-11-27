@@ -54,7 +54,7 @@ The Dynatrace Operator supports two main Custom Resource Definitions (CRDs):
 
 ### DynaKube
 
-The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for backward compatibility (v1beta3, v1beta4, v1beta5).
+The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for backward compatibility (at the time of writing: v1beta3, v1beta4 and v1beta5).
 
 **Key Features:**
 
@@ -68,10 +68,10 @@ The primary CRD for deploying and managing Dynatrace observability components. T
   - `kubernetes-monitoring`: Monitors Kubernetes API
   - `metrics-ingest`: Routes enriched metrics through ActiveGate
 - **Additional Features:**
-  - Extensions deployment
+  - [Extensions](https://docs.dynatrace.com/docs/ingest-from/extensions) deployment
   - Log monitoring deployment
   - OpenTelemetry Collector deployment
-  - KSPM deployment (Kubernetes Security Posture Management)
+  - [KSPM](https://www.dynatrace.com/news/blog/kubernetes-security-posture-management-kspm/) deployment (Kubernetes Security Posture Management)
   - Metadata enrichment
 
 ### EdgeConnect
@@ -88,11 +88,11 @@ The central controller (`cmd/operator/`) that reconciles Custom Resources. It co
 
 **DynaKube Controller** (`pkg/controllers/dynakube/`):
 
-The DynaKube is a rather large CR, therefore its controller has many feature-specific sub-reconcilers each having further sub-reconcilers. Here are the more top level sub-reconcilers:
+The DynaKube is a rather large CR, therefore its controller has many feature-specific sub-reconcilers each with nested components. Here are the top-level ones:
 
 - `activegate`: Manages ActiveGate StatefulSets
-- `oneagent`: Handles OneAgent DaemonSets for host monitoring
-- `injection`: Manages code module / otlp / metadata enrichment injection into application pods
+- `oneagent`: Handles [OneAgent](https://docs.dynatrace.com/docs/ingest-from/dynatrace-oneagent) DaemonSets for host monitoring
+- `injection`: Manages code module / [OTLP](https://opentelemetry.io/docs/specs/otlp/) / metadata enrichment injection into application pods
 - `extension`: Controls Dynatrace extensions deployment
 - `otelc`: Manages OpenTelemetry Collector deployment
 - `logmonitoring`: Handles log monitoring components
@@ -102,7 +102,8 @@ The DynaKube is a rather large CR, therefore its controller has many feature-spe
 - `proxy`: Manages proxy configurations
 - `deploymentmetadata`: Manages deployment metadata enrichment
 
-> [!WARNING] This is not the best pattern, it is the case mainly due to historical reasons, we will try to improve this in the future.
+> [!WARNING]
+> This is not the best pattern, it is the case mainly due to historical reasons, we will try to improve this in the future.
 
 **EdgeConnect Controller** (`pkg/controllers/edgeconnect/`):
 
@@ -115,8 +116,8 @@ The DynaKube is a rather large CR, therefore its controller has many feature-spe
 
 **Certificates Controller** (`pkg/controllers/certificates/`):
 
-- Creates self-signed TLS certificates for our (mutating/validating/conversion) Webhooks. Really old, meant to make the install seamless for the user, and not require any additional dependencies. (like cert-manager)
-- The certs are created by the Operator pod, and are read by the Webhook pod. Not purely handled by the webhook, as we don't want to have leader election for the webhook.
+- Creates self-signed TLS certificates for our (mutating/validating/conversion) Webhooks. Really old, meant to make the install seamless for the user, and not require any additional dependencies (like [cert-manager](https://cert-manager.io/) for example).
+- The certs are created by the Operator pod and read by the webhook pod. Not purely handled by the webhook, as we don't want to have leader election for the webhook.
 
 Relevant links:
 
@@ -147,7 +148,7 @@ Relevant links:
 
 ### Bootstrapper (Init Container)
 
-The bootstrapper (`cmd/bootstrapper/`) runs as an init container injected into user pods via the webhook.
+The bootstrapper (`cmd/bootstrapper/`) runs as an [init container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) injected into user pods via the webhook.
 
 It can operate in three modes:
 
@@ -185,7 +186,7 @@ It can provide 2 types of volumes:
   - It can download the code modules in 3 different ways:
     - As a ZIP, from the Dynatrace Environments API, which it has to extract and move to the correct location.
     - As a tar, from an OCI Image, which it has to extract and move to the correct location.
-      - This mostly likely will be removed in the future, in favor of the Job based approach.
+      - This most likely will be removed in the future, in favor of the Job based approach.
     - By scheduling a Job, which uses an OCI image that is a self extracting code module.
 - Manages the state of the filesystem, cleans up unused code modules.
 
@@ -221,6 +222,8 @@ This command(`cmd/metadata/`) generates metadata files containing Kubernetes att
 
 **Troubleshoot** (`cmd/troubleshoot/`):
 
+> [!NOTE]
+> This tool is outdated. Use the support archive command instead.
 - Command-line tool for diagnosing common deployment issues
 - Checks CRDs, namespaces, images, proxies, and configurations
 - Outdated, use support archive for comprehensive diagnostics
@@ -234,7 +237,7 @@ This command(`cmd/metadata/`) generates metadata files containing Kubernetes att
 **`cmd/`** - Entry points for all executables
 
 - Each subdirectory contains a CLI command that can be invoked
-- The main binary includes all commands as subcommands via Cobra
+- The main binary includes all commands as subcommands via [Cobra](https://pkg.go.dev/github.com/spf13/cobra)
 - Examples: `operator`, `webhook`, `csi-server`, `bootstrap`, `troubleshoot`
 
 **`pkg/api/`** - Custom Resource Definitions and API types
