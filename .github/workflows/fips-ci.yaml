@@ -60,12 +60,12 @@ jobs:
             **/*.go
             go.mod
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
-      - name: Detect fips.Dockerfile changes
+      - name: Detect Dockerfile changes
         uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: dockerfile
         with:
           files: |
-            fips.Dockerfile
+            Dockerfile
           base_sha: ${{ github.event_name == 'pull_request' && 'HEAD^' || github.event.before }}
       - name: List Changed Files
         run: |
@@ -119,8 +119,8 @@ jobs:
           platforms: ${{ matrix.platform }}
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
           suffix: ${{ matrix.image-postfix }}
-          dockerfile: ./fips.Dockerfile
-
+          dockerfile: ./Dockerfile
+          fips: true
   index:
     name: Create image-index
     needs: [detect-changes, prepare, build-images]

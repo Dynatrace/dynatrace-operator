@@ -19,7 +19,7 @@ ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
-ARG GOFIPS140=v1.0.0
+ARG GOFIPS140=off
 
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
