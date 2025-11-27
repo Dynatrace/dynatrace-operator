@@ -13,6 +13,7 @@ else
 endif
 
 FIPS_TAG ?= ${TAG}-fips
+GOFIPS140 ?= v1.0.0
 
 #use the digest if digest is set
 ifeq ($(DIGEST),)
@@ -46,7 +47,7 @@ images/build/push: images/build images/push
 # because cross-compile takes ~1h, we want to build fips locally only for local architecture
 # so that's why the recommended way to run it (assuming local platfrom is arm64) is `OPERATOR_DEV_BUILD_PLATFORM="linux/arm64" make images/build/fips
 images/build/fips: ensure-tag-not-snapshot
-	$(BUILD_IMAGE_SH) "${IMAGE}" "${FIPS_TAG}" "${DEBUG}" "fips.Dockerfile" "${OPERATOR_BUILD_PLATFORM}"
+	$(BUILD_IMAGE_SH) "${IMAGE}" "${FIPS_TAG}" "${DEBUG}" "Dockerfile" "${OPERATOR_BUILD_PLATFORM}" "${GOFIPS140}"
 
 images/push/fips: ensure-tag-not-snapshot
 	$(PUSH_IMAGE_SH) "${IMAGE}" "${FIPS_TAG}-${OPERATOR_BUILD_ARCH}"

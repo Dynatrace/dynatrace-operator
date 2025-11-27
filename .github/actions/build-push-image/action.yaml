@@ -17,6 +17,10 @@ inputs:
   suffix:
     description: Suffix appended to image tags
     required: false
+  fips:
+    description: Whether to build the image with FIPS enabled
+    default: "false"
+    required: false
 outputs:
   digest:
     description: The digest of the built image
@@ -88,6 +92,7 @@ runs:
         build-args: |
           GO_LINKER_ARGS=${{ steps.prep.outputs.go_linker_args }}
           GO_BUILD_TAGS=${{ steps.prep.outputs.go_build_tags }}
+          GOFIPS=${{ inputs.fips == 'true' && 'v1.0.0' || 'off' }}
         context: .
         file: ${{ inputs.dockerfile }}
         provenance: false
