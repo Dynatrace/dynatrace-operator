@@ -2,6 +2,7 @@ package apimonitoring
 
 import (
 	"context"
+	goerrors "errors"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -11,6 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
 )
+
+var errMissingKubeSystemUUID = goerrors.New("no kube-system namespace UUID given")
 
 type Reconciler struct {
 	dtc dtclient.Client
@@ -60,7 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, error) {
 	if r.dk.Status.KubeSystemUUID == "" {
-		return "", errors.New("no kube-system namespace UUID given")
+		return "", errMissingKubeSystemUUID
 	}
 
 	err := r.k8sEntityReconciler.Reconcile(ctx)

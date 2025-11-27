@@ -1,7 +1,7 @@
 package version
 
 import (
-	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -19,7 +19,7 @@ import (
 )
 
 func TestOneAgentUpdater(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
@@ -122,9 +122,11 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 			},
 		}
 
-		updater := newOneAgentUpdater(dk, nil, createErrorDTClient(t))
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.EXPECT().GetLatestOneAgentImage(mockCtx).Return(nil, errors.New("BOOM")).Once()
+		updater := newOneAgentUpdater(dk, nil, mockClient)
 
-		_, err := updater.LatestImageInfo(context.Background())
+		_, err := updater.LatestImageInfo(t.Context())
 		require.Error(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
@@ -154,7 +156,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
 
-		err := updater.UseTenantRegistry(context.TODO())
+		err := updater.UseTenantRegistry(t.Context())
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dk.Status.OneAgent.VersionStatus)
@@ -174,11 +176,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
 		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, testVersion)
+		mockLatestAgentVersion(mockClient, testVersion, 1)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
 
-		err := updater.UseTenantRegistry(context.Background())
+		err := updater.UseTenantRegistry(t.Context())
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dk.Status.OneAgent.VersionStatus)
@@ -207,11 +209,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, testVersion)
+		mockLatestAgentVersion(mockClient, testVersion, 1)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
 
-		err := updater.UseTenantRegistry(context.Background())
+		err := updater.UseTenantRegistry(t.Context())
 		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile
 		assert.Equal(t, previousVersion, dk.Status.OneAgent.Version)
 
@@ -241,11 +243,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, "BOOM")
+		mockLatestAgentVersion(mockClient, "BOOM", 1)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
 
-		err := updater.UseTenantRegistry(context.Background())
+		err := updater.UseTenantRegistry(t.Context())
 		require.Error(t, err)
 		assert.Equal(t, previousVersion, dk.Status.OneAgent.Version)
 
@@ -272,11 +274,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, testVersion)
+		mockLatestAgentVersion(mockClient, testVersion, 1)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
 
-		err := updater.UseTenantRegistry(context.Background())
+		err := updater.UseTenantRegistry(t.Context())
 		require.Error(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConditionType)
