@@ -284,19 +284,6 @@ func prepareController(clt client.Client) (*WebhookCertificateController, reconc
 	return rec, request
 }
 
-func testWebhookClientConfig(t *testing.T, webhookClientConfig *admissionregistrationv1.WebhookClientConfig, secretData map[string][]byte, isUpdate bool) {
-	t.Helper()
-	require.NotNil(t, webhookClientConfig)
-	require.NotEmpty(t, webhookClientConfig.CABundle)
-
-	expectedCert := secretData[RootCert]
-	if isUpdate {
-		expectedCert = append(expectedCert, []byte{123}...)
-	}
-
-	assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
-}
-
 func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret *corev1.Secret, clt client.Client, isUpdate bool) {
 	t.Helper()
 	cert := Certs{
@@ -310,17 +297,30 @@ func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret 
 	assert.False(t, cert.validateRootCerts(time.Now()))
 	assert.False(t, cert.validateServerCerts(time.Now()))
 
+	assertCABundle := func(t *testing.T, webhookClientConfig *admissionregistrationv1.WebhookClientConfig) {
+		t.Helper()
+		require.NotNil(t, webhookClientConfig)
+		require.NotEmpty(t, webhookClientConfig.CABundle)
+
+		expectedCert := secret.Data[RootCert]
+		if isUpdate {
+			expectedCert = append(expectedCert, []byte{123}...)
+		}
+
+		assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
+	}
+
 	mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
 	err := clt.Get(t.Context(), client.ObjectKey{Name: webhook.DeploymentName}, mutatingWebhookConfig)
 	require.NoError(t, err)
 	assert.Len(t, mutatingWebhookConfig.Webhooks, 2)
-	testWebhookClientConfig(t, &mutatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
+	assertCABundle(t, &mutatingWebhookConfig.Webhooks[0].ClientConfig)
 
 	validatingWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
 	err = clt.Get(t.Context(), client.ObjectKey{Name: webhook.DeploymentName}, validatingWebhookConfig)
 	require.NoError(t, err)
 	assert.Len(t, validatingWebhookConfig.Webhooks, 1)
-	testWebhookClientConfig(t, &validatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
+	assertCABundle(t, &validatingWebhookConfig.Webhooks[0].ClientConfig)
 }
 
 type fakeClientBuilder struct {
