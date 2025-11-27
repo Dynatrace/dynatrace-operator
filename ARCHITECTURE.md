@@ -154,15 +154,15 @@ The bootstrapper [`cmd/bootstrapper/`](./cmd/bootstrapper/) runs as an [init con
 
 It can operate in three modes:
 
-1. CSI-backed: Uses pre-downloaded code modules from the CSI driver
-2. Direct download: Fetches code modules directly from Dynatrace API
+1. CSI-backed: Uses pre-downloaded [code modules](https://docs.dynatrace.com/docs/shortlink/oneagent-support-matrix#ent-cloud-code-modules) from the CSI driver
+2. Direct download: Fetches [code modules](https://docs.dynatrace.com/docs/shortlink/oneagent-support-matrix#ent-cloud-code-modules) directly from Dynatrace API
 3. Metadata enrichment only: Only enriches the pod with metadata
 
 After downloading the code modules, it configures the OneAgent for the specific application and sets up metadata enrichment.
 
 ### CSI Driver
 
-A [Container Storage Interface](https://github.com/container-storage-interface/spec/blob/master/spec.md) driver [`cmd/csi/`](./cmd/csi/) that provides volumes for OneAgent code modules.
+A [Container Storage Interface](https://github.com/container-storage-interface/spec/blob/master/spec.md) driver [`cmd/csi/`](./cmd/csi/) that provides volumes for OneAgent [code modules](https://docs.dynatrace.com/docs/shortlink/oneagent-support-matrix#ent-cloud-code-modules).
 
 The CSI driver optimizes disk space usage by sharing OneAgent binaries across multiple pods on the same node and improves startup performance by caching downloads.
 
@@ -258,7 +258,7 @@ This command [`cmd/metadata/`](./cmd/metadata/) generates metadata files contain
 - [**`dynatrace/`**](./pkg/clients/dynatrace/): Dynatrace API client
 - [**`edgeconnect/`**](./pkg/clients/edgeconnect/): EdgeConnect API client
 
-[**`pkg/injection/`**](./pkg/injection/): Code module injection logic
+[**`pkg/injection/`**](./pkg/injection/): [Code module](https://docs.dynatrace.com/docs/shortlink/oneagent-support-matrix#ent-cloud-code-modules) injection logic
 
 - [**`codemodule/`**](./pkg/injection/codemodule/): Code module installer and management
 - [**`namespace/`**](./pkg/injection/namespace/): Namespace injection mapper
