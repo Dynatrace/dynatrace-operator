@@ -113,6 +113,7 @@ jobs:
           else
             CLEAN_BRANCH=$(./hack/build/ci/sanitize-branch-name.sh "${{ github.event.inputs.target }}")
             echo "TARGET_IMAGE=snapshot=${CLEAN_BRANCH}-fips" >> $GITHUB_ENV
+          fi
       - name: Run e2e test
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
