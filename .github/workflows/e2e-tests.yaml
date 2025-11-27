@@ -108,11 +108,12 @@ jobs:
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Set target image
         run: |
+          set -x
           if [[ "${{ github.event.inputs.target }}" == "main" ]]; then
             echo "TARGET_IMAGE=snapshot-fips" >> $GITHUB_ENV
           else
             CLEAN_BRANCH=$(./hack/build/ci/sanitize-branch-name.sh "${{ github.event.inputs.target }}")
-            echo "TARGET_IMAGE=snapshot=${CLEAN_BRANCH}-fips" >> $GITHUB_ENV
+            echo "TARGET_IMAGE=snapshot-${CLEAN_BRANCH}-fips" >> $GITHUB_ENV
           fi
       - name: Run e2e test
         id: run_e2e_test
