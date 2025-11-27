@@ -27,7 +27,7 @@ source ../ref/.github/scripts/prepare-e2e-secrets.sh
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
 if [[ -z "${TARGET_IMAGE}" ]]; then
-  make IMG="$TARGET_IMAGE" test/e2e-publish
+  make TAG="$TARGET_IMAGE" test/e2e-publish
 else
   echo "fall back to default branch target"
   make BRANCH="$TARGET_BRANCH" test/e2e-publish
