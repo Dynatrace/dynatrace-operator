@@ -54,67 +54,69 @@ The Dynatrace Operator supports two main Custom Resource Definitions (CRDs):
 
 ### DynaKube
 
-The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for backward compatibility (at the time of writing: v1beta3, v1beta4 and v1beta5).
+The primary CRD for deploying and managing Dynatrace observability components. The latest API version is stored in `pkg/api/latest/dynakube/`, with versioned APIs maintained for [backward compatibility](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/guides/migration/dynakube#deprecation) (at the time of writing: v1beta3, v1beta4 and v1beta5).
 
 **Key Features:**
 
-- **OneAgent Modes:**
+- **OneAgent deployment, supported modes:**
   - `classicFullStack`: Pod per node for full-stack monitoring
   - `applicationMonitoring`: Webhook-based app-only injection with optional CSI driver caching
   - `hostMonitoring`: Node-only monitoring with [optional CSI driver](https://docs.dynatrace.com/docs/shortlink/how-it-works-k8s-operator#csidriver) for read-only operation
   - `cloudNativeFullStack`: Combined application and host monitoring
-- **ActiveGate Capabilities:**
+- **ActiveGate deployment, supported capabilities:**
   - `routing`: Routes OneAgent traffic through an [ActiveGate](https://docs.dynatrace.com/docs/ingest-from/dynatrace-activegate)
   - `kubernetes-monitoring`: Monitors Kubernetes API
   - `metrics-ingest`: Routes enriched metrics through ActiveGate
-- **Additional Features:**
-  - [Extensions](https://docs.dynatrace.com/docs/ingest-from/extensions) deployment
-  - Log monitoring deployment
-  - OpenTelemetry Collector deployment
-  - [KSPM](https://www.dynatrace.com/news/blog/kubernetes-security-posture-management-kspm/) deployment (Kubernetes Security Posture Management)
+- **Additional features deployments:**
+  - [Extensions](https://docs.dynatrace.com/docs/ingest-from/extensions)
+    - Disclaimer: Only a limited number of extensions are supported by the operator.
+  - Log monitoring
+  - OpenTelemetry Collector
+  - [KSPM](https://www.dynatrace.com/news/blog/kubernetes-security-posture-management-kspm/) (Kubernetes Security Posture Management)
   - Metadata enrichment
 
 ### EdgeConnect
 
-Manages Dynatrace EdgeConnect deployments for extending observability to remote locations. The latest API version is `v1alpha2` stored in [pkg/api/v1alpha2/edgeconnect](pkg/api/v1alpha2/edgeconnect).
+Manages [Dynatrace EdgeConnect](https://docs.dynatrace.com/docs/ingest-from/edgeconnect) deployments for extending observability to remote locations. The latest API version is `v1alpha2` stored in [pkg/api/v1alpha2/edgeconnect](pkg/api/v1alpha2/edgeconnect).
 
 ## Dynatrace Operator Components
 
-The `Dynatrace Operator` is not a single Pod — it consists of multiple components working together, encompassing several Kubernetes concepts.
+The `Dynatrace Operator` is not a single Pod, it consists of multiple components working together, utilizing several Kubernetes concepts.
 
 ### Main Operator Pod
 
-The central controller (`cmd/operator/`) that reconciles Custom Resources. It consists of multiple sub-reconcilers:
+The central controller [`cmd/operator/`](./cmd/operator/) that reconciles Custom Resources. It consists of multiple sub-reconcilers:
 
-**DynaKube Controller** (`pkg/controllers/dynakube/`):
+**DynaKube Controller** [`pkg/controllers/dynakube/`](./pkg/controllers/dynakube/):
 
 The DynaKube is a rather large CR, therefore its controller has many feature-specific sub-reconcilers each with nested components. Here are the top-level ones:
 
-- `activegate`: Manages ActiveGate StatefulSets
-- `oneagent`: Handles [OneAgent](https://docs.dynatrace.com/docs/ingest-from/dynatrace-oneagent) DaemonSets for host monitoring
-- `injection`: Manages code module / [OTLP](https://opentelemetry.io/docs/specs/otlp/) / metadata enrichment injection into application pods
-- `extension`: Controls Dynatrace extensions deployment
-- `otelc`: Manages OpenTelemetry Collector deployment
-- `logmonitoring`: Handles log monitoring components
-- `kspm`: Manages Kubernetes Security Posture Management
-- `apimonitoring`: Monitors Kubernetes API
-- `istio`: Handles Istio service mesh integration
-- `proxy`: Manages proxy configurations
-- `deploymentmetadata`: Manages deployment metadata enrichment
+- [`activegate`](./pkg/controllers/dynakube/activegate/): Manages ActiveGate StatefulSets
+- [`oneagent`](./pkg/controllers/dynakube/oneagent/): Handles [OneAgent](https://docs.dynatrace.com/docs/ingest-from/dynatrace-oneagent) DaemonSets for host monitoring
+- [`injection`](./pkg/controllers/dynakube/injection/): Manages code module / [OTLP](https://opentelemetry.io/docs/specs/otlp/) / metadata enrichment injection into application pods
+- [`extension`](./pkg/controllers/dynakube/extension/): Controls Dynatrace extensions deployment
+- [`otelc`](./pkg/controllers/dynakube/otelc/): Manages OpenTelemetry Collector deployment
+- [`logmonitoring`](./pkg/controllers/dynakube/logmonitoring/): Handles log monitoring components
+- [`kspm`](./pkg/controllers/dynakube/kspm/): Manages Kubernetes Security Posture Management
+- [`apimonitoring`](./pkg/controllers/dynakube/apimonitoring/): Monitors Kubernetes API
+- [`istio`](./pkg/controllers/dynakube/istio/): Handles Istio service mesh integration
+- [`proxy`](./pkg/controllers/dynakube/proxy/): Manages proxy configurations
+- [`deploymentmetadata`](./pkg/controllers/dynakube/deploymentmetadata/): Manages deployment metadata. This is a small amount of metadata about the Operator and the OneAgent deployment mode, provided to the OneAgents.
+  - should be moved to the `oneagent` folder in the future
 
 > [!WARNING]
 > This is not the best pattern, it is the case mainly due to historical reasons, we will try to improve this in the future.
 
-**EdgeConnect Controller** (`pkg/controllers/edgeconnect/`):
+**EdgeConnect Controller** [(`pkg/controllers/edgeconnect/`)](./pkg/controllers/edgeconnect/):
 
 - Manages EdgeConnect deployments.
 
-**Node Controller** (`pkg/controllers/nodes/`):
+**Node Controller** [(`pkg/controllers/nodes/`)](./pkg/controllers/nodes/):
 
 - Monitors node lifecycle and maintains node-level state. Used for notifying the Dynatrace Environment if a node goes down in an expected way. So the users will not see false positives in the Dynatrace UI.
 - Its future is uncertain, we will try to remove it in the future.
 
-**Certificates Controller** (`pkg/controllers/certificates/`):
+**Certificates Controller** [(`pkg/controllers/certificates/`)](./pkg/controllers/certificates/):
 
 - Creates self-signed TLS certificates for our (mutating/validating/conversion) Webhooks. Really old, meant to make the install seamless for the user, and not require any additional dependencies (like [cert-manager](https://cert-manager.io/) for example).
 - The certs are created by the Operator pod and read by the webhook pod. Not purely handled by the webhook, as we don't want to have leader election for the webhook.
@@ -125,22 +127,22 @@ Relevant links:
 
 ### Webhook Pod
 
-The webhook server (`cmd/webhook/`) intercepts creation/update/delete of Kubernetes Resources and either mutates or validates them.
+The webhook server [(`cmd/webhook/`)](./cmd/webhook/) intercepts creation/update of Kubernetes Resources and either mutates or validates them.
 
-**Validation Webhooks** (`pkg/webhook/validation/`):
+**Validation Webhooks**[(`pkg/webhook/validation/`)](./pkg/webhook/validation/):
 
 - Validates DynaKube and EdgeConnect CRs to catch misconfigurations before they're applied
   - Normally, each API version of a CR has its own validation webhook, but we only have one webhook for all API versions. This is because of the high number of API versions we have, and we don't want to duplicate the code for each API version, as that would just make the codebase more complex without any real benefit.
   - We solve this by calling the conversion logic in the validation webhook as well, so we can always validate the latest API version. This is not the most performant solution, but it's the simplest one.
 - Prevents invalid changes from reaching the cluster
 
-**Mutation Webhooks** (`pkg/webhook/mutation/`):
+**Mutation Webhooks**[(`pkg/webhook/mutation/`)](./pkg/webhook/mutation/):
 
-- **Pod Mutation** (`mutation/pod/`): Injects init containers, volumes, environment variables, and annotations into user pods for application monitoring
-- **Namespace Mutation** (`mutation/namespace/`): Labels namespaces to track/control which namespace should the Pod mutation webhook react to
+- **Pod Mutation** [(`pkg/webhook/mutation/pod/`)](./pkg/webhook/mutation/pod/): Injects init containers, volumes, environment variables, and annotations into user pods for application monitoring
+- **Namespace Mutation** [(`pkg/webhook/mutation/namespace/`)](./pkg/webhook/mutation/namespace/): Labels namespaces to track/control which namespace should the Pod mutation webhook react to
   - May be removed in the future, as we plan to move to a more fine-grained approach.
 
-The webhook uses TLS 1.3 for secure communication and includes health/readiness probes for reliability.
+The webhook uses TLS for secure communication and includes health/readiness probes for reliability.
 
 Relevant links:
 
@@ -148,7 +150,7 @@ Relevant links:
 
 ### Bootstrapper (Init Container)
 
-The bootstrapper (`cmd/bootstrapper/`) runs as an [init container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) injected into user pods via the webhook.
+The bootstrapper [`cmd/bootstrapper/`](./cmd/bootstrapper/) runs as an [init container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) injected into user pods via the webhook.
 
 It can operate in three modes:
 
@@ -158,29 +160,25 @@ It can operate in three modes:
 
 After downloading the code modules, it configures the OneAgent for the specific application and sets up metadata enrichment.
 
-Relevant links:
-
-- [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)
-
 ### CSI Driver
 
-A [Container Storage Interface](https://github.com/container-storage-interface/spec/blob/master/spec.md) driver (`cmd/csi/`) that provides volumes for OneAgent code modules.
+A [Container Storage Interface](https://github.com/container-storage-interface/spec/blob/master/spec.md) driver [`cmd/csi/`](./cmd/csi/) that provides volumes for OneAgent code modules.
 
 The CSI driver optimizes disk space usage by sharing OneAgent binaries across multiple pods on the same node and improves startup performance by caching downloads.
 
 It consists of multiple components:
 
-**CSI Server** (`csi/server/`):
+**CSI Server** [`cmd/csi/server/`](./cmd/csi/server/):
 
 - Main CSI driver implementation running on each node
 - Handles volume provisioning and mounting
 
 It can provide 2 types of volumes:
 
-1. `app` volumes: These volumes contain a single OneAgent code module, and are used for application monitoring. Uses overlayfs to minimize disk space usage.
-2. `host` volumes: These volumes are just an empty directory on the node, and are used by the host OneAgents to persist their data.
+1. [`app` volumes](./cmd/csi/server/app.go): These volumes contain a single OneAgent code module, and are used for application monitoring. Uses overlayfs to minimize disk space usage.
+2. [`host` volumes](./cmd/csi/server/host.go): These volumes are just an empty directory on the node, and are used by the host OneAgents to persist their data.
 
-**CSI Provisioner** (`csi/provisioner/`):
+**CSI Provisioner** [`cmd/csi/provisioner/`](./cmd/csi/provisioner/):
 
 - Downloads the OneAgent code modules from the Dynatrace API and stores them on the host, to be used by the `server` container to provide volumes to the pods.
   - It can download the code modules in 3 different ways:
@@ -190,19 +188,19 @@ It can provide 2 types of volumes:
     - By scheduling a Job, which uses an OCI image that is a self extracting code module.
 - Manages the state of the filesystem, cleans up unused code modules.
 
-**Node Driver Registrar** (`csi/registrar/`):
-
-- Registers the CSI driver with the Kubelet
-- [Has been reimplemented by us](./cmd/csi/registrar), instead of using the upstream implementation, due to go version inconsistencies causing complications when handling CVE related questions.
-
-**CSI Init** (`csi/init/`):
+**CSI Init** [`cmd/csi/init/`](./cmd/csi/init/):
 
 - Initializes the CSI driver environment. Handles possible migrations from previous versions.
 
-**Liveness Probe** (`csi/livenessprobe/`):
+**Node Driver Registrar** [`cmd/csi/registrar/`](./cmd/csi/registrar/):
+
+- Registers the CSI driver with the Kubelet
+- Has been reimplemented by us, instead of using the [upstream implementation](https://github.com/kubernetes-csi/node-driver-registrar/tree/master), due to go version inconsistencies causing complications when handling CVE related questions.
+
+**Liveness Probe** [`cmd/csi/livenessprobe/`](./cmd/csi/livenessprobe/):
 
 - Monitors CSI driver health
-- [Has been reimplemented by us](./cmd/csi/livenessprobe), instead of using the upstream implementation, due to go version inconsistencies causing complications when handling CVE related questions.
+- Has been reimplemented by us, instead of using the [upstream implementation](https://github.com/kubernetes-csi/livenessprobe/tree/master), due to go version inconsistencies causing complications when handling CVE related questions.
 
 Relevant links:
 
@@ -210,25 +208,25 @@ Relevant links:
 
 ### Generate-metadata command
 
-This command(`cmd/metadata/`) generates metadata files containing Kubernetes attributes (namespace, pod name, labels, etc.) for enriching host OneAgents.
+This command [`cmd/metadata/`](./cmd/metadata/) generates metadata files containing Kubernetes attributes (namespace, pod name, labels, etc.) for enriching host OneAgents.
 
 ### Support Tools
 
-**Support Archive** (`cmd/supportarchive/`):
+**Support Archive** [`cmd/supportarchive/`](./cmd/supportarchive/):
 
 - Collects diagnostic information from the cluster
 - Gathers operator logs, DynaKube/EdgeConnect status, and resource states
 - Helps troubleshoot issues with Dynatrace support
 
-**Troubleshoot** (`cmd/troubleshoot/`):
+**Troubleshoot** [`cmd/troubleshoot/`](./cmd/troubleshoot/):
 
 > [!NOTE]
 > This tool is outdated. Use the support archive command instead.
+
 - Command-line tool for diagnosing common deployment issues
 - Checks CRDs, namespaces, images, proxies, and configurations
-- Outdated, use support archive for comprehensive diagnostics
 
-**Startup Probe** (`cmd/startupprobe/`):
+**Startup Probe** [`cmd/startupprobe/`](./cmd/startupprobe/):
 
 - Validates that OneAgent has started correctly in pods
 
@@ -240,48 +238,48 @@ This command(`cmd/metadata/`) generates metadata files containing Kubernetes att
 - The main binary includes all commands as subcommands via [Cobra](https://pkg.go.dev/github.com/spf13/cobra)
 - Examples: `operator`, `webhook`, `csi-server`, `bootstrap`, `troubleshoot`
 
-**`pkg/api/`** - Custom Resource Definitions and API types
+[**`pkg/api/`**](./pkg/api/): Custom Resource Definitions and API types
 
-- `latest/` - Current API version
+- [**`latest/`**](./pkg/api/latest/): Current API version
   - the purpose of this "hack" is to make the codebase easier to maintain, so when we introduce a new API version, we don't have to update the imports for every single file.
-- `v1alpha1/`, `v1alpha2/`, `v1beta3/`, etc. - Versioned APIs
-- `conversion/` - API version conversion logic
-- `validation/` - CR validation logic
-- `scheme/` - Kubernetes scheme registration
+- [**`v1alpha1/`**](./pkg/api/v1alpha1/), [**`v1alpha2/`**](./pkg/api/v1alpha2/), [**`v1beta3/`**](./pkg/api/v1beta3/), etc. - Versioned APIs
+- [**`conversion/`**](./pkg/api/conversion/): API version conversion logic
+- [**`validation/`**](./pkg/api/validation/): CR validation logic
+- [**`scheme/`**](./pkg/api/scheme/): Kubernetes scheme registration
 
-**`pkg/controllers/`** - Reconciliation logic
+[**`pkg/controllers/`**](./pkg/controllers/): Reconciliation logic
 
-**`pkg/webhook/`** - Admission webhook handlers
+[**`pkg/webhook/`**](./pkg/webhook/): Admission webhook handlers
 
-- `mutation/` - Mutating webhooks for pods and namespaces
+- [**`mutation/`**](./pkg/webhook/mutation/): Mutating webhooks for pods and namespaces
 
-**`pkg/clients/`** - External API clients
+[**`pkg/clients/`**](./pkg/clients/): External API clients
 
-- `dynatrace/` - Dynatrace API client
-- `edgeconnect/` - EdgeConnect API client
+- [**`dynatrace/`**](./pkg/clients/dynatrace/): Dynatrace API client
+- [**`edgeconnect/`**](./pkg/clients/edgeconnect/): EdgeConnect API client
 
-**`pkg/injection/`** - Code module injection logic
+[**`pkg/injection/`**](./pkg/injection/): Code module injection logic
 
-- `codemodule/` - Code module installer and management
-- `namespace/` - Namespace injection mapper
+- [**`codemodule/`**](./pkg/injection/codemodule/): Code module installer and management
+- [**`namespace/`**](./pkg/injection/namespace/): Namespace injection mapper
 
-**`pkg/util/`** - Utility packages
+[**`pkg/util/`**](./pkg/util/): Utility packages
 
 - Common utilities for Kubernetes operations, hashing, tokens, conditions, etc.
 
-**`pkg/otelcgen/`** - OpenTelemetry Collector generation
+[**`pkg/otelcgen/`**](./pkg/otelcgen/): OpenTelemetry Collector generation
 
 - Logic for generating OpenTelemetry Collector configurations and components
 
-**`pkg/logd/`** - Logging
+[**`pkg/logd/`**](./pkg/logd/): Logging
 
 - Logging configuration and utilities
 
-**`pkg/oci/`** - OCI Image Handling
+[**`pkg/oci/`**](./pkg/oci/): OCI Image Handling
 
 - Utilities for interacting with OCI registries and images
 
-**`pkg/arch/`** - Architecture Constants
+[**`pkg/arch/`**](./pkg/arch/): Architecture Constants
 
 - CPU architecture specific constants and utilities
 
@@ -303,7 +301,7 @@ The main binary (`cmd/main.go`) is a multi-mode executable that behaves differen
 
 ```bash
 dynatrace-operator operator                  # Run the main operator
-dynatrace-operator   webhook-server                   # Run the webhook server
+dynatrace-operator webhook-server            # Run the webhook server
 dynatrace-operator csi-server                # Run CSI driver server
 dynatrace-operator csi-init                  # Run CSI driver initialization
 dynatrace-operator csi-provisioner           # Run CSI driver provisioner
