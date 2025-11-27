@@ -51,11 +51,11 @@
     {
       fileMatch: [
         "(^|/|\\.)ci.yaml$",
+        "(^|/|\\.)action.yaml$",
       ],
       matchStrings: [
-        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
+        "datasource=(?<datasource>.*?)\\sdepName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
       ],
-      datasourceTemplate: "go",
     },
     {
       fileMatch: [

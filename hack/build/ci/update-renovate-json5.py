@@ -1,5 +1,4 @@
 import json5
-import sys
 
 # version file contains a list of strings
 versionFile = "release-branches.txt"
@@ -22,3 +21,5 @@ with open(renovateFile, "r") as f:
 # write updated renovate file
 with open(renovateFile, "w") as output:
     json5.dump(data, output, indent=2)
+    # editorconfig is set up to add a newline to files
+    output.write('\n')
