@@ -3,7 +3,11 @@ package volumes
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -107,5 +111,141 @@ func TestAddConfigVolume(t *testing.T) {
 				SizeLimit: ptr.To(resource.MustParse("300Mi")),
 			}},
 		}, pod.Spec.Volumes[0])
+	})
+}
+
+func TestAddConfigVolumeMount(t *testing.T) {
+	t.Run("should add common config volume mount if split mounts is disabled", func(t *testing.T) {
+		container := &corev1.Container{Name: "test-container"}
+		dk := dynakube.DynaKube{}
+		request := &dtwebhook.BaseRequest{
+			DynaKube: dk,
+			Pod:      &corev1.Pod{},
+		}
+
+		AddConfigVolumeMount(container, request)
+
+		assert.Len(t, container.VolumeMounts, 1)
+		assert.True(t, HasCommonConfigVolumeMounts(container))
+	})
+
+	t.Run("should add split mounts for oneagent if split mounts is enabled", func(t *testing.T) {
+		container := &corev1.Container{Name: "test-container"}
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+			},
+		}
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.InjectionSplitMounts: "true",
+				},
+			},
+		}
+		request := &dtwebhook.BaseRequest{
+			DynaKube: dk,
+			Pod:      pod,
+		}
+
+		AddConfigVolumeMount(container, request)
+
+		assert.Len(t, container.VolumeMounts, 1)
+
+		assert.True(t, HasSplitOneAgentMounts(container))
+		assert.False(t, HasSplitEnrichmentMounts(container))
+	})
+
+	t.Run("should add split mounts for both if split mounts is enabled", func(t *testing.T) {
+		container := &corev1.Container{Name: "test-container"}
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(true),
+				},
+			},
+		}
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.InjectionSplitMounts: "true",
+				},
+			},
+		}
+		request := &dtwebhook.BaseRequest{
+			DynaKube: dk,
+			Pod:      pod,
+		}
+
+		AddConfigVolumeMount(container, request)
+
+		assert.Len(t, container.VolumeMounts, 4)
+
+		assert.True(t, HasSplitOneAgentMounts(container))
+		assert.True(t, HasSplitEnrichmentMounts(container))
+	})
+
+	t.Run("should add split mounts for metadataenrichment if enabled", func(t *testing.T) {
+		container := &corev1.Container{Name: "test-container"}
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(true),
+				},
+			},
+		}
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.InjectionSplitMounts: "true",
+				},
+			},
+		}
+		request := &dtwebhook.BaseRequest{
+			DynaKube: dk,
+			Pod:      pod,
+		}
+
+		AddConfigVolumeMount(container, request)
+
+		assert.Len(t, container.VolumeMounts, 3)
+		assert.False(t, HasSplitOneAgentMounts(container))
+		assert.True(t, HasSplitEnrichmentMounts(container))
+	})
+
+	t.Run("should add split mounts for metadataenrichment if classicfullstack is enabled", func(t *testing.T) {
+		container := &corev1.Container{Name: "test-container"}
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(true),
+				},
+			},
+		}
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dtwebhook.InjectionSplitMounts: "true",
+				},
+			},
+		}
+		request := &dtwebhook.BaseRequest{
+			DynaKube: dk,
+			Pod:      pod,
+		}
+
+		AddConfigVolumeMount(container, request)
+
+		assert.Len(t, container.VolumeMounts, 3)
+		assert.False(t, HasSplitOneAgentMounts(container))
+		assert.True(t, HasSplitEnrichmentMounts(container))
 	})
 }
