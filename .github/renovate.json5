@@ -55,7 +55,7 @@
       ],
       matchStrings: [
         "datasource=(?<datasource>.*?)\\sdepName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
-      ]
+      ],
     },
     {
       fileMatch: [
