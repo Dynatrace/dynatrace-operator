@@ -16,13 +16,9 @@ var (
 )
 
 const (
-	ConfigVolumeName             = "dynatrace-config"
-	InitConfigMountPath          = "/mnt/config"
-	ConfigMountPath              = "/var/lib/dynatrace"
-	ConfigMountSubPathOneAgent   = "/oneagent"
-	ConfigMountPathOneAgent      = ConfigMountPath + ConfigMountSubPathOneAgent
-	ConfigMountSubPathEnrichment = "/enrichment"
-	ConfigMountPathEnrichment    = ConfigMountPath + ConfigMountSubPathEnrichment
+	ConfigVolumeName    = "dynatrace-config"
+	InitConfigMountPath = "/mnt/config"
+	ConfigMountPath     = "/var/lib/dynatrace"
 
 	InputVolumeName    = "dynatrace-input"
 	InitInputMountPath = "/mnt/input"
@@ -64,52 +60,23 @@ func AddConfigVolume(pod *corev1.Pod) {
 
 func AddConfigVolumeMount(container *corev1.Container, request *dtwebhook.BaseRequest) {
 	if request.IsSplitMountsEnabled() {
-		if request.DynaKube.OneAgent().IsAppInjectionNeeded() {
-			addOneAgentConfigVolumeMount(container)
-		}
-
-		if request.DynaKube.MetadataEnrichmentEnabled() {
-			addEnrichmentConfigVolumeMount(container)
-		}
+		addSplitMounts(container, request)
 	} else {
 		addCommonConfigVolumeMount(container)
 	}
 }
 
 func addCommonConfigVolumeMount(container *corev1.Container) {
-	if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPath) {
-		container.VolumeMounts = append(container.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      ConfigVolumeName,
-				MountPath: ConfigMountPath,
-				SubPath:   container.Name,
-			},
-		)
+	vm := corev1.VolumeMount{
+		Name:      ConfigVolumeName,
+		MountPath: ConfigMountPath,
+		SubPath:   container.Name,
 	}
+	container.VolumeMounts = mounts.Append(container.VolumeMounts, vm)
 }
 
-func addOneAgentConfigVolumeMount(container *corev1.Container) {
-	if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathOneAgent) {
-		container.VolumeMounts = append(container.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      ConfigVolumeName,
-				MountPath: ConfigMountPathOneAgent,
-				SubPath:   container.Name + ConfigMountSubPathOneAgent,
-			},
-		)
-	}
-}
-
-func addEnrichmentConfigVolumeMount(container *corev1.Container) {
-	if !mounts.IsPathIn(container.VolumeMounts, ConfigMountPathEnrichment) {
-		container.VolumeMounts = append(container.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      ConfigVolumeName,
-				MountPath: ConfigMountPathEnrichment,
-				SubPath:   container.Name + ConfigMountSubPathEnrichment,
-			},
-		)
-	}
+func HasCommonConfigVolumeMounts(container *corev1.Container) bool {
+	return mounts.IsPathIn(container.VolumeMounts, ConfigMountPath)
 }
 
 func AddInitConfigVolumeMount(container *corev1.Container) {

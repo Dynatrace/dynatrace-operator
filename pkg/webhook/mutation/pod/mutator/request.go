@@ -67,7 +67,7 @@ func (req *BaseRequest) IsSplitMountsEnabled() bool {
 		return true
 	}
 
-	return false
+	return req.DynaKube.OneAgent().IsClassicFullStackMode()
 }
 
 func (req *BaseRequest) NewContainers(isInjected func(corev1.Container, *BaseRequest) bool) (newContainers []*corev1.Container) {

@@ -36,3 +36,13 @@ func IsIn(mounts []corev1.VolumeMount, volumeName string) bool {
 
 	return false
 }
+
+func Append(mounts []corev1.VolumeMount, vm ...corev1.VolumeMount) []corev1.VolumeMount {
+	for _, v := range vm {
+		if !IsPathIn(mounts, v.MountPath) {
+			mounts = append(mounts, v)
+		}
+	}
+
+	return mounts
+}

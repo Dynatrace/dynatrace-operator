@@ -2,6 +2,7 @@ package pod
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -300,13 +301,23 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: volumes.ConfigMountPath + "/enrichment",
-						SubPath:   attr.ContainerName + "/enrichment",
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.json"),
+						SubPath:   attr.ContainerName + "/enrichment/dt_metadata.json",
 					},
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: volumes.ConfigMountPath + "/oneagent",
-						SubPath:   attr.ContainerName + "/oneagent",
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.properties"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.properties"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoints"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoints"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "oneagent"),
+						SubPath:   filepath.Join(attr.ContainerName, "oneagent"),
 					},
 				},
 			})
@@ -332,8 +343,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: volumes.ConfigMountPath + "/oneagent",
-						SubPath:   attr.ContainerName + "/oneagent",
+						MountPath: filepath.Join(volumes.ConfigMountPath, "oneagent"),
+						SubPath:   filepath.Join(attr.ContainerName, "oneagent"),
 					},
 				},
 			})
@@ -359,8 +370,18 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: volumes.ConfigMountPath + "/enrichment",
-						SubPath:   attr.ContainerName + "/enrichment",
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.json"),
+						SubPath:   attr.ContainerName + "/enrichment/dt_metadata.json",
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.properties"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.properties"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoints"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoints"),
 					},
 				},
 			})
