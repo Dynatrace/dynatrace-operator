@@ -64,7 +64,7 @@ The primary CRD for deploying and managing Dynatrace observability components. T
   - `hostMonitoring`: Node-only monitoring with [optional CSI driver](https://docs.dynatrace.com/docs/shortlink/how-it-works-k8s-operator#csidriver) for read-only operation
   - `cloudNativeFullStack`: Combined application and host monitoring
 - **ActiveGate Capabilities:**
-  - `routing`: Routes OneAgent traffic through ActiveGate
+  - `routing`: Routes OneAgent traffic through an [ActiveGate](https://docs.dynatrace.com/docs/ingest-from/dynatrace-activegate)
   - `kubernetes-monitoring`: Monitors Kubernetes API
   - `metrics-ingest`: Routes enriched metrics through ActiveGate
 - **Additional Features:**
