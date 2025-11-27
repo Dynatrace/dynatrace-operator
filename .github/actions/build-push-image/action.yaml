@@ -19,7 +19,7 @@ inputs:
     required: false
   fips:
     description: Whether to build the image with FIPS enabled
-    default: "false"
+    default: 'false'
     required: false
 outputs:
   digest:
