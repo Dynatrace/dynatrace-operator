@@ -67,7 +67,7 @@ The primary CRD for deploying and managing Dynatrace observability components. T
   - `routing`: Routes OneAgent traffic through an [ActiveGate](https://docs.dynatrace.com/docs/ingest-from/dynatrace-activegate)
   - `kubernetes-monitoring`: Monitors Kubernetes API
   - `metrics-ingest`: Routes enriched metrics through ActiveGate
-- **Additional features deployments:**
+- **Additional feature deployments:**
   - [Extensions](https://docs.dynatrace.com/docs/ingest-from/extensions)
     - Disclaimer: Only a limited number of extensions are supported by the operator.
   - Log monitoring
