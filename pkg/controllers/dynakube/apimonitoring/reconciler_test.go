@@ -120,6 +120,24 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 	})
+
+	t.Run("reconcile k8sentity again on first run", func(t *testing.T) {
+		dk := newDynaKube()
+		dk.Status.KubernetesClusterMEID = ""
+		r := newTestReconciler(t, dk)
+		r.k8sEntity.EXPECT().Reconcile(mockCtx).Return(nil).Twice()
+		r.dtClient.EXPECT().
+			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{}, dtclient.KubernetesSettingsSchemaID).
+			Return(dtclient.GetSettingsResponse{}, nil).Once()
+		r.dtClient.EXPECT().
+			CreateOrUpdateKubernetesSetting(mockCtx, testName, testUID, "").
+			Return(testObjectID, nil).Once()
+
+		actual, err := r.createObjectIDIfNotExists(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, testObjectID, actual)
+	})
+
 }
 
 func TestReconcileErrors(t *testing.T) {
