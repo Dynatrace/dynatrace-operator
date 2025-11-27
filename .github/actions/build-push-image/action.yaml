@@ -92,7 +92,7 @@ runs:
         build-args: |
           GO_LINKER_ARGS=${{ steps.prep.outputs.go_linker_args }}
           GO_BUILD_TAGS=${{ steps.prep.outputs.go_build_tags }}
-          GOFIPS=${{ inputs.fips == 'true' && 'v1.0.0' || 'off' }}
+          GOFIPS140=${{ inputs.fips == 'true' && 'v1.0.0' || 'off' }}
         context: .
         file: ${{ inputs.dockerfile }}
         provenance: false
