@@ -1,4 +1,4 @@
-## Location to install dependencies to
+# Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
@@ -29,7 +29,7 @@ YQ_VERSION ?= v4.49.2
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
 GO_TEST_COVERAGE_VERSION ?= v2.18.0
 
-## Tool Binaries
+# Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
@@ -106,8 +106,8 @@ prerequisites/setup-envtest: prerequisites/envtest
 	@echo "Setup of envtest binaries completed."
 
 ## Install 'helm' if it is missing
-## TODO: Have version accessible by renovate?
 prerequisites/helm-unittest:
+## TODO: Have version accessible by renovate?
 	hack/helm/install-unittest-plugin.sh $(HELMUNITTEST_VERSION)
 
 ## Install 'markdownlint' if it is missing
