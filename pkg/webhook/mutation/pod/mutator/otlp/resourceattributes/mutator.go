@@ -2,67 +2,79 @@ package resourceattributes
 
 import (
 	"context"
+	"maps"
 	"slices"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-var (
-	log = logd.Get().WithName("otlp-exporter-pod-mutation")
-)
-
-const (
-	OTELResourceAttributesEnv = "OTEL_RESOURCE_ATTRIBUTES"
 )
 
 type Mutator struct {
 	kubeClient client.Client
 }
 
-func New(apiReader client.Client) dtwebhook.Mutator {
+func New(apiReader client.Client) mutator.Mutator {
 	return &Mutator{kubeClient: apiReader}
 }
 
-func (Mutator) IsEnabled(_ *dtwebhook.BaseRequest) bool {
+func (*Mutator) IsEnabled(_ *mutator.BaseRequest) bool {
 	// always return true, as this mutator is only called if OTLP exporter mutator is enabled
 	return true
 }
 
-func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
+func (*Mutator) IsInjected(_ *mutator.BaseRequest) bool {
 	// always return false, as this mutator is only called if OTLP exporter mutator is enabled
 	return false
 }
 
-func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_ = m.mutate(request.Context, request.BaseRequest)
+func (m *Mutator) Mutate(request *mutator.MutationRequest) error {
+	_, err := m.mutate(request.Context, request.BaseRequest)
 
-	return nil
+	return err
 }
 
-func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+func (m *Mutator) Reinvoke(request *mutator.ReinvocationRequest) bool {
 	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	mutated := m.mutate(context.Background(), request.BaseRequest)
+	mutated, err := m.mutate(context.Background(), request.BaseRequest)
+	if err != nil {
+		log.Error(err, "reinvoke of OTLP resource attribute mutator failed")
+	}
 
 	return mutated
 }
 
-func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bool {
+func (m *Mutator) mutate(ctx context.Context, request *mutator.BaseRequest) (bool, error) {
+	var err error
+
 	mutated := false
 
 	log.Debug("injecting OTLP resource Attributes")
 
-	// fetch workload information once per pod
-	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, *request, log)
+	podAttributes := pod.Attributes{}
+
+	podAttributes, err = attributes.GetWorkloadInfoAttributes(podAttributes, ctx, request, m.kubeClient)
 	if err != nil {
-		// log error but continue (best effort)
 		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
+
+		// TODO: should we abort here or go on with rest of attributes?
+		/*
+			return false, mutator.MutatorError{
+				Err:      errors.WithStack(err),
+				Annotate: setNotInjectedAnnotationFunc(mutator.OwnerLookupFailedReason),
+			}*/
 	}
+
+	var envs []corev1.EnvVar
+
+	podAttributes, envs = attributes.GetPodAttributes(podAttributes, request)
+
+	podAttributes = attributes.GetMetadataAnnotations(podAttributes, request)
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
@@ -71,17 +83,15 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 			continue
 		}
 
-		if m.addResourceAttributes(request, c, ownerInfo) {
-			mutated = true
-		}
+		containerAttributes := attributes.GetContainerAttributes(c)
+
+		mutated = m.addResourceAttributes(c, podAttributes, containerAttributes, envs) || mutated
 	}
 
-	return mutated
+	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info) bool {
-	var mutated bool
-
+func (m *Mutator) addResourceAttributes(c *corev1.Container, podAttributes pod.Attributes, containerAttributes container.Attributes, envs []corev1.EnvVar) bool {
 	existingAttributes, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 	if ok {
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
@@ -90,80 +100,69 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		})
 	}
 
+	podAttributesMap, err := podAttributes.ToMap()
+	if err != nil {
+		log.Error(err, "failed to convert pod attributes to map")
+
+		return false
+	}
+
+	// need to sanitize and copy user-defined attributes separately
+	maps.Copy(podAttributesMap, SanitizeMap(podAttributes.UserDefined))
+
 	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
-	envVarSourcesAdded := ensureEnvVarSourcesSet(c)
+	mutated := ensureEnvVarSourcesSet(c, envs)
 
-	attributesToAdd := Attributes{
-		"k8s.namespace.name":           request.Pod.Namespace,
-		"k8s.cluster.uid":              request.DynaKube.Status.KubeSystemUUID,
-		"dt.kubernetes.cluster.id":     request.DynaKube.Status.KubeSystemUUID,
-		"k8s.cluster.name":             request.DynaKube.Status.KubernetesClusterName,
-		"dt.entity.kubernetes_cluster": request.DynaKube.Status.KubernetesClusterMEID,
-		"k8s.container.name":           c.Name,
-		"k8s.pod.name":                 "$(K8S_PODNAME)",
-		"k8s.pod.uid":                  "$(K8S_PODUID)",
-		"k8s.node.name":                "$(K8S_NODE_NAME)",
+	mutated = existingAttributes.Merge(podAttributesMap) || mutated
+
+	if _, found := existingAttributes["k8s.container.name"]; !found && containerAttributes.ContainerName != "" {
+		existingAttributes["k8s.container.name"] = containerAttributes.ContainerName
+		mutated = true
 	}
 
-	// add workload Attributes (only once fetched per pod, but appended per container to env var if not already present)
-	if ownerInfo != nil {
-		workloadAttributesToAdd := Attributes{
-			"k8s.workload.kind":           ownerInfo.Kind,
-			"dt.kubernetes.workload.kind": ownerInfo.Kind,
-			"k8s.workload.name":           ownerInfo.Name,
-			"dt.kubernetes.workload.name": ownerInfo.Name,
-		}
-		_ = attributesToAdd.Merge(workloadAttributesToAdd)
-	}
-	// add Attributes from annotations - these have the highest precedence, i.e. users can potentially overwrite the above Attributes
-	attributesFromAnnotations := NewAttributesFromMap(request.Pod.Annotations)
-	_ = attributesFromAnnotations.Merge(attributesToAdd)
-
-	mutated = existingAttributes.Merge(attributesFromAnnotations)
-
+	// TODO: what attributes need sanitization? All or just user-defined ones?
+	//	finalValue := SanitizeMap(existingAttributes).String()
 	finalValue := existingAttributes.String()
 
 	if finalValue != "" {
 		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: finalValue})
 	}
 
-	return envVarSourcesAdded || mutated
+	return mutated
 }
 
-func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool {
-	return dtwebhook.IsContainerExcludedFromInjection(
+func shouldSkipContainer(request mutator.BaseRequest, c corev1.Container) bool {
+	return mutator.IsContainerExcludedFromInjection(
 		request.DynaKube.Annotations,
 		request.Pod.Annotations,
 		c.Name,
 	)
 }
 
-func ensureEnvVarSourcesSet(c *corev1.Container) bool {
+func ensureEnvVarSourcesSet(c *corev1.Container, envs []corev1.EnvVar) bool {
 	mutated := false
 
-	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
-		Name:      "K8S_PODNAME",
-		ValueFrom: k8senv.NewSourceForField("metadata.name"),
-	}); added {
-		c.Env = envs
-		mutated = true
-	}
+	for env := range envs {
+		var added bool
 
-	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
-		Name:      "K8S_PODUID",
-		ValueFrom: k8senv.NewSourceForField("metadata.uid"),
-	}); added {
-		c.Env = envs
-		mutated = true
-	}
-
-	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
-		Name:      "K8S_NODE_NAME",
-		ValueFrom: k8senv.NewSourceForField("spec.nodeName"),
-	}); added {
-		c.Env = envs
-		mutated = true
+		c.Env, added = k8senv.Append(c.Env, envs[env])
+		if added {
+			mutated = true
+		}
 	}
 
 	return mutated
 }
+
+/*
+func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+
+		pod.Annotations[mutator.AnnotationOTLPInjected] = "false"
+		pod.Annotations[mutator.AnnotationOTLPReason] = reason
+	}
+}
+*/

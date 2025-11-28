@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/stretchr/testify/assert"
@@ -23,8 +24,6 @@ import (
 
 func TestAddPodAttributes(t *testing.T) {
 	validateAttributes := func(t *testing.T, request dtwebhook.MutationRequest) podattr.Attributes {
-		t.Helper()
-
 		require.NotEmpty(t, request.InstallContainer.Args)
 
 		rawArgs := []string{}
@@ -41,17 +40,17 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Equal(t, request.DynaKube.Status.KubernetesClusterMEID, attr.DTClusterEntity)
 		assert.Equal(t, request.DynaKube.Status.KubernetesClusterName, attr.ClusterName)
 		assert.Equal(t, request.DynaKube.Status.KubeSystemUUID, attr.ClusterUID)
-		assert.Contains(t, attr.PodName, K8sPodNameEnv)
-		assert.Contains(t, attr.PodUID, K8sPodUIDEnv)
-		assert.Contains(t, attr.NodeName, K8sNodeNameEnv)
+		assert.Contains(t, attr.PodName, attributes.K8sPodNameEnv)
+		assert.Contains(t, attr.PodUID, attributes.K8sPodUIDEnv)
+		assert.Contains(t, attr.NodeName, attributes.K8sNodeNameEnv)
 		assert.Equal(t, request.Pod.Namespace, attr.NamespaceName)
 
-		assertDeprecatedAttributes(t, attr)
+		assertDeprecatedClusterAttributes(t, attr)
 
 		require.Len(t, request.InstallContainer.Env, 3)
-		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodNameEnv))
-		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodUIDEnv))
-		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sNodeNameEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, attributes.K8sPodNameEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, attributes.K8sPodUIDEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, attributes.K8sNodeNameEnv))
 
 		return attr
 	}
@@ -681,80 +680,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 	})
 }
 
-func TestCreateImageInfo(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   containerattr.ImageInfo
-	}
-
-	testCases := []testCase{
-		{
-			title: "empty URI",
-			in:    "",
-			out:   containerattr.ImageInfo{},
-		},
-		{
-			title: "URI with tag",
-			in:    "registry.example.com/repository/image:tag",
-			out: containerattr.ImageInfo{
-				Registry:    "registry.example.com",
-				Repository:  "repository/image",
-				Tag:         "tag",
-				ImageDigest: "",
-			},
-		},
-		{
-			title: "URI with digest",
-			in:    "registry.example.com/repository/image@sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
-			out: containerattr.ImageInfo{
-				Registry:    "registry.example.com",
-				Repository:  "repository/image",
-				Tag:         "",
-				ImageDigest: "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
-			},
-		},
-		{
-			title: "URI with digest and tag",
-			in:    "registry.example.com/repository/image:tag@sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
-			out: containerattr.ImageInfo{
-				Registry:    "registry.example.com",
-				Repository:  "repository/image",
-				Tag:         "tag",
-				ImageDigest: "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc",
-			},
-		},
-		{
-			title: "URI with missing tag",
-			in:    "registry.example.com/repository/image",
-			out: containerattr.ImageInfo{
-				Registry:   "registry.example.com",
-				Repository: "repository/image",
-			},
-		},
-		{
-			title: "URI with docker.io (special case in certain libraries)",
-			in:    "docker.io/php:fpm-stretch",
-			out: containerattr.ImageInfo{
-				Registry:   "docker.io",
-				Repository: "php",
-				Tag:        "fpm-stretch",
-			},
-		},
-		{
-			title: "URI with missing registry",
-			in:    "php:fpm-stretch",
-			out: containerattr.ImageInfo{
-				Repository: "php",
-				Tag:        "fpm-stretch",
-			},
-		},
-	}
-	for _, test := range testCases {
-		t.Run(test.title, func(t *testing.T) {
-			imageInfo := createImageInfo(test.in)
-
-			require.Equal(t, test.out, imageInfo)
-		})
-	}
+func assertDeprecatedClusterAttributes(t *testing.T, attrs podattr.Attributes) {
+	depValue, ok := attrs.UserDefined[attributes.DeprecatedClusterIDKey]
+	require.True(t, ok)
+	assert.Equal(t, attrs.ClusterUID, depValue)
 }

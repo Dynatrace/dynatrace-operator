@@ -1,4 +1,4 @@
-package metadata
+package attributes
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test-annotation": "test-value",
 		}
 
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		copyMetadataFromNamespace(request.BaseRequest)
 		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "copyofannotations", request.Pod.Annotations[metadataenrichment.Prefix+"copyofannotations"])
@@ -77,7 +77,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		copyMetadataFromNamespace(request.BaseRequest)
 		require.Len(t, request.Pod.Annotations, 5)
 		require.Empty(t, request.Pod.Labels)
 
@@ -137,7 +137,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		copyMetadataFromNamespace(request.BaseRequest)
 		require.Len(t, request.Pod.Annotations, 3)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "test-label-value", request.Pod.Annotations[metadataenrichment.Prefix+"dt.test-label"])
@@ -170,7 +170,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test-annotation": "test-value",
 		}
 
-		annotations := copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		annotations := copyMetadataFromNamespace(request.BaseRequest)
 
 		require.Len(t, annotations, 2)
 		require.Len(t, request.Pod.Annotations, 3)
@@ -206,6 +206,7 @@ func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]str
 		*dk,
 	)
 }
+
 func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -216,6 +217,7 @@ func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
 		},
 	}
 }
+
 func getTestPod(annotations map[string]string) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{

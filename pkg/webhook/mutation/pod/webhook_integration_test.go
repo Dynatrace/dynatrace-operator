@@ -3,6 +3,7 @@ package pod_test
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net/url"
 	"testing"
 
@@ -224,9 +225,27 @@ func TestWebhook(t *testing.T) {
 }
 
 func TestOTLPWebhook(t *testing.T) {
-	metadataAnnotations := map[string]string{
+	const (
+		testSecContextLabel          = "test-security-context-label"
+		testCostCenterAnnotation     = "test-cost-center-annotation"
+		testCustomMetadataLabel      = "test-custom-metadata-label"
+		testCustomMetadataAnnotation = "test-custom-metadata-annotation"
+	)
+
+	podMetadataAnnotations := map[string]string{
 		"metadata.dynatrace.com/service.name": "checkout service",
 		"metadata.dynatrace.com/custom.key":   "value:with/special chars",
+	}
+
+	nsMetadataAnnoations := map[string]string{
+		testCostCenterAnnotation:                "sales",
+		testCustomMetadataAnnotation:            "custom-annotation",
+		"metadata.dynatrace.com/custom.ns-meta": "custom-ns-meta-value",
+	}
+
+	nsMetadataLabels := map[string]string{
+		testSecContextLabel:     "high",
+		testCustomMetadataLabel: "custom-label",
 	}
 
 	clt := integrationtests.SetupWebhookTestEnvironment(t,
@@ -239,8 +258,11 @@ func TestOTLPWebhook(t *testing.T) {
 					Labels: map[string]string{
 						podmutator.InjectionInstanceLabel: "dynakube",
 					},
+					Annotations: nsMetadataAnnoations,
 				},
 			}
+			maps.Copy(ns.Labels, nsMetadataLabels)
+
 			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
 
 			pod := &corev1.Pod{
@@ -264,8 +286,11 @@ func TestOTLPWebhook(t *testing.T) {
 		},
 	)
 
-	t.Run("otlp exporter", func(t *testing.T) {
-		const dataIngestToken = "test-token"
+	t.Run("otlp exporter with ns metadata propagation and custom enrichment rules", func(t *testing.T) {
+		const (
+			dataIngestToken = "test-token"
+		)
+
 		apiURL := "https://example.live.dynatrace.com"
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -293,6 +318,28 @@ func TestOTLPWebhook(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: "test-meid",
 				KubernetesClusterName: "test-cluster",
+				MetadataEnrichment: metadataenrichment.Status{
+					Rules: []metadataenrichment.Rule{
+						{
+							Type:   "LABEL",
+							Source: testSecContextLabel,
+							Target: "dt.security_context",
+						},
+						{
+							Type:   "LABEL",
+							Source: testCustomMetadataLabel,
+						},
+						{
+							Type:   "ANNOTATION",
+							Source: testCostCenterAnnotation,
+							Target: "dt.cost.costcenter",
+						},
+						{
+							Type:   "ANNOTATION",
+							Source: testCustomMetadataAnnotation,
+						},
+					},
+				},
 			},
 		}
 
@@ -311,7 +358,7 @@ func TestOTLPWebhook(t *testing.T) {
 		createDynaKube(t, clt, dk)
 
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Annotations = metadataAnnotations
+			pod.Annotations = podMetadataAnnotations
 		})
 
 		// verify mutation occurred by presence of OTLP env vars (annotation may not be set when no OneAgent injection)
@@ -351,16 +398,21 @@ func TestOTLPWebhook(t *testing.T) {
 
 		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
 
-		gotResourceAttributes, b := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
-		require.True(t, b, "OTEL_RESOURCE_ATTRIBUTES missing")
+		gotResourceAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
+		require.True(t, envVarFound, "OTEL_RESOURCE_ATTRIBUTES missing")
 
-		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/service.name"]), gotResourceAttributes["service.name"])
-		assert.Equal(t, url.QueryEscape(metadataAnnotations["metadata.dynatrace.com/custom.key"]), gotResourceAttributes["custom.key"])
+		assert.Equal(t, url.QueryEscape(podMetadataAnnotations["metadata.dynatrace.com/service.name"]), gotResourceAttributes["service.name"])
+		assert.Equal(t, url.QueryEscape(podMetadataAnnotations["metadata.dynatrace.com/custom.key"]), gotResourceAttributes["custom.key"])
 		assert.Equal(t, testNamespace, gotResourceAttributes["k8s.namespace.name"])
 		assert.Equal(t, "app", gotResourceAttributes["k8s.container.name"])
 		assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes["dt.kubernetes.cluster.id"])
 		assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
 		assert.Equal(t, dk.Status.KubernetesClusterName, gotResourceAttributes["k8s.cluster.name"])
+		assert.Equal(t, url.QueryEscape(nsMetadataAnnoations[testCustomMetadataAnnotation]), gotResourceAttributes["k8s.namespace.annotation."+testCustomMetadataAnnotation])
+		assert.Equal(t, url.QueryEscape(nsMetadataAnnoations[testCostCenterAnnotation]), gotResourceAttributes["dt.cost.costcenter"])
+		assert.Equal(t, url.QueryEscape(nsMetadataLabels[testSecContextLabel]), gotResourceAttributes["dt.security_context"])
+		assert.Equal(t, url.QueryEscape(nsMetadataLabels[testCustomMetadataLabel]), gotResourceAttributes["k8s.namespace.label."+testCustomMetadataLabel])
+		assert.Equal(t, url.QueryEscape(nsMetadataAnnoations["metadata.dynatrace.com/custom.ns-meta"]), gotResourceAttributes["custom.ns-meta"])
 	})
 
 	t.Run("data ingest token secret missing", func(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	attributescommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -193,8 +194,8 @@ func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
 
 		require.Len(t, initContainers, 1)
 
-		assert.Contains(t, testPod.Annotations, metacommon.AnnotationWorkloadKind)
-		assert.Contains(t, testPod.Annotations, metacommon.AnnotationWorkloadName)
+		assert.Contains(t, testPod.Annotations, attributescommon.AnnotationWorkloadKind)
+		assert.Contains(t, testPod.Annotations, attributescommon.AnnotationWorkloadName)
 
 		return ctx
 	}
@@ -207,8 +208,8 @@ func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func {
 
 		require.Len(t, initContainers, 1)
 
-		assert.NotContains(t, testPod.Annotations, metacommon.AnnotationWorkloadKind)
-		assert.NotContains(t, testPod.Annotations, metacommon.AnnotationWorkloadName)
+		assert.NotContains(t, testPod.Annotations, attributescommon.AnnotationWorkloadKind)
+		assert.NotContains(t, testPod.Annotations, attributescommon.AnnotationWorkloadName)
 
 		return ctx
 	}
@@ -252,7 +253,7 @@ func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) deployment.PodConsumer
 		assert.Contains(t, initContainers[0].Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 		// The `--target=/mnt/bin` is a sign that the init-container will download/configure the oneagent
 		assert.NotContains(t, initContainers[0].Args, "--"+bootstrapper.TargetFolderFlag+"="+consts.AgentInitBinDirMount)
-		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadKind)
-		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadName)
+		assert.Contains(t, pod.Annotations, attributescommon.AnnotationWorkloadKind)
+		assert.Contains(t, pod.Annotations, attributescommon.AnnotationWorkloadName)
 	}
 }
