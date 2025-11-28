@@ -1,16 +1,13 @@
 package metadata
 
 import (
-	"context"
-	"maps"
-
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,13 +19,13 @@ type Mutator struct {
 	metaClient client.Client
 }
 
-func NewMutator(metaClient client.Client) dtwebhook.Mutator {
+func NewMutator(metaClient client.Client) mutator.Mutator {
 	return &Mutator{
 		metaClient: metaClient,
 	}
 }
 
-func (mut *Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) IsEnabled(request *mutator.BaseRequest) bool {
 	if oneagent.IsEnabled(request) && oneagent.IsSelfExtractingImage(request) {
 		return true
 	}
@@ -48,44 +45,23 @@ func (mut *Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
 	return matchesNamespace && enabledOnPod && enabledOnDynakube
 }
 
-func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
+func (mut *Mutator) IsInjected(request *mutator.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
-func CollectMetadataAttributes(ctx context.Context, request *dtwebhook.BaseRequest, clt client.Client) (podattr.Attributes, error) {
-	workloadInfo, err := workload.FindRootOwnerOfPod(ctx, clt, *request, log)
+func (mut *Mutator) Mutate(request *mutator.MutationRequest) error {
+	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
+
+	attrs := podattr.Attributes{}
+	attrs, err := attributes.GetWorkloadInfoAttributes(attrs, request.Context, request.BaseRequest, mut.metaClient)
 	if err != nil {
-		return podattr.Attributes{}, dtwebhook.MutatorError{
+		return mutator.MutatorError{
 			Err:      errors.WithStack(err),
 			Annotate: setNotInjectedAnnotationFunc(OwnerLookupFailedReason),
 		}
 	}
 
-	attrs := podattr.Attributes{
-		UserDefined: make(map[string]string),
-		WorkloadInfo: podattr.WorkloadInfo{
-			WorkloadKind: workloadInfo.Kind,
-			WorkloadName: workloadInfo.Name,
-		},
-	}
-
-	setDeprecatedAttributes(&attrs)
-	setWorkloadAnnotations(request.Pod, workloadInfo)
-
-	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
-	if copiedMetadataAnnotations == nil {
-		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
-	} else {
-		maps.Copy(attrs.UserDefined, copiedMetadataAnnotations)
-	}
-
-	return attrs, nil
-}
-
-func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
-
-	attrs, err := CollectMetadataAttributes(request.Context, request.BaseRequest, mut.metaClient)
+	attrs = attributes.GetNamespaceAttributes(attrs, request.BaseRequest)
 
 	log.Debug("collected metadata attributes for pod", "attributes", attrs)
 
@@ -103,16 +79,17 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func turnOnMetadataEnrichment(request *dtwebhook.MutationRequest) {
+func turnOnMetadataEnrichment(request *mutator.MutationRequest) {
 	request.InstallContainer.Args = append(request.InstallContainer.Args, arg.ConvertArgsToStrings([]arg.Arg{{Name: bootstrapper.MetadataEnrichmentFlag}})...)
 }
 
-func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+func (mut *Mutator) Reinvoke(request *mutator.ReinvocationRequest) bool {
 	return false
 }
 
-func getNamespaceAttributes(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
-	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+/*
+func getNamespaceAttributes(request *mutator.MutationRequest, attributes *podattr.Attributes) {
+	copiedMetadataAnnotations := attributes.CopyMetadataFromNamespace(request.BaseRequest)
 	if copiedMetadataAnnotations == nil {
 		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
 
@@ -125,6 +102,7 @@ func getNamespaceAttributes(request *dtwebhook.MutationRequest, attributes *poda
 
 	maps.Copy(attributes.UserDefined, copiedMetadataAnnotations)
 }
+*/
 
 func setInjectedAnnotation(pod *corev1.Pod) {
 	if pod.Annotations == nil {
@@ -144,13 +122,4 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 		pod.Annotations[AnnotationInjected] = "false"
 		pod.Annotations[AnnotationReason] = reason
 	}
-}
-
-func setWorkloadAnnotations(pod *corev1.Pod, workload *workload.Info) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	pod.Annotations[AnnotationWorkloadKind] = workload.Kind
-	pod.Annotations[AnnotationWorkloadName] = workload.Name
 }

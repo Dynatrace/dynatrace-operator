@@ -1,7 +1,10 @@
-package metadata
+package attributes
 
 import (
 	"encoding/json"
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -10,14 +13,28 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func CopyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
-	copiedCustomRuleAnnotations := copyAccordingToCustomRules(pod, namespace, dk)
-	copiedPrefixAnnotations := copyAccordingToPrefix(pod, namespace)
+func GetNamespaceAttributes(attrs podattr.Attributes, request *mutator.BaseRequest) podattr.Attributes {
+	copiedMetadataAnnotations := copyMetadataFromNamespace(request)
+	if copiedMetadataAnnotations == nil {
+		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
+	} else {
+		if attrs.UserDefined == nil {
+			attrs.UserDefined = make(map[string]string)
+		}
+		maps.Copy(attrs.UserDefined, copiedMetadataAnnotations)
+	}
+
+	return attrs
+}
+
+func copyMetadataFromNamespace(request *mutator.BaseRequest) map[string]string {
+	copiedCustomRuleAnnotations := copyAccordingToCustomRules(request.Pod, request.Namespace, request.DynaKube)
+	copiedPrefixAnnotations := copyAccordingToPrefix(request.Pod, request.Namespace)
 
 	maps.Copy(copiedCustomRuleAnnotations, copiedPrefixAnnotations)
 
 	copiedCustomRuleAnnotations = removeMetadataPrefix(copiedCustomRuleAnnotations)
-	setPodMetadataJSONAnnotation(pod, copiedCustomRuleAnnotations)
+	setPodMetadataJSONAnnotation(request.Pod, copiedCustomRuleAnnotations)
 
 	return copiedCustomRuleAnnotations
 }
@@ -79,20 +96,6 @@ func setPodMetadataJSONAnnotation(pod *corev1.Pod, annotations map[string]string
 	}
 
 	_ = setPodAnnotationIfNotExists(pod, metadataenrichment.Annotation, string(marshaledAnnotations))
-}
-
-func setPodAnnotationIfNotExists(pod *corev1.Pod, key, value string) bool {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-
-	if _, ok := pod.Annotations[key]; !ok {
-		pod.Annotations[key] = value
-
-		return true
-	}
-
-	return false
 }
 
 func removeMetadataPrefix(annotations map[string]string) map[string]string {

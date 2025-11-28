@@ -31,4 +31,6 @@ const (
 	InstallContainerName = "dynatrace-operator"
 
 	InjectionSplitMounts = "dynatrace.com/split-mounts"
+
+	OwnerLookupFailedReason = "OwnerLookupFailed"
 )

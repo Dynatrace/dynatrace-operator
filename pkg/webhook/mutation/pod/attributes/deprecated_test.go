@@ -1,4 +1,4 @@
-package injection
+package attributes
 
 import (
 	"testing"

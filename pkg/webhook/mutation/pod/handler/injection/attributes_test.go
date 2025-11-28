@@ -2,6 +2,7 @@ package injection
 
 import (
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	"slices"
 	"strings"
 	"testing"
@@ -41,17 +42,17 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Equal(t, request.DynaKube.Status.KubernetesClusterMEID, attr.DTClusterEntity)
 		assert.Equal(t, request.DynaKube.Status.KubernetesClusterName, attr.ClusterName)
 		assert.Equal(t, request.DynaKube.Status.KubeSystemUUID, attr.ClusterUID)
-		assert.Contains(t, attr.PodName, K8sPodNameEnv)
-		assert.Contains(t, attr.PodUID, K8sPodUIDEnv)
-		assert.Contains(t, attr.NodeName, K8sNodeNameEnv)
+		assert.Contains(t, attr.PodName, attributes.K8sPodNameEnv)
+		assert.Contains(t, attr.PodUID, attributes.K8sPodUIDEnv)
+		assert.Contains(t, attr.NodeName, attributes.K8sNodeNameEnv)
 		assert.Equal(t, request.Pod.Namespace, attr.NamespaceName)
 
-		assertDeprecatedAttributes(t, attr)
+		attributes.assertDeprecatedAttributes(t, attr)
 
 		require.Len(t, request.InstallContainer.Env, 3)
-		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodNameEnv))
-		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodUIDEnv))
-		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sNodeNameEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, attributes.K8sPodNameEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, attributes.K8sPodUIDEnv))
+		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, attributes.K8sNodeNameEnv))
 
 		return attr
 	}
