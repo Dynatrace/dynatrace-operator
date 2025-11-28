@@ -52,7 +52,7 @@ jobs:
       - name: Setup up kind
         uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # v1.13.0
         with:
-          # renovate github-releases depName=github.com/kubernetes-sigs/kind
+          # renovate datasource=github-releases depName=github.com/kubernetes-sigs/kind
           version: v0.30.0
           install_only: true
       - name: Set up go

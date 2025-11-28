@@ -13,7 +13,7 @@ export DAEMONSET_NAME="dynatrace-cleanup-node-fs"
 export MAX_WAIT_SECONDS=600
 export WAIT_BEFORE_DAEMONSET_DESTRUCTION_SECONDS=0
 export KUBELET_PATH="/var/lib/kubelet"
-# renovate: datasource=docker depName=registry.access.redhat.com/ubi9-micro
+# renovate datasource=docker depName=registry.access.redhat.com/ubi9-micro
 export UBI_MICRO_IMAGE="registry.access.redhat.com/ubi9-micro:9.6-1760515026@sha256:aff810919642215e15c993b9bbc110dbcc446608730ad24499dafd9df7a8f8f4"
 
 echo "Using namespace: $NAMESPACE"

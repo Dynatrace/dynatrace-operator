@@ -32,7 +32,7 @@ runs:
     env:
       RHCC_APITOKEN: ${{ inputs.pyxis-api-token }}
       RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
-      # renovate depName=redhat-openshift-ecosystem/openshift-preflight
+      # renovate datasource=github-releases depName=redhat-openshift-ecosystem/openshift-preflight
       PREFLIGHT_VERSION: 1.15.2
       IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
     run: |
