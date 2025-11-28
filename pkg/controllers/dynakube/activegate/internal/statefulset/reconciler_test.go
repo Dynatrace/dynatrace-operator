@@ -3,13 +3,11 @@ package statefulset
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	dynafake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -17,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -42,7 +40,7 @@ func TestNewReconciler(t *testing.T) {
 	createDefaultReconciler(t)
 }
 
-func createDefaultReconciler(t *testing.T) *Reconciler {
+func createDefaultReconciler(t *testing.T) (*Reconciler, client.WithWatch, *dynakube.DynaKube) {
 	clt := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
@@ -67,117 +65,98 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 				}},
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
+			Namespace:   testNamespace,
+			Name:        testName,
+			Annotations: map[string]string{},
 		}}
 
-	capability.NewMultiCapability(dk)
-
-	r := NewReconciler(clt, clt, dk, capability.NewMultiCapability(dk)).(*Reconciler)
-	r.dk.Annotations = map[string]string{}
+	r := NewReconciler(clt, clt, dk, capability.NewMultiCapability(dk))
 	require.NotNil(t, r)
-	require.NotNil(t, r.client)
-	require.NotNil(t, r.dk)
 
-	return r
+	return r.(*Reconciler), clt, dk
+}
+
+func getStatefulSet(t *testing.T, clt client.Client, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+	t.Helper()
+	sts := &appsv1.StatefulSet{}
+	err := clt.Get(t.Context(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}, sts)
+	require.NoError(t, err)
+
+	return sts
 }
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	assertCondition := func(t *testing.T, dk *dynakube.DynaKube, status metav1.ConditionStatus, reason, message string) {
+		t.Helper()
+		condition := meta.FindStatusCondition(dk.Status.Conditions, ActiveGateStatefulSetConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, status, condition.Status)
+		assert.Equal(t, reason, condition.Reason)
+		assert.Equal(t, message, condition.Message)
+	}
 
-	t.Run("create stateful set", func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		err := r.Reconcile(ctx)
+	t.Run("create statefulset", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		require.NoError(t, r.Reconcile(t.Context()))
 
-		require.NoError(t, err)
-
-		statefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(ctx, client.ObjectKey{Name: capability.BuildServiceName(r.dk.Name), Namespace: r.dk.Namespace}, statefulSet)
-
-		assert.NotNil(t, statefulSet)
-		require.NoError(t, err)
-
-		condition := meta.FindStatusCondition(r.dk.Status.Conditions, ActiveGateStatefulSetConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.StatefulSetCreatedReason, condition.Reason)
-		assert.Equal(t, fmt.Sprintf("%s-activegate created", testName), condition.Message)
+		_ = getStatefulSet(t, clt, dk)
+		assertCondition(t, dk, metav1.ConditionTrue, conditions.StatefulSetCreatedReason, testName+"-activegate created")
 	})
-	t.Run("update stateful set", func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		err := r.Reconcile(ctx)
+	t.Run("update statefulset", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		require.NoError(t, r.Reconcile(t.Context()))
 
-		require.NoError(t, err)
+		_ = getStatefulSet(t, clt, dk)
 
-		statefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(ctx, client.ObjectKey{Name: capability.BuildServiceName(r.dk.Name), Namespace: r.dk.Namespace}, statefulSet)
+		dk.Spec.Proxy = &value.Source{Value: testValue}
+		require.NoError(t, r.Reconcile(t.Context()))
 
-		assert.NotNil(t, statefulSet)
-		require.NoError(t, err)
-
-		r.dk.Spec.Proxy = &value.Source{Value: testValue}
-		err = r.Reconcile(ctx)
-
-		require.NoError(t, err)
-
-		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(ctx, client.ObjectKey{Name: capability.BuildServiceName(r.dk.Name), Namespace: r.dk.Namespace}, newStatefulSet)
-
-		assert.NotNil(t, statefulSet)
-		require.NoError(t, err)
+		statefulSet := getStatefulSet(t, clt, dk)
 
 		found := 0
-
-		for _, vm := range newStatefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
+		for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
 			if vm.Name == InternalProxySecretVolumeName {
 				found++
 			}
 		}
 
 		assert.Equal(t, 1, found)
-
-		condition := meta.FindStatusCondition(r.dk.Status.Conditions, ActiveGateStatefulSetConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.StatefulSetCreatedReason, condition.Reason)
-		assert.Equal(t, testName+"-activegate created", condition.Message)
+		assertCondition(t, dk, metav1.ConditionTrue, conditions.StatefulSetCreatedReason, testName+"-activegate created")
 	})
-	t.Run("stateful set error is logged in condition", func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		fakeClient := dynafake.NewClientWithInterceptors(interceptor.Funcs{
-			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	t.Run("statefulset error is logged in condition", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		fakeClient := interceptor.NewClient(clt, interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 				return errors.New("BOOM")
 			},
 		})
 		r.apiReader = fakeClient
 
-		err := r.Reconcile(ctx)
+		err := r.Reconcile(t.Context())
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(r.dk.Status.Conditions, ActiveGateStatefulSetConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
-		assert.Equal(t, "A problem occurred when using the Kubernetes API: "+err.Error(), condition.Message)
+		assertCondition(t, dk, metav1.ConditionFalse, conditions.KubeAPIErrorReason, "A problem occurred when using the Kubernetes API: "+err.Error())
 	})
 }
 
 func TestReconcile_GetCustomPropertyHash(t *testing.T) {
-	ctx := context.Background()
-	r := createDefaultReconciler(t)
+	ctx := t.Context()
+	r, clt, dk := createDefaultReconciler(t)
 	hash, err := r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dk.Spec.ActiveGate.CustomProperties = &value.Source{Value: testValue}
+	dk.Spec.ActiveGate.CustomProperties = &value.Source{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dk.Spec.ActiveGate.CustomProperties = &value.Source{ValueFrom: testName}
+	dk.Spec.ActiveGate.CustomProperties = &value.Source{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash(ctx)
 	require.Error(t, err)
 	assert.Empty(t, hash)
 
-	err = r.client.Create(context.Background(), &corev1.Secret{
+	err = clt.Create(t.Context(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -194,13 +173,13 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 }
 
 func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
-	ctx := context.Background()
-	r := createDefaultReconciler(t)
+	ctx := t.Context()
+	r, clt, _ := createDefaultReconciler(t)
 	hash, err := r.calculateActiveGateConfigurationHash(ctx)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	err = r.client.Create(context.Background(), &corev1.Secret{
+	err = clt.Create(t.Context(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 			Namespace: r.dk.Namespace,
@@ -213,65 +192,54 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 }
 
 func TestManageStatefulSet(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("do not delete statefulset if custom labels were added", func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		desiredStatefulSet, err := r.buildDesiredStatefulSet(ctx)
+		r, clt, dk := createDefaultReconciler(t)
 
+		err := r.manageStatefulSet(ctx)
 		require.NoError(t, err)
+
+		statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Namespace: dk.Namespace, Name: capability.BuildServiceName(dk.Name)}}
+		result, err := controllerutil.CreateOrUpdate(t.Context(), clt, statefulSet, func() error {
+			statefulSet.Labels[testName] = testValue
+
+			return nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, controllerutil.OperationResultUpdated, result)
 
 		err = r.manageStatefulSet(ctx)
 		require.NoError(t, err)
 
-		actualStatefulSet, err := k8sstatefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
-		require.NoError(t, err)
-		assert.NotNil(t, actualStatefulSet)
-
-		actualStatefulSet.Labels[testName] = testValue
-		err = r.client.Update(ctx, actualStatefulSet)
-
-		require.NoError(t, err)
-		err = r.manageStatefulSet(ctx)
-		require.NoError(t, err)
-
-		actualStatefulSet, err = k8sstatefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
-		require.NoError(t, err)
-		assert.NotNil(t, actualStatefulSet)
+		actualStatefulSet := getStatefulSet(t, clt, dk)
 		assert.Contains(t, actualStatefulSet.Labels, testName)
 	})
 	t.Run("update statefulset if selector differs", func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		desiredStatefulSet, err := r.buildDesiredStatefulSet(ctx)
+		r, clt, dk := createDefaultReconciler(t)
 
+		err := r.manageStatefulSet(ctx)
 		require.NoError(t, err)
+
+		statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Namespace: dk.Namespace, Name: capability.BuildServiceName(dk.Name)}}
+		result, err := controllerutil.CreateOrUpdate(t.Context(), clt, statefulSet, func() error {
+			statefulSet.Spec.Selector.MatchLabels["activegate"] = testValue
+
+			return nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, controllerutil.OperationResultUpdated, result)
 
 		err = r.manageStatefulSet(ctx)
 		require.NoError(t, err)
 
-		actualStatefulSet, err := k8sstatefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
-		require.NoError(t, err)
-		assert.NotNil(t, actualStatefulSet)
-
-		actualStatefulSet.Spec.Selector.MatchLabels["activegate"] = testValue
-		err = r.client.Update(ctx, actualStatefulSet)
-
-		require.NoError(t, err)
-
-		err = r.manageStatefulSet(ctx)
-		require.NoError(t, err)
-
-		actualStatefulSet, err = k8sstatefulset.Query(r.client, r.apiReader, log).Get(ctx, client.ObjectKeyFromObject(desiredStatefulSet))
-		require.NoError(t, err)
-
-		labelValue, ok := actualStatefulSet.Spec.Selector.MatchLabels["activegate"]
-		require.True(t, ok)
-		assert.Equal(t, testValue, labelValue)
+		actualStatefulSet := getStatefulSet(t, clt, dk)
+		assert.Equal(t, testValue, actualStatefulSet.Spec.Selector.MatchLabels["activegate"])
 	})
 }
 
 func TestStatefulSetUpdateWeakness(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	clt := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
