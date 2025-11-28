@@ -5,6 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
@@ -57,18 +58,25 @@ func AddConfigVolume(pod *corev1.Pod) {
 	)
 }
 
-func AddConfigVolumeMount(container *corev1.Container) {
-	if mounts.IsPathIn(container.VolumeMounts, ConfigMountPath) {
-		return
+func AddConfigVolumeMount(container *corev1.Container, request *dtwebhook.BaseRequest) {
+	if request.IsSplitMountsEnabled() {
+		addSplitMounts(container, request)
+	} else {
+		addCommonConfigVolumeMount(container)
 	}
+}
 
-	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      ConfigVolumeName,
-			MountPath: ConfigMountPath,
-			SubPath:   container.Name,
-		},
-	)
+func addCommonConfigVolumeMount(container *corev1.Container) {
+	vm := corev1.VolumeMount{
+		Name:      ConfigVolumeName,
+		MountPath: ConfigMountPath,
+		SubPath:   container.Name,
+	}
+	container.VolumeMounts = mounts.Append(container.VolumeMounts, vm)
+}
+
+func HasCommonConfigVolumeMounts(container *corev1.Container) bool {
+	return mounts.IsPathIn(container.VolumeMounts, ConfigMountPath)
 }
 
 func AddInitConfigVolumeMount(container *corev1.Container) {

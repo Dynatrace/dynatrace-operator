@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -95,6 +96,7 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 				Annotations: map[string]string{
 					consts.AnnotationActiveGateConfigurationHash: statefulSetBuilder.configHash,
 					consts.AnnotationActiveGateTenantTokenHash:   statefulSetBuilder.dynakube.Status.ActiveGate.ConnectionInfo.TenantTokenHash,
+					mutator.InjectionSplitMounts:                 "true",
 				},
 			},
 		},
