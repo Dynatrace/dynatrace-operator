@@ -91,6 +91,7 @@ func createManager(config *rest.Config, namespace string) (manager.Manager, erro
 		Metrics: server.Options{
 			BindAddress: metricsBindAddress,
 		},
+		PprofBindAddress:       os.Getenv("PPROF_BIND_ADDRESS"),
 		HealthProbeBindAddress: probeAddress,
 		LivenessEndpointName:   livenessEndpointName,
 	}
