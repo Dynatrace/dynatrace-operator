@@ -2,6 +2,7 @@ package version
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -91,7 +92,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 			},
 		}
 		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, testVersion)
+		mockLatestAgentVersion(mockClient, testVersion, 1)
 		updater := newCodeModulesUpdater(dk, mockClient)
 
 		err := updater.UseTenantRegistry(ctx)
@@ -112,7 +113,11 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-		updater := newCodeModulesUpdater(dk, createErrorDTClient(t))
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.EXPECT().
+			GetLatestAgentVersion(mockCtx, dtclient.OsUnix, dtclient.InstallerTypePaaS).
+			Return("", errors.New("BOOM")).Once()
+		updater := newCodeModulesUpdater(dk, mockClient)
 
 		err := updater.UseTenantRegistry(ctx)
 		require.Error(t, err)
@@ -191,7 +196,9 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 			},
 		}
 
-		updater := newCodeModulesUpdater(dk, createErrorDTClient(t))
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.EXPECT().GetLatestCodeModulesImage(mockCtx).Return(nil, errors.New("BOOM")).Once()
+		updater := newCodeModulesUpdater(dk, mockClient)
 
 		_, err := updater.LatestImageInfo(context.Background())
 		require.Error(t, err)

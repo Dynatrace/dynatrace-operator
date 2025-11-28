@@ -35,7 +35,7 @@ func TestSetSecretFromReader(t *testing.T) {
 	t.Run("find existing secret", func(t *testing.T) {
 		certSecret := newCertificateSecret(&appsv1.Deployment{})
 		err := certSecret.setSecretFromReader(context.TODO(), fake.NewClient(
-			createTestSecret(t, createInvalidTestCertData(t))), testNamespace)
+			createTestSecret(createInvalidTestCertData())), testNamespace)
 
 		require.NoError(t, err)
 		assert.True(t, certSecret.existsInCluster)
