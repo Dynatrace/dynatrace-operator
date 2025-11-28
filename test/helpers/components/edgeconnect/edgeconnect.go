@@ -147,6 +147,8 @@ func BuildEcClient(ctx context.Context, secret tenant.EdgeConnectSecret) (edgeco
 			"settings:objects:write",
 		}),
 		edgeconnectClient.WithContext(ctx),
+		// Disable keep-alive to prevent dropped network packets in GitHub Actions environment
+		edgeconnectClient.WithKeepAlive(false),
 	)
 	if err != nil {
 		return nil, errors.WithStack(err)
