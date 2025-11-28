@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"context"
 	"maps"
 
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
@@ -51,28 +52,44 @@ func (mut *Mutator) IsInjected(request *dtwebhook.BaseRequest) bool {
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
-func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
-
-	workloadInfo, err := workload.FindRootOwnerOfPod(request.Context, mut.metaClient, *request.BaseRequest, log)
+func CollectMetadataAttributes(ctx context.Context, request *dtwebhook.BaseRequest, clt client.Client) (podattr.Attributes, error) {
+	workloadInfo, err := workload.FindRootOwnerOfPod(ctx, clt, *request, log)
 	if err != nil {
-		return dtwebhook.MutatorError{
+		return podattr.Attributes{}, dtwebhook.MutatorError{
 			Err:      errors.WithStack(err),
 			Annotate: setNotInjectedAnnotationFunc(OwnerLookupFailedReason),
 		}
 	}
 
-	attrs := podattr.Attributes{}
-	attrs.WorkloadInfo = podattr.WorkloadInfo{
-		WorkloadKind: workloadInfo.Kind,
-		WorkloadName: workloadInfo.Name,
+	attrs := podattr.Attributes{
+		UserDefined: make(map[string]string),
+		WorkloadInfo: podattr.WorkloadInfo{
+			WorkloadKind: workloadInfo.Kind,
+			WorkloadName: workloadInfo.Name,
+		},
 	}
 
 	setDeprecatedAttributes(&attrs)
-
-	addMetadataToInitArgs(request, &attrs)
-	setInjectedAnnotation(request.Pod)
 	setWorkloadAnnotations(request.Pod, workloadInfo)
+
+	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+	if copiedMetadataAnnotations == nil {
+		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
+	} else {
+		maps.Copy(attrs.UserDefined, copiedMetadataAnnotations)
+	}
+
+	return attrs, nil
+}
+
+func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
+	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
+
+	attrs, err := CollectMetadataAttributes(request.Context, request.BaseRequest, mut.metaClient)
+
+	log.Debug("collected metadata attributes for pod", "attributes", attrs)
+
+	setInjectedAnnotation(request.Pod)
 
 	args, err := podattr.ToArgs(attrs)
 	if err != nil {
@@ -94,8 +111,8 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	return false
 }
 
-func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
-	copiedMetadataAnnotations := copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+func getNamespaceAttributes(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
+	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 	if copiedMetadataAnnotations == nil {
 		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
 

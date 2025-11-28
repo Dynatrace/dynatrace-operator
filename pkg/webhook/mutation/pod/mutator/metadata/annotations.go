@@ -10,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func copyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
+func CopyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
 	copiedCustomRuleAnnotations := copyAccordingToCustomRules(pod, namespace, dk)
 	copiedPrefixAnnotations := copyAccordingToPrefix(pod, namespace)
 
@@ -20,24 +20,6 @@ func copyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk d
 	setPodMetadataJSONAnnotation(pod, copiedCustomRuleAnnotations)
 
 	return copiedCustomRuleAnnotations
-}
-
-func copyAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) map[string]string {
-	metadataAnnotations := make(map[string]string)
-
-	for key, value := range namespace.Annotations {
-		if strings.HasPrefix(key, metadataenrichment.Prefix) {
-			_ = setPodAnnotationIfNotExists(pod, key, value)
-		}
-	}
-
-	for key, value := range pod.Annotations {
-		if strings.HasPrefix(key, metadataenrichment.Prefix) {
-			metadataAnnotations[key] = value
-		}
-	}
-
-	return metadataAnnotations
 }
 
 func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
@@ -68,6 +50,26 @@ func copyAccordingToCustomRules(pod *corev1.Pod, namespace corev1.Namespace, dk 
 	}
 
 	return copiedAnnotations
+}
+
+func copyAccordingToPrefix(pod *corev1.Pod, namespace corev1.Namespace) map[string]string {
+	metadataAnnotations := make(map[string]string)
+
+	// first propagate metadata annotations from namespace to pod
+	for key, value := range namespace.Annotations {
+		if strings.HasPrefix(key, metadataenrichment.Prefix) {
+			_ = setPodAnnotationIfNotExists(pod, key, value)
+		}
+	}
+
+	// then collect all metadata annotations from pod in one go
+	for key, value := range pod.Annotations {
+		if strings.HasPrefix(key, metadataenrichment.Prefix) {
+			metadataAnnotations[key] = value
+		}
+	}
+
+	return metadataAnnotations
 }
 
 func setPodMetadataJSONAnnotation(pod *corev1.Pod, annotations map[string]string) {
