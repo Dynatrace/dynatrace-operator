@@ -40,7 +40,7 @@ func Feature(t *testing.T) features.Feature {
 
 	// update to snapshot
 	withCSI := true
-	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallViaHelm("", withCSI), true))
+	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.Install("", withCSI), true))
 	builder.Assess("restart half of sample apps", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 

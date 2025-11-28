@@ -37,11 +37,11 @@ func TestMain(m *testing.M) {
 	testEnv.Setup(
 		helpers.SetScheme,
 		namespace.CreateForEnv(nsWithIstio),
-		operator.InstallViaHelm("", true),
+		operator.Install("", true),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
-		testEnv.Finish(operator.UninstallViaMake(true))
+		testEnv.Finish(operator.Uninstall(true))
 		testEnv.Finish(namespace.CreateForEnv(nsWithoutIstio))
 	}
 

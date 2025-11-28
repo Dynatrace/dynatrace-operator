@@ -25,7 +25,9 @@ const (
 	helmRegistryURL = "oci://public.ecr.aws/dynatrace/dynatrace-operator"
 )
 
-func InstallViaHelm(releaseTag string, withCSI bool) env.Func {
+// Install the operator chart with the specified tag and CSI mode.
+// If no releaseTag is empty, the behavior will be equivalent to make/deploy.
+func Install(releaseTag string, withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		err := installViaHelm(releaseTag, withCSI)
 		if err != nil {
@@ -36,7 +38,7 @@ func InstallViaHelm(releaseTag string, withCSI bool) env.Func {
 	}
 }
 
-func UninstallViaMake(withCSI bool) env.Func {
+func Uninstall(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		rootDir := project.RootDir()
 		if withCSI {

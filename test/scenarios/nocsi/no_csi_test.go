@@ -36,11 +36,11 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
-		operator.InstallViaHelm("", false),
+		operator.Install("", false),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
-		testEnv.Finish(operator.UninstallViaMake(false))
+		testEnv.Finish(operator.Uninstall(false))
 	}
 
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
