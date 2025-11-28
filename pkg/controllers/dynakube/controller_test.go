@@ -47,30 +47,20 @@ import (
 )
 
 const (
-	testUID              = "test-uid"
-	testMEID             = "KUBERNETES_CLUSTER-0E30FE4BF2007587"
-	testPaasToken        = "test-paas-token"
-	testAPIToken         = "test-api-token"
-	testVersion          = "1.217.1.12345-678910"
-	testComponentVersion = "test-component-version"
-
-	testUUID     = "test-uuid"
-	testObjectID = "test-object-id"
-
-	testHost     = "test-host"
-	testPort     = uint32(1234)
-	testProtocol = "test-protocol"
-
+	testUID       = "test-uid"
+	testAPIToken  = "test-api-token"
+	testUUID      = "test-uuid"
+	testHost      = "test-host"
 	testName      = "test-name"
 	testNamespace = "test-namespace"
-
-	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
-
-	testMessage = "test-message"
+	testAPIURL    = "https://" + testHost + "/e/" + testUUID + "/api"
+	testMessage   = "test-message"
 )
 
+var mockCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestGetDynakubeOrCleanup(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Name: "dynakube-test", Namespace: "dynatrace"},
 	}
@@ -95,7 +85,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 		assert.Nil(t, dk)
 
 		unmarkedNamespace := &corev1.Namespace{}
-		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: markedNamespace.Name}, unmarkedNamespace)
+		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: markedNamespace.Name}, unmarkedNamespace)
 		require.NoError(t, err)
 		assert.Empty(t, unmarkedNamespace.Labels)
 	})
@@ -127,7 +117,7 @@ func TestMinimalRequest(t *testing.T) {
 			client:    fake.NewClient(),
 			apiReader: fake.NewClient(),
 		}
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{})
+		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -139,7 +129,7 @@ func TestMinimalRequest(t *testing.T) {
 			apiReader: errorClient{},
 		}
 
-		result, err := controller.Reconcile(context.Background(), reconcile.Request{})
+		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
 		require.Error(t, err)
 		assert.NotNil(t, result)
@@ -147,7 +137,7 @@ func TestMinimalRequest(t *testing.T) {
 }
 
 func TestHandleError(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dynakubeBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
@@ -225,7 +215,7 @@ func TestHandleError(t *testing.T) {
 }
 
 func TestSetupTokensAndClient(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
@@ -262,9 +252,9 @@ func TestSetupTokensAndClient(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("Build", mock.Anything).Return(nil, errors.New("BOOM"))
+		mockDtcBuilder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(mockDtcBuilder).Once()
+		mockDtcBuilder.EXPECT().SetTokens(mock.AnythingOfType("token.Tokens")).Return(mockDtcBuilder).Once()
+		mockDtcBuilder.EXPECT().Build(mockCtx).Return(nil, errors.New("BOOM")).Once()
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -294,18 +284,16 @@ func TestSetupTokensAndClient(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
 		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.On("GetTokenScopes", mock.Anything, "this is a token").Return(dtclient.TokenScopes{
+		mockedDtc.EXPECT().GetTokenScopes(mockCtx, "this is a token").Return(dtclient.TokenScopes{
 			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
 			dtclient.TokenScopeInstallerDownload,
 			dtclient.TokenScopeActiveGateTokenCreate,
-		}, nil)
+		}, nil).Once()
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("Build", mock.Anything).Return(mockedDtc, nil)
+		mockDynatraceClientBuild(mockDtcBuilder, mockedDtc)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -334,7 +322,7 @@ func assertTokenCondition(t *testing.T, dk *dynakube.DynaKube, hasError bool) {
 }
 
 func TestReconcileComponents(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dkBaser := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "this-is-a-name",
@@ -352,25 +340,25 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 		// ReconcileCodeModuleCommunicationHosts
 		mockOneAgentReconciler := controllermock.NewReconciler(t)
-		mockOneAgentReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockOneAgentReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockInjectionReconciler := controllermock.NewReconciler(t)
-		mockInjectionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockInjectionReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
-		mockLogMonitoringReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockLogMonitoringReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockExtensionReconciler := controllermock.NewReconciler(t)
-		mockExtensionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockExtensionReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		mockOtelcReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockOtelcReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockKSPMReconciler := controllermock.NewReconciler(t)
-		mockKSPMReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockKSPMReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -398,16 +386,16 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockExtensionReconciler := controllermock.NewReconciler(t)
-		mockExtensionReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockExtensionReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		mockOtelcReconciler.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
+		mockOtelcReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
-		mockLogMonitoringReconciler.On("Reconcile", mock.Anything).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError)
+		mockLogMonitoringReconciler.EXPECT().Reconcile(mockCtx).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
 
 		controller := &Controller{
 			client:                         fakeClient,
@@ -428,7 +416,7 @@ func TestReconcileComponents(t *testing.T) {
 }
 
 func TestReconcileDynaKube(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	baseDk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -438,7 +426,7 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	fakeClient := fake.NewClient(baseDk, createAPISecret())
 	mockClient := dtclientmock.NewClient(t)
-	mockClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
+	mockClient.EXPECT().GetTokenScopes(mockCtx, testAPIToken).Return(dtclient.TokenScopes{
 		dtclient.TokenScopeDataExport,
 		dtclient.TokenScopeSettingsRead,
 		dtclient.TokenScopeSettingsWrite,
@@ -447,37 +435,34 @@ func TestReconcileDynaKube(t *testing.T) {
 	}, nil)
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-
-	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.On("Build", mock.Anything).Return(mockClient, nil)
+	mockDynatraceClientBuild(mockDtcBuilder, mockClient)
 
 	mockDeploymentMetadataReconciler := controllermock.NewReconciler(t)
-	mockDeploymentMetadataReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockDeploymentMetadataReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	mockProxyReconciler := controllermock.NewReconciler(t)
-	mockProxyReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockProxyReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	mockOneAgentReconciler := controllermock.NewReconciler(t)
-	mockOneAgentReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockOneAgentReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	mockActiveGateReconciler := controllermock.NewReconciler(t)
-	mockActiveGateReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	mockInjectionReconciler := controllermock.NewReconciler(t)
-	mockInjectionReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockInjectionReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	mockLogMonitoringReconciler := controllermock.NewReconciler(t)
-	mockLogMonitoringReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockLogMonitoringReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	mockExtensionReconciler := controllermock.NewReconciler(t)
-	mockExtensionReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockExtensionReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	mockOtelcReconciler := controllermock.NewReconciler(t)
-	mockOtelcReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockOtelcReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	mockKSPMReconciler := controllermock.NewReconciler(t)
-	mockKSPMReconciler.On("Reconcile", mock.Anything).Return(nil)
+	mockKSPMReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
 
 	fakeIstio := fakeistio.NewSimpleClientset()
 
@@ -631,7 +616,7 @@ func TestGetDynakube(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.NotNil(t, dynakube)
@@ -653,7 +638,7 @@ func TestGetDynakube(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		ctx := context.Background()
+		ctx := t.Context()
 		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.Nil(t, dynakube)
@@ -669,7 +654,7 @@ func TestGetDynakube(t *testing.T) {
 			apiReader: errorClient{},
 		}
 
-		ctx := context.Background()
+		ctx := t.Context()
 		dk, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.Nil(t, dk)
@@ -678,7 +663,7 @@ func TestGetDynakube(t *testing.T) {
 }
 
 func TestTokenConditions(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("token condition error is set if token are invalid", func(t *testing.T) {
 		fakeClient := fake.NewClient()
@@ -711,7 +696,7 @@ func TestTokenConditions(t *testing.T) {
 			},
 		})
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(dtclient.TokenScopes{
+		mockClient.EXPECT().GetTokenScopes(mockCtx, testAPIToken).Return(dtclient.TokenScopes{
 			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
@@ -720,9 +705,7 @@ func TestTokenConditions(t *testing.T) {
 		}, nil)
 
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
-		mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-		mockDtcBuilder.On("Build", mock.Anything).Return(mockClient, nil)
+		mockDynatraceClientBuild(mockDtcBuilder, mockClient)
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -816,7 +799,7 @@ func TestTokenConditions(t *testing.T) {
 }
 
 func TestSetupIstio(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -897,8 +880,6 @@ func assertCondition(t *testing.T, dk *dynakube.DynaKube, expectedConditionType 
 }
 
 func TestTokenConditionsOptionalScopes(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("conditions not set", func(t *testing.T) {
 		dk := createDynakubeWithK8SMonitoring()
 
@@ -909,7 +890,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 			apiReader: fakeClient,
 		}
 
-		_, err := controller.setupTokensAndClient(ctx, dk)
+		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.Error(t, err)
 
 		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, "secrets \""+testName+"\" not found")
@@ -927,7 +908,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 			dtclient.TokenScopeActiveGateTokenCreate,
 		})
 
-		_, err := controller.setupTokensAndClient(ctx, dk)
+		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
@@ -948,7 +929,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 			dtclient.TokenScopeActiveGateTokenCreate,
 		})
 
-		_, err := controller.setupTokensAndClient(ctx, dk)
+		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
@@ -967,7 +948,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 			dtclient.TokenScopeActiveGateTokenCreate,
 		})
 
-		_, err := controller.setupTokensAndClient(ctx, dk)
+		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.NoError(t, err)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead)
@@ -1006,18 +987,22 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes dtclient.TokenScop
 	fakeClient := fake.NewClient(createAPISecret())
 
 	fakeDtClient := dtclientmock.NewClient(t)
-	fakeDtClient.On("GetTokenScopes", mock.Anything, testAPIToken).Return(tokenScopes, nil)
+	fakeDtClient.EXPECT().GetTokenScopes(mockCtx, testAPIToken).Return(tokenScopes, nil)
 
 	fakeBuilder := dtbuildermock.NewBuilder(t)
-	fakeBuilder.On("Build", mock.Anything).Return(fakeDtClient, nil)
-	fakeBuilder.On("SetDynakube", mock.Anything).Return(fakeBuilder, nil)
-	fakeBuilder.On("SetTokens", mock.Anything).Return(fakeBuilder, nil)
+	mockDynatraceClientBuild(fakeBuilder, fakeDtClient)
 
 	return &Controller{
 		client:                 fakeClient,
 		apiReader:              fakeClient,
 		dynatraceClientBuilder: fakeBuilder,
 	}
+}
+
+func mockDynatraceClientBuild(builder *dtbuildermock.Builder, client *dtclientmock.Client) {
+	builder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(builder)
+	builder.EXPECT().SetTokens(mock.AnythingOfType("token.Tokens")).Return(builder)
+	builder.EXPECT().Build(mockCtx).Return(client, nil)
 }
 
 func createDynakubeWithK8SMonitoring() *dynakube.DynaKube {
