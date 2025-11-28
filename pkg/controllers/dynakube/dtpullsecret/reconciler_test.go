@@ -18,27 +18,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
 	testPaasToken = "test-paas-token"
 	testName      = "test-name"
 	testNamespace = "test-namespace"
-	testKey       = "test-key"
 	testValue     = "test-value"
 )
-
-type errorClient struct {
-	client.Client
-}
-
-func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
-	return errors.New("fake error")
-}
-
-func (clt errorClient) Create(_ context.Context, _ client.Object, _ ...client.CreateOption) error {
-	return errors.New("fake error")
-}
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
@@ -48,12 +36,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
 		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.Background(),
+		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
@@ -64,14 +52,20 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 	})
 	t.Run("Error when accessing K8s API", func(t *testing.T) {
+		expectErr := errors.New("get error")
+
 		dk := createTestDynakube()
-		fakeClient := errorClient{}
-		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
+		fakeErrorClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				return expectErr
+			},
+		})
+		r := NewReconciler(fake.NewClient(), fakeErrorClient, dk, token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile(context.Background())
-		require.Error(t, err)
+		err := r.Reconcile(t.Context())
+		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("Error when tenant UUID is missing", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -83,25 +77,29 @@ func TestReconciler_Reconcile(t *testing.T) {
 				OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
 			},
 		}
-		fakeClient := errorClient{}
+		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.Error(t, err)
 	})
 	t.Run("Error when creating secret", func(t *testing.T) {
+		expectErr := errors.New("create error")
 		dk := createTestDynakube()
-		fakeErrorClient := errorClient{}
+		fakeErrorClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Create: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.CreateOption) error {
+				return expectErr
+			},
+		})
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeErrorClient, fakeClient, dk, token.Tokens{
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.Equal(t, "failed to create or update secret: fake error", err.Error())
+		err := r.Reconcile(t.Context())
+		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("Create does not reconcile with custom pull secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -113,7 +111,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				CustomPullSecret: testValue,
 			}}
 		r := NewReconciler(nil, nil, dk, nil)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 	})
@@ -125,12 +123,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
 		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.Background(),
+		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
@@ -149,28 +147,28 @@ func TestReconciler_Reconcile(t *testing.T) {
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
 		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.Background(),
+		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
 		require.NoError(t, err)
 
 		pullSecret.Data = nil
-		err = fakeClient.Update(context.Background(), &pullSecret)
+		err = fakeClient.Update(t.Context(), &pullSecret)
 
 		require.NoError(t, err)
 
 		r.timeprovider.Set(r.timeprovider.Now().Add(1 * time.Hour))
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
-		err = fakeClient.Get(context.Background(),
+		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
@@ -188,27 +186,27 @@ func TestReconciler_Reconcile(t *testing.T) {
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
 		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.Background(),
+		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
 		require.NoError(t, err)
 
 		pullSecret.Data = nil
-		err = fakeClient.Update(context.Background(), &pullSecret)
+		err = fakeClient.Update(t.Context(), &pullSecret)
 
 		require.NoError(t, err)
 
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
-		err = fakeClient.Get(context.Background(),
+		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
@@ -223,23 +221,23 @@ func TestReconciler_Reconcile(t *testing.T) {
 			dtclient.APIToken: &token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
 
 		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.Background(),
+		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
 		require.NoError(t, err)
 
 		dk.Spec.OneAgent = oneagent.Spec{}
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		err = fakeClient.Get(context.Background(),
+		err = fakeClient.Get(t.Context(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 

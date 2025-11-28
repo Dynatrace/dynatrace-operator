@@ -1,7 +1,6 @@
 package tls
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -33,10 +32,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
+		_, err = r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		})
@@ -62,10 +61,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
+		_, err = r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		})
@@ -93,10 +92,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
+		_, err = r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		})
@@ -121,10 +120,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		agTLSSecret, err := r.secrets.Get(context.Background(), types.NamespacedName{
+		agTLSSecret, err := r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetTLSSecretName(),
 		})

@@ -31,7 +31,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(nil).Once()
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
 		controller := &Controller{
 			client:                      fakeClient,
@@ -49,7 +49,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		controller := &Controller{
 			client:                      fakeClient,
@@ -84,7 +84,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(nil).Once()
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
 		mockAPIMonitoringReconciler := controllermock.NewReconciler(t)
 
@@ -119,10 +119,10 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(nil).Once()
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
 		mockAPIMonitoringReconciler := controllermock.NewReconciler(t)
-		mockAPIMonitoringReconciler.EXPECT().Reconcile(mockCtx).Return(nil).Once()
+		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
 		controller := &Controller{
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
@@ -158,10 +158,10 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(nil).Once()
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
 		mockAPIMonitoringReconciler := controllermock.NewReconciler(t)
-		mockAPIMonitoringReconciler.EXPECT().Reconcile(mockCtx).Return(nil).Once()
+		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
 		controller := &Controller{
 			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),

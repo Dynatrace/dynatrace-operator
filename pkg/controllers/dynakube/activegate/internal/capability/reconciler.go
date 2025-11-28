@@ -2,6 +2,7 @@ package capability
 
 import (
 	"context"
+	"maps"
 	"reflect"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -118,6 +119,6 @@ func (r *Reconciler) portsAreOutdated(installedService, desiredService *corev1.S
 }
 
 func (r *Reconciler) labelsAreOutdated(installedService, desiredService *corev1.Service) bool {
-	return !reflect.DeepEqual(installedService.Labels, desiredService.Labels) ||
-		!reflect.DeepEqual(installedService.Spec.Selector, desiredService.Spec.Selector)
+	return !maps.Equal(installedService.Labels, desiredService.Labels) ||
+		!maps.Equal(installedService.Spec.Selector, desiredService.Spec.Selector)
 }

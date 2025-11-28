@@ -57,7 +57,7 @@ const (
 	testMessage   = "test-message"
 )
 
-var mockCtx = mock.MatchedBy(func(context.Context) bool { return true })
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestGetDynakubeOrCleanup(t *testing.T) {
 	ctx := t.Context()
@@ -254,7 +254,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		mockDtcBuilder := dtbuildermock.NewBuilder(t)
 		mockDtcBuilder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(mockDtcBuilder).Once()
 		mockDtcBuilder.EXPECT().SetTokens(mock.AnythingOfType("token.Tokens")).Return(mockDtcBuilder).Once()
-		mockDtcBuilder.EXPECT().Build(mockCtx).Return(nil, errors.New("BOOM")).Once()
+		mockDtcBuilder.EXPECT().Build(anyCtx).Return(nil, errors.New("BOOM")).Once()
 
 		controller := &Controller{
 			client:                 fakeClient,
@@ -284,7 +284,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk, tokens)
 
 		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().GetTokenScopes(mockCtx, "this is a token").Return(dtclient.TokenScopes{
+		mockedDtc.EXPECT().GetTokenScopes(anyCtx, "this is a token").Return(dtclient.TokenScopes{
 			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
@@ -340,25 +340,25 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 		// ReconcileCodeModuleCommunicationHosts
 		mockOneAgentReconciler := controllermock.NewReconciler(t)
-		mockOneAgentReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockOneAgentReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockInjectionReconciler := controllermock.NewReconciler(t)
-		mockInjectionReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockInjectionReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
-		mockLogMonitoringReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockExtensionReconciler := controllermock.NewReconciler(t)
-		mockExtensionReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockExtensionReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		mockOtelcReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockOtelcReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockKSPMReconciler := controllermock.NewReconciler(t)
-		mockKSPMReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockKSPMReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -386,16 +386,16 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockExtensionReconciler := controllermock.NewReconciler(t)
-		mockExtensionReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockExtensionReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		mockOtelcReconciler.EXPECT().Reconcile(mockCtx).Return(errors.New("BOOM")).Once()
+		mockOtelcReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
-		mockLogMonitoringReconciler.EXPECT().Reconcile(mockCtx).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
+		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
 
 		controller := &Controller{
 			client:                         fakeClient,
@@ -426,7 +426,7 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	fakeClient := fake.NewClient(baseDk, createAPISecret())
 	mockClient := dtclientmock.NewClient(t)
-	mockClient.EXPECT().GetTokenScopes(mockCtx, testAPIToken).Return(dtclient.TokenScopes{
+	mockClient.EXPECT().GetTokenScopes(anyCtx, testAPIToken).Return(dtclient.TokenScopes{
 		dtclient.TokenScopeDataExport,
 		dtclient.TokenScopeSettingsRead,
 		dtclient.TokenScopeSettingsWrite,
@@ -438,31 +438,31 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockDynatraceClientBuild(mockDtcBuilder, mockClient)
 
 	mockDeploymentMetadataReconciler := controllermock.NewReconciler(t)
-	mockDeploymentMetadataReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockDeploymentMetadataReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockProxyReconciler := controllermock.NewReconciler(t)
-	mockProxyReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockProxyReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockOneAgentReconciler := controllermock.NewReconciler(t)
-	mockOneAgentReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockOneAgentReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockActiveGateReconciler := controllermock.NewReconciler(t)
-	mockActiveGateReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockInjectionReconciler := controllermock.NewReconciler(t)
-	mockInjectionReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockInjectionReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockLogMonitoringReconciler := controllermock.NewReconciler(t)
-	mockLogMonitoringReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockExtensionReconciler := controllermock.NewReconciler(t)
-	mockExtensionReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockExtensionReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockOtelcReconciler := controllermock.NewReconciler(t)
-	mockOtelcReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockOtelcReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	mockKSPMReconciler := controllermock.NewReconciler(t)
-	mockKSPMReconciler.EXPECT().Reconcile(mockCtx).Return(nil)
+	mockKSPMReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	fakeIstio := fakeistio.NewSimpleClientset()
 
@@ -696,7 +696,7 @@ func TestTokenConditions(t *testing.T) {
 			},
 		})
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetTokenScopes(mockCtx, testAPIToken).Return(dtclient.TokenScopes{
+		mockClient.EXPECT().GetTokenScopes(anyCtx, testAPIToken).Return(dtclient.TokenScopes{
 			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
@@ -987,7 +987,7 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes dtclient.TokenScop
 	fakeClient := fake.NewClient(createAPISecret())
 
 	fakeDtClient := dtclientmock.NewClient(t)
-	fakeDtClient.EXPECT().GetTokenScopes(mockCtx, testAPIToken).Return(tokenScopes, nil)
+	fakeDtClient.EXPECT().GetTokenScopes(anyCtx, testAPIToken).Return(tokenScopes, nil)
 
 	fakeBuilder := dtbuildermock.NewBuilder(t)
 	mockDynatraceClientBuild(fakeBuilder, fakeDtClient)
@@ -1002,7 +1002,7 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes dtclient.TokenScop
 func mockDynatraceClientBuild(builder *dtbuildermock.Builder, client *dtclientmock.Client) {
 	builder.EXPECT().SetDynakube(mock.AnythingOfType("dynakube.DynaKube")).Return(builder)
 	builder.EXPECT().SetTokens(mock.AnythingOfType("token.Tokens")).Return(builder)
-	builder.EXPECT().Build(mockCtx).Return(client, nil)
+	builder.EXPECT().Build(anyCtx).Return(client, nil)
 }
 
 func createDynakubeWithK8SMonitoring() *dynakube.DynaKube {
