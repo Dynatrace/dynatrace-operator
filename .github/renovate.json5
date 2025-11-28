@@ -50,28 +50,11 @@
     },
     {
       fileMatch: [
-        "(^|/|\\.)ci.yaml$",
-        "(^|/|\\.)action.yaml$",
-      ],
-      matchStrings: [
-        "datasource=(?<datasource>.*?)\\sdepName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
-      ],
-    },
-    {
-      fileMatch: [
         ".*\\.ya?ml$",
-      ],
-      matchStrings: [
-        "# ?renovate github-releases depName=(?<depName>[^\\s]+)[^\\n]*\\n[ \\t]*.*?(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)",
-      ],
-      datasourceTemplate: "github-releases",
-    },
-    {
-      fileMatch: [
         "(^|/|\\.)cleanup-node-fs.sh$",
       ],
       matchStrings: [
-        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+export UBI_MICRO_IMAGE=\".*?:(?<currentValue>.*)\"",
+        "# ?renovate datasource=(?<datasource>.*?) depName=(?<depName>[^\\s]+)[^\\n]*\\n[ \\t]*[^:]*:\\s*\"?(?<currentValue>[^\"\\s]+)\"?",
       ],
     },
   ],
