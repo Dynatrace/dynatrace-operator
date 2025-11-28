@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_setDeprecatedAttributes(t *testing.T) {
+func Test_setDeprecatedClusterAttributes(t *testing.T) {
 	t.Run("set deprecated attribute according to current attribute", func(t *testing.T) {
 		attrs := podattr.Attributes{
 			ClusterInfo: podattr.ClusterInfo{
@@ -16,16 +16,39 @@ func Test_setDeprecatedAttributes(t *testing.T) {
 			},
 		}
 
-		setDeprecatedAttributes(&attrs)
+		attrs = setDeprecatedClusterAttributes(attrs)
 
-		assertDeprecatedAttributes(t, attrs)
+		assertDeprecatedClusterAttributes(t, attrs)
 	})
 }
 
-func assertDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
-	t.Helper()
+func Test_setDeprecatedAttributes(t *testing.T) {
+	t.Run("set deprecated attribute according to current attribute", func(t *testing.T) {
+		attrs := podattr.Attributes{
+			WorkloadInfo: podattr.WorkloadInfo{
+				WorkloadKind: "kind",
+				WorkloadName: "name",
+			},
+		}
 
-	depValue, ok := attrs.UserDefined[deprecatedClusterIDKey]
+		attrs = setDeprecatedWorkloadAttributes(attrs)
+
+		assertDeprecatedWorkloadAttributes(t, attrs)
+	})
+}
+
+func assertDeprecatedWorkloadAttributes(t *testing.T, attrs podattr.Attributes) {
+	depWorkloadKind, ok := attrs.UserDefined[DeprecatedWorkloadKindKey]
+	require.True(t, ok)
+	assert.Equal(t, attrs.WorkloadKind, depWorkloadKind)
+
+	depWorkloadName, ok := attrs.UserDefined[DeprecatedWorkloadNameKey]
+	require.True(t, ok)
+	assert.Equal(t, attrs.WorkloadName, depWorkloadName)
+}
+
+func assertDeprecatedClusterAttributes(t *testing.T, attrs podattr.Attributes) {
+	depValue, ok := attrs.UserDefined[DeprecatedClusterIDKey]
 	require.True(t, ok)
 	assert.Equal(t, attrs.ClusterUID, depValue)
 }

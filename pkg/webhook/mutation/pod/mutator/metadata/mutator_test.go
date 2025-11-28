@@ -1,8 +1,8 @@
 package metadata
 
 import (
+	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	"strings"
 	"testing"
 
@@ -14,10 +14,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -207,7 +206,7 @@ func TestIsEnabled(t *testing.T) {
 func Test_setInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
 		mut := NewMutator(nil)
-		request := attributes.createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(nil, nil)
 
 		require.False(t, mut.IsInjected(request.BaseRequest))
 		setInjectedAnnotation(request.Pod)
@@ -217,7 +216,7 @@ func Test_setInjectedAnnotation(t *testing.T) {
 
 	t.Run("should remove reason from map", func(t *testing.T) {
 		mut := NewMutator(nil)
-		request := attributes.createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(nil, nil)
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 
 		require.False(t, mut.IsInjected(request.BaseRequest))
@@ -230,38 +229,12 @@ func Test_setInjectedAnnotation(t *testing.T) {
 func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 	t.Run("should add annotations to nil map", func(t *testing.T) {
 		mut := NewMutator(nil)
-		request := attributes.createTestMutationRequest(nil, nil)
+		request := createTestMutationRequest(nil, nil)
 
 		require.False(t, mut.IsInjected(request.BaseRequest))
 		setNotInjectedAnnotationFunc("test")(request.Pod)
 		require.Len(t, request.Pod.Annotations, 2)
 		require.False(t, mut.IsInjected(request.BaseRequest))
-	})
-}
-
-func TestWorkloadAnnotations(t *testing.T) {
-	workloadInfoName := "workload-name"
-	workloadInfoKind := "workload-kind"
-
-	t.Run("should add annotation to nil map", func(t *testing.T) {
-		request := attributes.createTestMutationRequest(nil, nil)
-
-		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
-		setWorkloadAnnotations(request.Pod, &workload.Info{Name: workloadInfoName, Kind: workloadInfoKind})
-		require.Len(t, request.Pod.Annotations, 2)
-		assert.Equal(t, workloadInfoName, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
-		assert.Equal(t, workloadInfoKind, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadKind, "not-found"))
-	})
-	t.Run("should lower case kind annotation", func(t *testing.T) {
-		request := attributes.createTestMutationRequest(nil, nil)
-		objectMeta := &metav1.PartialObjectMetadata{
-			ObjectMeta: metav1.ObjectMeta{Name: workloadInfoName},
-			TypeMeta:   metav1.TypeMeta{Kind: "SuperWorkload"},
-		}
-
-		setWorkloadAnnotations(request.Pod, workload.NewInfo(objectMeta))
-		assert.Contains(t, request.Pod.Annotations, AnnotationWorkloadKind)
-		assert.Equal(t, "superworkload", request.Pod.Annotations[AnnotationWorkloadKind])
 	})
 }
 
@@ -353,8 +326,8 @@ func TestMutate(t *testing.T) {
 
 		kindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.kind", strings.ToLower(request.Pod.OwnerReferences[0].Kind))
 		nameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.name", strings.ToLower(request.Pod.OwnerReferences[0].Name))
-		depKindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, deprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind))
-		depNameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, deprecatedWorkloadNameKey, strings.ToLower(request.Pod.OwnerReferences[0].Name))
+		depKindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, attributes.DeprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind))
+		depNameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, attributes.DeprecatedWorkloadNameKey, strings.ToLower(request.Pod.OwnerReferences[0].Name))
 		metaFromNsAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, nsMetaAnnotationKey, nsMetaAnnotationValue)
 
 		assert.Contains(t, request.InstallContainer.Args, kindAttr)
@@ -365,10 +338,85 @@ func TestMutate(t *testing.T) {
 		assert.Contains(t, request.InstallContainer.Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 
 		require.Len(t, request.Pod.Annotations, 5) // workload.kind + workload.name + injected + propagated ns annotations
-		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[AnnotationWorkloadKind])
-		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[AnnotationWorkloadName])
+		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[attributes.AnnotationWorkloadKind])
+		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[attributes.AnnotationWorkloadName])
 		assert.Equal(t, "true", request.Pod.Annotations[AnnotationInjected])
 		assert.Equal(t, nsMetaAnnotationValue, request.Pod.Annotations[metadataenrichment.Prefix+nsMetaAnnotationKey])
 		assert.NotEmpty(t, request.Pod.Annotations[metadataenrichment.Annotation])
 	})
+}
+
+func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+	if dk == nil {
+		dk = &dynakube.DynaKube{}
+	}
+
+	return dtwebhook.NewMutationRequest(
+		context.Background(),
+		*getTestNamespace(dk),
+		&corev1.Container{
+			Name: dtwebhook.InstallContainerName,
+		},
+		getTestPod(annotations),
+		*dk,
+	)
+}
+
+func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ns",
+			Labels: map[string]string{
+				dtwebhook.InjectionInstanceLabel: dk.Name,
+			},
+		},
+	}
+}
+
+func getTestPod(annotations map[string]string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "test-pod",
+			Namespace:   "test-ns",
+			Annotations: annotations,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "container-1",
+					Image: "alpine-1",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "volume",
+							MountPath: "/volume",
+						},
+					},
+				},
+				{
+					Name:  "container-2",
+					Image: "alpine-2",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "volume",
+							MountPath: "/volume",
+						},
+					},
+				},
+			},
+			InitContainers: []corev1.Container{
+				{
+					Name:  "init-container",
+					Image: "alpine",
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
 }

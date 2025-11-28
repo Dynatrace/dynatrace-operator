@@ -1,18 +1,16 @@
 package injection
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
-
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func addPodAttributes(request *mutator.MutationRequest) error {
-
 	attrs := podattr.Attributes{}
 	attrs, envs := attributes.GetPodAttributes(attrs, request.BaseRequest)
 
@@ -30,14 +28,14 @@ func addPodAttributes(request *mutator.MutationRequest) error {
 
 func addContainerAttributes(request *mutator.MutationRequest) (bool, error) {
 	newContainers := request.NewContainers(isInjected)
-	attributes := attributes.GetContainerAttributes(request, newContainers)
+	containerAttributes := attributes.GetContainersAttributes(newContainers)
 
 	for _, c := range newContainers {
 		volumes.AddConfigVolumeMount(c, request.BaseRequest)
 	}
 
-	if len(attributes) > 0 {
-		args, err := containerattr.ToArgs(attributes)
+	if len(containerAttributes) > 0 {
+		args, err := containerattr.ToArgs(containerAttributes)
 		if err != nil {
 			return false, err
 		}

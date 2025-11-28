@@ -53,6 +53,7 @@ func (mut *Mutator) Mutate(request *mutator.MutationRequest) error {
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
 	attrs := podattr.Attributes{}
+
 	attrs, err := attributes.GetWorkloadInfoAttributes(attrs, request.Context, request.BaseRequest, mut.metaClient)
 	if err != nil {
 		return mutator.MutatorError{
@@ -61,7 +62,7 @@ func (mut *Mutator) Mutate(request *mutator.MutationRequest) error {
 		}
 	}
 
-	attrs = attributes.GetNamespaceAttributes(attrs, request.BaseRequest)
+	attrs = attributes.GetMetadataAnnotations(attrs, request.BaseRequest)
 
 	log.Debug("collected metadata attributes for pod", "attributes", attrs)
 
@@ -86,23 +87,6 @@ func turnOnMetadataEnrichment(request *mutator.MutationRequest) {
 func (mut *Mutator) Reinvoke(request *mutator.ReinvocationRequest) bool {
 	return false
 }
-
-/*
-func getNamespaceAttributes(request *mutator.MutationRequest, attributes *podattr.Attributes) {
-	copiedMetadataAnnotations := attributes.CopyMetadataFromNamespace(request.BaseRequest)
-	if copiedMetadataAnnotations == nil {
-		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
-
-		return
-	}
-
-	if attributes.UserDefined == nil {
-		attributes.UserDefined = make(map[string]string)
-	}
-
-	maps.Copy(attributes.UserDefined, copiedMetadataAnnotations)
-}
-*/
 
 func setInjectedAnnotation(pod *corev1.Pod) {
 	if pod.Annotations == nil {

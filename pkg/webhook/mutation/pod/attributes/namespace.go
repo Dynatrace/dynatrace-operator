@@ -2,18 +2,17 @@ package attributes
 
 import (
 	"encoding/json"
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
 	"strings"
 
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func GetNamespaceAttributes(attrs podattr.Attributes, request *mutator.BaseRequest) podattr.Attributes {
+func GetMetadataAnnotations(attrs podattr.Attributes, request *mutator.BaseRequest) podattr.Attributes {
 	copiedMetadataAnnotations := copyMetadataFromNamespace(request)
 	if copiedMetadataAnnotations == nil {
 		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
@@ -21,6 +20,7 @@ func GetNamespaceAttributes(attrs podattr.Attributes, request *mutator.BaseReque
 		if attrs.UserDefined == nil {
 			attrs.UserDefined = make(map[string]string)
 		}
+
 		maps.Copy(attrs.UserDefined, copiedMetadataAnnotations)
 	}
 

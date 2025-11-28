@@ -2,6 +2,7 @@ package attributes
 
 import (
 	"context"
+
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
@@ -13,7 +14,7 @@ import (
 func GetWorkloadInfoAttributes(attrs podattr.Attributes, ctx context.Context, request *mutator.BaseRequest, clt client.Client) (podattr.Attributes, error) {
 	workloadInfo, err := workload.FindRootOwnerOfPod(ctx, clt, *request, log)
 	if err != nil {
-		return podattr.Attributes{}, errors.WithStack(err)
+		return attrs, errors.WithStack(err)
 	}
 
 	attrs.WorkloadInfo = podattr.WorkloadInfo{
@@ -21,7 +22,8 @@ func GetWorkloadInfoAttributes(attrs podattr.Attributes, ctx context.Context, re
 		WorkloadName: workloadInfo.Name,
 	}
 
-	attrs = setDeprecatedAttributes(attrs)
+	attrs = setDeprecatedWorkloadAttributes(attrs)
+
 	setWorkloadAnnotations(request.Pod, workloadInfo)
 
 	return attrs, nil

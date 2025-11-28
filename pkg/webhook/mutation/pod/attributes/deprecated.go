@@ -3,15 +3,28 @@ package attributes
 import podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 
 const (
-	deprecatedClusterIDKey = "dt.kubernetes.cluster.id"
+	DeprecatedClusterIDKey    = "dt.kubernetes.cluster.id"
+	DeprecatedWorkloadKindKey = "dt.kubernetes.workload.kind"
+	DeprecatedWorkloadNameKey = "dt.kubernetes.workload.name"
 )
 
-func setDeprecatedAttributes(attrs podattr.Attributes) podattr.Attributes {
+func setDeprecatedClusterAttributes(attrs podattr.Attributes) podattr.Attributes {
 	if attrs.UserDefined == nil {
 		attrs.UserDefined = map[string]string{}
 	}
 
-	attrs.UserDefined[deprecatedClusterIDKey] = attrs.ClusterUID
+	attrs.UserDefined[DeprecatedClusterIDKey] = attrs.ClusterUID
+
+	return attrs
+}
+
+func setDeprecatedWorkloadAttributes(attrs podattr.Attributes) podattr.Attributes {
+	if attrs.UserDefined == nil {
+		attrs.UserDefined = map[string]string{}
+	}
+
+	attrs.UserDefined[DeprecatedWorkloadKindKey] = attrs.WorkloadKind
+	attrs.UserDefined[DeprecatedWorkloadNameKey] = attrs.WorkloadName
 
 	return attrs
 }

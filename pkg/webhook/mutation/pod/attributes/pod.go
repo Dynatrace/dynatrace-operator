@@ -2,17 +2,15 @@ package attributes
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"k8s.io/api/core/v1"
 )
 
 func GetPodAttributes(attrs pod.Attributes, request *mutator.BaseRequest) (pod.Attributes, []v1.EnvVar) {
-
 	attrs.PodInfo = pod.PodInfo{
 		PodName:       createEnvVarRef(K8sPodNameEnv),
 		PodUID:        createEnvVarRef(K8sPodUIDEnv),
@@ -26,7 +24,7 @@ func GetPodAttributes(attrs pod.Attributes, request *mutator.BaseRequest) (pod.A
 		ClusterName:     request.DynaKube.Status.KubernetesClusterName,
 	}
 
-	setDeprecatedAttributes(attrs)
+	attrs = setDeprecatedClusterAttributes(attrs)
 
 	envs := []v1.EnvVar{
 		{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
@@ -37,18 +35,20 @@ func GetPodAttributes(attrs pod.Attributes, request *mutator.BaseRequest) (pod.A
 	return attrs, envs
 }
 
-func GetContainerAttributes(request *mutator.MutationRequest, containers []*v1.Container) []container.Attributes {
+func GetContainersAttributes(containers []*v1.Container) []container.Attributes {
 	attributes := []container.Attributes{}
 	for _, c := range containers {
-		attributes = append(attributes, container.Attributes{
-			ImageInfo:     createImageInfo(c.Image),
-			ContainerName: c.Name,
-		})
-
-		volumes.AddConfigVolumeMount(c, request.BaseRequest)
+		attributes = append(attributes, GetContainerAttributes(c))
 	}
 
 	return attributes
+}
+
+func GetContainerAttributes(c *v1.Container) container.Attributes {
+	return container.Attributes{
+		ImageInfo:     createImageInfo(c.Image),
+		ContainerName: c.Name,
+	}
 }
 
 func createEnvVarRef(envName string) string {

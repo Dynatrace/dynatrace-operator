@@ -206,6 +206,7 @@ func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]str
 		*dk,
 	)
 }
+
 func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -216,6 +217,7 @@ func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
 		},
 	}
 }
+
 func getTestPod(annotations map[string]string) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
