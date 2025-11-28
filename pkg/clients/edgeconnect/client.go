@@ -23,10 +23,11 @@ const (
 
 type client struct {
 	clientcredentials.Config
-	ctx        context.Context
-	httpClient *http.Client
-	baseURL    string
-	customCA   []byte
+	ctx               context.Context
+	httpClient        *http.Client
+	baseURL           string
+	customCA          []byte
+	disableKeepAlives bool
 }
 
 // Option can be passed to NewClient and customizes the created client instance.
@@ -57,6 +58,12 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 	}
 	if ot.Base == nil {
 		ot.Base = &http.Transport{}
+	}
+
+	if c.disableKeepAlives {
+		if t, ok := ot.Base.(*http.Transport); ok {
+			t.DisableKeepAlives = true
+		}
 	}
 
 	if c.customCA != nil {
@@ -116,13 +123,7 @@ func WithContext(ctx context.Context) func(*client) {
 
 func WithKeepAlive(keepAlive bool) func(*client) {
 	return func(c *client) {
-		if c.httpClient != nil {
-			if t, ok := c.httpClient.Transport.(*oauth2.Transport); ok {
-				if bt, ok := t.Base.(*http.Transport); ok {
-					bt.DisableKeepAlives = !keepAlive
-				}
-			}
-		}
+		c.disableKeepAlives = !keepAlive
 	}
 }
 
