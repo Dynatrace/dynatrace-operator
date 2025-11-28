@@ -3,6 +3,10 @@ DEBUG_LOGS ?= true
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 
+## Display the image name used to deploy the helm chart
+deploy/image-ref:
+	@echo $(IMAGE_URI)
+
 ## Deploy the operator without the csi-driver
 deploy/no-csi:
 	@make ENABLE_CSI=false $(@D)

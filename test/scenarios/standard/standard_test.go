@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
-		operator.InstallViaMake(true),
+		operator.InstallViaHelm("", true),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {

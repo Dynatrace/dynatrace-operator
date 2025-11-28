@@ -38,7 +38,7 @@ func Feature(t *testing.T) features.Feature {
 
 	// update to snapshot
 	withCSI := false
-	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallViaMake(withCSI), true))
+	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallViaHelm("", withCSI), true))
 
 	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
