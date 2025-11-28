@@ -38,7 +38,7 @@ func LogVersionToLogger(log logd.Logger) {
 		"buildDate", BuildDate,
 		"goVersion", runtime.Version(),
 		"platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		"fips140", fmt.Sprintf("FIPS 140-2 Mode Enabled: %v", fips140.Enabled()),
+		"fips140", fmt.Sprintf("FIPS 140-3 Mode Enabled: %v", fips140.Enabled()),
 	)
 
 	// SetMemoryLimit returns the previously set memory limit. A negative input does not adjust the limit, and allows for retrieval of the currently set memory limit.
