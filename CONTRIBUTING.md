@@ -233,6 +233,16 @@ make help | grep 'e2e'
 
 We recommended only executing the ones related to the changes as each one can take some minutes to finish.
 
+### Triggering E2E tests on kind in CI
+
+You can trigger the E2E tests on a kind cluster in GitHub Actions by commenting on a pull request with:
+
+```
+/run-e2e-kind
+```
+
+This is an optional check that won't block PR merging. It's useful for validating changes in a clean environment before merging.
+
 ## Useful commands
 
 ### Install kind cluster
