@@ -273,8 +273,15 @@ func TestMutate(t *testing.T) {
 	})
 	t.Run("metadata enrichment passes => additional args and annotations", func(t *testing.T) {
 		const (
-			nsMetaAnnotationKey   = "meta-annotation-key"
-			nsMetaAnnotationValue = "meta-annotation-value"
+			nsMetaAnnotationKey          = "meta-annotation-key"
+			nsMetaAnnotationValue        = "meta-annotation-value"
+			testSecContextLabel          = "test-security-context-label"
+			testCostCenterAnnotation     = "test-cost-center-annotation"
+			testCustomMetadataLabel      = "test-custom-metadata-label"
+			testCustomMetadataAnnotation = "test-custom-metadata-annotation"
+			testKubeSystemId             = "01234567-abcd-efgh-ijkl-987654321zyx"
+			testClusterName              = "dynakube"
+			testClusterMEID              = "KUBERNETES_CLUSTER-DE4AF78E24729521"
 		)
 
 		initContainer := corev1.Container{
@@ -304,12 +311,45 @@ func TestMutate(t *testing.T) {
 							Enabled: ptr.To(true),
 						},
 					},
+					Status: dynakube.DynaKubeStatus{
+						KubeSystemUUID:        testKubeSystemId,
+						KubernetesClusterMEID: testClusterMEID,
+						KubernetesClusterName: testClusterName,
+						MetadataEnrichment: metadataenrichment.Status{
+							Rules: []metadataenrichment.Rule{
+								{
+									Type:   "LABEL",
+									Source: testSecContextLabel,
+									Target: "dt.security_context",
+								},
+								{
+									Type:   "LABEL",
+									Source: testCustomMetadataLabel,
+								},
+								{
+									Type:   "ANNOTATION",
+									Source: testCostCenterAnnotation,
+									Target: "dt.cost.costcenter",
+								},
+								{
+									Type:   "ANNOTATION",
+									Source: testCustomMetadataAnnotation,
+								},
+							},
+						},
+					},
 				},
 				Namespace: corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: pod.Namespace,
 						Annotations: map[string]string{
 							metadataenrichment.Prefix + nsMetaAnnotationKey: nsMetaAnnotationValue,
+							testCostCenterAnnotation:                        "cost-center",
+							testCustomMetadataAnnotation:                    "custom-meta-annotation",
+						},
+						Labels: map[string]string{
+							testSecContextLabel:     "high",
+							testCustomMetadataLabel: "custom-meta-label",
 						},
 					},
 				},
@@ -324,26 +364,40 @@ func TestMutate(t *testing.T) {
 		require.NotEqual(t, *expectedPod, *request.Pod)
 		require.NotEmpty(t, request.Pod.OwnerReferences)
 
-		kindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.kind", strings.ToLower(request.Pod.OwnerReferences[0].Kind))
-		nameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.name", strings.ToLower(request.Pod.OwnerReferences[0].Name))
-		depKindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, attributes.DeprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind))
-		depNameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, attributes.DeprecatedWorkloadNameKey, strings.ToLower(request.Pod.OwnerReferences[0].Name))
-		metaFromNsAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, nsMetaAnnotationKey, nsMetaAnnotationValue)
-
-		assert.Contains(t, request.InstallContainer.Args, kindAttr)
-		assert.Contains(t, request.InstallContainer.Args, nameAttr)
-		assert.Contains(t, request.InstallContainer.Args, depKindAttr)
-		assert.Contains(t, request.InstallContainer.Args, depNameAttr)
-		assert.Contains(t, request.InstallContainer.Args, metaFromNsAttr)
+		assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.workload.kind", request.Pod.OwnerReferences[0].Kind))
+		assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.workload.name", request.Pod.OwnerReferences[0].Name))
+		assert.Contains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
+		assert.Contains(t, request.InstallContainer.Args, buildArgument(attributes.DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
+		assert.Contains(t, request.InstallContainer.Args, buildArgument(nsMetaAnnotationKey, nsMetaAnnotationValue))
+		assert.Contains(t, request.InstallContainer.Args, buildArgument("dt.security_context", "high"))
+		assert.Contains(t, request.InstallContainer.Args, buildArgument("dt.cost.costcenter", "cost-center"))
+		assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.namespace.label."+testCustomMetadataLabel, "custom-meta-label"))
+		assert.Contains(t, request.InstallContainer.Args, buildArgument("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-meta-annotation"))
 		assert.Contains(t, request.InstallContainer.Args, "--"+bootstrapper.MetadataEnrichmentFlag)
 
-		require.Len(t, request.Pod.Annotations, 5) // workload.kind + workload.name + injected + propagated ns annotations
+		/* TODO: these are not added by the mutator but by the metadata injection handler, should this be unified ot one place
+		   - --attribute-container={"container_image.registry":"docker.io","container_image.repository":"nginx","container_image.tags":"latest","k8s.container.name":"app"}
+		   - --attribute=k8s.pod.uid=$(K8S_PODUID)
+		   - --attribute=k8s.pod.name=$(K8S_PODNAME)
+		   - --attribute=k8s.node.name=$(K8S_NODE_NAME)
+		   - --attribute=k8s.namespace.name=default
+		   - --attribute=k8s.cluster.uid=01f0f32f-fd74-443d-975f-e46a7635db27
+		   - --attribute=k8s.cluster.name=dynakube
+		   - --attribute=dt.entity.kubernetes_cluster=KUBERNETES_CLUSTER-DE4AF78E24729521
+		   - --attribute=dt.kubernetes.cluster.id=01f0f32f-fd74-443d-975f-e46a7635db27
+		*/
+
+		require.Len(t, request.Pod.Annotations, 7) // workload.kind + workload.name + dt.security_context + dt.cost.costcenter + injected + propagated ns annotations
 		assert.Equal(t, strings.ToLower(request.Pod.OwnerReferences[0].Kind), request.Pod.Annotations[attributes.AnnotationWorkloadKind])
 		assert.Equal(t, request.Pod.OwnerReferences[0].Name, request.Pod.Annotations[attributes.AnnotationWorkloadName])
 		assert.Equal(t, "true", request.Pod.Annotations[AnnotationInjected])
 		assert.Equal(t, nsMetaAnnotationValue, request.Pod.Annotations[metadataenrichment.Prefix+nsMetaAnnotationKey])
 		assert.NotEmpty(t, request.Pod.Annotations[metadataenrichment.Annotation])
 	})
+}
+
+func buildArgument(attr string, value string) string {
+	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, attr, strings.ToLower(value))
 }
 
 func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {

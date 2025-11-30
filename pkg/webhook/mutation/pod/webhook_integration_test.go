@@ -3,8 +3,13 @@ package pod_test
 import (
 	"context"
 	"fmt"
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
+	appsv1 "k8s.io/api/apps/v1"
 	"maps"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -42,7 +47,61 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
-const testNamespace = "dynatrace"
+const (
+	testNamespace                = "dynatrace"
+	testSecContextLabel          = "test-security-context-label"
+	testCostCenterAnnotation     = "test-cost-center-annotation"
+	testCustomMetadataLabel      = "test-custom-metadata-label"
+	testCustomMetadataAnnotation = "test-custom-metadata-annotation"
+	testMEID                     = "test-meid"
+	testClusterName              = "test-cluster"
+	testClusterUUID              = "123e4567-e89b-12d3-a456-426614174000"
+)
+
+var (
+	podMetadataAnnotations = map[string]string{
+		"metadata.dynatrace.com/service.name": "checkout service",
+		"metadata.dynatrace.com/custom.key":   "value:with/special chars",
+	}
+
+	nsMetadataAnnotations = map[string]string{
+		testCostCenterAnnotation:                "sales",
+		testCustomMetadataAnnotation:            "custom-annotation",
+		"metadata.dynatrace.com/custom.ns-meta": "custom-ns-meta-value",
+	}
+
+	nsMetadataLabels = map[string]string{
+		testSecContextLabel:     "high",
+		testCustomMetadataLabel: "custom-label",
+	}
+
+	metadataEnrichmentStatus = metadataenrichment.Status{
+		Rules: []metadataenrichment.Rule{
+			{
+				Type:   "LABEL",
+				Source: testSecContextLabel,
+				Target: "dt.security_context",
+			},
+			{
+				Type:   "LABEL",
+				Source: testCustomMetadataLabel,
+			},
+			{
+				Type:   "ANNOTATION",
+				Source: testCostCenterAnnotation,
+				Target: "dt.cost.costcenter",
+			},
+			{
+				Type:   "ANNOTATION",
+				Source: testCustomMetadataAnnotation,
+			},
+		},
+	}
+)
+
+func buildArgument(attr string, value string) string {
+	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, attr, value)
+}
 
 func TestWebhook(t *testing.T) {
 	clt := integrationtests.SetupWebhookTestEnvironment(t,
@@ -57,11 +116,14 @@ func TestWebhook(t *testing.T) {
 					},
 				},
 			}
+			ns.Annotations = nsMetadataAnnotations
+			maps.Copy(ns.Labels, nsMetadataLabels)
+
 			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
 
 			pod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynatace-webhook",
+					Name:      "dynatrace-webhook",
 					Namespace: testNamespace,
 				},
 				Spec: corev1.PodSpec{
@@ -76,6 +138,36 @@ func TestWebhook(t *testing.T) {
 			require.NoError(t, mgr.GetClient().Create(t.Context(), pod))
 			t.Setenv(k8senv.PodName, pod.Name)
 
+			deploy := &appsv1.Deployment{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Deplyoment",
+					APIVersion: "apps/v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-deployment",
+					Namespace: testNamespace,
+				},
+				Spec: appsv1.DeploymentSpec{
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"app": "test-app"},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{"app": "test-app"},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "test",
+									Image: "dummy-app-img:1.0.0",
+								},
+							},
+						},
+					},
+				},
+				Status: appsv1.DeploymentStatus{},
+			}
+			require.NoError(t, mgr.GetClient().Create(t.Context(), deploy))
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
 	)
@@ -97,7 +189,7 @@ func TestWebhook(t *testing.T) {
 	}
 	createObject(t, clt, otlpExporterSecret)
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("success incl. enrichment rules, custom metadata and metadata annotation propagation", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "dynakube",
@@ -115,6 +207,10 @@ func TestWebhook(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: testMEID,
+				KubernetesClusterName: testClusterName,
+				MetadataEnrichment:    metadataEnrichmentStatus,
+				KubeSystemUUID:        testClusterUUID,
 				OneAgent: oneagent.Status{
 					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
 						ConnectionInfo: communication.ConnectionInfo{
@@ -131,11 +227,48 @@ func TestWebhook(t *testing.T) {
 		}
 		createDynaKube(t, clt, dk)
 
-		pod := createPod(t, clt, nil)
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Annotations = podMetadataAnnotations
+			pod.OwnerReferences = []metav1.OwnerReference{
+				{
+					Name:       "test-deployment",
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Controller: ptr.To(true),
+					UID:        types.UID(uuid.NewString()),
+				},
+			}
+		})
 
-		assert.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
-		assert.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
-		assert.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
+		require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
+		require.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
+		require.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
+
+		assert.Equal(t, "sales", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.cost.costcenter", ""))
+		assert.Equal(t, "high", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.security_context", ""))
+		assert.Equal(t, "custom-ns-meta-value", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/custom.ns-meta", ""))
+
+		require.Len(t, pod.Spec.InitContainers, 1)
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.kind", strings.ToLower(pod.OwnerReferences[0].Kind)))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.name", strings.ToLower(pod.OwnerReferences[0].Name)))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("custom.ns-meta", "custom-ns-meta-value"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.security_context", "high"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.cost.costcenter", "sales"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.label."+testCustomMetadataLabel, "custom-label"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-annotation"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, "--"+bootstrapper.MetadataEnrichmentFlag)
+
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.uid", "$(K8S_PODUID)"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.name", "$(K8S_PODNAME)"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.node.name", "$(K8S_NODE_NAME)"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.name", pod.Namespace))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.uid", testClusterUUID))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.name", testClusterName))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.entity.kubernetes_cluster", testMEID))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.kubernetes.cluster.id", testClusterUUID))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
 	})
 
 	t.Run("oneagent mutator failure", func(t *testing.T) {
@@ -225,29 +358,6 @@ func TestWebhook(t *testing.T) {
 }
 
 func TestOTLPWebhook(t *testing.T) {
-	const (
-		testSecContextLabel          = "test-security-context-label"
-		testCostCenterAnnotation     = "test-cost-center-annotation"
-		testCustomMetadataLabel      = "test-custom-metadata-label"
-		testCustomMetadataAnnotation = "test-custom-metadata-annotation"
-	)
-
-	podMetadataAnnotations := map[string]string{
-		"metadata.dynatrace.com/service.name": "checkout service",
-		"metadata.dynatrace.com/custom.key":   "value:with/special chars",
-	}
-
-	nsMetadataAnnoations := map[string]string{
-		testCostCenterAnnotation:                "sales",
-		testCustomMetadataAnnotation:            "custom-annotation",
-		"metadata.dynatrace.com/custom.ns-meta": "custom-ns-meta-value",
-	}
-
-	nsMetadataLabels := map[string]string{
-		testSecContextLabel:     "high",
-		testCustomMetadataLabel: "custom-label",
-	}
-
 	clt := integrationtests.SetupWebhookTestEnvironment(t,
 		getWebhookInstallOptions(),
 
@@ -258,7 +368,7 @@ func TestOTLPWebhook(t *testing.T) {
 					Labels: map[string]string{
 						podmutator.InjectionInstanceLabel: "dynakube",
 					},
-					Annotations: nsMetadataAnnoations,
+					Annotations: nsMetadataAnnotations,
 				},
 			}
 			maps.Copy(ns.Labels, nsMetadataLabels)
@@ -316,30 +426,9 @@ func TestOTLPWebhook(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "test-meid",
-				KubernetesClusterName: "test-cluster",
-				MetadataEnrichment: metadataenrichment.Status{
-					Rules: []metadataenrichment.Rule{
-						{
-							Type:   "LABEL",
-							Source: testSecContextLabel,
-							Target: "dt.security_context",
-						},
-						{
-							Type:   "LABEL",
-							Source: testCustomMetadataLabel,
-						},
-						{
-							Type:   "ANNOTATION",
-							Source: testCostCenterAnnotation,
-							Target: "dt.cost.costcenter",
-						},
-						{
-							Type:   "ANNOTATION",
-							Source: testCustomMetadataAnnotation,
-						},
-					},
-				},
+				KubernetesClusterMEID: testMEID,
+				KubernetesClusterName: testClusterName,
+				MetadataEnrichment:    metadataEnrichmentStatus,
 			},
 		}
 
@@ -408,11 +497,13 @@ func TestOTLPWebhook(t *testing.T) {
 		assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes["dt.kubernetes.cluster.id"])
 		assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
 		assert.Equal(t, dk.Status.KubernetesClusterName, gotResourceAttributes["k8s.cluster.name"])
-		assert.Equal(t, url.QueryEscape(nsMetadataAnnoations[testCustomMetadataAnnotation]), gotResourceAttributes["k8s.namespace.annotation."+testCustomMetadataAnnotation])
-		assert.Equal(t, url.QueryEscape(nsMetadataAnnoations[testCostCenterAnnotation]), gotResourceAttributes["dt.cost.costcenter"])
+		assert.Equal(t, url.QueryEscape(nsMetadataAnnotations[testCustomMetadataAnnotation]), gotResourceAttributes["k8s.namespace.annotation."+testCustomMetadataAnnotation])
+		assert.Equal(t, url.QueryEscape(nsMetadataAnnotations[testCostCenterAnnotation]), gotResourceAttributes["dt.cost.costcenter"])
 		assert.Equal(t, url.QueryEscape(nsMetadataLabels[testSecContextLabel]), gotResourceAttributes["dt.security_context"])
 		assert.Equal(t, url.QueryEscape(nsMetadataLabels[testCustomMetadataLabel]), gotResourceAttributes["k8s.namespace.label."+testCustomMetadataLabel])
-		assert.Equal(t, url.QueryEscape(nsMetadataAnnoations["metadata.dynatrace.com/custom.ns-meta"]), gotResourceAttributes["custom.ns-meta"])
+		assert.Equal(t, url.QueryEscape(nsMetadataAnnotations["metadata.dynatrace.com/custom.ns-meta"]), gotResourceAttributes["custom.ns-meta"])
+
+		// TODO: workload info attributes
 	})
 
 	t.Run("data ingest token secret missing", func(t *testing.T) {
