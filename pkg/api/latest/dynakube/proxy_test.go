@@ -1,4 +1,4 @@
-package test
+package dynakube_test
 
 import (
 	"context"
@@ -29,12 +29,12 @@ func proxyValueTester(t *testing.T) {
 			Proxy: &value.Source{Value: testProxyData},
 		},
 	}
-	proxy, err := dk.Proxy(context.TODO(), nil)
+	proxy, err := dk.Proxy(t.Context(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, testProxyData, proxy)
 
 	emptyDk := dynakube.DynaKube{}
-	proxy, err = emptyDk.Proxy(context.TODO(), nil)
+	proxy, err = emptyDk.Proxy(t.Context(), nil)
 	require.NoError(t, err)
 	assert.Empty(t, proxy)
 }
