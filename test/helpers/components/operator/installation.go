@@ -26,10 +26,24 @@ const (
 )
 
 // Install the operator chart with the specified tag and CSI mode.
-// If no releaseTag is empty, the behavior will be equivalent to make/deploy.
 func Install(releaseTag string, withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		if releaseTag == "" {
+			return ctx, errors.New("missing release tag")
+		}
 		err := installViaHelm(releaseTag, withCSI)
+		if err != nil {
+			return ctx, err
+		}
+
+		return VerifyInstall(ctx, envConfig, withCSI)
+	}
+}
+
+// InstallLocal deploys the operator helm chart from filesystem.
+func InstallLocal(withCSI bool) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		err := installViaHelm("", withCSI)
 		if err != nil {
 			return ctx, err
 		}
