@@ -22,5 +22,14 @@ const (
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "dynatrace-operator"
 
-	InjectionSplitMounts = "dynatrace.com/split-mounts"
+	// AnnotationInjectionSplitMounts can be set on a Pod to indicate that the `/var/lib/dynatrace` volume mount on the user container should be split into multiple mounts.
+	// The following mounts are created:
+	// - In case OneAgent injection is enabled:
+	//   - `/var/lib/dynatrace/oneagent`
+	// - In case Metadata enrichment is enabled:
+	//   - `/var/lib/dynatrace/enrichment/dt_metadata.json`
+	//   - `/var/lib/dynatrace/enrichment/dt_metadata.properties`
+	//   - `/var/lib/dynatrace/enrichment/endpoints`
+	// This functionality is needed for the self monitoring usecase (example OneAgent monitors an ActiveGate) and in case of the classic OneAgent doing the container injection.
+	AnnotationInjectionSplitMounts = "dynatrace.com/split-mounts"
 )
