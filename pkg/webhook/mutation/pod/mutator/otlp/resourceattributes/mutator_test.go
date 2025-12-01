@@ -247,7 +247,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			},
 		},
 		{
-			name:      "ReplicaSet owner missing (no deployment) - add other Attributes",
+			name:      "ReplicaSet owner missing (no deployment) - abort",
 			objects:   nil,
 			namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
 			pod: &corev1.Pod{
@@ -265,17 +265,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 			},
 			wantAttributes: map[string][]string{
-				"c1": {
-					"k8s.namespace.name=ns",
-					"k8s.cluster.uid=cluster-uid",
-					"dt.kubernetes.cluster.id=cluster-uid",
-					"k8s.cluster.name=cluster-name",
-					"dt.entity.kubernetes_cluster=cluster-meid",
-					"k8s.container.name=c1",
-					"k8s.pod.name=$(K8S_PODNAME)",
-					"k8s.pod.uid=$(K8S_PODUID)",
-					"k8s.node.name=$(K8S_NODE_NAME)",
-				},
+				"c1": {},
 			},
 		},
 		{
@@ -375,6 +365,40 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			}
 		})
 	}
+}
+
+// Abort mutation if owner reference cannot be resolved, be consistent with metadata mutator
+func Test_Mutator_MutateNoOwner(t *testing.T) {
+	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "ns",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       "ReplicaSet",
+					Name:       "ghost-rs",
+					Controller: ptr.To(true),
+				},
+			},
+		},
+		Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+	}
+	baseDK := latestdynakube.DynaKube{}
+
+	builder := fake.NewClientBuilder().WithScheme(scheme.Scheme)
+	client := builder.Build()
+	mut := New(client)
+
+	req := dtwebhook.NewMutationRequest(
+		t.Context(),
+		namespace,
+		nil,
+		pod,
+		baseDK,
+	)
+	err := mut.Mutate(req)
+	require.Error(t, err)
 }
 
 func Test_Mutator_Reinvoke(t *testing.T) {
