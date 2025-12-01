@@ -81,6 +81,7 @@ func run(cmd *cobra.Command, args []string) error {
 		switch {
 		case err == nil:
 			logd.Get().WithName("platform").Info("detected platform", "platform", "openshift")
+
 			isOpenShift = true
 		case k8serrors.IsNotFound(err):
 			logd.Get().WithName("platform").Info("detected platform", "platform", "kubernetes")
