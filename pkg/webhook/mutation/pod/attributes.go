@@ -77,8 +77,8 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 
 func isInjected(container corev1.Container, request *dtwebhook.BaseRequest) bool {
 	if request.IsSplitMountsEnabled() {
-		if request.DynaKube.OneAgent().IsAppInjectionNeeded() && !volumes.HasSplitOneAgentMounts(&container) ||
-			request.DynaKube.MetadataEnrichmentEnabled() && !volumes.HasSplitEnrichmentMounts(&container) {
+		if (request.DynaKube.OneAgent().IsAppInjectionNeeded() && !volumes.HasSplitOneAgentMounts(&container)) ||
+			(request.DynaKube.MetadataEnrichmentEnabled() && !volumes.HasSplitEnrichmentMounts(&container)) {
 			return false
 		}
 
