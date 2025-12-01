@@ -2,9 +2,9 @@ package dynakube_test
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/stretchr/testify/assert"
