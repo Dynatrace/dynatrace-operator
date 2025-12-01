@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,12 +63,10 @@ func (m *Mutator) mutate(ctx context.Context, request *mutator.BaseRequest) (boo
 	if err != nil {
 		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-		// TODO: should we abort here or go on with rest of attributes?
-		/*
-			return false, mutator.MutatorError{
-				Err:      errors.WithStack(err),
-				Annotate: setNotInjectedAnnotationFunc(mutator.OwnerLookupFailedReason),
-			}*/
+		return false, mutator.MutatorError{
+			Err:      errors.WithStack(err),
+			Annotate: setNotInjectedAnnotationFunc(mutator.OwnerLookupFailedReason),
+		}
 	}
 
 	var envs []corev1.EnvVar
@@ -120,8 +119,6 @@ func (m *Mutator) addResourceAttributes(c *corev1.Container, podAttributes pod.A
 		mutated = true
 	}
 
-	// TODO: what attributes need sanitization? All or just user-defined ones?
-	//	finalValue := SanitizeMap(existingAttributes).String()
 	finalValue := existingAttributes.String()
 
 	if finalValue != "" {
@@ -154,7 +151,6 @@ func ensureEnvVarSourcesSet(c *corev1.Container, envs []corev1.EnvVar) bool {
 	return mutated
 }
 
-/*
 func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	return func(pod *corev1.Pod) {
 		if pod.Annotations == nil {
@@ -165,4 +161,3 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 		pod.Annotations[mutator.AnnotationOTLPReason] = reason
 	}
 }
-*/

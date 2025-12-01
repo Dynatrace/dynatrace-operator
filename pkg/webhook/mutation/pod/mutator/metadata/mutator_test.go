@@ -279,7 +279,7 @@ func TestMutate(t *testing.T) {
 			testCostCenterAnnotation     = "test-cost-center-annotation"
 			testCustomMetadataLabel      = "test-custom-metadata-label"
 			testCustomMetadataAnnotation = "test-custom-metadata-annotation"
-			testKubeSystemId             = "01234567-abcd-efgh-ijkl-987654321zyx"
+			testKubeSystemID             = "01234567-abcd-efgh-ijkl-987654321zyx"
 			testClusterName              = "dynakube"
 			testClusterMEID              = "KUBERNETES_CLUSTER-DE4AF78E24729521"
 		)
@@ -312,7 +312,7 @@ func TestMutate(t *testing.T) {
 						},
 					},
 					Status: dynakube.DynaKubeStatus{
-						KubeSystemUUID:        testKubeSystemId,
+						KubeSystemUUID:        testKubeSystemID,
 						KubernetesClusterMEID: testClusterMEID,
 						KubernetesClusterName: testClusterName,
 						MetadataEnrichment: metadataenrichment.Status{

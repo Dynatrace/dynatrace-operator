@@ -3,15 +3,13 @@ package pod_test
 import (
 	"context"
 	"fmt"
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
-	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
-	appsv1 "k8s.io/api/apps/v1"
 	"maps"
 	"net/url"
 	"strings"
 	"testing"
 
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -28,6 +26,7 @@ import (
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	podmutation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/attributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/otlp"
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	metadatamutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
@@ -38,6 +37,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -140,7 +140,7 @@ func TestWebhook(t *testing.T) {
 
 			deploy := &appsv1.Deployment{
 				TypeMeta: metav1.TypeMeta{
-					Kind:       "Deplyoment",
+					Kind:       "Deployment",
 					APIVersion: "apps/v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
@@ -168,6 +168,7 @@ func TestWebhook(t *testing.T) {
 				Status: appsv1.DeploymentStatus{},
 			}
 			require.NoError(t, mgr.GetClient().Create(t.Context(), deploy))
+
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
 	)

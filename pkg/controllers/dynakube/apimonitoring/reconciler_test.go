@@ -137,7 +137,6 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testObjectID, actual)
 	})
-
 }
 
 func TestReconcileErrors(t *testing.T) {
