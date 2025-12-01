@@ -1,16 +1,11 @@
 package metadata
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCopyMetadataFromNamespace(t *testing.T) {
@@ -25,7 +20,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test-annotation": "test-value",
 		}
 
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 2)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "copyofannotations", request.Pod.Annotations[metadataenrichment.Prefix+"copyofannotations"])
@@ -77,7 +72,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 5)
 		require.Empty(t, request.Pod.Labels)
 
@@ -137,7 +132,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			},
 		}
 
-		copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 		require.Len(t, request.Pod.Annotations, 3)
 		require.Empty(t, request.Pod.Labels)
 		require.Equal(t, "test-label-value", request.Pod.Annotations[metadataenrichment.Prefix+"dt.test-label"])
@@ -170,7 +165,7 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 			"test-annotation": "test-value",
 		}
 
-		annotations := copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+		annotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 
 		require.Len(t, annotations, 2)
 		require.Len(t, request.Pod.Annotations, 3)
@@ -189,77 +184,4 @@ func TestCopyMetadataFromNamespace(t *testing.T) {
 		}
 		require.Equal(t, expectedMetadataJSON, actualMetadataJSON)
 	})
-}
-
-func createTestMutationRequest(dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
-	if dk == nil {
-		dk = &dynakube.DynaKube{}
-	}
-
-	return dtwebhook.NewMutationRequest(
-		context.Background(),
-		*getTestNamespace(dk),
-		&corev1.Container{
-			Name: dtwebhook.InstallContainerName,
-		},
-		getTestPod(annotations),
-		*dk,
-	)
-}
-func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
-	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-ns",
-			Labels: map[string]string{
-				dtwebhook.InjectionInstanceLabel: dk.Name,
-			},
-		},
-	}
-}
-func getTestPod(annotations map[string]string) *corev1.Pod {
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test-pod",
-			Namespace:   "test-ns",
-			Annotations: annotations,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "container-1",
-					Image: "alpine-1",
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "volume",
-							MountPath: "/volume",
-						},
-					},
-				},
-				{
-					Name:  "container-2",
-					Image: "alpine-2",
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "volume",
-							MountPath: "/volume",
-						},
-					},
-				},
-			},
-			InitContainers: []corev1.Container{
-				{
-					Name:  "init-container",
-					Image: "alpine",
-				},
-			},
-			Volumes: []corev1.Volume{
-				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-			},
-		},
-	}
 }

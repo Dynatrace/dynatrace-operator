@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func addPodAttributes(request *dtwebhook.MutationRequest) error {
+func GetPodAttributes(request dtwebhook.BaseRequest) (podattr.Attributes, []corev1.EnvVar) {
 	attrs := podattr.Attributes{
 		PodInfo: podattr.PodInfo{
 			PodName:       createEnvVarRef(K8sPodNameEnv),
@@ -37,6 +37,12 @@ func addPodAttributes(request *dtwebhook.MutationRequest) error {
 		{Name: K8sNodeNameEnv, ValueFrom: k8senv.NewSourceForField("spec.nodeName")},
 	}
 
+	return attrs, envs
+}
+
+func addPodAttributes(request *dtwebhook.MutationRequest) error {
+	attrs, envs := GetPodAttributes(*request.BaseRequest)
+
 	request.InstallContainer.Env = append(request.InstallContainer.Env, envs...)
 
 	args, err := podattr.ToArgs(attrs)
@@ -53,13 +59,19 @@ func createEnvVarRef(envName string) string {
 	return fmt.Sprintf("$(%s)", envName)
 }
 
+func GetContainerAttributes(container corev1.Container) containerattr.Attributes {
+	attrs := containerattr.Attributes{
+		ImageInfo:     createImageInfo(container.Image),
+		ContainerName: container.Name,
+	}
+
+	return attrs
+}
+
 func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 	attributes := []containerattr.Attributes{}
 	for _, c := range request.NewContainers(isInjected) {
-		attributes = append(attributes, containerattr.Attributes{
-			ImageInfo:     createImageInfo(c.Image),
-			ContainerName: c.Name,
-		})
+		attributes = append(attributes, GetContainerAttributes(*c))
 
 		volumes.AddConfigVolumeMount(c, request.BaseRequest)
 	}

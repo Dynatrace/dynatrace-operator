@@ -10,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func copyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
+func CopyMetadataFromNamespace(pod *corev1.Pod, namespace corev1.Namespace, dk dynakube.DynaKube) map[string]string {
 	copiedCustomRuleAnnotations := copyAccordingToCustomRules(pod, namespace, dk)
 	copiedPrefixAnnotations := copyAccordingToPrefix(pod, namespace)
 
