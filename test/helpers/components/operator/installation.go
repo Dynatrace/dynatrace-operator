@@ -115,40 +115,9 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 		return err
 	}
 
-	opts := []helm.Option{
-		helm.WithReleaseName("dynatrace-operator"),
-		helm.WithNamespace("dynatrace"),
-		helm.WithArgs("--create-namespace"),
-		helm.WithArgs("--install"),
-		helm.WithArgs("--set", fmt.Sprintf("platform=%s", _platform)),
-		helm.WithArgs("--set", "installCRD=true"),
-		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),
-		helm.WithArgs("--set", "manifests=true"),
-		helm.WithArgs("--set", "debugLogs=true"),
-	}
-
-	if releaseTag == "" {
-		// Install from filesystem
-		rootDir := project.RootDir()
-		imageRef, err := getImageRef(rootDir)
-		if err != nil {
-			return err
-		}
-
-		if imageRef == "" {
-			return errors.New("could not determine operator image")
-		}
-
-		opts = append(opts,
-			helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
-			helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
-		)
-	} else {
-		// Install from registry
-		opts = append(opts,
-			helm.WithArgs(helmRegistryURL),
-			helm.WithVersion(releaseTag),
-		)
+	opts, err := getHelmOptions(releaseTag, _platform, withCSI)
+	if err != nil {
+		return err
 	}
 
 	var klogLevel klog.Level
@@ -161,6 +130,49 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 	}()
 
 	return manager.RunUpgrade(opts...)
+}
+
+func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
+	opts := []helm.Option{
+		helm.WithReleaseName("dynatrace-operator"),
+		helm.WithNamespace("dynatrace"),
+		helm.WithArgs("--create-namespace"),
+		helm.WithArgs("--install"),
+		helm.WithArgs("--set", fmt.Sprintf("platform=%s", platform)),
+		helm.WithArgs("--set", "installCRD=true"),
+		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),
+		helm.WithArgs("--set", "manifests=true"),
+		helm.WithArgs("--set", "debugLogs=true"),
+	}
+
+	// Install from registry
+	if releaseTag != "" {
+		return append(opts,
+			helm.WithArgs(helmRegistryURL),
+			helm.WithVersion(releaseTag),
+		), nil
+	}
+
+	// Install nightly
+	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
+		return append(opts, helm.WithArgs(chartURI)), nil
+	}
+
+	// Install from filesystem
+	rootDir := project.RootDir()
+	imageRef, err := getImageRef(rootDir)
+	if err != nil {
+		return nil, err
+	}
+
+	if imageRef == "" {
+		return nil, errors.New("could not determine operator image")
+	}
+
+	return append(opts,
+		helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
+		helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
+	), nil
 }
 
 func getImageRef(rootDir string) (string, error) {
