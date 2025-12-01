@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
@@ -138,8 +139,6 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 			return errors.New("could not determine operator image")
 		}
 
-		fmt.Println("operator image:", strings.TrimSpace(imageRef)) //nolint:forbidigo
-
 		opts = append(opts,
 			helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
 			helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
@@ -151,6 +150,15 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 			helm.WithVersion(releaseTag),
 		)
 	}
+
+	var klogLevel klog.Level
+	// Show helm command args and output
+	// Set only fails if the input does not conform to stronv.ParseInt(x, 10, 32)
+	_ = klogLevel.Set("4")
+	defer func() {
+		// Reset to default value to prevent other logs from showing up
+		_ = klogLevel.Set("0")
+	}()
 
 	return manager.RunUpgrade(opts...)
 }
