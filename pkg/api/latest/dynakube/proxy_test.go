@@ -1,7 +1,6 @@
 package dynakube_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -50,12 +49,12 @@ func proxyValueFromTester(t *testing.T) {
 			Proxy: &value.Source{ValueFrom: testProxyName},
 		},
 	}
-	proxy, err := dk.Proxy(context.TODO(), kubeReader)
+	proxy, err := dk.Proxy(t.Context(), kubeReader)
 	require.NoError(t, err)
 	assert.Equal(t, testProxyData, proxy)
 
 	kubeReader = fake.NewClient()
-	proxy, err = dk.Proxy(context.TODO(), kubeReader)
+	proxy, err = dk.Proxy(t.Context(), kubeReader)
 	require.Error(t, err)
 	assert.Empty(t, proxy)
 }
