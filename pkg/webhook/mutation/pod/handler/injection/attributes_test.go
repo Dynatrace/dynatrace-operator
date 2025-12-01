@@ -305,7 +305,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					{
 						Name:      volumes.ConfigVolumeName,
 						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.json"),
-						SubPath:   attr.ContainerName + "/enrichment/dt_metadata.json",
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.json"),
 					},
 					{
 						Name:      volumes.ConfigVolumeName,
@@ -374,7 +374,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					{
 						Name:      volumes.ConfigVolumeName,
 						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.json"),
-						SubPath:   attr.ContainerName + "/enrichment/dt_metadata.json",
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.json"),
 					},
 					{
 						Name:      volumes.ConfigVolumeName,
