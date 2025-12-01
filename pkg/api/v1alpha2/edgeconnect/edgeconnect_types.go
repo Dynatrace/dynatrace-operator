@@ -7,7 +7,6 @@ package edgeconnect
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,32 +98,6 @@ type OAuthSpec struct {
 type KubernetesAutomationSpec struct {
 	// Enables Kubernetes Automation for Workflows
 	Enabled bool `json:"enabled,omitempty"`
-}
-
-// EdgeConnectStatus defines the observed state of EdgeConnect.
-type EdgeConnectStatus struct { //nolint:revive
-	// Defines the current state (Running, Updating, Error, ...)
-	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
-
-	// Version used for the Edgeconnect image
-	Version status.VersionStatus `json:"version,omitempty"`
-
-	// Indicates when the resource was last updated
-	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
-
-	// kube-system namespace uid
-	KubeSystemUID string `json:"kubeSystemUID,omitempty"`
-
-	// Conditions includes status about the current state of the instance
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// SetPhase sets the status phase on the EdgeConnect object.
-func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
-	upd := phase != dk.DeploymentPhase
-	dk.DeploymentPhase = phase
-
-	return upd
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
