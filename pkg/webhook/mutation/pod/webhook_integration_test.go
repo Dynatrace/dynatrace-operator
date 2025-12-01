@@ -3,6 +3,7 @@ package pod_test
 import (
 	"context"
 	"fmt"
+	appsv1 "k8s.io/api/apps/v1"
 	"maps"
 	"net/url"
 	"strings"
@@ -37,7 +38,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -121,53 +121,9 @@ func TestWebhook(t *testing.T) {
 
 			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
 
-			pod := &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynatrace-webhook",
-					Namespace: testNamespace,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  dtwebhook.WebhookContainerName,
-							Image: "dummy-webhook-img:1.0.0",
-						},
-					},
-				},
-			}
-			require.NoError(t, mgr.GetClient().Create(t.Context(), pod))
-			t.Setenv(k8senv.PodName, pod.Name)
-
-			deploy := &appsv1.Deployment{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Deployment",
-					APIVersion: "apps/v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-deployment",
-					Namespace: testNamespace,
-				},
-				Spec: appsv1.DeploymentSpec{
-					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{"app": "test-app"},
-					},
-					Template: corev1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{"app": "test-app"},
-						},
-						Spec: corev1.PodSpec{
-							Containers: []corev1.Container{
-								{
-									Name:  "test",
-									Image: "dummy-app-img:1.0.0",
-								},
-							},
-						},
-					},
-				},
-				Status: appsv1.DeploymentStatus{},
-			}
-			require.NoError(t, mgr.GetClient().Create(t.Context(), deploy))
+			dummyWebhookPod := getDummyWebhookPod()
+			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
+			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
@@ -228,17 +184,12 @@ func TestWebhook(t *testing.T) {
 		}
 		createDynaKube(t, clt, dk)
 
+		dummyOwner, ownerReference := getDummyOwnerDeployment()
+		createObject(t, clt, dummyOwner)
+
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations = podMetadataAnnotations
-			pod.OwnerReferences = []metav1.OwnerReference{
-				{
-					Name:       "test-deployment",
-					APIVersion: "apps/v1",
-					Kind:       "Deployment",
-					Controller: ptr.To(true),
-					UID:        types.UID(uuid.NewString()),
-				},
-			}
+			pod.OwnerReferences = ownerReference
 		})
 
 		require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
@@ -375,23 +326,9 @@ func TestOTLPWebhook(t *testing.T) {
 			maps.Copy(ns.Labels, nsMetadataLabels)
 
 			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
-
-			pod := &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynatace-webhook",
-					Namespace: testNamespace,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  dtwebhook.WebhookContainerName,
-							Image: "dummy-webhook-img:1.0.0",
-						},
-					},
-				},
-			}
-			require.NoError(t, mgr.GetClient().Create(t.Context(), pod))
-			t.Setenv(k8senv.PodName, pod.Name)
+			dummyWebhookPod := getDummyWebhookPod()
+			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
+			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
 
 			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
 		},
@@ -447,8 +384,12 @@ func TestOTLPWebhook(t *testing.T) {
 
 		createDynaKube(t, clt, dk)
 
+		dummyOwner, ownerReference := getDummyOwnerDeployment()
+		createObject(t, clt, dummyOwner)
+
 		pod := createPod(t, clt, func(pod *corev1.Pod) {
 			pod.Annotations = podMetadataAnnotations
+			pod.OwnerReferences = ownerReference
 		})
 
 		// verify mutation occurred by presence of OTLP env vars (annotation may not be set when no OneAgent injection)
@@ -491,20 +432,61 @@ func TestOTLPWebhook(t *testing.T) {
 		gotResourceAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTELResourceAttributesEnv)
 		require.True(t, envVarFound, "OTEL_RESOURCE_ATTRIBUTES missing")
 
-		assert.Equal(t, url.QueryEscape(podMetadataAnnotations["metadata.dynatrace.com/service.name"]), gotResourceAttributes["service.name"])
-		assert.Equal(t, url.QueryEscape(podMetadataAnnotations["metadata.dynatrace.com/custom.key"]), gotResourceAttributes["custom.key"])
 		assert.Equal(t, testNamespace, gotResourceAttributes["k8s.namespace.name"])
-		assert.Equal(t, "app", gotResourceAttributes["k8s.container.name"])
+		assert.Equal(t, "$(K8S_PODUID)", gotResourceAttributes["k8s.pod.uid"])
+		assert.Equal(t, "$(K8S_PODNAME)", gotResourceAttributes["k8s.pod.name"])
+		assert.Equal(t, "$(K8S_NODE_NAME)", gotResourceAttributes["k8s.node.name"])
+
+		assert.Contains(t, appContainer.Env, corev1.EnvVar{
+			Name: "K8S_PODUID",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "metadata.uid",
+				},
+			},
+		})
+		assert.Contains(t, appContainer.Env, corev1.EnvVar{
+			Name: "K8S_PODNAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "metadata.name",
+				},
+			},
+		})
+		assert.Contains(t, appContainer.Env, corev1.EnvVar{
+			Name: "K8S_NODE_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "spec.nodeName",
+				},
+			},
+		})
+
+		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPLogsEndpointEnv, Value: baseEndpoint + "/v1/logs"})
+		assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPTraceEndpointEnv, Value: baseEndpoint + "/v1/traces"})
+
+		assert.Equal(t, dk.Status.KubernetesClusterName, gotResourceAttributes["k8s.cluster.name"])
+		assert.Equal(t, pod.Spec.Containers[0].Name, gotResourceAttributes["k8s.container.name"])
+
 		assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes["dt.kubernetes.cluster.id"])
 		assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
-		assert.Equal(t, dk.Status.KubernetesClusterName, gotResourceAttributes["k8s.cluster.name"])
+
+		assert.Equal(t, pod.OwnerReferences[0].Name, gotResourceAttributes["k8s.workload.name"])
+		assert.Equal(t, pod.OwnerReferences[0].Name, gotResourceAttributes[attributes.DeprecatedWorkloadNameKey])
+		assert.Equal(t, strings.ToLower(pod.OwnerReferences[0].Kind), gotResourceAttributes["k8s.workload.kind"])
+		assert.Equal(t, strings.ToLower(pod.OwnerReferences[0].Kind), gotResourceAttributes[attributes.DeprecatedWorkloadKindKey])
+
+		assert.Equal(t, url.QueryEscape(nsMetadataAnnotations["metadata.dynatrace.com/custom.ns-meta"]), gotResourceAttributes["custom.ns-meta"])
+
+		assert.Equal(t, url.QueryEscape(podMetadataAnnotations["metadata.dynatrace.com/service.name"]), gotResourceAttributes["service.name"])
+		assert.Equal(t, url.QueryEscape(podMetadataAnnotations["metadata.dynatrace.com/custom.key"]), gotResourceAttributes["custom.key"])
 		assert.Equal(t, url.QueryEscape(nsMetadataAnnotations[testCustomMetadataAnnotation]), gotResourceAttributes["k8s.namespace.annotation."+testCustomMetadataAnnotation])
 		assert.Equal(t, url.QueryEscape(nsMetadataAnnotations[testCostCenterAnnotation]), gotResourceAttributes["dt.cost.costcenter"])
 		assert.Equal(t, url.QueryEscape(nsMetadataLabels[testSecContextLabel]), gotResourceAttributes["dt.security_context"])
 		assert.Equal(t, url.QueryEscape(nsMetadataLabels[testCustomMetadataLabel]), gotResourceAttributes["k8s.namespace.label."+testCustomMetadataLabel])
-		assert.Equal(t, url.QueryEscape(nsMetadataAnnotations["metadata.dynatrace.com/custom.ns-meta"]), gotResourceAttributes["custom.ns-meta"])
-
-		// TODO: workload info attributes
 	})
 
 	t.Run("data ingest token secret missing", func(t *testing.T) {
@@ -796,4 +778,66 @@ func createDynaKube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
 	createObject(t, clt, dk)
 	dk.Status = status
 	dk.UpdateStatus(t.Context(), clt)
+}
+
+func getDummyWebhookPod() *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynatrace-webhook",
+			Namespace: testNamespace,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  dtwebhook.WebhookContainerName,
+					Image: "dummy-webhook-img:1.0.0",
+				},
+			},
+		},
+	}
+}
+
+func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
+	deploy := &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-deployment",
+			Namespace: testNamespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": "test-app"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "test-app"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "test",
+							Image: "dummy-app-img:1.0.0",
+						},
+					},
+				},
+			},
+		},
+		Status: appsv1.DeploymentStatus{},
+	}
+
+	ownerReference := []metav1.OwnerReference{
+		{
+			Name:       deploy.Name,
+			APIVersion: deploy.APIVersion,
+			Kind:       deploy.Kind,
+			Controller: ptr.To(true),
+			UID:        types.UID(uuid.NewString()),
+		},
+	}
+
+	return deploy, ownerReference
+
 }
