@@ -156,7 +156,7 @@ func installViaHelm(releaseTag string, withCSI bool) error {
 }
 
 func getImageRef(rootDir string) (string, error) {
-	command := exec.Command("make", "-C", rootDir, "deploy/image-ref")
+	command := exec.Command("make", "-C", rootDir, "deploy/show-image-ref")
 	command.Env = os.Environ()
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	command.Stdout = stdout

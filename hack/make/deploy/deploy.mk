@@ -4,11 +4,11 @@ PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 
 ## Display the image name used to deploy the helm chart
-deploy/image-ref:
+deploy/show-image-ref:
 	@echo $(IMAGE_URI)
 
 ## Display the image name used to deploy the FIPS helm chart
-deploy/image-ref/fips:
+deploy/show-image-ref/fips:
 	@# Don't call make here to omit the make[1] lines for normal CLI usage.
 	@echo $(IMAGE_URI)-fips
 
