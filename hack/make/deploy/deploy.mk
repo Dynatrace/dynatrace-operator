@@ -7,6 +7,11 @@ HELM_CHART ?= config/helm/chart/default
 deploy/image-ref:
 	@echo $(IMAGE_URI)
 
+## Display the image name used to deploy the FIPS helm chart
+deploy/image-ref/fips:
+	@# Don't call make here to omit the make[1] lines for normal CLI usage.
+	@echo $(IMAGE_URI)-fips
+
 ## Deploy the operator without the csi-driver
 deploy/no-csi:
 	@make ENABLE_CSI=false $(@D)
