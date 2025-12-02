@@ -257,9 +257,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Lint markdown files
-        id: lint-markdown
-        run: |
-          make markdown/lint
+        run: make markdown/lint
+      - name: Check markdown links
+        run: make markdown/link-check
 
   prepare:
     name: Prepare properties
