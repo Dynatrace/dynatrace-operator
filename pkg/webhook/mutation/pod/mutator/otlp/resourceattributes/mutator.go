@@ -74,7 +74,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	}
 
 	podAttributes, envs := injection.GetPodAttributes(*request)
-	namespaceAttributes := metamutator.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+	maps.Copy(workloadInfoAttributes.UserDefined, metamutator.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
@@ -85,7 +85,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 
 		containerAttributes := injection.GetContainerAttributes(*c)
 
-		if m.addResourceAttributes(c, namespaceAttributes, workloadInfoAttributes, podAttributes, containerAttributes, envs) {
+		if m.addResourceAttributes(c, workloadInfoAttributes, podAttributes, containerAttributes, envs) {
 			mutated = true
 		}
 	}
@@ -93,10 +93,20 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(c *corev1.Container, namespaceAttributes map[string]string, workloadInfoAttributes podattr.Attributes, podAttributes podattr.Attributes, containerAttributes container.Attributes, envs []corev1.EnvVar) bool {
-	preconfiguredAttributes, preconfigureEnvVarFound := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
+func (m *Mutator) addResourceAttributes(c *corev1.Container, workloadInfoNamespaceAttributes podattr.Attributes, podAttributes podattr.Attributes, containerAttributes container.Attributes, envs []corev1.EnvVar) bool {
+	// order of precedence in metadata webhook (lowest to highest):
+	// 1. workload
+	// 2. namespace
+	// 2. container
+	// 3. pod
 
-	mutated := preconfiguredAttributes.Merge(SanitizeMap(namespaceAttributes))
+	// namespace attributes are in .UserDefined field, so they will take precedence over workload info attributes
+	workloadInfoNamespaceAttributesMap, err := getAttributesMap(workloadInfoNamespaceAttributes)
+	if err != nil {
+		log.Error(err, "failed to convert workload info and namespace attributes to map")
+
+		return false
+	}
 
 	podAttributesMap, err := getAttributesMap(podAttributes)
 	if err != nil {
@@ -105,30 +115,27 @@ func (m *Mutator) addResourceAttributes(c *corev1.Container, namespaceAttributes
 		return false
 	}
 
+	preconfiguredAttributes, preconfigureEnvVarFound := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
+
+	mutated := preconfiguredAttributes.Merge(workloadInfoNamespaceAttributesMap)
+
 	mutated = preconfiguredAttributes.Merge(podAttributesMap) || mutated
 
 	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
 	mutated = applyEnvVars(c, envs) || mutated
-
-	workloadInfoAttributesMap, err := getAttributesMap(workloadInfoAttributes)
-	if err != nil {
-		log.Error(err, "failed to convert workload info attributes to map")
-
-		return false
-	}
-
-	mutated = preconfiguredAttributes.Merge(workloadInfoAttributesMap) || mutated
 
 	if _, found := preconfiguredAttributes["k8s.container.name"]; !found && containerAttributes.ContainerName != "" {
 		preconfiguredAttributes["k8s.container.name"] = containerAttributes.ContainerName
 		mutated = true
 	}
 
+	mutated = preconfiguredAttributes.Merge(workloadInfoNamespaceAttributesMap) || mutated
+
 	finalValue := preconfiguredAttributes.String()
 
 	if finalValue != "" {
 		if preconfigureEnvVarFound {
-			// remove existing OTEL_RESOURCE_ATTRIBUTES env var and readd to make sure it's at the end of the list
+			// remove existing OTEL_RESOURCE_ATTRIBUTES env var and re-add to make sure it's at the end of the list
 			// because of referenced env vars in attribute values
 			c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
 				return e.Name == OTELResourceAttributesEnv
@@ -181,8 +188,10 @@ func getAttributesMap(attrs podattr.Attributes) (map[string]string, error) {
 		return nil, err
 	}
 
-	// need to sanitize and copy user-defined attributes separately
-	maps.Copy(attrsMap, SanitizeMap(attrs.UserDefined))
+	if attrs.UserDefined != nil {
+		// need to sanitize and copy user-defined attributes separately
+		maps.Copy(attrsMap, SanitizeMap(attrs.UserDefined))
+	}
 
 	return attrsMap, nil
 }
