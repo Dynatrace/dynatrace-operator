@@ -37,7 +37,7 @@ const (
 	// - In case Metadata enrichment is enabled:
 	//   - `/var/lib/dynatrace/enrichment/dt_metadata.json`
 	//   - `/var/lib/dynatrace/enrichment/dt_metadata.properties`
-	//   - `/var/lib/dynatrace/enrichment/endpoints`
+	//   - `/var/lib/dynatrace/enrichment/endpoint`
 	// This functionality is needed for the self monitoring usecase (example OneAgent monitors an ActiveGate) and in case of the classic OneAgent doing the container injection.
 	AnnotationInjectionSplitMounts = "dynatrace.com/split-mounts"
 )

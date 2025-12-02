@@ -12,14 +12,14 @@ const (
 	oneagentDirPath              = "/oneagent"
 	enrichmentJSONFilePath       = "/enrichment/dt_metadata.json"
 	enrichmentPropertiesFilePath = "/enrichment/dt_metadata.properties"
-	enrichmentEndpointsDirPath   = "/enrichment/endpoints"
+	enrichmentEndpointDirPath    = "/enrichment/endpoint"
 )
 
 var (
 	configOneAgentMountPath             = filepath.Join(ConfigMountPath, oneagentDirPath)
 	configEnrichmentJSONMountPath       = filepath.Join(ConfigMountPath, enrichmentJSONFilePath)
 	configEnrichmentPropertiesMountPath = filepath.Join(ConfigMountPath, enrichmentPropertiesFilePath)
-	configEnrichmentEndpointsMountPath  = filepath.Join(ConfigMountPath, enrichmentEndpointsDirPath)
+	configEnrichmentEndpointsMountPath  = filepath.Join(ConfigMountPath, enrichmentEndpointDirPath)
 )
 
 func HasSplitEnrichmentMounts(container *corev1.Container) bool {
@@ -85,5 +85,5 @@ func configEnrichmentPropertiesSubPath(containerName string) string {
 }
 
 func configEnrichmentEndpointsSubPath(containerName string) string {
-	return filepath.Join(containerName, enrichmentEndpointsDirPath)
+	return filepath.Join(containerName, enrichmentEndpointDirPath)
 }
