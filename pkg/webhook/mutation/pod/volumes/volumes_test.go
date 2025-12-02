@@ -141,7 +141,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		pod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 		}
@@ -173,7 +173,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		pod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 		}
@@ -202,7 +202,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		pod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 		}
@@ -233,7 +233,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 		pod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 		}

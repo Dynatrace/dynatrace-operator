@@ -102,61 +102,110 @@ func TestAddSplitMounts(t *testing.T) {
 }
 
 func TestHasSplitEnrichmentMounts(t *testing.T) {
-	t.Run("should return true if json path is present", func(t *testing.T) {
-		container := &corev1.Container{
-			VolumeMounts: []corev1.VolumeMount{
+	tests := []struct {
+		name         string
+		volumeMounts []corev1.VolumeMount
+		expected     bool
+	}{
+		{
+			name:         "should return false if nil",
+			volumeMounts: nil,
+			expected:     false,
+		},
+		{
+			name:         "should return false if empty",
+			volumeMounts: []corev1.VolumeMount{},
+			expected:     false,
+		},
+		{
+			name: "should return true if all mounts are present",
+			volumeMounts: []corev1.VolumeMount{
 				{MountPath: configEnrichmentJSONMountPath},
-			},
-		}
-		assert.True(t, HasSplitEnrichmentMounts(container))
-	})
-
-	t.Run("should return true if properties path is present", func(t *testing.T) {
-		container := &corev1.Container{
-			VolumeMounts: []corev1.VolumeMount{
 				{MountPath: configEnrichmentPropertiesMountPath},
-			},
-		}
-		assert.True(t, HasSplitEnrichmentMounts(container))
-	})
-
-	t.Run("should return true if endpoints path is present", func(t *testing.T) {
-		container := &corev1.Container{
-			VolumeMounts: []corev1.VolumeMount{
 				{MountPath: configEnrichmentEndpointsMountPath},
 			},
-		}
-		assert.True(t, HasSplitEnrichmentMounts(container))
-	})
-
-	t.Run("should return false if no enrichment paths are present", func(t *testing.T) {
-		container := &corev1.Container{
-			VolumeMounts: []corev1.VolumeMount{
+			expected: true,
+		},
+		{
+			name: "should return false if only json path is present",
+			volumeMounts: []corev1.VolumeMount{
+				{MountPath: configEnrichmentJSONMountPath},
+			},
+			expected: false,
+		},
+		{
+			name: "should return false if only properties path is present",
+			volumeMounts: []corev1.VolumeMount{
+				{MountPath: configEnrichmentPropertiesMountPath},
+			},
+			expected: false,
+		},
+		{
+			name: "should return false if only endpoints path is present",
+			volumeMounts: []corev1.VolumeMount{
+				{MountPath: configEnrichmentEndpointsMountPath},
+			},
+			expected: false,
+		},
+		{
+			name: "should return false if no enrichment paths are present",
+			volumeMounts: []corev1.VolumeMount{
 				{MountPath: "/other/path"},
 			},
-		}
-		assert.False(t, HasSplitEnrichmentMounts(container))
-	})
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			container := &corev1.Container{
+				VolumeMounts: test.volumeMounts,
+			}
+			assert.Equal(t, test.expected, HasSplitEnrichmentMounts(container))
+		})
+	}
 }
 
 func TestHasSplitOneAgentMounts(t *testing.T) {
-	t.Run("should return true if oneagent path is present", func(t *testing.T) {
-		container := &corev1.Container{
-			VolumeMounts: []corev1.VolumeMount{
+	tests := []struct {
+		name         string
+		volumeMounts []corev1.VolumeMount
+		expected     bool
+	}{
+		{
+			name:         "should return false if nil",
+			volumeMounts: nil,
+			expected:     false,
+		},
+		{
+			name:         "should return false if empty",
+			volumeMounts: []corev1.VolumeMount{},
+			expected:     false,
+		},
+		{
+			name: "should return true if oneagent path is present",
+			volumeMounts: []corev1.VolumeMount{
 				{MountPath: configOneAgentMountPath},
 			},
-		}
-		assert.True(t, HasSplitOneAgentMounts(container))
-	})
-
-	t.Run("should return false if oneagent path is not present", func(t *testing.T) {
-		container := &corev1.Container{
-			VolumeMounts: []corev1.VolumeMount{
+			expected: true,
+		},
+		{
+			name: "should return false if oneagent path is not present",
+			volumeMounts: []corev1.VolumeMount{
 				{MountPath: "/other/path"},
 			},
-		}
-		assert.False(t, HasSplitOneAgentMounts(container))
-	})
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			container := &corev1.Container{
+				VolumeMounts: test.volumeMounts,
+			}
+			assert.Equal(t, test.expected, HasSplitOneAgentMounts(container))
+		})
+	}
 }
 
 func TestAddSplitOneAgentConfigVolumeMount(t *testing.T) {

@@ -101,7 +101,7 @@ func TestAddContainerAttributes(t *testing.T) {
 		Pod: &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "false",
+					dtwebhook.AnnotationInjectionSplitMounts: "false",
 				},
 			},
 		},
@@ -258,7 +258,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						dtwebhook.InjectionSplitMounts: "true",
+						dtwebhook.AnnotationInjectionSplitMounts: "true",
 					},
 				},
 			},
@@ -406,7 +406,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -459,7 +459,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -511,7 +511,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -565,7 +565,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -617,7 +617,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -669,7 +669,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{

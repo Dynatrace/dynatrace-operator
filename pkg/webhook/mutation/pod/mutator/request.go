@@ -63,7 +63,7 @@ func (req *BaseRequest) PodName() string {
 }
 
 func (req *BaseRequest) IsSplitMountsEnabled() bool {
-	if value, found := req.Pod.Annotations[InjectionSplitMounts]; found && strings.ToLower(value) == "true" {
+	if value, found := req.Pod.Annotations[AnnotationInjectionSplitMounts]; found && strings.ToLower(value) == "true" {
 		return true
 	}
 

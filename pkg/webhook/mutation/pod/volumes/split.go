@@ -23,8 +23,8 @@ var (
 )
 
 func HasSplitEnrichmentMounts(container *corev1.Container) bool {
-	return k8smount.ContainsPath(container.VolumeMounts, configEnrichmentJSONMountPath) ||
-		k8smount.ContainsPath(container.VolumeMounts, configEnrichmentPropertiesMountPath) ||
+	return k8smount.ContainsPath(container.VolumeMounts, configEnrichmentJSONMountPath) &&
+		k8smount.ContainsPath(container.VolumeMounts, configEnrichmentPropertiesMountPath) &&
 		k8smount.ContainsPath(container.VolumeMounts, configEnrichmentEndpointsMountPath)
 }
 
