@@ -21,7 +21,10 @@ echo "Exporting env var containing helm chart used for installation (if provided
 export HELM_CHART
 
 echo "Preparing test tenant secrets..."
-./prepare-e2e-secrets.sh
+
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "Executing prepare-e2e-secrets.sh from '$__dir'"
+bash ${__dir}/prepare-e2e-secrets.sh
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
