@@ -314,8 +314,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoints"),
-						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoints"),
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoint"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoint"),
 					},
 					{
 						Name:      volumes.ConfigVolumeName,
@@ -383,8 +383,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoints"),
-						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoints"),
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoint"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoint"),
 					},
 				},
 			})
