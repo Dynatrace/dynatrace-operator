@@ -24,7 +24,8 @@ echo "Preparing test tenant secrets..."
 
 pwd
 
-bash ./.github/scripts/prepare-e2e-secrets.sh
+# should be the same as we run inside GA
+ref/.github/scripts/prepare-e2e-secrets.sh
 
 echo "Running tests for environment '$FLC_ENVIRONMENT'..."
 
