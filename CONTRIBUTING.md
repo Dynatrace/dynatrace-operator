@@ -237,7 +237,7 @@ We recommended only executing the ones related to the changes as each one can ta
 
 You can trigger the E2E tests on a kind cluster in GitHub Actions by commenting on a pull request with:
 
-```
+```sh
 /run-e2e-kind
 ```
 
