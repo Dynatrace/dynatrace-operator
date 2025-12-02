@@ -2,7 +2,7 @@
 
 ## role-permissions2md - YAML to Markdown converter for operator permissions
 
-This script can be used to create a table containing permissions needed by components of the Dynatrace Kubernetes Operator. The resulting tables can be used as input for our [public documentation](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dt-component-permissions#dto)
+This script can be used to create a table containing permissions needed by components of the Dynatrace Kubernetes Operator. The resulting tables can be used as input for our [public documentation](https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/security#dto)
 
 Pre-requisites:
 
