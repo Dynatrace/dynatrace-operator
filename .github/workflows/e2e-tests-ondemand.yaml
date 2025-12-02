@@ -52,6 +52,10 @@ jobs:
             platform: ocp
           - version: 4-18
             platform: ocp
+          - version: 4-19
+            platform: ocp
+          - version: 4-20
+            platform: ocp
     environment: E2E
     runs-on:
       - self-hosted

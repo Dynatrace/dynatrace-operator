@@ -1,3 +1,4 @@
+from itertools import zip_longest
 import json
 from ruamel.yaml import YAML
 
@@ -105,9 +106,43 @@ table_section = {"type": "table", "rows": []}
 rows = [table_header]
 
 
-for k8s_env, ocp_env in zip(supported_k8s, supported_ocps):
+# In case we have different number of supported k8s and ocp environments
+for k8s_env, ocp_env in zip_longest(supported_k8s, supported_ocps):
+    k8s_env = k8s_env or "n/a"
+    ocp_env = ocp_env or "n/a"
     k8s_env_clean = k8s_env.replace("-", "_").replace(".", "_").upper()
     ocp_env_clean = ocp_env.replace("-", "_").replace(".", "_").upper()
+
+    if k8s_env != "n/a":
+        k8s_link_elements = [
+            {
+                "type": "link",
+                "url": "${{{{ env.{}_RUN_ID_URL }}}}".format(k8s_env_clean),
+                "text": "tests ",
+            },
+            {
+                "type": "emoji",
+                "name": "${{{{ env.{}_EMOJI }}}}".format(k8s_env_clean),
+            },
+        ]
+    else:
+        k8s_link_elements = [{"type": "text", "text": "n/a"}]
+
+    if ocp_env != "n/a":
+        ocp_link_elements = [
+            {
+                "type": "link",
+                "url": "${{{{ env.{}_RUN_ID_URL }}}}".format(ocp_env_clean),
+                "text": "tests ",
+            },
+            {
+                "type": "emoji",
+                "name": "${{{{ env.{}_EMOJI }}}}".format(ocp_env_clean),
+            },
+        ]
+    else:
+        ocp_link_elements = [{"type": "text", "text": "n/a"}]
+
     row = [
         {
             "type": "rich_text",
@@ -123,17 +158,7 @@ for k8s_env, ocp_env in zip(supported_k8s, supported_ocps):
             "elements": [
                 {
                     "type": "rich_text_section",
-                    "elements": [
-                        {
-                            "type": "link",
-                            "url": "${{{{ env.{}_RUN_ID_URL }}}}".format(k8s_env_clean),
-                            "text": "tests ",
-                        },
-                        {
-                            "type": "emoji",
-                            "name": "${{{{ env.{}_EMOJI }}}}".format(k8s_env_clean),
-                        },
-                    ],
+                    "elements": k8s_link_elements,
                 }
             ],
         },
@@ -151,17 +176,7 @@ for k8s_env, ocp_env in zip(supported_k8s, supported_ocps):
             "elements": [
                 {
                     "type": "rich_text_section",
-                    "elements": [
-                        {
-                            "type": "link",
-                            "url": "${{{{ env.{}_RUN_ID_URL }}}}".format(ocp_env_clean),
-                            "text": "tests ",
-                        },
-                        {
-                            "type": "emoji",
-                            "name": "${{{{ env.{}_EMOJI }}}}".format(ocp_env_clean),
-                        },
-                    ],
+                    "elements": ocp_link_elements,
                 }
             ],
         },
