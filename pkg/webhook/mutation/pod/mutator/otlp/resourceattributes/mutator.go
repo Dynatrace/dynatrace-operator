@@ -5,11 +5,9 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	metamutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	"github.com/pkg/errors"
@@ -44,6 +42,7 @@ func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
 }
 
 func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
+	//_, err := m.mutate(request.Context, request.BaseRequest)
 	_, err := m.mutate(request.Context, request.BaseRequest)
 
 	return err
@@ -52,6 +51,7 @@ func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
+	//mutated, _ := m.mutate(context.Background(), request.BaseRequest)
 	mutated, _ := m.mutate(context.Background(), request.BaseRequest)
 
 	return mutated
@@ -62,7 +62,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 
 	log.Debug("injecting OTLP resource Attributes")
 
-	// fetch workload information once per pod
+	// get the workload info and set workload annotations
 	workloadInfoAttributes, err := metamutator.GetWorkloadInfoAttributes(ctx, *request, m.kubeClient)
 	if err != nil {
 		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
@@ -73,8 +73,14 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 	}
 
-	podAttributes, envs := injection.GetPodAttributes(*request)
-	maps.Copy(workloadInfoAttributes.UserDefined, metamutator.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
+	workloadInfoNamespaceAttributesMap, err := getAttributesMap(workloadInfoAttributes)
+	if err != nil {
+		log.Error(err, "failed to convert workload info attributes to map, unable to add resource attributes to container", "pod", request.Pod.Name, "namespace", request.Pod.Namespace)
+	}
+
+	// get attributes from namespace according to enrichment rules, propagate metadata annotations from pod to namespace and
+	// collect metadata annotations from the pod
+	workloadInfoNamespaceAttributesMap.Merge(SanitizeMap(metamutator.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)))
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
@@ -83,9 +89,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 			continue
 		}
 
-		containerAttributes := injection.GetContainerAttributes(*c)
-
-		if m.addResourceAttributes(c, workloadInfoAttributes, podAttributes, containerAttributes, envs) {
+		if m.addResourceAttributes(request, c, workloadInfoNamespaceAttributesMap) {
 			mutated = true
 		}
 	}
@@ -93,59 +97,44 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(c *corev1.Container, workloadInfoNamespaceAttributes podattr.Attributes, podAttributes podattr.Attributes, containerAttributes container.Attributes, envs []corev1.EnvVar) bool {
-	// order of precedence in metadata webhook (lowest to highest):
-	// 1. workload
-	// 2. namespace
-	// 2. container
-	// 3. pod
+func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, workloadInfoNamespaceAttributesMap Attributes) bool {
+	var mutated bool
 
-	// namespace attributes are in .UserDefined field, so they will take precedence over workload info attributes
-	workloadInfoNamespaceAttributesMap, err := getAttributesMap(workloadInfoNamespaceAttributes)
-	if err != nil {
-		log.Error(err, "failed to convert workload info and namespace attributes to map")
-
-		return false
+	existingAttributes, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
+	if ok {
+		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
+		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
+			return e.Name == OTELResourceAttributesEnv
+		})
 	}
-
-	podAttributesMap, err := getAttributesMap(podAttributes)
-	if err != nil {
-		log.Error(err, "failed to convert pod attributes to map")
-
-		return false
-	}
-
-	preconfiguredAttributes, preconfigureEnvVarFound := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
-
-	mutated := preconfiguredAttributes.Merge(workloadInfoNamespaceAttributesMap)
-
-	mutated = preconfiguredAttributes.Merge(podAttributesMap) || mutated
 
 	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
-	mutated = applyEnvVars(c, envs) || mutated
+	envVarSourcesAdded := ensureEnvVarSourcesSet(c)
 
-	if _, found := preconfiguredAttributes["k8s.container.name"]; !found && containerAttributes.ContainerName != "" {
-		preconfiguredAttributes["k8s.container.name"] = containerAttributes.ContainerName
-		mutated = true
+	attributesToAdd := Attributes{
+		"k8s.namespace.name":           request.Pod.Namespace,
+		"k8s.cluster.uid":              request.DynaKube.Status.KubeSystemUUID,
+		"dt.kubernetes.cluster.id":     request.DynaKube.Status.KubeSystemUUID,
+		"k8s.cluster.name":             request.DynaKube.Status.KubernetesClusterName,
+		"dt.entity.kubernetes_cluster": request.DynaKube.Status.KubernetesClusterMEID,
+		"k8s.container.name":           c.Name,
+		"k8s.pod.name":                 "$(K8S_PODNAME)",
+		"k8s.pod.uid":                  "$(K8S_PODUID)",
+		"k8s.node.name":                "$(K8S_NODE_NAME)",
 	}
 
-	mutated = preconfiguredAttributes.Merge(workloadInfoNamespaceAttributesMap) || mutated
+	// add workload Attributes (only once fetched per pod, but appended per container to env var if not already present)
+	_ = attributesToAdd.Merge(workloadInfoNamespaceAttributesMap)
 
-	finalValue := preconfiguredAttributes.String()
+	mutated = existingAttributes.Merge(attributesToAdd)
+
+	finalValue := existingAttributes.String()
 
 	if finalValue != "" {
-		if preconfigureEnvVarFound {
-			// remove existing OTEL_RESOURCE_ATTRIBUTES env var and re-add to make sure it's at the end of the list
-			// because of referenced env vars in attribute values
-			c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
-				return e.Name == OTELResourceAttributesEnv
-			})
-		}
-
 		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: finalValue})
 	}
 
-	return mutated
+	return envVarSourcesAdded || mutated
 }
 
 func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool {
@@ -154,6 +143,36 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool
 		request.Pod.Annotations,
 		c.Name,
 	)
+}
+
+func ensureEnvVarSourcesSet(c *corev1.Container) bool {
+	mutated := false
+
+	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
+		Name:      "K8S_PODNAME",
+		ValueFrom: k8senv.NewSourceForField("metadata.name"),
+	}); added {
+		c.Env = envs
+		mutated = true
+	}
+
+	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
+		Name:      "K8S_PODUID",
+		ValueFrom: k8senv.NewSourceForField("metadata.uid"),
+	}); added {
+		c.Env = envs
+		mutated = true
+	}
+
+	if envs, added := k8senv.Append(c.Env, corev1.EnvVar{
+		Name:      "K8S_NODE_NAME",
+		ValueFrom: k8senv.NewSourceForField("spec.nodeName"),
+	}); added {
+		c.Env = envs
+		mutated = true
+	}
+
+	return mutated
 }
 
 func applyEnvVars(c *corev1.Container, envs []corev1.EnvVar) bool {
@@ -182,7 +201,7 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	}
 }
 
-func getAttributesMap(attrs podattr.Attributes) (map[string]string, error) {
+func getAttributesMap(attrs podattr.Attributes) (Attributes, error) {
 	attrsMap, err := attrs.ToMap()
 	if err != nil {
 		return nil, err
