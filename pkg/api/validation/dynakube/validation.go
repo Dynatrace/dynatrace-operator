@@ -65,6 +65,7 @@ var (
 		forbiddenTelemetryIngestServiceNameSuffix,
 		conflictingTelemetryIngestServiceNames,
 		missingOtelCollectorImage,
+		missingDatabaseExecutorImage,
 		conflictingOrInvalidDatabasesVolumeMounts,
 		unusedDatabasesVolume,
 	}

@@ -98,6 +98,12 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 						Tag:        "version",
 					},
 				},
+				DatabaseExecutor: extensions.DatabaseExecutorSpec{
+					ImageRef: image.Ref{
+						Repository: "repo/image",
+						Tag:        "version",
+					},
+				},
 			},
 		},
 	}
