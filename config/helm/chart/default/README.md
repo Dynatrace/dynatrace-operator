@@ -13,7 +13,7 @@ Install the Dynatrace Operator via Helm by running the following commands.
 ### Installation
 
 > For instructions on how to install the dynatrace-operator on Openshift, head to the
-> [official help page](https://www.dynatrace.com/support/help/shortlink/k8s-helm)
+> [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes)
 
 #### For versions older than 0.15.0
 
@@ -39,7 +39,7 @@ helm install dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operato
 
 ## Uninstall chart
 
-> Full instructions can be found in the [official help page](https://www.dynatrace.com/support/help/shortlink/k8s-helm#uninstall-dynatrace-operator)
+> Full instructions can be found in the [official help page](https://www.dynatrace.com/support/help/shortlink/guides-k8s-update-uninstall-operator)
 
 Uninstall the Dynatrace Operator by running the following command:
 
