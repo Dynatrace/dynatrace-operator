@@ -338,5 +338,5 @@ This design allows using a single container image with different entry points fo
 
 - [HACKING.md](HACKING.md) - Development setup and guidelines
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [Official Documentation](https://www.dynatrace.com/support/help/shortlink/kubernetes-hub) - User-facing documentation
+- [Official Documentation](https://www.dynatrace.com/support/help/shortlink/kubernetes) - User-facing documentation
 - [API Samples](assets/samples/dynakube/) - Example DynaKube configurations
