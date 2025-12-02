@@ -42,7 +42,6 @@ func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
 }
 
 func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	//_, err := m.mutate(request.Context, request.BaseRequest)
 	_, err := m.mutate(request.Context, request.BaseRequest)
 
 	return err
@@ -51,7 +50,6 @@ func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	//mutated, _ := m.mutate(context.Background(), request.BaseRequest)
 	mutated, _ := m.mutate(context.Background(), request.BaseRequest)
 
 	return mutated
@@ -79,8 +77,8 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	}
 
 	// get attributes from namespace according to enrichment rules, propagate metadata annotations from pod to namespace and
-	// collect metadata annotations from the pod
-	workloadInfoNamespaceAttributesMap.Merge(SanitizeMap(metamutator.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)))
+	// collect metadata annotations from the pod, these take precedence over the workload info attributes
+	maps.Copy(workloadInfoNamespaceAttributesMap, SanitizeMap(metamutator.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)))
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
@@ -170,21 +168,6 @@ func ensureEnvVarSourcesSet(c *corev1.Container) bool {
 	}); added {
 		c.Env = envs
 		mutated = true
-	}
-
-	return mutated
-}
-
-func applyEnvVars(c *corev1.Container, envs []corev1.EnvVar) bool {
-	mutated := false
-
-	for env := range envs {
-		var added bool
-
-		c.Env, added = k8senv.Append(c.Env, envs[env])
-		if added {
-			mutated = true
-		}
 	}
 
 	return mutated
