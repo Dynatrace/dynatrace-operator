@@ -261,22 +261,6 @@ jobs:
       - name: Check markdown links
         run: make markdown/link-check
 
-  prepare:
-    name: Prepare properties
-    needs: [detect-changes]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      - name: Prepare build parameters
-        id: prep
-        run: |
-          hack/build/ci/prepare-build-variables.sh
-    outputs:
-      labels: ${{ steps.prep.outputs.docker_image_labels }}
-      version: ${{ steps.prep.outputs.docker_image_tag }}
-
   build-push:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
@@ -301,7 +285,7 @@ jobs:
     name: Run preflight on quay.io without submitting results when merging to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: Release
-    needs: [build-push, prepare]
+    needs: [build-push]
     runs-on: ubuntu-24.04
     env:
       SCAN_REGISTRY: "quay.io"
@@ -311,7 +295,8 @@ jobs:
       - name: Run preflight
         uses: ./.github/actions/preflight
         with:
-          version: ${{ needs.prepare.outputs.version }}
+          platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
           registry: ${{ env.DOCKER_REGISTRY }}
           repository: ${{ env.DOCKER_REPOSITORY }}
           report-name: "preflight.json"
