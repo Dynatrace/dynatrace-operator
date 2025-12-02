@@ -22,7 +22,7 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
   * `metrics-ingest` routes enriched metrics through ActiveGate
 
 For more information please have a look at [our DynaKube Custom Resource examples](assets/samples/dynakube) and
-our [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes-hub).
+our [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes).
 
 ## Support lifecycle
 
@@ -39,7 +39,7 @@ objects like permissions, custom resources and corresponding StatefulSets.
 ### Installation
 
 > For install instructions, head to the
-> [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8)
+> [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes)
 
 ## Hacking
 
