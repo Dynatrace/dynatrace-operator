@@ -122,7 +122,7 @@ func TestHasSplitEnrichmentMounts(t *testing.T) {
 			volumeMounts: []corev1.VolumeMount{
 				{MountPath: configEnrichmentJSONMountPath},
 				{MountPath: configEnrichmentPropertiesMountPath},
-				{MountPath: configEnrichmentEndpointsMountPath},
+				{MountPath: configEnrichmentEndpointMountPath},
 			},
 			expected: true,
 		},
@@ -143,7 +143,7 @@ func TestHasSplitEnrichmentMounts(t *testing.T) {
 		{
 			name: "should return false if only endpoints path is present",
 			volumeMounts: []corev1.VolumeMount{
-				{MountPath: configEnrichmentEndpointsMountPath},
+				{MountPath: configEnrichmentEndpointMountPath},
 			},
 			expected: false,
 		},
@@ -240,6 +240,6 @@ func TestAddSplitEnrichmentConfigVolumeMount(t *testing.T) {
 	// Check Endpoints mount
 	endpointsMount := container.VolumeMounts[2]
 	assert.Equal(t, ConfigVolumeName, endpointsMount.Name)
-	assert.Equal(t, configEnrichmentEndpointsMountPath, endpointsMount.MountPath)
+	assert.Equal(t, configEnrichmentEndpointMountPath, endpointsMount.MountPath)
 	assert.Equal(t, configEnrichmentEndpointsSubPath(container.Name), endpointsMount.SubPath)
 }

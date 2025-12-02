@@ -19,13 +19,13 @@ var (
 	configOneAgentMountPath             = filepath.Join(ConfigMountPath, oneagentDirPath)
 	configEnrichmentJSONMountPath       = filepath.Join(ConfigMountPath, enrichmentJSONFilePath)
 	configEnrichmentPropertiesMountPath = filepath.Join(ConfigMountPath, enrichmentPropertiesFilePath)
-	configEnrichmentEndpointsMountPath  = filepath.Join(ConfigMountPath, enrichmentEndpointDirPath)
+	configEnrichmentEndpointMountPath   = filepath.Join(ConfigMountPath, enrichmentEndpointDirPath)
 )
 
 func HasSplitEnrichmentMounts(container *corev1.Container) bool {
 	return k8smount.ContainsPath(container.VolumeMounts, configEnrichmentJSONMountPath) &&
 		k8smount.ContainsPath(container.VolumeMounts, configEnrichmentPropertiesMountPath) &&
-		k8smount.ContainsPath(container.VolumeMounts, configEnrichmentEndpointsMountPath)
+		k8smount.ContainsPath(container.VolumeMounts, configEnrichmentEndpointMountPath)
 }
 
 func HasSplitOneAgentMounts(container *corev1.Container) bool {
@@ -65,7 +65,7 @@ func addSplitEnrichmentConfigVolumeMount(container *corev1.Container) {
 		},
 		{
 			Name:      ConfigVolumeName,
-			MountPath: configEnrichmentEndpointsMountPath,
+			MountPath: configEnrichmentEndpointMountPath,
 			SubPath:   configEnrichmentEndpointsSubPath(container.Name),
 		},
 	}
