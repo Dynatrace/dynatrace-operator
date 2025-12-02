@@ -18,8 +18,8 @@ require (
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.47.0
-	go.opentelemetry.io/collector/config/configtls v1.46.0
-	go.opentelemetry.io/collector/confmap v1.46.0
+	go.opentelemetry.io/collector/config/configtls v1.47.0
+	go.opentelemetry.io/collector/confmap v1.47.0
 	go.opentelemetry.io/collector/pipeline v1.46.0
 	go.opentelemetry.io/collector/service v0.140.0
 	go.uber.org/zap v1.27.1
@@ -107,9 +107,9 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.140.0 // indirect
 	go.opentelemetry.io/collector/component/componenttest v0.140.0 // indirect
-	go.opentelemetry.io/collector/config/configopaque v1.46.0 // indirect
+	go.opentelemetry.io/collector/config/configopaque v1.47.0 // indirect
 	go.opentelemetry.io/collector/config/configtelemetry v0.140.0 // indirect
-	go.opentelemetry.io/collector/confmap/xconfmap v0.140.0 // indirect
+	go.opentelemetry.io/collector/confmap/xconfmap v0.141.0 // indirect
 	go.opentelemetry.io/collector/connector v0.140.0 // indirect
 	go.opentelemetry.io/collector/connector/connectortest v0.140.0 // indirect
 	go.opentelemetry.io/collector/connector/xconnector v0.140.0 // indirect
@@ -162,7 +162,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
