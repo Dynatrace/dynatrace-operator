@@ -5,7 +5,6 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -57,24 +56,61 @@ func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	return mutated
 }
 
+func getWorkloadInfoAttributesMap(ctx context.Context, request dtwebhook.BaseRequest, clt client.Client) (Attributes, error) {
+	workloadInfoAttributes, err := metamutator.GetWorkloadInfoAttributes(ctx, request, clt)
+	if err != nil {
+		return Attributes{}, dtwebhook.MutatorError{
+			Err:      errors.WithStack(err),
+			Annotate: setNotInjectedAnnotationFunc(metamutator.OwnerLookupFailedReason),
+		}
+	}
+
+	attrsMap, err := getAttributesMap(workloadInfoAttributes)
+	if err != nil {
+		return Attributes{}, dtwebhook.MutatorError{
+			Err:      errors.WithStack(err),
+			Annotate: setNotInjectedAnnotationFunc(AttributesConversionFailedReason),
+		}
+	}
+
+	return attrsMap, nil
+}
+
+func getPodAttributesMap(request dtwebhook.BaseRequest) (Attributes, []corev1.EnvVar, error) {
+	podAttributes, envs := injection.GetPodAttributes(request)
+
+	podAttributesMap, err := getAttributesMap(podAttributes)
+	if err != nil {
+		return Attributes{}, nil, &dtwebhook.MutatorError{
+			Err:      errors.WithStack(err),
+			Annotate: setNotInjectedAnnotationFunc(AttributesConversionFailedReason),
+		}
+	}
+
+	return podAttributesMap, envs, nil
+}
+
 func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (bool, error) {
 	mutated := false
 
 	log.Debug("injecting OTLP resource Attributes")
 
 	// fetch workload information once per pod
-	workloadInfoAttributes, err := metamutator.GetWorkloadInfoAttributes(ctx, *request, m.kubeClient)
-	if err != nil {
-		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
+	workloadInfoAttributes, mutationError := getWorkloadInfoAttributesMap(ctx, *request, m.kubeClient)
+	if mutationError != nil {
+		log.Error(mutationError, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-		return false, dtwebhook.MutatorError{
-			Err:      errors.WithStack(err),
-			Annotate: setNotInjectedAnnotationFunc(metamutator.OwnerLookupFailedReason),
-		}
+		return false, mutationError
 	}
 
-	podAttributes, envs := injection.GetPodAttributes(*request)
-	maps.Copy(workloadInfoAttributes.UserDefined, metamutator.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
+	podAttributes, envs, mutationError := getPodAttributesMap(*request)
+	if mutationError != nil {
+		log.Error(mutationError, "failed to get pod attributes info", "podName", request.PodName(), "namespace", request.Namespace.Name)
+
+		return false, mutationError
+	}
+
+	namespaceAttributes := SanitizeMap(metamutator.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
@@ -83,9 +119,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 			continue
 		}
 
-		containerAttributes := injection.GetContainerAttributes(*c)
-
-		if m.addResourceAttributes(c, workloadInfoAttributes, podAttributes, containerAttributes, envs) {
+		if m.addResourceAttributes(c, workloadInfoAttributes, podAttributes, namespaceAttributes, envs) {
 			mutated = true
 		}
 	}
@@ -93,43 +127,27 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(c *corev1.Container, workloadInfoNamespaceAttributes podattr.Attributes, podAttributes podattr.Attributes, containerAttributes container.Attributes, envs []corev1.EnvVar) bool {
-	// order of precedence in metadata webhook (lowest to highest):
+func (m *Mutator) addResourceAttributes(c *corev1.Container, workloadInfoAttributes Attributes, podAttributes Attributes, namespaceAttributes Attributes, envs []corev1.EnvVar) bool {
+	// order of precedence as in metadata webhook (lowest to highest):
 	// 1. workload
 	// 2. namespace
 	// 2. container
 	// 3. pod
-
-	// namespace attributes are in .UserDefined field, so they will take precedence over workload info attributes
-	workloadInfoNamespaceAttributesMap, err := getAttributesMap(workloadInfoNamespaceAttributes)
-	if err != nil {
-		log.Error(err, "failed to convert workload info and namespace attributes to map")
-
-		return false
-	}
-
-	podAttributesMap, err := getAttributesMap(podAttributes)
-	if err != nil {
-		log.Error(err, "failed to convert pod attributes to map")
-
-		return false
-	}
-
 	preconfiguredAttributes, preconfigureEnvVarFound := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 
-	mutated := preconfiguredAttributes.Merge(workloadInfoNamespaceAttributesMap)
-
-	mutated = preconfiguredAttributes.Merge(podAttributesMap) || mutated
+	mutated := preconfiguredAttributes.Merge(workloadInfoAttributes)
+	mutated = preconfiguredAttributes.Merge(namespaceAttributes) || mutated
 
 	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
 	mutated = applyEnvVars(c, envs) || mutated
 
+	containerAttributes := injection.GetContainerAttributes(*c)
 	if _, found := preconfiguredAttributes["k8s.container.name"]; !found && containerAttributes.ContainerName != "" {
 		preconfiguredAttributes["k8s.container.name"] = containerAttributes.ContainerName
 		mutated = true
 	}
 
-	mutated = preconfiguredAttributes.Merge(workloadInfoNamespaceAttributesMap) || mutated
+	mutated = preconfiguredAttributes.Merge(podAttributes) || mutated
 
 	finalValue := preconfiguredAttributes.String()
 
