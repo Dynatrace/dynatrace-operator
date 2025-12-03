@@ -102,15 +102,10 @@ runs:
           echo "Cluster creation failed or was skipped. Skipping tests."
           echo "skip_tests=true" >> $GITHUB_OUTPUT
         fi
-    - name: Run tests
+    - name: Prepare e2e secrets
       shell: bash
-      run: ref/.github/scripts/run-e2e-tests.sh
+      run: ref/.github/scripts/prepare-e2e-secrets.sh
       env:
-        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
-        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
-        HELM_CHART: ${{ inputs.helm-chart }}
-        TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
-        TARGET_IMAGE: ${{ inputs.target-image }}
         TENANT1_NAME: ${{ inputs.tenant1-name }}
         TENANT1_APITOKEN: ${{ inputs.tenant1-apitoken }}
         TENANT1_APITOKEN_NOSETTINGS: ${{ inputs.tenant1-apitoken-nosettings }}
@@ -121,6 +116,15 @@ runs:
         TENANT2_NAME: ${{ inputs.tenant2-name }}
         TENANT2_APITOKEN: ${{ inputs.tenant2-apitoken }}
         TENANT2_DATAINGESTTOKEN: ${{ inputs.tenant2-dataingesttoken }}
+    - name: Run tests
+      shell: bash
+      run: ref/.github/scripts/run-e2e-tests.sh
+      env:
+        FLC_NAMESPACE: ${{ inputs.flc-namespace }}
+        FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
+        HELM_CHART: ${{ inputs.helm-chart }}
+        TARGET_BRANCH: ${{ inputs.target-branch || 'main' }}
+        TARGET_IMAGE: ${{ inputs.target-image }}
       if: steps.check_cluster_status.outputs.skip_tests != 'true'
     - name: Destroy cluster
       shell: bash
