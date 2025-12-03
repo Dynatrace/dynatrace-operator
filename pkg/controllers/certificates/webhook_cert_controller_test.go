@@ -1,7 +1,6 @@
 package certificates
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -34,13 +33,13 @@ func TestReconcileCertificate_Create(t *testing.T) {
 	clt := newFakeClientBuilder().WithCRD().Build()
 	controller, request := prepareController(clt)
 
-	res, err := controller.Reconcile(context.TODO(), request)
+	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, SuccessDuration, res.RequeueAfter)
 
 	secret := &corev1.Secret{}
-	err = clt.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
 	require.NoError(t, err)
 
 	assert.NotNil(t, secret.Data)
@@ -61,7 +60,7 @@ func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
 	clt := newFakeClientBuilder().Build()
 	controller, request := prepareController(clt)
 
-	res, err := controller.Reconcile(context.TODO(), request)
+	res, err := controller.Reconcile(t.Context(), request)
 	require.Error(t, err)
 	assert.Equal(t, reconcile.Result{}, res)
 }
@@ -70,13 +69,13 @@ func TestReconcileCertificate_Update(t *testing.T) {
 	clt := newFakeClientBuilder().WithInvalidCertificateSecret().WithCRD().Build()
 	controller, request := prepareController(clt)
 
-	res, err := controller.Reconcile(context.TODO(), request)
+	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, SuccessDuration, res.RequeueAfter)
 
 	secret := &corev1.Secret{}
-	err = clt.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
 	require.NoError(t, err)
 
 	assert.NotNil(t, secret.Data)
@@ -97,13 +96,13 @@ func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
 	clt := newFakeClientBuilder().WithValidCertificateSecret().WithCRD().Build()
 	controller, request := prepareController(clt)
 
-	res, err := controller.Reconcile(context.TODO(), request)
+	res, err := controller.Reconcile(t.Context(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, SuccessDuration, res.RequeueAfter)
 
 	secret := &corev1.Secret{}
-	err = clt.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
 	require.NoError(t, err)
 
 	verifyCertificates(t, controller, secret, clt, false)
@@ -157,7 +156,7 @@ func TestReconcile(t *testing.T) {
 				},
 			})
 		controller, request := prepareController(fakeClient)
-		result, err := controller.Reconcile(context.TODO(), request)
+		result, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -185,7 +184,7 @@ func TestReconcile(t *testing.T) {
 				},
 			})
 		controller, request := prepareController(fakeClient)
-		result, err := controller.Reconcile(context.TODO(), request)
+		result, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -200,12 +199,12 @@ func TestReconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(dkCrd, ecCrd, deployment)
 		cs := newCertificateSecret(deployment)
-		_ = cs.setSecretFromReader(context.TODO(), fakeClient, testNamespace)
+		_ = cs.setSecretFromReader(t.Context(), fakeClient, testNamespace)
 		_ = cs.validateCertificates(testNamespace)
-		_ = cs.createOrUpdateIfNecessary(context.TODO(), fakeClient)
+		_ = cs.createOrUpdateIfNecessary(t.Context(), fakeClient)
 
 		controller, request := prepareController(fakeClient)
-		result, err := controller.Reconcile(context.TODO(), request)
+		result, err := controller.Reconcile(t.Context(), request)
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 
@@ -213,7 +212,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		actualCrd := &apiv1.CustomResourceDefinition{}
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dkCrdName}, actualCrd)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dkCrdName}, actualCrd)
 		require.NoError(t, err)
 		assert.Equal(t, expectedBundle, actualCrd.Spec.Conversion.Webhook.ClientConfig.CABundle)
 	})
@@ -228,18 +227,18 @@ func TestReconcile(t *testing.T) {
 			},
 		})
 		controller, request := prepareController(fakeClient)
-		result, err := controller.Reconcile(context.TODO(), request)
+		result, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		secret := &corev1.Secret{}
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
 		require.NoError(t, err)
 	})
 }
 
-func createInvalidTestCertData(_ *testing.T) map[string][]byte {
+func createInvalidTestCertData() map[string][]byte {
 	return map[string][]byte{
 		RootKey:    {testBytes},
 		RootCert:   {testBytes},
@@ -248,7 +247,7 @@ func createInvalidTestCertData(_ *testing.T) map[string][]byte {
 	}
 }
 
-func createValidTestCertData(_ *testing.T) map[string][]byte {
+func createValidTestCertData() map[string][]byte {
 	cert := Certs{
 		Domain: testDomain,
 		Now:    time.Now(),
@@ -258,7 +257,7 @@ func createValidTestCertData(_ *testing.T) map[string][]byte {
 	return cert.Data
 }
 
-func createTestSecret(_ *testing.T, certData map[string][]byte) *corev1.Secret {
+func createTestSecret(certData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -285,21 +284,8 @@ func prepareController(clt client.Client) (*WebhookCertificateController, reconc
 	return rec, request
 }
 
-func testWebhookClientConfig(
-	t *testing.T, webhookClientConfig *admissionregistrationv1.WebhookClientConfig,
-	secretData map[string][]byte, isUpdate bool) {
-	require.NotNil(t, webhookClientConfig)
-	require.NotEmpty(t, webhookClientConfig.CABundle)
-
-	expectedCert := secretData[RootCert]
-	if isUpdate {
-		expectedCert = append(expectedCert, []byte{123}...)
-	}
-
-	assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
-}
-
 func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret *corev1.Secret, clt client.Client, isUpdate bool) {
+	t.Helper()
 	cert := Certs{
 		Domain:  getDomain(rec.namespace),
 		Data:    secret.Data,
@@ -311,21 +297,30 @@ func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret 
 	assert.False(t, cert.validateRootCerts(time.Now()))
 	assert.False(t, cert.validateServerCerts(time.Now()))
 
+	assertCABundle := func(t *testing.T, webhookClientConfig *admissionregistrationv1.WebhookClientConfig) {
+		t.Helper()
+		require.NotNil(t, webhookClientConfig)
+		require.NotEmpty(t, webhookClientConfig.CABundle)
+
+		expectedCert := secret.Data[RootCert]
+		if isUpdate {
+			expectedCert = append(expectedCert, []byte{123}...)
+		}
+
+		assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
+	}
+
 	mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
-	err := clt.Get(context.TODO(), client.ObjectKey{
-		Name: webhook.DeploymentName,
-	}, mutatingWebhookConfig)
+	err := clt.Get(t.Context(), client.ObjectKey{Name: webhook.DeploymentName}, mutatingWebhookConfig)
 	require.NoError(t, err)
 	assert.Len(t, mutatingWebhookConfig.Webhooks, 2)
-	testWebhookClientConfig(t, &mutatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
+	assertCABundle(t, &mutatingWebhookConfig.Webhooks[0].ClientConfig)
 
 	validatingWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
-	err = clt.Get(context.TODO(), client.ObjectKey{
-		Name: webhook.DeploymentName,
-	}, validatingWebhookConfig)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: webhook.DeploymentName}, validatingWebhookConfig)
 	require.NoError(t, err)
 	assert.Len(t, validatingWebhookConfig.Webhooks, 1)
-	testWebhookClientConfig(t, &validatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
+	assertCABundle(t, &validatingWebhookConfig.Webhooks[0].ClientConfig)
 }
 
 type fakeClientBuilder struct {
@@ -369,17 +364,13 @@ func newFakeClientBuilder() *fakeClientBuilder {
 }
 
 func (builder *fakeClientBuilder) WithValidCertificateSecret() *fakeClientBuilder {
-	builder.objs = append(builder.objs,
-		createTestSecret(nil, createValidTestCertData(nil)),
-	)
+	builder.objs = append(builder.objs, createTestSecret(createValidTestCertData()))
 
 	return builder
 }
 
 func (builder *fakeClientBuilder) WithInvalidCertificateSecret() *fakeClientBuilder {
-	builder.objs = append(builder.objs,
-		createTestSecret(nil, createInvalidTestCertData(nil)),
-	)
+	builder.objs = append(builder.objs, createTestSecret(createInvalidTestCertData()))
 
 	return builder
 }

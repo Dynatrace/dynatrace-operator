@@ -13,13 +13,28 @@ import (
 )
 
 const (
-	errorConflictingDatabasesVolumeMounts = `Database volume mount (%s) in conflict with a default database volume mount (%s) detected. Please make sure to avoid such conflicts.`
-	errorInvalidDatabasesVolumeMount      = `Invalid database volume mount detected: %s. No matching database volume found.`
-	errorUnusedDatabasesVolumes           = `Unused database volume(s) found (%s). Make sure to mount all database volumes defined in the DynaKube.`
-	errorInvalidDatabasesVolumeMountPath  = `Invalid database volume mount path detected (%s). Make sure to use absolute paths.`
+	errorExtensionDatabaseExecutorImageNotSpecified = `DynaKube's specification enables the database extensions feature, make sure you correctly specify the databaseExecutor image.`
+	errorConflictingDatabasesVolumeMounts           = `Database volume mount (%s) in conflict with a default database volume mount (%s) detected. Please make sure to avoid such conflicts.`
+	errorInvalidDatabasesVolumeMount                = `Invalid database volume mount detected: %s. No matching database volume found.`
+	errorUnusedDatabasesVolumes                     = `Unused database volume(s) found (%s). Make sure to mount all database volumes defined in the DynaKube.`
+	errorInvalidDatabasesVolumeMountPath            = `Invalid database volume mount path detected (%s). Make sure to use absolute paths.`
 
 	warningHostPathDatabaseVolumeDetected = `Host path database volume detected. If you're on OpenShift, mounting host path volumes will be prohibited by the SCC and cause silent failures. If you still want to do this, make sure to create and bind corresponding roles.`
 )
+
+func missingDatabaseExecutorImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if !dk.Extensions().IsDatabasesEnabled() {
+		return ""
+	}
+
+	if dk.Spec.Templates.DatabaseExecutor.ImageRef.Repository == "" || dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag == "" {
+		log.Info("requested dynakube doesn't specify the databaseExecutor image.", "name", dk.Name, "namespace", dk.Namespace)
+
+		return errorExtensionDatabaseExecutorImageNotSpecified
+	}
+
+	return ""
+}
 
 func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if !dk.Extensions().IsDatabasesEnabled() {

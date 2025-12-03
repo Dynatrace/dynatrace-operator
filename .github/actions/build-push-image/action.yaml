@@ -47,7 +47,7 @@ runs:
       run: |
         echo "date=$(date --iso-8601)" >> $GITHUB_OUTPUT
     - name: Docker metadata
-      uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5.9.0
+      uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
       id: meta
       env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ contains(inputs.platforms, ',') && 'manifest,index' || 'manifest' }}

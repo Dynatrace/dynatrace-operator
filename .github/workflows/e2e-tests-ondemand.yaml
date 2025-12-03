@@ -52,6 +52,10 @@ jobs:
             platform: ocp
           - version: 4-18
             platform: ocp
+          - version: 4-19
+            platform: ocp
+          - version: 4-20
+            platform: ocp
     environment: E2E
     runs-on:
       - self-hosted
@@ -102,7 +106,7 @@ jobs:
           if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
             exit 1
           fi
-      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@5e8d0e6d1e76d8577a070db6d0128a91b1c9d5ad # 0.30.2
+      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@2d3c39a47c6af3b9d57a230bcaf57d03093e96db # 0.31.2
         if: always()
         with:
           value: "${{ steps.prepare_outputs.outputs.matrix }}"
@@ -115,8 +119,8 @@ jobs:
     if: ${{ always() }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@5e8d0e6d1e76d8577a070db6d0128a91b1c9d5ad # 0.30.2
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@2d3c39a47c6af3b9d57a230bcaf57d03093e96db # 0.31.2
         id: get-matrix-outputs
         with:
           artifact-name: "run-matrix-artifact"

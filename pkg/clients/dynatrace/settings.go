@@ -54,8 +54,7 @@ const (
 	fieldsQueryParam               = "fields"
 	kubernetesSettingsNeededFields = "value,scope"
 
-	schemaIDsQueryParam        = "schemaIds"
-	kubernetesSettingsSchemaID = "builtin:cloud.kubernetes"
+	schemaIDsQueryParam = "schemaIds"
 )
 
 func (dtc *dynatraceClient) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
@@ -70,7 +69,7 @@ func (dtc *dynatraceClient) GetK8sClusterME(ctx context.Context, kubeSystemUUID 
 
 	q := req.URL.Query()
 	q.Add(pageSizeQueryParam, entitiesPageSize)
-	q.Add(schemaIDsQueryParam, kubernetesSettingsSchemaID)
+	q.Add(schemaIDsQueryParam, KubernetesSettingsSchemaID)
 	q.Add(fieldsQueryParam, kubernetesSettingsNeededFields)
 	q.Add(filterQueryParam, fmt.Sprintf("value.clusterId='%s'", kubeSystemUUID))
 	req.URL.RawQuery = q.Encode()
