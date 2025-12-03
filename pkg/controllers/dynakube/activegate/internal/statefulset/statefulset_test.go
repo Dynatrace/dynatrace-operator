@@ -89,7 +89,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
-			mutator.InjectionSplitMounts:                 "true",
+			mutator.AnnotationInjectionSplitMounts:       "true",
 		}
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
@@ -155,7 +155,7 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		expectedTemplateAnnotations := map[string]string{
 			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
 			consts.AnnotationActiveGateTenantTokenHash:   testTokenHash,
-			mutator.InjectionSplitMounts:                 "true",
+			mutator.AnnotationInjectionSplitMounts:       "true",
 			"test":                                       "test",
 		}
 
