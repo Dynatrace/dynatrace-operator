@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetHostEntityIDForIP(t *testing.T) {
-	mockHostEntityAPI := func(status int, expectedHostInfo ...hostInfoResponse) http.HandlerFunc {
+	mockHostEntityAPI := func(status int, expectedHostInfo ...HostInfoResponse) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 
@@ -47,7 +47,7 @@ func TestGetHostEntityIDForIP(t *testing.T) {
 	}
 	t.Run("happy path", func(t *testing.T) {
 		ctx := t.Context()
-		testEntities := []hostInfoResponse{
+		testEntities := []HostInfoResponse{
 			{
 				EntityID:      "HOST-42",
 				NetworkZoneID: "default",
@@ -77,7 +77,7 @@ func TestGetHostEntityIDForIP(t *testing.T) {
 
 	t.Run("host entity not found path", func(t *testing.T) {
 		ctx := t.Context()
-		testEntities := []hostInfoResponse{
+		testEntities := []HostInfoResponse{
 			{
 				EntityID:      "HOST-11",
 				NetworkZoneID: "default",
@@ -101,7 +101,7 @@ func TestGetHostEntityIDForIP(t *testing.T) {
 
 	t.Run("server error", func(t *testing.T) {
 		ctx := t.Context()
-		testEntities := []hostInfoResponse{}
+		testEntities := []HostInfoResponse{}
 
 		dynatraceServer := httptest.NewServer(mockHostEntityAPI(http.StatusBadGateway, testEntities...))
 
@@ -119,7 +119,7 @@ func TestGetHostEntityIDForIP(t *testing.T) {
 
 	t.Run("api not found 404 error", func(t *testing.T) {
 		ctx := t.Context()
-		testEntities := []hostInfoResponse{}
+		testEntities := []HostInfoResponse{}
 
 		dynatraceServer := httptest.NewServer(mockHostEntityAPI(http.StatusNotFound, testEntities...))
 

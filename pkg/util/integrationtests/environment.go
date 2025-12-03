@@ -32,28 +32,28 @@ var (
 	testEnv *envtest.Environment
 )
 
-func SetupTestEnvironment(t *testing.T) client.Client {
-	setupBaseTestEnv(t)
+func SetupTestEnvironment(tb testing.TB) client.Client {
+	setupBaseTestEnv(tb)
 
 	testEnv.AttachControlPlaneOutput = true
 
 	// start test environment
 	cfg, err := testEnv.Start()
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
-	t.Cleanup(func() {
+	tb.Cleanup(func() {
 		err := testEnv.Stop()
 		if err != nil {
 			// test is already ending, no need to explicitly fail test
-			t.Error(err, "stop env")
+			tb.Error(err, "stop env")
 		}
 	})
 
 	clt, err := client.New(cfg, client.Options{})
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	return clt
@@ -139,7 +139,7 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 	return clt
 }
 
-func setupBaseTestEnv(t *testing.T) {
+func setupBaseTestEnv(t testing.TB) {
 	t.Helper()
 
 	// specify test environment configuration
