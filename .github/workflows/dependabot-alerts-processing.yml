@@ -1,0 +1,337 @@
+name: Dependabot Critical -> Assign to Copilot (Fine-grained-PAT)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+  security-events: read
+
+concurrency:
+  group: dependabot-triage
+  cancel-in-progress: true
+
+jobs:
+  triage-critical:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache last run timestamp
+        uses: actions/cache@v3
+        with:
+          path: last-run.txt
+          key: dependabot-triage-lastrun-${{ github.run_id }}
+          restore-keys: |
+            dependabot-triage-lastrun-
+
+      - name: Fetch new Dependabot critical alerts and create consolidated issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.REPO_SPONSOR_PAT }}
+          script: |
+            const fs = require('fs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const copilotPrompt = "Verify Dependabot alerts with Dynatrace. For the confirmed ones, apply the fixes. Others should be dismissed.";
+
+            let lastRunTime = new Date(0);
+            const lastRunFile = 'last-run.txt';
+            if (fs.existsSync(lastRunFile)) {
+              try {
+                const lastRunStr = fs.readFileSync(lastRunFile, 'utf8').trim();
+                lastRunTime = new Date(lastRunStr);
+                core.info(`Last run was at: ${lastRunTime.toISOString()}`);
+              } catch (e) {
+                core.warning(`Failed to read last run time: ${e.message}`);
+              }
+            } else {
+              core.info('No previous run timestamp found, treating all alerts as new');
+            }
+
+            const currentRunTime = new Date();
+
+            // Updated to request max 100 per page and use link header for pagination
+            async function listCriticalDependabotAlerts(owner, repo) {
+              const perPage = 100;
+              let allAlerts = [];
+            // let url = `/repos/${owner}/${repo}/dependabot/alerts?state=open&severity=critical&per_page=${perPage}`;
+              let url = `/repos/${owner}/${repo}/dependabot/alerts?state=open&per_page=${perPage}`;
+              while (url) {
+                const res = await github.request(`GET ${url}`);
+                allAlerts = allAlerts.concat(res.data);
+
+                // Parse Link header for next page if present
+                const link = res.headers.link;
+                let nextPageUrl = null;
+                if (link) {
+                  const links = link.split(",");
+                  for (const l of links) {
+                    const match = l.match(/<([^>]+)>;\s*rel="next"/);
+                    if (match) {
+                      // Next page exists, set url for next fetch
+                      // GitHub returns full URL, so trim host prefix if present
+                      let next = match[1];
+                      if (next.startsWith("https://api.github.com")) {
+                        next = next.replace("https://api.github.com", "");
+                      }
+                      nextPageUrl = next;
+                      break;
+                    }
+                  }
+                }
+                url = nextPageUrl;
+              }
+              return allAlerts;
+            }
+
+            async function consolidatedIssueExists(runMarker) {
+              const perPage = 100;
+              let page = 1;
+              let found = false;
+              while (!found) {
+                try {
+                  const issuesResp = await github.request("GET /repos/{owner}/{repo}/issues", {
+                    owner,
+                    repo,
+                    state: "open",
+                    // labels: "security,dependabot,critical,verification:pending",
+                    labels: "security,dependabot,verification:pending",
+                    per_page: perPage,
+                    page
+                  });
+                  if (!issuesResp.data.length) break;
+                  for (const issue of issuesResp.data) {
+                    if (issue.body && issue.body.includes(runMarker)) {
+                      found = true;
+                      break;
+                    }
+                  }
+                  if (issuesResp.data.length < perPage) break;
+                  page++;
+                } catch (e) {
+                  core.warning(`Error fetching issues when checking for consolidated issue: ${e.message}`);
+                  break;
+                }
+              }
+              return found;
+            }
+
+            (async () => {
+              try {
+                const allAlerts = await listCriticalDependabotAlerts(owner, repo);
+                if (!allAlerts.length) {
+                  core.info("No open Critical Dependabot alerts found.");
+                  fs.writeFileSync(lastRunFile, currentRunTime.toISOString());
+                  return;
+                }
+
+                const newAlerts = allAlerts.filter(alert => {
+                  const createdAt = new Date(alert.created_at);
+                  return createdAt > lastRunTime;
+                });
+
+                if (!newAlerts.length) {
+                  core.info(`Found ${allAlerts.length} total alerts, but no new alerts since ${lastRunTime.toISOString()}`);
+                  fs.writeFileSync(lastRunFile, currentRunTime.toISOString());
+                  return;
+                }
+
+                core.info(`Found ${newAlerts.length} new critical alert(s) out of ${allAlerts.length} total critical alerts`);
+
+                const runMarker = `dependabot-alerts-batch: ${currentRunTime.toISOString()}`;
+
+                if (await consolidatedIssueExists(runMarker)) {
+                  core.info(`Consolidated issue already exists for this run, skipping.`);
+                  return;
+                }
+
+                const alertDetails = newAlerts.map(alert => {
+                  const advisory = alert.security_advisory || {};
+                  const vuln = alert.security_vulnerability || {};
+                  const dependency = alert.dependency || {};
+
+                  const ghsa =
+                    advisory.ghsa_id ||
+                    (advisory.identifiers || []).find(i => i.type === "GHSA")?.value ||
+                    "N/A";
+                  const cves = (advisory.identifiers || [])
+                    .filter(i => i.type === "CVE")
+                    .map(i => i.value);
+
+                  const severity = (advisory.severity || "unknown").toLowerCase();
+
+                  const pkg =
+                    vuln.package?.name ||
+                    dependency.package?.name ||
+                    "dependency";
+                  const ecosystem =
+                    vuln.package?.ecosystem ||
+                    dependency.package?.ecosystem ||
+                    "N/A";
+
+                  const affected = vuln.vulnerable_version_range || "N/A";
+                  const fixedIn = vuln.first_patched_version?.identifier || "N/A";
+                  const manifest = dependency.manifest_path || "N/A";
+                  const alertId = alert.number || alert.id;
+
+                  const alertUrl =
+                    alert.html_url ||
+                    (alertId
+                      ? `https://github.com/${owner}/${repo}/security/dependabot/${alertId}`
+                      : "N/A");
+
+                  return {
+                    alertId,
+                    severity,
+                    ghsa,
+                    cves,
+                    pkg,
+                    ecosystem,
+                    affected,
+                    fixedIn,
+                    manifest,
+                    alertUrl
+                  };
+                });
+
+                alertDetails.sort((a, b) => a.pkg.localeCompare(b.pkg));
+                const criticalCount = alertDetails.length;
+
+                const title = `Dependabot Security Alerts: ${criticalCount} Critical`;
+
+                const alertSections = alertDetails.map(alert => [
+                  `### CRITICAL: ${alert.ghsa} in ${alert.pkg}`,
+                  `- **Alert URL**: ${alert.alertUrl}`,
+                  `- **Package**: ${alert.pkg} (${alert.ecosystem})`,
+                  `- **Affected versions**: ${alert.affected}`,
+                  `- **Fixed in**: ${alert.fixedIn}`,
+                  `- **GHSA**: ${alert.ghsa}`,
+                  `- **CVEs**: ${alert.cves.length ? alert.cves.join(", ") : "N/A"}`,
+                  `- **Manifest path**: ${alert.manifest}`,
+                  ""
+                ].join("\n"));
+
+                const body = [
+                  `**Copilot Instructions:** ${copilotPrompt}`,
+                  "",
+                  `This issue was created automatically for ${criticalCount} new Critical Dependabot alert(s) detected on ${currentRunTime.toISOString()}.`,
+                  "",
+                  `**Summary**: ${criticalCount} Critical severity alerts`,
+                  "",
+                  "## Alert Details",
+                  "",
+                  ...alertSections,
+                  "---",
+                  "",
+                  `**Tracking**: ${runMarker}`,
+                  `**Alert IDs**: ${alertDetails.map(a => a.alertId).join(", ")}`
+                ].join("\n");
+
+                const labelsToAdd = ["security", "dependabot", "critical", "verification:pending"];
+
+                try {
+                  // Find Copilot assignee ID as before
+                  const repoInfo = await github.graphql(
+                    `query($owner: String!, $repo: String!) {
+                      repository(owner: $owner, name: $repo) {
+                        id
+                        suggestedActors(capabilities: [CAN_BE_ASSIGNED], first: 100) {
+                          nodes {
+                            login
+                            __typename
+                            ... on Bot { id }
+                          }
+                        }
+                      }
+                    }`,
+                    { owner, repo }
+                  );
+                  const repositoryId = repoInfo.repository.id;
+                  const actors = repoInfo.repository.suggestedActors?.nodes || [];
+                  let copilotId = null;
+                  const fromSuggested = actors.find(n => n && n.login === "copilot-swe-agent" && n.id);
+                  if (fromSuggested && fromSuggested.id) {
+                    copilotId = fromSuggested.id;
+                  } else {
+                    try {
+                      const userRes = await github.request("GET /users/{username}", {
+                        username: "copilot-swe-agent"
+                      });
+                      const nodeId = userRes?.data?.node_id;
+                      let assignable = false;
+                      try {
+                        const check = await github.request("GET /repos/{owner}/{repo}/assignees/{assignee}", {
+                          owner,
+                          repo,
+                          assignee: "copilot-swe-agent"
+                        });
+                        if (check.status === 204) {
+                          assignable = true;
+                        }
+                      } catch (chkErr) {}
+                      if (assignable && nodeId) copilotId = nodeId;
+                    } catch (userErr) {}
+                  }
+                  if (!copilotId) throw new Error("COPILOT_NOT_ASSIGNABLE");
+                  const createIssueRes = await github.graphql(
+                    `mutation($repositoryId: ID!, $title: String!, $body: String!, $assigneeIds: [ID!]) {
+                      createIssue(input: {
+                        repositoryId: $repositoryId,
+                        title: $title,
+                        body: $body,
+                        assigneeIds: $assigneeIds
+                      }) {
+                        issue {
+                          number
+                          url
+                        }
+                      }
+                    }`,
+                    {
+                      repositoryId,
+                      title,
+                      body,
+                      assigneeIds: [copilotId]
+                    }
+                  );
+                  const issueNumber = createIssueRes.createIssue.issue.number;
+                  await github.rest.issues.addLabels({
+                    owner,
+                    repo,
+                    issue_number: issueNumber,
+                    labels: labelsToAdd
+                  });
+                  core.info(`Created consolidated issue #${issueNumber} and assigned to copilot-swe-agent via assigneeIds`);
+                } catch (e) {
+                  // Fallback: create without Copilot assignment, add a label and comment
+                  if (e.message === "COPILOT_NOT_ASSIGNABLE" || e.status === 422) {
+                    const created = await github.rest.issues.create({
+                      owner,
+                      repo,
+                      title,
+                      body,
+                      labels: [...labelsToAdd, "copilot-assignment-failed"]
+                    });
+                    await github.rest.issues.createComment({
+                      owner,
+                      repo,
+                      issue_number: created.data.number,
+                      body: "Automatic assignment to the Copilot coding agent (copilot-swe-agent) could not be completed. Ensure the agent is enabled for this repository and that this GitHub token can assign issues to it."
+                    });
+                    core.warning(`Copilot assignment unavailable; created issue #${created.data.number} with fallback label.`);
+                  } else if (e.status === 403) {
+                    core.error(`Issues API denied (403). Verify the personal access token has 'Issues: Read and write' and is allowed for this repository. Message: ${e.message}`);
+                    throw e;
+                  } else {
+                    core.error(`Issue creation/assignment error: ${e.status || ""} ${e.message}`);
+                    throw e;
+                  }
+                }
+                fs.writeFileSync(lastRunFile, currentRunTime.toISOString());
+                core.info(`Updated last run timestamp to: ${currentRunTime.toISOString()}`);
+              } catch (mainErr) {
+                core.error(`Unhandled error: ${mainErr.stack || mainErr}`);
+                throw mainErr;
+              }
+            })();
