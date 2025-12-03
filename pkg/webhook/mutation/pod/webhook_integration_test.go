@@ -104,17 +104,10 @@ func TestWebhook(t *testing.T) {
 		getWebhookInstallOptions(),
 
 		func(mgr ctrl.Manager) error {
-			ns := &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testNamespace,
-					Labels: map[string]string{
-						podmutator.InjectionInstanceLabel: "dynakube",
-					},
-				},
-			}
-			ns.Annotations = nsMetadataAnnotations
-			maps.Copy(ns.Labels, nsMetadataLabels)
-			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
+			namespace := getNamespace()
+			namespace.Annotations = nsMetadataAnnotations
+			maps.Copy(namespace.Labels, nsMetadataLabels)
+			require.NoError(t, mgr.GetClient().Create(t.Context(), namespace))
 
 			dummyWebhookPod := getDummyWebhookPod()
 			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
@@ -125,20 +118,10 @@ func TestWebhook(t *testing.T) {
 	)
 
 	// shared between test cases
-	bootstrapperSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.BootstrapperInitSecretName,
-			Namespace: testNamespace,
-		},
-	}
+	bootstrapperSecret := getBoostrapperSecret()
 	createObject(t, clt, bootstrapperSecret)
 
-	otlpExporterSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OTLPExporterSecretName,
-			Namespace: testNamespace,
-		},
-	}
+	otlpExporterSecret := getOTLPExporterSecret()
 	createObject(t, clt, otlpExporterSecret)
 
 	t.Run("success incl. enrichment rules, custom metadata and metadata annotation propagation", func(t *testing.T) {
@@ -212,6 +195,101 @@ func TestWebhook(t *testing.T) {
 		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.entity.kubernetes_cluster", testMEID))
 		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.kubernetes.cluster.id", testClusterUUID))
 		assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
+	})
+
+	t.Run("success with proper precedence", func(t *testing.T) {
+		const overrideNamespaceName = "override-namespace"
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.InjectionAutomaticKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(true),
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: testMEID,
+				KubernetesClusterName: testClusterName,
+				MetadataEnrichment:    metadataEnrichmentStatus,
+				KubeSystemUUID:        testClusterUUID,
+				OneAgent: oneagent.Status{
+					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: communication.ConnectionInfo{
+							TenantUUID: uuid.NewString(),
+						},
+					},
+				},
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						Version: "1.2.3",
+					},
+				},
+			},
+		}
+		createDynaKube(t, clt, dk)
+
+		overrideNamespace := getNamespace()
+		overrideNamespace.Name = overrideNamespaceName
+		overrideNamespace.Annotations = map[string]string{
+			"metadata.dynatrace.com/k8s.cluster.name":             "override-cluster-name",
+			"metadata.dynatrace.com/dt.entity.kubernetes_cluster": "ns-meid",
+		}
+		createObject(t, clt, overrideNamespace)
+
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.Namespace = overrideNamespaceName
+			maps.Copy(pod.Annotations, map[string]string{
+				"metadata.dynatrace.com/k8s.pod.name":                 "override-pod-name",
+				"metadata.dynatrace.com/dt.entity.kubernetes_cluster": "pod-meid",
+			})
+		})
+
+		overrideBootstrapperSecret := getBoostrapperSecret()
+		overrideBootstrapperSecret.Namespace = overrideNamespaceName
+		createObject(t, clt, overrideBootstrapperSecret)
+
+		overrideNsOTLPExporterSecret := getOTLPExporterSecret()
+		overrideNsOTLPExporterSecret.Namespace = overrideNamespaceName
+		createObject(t, clt, overrideNsOTLPExporterSecret)
+
+		require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
+		require.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
+		require.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
+
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.name", "override-pod-name"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.entity.kubernetes_cluster", "pod-meid"))
+		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.name", "override-cluster-name"))
+		/*
+			assert.Equal(t, "sales", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.cost.costcenter", ""))
+			assert.Equal(t, "high", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/dt.security_context", ""))
+			assert.Equal(t, "custom-ns-meta-value", maputils.GetField(pod.Annotations, "metadata.dynatrace.com/custom.ns-meta", ""))
+			require.Len(t, pod.Spec.InitContainers, 1)
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.kind", strings.ToLower(pod.OwnerReferences[0].Kind)))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.name", strings.ToLower(pod.OwnerReferences[0].Name)))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("custom.ns-meta", "custom-ns-meta-value"))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.security_context", "high"))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.cost.costcenter", "sales"))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.label."+testCustomMetadataLabel, "custom-label"))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-annotation"))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, "--"+bootstrapper.MetadataEnrichmentFlag)
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.uid", "$(K8S_PODUID)"))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.node.name", "$(K8S_NODE_NAME)"))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.name", pod.Namespace))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.uid", testClusterUUID))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.kubernetes.cluster.id", testClusterUUID))
+			assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
+		*/
 	})
 
 	t.Run("oneagent mutator failure", func(t *testing.T) {
@@ -815,4 +893,33 @@ func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
 	}
 
 	return deploy, ownerReference
+}
+
+func getNamespace() *corev1.Namespace {
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNamespace,
+			Labels: map[string]string{
+				podmutator.InjectionInstanceLabel: "dynakube",
+			},
+		},
+	}
+}
+
+func getBoostrapperSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.BootstrapperInitSecretName,
+			Namespace: testNamespace,
+		},
+	}
+}
+
+func getOTLPExporterSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.OTLPExporterSecretName,
+			Namespace: testNamespace,
+		},
+	}
 }
