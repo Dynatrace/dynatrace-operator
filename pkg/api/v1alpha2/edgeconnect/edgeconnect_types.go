@@ -24,7 +24,7 @@ type EdgeConnectSpec struct { //nolint:revive
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Amount of replicas for your EdgeConnect (the default value is: 1)
-	Replicas *int32 `json:"replicas"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Node selector to control the selection of nodes for the EdgeConnect pods
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
@@ -40,7 +40,7 @@ type EdgeConnectSpec struct { //nolint:revive
 	ServiceAccountName *string `json:"serviceAccountName,omitempty"`
 
 	// Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
-	AutoUpdate *bool `json:"autoUpdate"`
+	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 
 	// Overrides the default image
 	ImageRef image.Ref `json:"imageRef,omitempty"`
