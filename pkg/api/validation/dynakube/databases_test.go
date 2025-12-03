@@ -14,6 +14,31 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestMissingDatabaseExecutorImage(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+			Templates: dynakube.TemplatesSpec{
+				ExtensionExecutionController: extensions.ExecutionControllerSpec{
+					ImageRef: image.Ref{
+						Repository: "some-repo",
+						Tag:        "some-tag",
+					},
+				},
+			},
+			Extensions: &extensions.Spec{
+				Databases: []extensions.DatabaseSpec{{ID: "test"}},
+			},
+		},
+	}
+
+	assertDenied(t, []string{errorExtensionDatabaseExecutorImageNotSpecified}, dk)
+}
+
 func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 	baseDk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -24,6 +49,12 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 			APIURL: testAPIURL,
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
+					ImageRef: image.Ref{
+						Repository: "some-repo",
+						Tag:        "some-tag",
+					},
+				},
+				DatabaseExecutor: extensions.DatabaseExecutorSpec{
 					ImageRef: image.Ref{
 						Repository: "some-repo",
 						Tag:        "some-tag",
@@ -127,6 +158,12 @@ func TestUnusedVolumes(t *testing.T) {
 						Tag:        "some-tag",
 					},
 				},
+				DatabaseExecutor: extensions.DatabaseExecutorSpec{
+					ImageRef: image.Ref{
+						Repository: "some-repo",
+						Tag:        "some-tag",
+					},
+				},
 			},
 			Extensions: &extensions.Spec{
 				Databases: []extensions.DatabaseSpec{},
@@ -181,6 +218,12 @@ func TestHostPathDatabaseVolume(t *testing.T) {
 				APIURL: testAPIURL,
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extensions.ExecutionControllerSpec{
+						ImageRef: image.Ref{
+							Repository: "some-repo",
+							Tag:        "some-tag",
+						},
+					},
+					DatabaseExecutor: extensions.DatabaseExecutorSpec{
 						ImageRef: image.Ref{
 							Repository: "some-repo",
 							Tag:        "some-tag",
