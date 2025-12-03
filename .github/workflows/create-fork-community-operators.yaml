@@ -1,0 +1,137 @@
+name: Create Fork for community operators
+on:
+  pull_request:
+    types: closed
+    branches:
+      - release-*
+jobs:
+  prepare:
+    if: >
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'csv-') &&
+      startsWith(github.event.pull_request.base.ref, 'release-')
+    name: Prepare Fork PRs
+    runs-on: ubuntu-24.04
+    env:
+      ORIGINAL_REPOSITORY_URL: k8s-operatorhub/community-operators
+      FORK_REPOSITORY_URL: dt-team-kubernetes/community-operators
+    steps:
+      - name: Checkout dynatrace-operator at base branch (as team user)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.TEAM_USER_TOKEN }}
+      - name: Configure git identity (team user)
+        run: |
+          git config --global user.name  "${{ secrets.TEAM_USER_NAME }}"
+          git config --global user.email "${{ secrets.TEAM_USER_EMAIL }}"
+      - name: Set up Python and jq
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+      - name: Derive version and branch from repo state
+        id: meta
+        run: |
+          set -euo pipefail
+          base_ref='${{ github.event.pull_request.base.ref }}'
+          echo "Base ref: $base_ref"
+
+          versions_dirs="$(ls -d config/olm/kubernetes/*/ 2>/dev/null || true)"
+          if [ -z "$versions_dirs" ]; then
+            echo "ERROR: No bundle directories found under config/olm/kubernetes"
+            ls -R config/olm || true
+            exit 1
+          fi
+
+          version="$(python .github/scripts/release/directory_version.py "${versions_dirs}")"
+          echo "Detected bundle version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "branch=$base_ref" >> "$GITHUB_OUTPUT"
+      - name: Copy bundles into existing fork (no auto-fork)
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          BRANCH: ${{ steps.meta.outputs.branch }}
+          FORK_REPOSITORY: dt-team-kubernetes/community-operators
+          TEAM_TOKEN: ${{ secrets.TEAM_USER_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${VERSION}"
+          branch="${BRANCH}"
+
+          echo "Fetching image digest for dynatrace-operator:v${version}"
+          image_digest=$(skopeo inspect "docker://docker.io/dynatrace/dynatrace-operator:${version}" | jq -r '.Digest')
+          image="docker.io/dynatrace/dynatrace-operator@${image_digest}"
+
+          echo "Using version=${version}, branch=${branch}"
+          git checkout "${branch}"
+          git pull origin "${branch}"
+
+          fork_clone_url="https://github.com/${FORK_REPOSITORY}.git"
+          fork_clone_url_with_token="${fork_clone_url/https:\/\//https:\/\/x-access-token:${TEAM_TOKEN}@}"
+
+          echo "Cloning existing fork ${FORK_REPOSITORY}"
+          git clone "${fork_clone_url_with_token}"
+          cd "$(basename "${FORK_REPOSITORY}")"
+
+          upstream_repo="${ORIGINAL_REPOSITORY_URL}"
+          git remote add upstream "https://github.com/${upstream_repo}.git" || true
+          git fetch upstream
+
+          branch_name="dynatrace-operator-${version}"
+          git checkout -B "${branch_name}" "upstream/main"
+
+          echo "Determining last existing version in operators/dynatrace-operator"
+          last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator/*/)")"
+          echo "Last version: ${last_version}"
+
+          echo "Creating directory structure for version ${version}"
+          mkdir -p "operators/dynatrace-operator/${version}/manifests"
+          mkdir -p "operators/dynatrace-operator/${version}/metadata"
+
+          echo "Creating Dockerfile"
+          origin_dockerfile="../config/olm/kubernetes/bundle-${version}.Dockerfile"
+          target_dockerfile="operators/dynatrace-operator/${version}/Dockerfile"
+          sed -n "\|COPY ${version}/manifests /manifests/|q;p" "${origin_dockerfile}" > "${target_dockerfile}"
+
+          echo "COPY manifests /manifests/" >> "${target_dockerfile}"
+          echo "COPY metadata /metadata/" >> "${target_dockerfile}"
+
+          echo "Copying OLM bundle files"
+          cp -rf "../config/olm/kubernetes/${version}/manifests" "operators/dynatrace-operator/${version}/"
+          cp -rf "../config/olm/kubernetes/${version}/metadata" "operators/dynatrace-operator/${version}/"
+
+          if [ -n "${last_version}" ]; then
+            echo "Setting spec.replaces to dynatrace-operator.v${last_version}"
+            python ../.github/scripts/set_property.py \
+              --file "operators/dynatrace-operator/${version}/manifests/dynatrace-operator.clusterserviceversion.yaml" \
+              --property "spec.replaces" \
+              --value "dynatrace-operator.v${last_version}"
+          else
+            echo "Removing spec.replaces (no previous version)"
+            python ../.github/scripts/set_property.py \
+              --file "operators/dynatrace-operator/${version}/manifests/dynatrace-operator.clusterserviceversion.yaml" \
+              --property "spec.replaces"
+          fi
+
+          echo "Applying community marketplace-specific CSV tweaks"
+          python ../.github/scripts/make-release-csv.py \
+            "operators/dynatrace-operator/${version}/manifests/dynatrace-operator.clusterserviceversion.yaml" \
+            --image "${image}" \
+            --marketplace "community"
+          echo "Committing and pushing changes to fork as team user"
+
+          git add -A
+          if git diff-index --quiet HEAD; then
+            echo "No changes to commit; files already present in fork"
+          else
+            git commit -s -m "operator dynatrace-operator (${version})"
+            git push origin "${branch_name}"
+          fi
