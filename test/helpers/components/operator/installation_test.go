@@ -65,7 +65,7 @@ func TestGetHelmOptions(t *testing.T) {
 
 	t.Run("use filesystem", func(t *testing.T) {
 		tempDir := t.TempDir()
-		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho repo:tag"), os.ModePerm))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho repo:tag"), os.ModePerm)) //nolint:gosec
 		t.Setenv("PATH", tempDir+":"+os.Getenv("PATH"))
 
 		t.Setenv("HELM_CHART", "oci://registry:snapshot-test")
@@ -90,7 +90,7 @@ func TestGetHelmOptions(t *testing.T) {
 
 	t.Run("no image found", func(t *testing.T) {
 		tempDir := t.TempDir()
-		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho make[1] Entering directory"), os.ModePerm))
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho make[1] Entering directory"), os.ModePerm)) //nolint:gosec
 		t.Setenv("PATH", tempDir+":"+os.Getenv("PATH"))
 
 		_, err := getHelmOptions("", "test", false)
