@@ -56,6 +56,7 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 	if !ok {
 		return nil, errors.New("unexpected transport type")
 	}
+
 	if ot.Base == nil {
 		ot.Base = &http.Transport{}
 	}
