@@ -104,12 +104,7 @@ runs:
         fi
     - name: Run tests
       shell: bash
-      run: |
-        echo "Prepare e2e secrets"
-        ref/.github/scripts/prepare-e2e-secrets.sh
-
-        echo "Running e2e tests"
-        ref/.github/scripts/run-e2e-tests.sh
+      run: ref/.github/scripts/run-e2e-tests.sh
       env:
         FLC_NAMESPACE: ${{ inputs.flc-namespace }}
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}

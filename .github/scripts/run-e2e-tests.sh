@@ -20,7 +20,7 @@ export KUBECONFIG="$FLC_ENVIRONMENT_KUBECONFIG"
 echo "Exporting env var containing helm chart used for installation (if provided)"
 export HELM_CHART
 
-echo "Preparing e2e test secrets..."
+echo "Preparing test tenant secrets..."
 
 source ../ref/.github/scripts/prepare-e2e-secrets.sh
 
