@@ -20,6 +20,7 @@ type MetadataEnrichment struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type Spec struct {
 	// Enables MetadataEnrichment, `false` by default.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="MetaDataEnrichment",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"

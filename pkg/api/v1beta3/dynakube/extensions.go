@@ -6,6 +6,7 @@ import (
 )
 
 // +kubebuilder:validation:Optional
+
 type ExtensionsSpec struct {
 }
 

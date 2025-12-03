@@ -17,6 +17,7 @@ type Extensions struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type Spec struct {
 	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
 
@@ -29,6 +30,7 @@ type Spec struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type PrometheusSpec struct{}
 
 // +kubebuilder:object:generate=true
@@ -78,6 +80,7 @@ type ExecutionControllerSpec struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type DatabaseSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MaxLength:=8
@@ -116,6 +119,7 @@ type DatabaseSpec struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type DatabaseExecutorSpec struct {
 	// +kubebuilder:validation:Required
 	ImageRef image.Ref `json:"imageRef"`
