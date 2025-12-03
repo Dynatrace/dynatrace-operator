@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -46,14 +45,11 @@ func TestNewAttributesFromEnv(t *testing.T) {
 }
 
 func TestNewAttributesFromMap(t *testing.T) {
-	prefix := metadataenrichment.Annotation + "/"
-	annotKey := prefix + "service.name"
+	annotKey := "service.name"
 	annotVal := "my service/value with spaces"
-	otherKey := "unrelated.annotation/key"
 
 	input := map[string]string{
 		annotKey: annotVal,
-		otherKey: "ignore-me",
 	}
 	attrs := NewAttributesFromMap(input)
 	require.Len(t, attrs, 1)
@@ -95,7 +91,7 @@ func TestAttributes(t *testing.T) {
 	// Build from env then Merge annotations
 	envAttrs, found := NewAttributesFromEnv([]corev1.EnvVar{{Name: envName, Value: "k1=v1,k2=v2"}}, envName)
 	require.True(t, found)
-	annotKey := metadataenrichment.Annotation + "/custom.key"
+	annotKey := "custom.key"
 	annotVal := "value:with/special chars"
 	mapAttrs := NewAttributesFromMap(map[string]string{annotKey: annotVal})
 	mutated := envAttrs.Merge(mapAttrs)
