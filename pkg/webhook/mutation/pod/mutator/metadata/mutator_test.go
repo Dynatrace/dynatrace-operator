@@ -246,7 +246,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 		request := createTestMutationRequest(nil, nil)
 
 		require.Equal(t, "not-found", maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
-		setWorkloadAnnotations(request.Pod, &workload.Info{Name: workloadInfoName, Kind: workloadInfoKind})
+		SetWorkloadAnnotations(request.Pod, &workload.Info{Name: workloadInfoName, Kind: workloadInfoKind})
 		require.Len(t, request.Pod.Annotations, 2)
 		assert.Equal(t, workloadInfoName, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadName, "not-found"))
 		assert.Equal(t, workloadInfoKind, maputils.GetField(request.Pod.Annotations, AnnotationWorkloadKind, "not-found"))
@@ -258,7 +258,7 @@ func TestWorkloadAnnotations(t *testing.T) {
 			TypeMeta:   metav1.TypeMeta{Kind: "SuperWorkload"},
 		}
 
-		setWorkloadAnnotations(request.Pod, workload.NewInfo(objectMeta))
+		SetWorkloadAnnotations(request.Pod, workload.NewInfo(objectMeta))
 		assert.Contains(t, request.Pod.Annotations, AnnotationWorkloadKind)
 		assert.Equal(t, "superworkload", request.Pod.Annotations[AnnotationWorkloadKind])
 	})
@@ -352,8 +352,8 @@ func TestMutate(t *testing.T) {
 
 		kindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.kind", strings.ToLower(request.Pod.OwnerReferences[0].Kind))
 		nameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, "k8s.workload.name", strings.ToLower(request.Pod.OwnerReferences[0].Name))
-		depKindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, deprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind))
-		depNameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, deprecatedWorkloadNameKey, strings.ToLower(request.Pod.OwnerReferences[0].Name))
+		depKindAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, DeprecatedWorkloadKindKey, strings.ToLower(request.Pod.OwnerReferences[0].Kind))
+		depNameAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, DeprecatedWorkloadNameKey, strings.ToLower(request.Pod.OwnerReferences[0].Name))
 		metaFromNsAttr := fmt.Sprintf("--%s=%s=%s", podattr.Flag, nsMetaAnnotationKey, nsMetaAnnotationValue)
 
 		assert.Contains(t, request.InstallContainer.Args, kindAttr)
