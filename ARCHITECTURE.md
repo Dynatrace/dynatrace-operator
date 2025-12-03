@@ -129,7 +129,7 @@ Relevant links:
 
 The webhook server [(`cmd/webhook/`)](./cmd/webhook/) intercepts creation/update of Kubernetes Resources and either mutates or validates them.
 
-**Validation Webhooks**[(`pkg/webhook/validation/`)](./pkg/webhook/validation/):
+**Validation Webhooks**[(`pkg/api/validation/`)](./pkg/api/validation/):
 
 - Validates DynaKube and EdgeConnect CRs to catch misconfigurations before they're applied
   - Normally, each API version of a CR has its own validation webhook, but we only have one webhook for all API versions. This is because of the high number of API versions we have, and we don't want to duplicate the code for each API version, as that would just make the codebase more complex without any real benefit.
@@ -175,8 +175,8 @@ It consists of multiple components:
 
 It can provide 2 types of volumes:
 
-1. [`app` volumes](./cmd/csi/server/app.go): These volumes contain a single OneAgent code module, and are used for application monitoring. Uses overlayfs to minimize disk space usage.
-2. [`host` volumes](./cmd/csi/server/host.go): These volumes are just an empty directory on the node, and are used by the host OneAgents to persist their data.
+1. [`app` volumes](./pkg/controllers/csi/driver/volumes/app): These volumes contain a single OneAgent code module, and are used for application monitoring. Uses overlayfs to minimize disk space usage.
+2. [`host` volumes](./pkg/controllers/csi/driver/volumes/host): These volumes are just an empty directory on the node, and are used by the host OneAgents to persist their data.
 
 **CSI Provisioner** [`cmd/csi/provisioner/`](./cmd/csi/provisioner/):
 
