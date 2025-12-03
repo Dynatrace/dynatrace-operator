@@ -14,7 +14,7 @@ import (
 
 const (
 	DynaKubeName     = "dynakubes.dynatrace.com"
-	EdgeConnectName  = "edgeconnect.dynatrace.com"
+	EdgeConnectName  = "edgeconnects.dynatrace.com"
 )
 
 // CheckVersion checks if the CRD version matches the application version and logs an error if they do not match.
@@ -41,7 +41,7 @@ func CheckVersion(ctx context.Context, apiReader client.Reader, crdName string) 
 	}
 
 	if appVersion != crdVersion {
-		log.Error(errors.Errorf("mismatching version found"), "outdated CRD version", "CRD name", crdName, "CRD version", crdVersion, "expected version", appVersion)
+		log.Info("outdated CRD version", "CRD name", crdName, "CRD version", crdVersion, "expected version", appVersion)
 	}
 
 	return nil
