@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
@@ -97,6 +98,11 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	_log := log.WithValues("namespace", request.Namespace, "name", request.Name)
 
 	_log.Info("reconciling EdgeConnect")
+
+	err := k8scrd.CheckVersion(ctx, controller.apiReader, k8scrd.EdgeConnectName)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	ec, err := controller.getEdgeConnect(ctx, request.Name, request.Namespace)
 	if err != nil {
