@@ -153,39 +153,6 @@ jobs:
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
-  build-gcr-deployer:
-    name: Build GCR deployer image
-    environment: Release
-    runs-on: ubuntu-24.04
-    needs: [ prepare ]
-    env:
-      IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version }}
-      IMAGE_NO_PREFIX: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version_without_prefix }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-    - name: Login to Docker Hub
-      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
-      with:
-        registry: gcr.io
-        username: ${{ secrets.GCR_USERNAME }}
-        password: ${{ secrets.GCR_JSON_KEY }}
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # 3.11.1
-    - name: Build and push
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # 6.18.0
-      with:
-        platforms: ${{ env.DEPLOYER_PLATFORMS }}
-        provenance: false
-        context: ./config/helm
-        file: ./config/helm/Dockerfile
-        push: true
-        tags: ${{ env.IMAGE }},${{ env.IMAGE_NO_PREFIX }}
-        annotations: |
-         ${{ env.GOOGLE_MARKETPLACE_ANNOTATION }}
-
   run-preflight-rhcc:
     name: Run preflight for rhcc
     environment: Release
@@ -332,6 +299,12 @@ jobs:
           prerelease: false
           draft: true
           fail_on_unmatched_files: true
+      - name: Upload Changelog as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG.md
+          if-no-files-found: warn
       - name: Update index helm file
         if: ${{ !contains(github.ref, '-rc.') }}
         env:
@@ -364,3 +337,23 @@ jobs:
             Helm upgrade to and install of `${{ github.ref }}` works.
             ## Checklist
             - [x] PR is labeled accordingly
+
+  update-csv-bundles:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    if: ${{ !contains(github.ref, '-rc.') }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Download changelog
+      uses: actions/download-artifact@v4
+      with:
+        name: changelog
+        path: changelog_artifact
+    - uses: ./.github/actions/update-csv-bundles
+      with:
+        version: ${{ needs.prepare.outputs.version_without_prefix }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        changelog-path: ./changelog_artifact/CHANGELOG.md
