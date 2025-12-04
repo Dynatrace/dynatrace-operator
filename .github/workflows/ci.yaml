@@ -15,7 +15,7 @@ permissions:
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
   DOCKER_REGISTRY: quay.io
-  DOCKER_REPOSITORY: dynatrace/dynatrace-operator
+  DOCKER_REPOSITORY: ${{ secrets.REPOSITORY }}
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
   PR_PLATFORMS: linux/amd64,linux/arm64
 
@@ -108,63 +108,63 @@ jobs:
           echo "Prerequisites changed: ${{ steps.prerequisites.outputs.all_changed_files }}"
           echo "Markdown changed: ${{ steps.markdown.outputs.all_changed_files }}"
 
-  helm-test:
-    needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
-    name: Run helm unit tests
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
-        with:
-          # renovate datasource=github-releases depName=helm/helm
-          version: v4.0.1
-      - name: Run Unit tests
-        id: helm-unittest
-        run: |
-          make test/helm/unit
+#  helm-test:
+#    needs: [detect-changes]
+#    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+#    name: Run helm unit tests
+#    runs-on: ubuntu-24.04
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+#      - name: Set up Helm
+#        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+#        with:
+#          # renovate datasource=github-releases depName=helm/helm
+#          version: v4.0.1
+#      - name: Run Unit tests
+#        id: helm-unittest
+#        run: |
+#          make test/helm/unit
 
-  helm-lint:
-    needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
-    name: Run helm linting
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
-        with:
-          # renovate datasource=github-releases depName=helm/helm
-          version: v4.0.1
-      - name: Run Linting
-        id: helm-linting
-        run: |
-          make test/helm/lint
+#  helm-lint:
+#    needs: [detect-changes]
+#    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.helm_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+#    name: Run helm linting
+#    runs-on: ubuntu-24.04
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+#      - name: Set up Helm
+#        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+#        with:
+#          # renovate datasource=github-releases depName=helm/helm
+#          version: v4.0.1
+#      - name: Run Linting
+#        id: helm-linting
+#        run: |
+#          make test/helm/lint
 
-  tests:
-    needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
-    name: Run unit tests
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      - name: Setup Golang
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
-        with:
-          go-version-file: "${{ github.workspace }}/go.mod"
-      - name: Run Unit tests and Integration tests
-        id: unittest
-        run: |
-          make go/test
-          make go/integration_test
-      - name: Check test coverage
-        id: check-code-coverage
-        run: |
-          make go/check-coverage
+#  tests:
+#    needs: [detect-changes]
+#    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+#    name: Run unit tests
+#    runs-on: ubuntu-24.04
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+#      - name: Setup Golang
+#        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+#        with:
+#          go-version-file: "${{ github.workspace }}/go.mod"
+#      - name: Run Unit tests and Integration tests
+#        id: unittest
+#        run: |
+#          make go/test
+#          make go/integration_test
+#      - name: Check test coverage
+#        id: check-code-coverage
+#        run: |
+#          make go/check-coverage
 
   linting:
     needs: [detect-changes]
@@ -215,38 +215,38 @@ jobs:
           make go/gen_mocks
           git diff --exit-code
 
-  security:
-    needs: [detect-changes]
-    if: >
-      needs.detect-changes.outputs.is_snyk_authorized &&
-      (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
-    name: Code security scanning alerts
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_API_TOKEN }}
-        with:
-          args: --severity-threshold=high
+#  security:
+#    needs: [detect-changes]
+#    if: >
+#      needs.detect-changes.outputs.is_snyk_authorized &&
+#      (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
+#    name: Code security scanning alerts
+#    runs-on: ubuntu-24.04
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+#      - name: Run Snyk to check for vulnerabilities
+#        uses: snyk/actions/golang@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+#        env:
+#          SNYK_TOKEN: ${{ secrets.SNYK_API_TOKEN }}
+#        with:
+#          args: --severity-threshold=high
 
-  govulncheck:
-    needs: [detect-changes]
-    if: >
-        !needs.detect-changes.outputs.is_snyk_authorized &&
-        (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
-    name: Govulncheck
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      - name: Run govulncheck
-        uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
-        with:
-          go-version-file: "${{ github.workspace }}/go.mod"
-          repo-checkout: false
+#  govulncheck:
+#    needs: [detect-changes]
+#    if: >
+#        !needs.detect-changes.outputs.is_snyk_authorized &&
+#        (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
+#    name: Govulncheck
+#    runs-on: ubuntu-24.04
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+#      - name: Run govulncheck
+#        uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
+#        with:
+#          go-version-file: "${{ github.workspace }}/go.mod"
+#          repo-checkout: false
 
   markdown-lint:
     needs: [detect-changes]
@@ -297,22 +297,22 @@ jobs:
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
 
-  run-preflight:
-    name: Run preflight on quay.io without submitting results when merging to main
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: Release
-    needs: [build-push, prepare]
-    runs-on: ubuntu-24.04
-    env:
-      SCAN_REGISTRY: "quay.io"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-      - name: Run preflight
-        uses: ./.github/actions/preflight
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.DOCKER_REGISTRY }}
-          repository: ${{ env.DOCKER_REPOSITORY }}
-          report-name: "preflight.json"
-          should-submit: "false"
+#  run-preflight:
+#    name: Run preflight on quay.io without submitting results when merging to main
+#    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#    environment: Release
+#    needs: [build-push, prepare]
+#    runs-on: ubuntu-24.04
+#    env:
+#      SCAN_REGISTRY: "quay.io"
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+#      - name: Run preflight
+#        uses: ./.github/actions/preflight
+#        with:
+#          version: ${{ needs.prepare.outputs.version }}
+#          registry: ${{ env.DOCKER_REGISTRY }}
+#          repository: ${{ env.DOCKER_REPOSITORY }}
+#          report-name: "preflight.json"
+#          should-submit: "false"

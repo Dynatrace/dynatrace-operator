@@ -92,7 +92,8 @@ runs:
         file: ${{ inputs.dockerfile }}
         provenance: false
         platforms: ${{ inputs.platforms }}
-        push: true
+        #push: true
+        push: false
         tags: ${{ steps.meta.outputs.tags }}
         labels: |
           ${{ steps.meta.outputs.labels }}
