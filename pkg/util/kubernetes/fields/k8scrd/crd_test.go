@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestCheckVersion(t *testing.T) {
+func TestIsLatestVersion(t *testing.T) {
 	testDynaKubeCRD := getTestCRD(DynaKubeName)
 	testEdgeConnectCRD := getTestCRD(EdgeConnectName)
 
