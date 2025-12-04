@@ -115,7 +115,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		}
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.EXPECT().
-			GetLatestAgentVersion(mockCtx, dtclient.OsUnix, dtclient.InstallerTypePaaS).
+			GetLatestAgentVersion(anyCtx, dtclient.OsUnix, dtclient.InstallerTypePaaS).
 			Return("", errors.New("BOOM")).Once()
 		updater := newCodeModulesUpdater(dk, mockClient)
 
@@ -197,7 +197,7 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetLatestCodeModulesImage(mockCtx).Return(nil, errors.New("BOOM")).Once()
+		mockClient.EXPECT().GetLatestCodeModulesImage(anyCtx).Return(nil, errors.New("BOOM")).Once()
 		updater := newCodeModulesUpdater(dk, mockClient)
 
 		_, err := updater.LatestImageInfo(context.Background())
