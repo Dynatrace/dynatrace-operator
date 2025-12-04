@@ -15,7 +15,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.47.0
 	go.opentelemetry.io/collector/config/configtls v1.47.0
@@ -30,7 +30,7 @@ require (
 	golang.org/x/sys v0.38.0
 	google.golang.org/grpc v1.77.0
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.28.0
+	istio.io/api v1.28.1
 	istio.io/client-go v1.28.0
 	k8s.io/api v0.34.2
 	k8s.io/apiextensions-apiserver v0.34.2
