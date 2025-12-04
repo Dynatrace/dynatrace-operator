@@ -29,12 +29,12 @@ runs:
         MAJOR_MINOR="${VERSION%.*}"
         echo "major_minor=${MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
     - name: Checkout release branch
-      uses: actions/checkout@v4
+      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       with:
         ref: release-${{ steps.vars.outputs.major_minor }}
         fetch-depth: 0
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c #6.0.1
       with:
         go-version-file: "${{ github.workspace }}/go.mod"
     - name: Setting properties
@@ -153,7 +153,7 @@ runs:
           --token "${GITHUB_TOKEN}"
 
     - name: Create CSV update PR
-      uses: peter-evans/create-pull-request@v7
+      uses: peter-evans/create-pull-request@84ae59a2cdc2258d6fa0732dd66352dddae2a412 # v7.0.9
       env:
         VERSION: ${{ inputs.version }}
       with:

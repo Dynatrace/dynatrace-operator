@@ -17,7 +17,7 @@ jobs:
       FORK_REPOSITORY_URL: dt-team-kubernetes/certified-operators
     steps:
       - name: Checkout dynatrace-operator at base branch (as team user)
-        uses: actions/checkout@v4
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0
@@ -27,7 +27,7 @@ jobs:
           git config --global user.name  "${{ secrets.TEAM_USER_NAME }}"
           git config --global user.email "${{ secrets.TEAM_USER_EMAIL }}"
       - name: Set up Python and jq
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
           python-version: '3.11'
       - run: |
