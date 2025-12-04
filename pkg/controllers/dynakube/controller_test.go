@@ -3,11 +3,14 @@ package dynakube
 import (
 	"context"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -27,6 +30,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -74,7 +80,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 				},
 			},
 		}
-		fakeClient := fake.NewClientWithIndex(markedNamespace)
+		fakeClient := fake.NewClientWithIndex(markedNamespace, mockCRD())
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -98,7 +104,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
 		}
-		fakeClient := fake.NewClientWithIndex(expectedDynakube)
+		fakeClient := fake.NewClientWithIndex(expectedDynakube, mockCRD())
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -115,7 +121,7 @@ func TestMinimalRequest(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
 		controller := &Controller{
 			client:    fake.NewClient(),
-			apiReader: fake.NewClient(),
+			apiReader: fake.NewClient(mockCRD()),
 		}
 		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
@@ -196,7 +202,7 @@ func TestHandleError(t *testing.T) {
 	})
 	t.Run("random error => error, set error-phase", func(t *testing.T) {
 		oldDynakube := dynakubeBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(oldDynakube)
+		fakeClient := fake.NewClientWithIndex(oldDynakube, mockCRD())
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -424,7 +430,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		},
 	}
 
-	fakeClient := fake.NewClient(baseDk, createAPISecret())
+	fakeClient := fake.NewClient(baseDk, mockCRD(), createAPISecret())
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.EXPECT().GetTokenScopes(mockCtx, testAPIToken).Return(dtclient.TokenScopes{
 		dtclient.TokenScopeDataExport,
@@ -1032,6 +1038,23 @@ func createAPISecret() *corev1.Secret {
 		},
 		Data: map[string][]byte{
 			dtclient.APIToken: []byte(testAPIToken),
+		},
+	}
+}
+
+func mockCRD() *apiextensionsv1.CustomResourceDefinition {
+	os.Setenv(k8senv.AppVersion, "1.0.0")
+
+	return &apiextensionsv1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CustomResourceDefinition",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8scrd.DynaKubeName,
+			Labels: map[string]string{
+				k8slabel.AppVersionLabel: "1.0.0",
+			},
 		},
 	}
 }

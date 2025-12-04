@@ -139,7 +139,7 @@ type Controller struct {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
-	err := k8scrd.CheckVersion(ctx, controller.apiReader, k8scrd.DynaKubeName)
+	_, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.DynaKubeName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

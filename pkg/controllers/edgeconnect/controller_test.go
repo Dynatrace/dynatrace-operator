@@ -3,16 +3,22 @@ package edgeconnect
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	edgeconnectmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/edgeconnect"
@@ -772,10 +778,11 @@ func getEdgeConnectCR(apiReader client.Reader, name string, namespace string) (e
 }
 
 func createFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, objects ...client.Object) *Controller {
-	fakeClient := fake.NewClientWithIndex()
+	crd := mockCRD()
+	fakeClient := fake.NewClientWithIndex(crd)
 
 	if ec != nil {
-		objs := []client.Object{ec}
+		objs := []client.Object{ec, crd}
 		objs = append(objs, objects...)
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
@@ -809,10 +816,11 @@ func createFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, ob
 }
 
 func createFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.EdgeConnect, builder edgeConnectClientBuilderType, objects ...client.Object) *Controller {
-	fakeClient := fake.NewClientWithIndex()
+	crd := mockCRD()
+	fakeClient := fake.NewClientWithIndex(crd)
 
 	if ec != nil {
-		objs := []client.Object{ec}
+		objs := []client.Object{ec, crd}
 		objs = append(objs, objects...)
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
@@ -1115,6 +1123,23 @@ func createDeployment(namespace, name string, replicas, readyReplicas int32) *ap
 		Status: appsv1.DeploymentStatus{
 			Replicas:      replicas,
 			ReadyReplicas: readyReplicas,
+		},
+	}
+}
+
+func mockCRD() *apiextensionsv1.CustomResourceDefinition {
+	os.Setenv(k8senv.AppVersion, "1.0.0")
+
+	return &apiextensionsv1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CustomResourceDefinition",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8scrd.EdgeConnectName,
+			Labels: map[string]string{
+				k8slabel.AppVersionLabel: "1.0.0",
+			},
 		},
 	}
 }

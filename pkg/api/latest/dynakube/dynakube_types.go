@@ -54,7 +54,7 @@ const (
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
 // +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
 
-// DynaKube is the Schema for the DynaKube API
+// DynaKube is the Schema for the DynaKube API.
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
 
@@ -65,7 +65,7 @@ type DynaKube struct {
 
 // +k8s:openapi-gen=true
 
-// DynaKubeSpec defines the desired state of DynaKube
+// DynaKubeSpec defines the desired state of DynaKube.
 type DynaKubeSpec struct { //nolint:revive
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
@@ -180,7 +180,7 @@ type TemplatesSpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 
-// DynaKubeList contains a list of DynaKube
+// DynaKubeList contains a list of DynaKube.
 type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

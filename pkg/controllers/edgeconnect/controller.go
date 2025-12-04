@@ -99,7 +99,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	_log.Info("reconciling EdgeConnect")
 
-	err := k8scrd.CheckVersion(ctx, controller.apiReader, k8scrd.EdgeConnectName)
+	_, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.EdgeConnectName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
