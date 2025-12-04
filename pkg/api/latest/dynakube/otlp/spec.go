@@ -40,6 +40,7 @@ type ExporterConfigurationSpec struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type SignalConfiguration struct {
 	// Enables the automatic OTLP exporter configuration for Metrics
 	// see https://opentelemetry.io/docs/specs/otel/protocol/exporter/#endpoint-urls-for-otlphttp
@@ -53,10 +54,13 @@ type SignalConfiguration struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type MetricsSignal struct{}
 
 // +kubebuilder:object:generate=true
+
 type TracesSignal struct{}
 
 // +kubebuilder:object:generate=true
+
 type LogsSignal struct{}
