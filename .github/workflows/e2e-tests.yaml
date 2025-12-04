@@ -1,0 +1,179 @@
+name: E2E tests
+
+on:
+  schedule:
+    # every work day at 00:00 UTC
+    - cron: 0 0 * * 1-5
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target branch to run E2E tests over'
+        required: true
+        default: 'main'
+      helm-chart:
+        description: 'Helm chart used for installation'
+        required: true
+        default: 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart'
+        type: string
+
+permissions:
+  checks: write
+
+jobs:
+  run-in-k8s:
+    name: Run in Kubernetes latest (${{ github.event.inputs.target || 'main' }})
+    environment: E2E
+    runs-on:
+      - self-hosted
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-daily
+          flc-environment: dto-k8s-latest-flc
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine cluster status
+        if: failure()
+        run: |
+          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+            exit 1
+          fi
+  run-in-ocp:
+    name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    environment: E2E
+    runs-on:
+      - self-hosted
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-daily
+          flc-environment: dto-ocp-latest-flc
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-branch: ${{ github.event.inputs.target }}
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine cluster status
+        if: failure()
+        run: |
+          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+            exit 1
+          fi
+  run-in-ocp-fips:
+    name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
+    environment: E2E
+    runs-on:
+      - self-hosted
+      - operator-e2e
+    outputs:
+      cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
+      job_id: ${{ job.check_run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Run e2e test
+        id: run_e2e_test
+        uses: ./.github/actions/run-e2e
+        with:
+          flc-namespace: dto-ocp-ondemand
+          flc-environment: dto-ocp-fips
+          helm-chart: ${{ github.event.inputs.helm-chart || 'oci://quay.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
+          target-image: format('{0}-fips', (${{ github.event.inputs.target || 'main' }}))
+          tenant1-name: ${{ secrets.TENANT1_NAME }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          tenant1-oauth-secret: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          tenant1-oauth-urn: ${{ secrets.TENANT1_OAUTH_URN }}
+          tenant2-name: ${{ secrets.TENANT2_NAME }}
+          tenant2-apitoken: ${{ secrets.TENANT2_APITOKEN }}
+          tenant2-dataingesttoken: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine cluster status
+        if: failure()
+        run: |
+          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+            exit 1
+          fi
+
+  notify-slack:
+    name: Notify test results in Slack
+    environment: E2E
+    needs: [ "run-in-k8s", "run-in-ocp", "run-in-ocp-fips" ]
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Set Slack message
+        id: set_slack_message
+        env:
+          TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
+        run: |
+          get_emoji() {
+            if [ "$1" = "skipped" ]; then
+              echo "large_yellow_circle"
+            elif [ "$2" = "success" ]; then
+              echo "white_check_mark"
+            else
+              echo "red_circle"
+            fi
+          }
+          K8S_STATUS=$(get_emoji "${{ needs.run-in-k8s.outputs.cluster_status }}" "${{ needs.run-in-k8s.result }}")
+          OCP_STATUS=$(get_emoji "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
+          OCP_FIPS_STATUS=$(get_emoji "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
+
+          echo "K8S_STATUS=$K8S_STATUS" >> $GITHUB_ENV
+          echo "K8S_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-k8s.outputs.job_id }}" >> $GITHUB_ENV
+
+          echo "OCP_STATUS=$OCP_STATUS" >> $GITHUB_ENV
+          echo "OCP_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-ocp.outputs.job_id }}" >> $GITHUB_ENV
+
+          echo "OCP_FIPS_STATUS=$OCP_FIPS_STATUS" >> $GITHUB_ENV
+          echo "OCP_FIPS_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-ocp-fips.outputs.job_id }}" >> $GITHUB_ENV
+
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
+      - name: Notify failure in Slack
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          errors: true
+          payload-templated: true
+          payload-file-path: ./hack/slack/slack-e2e-payload.json

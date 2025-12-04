@@ -1,0 +1,129 @@
+name: Nightly build
+
+on:
+  schedule:
+    # every work day at 00:00 UTC
+    - cron: 0 0 * * 1-5
+
+env:
+  DOCKER_REGISTRY: quay.io
+  DOCKER_REPOSITORY: dynatrace/dynatrace-operator
+  PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
+
+jobs:
+  prepare:
+    permissions:
+      contents: read
+    name: Prepare properties
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Prepare build parameters
+        id: prep
+        run: |
+          hack/build/ci/prepare-build-variables.sh
+    outputs:
+      version: ${{ steps.prep.outputs.docker_image_tag }}
+      version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
+
+  build-push:
+    name: Build images
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Login to Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Build image
+        id: build-image
+        uses: ./.github/actions/build-push-image
+        with:
+          platforms: ${{ env.PLATFORMS }}
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
+    outputs:
+      digest: ${{ steps.build-image.outputs.digest }}
+
+  signing:
+    name: Sign the image index/manifests + Add SBOM
+    environment: Release
+    needs: [prepare, build-push]
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Login to Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Sign images
+        uses: ./.github/actions/sign-image
+        with:
+          image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Create SBOM
+        id: sbom
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+        with:
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          format: 'cyclonedx'
+          output: 'result.json'
+          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
+          skip-files: '/usr/local/bin/dynatrace-operator'
+      - name: Upload SBOM
+        uses: ./.github/actions/upload-sbom
+        with:
+          image: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          sbom: 'result.json'
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+
+  release:
+    name: Create release
+    needs: [prepare, build-push, signing]
+    environment: Release
+    permissions:
+      id-token: write
+    runs-on: ubuntu-24.04
+    env:
+      HELM_PACKAGE_VERSION: 0.0.0-${{ needs.prepare.outputs.version_without_prefix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Setup Golang
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version-file: "${{ github.workspace }}/go.mod"
+      - name: Build helm packages
+        uses: ./.github/actions/build-helm
+        with:
+          version_without_prefix: ${{ env.HELM_PACKAGE_VERSION }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          secring: ${{ secrets.HELM_SECRING }}
+          passphrase: ${{ secrets.HELM_PASSPHRASE }}
+          output-dir: "./helm-pkg"
+      - name: Authenticate Helm
+        shell: bash
+        run: |
+          helm registry login -u "${{ secrets.QUAY_USERNAME }}" -p "${{ secrets.QUAY_PASSWORD }}" "${{ env.DOCKER_REGISTRY }}"
+      - name: Authenticate Docker
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Upload and sign helm package
+        uses: ./.github/actions/upload-nightly-helm
+        with:
+          version: ${{ needs.prepare.outputs.version }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
