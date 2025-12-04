@@ -104,19 +104,19 @@ jobs:
 
           if [ -n "${last_version}" ]; then
             echo "Setting spec.replaces to dynatrace-operator.v${last_version}"
-            python ../.github/scripts/set_property.py \
+            python ../.github/scripts/release/set_property.py \
               --file "operators/dynatrace-operator/${version}/manifests/dynatrace-operator.clusterserviceversion.yaml" \
               --property "spec.replaces" \
               --value "dynatrace-operator.v${last_version}"
           else
             echo "Removing spec.replaces (no previous version)"
-            python ../.github/scripts/set_property.py \
+            python ../.github/scripts/release/set_property.py \
               --file "operators/dynatrace-operator/${version}/manifests/dynatrace-operator.clusterserviceversion.yaml" \
               --property "spec.replaces"
           fi
 
           echo "Applying certified marketplace-specific CSV tweaks"
-          python ../.github/scripts/make-release-csv.py \
+          python ../.github/scripts/release/csv/make-release-csv.py \
             "operators/dynatrace-operator/${version}/manifests/dynatrace-operator.clusterserviceversion.yaml" \
             --image "${image}" \
             --marketplace "certified"

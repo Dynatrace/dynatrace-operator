@@ -105,7 +105,7 @@ jobs:
             "operators/dynatrace-operator-rhmp/${version}/metadata/annotations.yaml"
 
           echo "Applying redhat marketplace-specific CSV tweaks"
-          python ../.github/scripts/make-release-csv.py \
+          python ../.github/scripts/release/csv/make-release-csv.py \
             "operators/dynatrace-operator-rhmp/${version}/manifests/dynatrace-operator.clusterserviceversion.yaml" \
             --image "${image}" \
             --marketplace "redhat" \
@@ -117,19 +117,19 @@ jobs:
 
           if [ -n "${last_version}" ]; then
             echo "Setting spec.replaces to dynatrace-operator.v${last_version}"
-            python ../.github/scripts/set_property.py \
+            python ../.github/scripts/release/set_property.py \
               --file "operators/dynatrace-operator-rhmp/${version}/manifests/dynatrace-operator-rhmp.clusterserviceversion.yaml" \
               --property "spec.replaces" \
               --value "dynatrace-operator.v${last_version}"
           else
             echo "Removing spec.replaces (no previous version)"
-            python ../.github/scripts/set_property.py \
+            python ../.github/scripts/release/set_property.py \
               --file "operators/dynatrace-operator-rhmp/${version}/manifests/dynatrace-operator-rhmp.clusterserviceversion.yaml" \
               --property "spec.replaces"
           fi
 
           echo "Setting correct name for rhmp"
-          python ../.github/scripts/set_property.py \
+          python ../.github/scripts/release/set_property.py \
             --file "operators/dynatrace-operator-rhmp/${version}/manifests/dynatrace-operator-rhmp.clusterserviceversion.yaml" \
             --property "metadata.name" \
             --value "dynatrace-operator-rhmp.v${version}"
