@@ -18,11 +18,13 @@ type LogMonitoring struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type Spec struct {
 	IngestRuleMatchers []IngestRuleMatchers `json:"ingestRuleMatchers,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
+
 type TemplateSpec struct {
 	// Add custom annotations to the LogMonitoring pods
 	// +kubebuilder:validation:Optional

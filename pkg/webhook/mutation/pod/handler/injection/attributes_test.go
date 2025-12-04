@@ -2,6 +2,7 @@ package injection
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -100,7 +101,7 @@ func TestAddContainerAttributes(t *testing.T) {
 		Pod: &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "false",
+					dtwebhook.AnnotationInjectionSplitMounts: "false",
 				},
 			},
 		},
@@ -257,7 +258,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						dtwebhook.InjectionSplitMounts: "true",
+						dtwebhook.AnnotationInjectionSplitMounts: "true",
 					},
 				},
 			},
@@ -303,13 +304,23 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: volumes.ConfigMountPath + "/enrichment",
-						SubPath:   attr.ContainerName + "/enrichment",
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.json"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.json"),
 					},
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: volumes.ConfigMountPath + "/oneagent",
-						SubPath:   attr.ContainerName + "/oneagent",
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.properties"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.properties"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoint"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoint"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "oneagent"),
+						SubPath:   filepath.Join(attr.ContainerName, "oneagent"),
 					},
 				},
 			})
@@ -335,8 +346,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: volumes.ConfigMountPath + "/oneagent",
-						SubPath:   attr.ContainerName + "/oneagent",
+						MountPath: filepath.Join(volumes.ConfigMountPath, "oneagent"),
+						SubPath:   filepath.Join(attr.ContainerName, "oneagent"),
 					},
 				},
 			})
@@ -362,8 +373,18 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      volumes.ConfigVolumeName,
-						MountPath: volumes.ConfigMountPath + "/enrichment",
-						SubPath:   attr.ContainerName + "/enrichment",
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.json"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.json"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "dt_metadata.properties"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "dt_metadata.properties"),
+					},
+					{
+						Name:      volumes.ConfigVolumeName,
+						MountPath: filepath.Join(volumes.ConfigMountPath, "enrichment", "endpoint"),
+						SubPath:   filepath.Join(attr.ContainerName, "enrichment", "endpoint"),
 					},
 				},
 			})
@@ -385,7 +406,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -438,7 +459,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -490,7 +511,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -544,7 +565,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -596,7 +617,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -648,7 +669,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		pod := corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dtwebhook.InjectionSplitMounts: "true",
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			Spec: corev1.PodSpec{

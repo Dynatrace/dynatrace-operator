@@ -96,7 +96,7 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 				Annotations: map[string]string{
 					consts.AnnotationActiveGateConfigurationHash: statefulSetBuilder.configHash,
 					consts.AnnotationActiveGateTenantTokenHash:   statefulSetBuilder.dynakube.Status.ActiveGate.ConnectionInfo.TenantTokenHash,
-					mutator.InjectionSplitMounts:                 "true",
+					mutator.AnnotationInjectionSplitMounts:       "true",
 				},
 			},
 		},

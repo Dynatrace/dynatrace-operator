@@ -5,6 +5,7 @@ import (
 )
 
 // +kubebuilder:object:generate=true
+
 type ConnectionInfo struct {
 
 	// Time of the last connection request

@@ -1,6 +1,7 @@
 package value
 
 // +kubebuilder:object:generate=true
+
 type Source struct {
 	// Raw value for given property.
 	// +nullable

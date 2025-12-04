@@ -1,0 +1,54 @@
+name: 'Check Comment'
+description: 'Checks if a comment contains an allowed command and outputs the detected command, PR ref, and sha.'
+inputs:
+  allowed-commands:
+    description: 'Comma-separated list of allowed commands (e.g. "/run-e2e-kind, /othercommand")'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Check comment author association and command
+      id: check
+      shell: bash
+      run: |
+        allowed_commands=( $(echo "${{ inputs.allowed-commands }}" | tr ',' ' ') )
+        comment_body="${{ github.event.comment.body }}"
+        association="${{ github.event.comment.author_association }}"
+        triggered=false
+        detected_command=""
+        if [[ "$association" == "MEMBER" || "$association" == "OWNER" || "$association" == "COLLABORATOR" ]]; then
+          for cmd in "${allowed_commands[@]}"; do
+            if [[ "$comment_body" == *"$cmd"* ]]; then
+              triggered=true
+              detected_command="$cmd"
+              break
+            fi
+          done
+        fi
+        echo "triggered=$triggered" >> $GITHUB_OUTPUT
+        echo "detected-command=$detected_command" >> $GITHUB_OUTPUT
+    - name: Get PR details
+      id: get-pr
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      with:
+        script: |
+          const pr = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          });
+          core.setOutput('pr_branch', pr.data.head.ref);
+          core.setOutput('pr_sha', pr.data.head.sha);
+outputs:
+  triggered:
+    description: 'true if an allowed command was found and author is allowed'
+    value: ${{ steps.check.outputs.triggered }}
+  detected-command:
+    description: 'The detected command from the comment'
+    value: ${{ steps.check.outputs.detected-command }}
+  pr_branch:
+    description: 'The branch of the PR'
+    value: ${{ steps.get-pr.outputs.pr_branch }}
+  pr_sha:
+    description: 'The sha of the PR head'
+    value: ${{ steps.get-pr.outputs.pr_sha }}

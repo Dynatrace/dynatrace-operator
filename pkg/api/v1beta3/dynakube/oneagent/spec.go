@@ -21,6 +21,7 @@ type OneAgent struct {
 type Mode string
 
 // +kubebuilder:object:generate=true
+
 type Spec struct {
 	// Has a single OneAgent per node via DaemonSet.
 	// Injection is performed via the same OneAgent DaemonSet.
@@ -50,12 +51,14 @@ type Spec struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type CloudNativeFullStackSpec struct {
 	HostInjectSpec   `json:",inline"`
 	AppInjectionSpec `json:",inline"`
 }
 
 // +kubebuilder:object:generate=true
+
 type HostInjectSpec struct {
 
 	// Add custom OneAgent annotations.
@@ -131,6 +134,7 @@ type HostInjectSpec struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type ApplicationMonitoringSpec struct {
 
 	// Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.
@@ -142,6 +146,7 @@ type ApplicationMonitoringSpec struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type AppInjectionSpec struct {
 	// Define resources requests and limits for the initContainer. For details, see Managing resources for containers
 	// (https://kubernetes.io/docs/concepts/configuration/manage-resources-containers).
@@ -161,6 +166,7 @@ type AppInjectionSpec struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type CodeModulesStatus struct {
 	status.VersionStatus `json:",inline"`
 }

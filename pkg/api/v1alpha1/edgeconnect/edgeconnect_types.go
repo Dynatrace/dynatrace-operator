@@ -2,6 +2,7 @@
 // +groupName=dynatrace.com
 // +versionName=v1alpha1
 // +kubebuilder:validation:Optional
+
 package edgeconnect
 
 import (
@@ -155,8 +156,6 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// EdgeConnect is the Schema for the EdgeConnect API
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -164,6 +163,8 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiServer`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+
+// EdgeConnect is the Schema for the EdgeConnect API
 type EdgeConnect struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -173,10 +174,10 @@ type EdgeConnect struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// EdgeConnectList contains a list of EdgeConnect
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
+
+// EdgeConnectList contains a list of EdgeConnect
 type EdgeConnectList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
