@@ -12,6 +12,7 @@ on:
 permissions:
   contents: read
 
+
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
   DOCKER_REGISTRY: quay.io
