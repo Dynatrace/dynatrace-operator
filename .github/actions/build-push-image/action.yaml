@@ -32,11 +32,20 @@ runs:
       uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
       with:
         go-version-file: "${{ github.workspace }}/go.mod"
-    - name: Prepare build parameters
-      id: prep
+    - name: Sanitize names
+      id: sanitize
       shell: bash
       run: |
-        hack/build/ci/prepare-build-variables.sh
+        ref_name=$(hack/build/ci/sanitize-branch-name.sh "${{ github.ref_name }}")
+        echo "ref_name=${ref_name}" >> $GITHUB_OUTPUT
+        echo "ref_name_without_prefix=${ref_name#v}" >> $GITHUB_OUTPUT
+
+        head_ref=$(hack/build/ci/sanitize-branch-name.sh "${{ github.head_ref }}")
+        echo "head_ref=${head_ref}" >> $GITHUB_OUTPUT
+
+        echo "ref_name=${ref_name}"
+        echo "ref_name_without_prefix=${ref_name#v}"
+        echo "head_ref=${head_ref}"
     - name: Download third party licenses
       shell: bash
       run: |
@@ -67,27 +76,41 @@ runs:
           build-date=${{ steps.set-build-date.outputs.date }}
         tags: |
           # PRs
-          type=raw,value=snapshot-${{ github.head_ref }},enable=${{ github.event_name == 'pull_request' }}
+          # type=raw,value=snapshot-${{ github.head_ref }},enable=${{ github.event_name == 'pull_request' }}
+          type=raw,value=snapshot-${{ steps.sanitize.outputs.head_ref }},enable=${{ github.event_name == 'pull_request' }}
+
           # main branches (not including nightly builds)
           type=raw,value=snapshot,enable=${{ github.ref_name == 'main' && github.event_name != 'schedule' }}
+
           # nightly builds
           type=raw,value=nightly-${{ steps.set-build-date.outputs.date }},enable=${{ github.event_name == 'schedule' }}
           type=raw,value=nightly,enable=${{ github.event_name == 'schedule' }}
+
           # tags
-          type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
+          # type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
+          type=raw,value=${{ steps.sanitize.outputs.ref_name_without_prefix }},enable=${{ github.ref_type == 'tag' }}
+
           # all other branches including 'release-*' branches except 'main'
-          type=raw,value=${{ steps.prep.outputs.docker_image_tag_without_prefix }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
+          # type=raw,value=${{ steps.prep.outputs.docker_image_tag_without_prefix }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
+          type=raw,value=snapshot-${{ steps.sanitize.outputs.ref_name }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
         annotations: |
           ${{ inputs.annotation }}
           version=${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+    - name: Prepare linker args
+      id: linker-args
+      shell: bash
+      run: |
+          go_linker_args=$(hack/build/create_go_linker_args.sh "${{ steps.meta.outputs.tag-names }}" "${{ github.sha }}")
+          echo "go_linker_args=${go_linker_args}" >> $GITHUB_OUTPUT
+
+          echo "go_linker_args=${go_linker_args}"
     - name: Build target
       id: build-target
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |
-          GO_LINKER_ARGS=${{ steps.prep.outputs.go_linker_args }}
-          GO_BUILD_TAGS=${{ steps.prep.outputs.go_build_tags }}
+          GO_LINKER_ARGS=${{ steps.linker-args.outputs.go_linker_args }}
         context: .
         file: ${{ inputs.dockerfile }}
         provenance: false
