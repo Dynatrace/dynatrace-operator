@@ -20,10 +20,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("connection-info fail => error", func(t *testing.T) {
 		failOAConnectionInfo := createFailingReconciler(t)
 		dk := &dynakube.DynaKube{}
-		passMonitoredEntity := createPassingMonitoredEntityReconciler(t, dk)
 		r := Reconciler{
 			dk:                               dk,
-			k8sEntityReconciler:              passMonitoredEntity,
 			oneAgentConnectionInfoReconciler: failOAConnectionInfo,
 		}
 
@@ -31,17 +29,14 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 
 		failOAConnectionInfo.AssertCalled(t, "Reconcile", ctx)
-		passMonitoredEntity.AssertCalled(t, "Reconcile", ctx)
 	})
 
 	t.Run("config-secret fail => error", func(t *testing.T) {
 		failConfigSecret := createFailingReconciler(t)
 		passOAConnectionInfo := createPassingReconciler(t)
 		dk := &dynakube.DynaKube{}
-		passMonitoredEntity := createPassingMonitoredEntityReconciler(t, dk)
 		r := Reconciler{
 			dk:                               dk,
-			k8sEntityReconciler:              passMonitoredEntity,
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           failConfigSecret,
 		}
@@ -51,7 +46,6 @@ func TestReconcile(t *testing.T) {
 
 		failConfigSecret.AssertCalled(t, "Reconcile", ctx)
 		passOAConnectionInfo.AssertCalled(t, "Reconcile", ctx)
-		passMonitoredEntity.AssertCalled(t, "Reconcile", ctx)
 	})
 
 	t.Run("all reconcilers pass", func(t *testing.T) {
@@ -70,10 +64,8 @@ func TestReconcile(t *testing.T) {
 		mockClient.On("CreateLogMonitoringSetting", mock.AnythingOfType("context.backgroundCtx"), "meid", "cluster-name", []logmonitoring.IngestRuleMatchers{}).
 			Return("test-object-id", nil).Maybe()
 
-		passMonitoredEntity := createPassingMonitoredEntityReconciler(t, dk)
 		r := Reconciler{
 			dk:                               dk,
-			k8sEntityReconciler:              passMonitoredEntity,
 			oneAgentConnectionInfoReconciler: passOAConnectionInfo,
 			configSecretReconciler:           passConfigSecret,
 			daemonsetReconciler:              passDaemonSet,
@@ -87,7 +79,6 @@ func TestReconcile(t *testing.T) {
 		passConfigSecret.AssertCalled(t, "Reconcile", ctx)
 		passOAConnectionInfo.AssertCalled(t, "Reconcile", ctx)
 		passDaemonSet.AssertCalled(t, "Reconcile", ctx)
-		passMonitoredEntity.AssertCalled(t, "Reconcile", ctx)
 	})
 }
 
@@ -101,16 +92,6 @@ func createFailingReconciler(t *testing.T) *controllermock.Reconciler {
 func createPassingReconciler(t *testing.T) *controllermock.Reconciler {
 	passMock := controllermock.NewReconciler(t)
 	passMock.On("Reconcile", mock.Anything).Return(nil)
-
-	return passMock
-}
-
-func createPassingMonitoredEntityReconciler(t *testing.T, dk *dynakube.DynaKube) *controllermock.Reconciler {
-	passMock := controllermock.NewReconciler(t)
-	passMock.On("Reconcile", mock.Anything).Run(func(args mock.Arguments) {
-		dk.Status.KubernetesClusterMEID = "meid"
-		dk.Status.KubernetesClusterName = "cluster-name"
-	}).Return(nil)
 
 	return passMock
 }
