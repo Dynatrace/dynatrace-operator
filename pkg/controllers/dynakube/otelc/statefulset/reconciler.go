@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	serviceAccountName                                  = "dynatrace-opentelemetry-collector"
+	serviceAccountName                                  = "dynatrace-otel-collector"
 	annotationTelemetryIngestSecretHash                 = api.InternalFlagPrefix + "telemetry-ingest-secret-hash"
 	annotationTelemetryIngestConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-ingest-config-hash"
 )

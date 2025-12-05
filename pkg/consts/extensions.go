@@ -1,12 +1,12 @@
 package consts
 
 const (
-	ExtensionsSelfSignedTLSSecretSuffix = "-extensions-controller-tls"
+	ExtensionsSelfSignedTLSSecretSuffix = "-extension-controller-tls"
 
-	// shared volume name between eec and OtelC
+	// shared volume name between EEC and OtelC
 	ExtensionsTokensVolumeName = "tokens"
 
-	ExtensionsControllerSuffix         = "-extensions-controller"
+	ExtensionsControllerSuffix         = "-extension-controller"
 	ExtensionsDatasourceTargetPortName = "collector-com"
 	ExtensionsDatasourceTargetPort     = 14599
 
