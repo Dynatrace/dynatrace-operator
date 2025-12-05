@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache last run timestamp
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: last-run.txt
           key: dependabot-triage-lastrun-${{ github.run_id }}
