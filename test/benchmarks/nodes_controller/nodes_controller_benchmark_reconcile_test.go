@@ -13,38 +13,14 @@ import (
 )
 
 var (
-	smallBenchmarkConfig = benchmarkConfig{
-		NumNodes:     10,
-		NumDynakubes: 2,
-		NumEntities:  20,
-	}
-	mediumBenchmarkConfig = benchmarkConfig{
-		NumNodes:     50,
-		NumDynakubes: 5,
-		NumEntities:  100,
-	}
-	largeBenchmarkConfig = benchmarkConfig{
-		NumNodes:     100,
-		NumDynakubes: 10,
-		NumEntities:  200,
-	}
-	xlargeBenchmarkConfig = benchmarkConfig{
-		NumNodes:     500,
-		NumDynakubes: 20,
-		NumEntities:  1000,
-	}
-
 	// Used for custom benchmarks
-	customNumNodes    = flag.Int("num-nodes", -1, "custom number of nodes for the benchmark")
-	customNumDKs      = flag.Int("num-dynakubes", -1, "custom number of dynakubes for the benchmark")
-	customNumEntities = flag.Int("num-entities", -1, "custom number of entities for the benchmark")
+	customNumNodes    = flag.Int("num-nodes", 10, "custom number of nodes for the benchmark")
+	customNumDKs      = flag.Int("num-dynakubes", 1, "custom number of dynakubes for the benchmark")
+	customNumEntities = flag.Int("num-entities", 10, "custom number of entities for the benchmark")
 )
 
-func getCustomBenchmarkConfig(b *testing.B) benchmarkConfig {
+func getBenchmarkConfig(b *testing.B) benchmarkConfig {
 	b.Helper()
-	if *customNumNodes < 0 || *customNumDKs < 0 || *customNumEntities < 0 {
-		b.Skip("custom benchmark parameters not provided")
-	}
 
 	return benchmarkConfig{
 		NumNodes:     *customNumNodes,
@@ -53,24 +29,8 @@ func getCustomBenchmarkConfig(b *testing.B) benchmarkConfig {
 	}
 }
 
-func BenchmarkNodesController_Reconcile_custom(b *testing.B) {
-	runBenchmarkReconcile(b, getCustomBenchmarkConfig(b))
-}
-
-func BenchmarkNodesController_Reconcile_small(b *testing.B) {
-	runBenchmarkReconcile(b, smallBenchmarkConfig)
-}
-
-func BenchmarkNodesController_Reconcile_medium(b *testing.B) {
-	runBenchmarkReconcile(b, mediumBenchmarkConfig)
-}
-
-func BenchmarkNodesController_Reconcile_large(b *testing.B) {
-	runBenchmarkReconcile(b, largeBenchmarkConfig)
-}
-
-func BenchmarkNodesController_Reconcile_xlarge(b *testing.B) {
-	runBenchmarkReconcile(b, xlargeBenchmarkConfig)
+func BenchmarkNodesController_Reconcile(b *testing.B) {
+	runBenchmarkReconcile(b, getBenchmarkConfig(b))
 }
 
 func runBenchmarkReconcile(b *testing.B, config benchmarkConfig) {
@@ -107,24 +67,8 @@ func runBenchmarkReconcile(b *testing.B, config benchmarkConfig) {
 	config.ReportMetrics(b)
 }
 
-func BenchmarkNodesController_ReconcileOnDelete_custom(b *testing.B) {
-	runBenchmarkReconcileOnDelete(b, getCustomBenchmarkConfig(b))
-}
-
-func BenchmarkNodesController_ReconcileOnDelete_small(b *testing.B) {
-	runBenchmarkReconcileOnDelete(b, smallBenchmarkConfig)
-}
-
-func BenchmarkNodesController_ReconcileOnDelete_medium(b *testing.B) {
-	runBenchmarkReconcileOnDelete(b, mediumBenchmarkConfig)
-}
-
-func BenchmarkNodesController_ReconcileOnDelete_large(b *testing.B) {
-	runBenchmarkReconcileOnDelete(b, largeBenchmarkConfig)
-}
-
-func BenchmarkNodesController_ReconcileOnDelete_xlarge(b *testing.B) {
-	runBenchmarkReconcileOnDelete(b, xlargeBenchmarkConfig)
+func BenchmarkNodesController_ReconcileOnDelete(b *testing.B) {
+	runBenchmarkReconcileOnDelete(b, getBenchmarkConfig(b))
 }
 
 func runBenchmarkReconcileOnDelete(b *testing.B, config benchmarkConfig) {

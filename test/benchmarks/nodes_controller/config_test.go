@@ -85,10 +85,10 @@ func (bc benchmarkConfig) SetupDKs(b *testing.B, clt client.Client, dtURL string
 		createSecret(b, clt, i)
 
 		instances := make(map[string]oneagent.Instance)
-		for j := range bc.NumNodes {
-			nodeName := generateNodeName(j)
+		for j := range bc.NumNodes / bc.NumDynakubes {
+			nodeName := generateNodeName(j + (i * (bc.NumNodes / bc.NumDynakubes)))
 			instances[nodeName] = oneagent.Instance{
-				IPAddress: generateNodeIP(i),
+				IPAddress: generateNodeIP(j + (i * (bc.NumNodes / bc.NumDynakubes))),
 			}
 		}
 
