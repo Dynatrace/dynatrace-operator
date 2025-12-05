@@ -15,10 +15,10 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-extensions-controller-prometheus
+  name: dynatrace-extension-controller-prometheus
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.extensionControllerLabels" . | nindent 4 }}
 rules:
   - apiGroups:
       - security.openshift.io
@@ -32,15 +32,15 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-extensions-controller-prometheus
+  name: dynatrace-extension-controller-prometheus
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.extensionsControllerLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.extensionControllerLabels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-extensions-controller
+    name: dynatrace-extension-controller
 roleRef:
   kind: Role
-  name: dynatrace-extensions-controller-prometheus
+  name: dynatrace-extension-controller-prometheus
   apiGroup: rbac.authorization.k8s.io
 {{ end }}

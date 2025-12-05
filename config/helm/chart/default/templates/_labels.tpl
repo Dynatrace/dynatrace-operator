@@ -104,9 +104,9 @@ app.kubernetes.io/component: oneagent
 {{/*
 Extensions Controller (EEC) labels
 */}}
-{{- define "dynatrace-operator.extensionsControllerLabels" -}}
+{{- define "dynatrace-operator.extensionControllerLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: dynatrace-extensions-controller
+app.kubernetes.io/component: dynatrace-extension-controller
 {{- end -}}
 
 {{/*
@@ -138,5 +138,5 @@ Database Extensions Executor labels
 */}}
 {{- define "dynatrace-operator.databaseDatasourceLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: dynatrace-database-datasource
+app.kubernetes.io/component: dynatrace-sql-extension-executor
 {{- end -}}
