@@ -34,10 +34,6 @@ func IsLatestVersion(ctx context.Context, apiReader client.Reader, crdName strin
 		return false, err
 	}
 
-	if crd.Labels == nil {
-		return false, errors.Errorf("no labels on %s, mismatch found", crdName)
-	}
-
 	crdVersion, ok := crd.Labels[k8slabel.AppVersionLabel]
 	if !ok {
 		return false, errors.Errorf("missing version label '%s' on %s, mismatch found", k8slabel.AppVersionLabel, crdName)
