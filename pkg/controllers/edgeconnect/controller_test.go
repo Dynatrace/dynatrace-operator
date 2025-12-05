@@ -3,7 +3,6 @@ package edgeconnect
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 	"time"
 
@@ -778,11 +777,10 @@ func getEdgeConnectCR(apiReader client.Reader, name string, namespace string) (e
 }
 
 func createFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, objects ...client.Object) *Controller {
-	crd := mockCRD()
-	fakeClient := fake.NewClientWithIndex(crd)
+	fakeClient := fake.NewClientWithIndex(createCRD(t))
 
 	if ec != nil {
-		objs := []client.Object{ec, crd}
+		objs := []client.Object{ec, createCRD(t)}
 		objs = append(objs, objects...)
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
@@ -816,11 +814,10 @@ func createFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, ob
 }
 
 func createFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.EdgeConnect, builder edgeConnectClientBuilderType, objects ...client.Object) *Controller {
-	crd := mockCRD()
-	fakeClient := fake.NewClientWithIndex(crd)
+	fakeClient := fake.NewClientWithIndex(createCRD(t))
 
 	if ec != nil {
-		objs := []client.Object{ec, crd}
+		objs := []client.Object{ec, createCRD(t)}
 		objs = append(objs, objects...)
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
@@ -1127,8 +1124,8 @@ func createDeployment(namespace, name string, replicas, readyReplicas int32) *ap
 	}
 }
 
-func mockCRD() *apiextensionsv1.CustomResourceDefinition {
-	os.Setenv(k8senv.AppVersion, "1.0.0")
+func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
+	t.Setenv(k8senv.AppVersion, "1.0.0")
 
 	return &apiextensionsv1.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{

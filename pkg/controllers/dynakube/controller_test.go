@@ -3,7 +3,6 @@ package dynakube
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -80,7 +79,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 				},
 			},
 		}
-		fakeClient := fake.NewClientWithIndex(markedNamespace, mockCRD())
+		fakeClient := fake.NewClientWithIndex(markedNamespace, createCRD(t))
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -104,7 +103,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
 		}
-		fakeClient := fake.NewClientWithIndex(expectedDynakube, mockCRD())
+		fakeClient := fake.NewClientWithIndex(expectedDynakube, createCRD(t))
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -121,7 +120,7 @@ func TestMinimalRequest(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
 		controller := &Controller{
 			client:    fake.NewClient(),
-			apiReader: fake.NewClient(mockCRD()),
+			apiReader: fake.NewClient(createCRD(t)),
 		}
 		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
@@ -202,7 +201,7 @@ func TestHandleError(t *testing.T) {
 	})
 	t.Run("random error => error, set error-phase", func(t *testing.T) {
 		oldDynakube := dynakubeBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(oldDynakube, mockCRD())
+		fakeClient := fake.NewClientWithIndex(oldDynakube, createCRD(t))
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -430,7 +429,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		},
 	}
 
-	fakeClient := fake.NewClient(baseDk, mockCRD(), createAPISecret())
+	fakeClient := fake.NewClient(baseDk, createCRD(t), createAPISecret())
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.EXPECT().GetTokenScopes(mockCtx, testAPIToken).Return(dtclient.TokenScopes{
 		dtclient.TokenScopeDataExport,
@@ -506,7 +505,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		dk.Spec.APIURL = testAPIURL
 		dk.Spec.EnableIstio = true
 
-		fakeClientWithIstio := fake.NewClientWithIndex(dk, createAPISecret())
+		fakeClientWithIstio := fake.NewClientWithIndex(dk, createCRD(t), createAPISecret())
 
 		controller := baseController
 		controller.client = fakeClientWithIstio
@@ -1042,8 +1041,8 @@ func createAPISecret() *corev1.Secret {
 	}
 }
 
-func mockCRD() *apiextensionsv1.CustomResourceDefinition {
-	os.Setenv(k8senv.AppVersion, "1.0.0")
+func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
+	t.Setenv(k8senv.AppVersion, "1.0.0")
 
 	return &apiextensionsv1.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{
