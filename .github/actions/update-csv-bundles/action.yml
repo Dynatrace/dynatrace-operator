@@ -67,14 +67,15 @@ runs:
     - name: Install operator-sdk v1.36.0
       shell: bash
       env:
+        OPERATOR_SDK_VERSION: v1.36.0
         VERSION: ${{ inputs.version }}
       run: |
         GOBIN="$(go env GOPATH)/bin"
         mkdir -p "$GOBIN"
 
-        echo "Installing operator-sdk v1.36.0 into $GOBIN"
+        echo "Installing operator-sdk ${OPERATOR_SDK_VERSION} into $GOBIN"
         curl -OJL \
-          "https://github.com/operator-framework/operator-sdk/releases/download/v1.36.0/operator-sdk_linux_amd64"
+          "https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk_linux_amd64"
         chmod +x operator-sdk_linux_amd64
 
         mv operator-sdk_linux_amd64  ${GOBIN}/operator-sdk
@@ -86,7 +87,6 @@ runs:
       env:
         VERSION: ${{ inputs.version }}
       run: |
-        VERSION="${VERSION}"
         mkdir -p config/olm/openshift/bases
         make bundle PLATFORM=openshift VERSION="${VERSION}" CHANNELS=stable DEFAULT_CHANNEL=stable OLM_IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator"
     - name: Generate OLM bundles (kubernetes)
@@ -94,14 +94,12 @@ runs:
       env:
         VERSION: ${{ inputs.version }}
       run: |
-        VERSION="${VERSION}"
         make bundle PLATFORM=kubernetes VERSION="${VERSION}" CHANNELS=stable DEFAULT_CHANNEL=stable IMAGE="docker.io/dynatrace/dynatrace-operator" OLM_IMAGE="docker.io/dynatrace/dynatrace-operator:v${VERSION}"
     - name: Finalize CSV files
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
       run: |
-        VERSION="${VERSION}"
 
         echo "Finalizing CSV files for Kubernetes"
         ./.github/scripts/release/csv/finalize_csv_files.py \
