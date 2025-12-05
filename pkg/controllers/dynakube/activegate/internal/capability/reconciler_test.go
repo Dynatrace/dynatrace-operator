@@ -2,6 +2,7 @@ package capability
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -11,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/activegate"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -26,6 +27,8 @@ const (
 	testUID      = "test-uid"
 	testDynakube = "test-dynakube"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 var capabilitiesWithService = []activegate.CapabilityDisplayName{
 	activegate.RoutingCapability.DisplayName,
@@ -72,14 +75,22 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName) *dynakube.Dy
 	}
 }
 
-func getMockReconciler(t *testing.T, returnArguments ...any) *reconcilermock.CapabilityReconciler {
+func getMockReconciler(t *testing.T, returnValue error) *reconcilermock.CapabilityReconciler {
 	mockReconciler := reconcilermock.NewCapabilityReconciler(t)
-	mockReconciler.On("Reconcile", mock.Anything).Return(returnArguments...).Maybe()
+	mockReconciler.EXPECT().Reconcile(anyCtx).Return(returnValue).Once()
 
 	return mockReconciler
 }
 
-func verifyReconciler(t *testing.T, r *Reconciler) {
+func TestNewReconciler(t *testing.T) {
+	r := NewReconciler(
+		fake.NewClientBuilder().Build(),
+		capability.NewMultiCapability(&dynakube.DynaKube{}),
+		&dynakube.DynaKube{},
+		reconcilermock.NewCapabilityReconciler(t),
+		reconcilermock.NewCapabilityReconciler(t),
+		reconcilermock.NewCapabilityReconciler(t),
+	).(*Reconciler)
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)
 	require.NotNil(t, r)
@@ -89,61 +100,31 @@ func verifyReconciler(t *testing.T, r *Reconciler) {
 func TestReconcile(t *testing.T) {
 	clt := createClient()
 
-	t.Run("reconciler works with multiple capabilities", func(t *testing.T) {
-		dk := buildDynakube(capabilitiesWithService)
-		mockStatefulSetReconciler := getMockReconciler(t, nil)
-		mockCustompropertiesReconciler := getMockReconciler(t, nil)
-		mockTLSSecretReconciler := getMockReconciler(t, nil)
-
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
-
-		err := r.Reconcile(context.Background())
-
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		require.NoError(t, err)
-	})
 	t.Run("statefulSetReconciler errors", func(t *testing.T) {
+		expectErr := errors.New("statefulset error")
+
 		dk := buildDynakube(capabilitiesWithoutService)
-		mockStatefulSetReconciler := getMockReconciler(t, errors.New(""))
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
+		mockStatefulSetReconciler := getMockReconciler(t, expectErr)
 		mockTLSSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 
-		err := r.Reconcile(context.Background())
-
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		require.Error(t, err)
+		err := r.Reconcile(t.Context())
+		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("customPropertiesReconciler errors", func(t *testing.T) {
+		expectErr := errors.New("customproperties error")
+
 		dk := buildDynakube(capabilitiesWithoutService)
-		mockStatefulSetReconciler := getMockReconciler(t)
-		mockCustompropertiesReconciler := getMockReconciler(t, errors.New(""))
-		mockTLSSecretReconciler := getMockReconciler(t, nil)
+		mockCustompropertiesReconciler := getMockReconciler(t, expectErr)
+		mockStatefulSetReconciler := reconcilermock.NewCapabilityReconciler(t)
+		mockTLSSecretReconciler := reconcilermock.NewCapabilityReconciler(t)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 
-		err := r.Reconcile(context.Background())
-
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		require.Error(t, err)
-	})
-	t.Run("statefulSetReconciler and customPropertiesReconciler error", func(t *testing.T) {
-		dk := buildDynakube(capabilitiesWithoutService)
-		mockStatefulSetReconciler := getMockReconciler(t, errors.New(""))
-		mockCustompropertiesReconciler := getMockReconciler(t, errors.New(""))
-		mockTLSSecretReconciler := getMockReconciler(t, nil)
-
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
-
-		err := r.Reconcile(context.Background())
-		require.Error(t, err)
+		err := r.Reconcile(t.Context())
+		require.ErrorIs(t, err, expectErr)
 	})
 	t.Run("service gets created", func(t *testing.T) {
 		dk := buildDynakube(capabilitiesWithService)
@@ -151,20 +132,16 @@ func TestReconcile(t *testing.T) {
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
 		mockTLSSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 
-		err := r.Reconcile(context.Background())
-
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service := corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, &service)
+		err = clt.Get(t.Context(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}, &service)
 
-		assert.NotNil(t, service)
 		require.NoError(t, err)
+		assert.NotNil(t, service)
 	})
 	t.Run("service is created even though capability does not need it", func(t *testing.T) {
 		clt := createClient()
@@ -173,17 +150,12 @@ func TestReconcile(t *testing.T) {
 		mockCustompropertiesReconciler := getMockReconciler(t, nil)
 		mockTLSSecretReconciler := getMockReconciler(t, nil)
 
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
+		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 
-		err := r.Reconcile(context.Background())
-
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		require.NoError(t, err)
+		require.NoError(t, r.Reconcile(t.Context()))
 
 		service := corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, &service)
+		err := clt.Get(t.Context(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}, &service)
 
 		require.NoError(t, err)
 
@@ -193,151 +165,64 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestCreateOrUpdateService(t *testing.T) {
-	clt := createClient()
 	dk := buildDynakube(capabilitiesWithService)
-	mockStatefulSetReconciler := getMockReconciler(t, nil)
-	mockCustompropertiesReconciler := getMockReconciler(t, nil)
-	mockTLSSecretReconciler := getMockReconciler(t, nil)
 
-	t.Run("create service works", func(t *testing.T) {
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
-
+	getService := func(t *testing.T, clt client.Client) *corev1.Service {
+		t.Helper()
 		service := &corev1.Service{}
-		err := r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
-		require.Error(t, err)
-		assert.NotNil(t, service)
-
-		err = r.createOrUpdateService(context.Background())
+		err := clt.Get(t.Context(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
-		service = &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
-		require.NoError(t, err)
-		assert.NotNil(t, service)
-	})
-	t.Run("ports get updated", func(t *testing.T) {
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
+		return service
+	}
 
-		err := r.createOrUpdateService(context.Background())
-		require.NoError(t, err)
+	tests := []struct {
+		name   string
+		mutate func(*corev1.Service)
+	}{
+		{
+			"ports get updated",
+			func(svc *corev1.Service) {
+				svc.Spec.Ports = []corev1.ServicePort{}
+			},
+		},
+		{
+			"labels get updated",
+			func(svc *corev1.Service) {
+				svc.Labels = map[string]string{}
+			},
+		},
+		{
+			"selector gets updated",
+			func(svc *corev1.Service) {
+				svc.Spec.Selector = map[string]string{}
+			},
+		},
+	}
 
-		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
-		require.NoError(t, err)
-		assert.NotNil(t, service)
+	for _, test := range tests {
+		clt := createClient()
+		r := &Reconciler{client: clt, capability: capability.NewMultiCapability(dk), dk: dk}
 
-		service.Spec.Ports = []corev1.ServicePort{}
-
-		err = r.createOrUpdateService(context.Background())
-		require.NoError(t, err)
-
-		actualService := &corev1.Service{}
-
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, actualService)
-		require.NoError(t, err)
-		assert.NotNil(t, actualService)
-
-		assert.Equal(t, int32(443), actualService.Spec.Ports[0].Port)
-
-		require.NotEqual(t, actualService, service)
-		require.NotEqual(t, actualService.Spec.Ports, service.Spec.Ports)
-	})
-	t.Run("labels get updated", func(t *testing.T) {
-		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-		verifyReconciler(t, r)
-
-		err := r.createOrUpdateService(context.Background())
+		err := r.createOrUpdateService(t.Context())
 		require.NoError(t, err)
 
-		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
+		service := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}}
+		result, err := controllerutil.CreateOrUpdate(t.Context(), clt, service, func() error {
+			test.mutate(service)
+
+			return nil
+		})
 		require.NoError(t, err)
-		assert.NotNil(t, service)
+		require.Equal(t, result, controllerutil.OperationResultUpdated)
 
-		service.Labels = map[string]string{}
-
-		err = r.createOrUpdateService(context.Background())
+		err = r.createOrUpdateService(t.Context())
 		require.NoError(t, err)
 
-		actualService := &corev1.Service{}
-
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, actualService)
-		require.NoError(t, err)
-		assert.NotNil(t, service)
-
-		require.NotEqual(t, actualService, service)
-		require.NotEqual(t, actualService.Labels, service.Labels)
-	})
-}
-
-func TestPortsAreOutdated(t *testing.T) {
-	clt := createClient()
-	dk := buildDynakube(capabilitiesWithService)
-	mockStatefulSetReconciler := getMockReconciler(t, nil)
-	mockCustompropertiesReconciler := getMockReconciler(t, nil)
-	mockTLSSecretReconciler := getMockReconciler(t, nil)
-
-	r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-	verifyReconciler(t, r)
-
-	desiredService := CreateService(r.dk)
-
-	err := r.Reconcile(context.Background())
-	require.NoError(t, err)
-
-	t.Run("ports are detected as outdated", func(t *testing.T) {
-		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
-		require.NoError(t, err)
-		assert.NotNil(t, service)
-
-		assert.False(t, r.portsAreOutdated(service, desiredService))
-
-		service.Spec.Ports = []corev1.ServicePort{}
-
-		assert.True(t, r.portsAreOutdated(service, desiredService))
-	})
-}
-
-func TestLabelsAreOutdated(t *testing.T) {
-	clt := createClient()
-	dk := buildDynakube(capabilitiesWithService)
-	mockStatefulSetReconciler := getMockReconciler(t, nil)
-	mockCustompropertiesReconciler := getMockReconciler(t, nil)
-	mockTLSSecretReconciler := getMockReconciler(t, nil)
-
-	r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler).(*Reconciler)
-	verifyReconciler(t, r)
-
-	desiredService := CreateService(r.dk)
-
-	err := r.Reconcile(context.Background())
-	require.NoError(t, err)
-
-	t.Run("labels are detected as outdated", func(t *testing.T) {
-		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
-		require.NoError(t, err)
-		assert.NotNil(t, service)
-
-		assert.False(t, r.labelsAreOutdated(service, desiredService))
-
-		service.Labels = map[string]string{}
-
-		assert.True(t, r.labelsAreOutdated(service, desiredService))
-	})
-	t.Run("labelSelectors are detected as outdated", func(t *testing.T) {
-		service := &corev1.Service{}
-		err = r.client.Get(context.Background(), client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: r.dk.Namespace}, service)
-		require.NoError(t, err)
-		assert.NotNil(t, service)
-
-		assert.False(t, r.labelsAreOutdated(service, desiredService))
-
-		service.Spec.Selector = map[string]string{}
-
-		assert.True(t, r.labelsAreOutdated(service, desiredService))
-	})
+		actualService := getService(t, clt)
+		desiredService := CreateService(dk)
+		assert.Equal(t, desiredService.Labels, actualService.Labels)
+		assert.Equal(t, desiredService.Spec, actualService.Spec)
+		assert.NotEqual(t, actualService, service)
+	}
 }

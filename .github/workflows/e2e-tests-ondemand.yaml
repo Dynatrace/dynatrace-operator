@@ -62,7 +62,7 @@ jobs:
       - operator-e2e
     steps:
       - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Run e2e test
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
@@ -119,7 +119,7 @@ jobs:
     if: ${{ always() }}
     steps:
       - name: Checkout
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@5ac504609f6ef35c5ac94bd8199063aa32104721 # 0.31.3
         id: get-matrix-outputs
         with:
