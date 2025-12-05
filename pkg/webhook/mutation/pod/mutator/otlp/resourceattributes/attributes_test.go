@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -35,27 +34,25 @@ func TestNewAttributesFromEnv(t *testing.T) {
 		assert.Equal(t, "v3", attrs["k3"])
 	})
 
-	t.Run("ignores malformed entries without '='", func(t *testing.T) {
+	t.Run("ignores malformed entries without '=' or without value", func(t *testing.T) {
 		attrs, found := NewAttributesFromEnv([]corev1.EnvVar{{Name: envName, Value: "k1=v1,k2,k3=v3"}}, envName)
 		require.True(t, found)
 		require.Len(t, attrs, 2)
 		assert.Contains(t, attrs, "k1")
 		assert.Contains(t, attrs, "k3")
 		assert.NotContains(t, attrs, "k2")
+		assert.NotContains(t, attrs, "k4")
 	})
 }
 
-func TestNewAttributesFromMap(t *testing.T) {
-	prefix := metadataenrichment.Annotation + "/"
-	annotKey := prefix + "service.name"
+func TestSanitizeMap(t *testing.T) {
+	annotKey := "service.name"
 	annotVal := "my service/value with spaces"
-	otherKey := "unrelated.annotation/key"
 
 	input := map[string]string{
 		annotKey: annotVal,
-		otherKey: "ignore-me",
 	}
-	attrs := NewAttributesFromMap(input)
+	attrs := SanitizeMap(input)
 	require.Len(t, attrs, 1)
 	encoded := url.QueryEscape(annotVal)
 	assert.Equal(t, encoded, attrs["service.name"])
@@ -75,7 +72,7 @@ func TestAttributesMerge(t *testing.T) {
 }
 
 func TestAttributesToString(t *testing.T) {
-	attrs := Attributes{"a": "1", "b": "2", "c": "3", "empty": "", "": "empty"}
+	attrs := Attributes{"a": "1", "b": "2", "c": "3", "keyWithEmptyValue": "", "": "valueWithEmptyKey"}
 	result := attrs.String()
 	parts := strings.Split(result, ",")
 	require.Len(t, parts, 3)
@@ -95,9 +92,9 @@ func TestAttributes(t *testing.T) {
 	// Build from env then Merge annotations
 	envAttrs, found := NewAttributesFromEnv([]corev1.EnvVar{{Name: envName, Value: "k1=v1,k2=v2"}}, envName)
 	require.True(t, found)
-	annotKey := metadataenrichment.Annotation + "/custom.key"
+	annotKey := "custom.key"
 	annotVal := "value:with/special chars"
-	mapAttrs := NewAttributesFromMap(map[string]string{annotKey: annotVal})
+	mapAttrs := SanitizeMap(map[string]string{annotKey: annotVal})
 	mutated := envAttrs.Merge(mapAttrs)
 	assert.True(t, mutated)
 	// ensure encoded value is present
