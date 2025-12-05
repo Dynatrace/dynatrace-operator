@@ -105,6 +105,8 @@ tests:
                       }
                   - name: GOMEMLIMIT
                     value: 116MiB
+                  - name: APP_VERSION
+                    value: 1.0.1
                 ports:
                   - containerPort: 10080
                     name: livez
@@ -304,6 +306,8 @@ tests:
                       }
                   - name: GOMEMLIMIT
                     value: 116MiB
+                  - name: APP_VERSION
+                    value: 1.0.1
                 ports:
                   - containerPort: 10080
                     name: livez

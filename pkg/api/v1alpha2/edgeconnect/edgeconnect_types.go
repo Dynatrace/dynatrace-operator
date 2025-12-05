@@ -111,7 +111,7 @@ type KubernetesAutomationSpec struct {
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
 
-// EdgeConnect is the Schema for the EdgeConnect API
+// EdgeConnect is the Schema for the EdgeConnect API.
 type EdgeConnect struct {
 	Spec              EdgeConnectSpec `json:"spec,omitempty"`
 	metav1.TypeMeta   `json:",inline"`
@@ -124,7 +124,7 @@ type EdgeConnect struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 
-// EdgeConnectList contains a list of EdgeConnect
+// EdgeConnectList contains a list of EdgeConnect.
 type EdgeConnectList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

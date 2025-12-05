@@ -27,6 +27,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -37,6 +40,7 @@ import (
 	"github.com/stretchr/testify/require"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -74,7 +78,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 				},
 			},
 		}
-		fakeClient := fake.NewClientWithIndex(markedNamespace)
+		fakeClient := fake.NewClientWithIndex(markedNamespace, createCRD(t))
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -98,7 +102,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
 		}
-		fakeClient := fake.NewClientWithIndex(expectedDynakube)
+		fakeClient := fake.NewClientWithIndex(expectedDynakube, createCRD(t))
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -115,7 +119,7 @@ func TestMinimalRequest(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
 		controller := &Controller{
 			client:    fake.NewClient(),
-			apiReader: fake.NewClient(),
+			apiReader: fake.NewClient(createCRD(t)),
 		}
 		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
@@ -196,7 +200,7 @@ func TestHandleError(t *testing.T) {
 	})
 	t.Run("random error => error, set error-phase", func(t *testing.T) {
 		oldDynakube := dynakubeBase.DeepCopy()
-		fakeClient := fake.NewClientWithIndex(oldDynakube)
+		fakeClient := fake.NewClientWithIndex(oldDynakube, createCRD(t))
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -424,7 +428,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		},
 	}
 
-	fakeClient := fake.NewClient(baseDk, createAPISecret())
+	fakeClient := fake.NewClient(baseDk, createCRD(t), createAPISecret())
 	mockClient := dtclientmock.NewClient(t)
 	mockClient.EXPECT().GetTokenScopes(anyCtx, testAPIToken).Return(dtclient.TokenScopes{
 		dtclient.TokenScopeDataExport,
@@ -500,7 +504,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		dk.Spec.APIURL = testAPIURL
 		dk.Spec.EnableIstio = true
 
-		fakeClientWithIstio := fake.NewClientWithIndex(dk, createAPISecret())
+		fakeClientWithIstio := fake.NewClientWithIndex(dk, createCRD(t), createAPISecret())
 
 		controller := baseController
 		controller.client = fakeClientWithIstio
@@ -1032,6 +1036,23 @@ func createAPISecret() *corev1.Secret {
 		},
 		Data: map[string][]byte{
 			dtclient.APIToken: []byte(testAPIToken),
+		},
+	}
+}
+
+func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
+	t.Setenv(k8senv.AppVersion, "1.0.0")
+
+	return &apiextensionsv1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CustomResourceDefinition",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8scrd.DynaKubeName,
+			Labels: map[string]string{
+				k8slabel.AppVersionLabel: "1.0.0",
+			},
 		},
 	}
 }

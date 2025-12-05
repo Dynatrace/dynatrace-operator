@@ -13,6 +13,7 @@ const (
 	PodNamespace           = "POD_NAMESPACE"
 	PodName                = "POD_NAME"
 	DtOperatorImageEnvName = "DT_OPERATOR_IMAGE"
+	AppVersion             = "APP_VERSION"
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
