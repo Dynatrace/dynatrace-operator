@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -18,13 +19,12 @@ const (
 )
 
 func nameViolatesDNS1035(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	dynakubeName := dk.Name
-
-	var errs []string
-
-	if dynakubeName != "" {
-		errs = validation.IsDNS1035Label(dynakubeName)
+	if dk.Name == "" {
+		// Make unit testing easier. This can never happen in an actual cluster.
+		return ""
 	}
+
+	errs := validation.IsDNS1035Label(dk.Name)
 
 	if len(errs) == 0 {
 		return ""
@@ -34,8 +34,21 @@ func nameViolatesDNS1035(_ context.Context, _ *Validator, dk *dynakube.DynaKube)
 }
 
 func nameTooLong(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	dynakubeName := dk.Name
-	if dynakubeName != "" && len(dynakubeName) > dynakube.MaxNameLength {
+	if dk.Name == "" {
+		// Make unit testing easier. This can never happen in an actual cluster.
+		return ""
+	}
+
+	nameLen := len(dk.Name)
+
+	if dk.Extensions().IsDatabasesEnabled() {
+		// Pod names are limited to 63 characters and Kubernetes will cut off characters from the owner resource name to ensure that they can be deployed.
+		// Max length for a Deployment to ensure that nothing gets cut off is: 47 (+9 for pod template hash, +5 for random suffix)
+		// To account for DB SQL executor deployment names using the ID (MaxLength=8), add 1 character to the infix length.
+		nameLen += len(extensions.SQLExecutorInfix) + 1
+	}
+
+	if nameLen > dynakube.MaxNameLength {
 		return fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
 	}
 

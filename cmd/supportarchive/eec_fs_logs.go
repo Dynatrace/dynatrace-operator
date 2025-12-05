@@ -23,8 +23,8 @@ const (
 	diagLogCollectorName = "fsLogCollector"
 	eecExtensionsPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 	fileNotFoundMarker   = "<NOT FOUND>"
-	LabelEecPodName      = "dynatrace-extensions-controller"
-	eecContainerName     = "extensions-controller"
+	LabelEecPodName      = "dynatrace-extension-controller"
+	eecContainerName     = "extension-controller"
 )
 
 type fsLogCollector struct {

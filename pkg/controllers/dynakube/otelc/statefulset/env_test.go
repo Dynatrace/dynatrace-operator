@@ -188,7 +188,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 		{
 			name:            "telemetryIngest, public AG, with proxy secret",
@@ -218,7 +218,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 	}
 
@@ -277,7 +277,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 		{
 			name:            "telemetryIngest, public AG, with proxy value",
@@ -307,7 +307,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 	}
 

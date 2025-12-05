@@ -16,7 +16,7 @@ const (
 	agCertVolumeName  = "agcert"
 
 	customTLSCertVolumeName            = "telemetry-ingest-custom-tls"
-	extensionsControllerTLSVolumeName  = "extensions-controller-tls"
+	extensionControllerTLSVolumeName   = "extension-controller-tls"
 	telemetryCollectorConfigVolumeName = "telemetry-collector-config"
 	telemetryCollectorConfigPath       = "/config"
 )
@@ -43,7 +43,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				},
 			},
 			corev1.Volume{
-				Name: extensionsControllerTLSVolumeName,
+				Name: extensionControllerTLSVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: dk.Extensions().GetTLSSecretName(),
@@ -144,7 +144,7 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 				Name: consts.ExtensionsTokensVolumeName, ReadOnly: true, MountPath: secretsTokensPath,
 			},
 			corev1.VolumeMount{
-				Name:      extensionsControllerTLSVolumeName,
+				Name:      extensionControllerTLSVolumeName,
 				MountPath: customEecTLSCertificatePath,
 				ReadOnly:  true,
 			},
