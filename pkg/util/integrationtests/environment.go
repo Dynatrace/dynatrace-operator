@@ -20,9 +20,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/projectpath"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -57,6 +59,10 @@ func SetupTestEnvironment(tb testing.TB) client.Client {
 	}
 
 	return clt
+}
+
+func GetKubeConfig() *rest.Config {
+	return testEnv.Config
 }
 
 func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookInstallOptions, webhookSetup func(ctrl.Manager) error) client.Client {
@@ -134,6 +140,82 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 	)
 	if err != nil {
 		t.Fatal(err, "wait for webhook")
+	}
+
+	return clt
+}
+
+func SetupManagerTestEnvironment(t testing.TB, managerSetup func(ctrl.Manager) error) client.Client {
+	setupBaseTestEnv(t)
+
+	// start test environment
+	cfg, err := testEnv.Start()
+	if err != nil {
+		t.Fatal(err, "start environment")
+	}
+
+	t.Cleanup(func() {
+		err := testEnv.Stop()
+		if err != nil {
+			// test is already ending, no need to explicitly fail test
+			t.Error(err, "stop env")
+		}
+	})
+
+	clt, err := client.New(cfg, client.Options{})
+	if err != nil {
+		t.Fatal(err, "new client")
+	}
+
+	// start webhook server using Manager.
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:                 scheme.Scheme,
+		LeaderElection:         false,
+		Metrics:                metricsserver.Options{BindAddress: "0"},
+		HealthProbeBindAddress: ":10080",
+		LivenessEndpointName:   "/livez",
+	})
+	if err != nil {
+		t.Fatal(err, "new manager")
+	}
+
+	err = mgr.AddHealthzCheck("livez", healthz.Ping)
+	if err != nil {
+		t.Fatal(err, "add livez to manager")
+	}
+
+	if err := managerSetup(mgr); err != nil {
+		t.Fatal(err, "manager setup")
+	}
+
+	// this code is adapted from the ginkgo/gomega boilerplate that kubebuilder generates
+
+	go func() {
+		if err := mgr.Start(t.Context()); err != nil {
+			// don't call t.Fatal in a goroutine
+			t.Error(err, "run manager")
+		}
+	}()
+
+	// wait for the manager health endpoint to get ready.
+	dialer := &net.Dialer{Timeout: time.Second}
+	addrPort := "localhost:10080"
+
+	err = wait.PollUntilContextTimeout(
+		t.Context(),
+		500*time.Millisecond, 10*time.Second,
+		false,
+		func(ctx context.Context) (bool, error) {
+			conn, err := dialer.DialContext(ctx, "tcp", addrPort)
+			if err != nil {
+				return false, err
+			}
+
+			return true, conn.Close()
+		},
+	)
+	if err != nil {
+		t.Fatal(err, "wait for manager")
 	}
 
 	return clt

@@ -30,7 +30,7 @@ func TestLogLevelFromEnvEmptyString(t *testing.T) {
 func TestLogger(t *testing.T) {
 	t.Run("log level Info", func(t *testing.T) {
 		logBuffer := bytes.Buffer{}
-		log := createLogger(NewPrettyLogWriter(WithWriter(&logBuffer)), zapcore.InfoLevel)
+		log := CreateLogger(NewPrettyLogWriter(WithWriter(&logBuffer)), zapcore.InfoLevel)
 
 		log.Info("Info message")
 		log.Debug("Debug message")
@@ -41,7 +41,7 @@ func TestLogger(t *testing.T) {
 	})
 	t.Run("log level Debug", func(t *testing.T) {
 		logBuffer := bytes.Buffer{}
-		log := createLogger(NewPrettyLogWriter(WithWriter(&logBuffer)), zapcore.DebugLevel)
+		log := CreateLogger(NewPrettyLogWriter(WithWriter(&logBuffer)), zapcore.DebugLevel)
 
 		log.Info("Info message")
 		log.Debug("Debug message")
@@ -52,7 +52,7 @@ func TestLogger(t *testing.T) {
 	})
 	t.Run("log level default without env", func(t *testing.T) {
 		logBuffer := bytes.Buffer{}
-		log := createLogger(NewPrettyLogWriter(WithWriter(&logBuffer)), readLogLevelFromEnv())
+		log := CreateLogger(NewPrettyLogWriter(WithWriter(&logBuffer)), readLogLevelFromEnv())
 
 		log.Info("Info message")
 		log.Debug("Debug message")

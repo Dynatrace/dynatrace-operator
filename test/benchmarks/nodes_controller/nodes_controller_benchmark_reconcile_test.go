@@ -1,13 +1,23 @@
 package nodes
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
+	"fmt"
+	"io"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
+	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -169,4 +179,69 @@ func runBenchmarkReconcileOnDelete(b *testing.B, config benchmarkConfig) {
 		i++
 	}
 	config.ReportMetrics(b)
+}
+
+func BenchmarkNodesController_ReconcileOnDeleteWithManager_large(b *testing.B) {
+	runBenchmarkReconcileOnDeleteWithManager(b, largeBenchmarkConfig)
+}
+
+func BenchmarkNodesController_ReconcileOnDeleteWithManager_custom(b *testing.B) {
+	runBenchmarkReconcileOnDeleteWithManager(b, getCustomBenchmarkConfig(b))
+}
+
+func runBenchmarkReconcileOnDeleteWithManager(b *testing.B, config benchmarkConfig) {
+	b.Helper()
+	b.Setenv("RUN_LOCAL", "true")
+	b.Setenv(k8senv.PodNamespace, testNamespace)
+
+	scanner := setupLogCapture(b)
+
+	// 1. Setup dt server
+	dtServer := config.SetupDTServerMock(b)
+	defer dtServer.Close()
+
+	// 2. Setup env
+	clt := integrationtests.SetupManagerTestEnvironment(b, func(m controllerruntime.Manager) error { return nodes.Add(m, "") })
+
+	// 3. Setup dks/nodes
+	config.SetupDKs(b, clt, dtServer.URL)
+	config.SetupNodes(b, clt)
+	// 4. Initial wait for all nodes to be processed
+	waitForLogMessage(b, scanner, fmt.Sprintf("node-%d", config.NumNodes-1))
+
+	b.ReportAllocs()
+
+	i := 0
+	for b.Loop() {
+		if i >= config.NumNodes {
+			i = 0
+		}
+		require.NoError(b, clt.Delete(b.Context(), genNode(i)))
+		time.Sleep(time.Second / 2)
+
+		waitForLogMessage(b, scanner, "sending mark for termination event to dynatrace server")
+		i++
+	}
+	config.ReportMetrics(b)
+}
+
+func setupLogCapture(b *testing.B) *bufio.Scanner {
+	b.Helper()
+	logs := &bytes.Buffer{}
+	scanner := bufio.NewScanner(logs)
+	nodes.Log = logd.CreateLogger(io.MultiWriter(logs, os.Stdout), zapcore.InfoLevel)
+
+	return scanner
+}
+
+func waitForLogMessage(b *testing.B, scanner *bufio.Scanner, message string) {
+	b.Helper()
+	scannedLogs := make([]byte, 0)
+	for scanner.Scan() {
+		time.Sleep(time.Second / 10)
+		scannedLogs = append(scannedLogs, scanner.Bytes()...)
+		if strings.Contains(string(scannedLogs), message) {
+			break
+		}
+	}
 }

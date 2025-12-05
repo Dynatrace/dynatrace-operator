@@ -70,7 +70,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	nodeName := request.Name
 	dk, err := controller.determineDynakubeForNode(nodeName)
 
-	log.Info("reconciling node name", "node", nodeName)
+	Log.Info("reconciling node name", "node", nodeName)
 
 	if err != nil {
 		return reconcile.Result{}, err
@@ -188,18 +188,18 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	entityID, err := dynatraceClient.GetHostEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {
 		if errors.As(err, &dtclient.HostEntityNotFoundErr{}) {
-			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+			Log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 			return nil
 		}
 
 		if errors.As(err, &dtclient.V1HostEntityAPINotAvailableErr{}) {
-			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+			Log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 			return nil
 		}
 
-		log.Info("failed to send mark for termination event",
+		Log.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
 
 		return err
@@ -218,7 +218,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		},
 	})
 	if errors.As(err, &dtclient.V1EventsAPINotAvailableErr{}) {
-		log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+		Log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 		return nil
 	}
@@ -233,7 +233,7 @@ func (controller *Controller) markForTermination(ctx context.Context, dk *dynaku
 
 	cacheEntry.SetLastMarkedForTerminationTimestamp(controller.timeProvider.Now().UTC())
 
-	log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress,
+	Log.Info("sending mark for termination event to dynatrace server", "dk", dk.Name, "ip", cacheEntry.IPAddress,
 		"node", cacheEntry.NodeName)
 
 	return controller.sendMarkedForTermination(ctx, dk, cacheEntry)
@@ -275,7 +275,7 @@ func (controller *Controller) pruneCache(ctx context.Context, nodeCache *cache.C
 	}
 
 	for _, nodeName := range missingCachedNodes {
-		log.Info("Removing missing cached node from cluster", "node", nodeName)
+		Log.Info("Removing missing cached node from cluster", "node", nodeName)
 
 		err := controller.reconcileNodeDeletion(ctx, nodeCache, nodeName)
 		if err != nil {

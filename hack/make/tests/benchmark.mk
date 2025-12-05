@@ -9,38 +9,45 @@ CUSTOM_NODE_ARGS := -args -num-nodes=$(NUM_NODES) -num-dynakubes=$(NUM_DK) -num-
 
 HIDE_LOGS := | grep "BenchmarkNodesController_"
 
+define RUN_NODE_CONTROLLER_BENCHMARK
+	@$(GOBENCHCMD) -bench=$(1) -cpuprofile=$(1)_cpu.prof -memprofile=$(1)_mem.prof ./test/benchmarks/nodes_controller/... $(2) $(HIDE_LOGS)
+endef
+
 benchmark/nodes-controller/%/verbose:
 	@make HIDE_LOGS="" $(@D)
 
 benchmark/nodes-controller:
-	$(GOBENCHCMD) -bench=. ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,.)
 
 benchmark/nodes-controller/reconcile-small:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_Reconcile_small  ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_Reconcile_small)
 
 benchmark/nodes-controller/reconcile-medium:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_Reconcile_medium  ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_Reconcile_medium)
 
 benchmark/nodes-controller/reconcile-large:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_Reconcile_large  ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_Reconcile_large)
 
 benchmark/nodes-controller/reconcile-xlarge:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_Reconcile_xlarge  ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_Reconcile_xlarge)
 
 benchmark/nodes-controller/reconcile-custom:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_Reconcile_custom   ./test/benchmarks/nodes_controller/... $(CUSTOM_NODE_ARGS) $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_Reconcile_custom,$(CUSTOM_NODE_ARGS))
 
 benchmark/nodes-controller/on-delete-small:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_ReconcileOnDelete_small  ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_ReconcileOnDelete_small)
 
 benchmark/nodes-controller/on-delete-medium:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_ReconcileOnDelete_medium  ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_ReconcileOnDelete_medium)
 
 benchmark/nodes-controller/on-delete-large:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_ReconcileOnDelete_large  ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_ReconcileOnDelete_large)
 
 benchmark/nodes-controller/on-delete-xlarge:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_ReconcileOnDelete_xlarge  ./test/benchmarks/nodes_controller/... $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_ReconcileOnDelete_xlarge)
 
 benchmark/nodes-controller/on-delete-custom:
-	$(GOBENCHCMD) -bench=BenchmarkNodesController_ReconcileOnDelete_custom   ./test/benchmarks/nodes_controller/... $(CUSTOM_NODE_ARGS) $(HIDE_LOGS)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_ReconcileOnDelete_custom,$(CUSTOM_NODE_ARGS))
+
+benchmark/nodes-controller/on-delete-with-manager-custom:
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_ReconcileOnDeleteWithManager_custom,$(CUSTOM_NODE_ARGS))

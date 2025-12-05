@@ -5,6 +5,6 @@ import (
 )
 
 var (
-	log                 = logd.Get().WithName("nodes")
+	Log                 = logd.Get().WithName("nodes")
 	unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
 )

@@ -26,7 +26,7 @@ var (
 func Get() Logger {
 	baseLoggerOnce.Do(func() {
 		logLevel := readLogLevelFromEnv()
-		baseLogger = createLogger(NewPrettyLogWriter(), logLevel)
+		baseLogger = CreateLogger(NewPrettyLogWriter(), logLevel)
 	})
 
 	return baseLogger
@@ -37,7 +37,7 @@ func LogBaseLoggerSettings() {
 	baseLogger.Info("logging level", "logLevel", logLevel.String())
 }
 
-func createLogger(out io.Writer, logLevel zapcore.Level) Logger {
+func CreateLogger(out io.Writer, logLevel zapcore.Level) Logger {
 	// It's important to create only one "main" logd to avoid excessive memory usage, creating a full logd is rather expensive,
 	// deriving other loggers by WithName is rather cheap
 	config := zap.NewProductionEncoderConfig()
