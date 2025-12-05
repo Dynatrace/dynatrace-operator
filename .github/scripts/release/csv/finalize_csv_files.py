@@ -27,22 +27,16 @@ def write_yaml(data, path):
 
 
 if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser(description="Finalize CSV files by automatically setting")
+    argument_parser = argparse.ArgumentParser(description="Finalize CSV files by automatically setting the createdAt annotation and olm.skipRange")
     argument_parser.add_argument("--platform", type=str, required=True, choices=["openshift", "kubernetes"],
                                  help="Sets the platform for which the CSV files are finalized")
     argument_parser.add_argument("--version", type=str, required=True,
                                  help="Sets the version for which the CSV files are finalized")
-    argument_parser.add_argument("--token", type=str, required=True,
-                                 help="The token used to query the GitHub API")
-    argument_parser.add_argument("--repository", type=str, required=False, default="Dynatrace/dynatrace-operator",
-                                 help="The repository for which the releases are queried to find the current version."
-                                      "Defaults to Dynatrace/dynatrace-operator")
+
     args = argument_parser.parse_args()
 
     platform = args.platform
     version = args.version
-    repository = args.repository
-    token = args.token
     csv_filepath = \
         f"config/olm/{platform}/{version}/manifests/" \
         f"dynatrace-operator.clusterserviceversion.yaml"
