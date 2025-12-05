@@ -28,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -137,6 +138,11 @@ type Controller struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
+
+	_, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.DynaKubeName)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {

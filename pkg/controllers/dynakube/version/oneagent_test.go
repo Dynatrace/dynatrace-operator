@@ -123,7 +123,7 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetLatestOneAgentImage(mockCtx).Return(nil, errors.New("BOOM")).Once()
+		mockClient.EXPECT().GetLatestOneAgentImage(anyCtx).Return(nil, errors.New("BOOM")).Once()
 		updater := newOneAgentUpdater(dk, nil, mockClient)
 
 		_, err := updater.LatestImageInfo(t.Context())

@@ -4,4 +4,4 @@ package arch
 
 const Arch = ArchARM
 const ImageArch = ARMImage
-const Flavor = FlavorDefault
+const Flavor = FlavorMultidistro

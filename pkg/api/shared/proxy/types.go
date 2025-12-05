@@ -1,6 +1,7 @@
 package proxy
 
 // +kubebuilder:object:generate=true
+
 type Spec struct {
 	// Server address (hostname or IP address) of the proxy.
 	Host string `json:"host,omitempty"`

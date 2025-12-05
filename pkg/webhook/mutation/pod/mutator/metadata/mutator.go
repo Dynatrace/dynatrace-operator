@@ -68,11 +68,11 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 		WorkloadName: workloadInfo.Name,
 	}
 
-	setDeprecatedAttributes(&attrs)
+	SetDeprecatedAttributes(&attrs)
 
 	addMetadataToInitArgs(request, &attrs)
 	setInjectedAnnotation(request.Pod)
-	setWorkloadAnnotations(request.Pod, workloadInfo)
+	SetWorkloadAnnotations(request.Pod, workloadInfo)
 
 	args, err := podattr.ToArgs(attrs)
 	if err != nil {
@@ -95,7 +95,7 @@ func (mut *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 }
 
 func addMetadataToInitArgs(request *dtwebhook.MutationRequest, attributes *podattr.Attributes) {
-	copiedMetadataAnnotations := copyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
+	copiedMetadataAnnotations := CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube)
 	if copiedMetadataAnnotations == nil {
 		log.Info("copied metadata annotations from namespace is empty, propagation is not necessary")
 
@@ -129,7 +129,7 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	}
 }
 
-func setWorkloadAnnotations(pod *corev1.Pod, workload *workload.Info) {
+func SetWorkloadAnnotations(pod *corev1.Pod, workload *workload.Info) {
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
 	}
