@@ -1,4 +1,4 @@
-package nodes
+package nodes_test
 
 import (
 	"flag"
@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	// Used for custom benchmarks
 	customNumNodes    = flag.Int("num-nodes", 10, "custom number of nodes for the benchmark")
 	customNumDKs      = flag.Int("num-dynakubes", 1, "custom number of dynakubes for the benchmark")
 	customNumEntities = flag.Int("num-entities", 10, "custom number of entities for the benchmark")

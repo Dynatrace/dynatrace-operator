@@ -10,7 +10,7 @@ NODE_BENCHMARK_CONFIG := -args -num-nodes=$(NUM_NODES) -num-dynakubes=$(NUM_DK) 
 HIDE_LOGS := | grep "BenchmarkNodesController_"
 
 define RUN_NODE_CONTROLLER_BENCHMARK
-	@$(GOBENCHCMD) -bench=$(1) -cpuprofile=$(1)_cpu.prof -memprofile=$(1)_mem.prof ./test/benchmarks/nodes_controller/... $(NODE_BENCHMARK_CONFIG) $(HIDE_LOGS)
+	@$(GOBENCHCMD) -bench=$(1) -cpuprofile=$(1)_$(NUM_NODES)n_$(NUM_DK)d_$(NUM_ENTITIES)e_cpu.prof -memprofile=$(1)_$(NUM_NODES)n_$(NUM_DK)d_$(NUM_ENTITIES)e_mem.prof ./test/benchmarks/nodes_controller/... $(NODE_BENCHMARK_CONFIG) $(HIDE_LOGS)
 endef
 
 benchmark/nodes-controller/%/verbose:
