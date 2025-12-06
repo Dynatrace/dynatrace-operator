@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name:  dynatrace-database-extensions
+  name:  dynatrace-sql-extension-executor
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.databaseDatasourceLabels" . | nindent 4 }}
@@ -24,16 +24,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name:  dynatrace-database-extensions
+  name:  dynatrace-sql-extension-executor
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dynatrace-operator.databaseDatasourceLabels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-database-extensions-executor
+    name: dynatrace-sql-extension-executor
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name:  dynatrace-database-extensions
+  name:  dynatrace-sql-extension-executor
   apiGroup: rbac.authorization.k8s.io
 {{ end }}

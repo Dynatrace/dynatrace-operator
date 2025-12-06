@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,30 +32,19 @@ func TestNameTooLong(t *testing.T) {
 	type testCase struct {
 		name         string
 		crNameLength int
+		withDBExt    bool
 		allow        bool
 	}
 
 	testCases := []testCase{
-		{
-			name:         "normal length",
-			crNameLength: 10,
-			allow:        true,
-		},
-		{
-			name:         "max - 1 ",
-			crNameLength: dynakube.MaxNameLength - 1,
-			allow:        true,
-		},
-		{
-			name:         "max",
-			crNameLength: dynakube.MaxNameLength,
-			allow:        true,
-		},
-		{
-			name:         "max + 1 ",
-			crNameLength: dynakube.MaxNameLength + 1,
-			allow:        false,
-		},
+		{"normal length", 10, false, true},
+		{"normal length with DB", 10, true, true},
+		{"max - 1", dynakube.MaxNameLength - 1, false, true},
+		{"max - 1 with DB", dynakube.MaxNameLength - len(extensions.SQLExecutorInfix) - 2, true, true},
+		{"max", dynakube.MaxNameLength, false, true},
+		{"max with DB", dynakube.MaxNameLength - len(extensions.SQLExecutorInfix) - 1, true, true},
+		{"max + 1", dynakube.MaxNameLength + 1, false, false},
+		{"max + 1 with DB", dynakube.MaxNameLength - len(extensions.SQLExecutorInfix), true, false},
 	}
 
 	for _, test := range testCases {
@@ -67,6 +57,16 @@ func TestNameTooLong(t *testing.T) {
 					APIURL: "https://tenantid.doma.in/api",
 				},
 			}
+			if test.withDBExt {
+				dk.Spec.Extensions = &extensions.Spec{
+					Databases: []extensions.DatabaseSpec{{ID: "test"}},
+				}
+				dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository = "repo"
+				dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag = "tag"
+				dk.Spec.Templates.DatabaseExecutor.ImageRef.Repository = "repo"
+				dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag = "tag"
+			}
+
 			if test.allow {
 				assertAllowed(t, dk)
 			} else {

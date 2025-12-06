@@ -25,7 +25,7 @@ const (
 	readinessProbePath       = "/health/ready"
 	userGroupID        int64 = 1000
 	// Keep in sync with helm chart
-	defaultServiceAccount = "dynatrace-database-extensions-executor"
+	defaultServiceAccount = "dynatrace-sql-extension-executor"
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
 
@@ -57,7 +57,7 @@ func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKu
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
 // Do NOT modify maps produced by this function.
 func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
-	appLabels := k8slabel.NewAppLabels(k8slabel.DatabaseDatasourceLabel, dk.Name, k8slabel.DatabaseDatasourceLabel, dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag)
+	appLabels := k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag)
 
 	deploymentLabels := appLabels.BuildLabels()
 	matchLabels := appLabels.BuildMatchLabels()
@@ -93,7 +93,7 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev
 	}
 
 	container := corev1.Container{
-		Name:            "database-datasource",
+		Name:            "sql-executor",
 		Image:           dk.Spec.Templates.DatabaseExecutor.ImageRef.String(),
 		ImagePullPolicy: pullPolicy,
 		Args:            buildContainerArgs(dk),

@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	eecPodName   = "dynakube-extensions-controller-0"
+	eecPodName   = "dynakube-extension-controller-0"
 	eecNamespace = "dynatrace"
 
-	zipLsFileName           = "logs/dynakube-extensions-controller-0/ls.txt"
-	zipDiagExecutorFileName = "logs/dynakube-extensions-controller-0/var/lib/dynatrace/remotepluginmodule/log/extensions/diagnostics/diag_executor.log"
+	zipLsFileName           = "logs/dynakube-extension-controller-0/ls.txt"
+	zipDiagExecutorFileName = "logs/dynakube-extension-controller-0/var/lib/dynatrace/remotepluginmodule/log/extensions/diagnostics/diag_executor.log"
 
 	lsOutput = `/var/lib/dynatrace/remotepluginmodule/log/extensions/:
 datasources

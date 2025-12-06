@@ -192,7 +192,7 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		condition := meta.FindStatusCondition(*dk.Conditions(), serviceConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, conditions.ServiceCreatedReason, condition.Reason)
-		assert.Equal(t, dk.Name+eecConsts.ExtensionsControllerSuffix+" created", condition.Message)
+		assert.Equal(t, dk.Name+eecConsts.ExtensionControllerSuffix+" created", condition.Message)
 	})
 
 	t.Run("Don't create service when extensions are disabled with minimal setup", func(t *testing.T) {

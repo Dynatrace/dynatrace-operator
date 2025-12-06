@@ -214,7 +214,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 			return nil
 		})
 		require.NoError(t, err)
-		require.Equal(t, result, controllerutil.OperationResultUpdated)
+		require.Equal(t, controllerutil.OperationResultUpdated, result)
 
 		err = r.createOrUpdateService(t.Context())
 		require.NoError(t, err)
