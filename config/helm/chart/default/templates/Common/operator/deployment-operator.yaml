@@ -75,6 +75,10 @@ spec:
             - name: LOG_LEVEL
               value: "debug"
             {{- end }}
+            {{- if .Values.enableProfiling }}
+            - name: PPROF_BIND_ADDRESS
+              value: ":6060"
+            {{- end }}
             {{ include "dynatrace-operator.modules-json-env" . | nindent 12}}
             {{ include "dynatrace-operator.gomemlimit" .Values.operator | nindent 12 }}
             {{ include "dynatrace-operator.app-version-env" . | nindent 12 }}
