@@ -5,14 +5,18 @@ package operator
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
@@ -22,22 +26,13 @@ const (
 	helmRegistryURL = "oci://public.ecr.aws/dynatrace/dynatrace-operator"
 )
 
-func InstallViaMake(withCSI bool) env.Func {
+// Install the operator chart with the specified tag and CSI mode.
+func Install(releaseTag string, withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		rootDir := project.RootDir()
-		err := execMakeCommand(rootDir, "deploy", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
-		if err != nil {
-			return ctx, err
+		if releaseTag == "" {
+			return ctx, errors.New("missing release tag")
 		}
-		ctx, err = VerifyInstall(ctx, envConfig, withCSI)
-
-		return ctx, err
-	}
-}
-
-func InstallViaHelm(releaseTag string, withCSI bool, namespace string) env.Func {
-	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		err := installViaHelm(releaseTag, withCSI, namespace)
+		err := installViaHelm(releaseTag, withCSI)
 		if err != nil {
 			return ctx, err
 		}
@@ -46,7 +41,19 @@ func InstallViaHelm(releaseTag string, withCSI bool, namespace string) env.Func 
 	}
 }
 
-func UninstallViaMake(withCSI bool) env.Func {
+// InstallLocal deploys the operator helm chart from filesystem.
+func InstallLocal(withCSI bool) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		err := installViaHelm("", withCSI)
+		if err != nil {
+			return ctx, err
+		}
+
+		return VerifyInstall(ctx, envConfig, withCSI)
+	}
+}
+
+func Uninstall(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		rootDir := project.RootDir()
 		if withCSI {
@@ -90,17 +97,17 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 	err := command.Run()
 
 	if len(b.String()) != 0 {
-		fmt.Println("out:", b.String()) //nolint
+		fmt.Println("out:", b.String()) //nolint:forbidigo
 	}
 
 	if len(bErr.String()) != 0 {
-		fmt.Println("err:", bErr.String()) //nolint
+		fmt.Println("err:", bErr.String()) //nolint:forbidigo
 	}
 
 	return err
 }
 
-func installViaHelm(releaseTag string, withCsi bool, namespace string) error {
+func installViaHelm(releaseTag string, withCSI bool) error {
 	manager := helm.New("''")
 
 	_platform, err := platform.NewResolver().GetPlatform()
@@ -108,15 +115,84 @@ func installViaHelm(releaseTag string, withCsi bool, namespace string) error {
 		return err
 	}
 
-	return manager.RunUpgrade(helm.WithNamespace(namespace),
+	opts, err := getHelmOptions(releaseTag, _platform, withCSI)
+	if err != nil {
+		return err
+	}
+
+	var klogLevel klog.Level
+	// Show helm command args and output
+	// Set only fails if the input does not conform to stronv.ParseInt(x, 10, 32)
+	_ = klogLevel.Set("4")
+	defer func() {
+		// Reset to default value to prevent other logs from showing up
+		_ = klogLevel.Set("0")
+	}()
+
+	return manager.RunUpgrade(opts...)
+}
+
+func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
+	opts := []helm.Option{
 		helm.WithReleaseName("dynatrace-operator"),
-		helm.WithArgs(helmRegistryURL),
-		helm.WithVersion(releaseTag),
+		helm.WithNamespace("dynatrace"),
 		helm.WithArgs("--create-namespace"),
 		helm.WithArgs("--install"),
-		helm.WithArgs("--set", fmt.Sprintf("platform=%s", _platform)),
+		helm.WithArgs("--set", fmt.Sprintf("platform=%s", platform)),
 		helm.WithArgs("--set", "installCRD=true"),
-		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCsi)),
+		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),
 		helm.WithArgs("--set", "manifests=true"),
-	)
+		helm.WithArgs("--set", "debugLogs=true"),
+	}
+
+	// Install from registry
+	if releaseTag != "" {
+		return append(opts,
+			helm.WithArgs(helmRegistryURL),
+			helm.WithVersion(releaseTag),
+		), nil
+	}
+
+	// Install nightly
+	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
+		return append(opts, helm.WithArgs(chartURI)), nil
+	}
+
+	// Install from filesystem
+	rootDir := project.RootDir()
+	imageRef, err := getImageRef(rootDir)
+	if err != nil {
+		return nil, err
+	}
+
+	if imageRef == "" {
+		return nil, errors.New("could not determine operator image")
+	}
+
+	return append(opts,
+		helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
+		helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
+	), nil
+}
+
+func getImageRef(rootDir string) (string, error) {
+	command := exec.Command("make", "-C", rootDir, "deploy/show-image-ref")
+	command.Env = os.Environ()
+	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+	command.Stdout = stdout
+	command.Stderr = stderr
+	err := command.Run()
+	if err != nil || stderr.String() != "" {
+		return "", fmt.Errorf("%s: %w", stderr, err)
+	}
+	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	stdout.Reset()
+	for _, line := range lines {
+		// make prints things to stdout, e.g. make[1]: Entering directory
+		if !strings.HasPrefix(line, "make[") {
+			stdout.WriteString(line)
+		}
+	}
+
+	return stdout.String(), nil
 }
