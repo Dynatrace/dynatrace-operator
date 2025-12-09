@@ -185,14 +185,14 @@ jobs:
           # Prepare CSV files
           if [ "${MARKETPLACE}" = "redhat" ]; then
             csv_file="operators/dynatrace-operator-rhmp/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-            python ../.github/scripts/release/csv/make-release-csv.py \
+            python ../.github/scripts/release/csv/make_release_csv.py \
               "${csv_file}" \
               --image "${IMAGE}" \
               --marketplace "${MARKETPLACE}" \
               --isRHCC true
           else
             csv_file="operators/dynatrace-operator/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-            python ../.github/scripts/release/csv/make-release-csv.py \
+            python ../.github/scripts/release/csv/make_release_csv.py \
               "${csv_file}" \
               --image "${IMAGE}" \
               --marketplace "${MARKETPLACE}"
