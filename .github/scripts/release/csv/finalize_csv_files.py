@@ -5,12 +5,6 @@ import datetime
 import yaml
 
 
-def print_usage():
-    print("Usage: finalize_csv_files <platform> <version>")
-    print("\tplatform:\tOne of 'kubernetes' or 'openshift'")
-    print("\tversion:\tVersion string in the form of x.y.z for which the CSV files should be finalized ")
-
-
 def read_yaml(path):
     with open(path, "r") as yaml_file:
         try:

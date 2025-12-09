@@ -15,9 +15,6 @@ def configure_deployment(deployment, image, marketplace):
     containers = deployment["spec"]["template"]["spec"]["containers"]
     for container_index in range(len(containers)):
         containers[container_index]["image"] = image
-    
-    # Setting changed array since I am unsure if python assigns arrays by reference or value
-    deployment["spec"]["template"]["containers"] = containers
 
     if deployment["name"] == "dynatrace-operator":
         formattedMarketplace = "operatorhub" + "-" + marketplace
@@ -49,9 +46,6 @@ if __name__ == "__main__":
         deployments = csv["spec"]["install"]["spec"]["deployments"]
         for deployment_index in range(len(deployments)):
             deployments[deployment_index] = configure_deployment(deployments[deployment_index], image, marketplace)
-
-        # Setting changed array since I am unsure if python assigns arrays by reference or value
-        csv["spec"]["install"]["spec"]["deployments"] = deployments
 
         csv["metadata"]["annotations"]["operators.openshift.io/valid-subscription"] = \
         '[\"Dynatrace Platform Subscription (DPS)\",\"Dynatrace Classic License\"]'
