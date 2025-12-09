@@ -88,6 +88,4 @@ RUN /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
-RUN echo 1
-
 USER ${USER_UID}:${USER_UID}
