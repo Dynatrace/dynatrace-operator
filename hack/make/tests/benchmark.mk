@@ -22,4 +22,4 @@ benchmark/nodes-controller/reconcile:
 	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_Reconcile)
 
 benchmark/nodes-controller/on-delete:
-	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_ReconcileOnDelete)
+	$(call RUN_NODE_CONTROLLER_BENCHMARK,BenchmarkNodesController_OnDelete)
