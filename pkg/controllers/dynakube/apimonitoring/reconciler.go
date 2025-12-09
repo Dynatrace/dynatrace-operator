@@ -24,9 +24,9 @@ type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterL
 
 func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler {
 	return &Reconciler{
-		dtc:                 dtc,
-		dk:                  dk,
-		clusterLabel:        clusterLabel,
+		dtc:          dtc,
+		dk:           dk,
+		clusterLabel: clusterLabel,
 	}
 }
 
