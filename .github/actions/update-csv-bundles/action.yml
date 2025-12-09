@@ -86,15 +86,24 @@ runs:
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+        PLATFORM: openshift
+        CHANNELS: stable
+        DEFAULT_CHANNEL: stable
+        IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
+        OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}
       run: |
-        mkdir -p config/olm/openshift/bases
-        make bundle PLATFORM=openshift VERSION="${VERSION}" CHANNELS=stable DEFAULT_CHANNEL=stable OLM_IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}" IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator"
+        make bundle PLATFORM="${PLATFORM}" VERSION="${VERSION}" CHANNELS="${CHANNELS}" DEFAULT_CHANNEL="${DEFAULT_CHANNEL}" IMAGE="${IMAGE}" OLM_IMAGE="${OLM_IMAGE}"
     - name: Generate OLM bundles (kubernetes)
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
+        PLATFORM: kubernetes
+        CHANNELS: stable
+        DEFAULT_CHANNEL: stable
+        IMAGE: docker.io/dynatrace/dynatrace-operator
+        OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}
       run: |
-        make bundle PLATFORM=kubernetes VERSION="${VERSION}" CHANNELS=stable DEFAULT_CHANNEL=stable IMAGE="docker.io/dynatrace/dynatrace-operator" OLM_IMAGE="docker.io/dynatrace/dynatrace-operator:v${VERSION}"
+        make bundle PLATFORM="${PLATFORM}" VERSION="${VERSION}" CHANNELS="${CHANNELS}" DEFAULT_CHANNEL="${DEFAULT_CHANNEL}" IMAGE="${IMAGE}" OLM_IMAGE="${OLM_IMAGE}"
     - name: Finalize CSV files
       shell: bash
       env:
