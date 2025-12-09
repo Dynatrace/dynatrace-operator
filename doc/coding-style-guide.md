@@ -46,6 +46,8 @@
 - Run the linters locally before opening a PR, it will save you time.
   - There is a pre-commit hook that you can configure via `make prerequisites/setup-pre-commit`
 - Avoid using the `path` package for operations on filesystem paths. Use "path/filepath" package.
+- Apply appropriate [godoc comment formatting](https://go.dev/doc/comment) to ensure that editors can properly display it.
+  Codegen markers should not be part of godoc unless it's not ergonomic to implement (as is the case for most CRD fields).
 
 ## Function Parameter and Return-Value Order
 
