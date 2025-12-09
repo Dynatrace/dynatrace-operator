@@ -87,7 +87,7 @@ runs:
         IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
         OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}
       run: |
-        make bundle PLATFORM="${PLATFORM}" VERSION="${VERSION}" CHANNELS="${CHANNELS}" DEFAULT_CHANNEL="${DEFAULT_CHANNEL}" IMAGE="${IMAGE}" OLM_IMAGE="${OLM_IMAGE}"
+        make bundle
     - name: Generate OLM bundles (kubernetes)
       shell: bash
       env:
@@ -98,7 +98,7 @@ runs:
         IMAGE: docker.io/dynatrace/dynatrace-operator
         OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}
       run: |
-        make bundle PLATFORM="${PLATFORM}" VERSION="${VERSION}" CHANNELS="${CHANNELS}" DEFAULT_CHANNEL="${DEFAULT_CHANNEL}" IMAGE="${IMAGE}" OLM_IMAGE="${OLM_IMAGE}"
+        make bundle
     - name: Finalize CSV files
       shell: bash
       env:
