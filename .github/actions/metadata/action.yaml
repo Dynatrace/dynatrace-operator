@@ -1,0 +1,95 @@
+name: Build image metadata
+description: Builds image metadata
+inputs:
+  platforms:
+    description: The platforms for which the image will be built
+    default: linux/amd64,linux/arm64
+    required: true
+  annotation:
+    description: The annotation added to the built image
+    required: false
+  dockerfile:
+    description: The path to the Dockerfile to be used
+    default: ./Dockerfile
+  images:
+    description: Base names of the image tags
+    required: false
+  suffix:
+    description: Suffix appended to image tags
+    required: false
+outputs:
+  annotations:
+    description: Annotations of the image
+    value: ${{ steps.meta.outputs.annotations }}
+  labels:
+    description: Labels of the image
+    value: ${{ steps.meta.outputs.labels }}
+  tags:
+    description: Tags of the image
+    value: ${{ steps.meta.outputs.tags }}
+  tag-names:
+    description: Tag-names of the image
+    value: ${{ steps.meta.outputs.tag-names }}
+runs:
+  using: "composite"
+  steps:
+    - name: Sanitize names
+      id: sanitize
+      shell: bash
+      run: |
+        # Sanitize names
+
+        ref_name=$(hack/build/ci/sanitize-branch-name.sh "${{ github.ref_name }}")
+        echo "ref_name=${ref_name}" >> $GITHUB_OUTPUT
+        echo "ref_name_without_prefix=${ref_name#v}" >> $GITHUB_OUTPUT
+
+        head_ref=$(hack/build/ci/sanitize-branch-name.sh "${{ github.head_ref }}")
+        echo "head_ref=${head_ref}" >> $GITHUB_OUTPUT
+    - name: Set build date
+      shell: bash
+      id: set-build-date
+      run: |
+        # Set build date
+
+        echo "date=$(date --iso-8601)" >> $GITHUB_OUTPUT
+    - name: Docker metadata
+      uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+      id: meta
+      env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ contains(inputs.platforms, ',') && 'manifest,index' || 'manifest' }}
+      with:
+        images: ${{ inputs.images }}
+        flavor: |
+          # prepend suffixes (like "fips") with a dash
+          suffix=${{ inputs.suffix != '' && format('-{0}', inputs.suffix) || '' }}
+        labels: |
+          # default retention policy
+          quay.expires-after=10d
+
+          # releases and snapshots of the main branch should never expire
+          ${{ ((github.ref_type == 'tag' && startsWith(github.ref_name, 'release-')) || github.ref_name == 'main') && 'quay.expires-after=' }}
+
+          # retention policy for nightly builds
+          ${{ github.event_name == 'schedule' && 'quay.expires-after=14d' }}
+
+          vcs-ref=${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          build-date=${{ steps.set-build-date.outputs.date }}
+        tags: |
+          # PRs
+          type=raw,value=snapshot-${{ steps.sanitize.outputs.head_ref }},enable=${{ github.event_name == 'pull_request' }}
+
+          # main branches (not including nightly builds)
+          type=raw,value=snapshot,enable=${{ github.ref_name == 'main' && github.event_name != 'schedule' }}
+
+          # nightly builds
+          type=raw,value=nightly-${{ steps.set-build-date.outputs.date }},enable=${{ github.event_name == 'schedule' }}
+          type=raw,value=nightly,enable=${{ github.event_name == 'schedule' }}
+
+          # tags
+          type=raw,value=${{ steps.sanitize.outputs.ref_name_without_prefix }},enable=${{ github.ref_type == 'tag' }}
+
+          # all other branches including 'release-*' branches except 'main'
+          type=raw,value=snapshot-${{ steps.sanitize.outputs.ref_name }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
+        annotations: |
+          ${{ inputs.annotation }}
+          version=${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}

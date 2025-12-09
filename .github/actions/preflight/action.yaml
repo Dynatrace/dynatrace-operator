@@ -1,15 +1,13 @@
 name: Preflight
 description: Does the preflight check
 inputs:
-  version:
-    description: The version the image is for
+  platforms:
+    description: The platforms for which the image will be built
+    default: linux/amd64,linux/arm64
     required: true
-  registry:
-    description: The registry where the image is uploaded
-    required: true
-  repository:
-    description: The repository in the registry where the image is uploaded
-    required: true
+  images:
+    description: Base names of the image tags
+    required: false
   report-name:
     description: The name of the output report
     required: true
@@ -27,10 +25,16 @@ inputs:
 runs:
   using: "composite"
   steps:
+  - name: Build image metadata
+    uses: ./.github/actions/metadata
+    id: meta
+    with:
+      platforms: ${{ inputs.platforms }}
+      images: ${{ inputs.images }}
   - name: Run preflight on image
     shell: bash
     env:
-      IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
+      IMAGE_URI: ${{ steps.meta.outputs.tags  }}
       PREFLIGHT_EXECUTABLE: "preflight-linux-amd64"
       PREFLIGHT_LOG: "preflight.log"
       PREFLIGHT_REPORT_NAME: ${{ inputs.report-name }}
