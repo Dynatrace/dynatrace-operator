@@ -62,6 +62,6 @@ roleRef:
   name: dynatrace-telemetry-ingest
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-opentelemetry-collector
+    name: dynatrace-otel-collector
     namespace: {{ .Release.Namespace }}
 {{ end }}
