@@ -1045,8 +1045,8 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 
 	return &apiextensionsv1.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "CustomResourceDefinition",
-			APIVersion: "v1",
+			APIVersion: k8scrd.APIVersion,
+			Kind:       k8scrd.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8scrd.DynaKubeName,
