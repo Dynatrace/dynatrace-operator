@@ -120,7 +120,7 @@ jobs:
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
           suffix: ${{ matrix.image-postfix }}
           dockerfile: ./Dockerfile
-
+          fips: 'true'
   index:
     name: Create image-index
     needs: [detect-changes, prepare, build-images]
