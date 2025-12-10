@@ -52,7 +52,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, d
 	if err != nil {
 		log.Info("failed to retrieve MEs")
 
-		return fmt.Errorf("get kubernetes monitored entity: %w", err)
+		return fmt.Errorf("get kubernetes cluster monitored entity: %w", err)
 	}
 
 	if k8sEntity.ID == "" {
