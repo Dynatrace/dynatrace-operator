@@ -36,12 +36,12 @@ packages:
       Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube:
     interfaces:
-      dtclientReconciler:
+      k8sEntityReconciler:
         config:
           dir: '{{.InterfaceDir}}'
           pkgname: '{{.SrcPackageName}}'
           structname: '{{.Mock}}{{.InterfaceName | camelcase | firstUpper }}'
-          filename: 'mock_{{.InterfaceName | snakecase }}_test.go'
+          filename: 'mock_k8sentity_reconciler_test.go' # snakecase breaks with "k8s"
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     interfaces:
       Reconciler:

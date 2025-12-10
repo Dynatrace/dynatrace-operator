@@ -103,7 +103,7 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
-type dtclientReconciler interface {
+type k8sEntityReconciler interface {
 	Reconcile(ctx context.Context, dtclient dtclient.Client, dk *dynakube.DynaKube) error
 }
 
@@ -114,7 +114,7 @@ type Controller struct {
 	client    client.Client
 	apiReader client.Reader
 
-	k8sEntityReconciler dtclientReconciler
+	k8sEntityReconciler k8sEntityReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
