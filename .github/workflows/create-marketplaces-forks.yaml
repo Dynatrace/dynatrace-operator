@@ -133,9 +133,9 @@ jobs:
           
           # Determine last existing version and set spec.replaces
           if [ "${MARKETPLACE}" = "redhat" ]; then
-            last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator-rhmp/*/ 2>/dev/null)" 2>/dev/null || true)"
+            last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator-rhmp/*/)" 2>/dev/null || true)"
           else
-            last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator/*/ 2>/dev/null)" 2>/dev/null || true)"
+            last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator/*/)" 2>/dev/null || true)"
           fi
           
           csv_file="${operator_dir}/manifests/dynatrace-operator.clusterserviceversion.yaml"
