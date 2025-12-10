@@ -73,6 +73,6 @@ roleRef:
   name: dynatrace-extensions-prometheus
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-opentelemetry-collector
+    name: dynatrace-otel-collector
     namespace: {{ .Release.Namespace }}
 {{ end }}
