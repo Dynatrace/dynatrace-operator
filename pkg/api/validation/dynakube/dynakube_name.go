@@ -70,10 +70,10 @@ func maxNameLengthForSQLExecutor(dk *dynakube.DynaKube) int {
 		infixLen                = len(extensions.SQLExecutorInfix)
 	)
 
-	var maxID int
+	var maxIDLen int
 	for _, db := range dk.Extensions().Databases {
-		maxID = max(maxID, len(db.ID))
+		maxIDLen = max(maxIDLen, len(db.ID))
 	}
 
-	return min(dynakube.MaxNameLength, maxDeploymentNameLength-infixLen-maxID)
+	return min(dynakube.MaxNameLength, maxDeploymentNameLength-infixLen-maxIDLen)
 }
