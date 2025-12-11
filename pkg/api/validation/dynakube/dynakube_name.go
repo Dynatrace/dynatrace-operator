@@ -40,16 +40,24 @@ func nameTooLong(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string 
 	}
 
 	nameLen := len(dk.Name)
+	maxLength := dynakube.MaxNameLength
 
 	if dk.Extensions().IsDatabasesEnabled() {
 		// Pod names are limited to 63 characters and Kubernetes will cut off characters from the owner resource name to ensure that they can be deployed.
-		// Max length for a Deployment to ensure that nothing gets cut off is: 47 (+9 for pod template hash, +5 for random suffix)
-		// To account for DB SQL executor deployment names using the ID (MaxLength=8), add 1 character to the infix length.
-		nameLen += len(extensions.SQLExecutorInfix) + 1
+		// Max length for a Deployment to ensure that nothing gets cut off is: 57 (+5 for random suffix +1 for separating hyphen)
+		const maxDeploymentNameLength = 57
+		const infixLen = len(extensions.SQLExecutorInfix)
+
+		var maxID int
+		for _, db := range dk.Extensions().Databases {
+			maxID = max(maxID, len(db.ID))
+		}
+
+		maxLength = maxDeploymentNameLength - infixLen - maxID
 	}
 
-	if nameLen > dynakube.MaxNameLength {
-		return fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
+	if nameLen > maxLength {
+		return fmt.Sprintf(errorNameTooLong, maxLength)
 	}
 
 	return ""

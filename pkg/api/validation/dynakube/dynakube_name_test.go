@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -32,19 +31,26 @@ func TestNameTooLong(t *testing.T) {
 	type testCase struct {
 		name         string
 		crNameLength int
-		withDBExt    bool
+		idNameLength int
 		allow        bool
 	}
 
 	testCases := []testCase{
-		{"normal length", 10, false, true},
-		{"normal length with DB", 10, true, true},
-		{"max - 1", dynakube.MaxNameLength - 1, false, true},
-		{"max - 1 with DB", dynakube.MaxNameLength - len(extensions.SQLExecutorInfix) - 2, true, true},
-		{"max", dynakube.MaxNameLength, false, true},
-		{"max with DB", dynakube.MaxNameLength - len(extensions.SQLExecutorInfix) - 1, true, true},
-		{"max + 1", dynakube.MaxNameLength + 1, false, false},
-		{"max + 1 with DB", dynakube.MaxNameLength - len(extensions.SQLExecutorInfix), true, false},
+		{"normal length", 10, 0, true},
+		{"max - 1", dynakube.MaxNameLength - 1, 0, true},
+		{"max", dynakube.MaxNameLength, 0, true},
+		{"max + 1", dynakube.MaxNameLength + 1, 0, false},
+		{"normal length with DB", 10, 8, true},
+		{"max - 1 with DB", 24, 8, true},
+		{"max with ID length 1", 32, 1, true},
+		{"max with ID length 2", 31, 2, true},
+		{"max with ID length 3", 30, 3, true},
+		{"max with ID length 4", 29, 4, true},
+		{"max with ID length 5", 28, 5, true},
+		{"max with ID length 6", 27, 6, true},
+		{"max with ID length 7", 26, 7, true},
+		{"max with ID length 8", 25, 8, true},
+		{"max + 1 with DB", 26, 8, false},
 	}
 
 	for _, test := range testCases {
@@ -57,9 +63,9 @@ func TestNameTooLong(t *testing.T) {
 					APIURL: "https://tenantid.doma.in/api",
 				},
 			}
-			if test.withDBExt {
+			if test.idNameLength > 0 {
 				dk.Spec.Extensions = &extensions.Spec{
-					Databases: []extensions.DatabaseSpec{{ID: "test"}},
+					Databases: []extensions.DatabaseSpec{{ID: strings.Repeat("b", test.idNameLength)}},
 				}
 				dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository = "repo"
 				dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag = "tag"
@@ -70,8 +76,7 @@ func TestNameTooLong(t *testing.T) {
 			if test.allow {
 				assertAllowed(t, dk)
 			} else {
-				errorMessage := fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
-				assertDenied(t, []string{errorMessage}, dk)
+				assertDenied(t, []string{"The length limit for the name of a DynaKube is"}, dk)
 			}
 		})
 	}
