@@ -76,10 +76,6 @@ func TestIsLatestVersion(t *testing.T) {
 
 func getTestCRD(name string) *apiextensionsv1.CustomResourceDefinition {
 	return &apiextensionsv1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: APIVersion,
-			Kind:       Kind,
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
