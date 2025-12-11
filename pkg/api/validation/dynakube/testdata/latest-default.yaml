@@ -124,8 +124,6 @@ spec:
     valueFrom: proxy-from
   skipCertCheck: true
   templates:
-    databaseExecutor:
-      imageRef: {}
     extensionExecutionController:
       annotations:
         eec-annotation-key1: eec-annotation-value1
@@ -262,6 +260,8 @@ spec:
       - maxSkew: 1
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: ScheduleAnyway
+    sqlExtensionExecutor:
+      imageRef: {}
   tokens: token
   trustedCAs: trusted-ca
 status:

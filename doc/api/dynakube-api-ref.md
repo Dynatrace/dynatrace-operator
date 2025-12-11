@@ -145,12 +145,6 @@
 |`namespaceSelector`||-|object|
 |`overrideEnvVars`||-|boolean|
 
-### .spec.templates.databaseExecutor
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`tolerations`||-|array|
-
 ### .spec.oneAgent.cloudNativeFullStack
 
 |Parameter|Description|Default value|Data type|
@@ -194,6 +188,12 @@
 |`namespaceSelector`||-|object|
 |`version`||-|string|
 
+### .spec.templates.sqlExtensionExecutor
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`tolerations`||-|array|
+
 ### .spec.templates.logMonitoring.imageRef
 
 |Parameter|Description|Default value|Data type|
@@ -216,13 +216,6 @@
 |`metrics`||-|object|
 |`traces`||-|object|
 
-### .spec.templates.databaseExecutor.imageRef
-
-|Parameter|Description|Default value|Data type|
-|:-|:-|:-|:-|
-|`repository`||-|string|
-|`tag`||-|string|
-
 ### .spec.templates.extensionExecutionController
 
 |Parameter|Description|Default value|Data type|
@@ -236,6 +229,13 @@
 |`tolerations`||-|array|
 |`topologySpreadConstraints`||-|array|
 |`useEphemeralVolume`||-|boolean|
+
+### .spec.templates.sqlExtensionExecutor.imageRef
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`repository`||-|string|
+|`tag`||-|string|
 
 ### .spec.templates.kspmNodeConfigurationCollector
 

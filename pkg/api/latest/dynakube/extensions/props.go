@@ -4,7 +4,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 )
 
-const SQLExecutorInfix = "-sql-extension-executor-"
+const SQLExecutorInfix = "-sql-ext-exec-"
 
 func (e *Extensions) SetName(name string) {
 	e.name = name
