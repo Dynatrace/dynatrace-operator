@@ -16,15 +16,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 const (
 	testDynakubeName = "test-dynakube"
 	testNamespace    = "test-namespace"
-	secretName       = testDynakubeName + activegate.AuthTokenSecretSuffix
 	testToken        = "dt.testtoken.test"
 )
 
@@ -33,6 +30,8 @@ var (
 		TokenID: "test",
 		Token:   "dt.some.valuegoeshere",
 	}
+
+	anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 )
 
 func newDynaKube() *dynakube.DynaKube {
@@ -52,38 +51,20 @@ func newDynaKube() *dynakube.DynaKube {
 	}
 }
 
-func newTestReconciler(t *testing.T, client client.Client, dk *dynakube.DynaKube) *Reconciler {
-	dtc := dtclientmock.NewClient(t)
-	dtc.On("GetActiveGateAuthToken", mock.AnythingOfType("context.backgroundCtx"), mock.Anything).Return(testAgAuthTokenResponse, nil)
-
-	r := NewReconciler(client, client, dk, dtc)
-
-	return r
-}
-
-func clientCreateWithTimestamp() func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-	return func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-		obj.SetCreationTimestamp(metav1.Time{Time: time.Now()})
-
-		return client.Create(ctx, obj, opts...)
-	}
-}
-
 func TestReconcile(t *testing.T) {
-	interceptorFuncs := interceptor.Funcs{
-		Create: clientCreateWithTimestamp(),
-	}
-
 	t.Run("reconcile auth token for first time", func(t *testing.T) {
 		dk := newDynaKube()
 
 		clt := fake.NewClientBuilder().Build()
 
-		r := newTestReconciler(t, clt, dk)
-		err := r.Reconcile(context.Background())
+		dtc := dtclientmock.NewClient(t)
+		dtc.EXPECT().GetActiveGateAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
+		r := NewReconciler(clt, clt, dk, dtc)
+
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		authToken, err := r.secrets.Get(context.Background(), types.NamespacedName{
+		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})
@@ -98,12 +79,14 @@ func TestReconcile(t *testing.T) {
 	t.Run("reconcile outdated auth token", func(t *testing.T) {
 		dk := newDynaKube()
 
-		clt := interceptor.NewClient(fake.NewClientBuilder().Build(), interceptorFuncs)
+		clt := fake.NewClientBuilder().Build()
 
-		r := newTestReconciler(t, clt, dk)
+		dtc := dtclientmock.NewClient(t)
+		dtc.EXPECT().GetActiveGateAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Twice()
+		r := NewReconciler(clt, clt, dk, dtc)
 
 		// create secret
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
@@ -111,7 +94,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		firstTransition := condition.LastTransitionTime
 
-		authToken, err := r.secrets.Get(context.Background(), types.NamespacedName{
+		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})
@@ -122,7 +105,7 @@ func TestReconcile(t *testing.T) {
 		authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
 		// time.Round is called because client.Update(secret)->json.Marshall(secret) rounds CreationTimestamp to seconds
 		authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(-5 * time.Second)}
-		err = r.secrets.Update(context.Background(), authToken)
+		err = r.secrets.Update(t.Context(), authToken)
 		require.NoError(t, err)
 
 		firstCreationTimestamp := authToken.CreationTimestamp
@@ -131,7 +114,7 @@ func TestReconcile(t *testing.T) {
 		time.Sleep(1 * time.Second)
 
 		// update secret
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
@@ -139,7 +122,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
 
-		authToken, err = r.secrets.Get(context.Background(), types.NamespacedName{
+		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})
@@ -155,12 +138,14 @@ func TestReconcile(t *testing.T) {
 	t.Run("reconcile valid auth token", func(t *testing.T) {
 		dk := newDynaKube()
 
-		clt := interceptor.NewClient(fake.NewClientBuilder().Build(), interceptorFuncs)
+		clt := fake.NewClientBuilder().Build()
 
-		r := newTestReconciler(t, clt, dk)
+		dtc := dtclientmock.NewClient(t)
+		dtc.EXPECT().GetActiveGateAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
+		r := NewReconciler(clt, clt, dk, dtc)
 
 		// create secret
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
@@ -168,7 +153,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		firstTransition := condition.LastTransitionTime
 
-		authToken, err := r.secrets.Get(context.Background(), types.NamespacedName{
+		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})
@@ -180,7 +165,7 @@ func TestReconcile(t *testing.T) {
 		authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
 		// time.Round is called because client.Update(secret)->json.Marshall(secret) rounds CreationTimestamp to seconds
 		authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(1 * time.Minute)}
-		err = r.secrets.Update(context.Background(), authToken)
+		err = r.secrets.Update(t.Context(), authToken)
 		require.NoError(t, err)
 
 		firstCreationTimestamp := authToken.CreationTimestamp
@@ -189,7 +174,7 @@ func TestReconcile(t *testing.T) {
 		time.Sleep(1 * time.Second)
 
 		// do not update secret
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
@@ -197,7 +182,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
 
-		authToken, err = r.secrets.Get(context.Background(), types.NamespacedName{
+		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
 			Namespace: r.dk.Namespace,
 			Name:      r.dk.ActiveGate().GetAuthTokenSecretName(),
 		})

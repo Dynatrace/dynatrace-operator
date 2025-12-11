@@ -8,6 +8,7 @@ import (
 )
 
 // +kubebuilder:object:generate=true
+
 type Status struct {
 	status.VersionStatus `json:",inline"`
 
@@ -28,6 +29,7 @@ type Status struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type Instance struct {
 	// Name of the OneAgent pod
 	PodName string `json:"podName,omitempty"`
@@ -37,6 +39,7 @@ type Instance struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type ConnectionInfoStatus struct {
 	// Information for communicating with the tenant
 	communication.ConnectionInfo `json:",inline"`
@@ -46,6 +49,7 @@ type ConnectionInfoStatus struct {
 }
 
 // +kubebuilder:object:generate=true
+
 type CommunicationHostStatus struct {
 	// Connection protocol
 	Protocol string `json:"protocol,omitempty"`

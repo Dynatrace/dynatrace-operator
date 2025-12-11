@@ -11,57 +11,48 @@ package k8sentity
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 )
 
 type Reconciler struct {
-	dk           *dynakube.DynaKube
-	dtClient     dynatrace.Client
 	timeProvider *timeprovider.Provider
 }
 
-type ReconcilerBuilder func(dtClient dynatrace.Client, dk *dynakube.DynaKube) controllers.Reconciler
-
-func NewReconciler( //nolint
-	dtClient dynatrace.Client,
-	dk *dynakube.DynaKube,
-) controllers.Reconciler {
+func NewReconciler() *Reconciler {
 	return &Reconciler{
-		dk:           dk,
-		dtClient:     dtClient,
 		timeProvider: timeprovider.New(),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling Kubernetes Cluster MEID")
 
-	if !conditions.IsOutdated(r.timeProvider, r.dk, meIDConditionType) {
+	if !conditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
 		log.Info("Kubernetes Cluster MEID not outdated, skipping reconciliation")
 
 		return nil
 	}
 
-	conditions.SetStatusOutdated(r.dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
+	conditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
 
-	if !conditions.IsOptionalScopeAvailable(r.dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
+	if !conditions.IsOptionalScopeAvailable(dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
 		msg := dynatrace.TokenScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
-		conditions.SetOptionalScopeMissing(r.dk.Conditions(), meIDConditionType, msg)
+		conditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
 
 		return nil
 	}
 
-	k8sEntity, err := r.dtClient.GetK8sClusterME(ctx, r.dk.Status.KubeSystemUUID)
+	k8sEntity, err := dtClient.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
 	if err != nil {
 		log.Info("failed to retrieve MEs")
 
-		return err
+		return fmt.Errorf("get kubernetes cluster monitored entity: %w", err)
 	}
 
 	if k8sEntity.ID == "" {
@@ -70,11 +61,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	r.dk.Status.KubernetesClusterMEID = k8sEntity.ID
-	r.dk.Status.KubernetesClusterName = k8sEntity.Name
-	conditions.SetStatusUpdated(r.dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is up to date")
+	dk.Status.KubernetesClusterMEID = k8sEntity.ID
+	dk.Status.KubernetesClusterName = k8sEntity.Name
+	conditions.SetStatusUpdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is up to date")
 
-	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", r.dk.Status.KubernetesClusterMEID)
+	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", dk.Status.KubernetesClusterMEID)
 
 	return nil
 }

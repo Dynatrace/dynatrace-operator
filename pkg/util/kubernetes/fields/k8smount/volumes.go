@@ -36,3 +36,17 @@ func Contains(mounts []corev1.VolumeMount, volumeName string) bool {
 
 	return false
 }
+
+// Append will return a new slice with the provided volume mounts appended to the existing slice.
+// If a volume mount with the same mount path already exists, it will be skipped.
+// It doesn't check for the volume name to be unique, as the volume name can be different for the same mount path,
+// also the volume name can be repeated to mount different parts of the same volume into different paths.
+func Append(mounts []corev1.VolumeMount, vm ...corev1.VolumeMount) []corev1.VolumeMount {
+	for _, v := range vm {
+		if !ContainsPath(mounts, v.MountPath) {
+			mounts = append(mounts, v)
+		}
+	}
+
+	return mounts
+}

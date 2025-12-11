@@ -33,7 +33,7 @@ const (
 	latestActiveGateVersion = "1.2.3.4-56"
 )
 
-var mockCtx = mock.MatchedBy(func(context.Context) bool { return true })
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestReconcile(t *testing.T) {
 	ctx := t.Context()
@@ -55,7 +55,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetLatestActiveGateVersion(mockCtx, mock.Anything).Return("", errors.New("Something wrong happened"))
+		mockClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return("", errors.New("Something wrong happened"))
 
 		versionReconciler := reconciler{
 			dtClient:     mockClient,
@@ -380,21 +380,21 @@ func createTestPullSecret(fakeClient client.Client, dk dynakube.DynaKube) error 
 }
 
 func mockActiveGateImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.EXPECT().GetLatestActiveGateImage(mockCtx).Return(&imageInfo, nil).Once()
+	mockClient.EXPECT().GetLatestActiveGateImage(anyCtx).Return(&imageInfo, nil).Once()
 }
 
 func mockCodeModulesImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.EXPECT().GetLatestCodeModulesImage(mockCtx).Return(&imageInfo, nil).Once()
+	mockClient.EXPECT().GetLatestCodeModulesImage(anyCtx).Return(&imageInfo, nil).Once()
 }
 
 func mockOneAgentImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.EXPECT().GetLatestOneAgentImage(mockCtx).Return(&imageInfo, nil).Once()
+	mockClient.EXPECT().GetLatestOneAgentImage(anyCtx).Return(&imageInfo, nil).Once()
 }
 
 func mockLatestAgentVersion(mockClient *dtclientmock.Client, latestVersion string, expectedCalls int) {
-	mockClient.EXPECT().GetLatestAgentVersion(mockCtx, mock.Anything, mock.Anything).Return(latestVersion, nil).Times(expectedCalls)
+	mockClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.Anything, mock.Anything).Return(latestVersion, nil).Times(expectedCalls)
 }
 
 func mockLatestActiveGateVersion(mockClient *dtclientmock.Client, latestVersion string) {
-	mockClient.EXPECT().GetLatestActiveGateVersion(mockCtx, mock.Anything).Return(latestVersion, nil).Once()
+	mockClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return(latestVersion, nil).Once()
 }

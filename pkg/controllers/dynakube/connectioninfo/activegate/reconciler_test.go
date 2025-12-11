@@ -35,8 +35,10 @@ const (
 	testOutdated        = "outdated"
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("cleanup when activegate is not needed", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -65,7 +67,7 @@ func TestReconcile(t *testing.T) {
 		dk := getTestDynakube()
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
+		dtc.EXPECT().GetActiveGateConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk)
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
@@ -90,7 +92,7 @@ func TestReconcile(t *testing.T) {
 		dk := getTestDynakube()
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
+		dtc.EXPECT().GetActiveGateConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk, buildActiveGateSecret(*dk, testTenantUUID))
 		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{
@@ -98,9 +100,8 @@ func TestReconcile(t *testing.T) {
 			Endpoints:  testOutdated,
 		}
 
-		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		rec := r.(*reconciler)
-		rec.timeProvider.Set(rec.timeProvider.Now().Add(time.Minute * 20))
+		r := NewReconciler(fakeClient, fakeClient, dtc, dk).(*reconciler)
+		r.timeProvider.Set(r.timeProvider.Now().Add(time.Minute * 20))
 
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
@@ -125,7 +126,7 @@ func TestReconcile(t *testing.T) {
 		dk := getTestDynakube()
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil)
+		dtc.EXPECT().GetActiveGateConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk)
 
@@ -153,13 +154,13 @@ func TestReconcile(t *testing.T) {
 	t.Run("ActiveGate connection info error shown in conditions", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
-			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 				return errors.New("BOOM")
 			},
 		})
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetActiveGateConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestActiveGateConnectionInfo(), nil).Maybe()
+		dtc.EXPECT().GetActiveGateConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)

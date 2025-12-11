@@ -63,11 +63,11 @@ func (req *BaseRequest) PodName() string {
 }
 
 func (req *BaseRequest) IsSplitMountsEnabled() bool {
-	if value, found := req.Pod.Annotations[InjectionSplitMounts]; found && strings.ToLower(value) == "true" {
+	if value, found := req.Pod.Annotations[AnnotationInjectionSplitMounts]; found && strings.ToLower(value) == "true" {
 		return true
 	}
 
-	return false
+	return req.DynaKube.OneAgent().IsClassicFullStackMode()
 }
 
 func (req *BaseRequest) NewContainers(isInjected func(corev1.Container, *BaseRequest) bool) (newContainers []*corev1.Container) {

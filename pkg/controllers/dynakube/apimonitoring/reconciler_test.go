@@ -13,7 +13,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -27,28 +26,24 @@ const (
 	testMEID     = "test-MEID"
 )
 
-var mockCtx = mock.MatchedBy(func(context.Context) bool { return true })
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 type testReconciler struct {
 	Reconciler
 
-	dtClient  *dtclientmock.Client
-	k8sEntity *controllermock.Reconciler
+	dtClient *dtclientmock.Client
 }
 
 func newTestReconciler(t *testing.T, dk *dynakube.DynaKube) *testReconciler {
 	dtClient := dtclientmock.NewClient(t)
-	k8sEntity := controllermock.NewReconciler(t)
 
 	return &testReconciler{
 		Reconciler: Reconciler{
-			dtc:                 dtClient,
-			dk:                  dk,
-			k8sEntityReconciler: k8sEntity,
-			clusterLabel:        testName,
+			dtc:          dtClient,
+			dk:           dk,
+			clusterLabel: testName,
 		},
-		dtClient:  dtClient,
-		k8sEntity: k8sEntity,
+		dtClient: dtClient,
 	}
 }
 
@@ -61,12 +56,11 @@ func createMonitoredEntities() dtclient.K8sClusterME {
 func TestReconcile(t *testing.T) {
 	t.Run("create setting when no settings for the found monitored entities are existing", func(t *testing.T) {
 		r := newTestReconciler(t, newDynaKube())
-		r.k8sEntity.EXPECT().Reconcile(mockCtx).Return(nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
 			Return(dtclient.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(mockCtx, testName, testUID, testMEID).
+			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, testMEID).
 			Return(testObjectID, nil).Once()
 
 		actual, err := r.createObjectIDIfNotExists(t.Context())
@@ -76,12 +70,11 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("don't create setting when settings for the found monitored entities are existing", func(t *testing.T) {
 		r := newTestReconciler(t, newDynaKube())
-		r.k8sEntity.EXPECT().Reconcile(mockCtx).Return(nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
 			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
 			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
 
 		actual, err := r.createObjectIDIfNotExists(t.Context())
@@ -109,12 +102,11 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("app-transition schema not found", func(t *testing.T) {
 		r := newTestReconciler(t, newDynaKube())
-		r.k8sEntity.EXPECT().Reconcile(mockCtx).Return(nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
 			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
 			Return(dtclient.GetSettingsResponse{}, dtclient.ServerError{Code: 404}).Once()
 
 		err := r.Reconcile(t.Context())
@@ -125,12 +117,11 @@ func TestReconcile(t *testing.T) {
 		dk := newDynaKube()
 		dk.Status.KubernetesClusterMEID = ""
 		r := newTestReconciler(t, dk)
-		r.k8sEntity.EXPECT().Reconcile(mockCtx).Return(nil).Twice()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{}, dtclient.KubernetesSettingsSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{}, dtclient.KubernetesSettingsSchemaID).
 			Return(dtclient.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(mockCtx, testName, testUID, "").
+			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, "").
 			Return(testObjectID, nil).Once()
 
 		actual, err := r.createObjectIDIfNotExists(t.Context())
@@ -155,9 +146,8 @@ func TestReconcileErrors(t *testing.T) {
 		expectErr := errors.New("could not get settings for monitored entities")
 
 		r := newTestReconciler(t, newDynaKube())
-		r.k8sEntity.EXPECT().Reconcile(mockCtx).Return(nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
 			Return(dtclient.GetSettingsResponse{}, expectErr).Once()
 
 		actual, err := r.createObjectIDIfNotExists(t.Context())
@@ -170,12 +160,11 @@ func TestReconcileErrors(t *testing.T) {
 		expectErr := errors.New("could not create kubernetes setting")
 
 		r := newTestReconciler(t, newDynaKube())
-		r.k8sEntity.EXPECT().Reconcile(mockCtx).Return(nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
 			Return(dtclient.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(mockCtx, testName, testUID, testMEID).
+			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, testMEID).
 			Return("", expectErr).Once()
 
 		actual, err := r.createObjectIDIfNotExists(t.Context())
@@ -188,15 +177,14 @@ func TestReconcileErrors(t *testing.T) {
 		expectErr := errors.New("could not create monitored entity")
 
 		r := newTestReconciler(t, newDynaKube())
-		r.k8sEntity.EXPECT().Reconcile(mockCtx).Return(nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
 			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
 			Return(dtclient.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
-			CreateOrUpdateKubernetesAppSetting(mockCtx, testMEID).
+			CreateOrUpdateKubernetesAppSetting(anyCtx, testMEID).
 			Return("", expectErr).Once()
 
 		actual, err := r.createObjectIDIfNotExists(t.Context())
@@ -210,7 +198,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 	t.Run("don't create app setting due to empty MonitoredEntitys", func(t *testing.T) {
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{}, dtclient.AppTransitionSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{}, dtclient.AppTransitionSchemaID).
 			Return(dtclient.GetSettingsResponse{}, nil).Once()
 
 		err := r.handleKubernetesAppEnabled(t.Context(), dtclient.K8sClusterME{})
@@ -221,7 +209,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		entity := createMonitoredEntities()
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, entity, dtclient.AppTransitionSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, entity, dtclient.AppTransitionSchemaID).
 			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
 
 		err := r.handleKubernetesAppEnabled(t.Context(), entity)
@@ -233,7 +221,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, dtclient.K8sClusterME{}, dtclient.AppTransitionSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{}, dtclient.AppTransitionSchemaID).
 			Return(dtclient.GetSettingsResponse{}, expectErr).Once()
 
 		err := r.handleKubernetesAppEnabled(t.Context(), dtclient.K8sClusterME{})
@@ -246,10 +234,10 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		entity := createMonitoredEntities()
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, entity, dtclient.AppTransitionSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, entity, dtclient.AppTransitionSchemaID).
 			Return(dtclient.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
-			CreateOrUpdateKubernetesAppSetting(mockCtx, entity.ID).
+			CreateOrUpdateKubernetesAppSetting(anyCtx, entity.ID).
 			Return("", expectErr).Once()
 
 		err := r.handleKubernetesAppEnabled(t.Context(), entity)
@@ -260,10 +248,10 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		entity := createMonitoredEntities()
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(mockCtx, entity, dtclient.AppTransitionSchemaID).
+			GetSettingsForMonitoredEntity(anyCtx, entity, dtclient.AppTransitionSchemaID).
 			Return(dtclient.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
-			CreateOrUpdateKubernetesAppSetting(mockCtx, entity.ID).
+			CreateOrUpdateKubernetesAppSetting(anyCtx, entity.ID).
 			Return("test", nil).Once()
 
 		err := r.handleKubernetesAppEnabled(t.Context(), entity)
