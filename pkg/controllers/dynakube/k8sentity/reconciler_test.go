@@ -17,17 +17,17 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
+func TestReconcile(t *testing.T) {
 	t.Run("no error + no run if no scope in status", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
 		dk := createDynaKube()
 		dk.Status.Conditions = []metav1.Condition{}
 
-		reconciler := NewReconciler(clt, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(t.Context(), clt, dk)
 
 		require.NoError(t, err)
 		require.Empty(t, dk.Status.KubernetesClusterMEID)
@@ -40,36 +40,36 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("no error if has valid kube system uuid", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetK8sClusterME",
-			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil)
+		clt.EXPECT().
+			GetK8sClusterME(anyCtx, "kube-system-uuid").
+			Return(dtclient.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil).Once()
 
 		dk := createDynaKube()
 
-		reconciler := NewReconciler(clt, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(t.Context(), clt, dk)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, dk.Status.KubernetesClusterMEID)
 	})
 	t.Run("no error if no MEs are found", func(t *testing.T) {
 		clt := dtclientmock.NewClient(t)
-		clt.On("GetK8sClusterME",
-			mock.AnythingOfType("context.backgroundCtx"), "kube-system-uuid").Return(dtclient.K8sClusterME{}, nil)
+		clt.EXPECT().GetK8sClusterME(anyCtx, "kube-system-uuid").Return(dtclient.K8sClusterME{}, nil)
 
 		dk := createDynaKube()
 
-		reconciler := NewReconciler(clt, &dk)
+		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(t.Context(), clt, dk)
 
 		require.NoError(t, err)
 		require.Empty(t, dk.Status.KubernetesClusterMEID)
 	})
 }
 
-func createDynaKube() dynakube.DynaKube {
-	return dynakube.DynaKube{
+func createDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-dk",
 		},
