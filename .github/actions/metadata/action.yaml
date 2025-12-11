@@ -38,7 +38,6 @@ runs:
       shell: bash
       run: |
         # Sanitize names
-
         ref_name=$(hack/build/ci/sanitize-branch-name.sh "${{ github.ref_name }}")
         echo "ref_name=${ref_name}" >> $GITHUB_OUTPUT
         echo "ref_name_without_prefix=${ref_name#v}" >> $GITHUB_OUTPUT
@@ -50,7 +49,6 @@ runs:
       id: set-build-date
       run: |
         # Set build date
-
         echo "date=$(date --iso-8601)" >> $GITHUB_OUTPUT
     - name: Docker metadata
       uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
@@ -86,7 +84,7 @@ runs:
           type=raw,value=nightly,enable=${{ github.event_name == 'schedule' }}
 
           # tags
-          type=raw,value=${{ steps.sanitize.outputs.ref_name_without_prefix }},enable=${{ github.ref_type == 'tag' }}
+          type=raw,value=${{ steps.sanitize.outputs.ref_name }},enable=${{ github.ref_type == 'tag' }}
 
           # all other branches including 'release-*' branches except 'main'
           type=raw,value=snapshot-${{ steps.sanitize.outputs.ref_name }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
