@@ -38,10 +38,7 @@ packages:
     interfaces:
       k8sEntityReconciler:
         config:
-          dir: '{{.InterfaceDir}}'
-          pkgname: '{{.SrcPackageName}}'
-          structname: '{{.Mock}}{{.InterfaceName | camelcase | firstUpper }}'
-          filename: 'mock_k8sentity_reconciler_test.go' # snakecase breaks with "k8s"
+          structname: '{{ .InterfaceName | firstUpper }}'
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     interfaces:
       Reconciler:
