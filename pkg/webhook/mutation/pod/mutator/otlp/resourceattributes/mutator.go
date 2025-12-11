@@ -7,7 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/workload"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -39,20 +41,20 @@ func (Mutator) IsInjected(_ *dtwebhook.BaseRequest) bool {
 }
 
 func (m *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
-	_ = m.mutate(request.Context, request.BaseRequest)
+	_, err := m.mutate(request.Context, request.BaseRequest)
 
-	return nil
+	return err
 }
 
 func (m *Mutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
 	log.Debug("reinvocation of OTLP resource attribute mutator", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	mutated := m.mutate(context.Background(), request.BaseRequest)
+	mutated, _ := m.mutate(context.Background(), request.BaseRequest)
 
 	return mutated
 }
 
-func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bool {
+func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (bool, error) {
 	mutated := false
 
 	log.Debug("injecting OTLP resource Attributes")
@@ -60,9 +62,15 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 	// fetch workload information once per pod
 	ownerInfo, err := workload.FindRootOwnerOfPod(ctx, m.kubeClient, *request, log)
 	if err != nil {
-		// log error but continue (best effort)
 		log.Error(err, "failed to get workload info", "podName", request.PodName(), "namespace", request.Namespace.Name)
+
+		return false, dtwebhook.MutatorError{
+			Err:      errors.WithStack(err),
+			Annotate: setNotInjectedAnnotationFunc(metadata.OwnerLookupFailedReason),
+		}
 	}
+
+	annotationAttributes := SanitizeMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
@@ -71,18 +79,22 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) bo
 			continue
 		}
 
-		if m.addResourceAttributes(request, c, ownerInfo) {
-			mutated = true
-		}
+		mutated = m.addResourceAttributes(request, c, ownerInfo, annotationAttributes) || mutated
 	}
 
-	return mutated
+	return mutated, nil
 }
 
-func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info) bool {
-	var mutated bool
+func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev1.Container, ownerInfo *workload.Info, annotationAttributes Attributes) bool {
+	// order of precedence as in metadata webhook (lowest to highest):
+	// 1. workload
+	// 2. namespace
+	// 3. container
+	// 4. pod
+	// 5. exsting OTEL_RESOURCE_ATTRIBUTES env var
 
-	existingAttributes, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
+	// existing attributes have the highes precedence, they are the base
+	attributes, ok := NewAttributesFromEnv(c.Env, OTELResourceAttributesEnv)
 	if ok {
 		// delete existing env var to add again as last step (to ensure it is at the end of the list because of referenced env vars)
 		c.Env = slices.DeleteFunc(c.Env, func(e corev1.EnvVar) bool {
@@ -90,10 +102,10 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		})
 	}
 
-	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
-	envVarSourcesAdded := ensureEnvVarSourcesSet(c)
+	// add Attributes from annotations
+	mutated := attributes.Merge(annotationAttributes)
 
-	attributesToAdd := Attributes{
+	kubernetesMetaDataAttributes := Attributes{
 		"k8s.namespace.name":           request.Pod.Namespace,
 		"k8s.cluster.uid":              request.DynaKube.Status.KubeSystemUUID,
 		"dt.kubernetes.cluster.id":     request.DynaKube.Status.KubeSystemUUID,
@@ -107,27 +119,31 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 
 	// add workload Attributes (only once fetched per pod, but appended per container to env var if not already present)
 	if ownerInfo != nil {
-		workloadAttributesToAdd := Attributes{
-			"k8s.workload.kind":           ownerInfo.Kind,
-			"dt.kubernetes.workload.kind": ownerInfo.Kind,
-			"k8s.workload.name":           ownerInfo.Name,
-			"dt.kubernetes.workload.name": ownerInfo.Name,
-		}
-		_ = attributesToAdd.Merge(workloadAttributesToAdd)
+		_ = kubernetesMetaDataAttributes.Merge(Attributes{
+			"k8s.workload.kind":                ownerInfo.Kind,
+			"k8s.workload.name":                ownerInfo.Name,
+			metadata.DeprecatedWorkloadNameKey: ownerInfo.Name,
+			metadata.DeprecatedWorkloadKindKey: ownerInfo.Kind,
+		})
 	}
-	// add Attributes from annotations - these have the highest precedence, i.e. users can potentially overwrite the above Attributes
-	attributesFromAnnotations := NewAttributesFromMap(request.Pod.Annotations)
-	_ = attributesFromAnnotations.Merge(attributesToAdd)
 
-	mutated = existingAttributes.Merge(attributesFromAnnotations)
+	// add standard kubernetes metadata attributes
+	mutated = attributes.Merge(kubernetesMetaDataAttributes) || mutated
 
-	finalValue := existingAttributes.String()
+	// ensure the container env vars for POD_NAME, POD_UID, and NODE_NAME are set
+	mutated = ensureEnvVarSourcesSet(c) || mutated
+
+	finalValue := attributes.String()
+
+	if mutated {
+		metadata.SetWorkloadAnnotations(request.Pod, ownerInfo)
+	}
 
 	if finalValue != "" {
 		c.Env = append(c.Env, corev1.EnvVar{Name: OTELResourceAttributesEnv, Value: finalValue})
 	}
 
-	return envVarSourcesAdded || mutated
+	return mutated
 }
 
 func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container) bool {
@@ -166,4 +182,15 @@ func ensureEnvVarSourcesSet(c *corev1.Container) bool {
 	}
 
 	return mutated
+}
+
+func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+
+		pod.Annotations[dtwebhook.AnnotationOTLPInjected] = "false"
+		pod.Annotations[dtwebhook.AnnotationOTLPReason] = reason
+	}
 }

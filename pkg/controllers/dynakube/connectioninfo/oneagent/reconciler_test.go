@@ -35,8 +35,21 @@ const (
 	testOutdated        = "outdated"
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
+
+	assertCondition := func(t *testing.T, dk *dynakube.DynaKube, status metav1.ConditionStatus, reason string, message ...string) {
+		t.Helper()
+		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, status, condition.Status)
+		assert.Equal(t, reason, condition.Reason)
+		if message != nil {
+			assert.Equal(t, message[0], condition.Message)
+		}
+	}
 
 	t.Run("cleanup when oneagent is not needed", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -82,7 +95,7 @@ func TestReconcile(t *testing.T) {
 
 		fakeClient := fake.NewClient(dk)
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
+		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
@@ -91,43 +104,38 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 		require.NotNil(t, condition)
+		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason)
 	})
 
 	t.Run("set correct condition on dynatrace-client error", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient()
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(dtclient.OneAgentConnectionInfo{}, errors.New("BOOM"))
+		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(dtclient.OneAgentConnectionInfo{}, errors.New("BOOM")).Once()
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assertCondition(t, dk, metav1.ConditionFalse, conditions.DynatraceAPIErrorReason)
 	})
 
 	t.Run("set correct condition on kube-client error", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := createFailK8sClient()
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
+		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assertCondition(t, dk, metav1.ConditionFalse, conditions.KubeAPIErrorReason)
 	})
 
 	t.Run("store OneAgent connection info to DynaKube status + create secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
+		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
@@ -145,16 +153,13 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason)
 	})
 	t.Run("update OneAgent connection info + secret", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
+		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
@@ -179,11 +184,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.NotEqual(t, "testing", condition.Message)
+		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason, dk.OneAgent().GetTenantSecret()+" created")
 	})
 	t.Run("do not update OneAgent connection info within timeout", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -210,17 +211,13 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testOutdated), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, "testing created", condition.Message)
+		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason, "testing created")
 	})
 	t.Run("update OneAgent connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
+		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
@@ -242,18 +239,14 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.NotEqual(t, "testing", condition.Message)
+		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason, dk.OneAgent().GetTenantSecret()+" created")
 	})
 
 	t.Run("update OneAgent connection info in case conditions is in 'False' state ", func(t *testing.T) {
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(getTestOneAgentConnectionInfo(), nil)
+		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
 		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
 			ConnectionInfo: communication.ConnectionInfo{
@@ -275,16 +268,13 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason)
 	})
 }
 
 func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
-	ctx := context.Background()
-	dk := dynakube.DynaKube{
+	ctx := t.Context()
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
@@ -297,7 +287,7 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 	}
 
 	dtc := dtclientmock.NewClient(t)
-	dtc.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(dtclient.OneAgentConnectionInfo{
+	dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(dtclient.OneAgentConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
@@ -306,9 +296,9 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 		CommunicationHosts: nil,
 	}, nil)
 
-	fakeClient := fake.NewClient(&dk)
+	fakeClient := fake.NewClient(dk)
 
-	r := NewReconciler(fakeClient, fakeClient, dtc, &dk)
+	r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 	err := r.Reconcile(ctx)
 	require.ErrorIs(t, err, NoOneAgentCommunicationHostsError)
 
@@ -389,16 +379,16 @@ func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
 
 func createFailK8sClient() client.Client {
 	boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
-		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+		Create: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.CreateOption) error {
 			return errors.New("BOOM")
 		},
-		Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+		Delete: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.DeleteOption) error {
 			return errors.New("BOOM")
 		},
-		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+		Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
 			return errors.New("BOOM")
 		},
-		Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+		Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 			return errors.New("BOOM")
 		},
 	})

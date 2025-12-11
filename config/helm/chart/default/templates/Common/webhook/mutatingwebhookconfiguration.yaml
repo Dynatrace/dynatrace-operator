@@ -37,7 +37,7 @@ webhooks:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
         path: /inject
-    admissionReviewVersions: [ "v1beta1", "v1" ]
+    admissionReviewVersions: [ "v1" ]
     sideEffects: None
   - name: webhook.ns.dynatrace.com
     reinvocationPolicy: IfNeeded
@@ -54,5 +54,5 @@ webhooks:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
         path: /label-ns
-    admissionReviewVersions: [ "v1beta1", "v1" ]
+    admissionReviewVersions: [ "v1" ]
     sideEffects: None

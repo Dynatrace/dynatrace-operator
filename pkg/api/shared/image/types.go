@@ -1,6 +1,7 @@
 package image
 
 // +kubebuilder:object:generate=true
+
 type Ref struct {
 	// Custom image repository
 	// +kubebuilder:example:="docker.io/dynatrace/image-name"

@@ -23,10 +23,11 @@ const (
 
 type client struct {
 	clientcredentials.Config
-	ctx        context.Context
-	httpClient *http.Client
-	baseURL    string
-	customCA   []byte
+	ctx               context.Context
+	httpClient        *http.Client
+	baseURL           string
+	customCA          []byte
+	disableKeepAlives bool
 }
 
 // Option can be passed to NewClient and customizes the created client instance.
@@ -51,6 +52,21 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 		return nil, errors.New("can't create http client for edge connect")
 	}
 
+	ot, ok := httpClient.Transport.(*oauth2.Transport)
+	if !ok {
+		return nil, errors.New("unexpected transport type")
+	}
+
+	if ot.Base == nil {
+		ot.Base = &http.Transport{}
+	}
+
+	if c.disableKeepAlives {
+		if t, ok := ot.Base.(*http.Transport); ok {
+			t.DisableKeepAlives = true
+		}
+	}
+
 	if c.customCA != nil {
 		rootCAs, err := x509.SystemCertPool()
 		if err != nil {
@@ -59,11 +75,6 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 
 		if ok := rootCAs.AppendCertsFromPEM(c.customCA); !ok {
 			return nil, errors.New("append custom certs")
-		}
-
-		ot := httpClient.Transport.(*oauth2.Transport)
-		if ot.Base == nil {
-			ot.Base = &http.Transport{}
 		}
 
 		t := ot.Base.(*http.Transport)
@@ -108,6 +119,12 @@ func WithCustomCA(caData []byte) func(*client) {
 func WithContext(ctx context.Context) func(*client) {
 	return func(c *client) {
 		c.ctx = ctx
+	}
+}
+
+func WithKeepAlive(keepAlive bool) func(*client) {
+	return func(c *client) {
+		c.disableKeepAlives = !keepAlive
 	}
 }
 

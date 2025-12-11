@@ -37,6 +37,6 @@ func TestReconciler_prepareService(t *testing.T) {
 func TestFQDNNameGeneration(t *testing.T) {
 	t.Run("Check FQDN name generation", func(t *testing.T) {
 		dk := createDynakube()
-		assert.Equal(t, "test-name-extensions-controller.test-namespace", dk.Extensions().GetServiceNameFQDN())
+		assert.Equal(t, "test-name-extension-controller.test-namespace", dk.Extensions().GetServiceNameFQDN())
 	})
 }

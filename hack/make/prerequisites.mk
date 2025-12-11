@@ -15,11 +15,13 @@ CONTROLLER_GEN_VERSION ?= v0.19.0
 # renovate depName=github.com/golangci/golangci-lint/v2
 GOLANGCI_LINT_VERSION ?= v2.6.2
 # renovate depName=golang.org/x/tools
-GOLANG_TOOLS_VERSION ?= v0.39.0
+GOLANG_TOOLS_VERSION ?= v0.40.0
 # renovate depName=github.com/vektra/mockery
 MOCKERY_VERSION ?= v3.6.1
 # renovate depName=github.com/igorshubovych/markdownlint-cli
-MARKDOWNLINT_CLI_VERSION ?= v0.46.0
+MARKDOWNLINT_CLI_VERSION ?= v0.47.0
+# renovate depName=github.com/tcort/markdown-link-check
+MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 # renovate depName=github.com/helm-unittest/helm-unittest
 HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
@@ -41,6 +43,7 @@ GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 PYTHON ?= $(LOCALBIN)/.venv/bin/python3
 MARKDOWNLINT ?= $(LOCALBIN_NPM)/markdownlint
+MARKDOWN_LINK_CHECK ?= $(LOCALBIN_NPM)/markdown-link-check
 
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell v='$(call gomodver,sigs.k8s.io/controller-runtime)'; \
@@ -112,7 +115,11 @@ prerequisites/helm-unittest:
 
 ## Install 'markdownlint' if it is missing
 prerequisites/markdownlint:
-	npm install --force markdownlint-cli@$(MARKDOWNLINT_CLI_VERSION)
+	npm install markdownlint-cli@$(MARKDOWNLINT_CLI_VERSION)
+
+## Install 'markdown-link-check' if it is missing
+prerequisites/markdown-link-check:
+	npm install markdown-link-check@$(MARKDOWN_LINK_CHECK_VERSION)
 
 ## Install python dependencies
 prerequisites/python:

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -111,7 +112,7 @@ func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
 func TestReconcile(t *testing.T) {
 	dkCrd := &apiv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: dkCrdName,
+			Name: k8scrd.DynaKubeName,
 		},
 		Spec: apiv1.CustomResourceDefinitionSpec{
 			Conversion: &apiv1.CustomResourceConversion{
@@ -125,7 +126,7 @@ func TestReconcile(t *testing.T) {
 
 	ecCrd := &apiv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ecCrdName,
+			Name: k8scrd.EdgeConnectName,
 		},
 		Spec: apiv1.CustomResourceDefinitionSpec{
 			Conversion: &apiv1.CustomResourceConversion{
@@ -212,7 +213,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		actualCrd := &apiv1.CustomResourceDefinition{}
-		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dkCrdName}, actualCrd)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: k8scrd.DynaKubeName}, actualCrd)
 		require.NoError(t, err)
 		assert.Equal(t, expectedBundle, actualCrd.Spec.Conversion.Webhook.ClientConfig.CABundle)
 	})
@@ -379,7 +380,7 @@ func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
 	builder.objs = append(builder.objs,
 		&apiv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: dkCrdName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiv1.CustomResourceDefinitionSpec{
 				Conversion: &apiv1.CustomResourceConversion{
@@ -392,7 +393,7 @@ func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
 		},
 		&apiv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: ecCrdName,
+				Name: k8scrd.EdgeConnectName,
 			},
 			Spec: apiv1.CustomResourceDefinitionSpec{
 				Conversion: &apiv1.CustomResourceConversion{

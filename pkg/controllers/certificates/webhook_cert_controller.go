@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/eventfilter"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -22,8 +23,6 @@ import (
 const (
 	SuccessDuration = 3 * time.Hour
 
-	dkCrdName                    = "dynakubes.dynatrace.com"
-	ecCrdName                    = "edgeconnects.dynatrace.com"
 	secretPostfix                = "-certs"
 	errorCertificatesSecretEmpty = "certificates secret is empty"
 )
@@ -126,11 +125,11 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	if err = controller.updateCRDConfiguration(ctx, dkCrdName, bundle); err != nil {
+	if err = controller.updateCRDConfiguration(ctx, k8scrd.DynaKubeName, bundle); err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	if err = controller.updateCRDConfiguration(ctx, ecCrdName, bundle); err != nil {
+	if err = controller.updateCRDConfiguration(ctx, k8scrd.EdgeConnectName, bundle); err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
@@ -213,7 +212,7 @@ func (controller *WebhookCertificateController) getValidatingWebhookConfiguratio
 
 func (controller *WebhookCertificateController) getCrd(ctx context.Context) (*apiv1.CustomResourceDefinition, error) {
 	var crd apiv1.CustomResourceDefinition
-	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: dkCrdName}, &crd); err != nil {
+	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd); err != nil {
 		return nil, err
 	}
 

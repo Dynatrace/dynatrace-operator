@@ -63,11 +63,11 @@ runs:
         sudo apt-get update
         sudo apt-get install -y make
     - name: Checkout workflow scripts from ref branch
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         path: ref
     - name: Checkout target branch
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         ref: ${{ inputs.target-branch || 'main' }}
         path: target
@@ -80,8 +80,8 @@ runs:
     - name: Set up helm
       uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
       with:
-        # renovate: datasource=github-releases depName=helm/helm
-        version: v4.0.1
+        # renovate datasource=github-releases depName=helm/helm
+        version: v4.0.2
         token: ${{ inputs.github-token }}
     - name: Install gotestsum
       shell: bash

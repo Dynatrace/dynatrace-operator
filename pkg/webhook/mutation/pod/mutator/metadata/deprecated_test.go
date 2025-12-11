@@ -17,7 +17,7 @@ func Test_setDeprecatedAttributes(t *testing.T) {
 			},
 		}
 
-		setDeprecatedAttributes(&attrs)
+		SetDeprecatedAttributes(&attrs)
 
 		assertDeprecatedAttributes(t, attrs)
 	})
@@ -26,11 +26,11 @@ func Test_setDeprecatedAttributes(t *testing.T) {
 func assertDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
 	t.Helper()
 
-	depWorkloadKind, ok := attrs.UserDefined[deprecatedWorkloadKindKey]
+	depWorkloadKind, ok := attrs.UserDefined[DeprecatedWorkloadKindKey]
 	require.True(t, ok)
 	assert.Equal(t, attrs.WorkloadKind, depWorkloadKind)
 
-	depWorkloadName, ok := attrs.UserDefined[deprecatedWorkloadNameKey]
+	depWorkloadName, ok := attrs.UserDefined[DeprecatedWorkloadNameKey]
 	require.True(t, ok)
 	assert.Equal(t, attrs.WorkloadName, depWorkloadName)
 }
