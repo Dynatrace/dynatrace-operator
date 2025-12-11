@@ -355,5 +355,6 @@ jobs:
     - uses: ./.github/actions/update-csv-bundles
       with:
         version: ${{ needs.prepare.outputs.version_without_prefix }}
-        token: ${{ secrets.GITHUB_TOKEN }}
         changelog-path: ./changelog_artifact/CHANGELOG.md
+        app-id: ${{ secrets.RELEASE_APP_ID }}
+        private-key: ${{ secrets.RELEASE_APP_KEY }}

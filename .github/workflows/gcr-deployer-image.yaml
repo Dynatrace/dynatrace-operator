@@ -16,7 +16,7 @@ jobs:
   prepare:
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'csv-') && startsWith(github.event.pull_request.base.ref, 'release-')
     name: Prepare properties
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -33,7 +33,7 @@ jobs:
       if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'csv-') && startsWith(github.event.pull_request.base.ref, 'release-')
       name: Build GCR deployer image
       environment: Release
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-24.04
       needs: [ prepare ]
       env:
         IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version }}
