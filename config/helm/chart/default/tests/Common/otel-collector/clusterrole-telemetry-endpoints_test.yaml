@@ -1,6 +1,6 @@
 suite: test clusterrole for the dynatrace OpenTelemetry collector endpoints
 templates:
-  - Common/opentelemetry-collector/clusterole-telemetry-endpoints.yaml
+  - Common/otel-collector/clusterole-telemetry-endpoints.yaml
 tests:
   - it: ClusterRole and ClusterRoleBinding exists
     asserts:

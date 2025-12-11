@@ -580,7 +580,7 @@ func createDeployment(dk *dynakube.DynaKube, replicas, readyReplicas int32) *app
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: dk.Namespace,
-			Labels:    k8slabel.NewAppLabels(k8slabel.DatabaseDatasourceLabel, dk.Name, k8slabel.DatabaseDatasourceLabel, "").BuildLabels(),
+			Labels:    k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, "").BuildLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,

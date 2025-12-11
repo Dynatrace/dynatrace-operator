@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/metadata/rules"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
@@ -30,7 +29,6 @@ type Reconciler struct {
 	istioReconciler           istio.Reconciler
 	versionReconciler         version.Reconciler
 	connectionInfoReconciler  controllers.Reconciler
-	k8sEntityReconciler       controllers.Reconciler
 	enrichmentRulesReconciler controllers.Reconciler
 	dynatraceClient           dynatrace.Client
 }
@@ -66,7 +64,6 @@ func NewReconciler(
 		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
 		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dk),
-		k8sEntityReconciler:       k8sentity.NewReconciler(dynatraceClient, dk),
 	}
 }
 
@@ -214,12 +211,7 @@ func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1
 }
 
 func (r *Reconciler) setupEnrichmentInjection(ctx context.Context) error {
-	err := r.k8sEntityReconciler.Reconcile(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = r.enrichmentRulesReconciler.Reconcile(ctx)
+	err := r.enrichmentRulesReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("couldn't reconcile metadata-enrichment rules")
 
