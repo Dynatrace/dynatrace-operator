@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
 )
@@ -16,21 +15,18 @@ import (
 var errMissingKubeSystemUUID = goerrors.New("no kube-system namespace UUID given")
 
 type Reconciler struct {
-	dtc dtclient.Client
-
-	k8sEntityReconciler controllers.Reconciler
-	dk                  *dynakube.DynaKube
-	clusterLabel        string
+	dtc          dtclient.Client
+	dk           *dynakube.DynaKube
+	clusterLabel string
 }
 
 type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler
 
 func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler {
 	return &Reconciler{
-		dtc:                 dtc,
-		dk:                  dk,
-		clusterLabel:        clusterLabel,
-		k8sEntityReconciler: k8sentity.NewReconciler(dtc, dk),
+		dtc:          dtc,
+		dk:           dk,
+		clusterLabel: clusterLabel,
 	}
 }
 
@@ -66,11 +62,6 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 		return "", errMissingKubeSystemUUID
 	}
 
-	err := r.k8sEntityReconciler.Reconcile(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	var k8sEntity dtclient.K8sClusterME
 
 	if r.dk.Status.KubernetesClusterMEID != "" {
@@ -96,15 +87,6 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(ctx, r.clusterLabel, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error creating dynatrace settings object")
-	}
-
-	if r.dk.Status.KubernetesClusterMEID == "" {
-		// the CreateOrUpdateKubernetesSetting call will create the ME(monitored-entity) if no scope was given (scope == entity-id), this happens on the "first run"
-		// so we have to run the entity reconciler AGAIN to set it in the status.
-		err := r.k8sEntityReconciler.Reconcile(ctx)
-		if err != nil {
-			return "", err
-		}
 	}
 
 	return objectID, nil
