@@ -35,7 +35,7 @@ type benchmarkConfig struct {
 func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 	b.Helper()
 
-	mockHostEntityAPI := func(expectedHostInfo []dtclient.HostInfoResponse) http.HandlerFunc {
+	mockHostEntityAPI := func(expectedHostInfo []byte) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 
@@ -45,13 +45,8 @@ func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 
 			switch r.URL.Path {
 			case "/v1/entity/infrastructure/hosts":
-				getResponseBytes, err := json.Marshal(expectedHostInfo)
-				if err != nil {
-					return
-				}
-
 				w.WriteHeader(http.StatusOK)
-				w.Write(getResponseBytes)
+				w.Write(expectedHostInfo)
 
 			case "/v1/events":
 				w.WriteHeader(http.StatusOK)
@@ -68,8 +63,10 @@ func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 			IPAddresses: []string{generateNodeIP(i)},
 		})
 	}
+	getResponseBytes, err := json.Marshal(responses)
+	require.NoError(b, err)
 
-	return httptest.NewServer(mockHostEntityAPI(responses))
+	return httptest.NewServer(mockHostEntityAPI(getResponseBytes))
 }
 
 // SetupDKs creates the specified number of Dynakube instances in the test namespace.
