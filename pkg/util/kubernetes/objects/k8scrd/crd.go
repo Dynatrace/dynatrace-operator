@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	APIVersion = "apiextensions.k8s.io/v1"
-	Kind       = "CustomResourceDefinition"
+	apiVersion = "apiextensions.k8s.io/v1"
+	kind       = "CustomResourceDefinition"
 
 	DynaKubeName    = "dynakubes.dynatrace.com"
 	EdgeConnectName = "edgeconnects.dynatrace.com"
@@ -26,8 +26,8 @@ var log = logd.Get().WithName("operator-k8scrd")
 func IsLatestVersion(ctx context.Context, apiReader client.Reader, crdName string) (bool, error) {
 	crdMetadata := metav1.PartialObjectMetadata{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: APIVersion,
-			Kind:       Kind,
+			APIVersion: apiVersion,
+			Kind:       kind,
 		},
 	}
 
