@@ -21,9 +21,9 @@ const (
 	ActiveGateComponentLabel    = "activegate"
 	WebhookComponentLabel       = "webhook"
 	EdgeConnectComponentLabel   = "edgeconnect"
-	ExtensionComponentLabel     = "dynatrace-extensions-controller"
-	OtelCComponentLabel         = "dynatrace-opentelemetry-collector"
-	DatabaseDatasourceLabel     = "dynatrace-database-datasource"
+	ExtensionComponentLabel     = "dynatrace-extension-controller"
+	OtelCComponentLabel         = "dynatrace-otel-collector"
+	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
 )
 
 type AppMatchLabels struct {

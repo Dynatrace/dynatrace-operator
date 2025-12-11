@@ -63,7 +63,7 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.0.1
+          version: v4.0.2
       - name: Store test tenant secrets
         run: |
           ./.github/scripts/prepare-e2e-secrets.sh
