@@ -42,7 +42,7 @@ func runBenchmarkReconcile(b *testing.B, config benchmarkConfig) {
 	defer dtServer.Close()
 
 	// 2. Setup env
-	clt := integrationtests.SetupTestEnvironment(b)
+	clt := integrationtests.SetupTestEnvironment(b, integrationtests.DisableAttachControlPlaneOutput())
 
 	// 3. Setup dks/nodes
 	config.SetupDKs(b, clt, dtServer.URL)
@@ -80,7 +80,7 @@ func runBenchmarkOnDelete(b *testing.B, config benchmarkConfig) {
 	defer dtServer.Close()
 
 	// 2. Setup env
-	clt := integrationtests.SetupTestEnvironment(b)
+	clt := integrationtests.SetupTestEnvironment(b, integrationtests.DisableAttachControlPlaneOutput())
 
 	// 3. Setup dks/nodes
 	config.SetupDKs(b, clt, dtServer.URL)

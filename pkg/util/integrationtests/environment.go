@@ -32,10 +32,22 @@ var (
 	testEnv *envtest.Environment
 )
 
-func SetupTestEnvironment(tb testing.TB) client.Client {
+type TestEnvOpt func(*envtest.Environment)
+
+func DisableAttachControlPlaneOutput() TestEnvOpt {
+	return func(env *envtest.Environment) {
+		env.AttachControlPlaneOutput = false
+	}
+}
+
+func SetupTestEnvironment(tb testing.TB, opts ...TestEnvOpt) client.Client {
 	setupBaseTestEnv(tb)
 
 	testEnv.AttachControlPlaneOutput = true
+
+	for _, opt := range opts {
+		opt(testEnv)
+	}
 
 	// start test environment
 	cfg, err := testEnv.Start()
