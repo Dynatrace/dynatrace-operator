@@ -35,7 +35,7 @@ type benchmarkConfig struct {
 func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 	b.Helper()
 
-	mockHostEntityAPI := func(expectedHostInfo []byte) http.HandlerFunc {
+	mockHostEntityAPI := func(expectedHostInfoBytes []byte) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 
@@ -46,7 +46,7 @@ func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 			switch r.URL.Path {
 			case "/v1/entity/infrastructure/hosts":
 				w.WriteHeader(http.StatusOK)
-				w.Write(expectedHostInfo)
+				w.Write(expectedHostInfoBytes)
 
 			case "/v1/events":
 				w.WriteHeader(http.StatusOK)
