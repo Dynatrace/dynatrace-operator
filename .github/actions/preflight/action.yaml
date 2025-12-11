@@ -34,7 +34,7 @@ runs:
   - name: Run preflight on image
     shell: bash
     env:
-      IMAGE_URI: ${{ steps.meta.outputs.tags  }}
+      IMAGE_URI: ${{ steps.meta.outputs.tags }}
       PREFLIGHT_EXECUTABLE: "preflight-linux-amd64"
       PREFLIGHT_LOG: "preflight.log"
       PREFLIGHT_REPORT_NAME: ${{ inputs.report-name }}
