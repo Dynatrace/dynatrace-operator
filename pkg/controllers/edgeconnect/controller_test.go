@@ -1127,10 +1127,6 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 	t.Setenv(k8senv.AppVersion, "1.0.0")
 
 	return &apiextensionsv1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "CustomResourceDefinition",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8scrd.EdgeConnectName,
 			Labels: map[string]string{
