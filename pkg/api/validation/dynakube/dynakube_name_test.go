@@ -77,8 +77,8 @@ func TestNameTooLong(t *testing.T) {
 				}
 				dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository = "repo"
 				dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag = "tag"
-				dk.Spec.Templates.DatabaseExecutor.ImageRef.Repository = "repo"
-				dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag = "tag"
+				dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Repository = "repo"
+				dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag = "tag"
 			}
 
 			if test.allow {

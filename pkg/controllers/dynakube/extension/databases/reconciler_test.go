@@ -120,7 +120,7 @@ func TestReconcileSpec(t *testing.T) {
 		assert.NotNil(t, container.LivenessProbe)
 		assert.NotNil(t, container.ReadinessProbe)
 		assert.NotNil(t, container.SecurityContext)
-		assert.Equal(t, dk.Spec.Templates.DatabaseExecutor.ImageRef.String(), container.Image)
+		assert.Equal(t, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String(), container.Image)
 		assert.Equal(t, corev1.PullIfNotPresent, container.ImagePullPolicy)
 		assert.NotEmpty(t, container.Resources.Requests)
 		assert.NotEmpty(t, container.Resources.Limits)
@@ -149,7 +149,7 @@ func TestReconcileSpec(t *testing.T) {
 
 	t.Run("override image pull policy", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag = "latest"
+		dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag = "latest"
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
 		assert.Equal(t, corev1.PullAlways, deploy.Spec.Template.Spec.Containers[0].ImagePullPolicy)
 	})
@@ -279,7 +279,7 @@ func getTestDynakube() *dynakube.DynaKube {
 				},
 			},
 			Templates: dynakube.TemplatesSpec{
-				DatabaseExecutor: extensions.DatabaseExecutorSpec{
+				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 					ImageRef: image.Ref{
 						Repository: testExecutorImageRepository,
 						Tag:        testExecutorImageTag,

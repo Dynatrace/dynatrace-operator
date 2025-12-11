@@ -42,7 +42,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 									Tag:        "b",
 								},
 							},
-							DatabaseExecutor: extensions.DatabaseExecutorSpec{
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: image.Ref{
 									Repository: "a",
 									Tag:        "b",
@@ -74,7 +74,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 										Repository: "a",
 									},
 								},
-								DatabaseExecutor: extensions.DatabaseExecutorSpec{
+								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 									ImageRef: image.Ref{
 										Repository: "a",
 										Tag:        "b",
@@ -106,7 +106,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 										Tag: "b",
 									},
 								},
-								DatabaseExecutor: extensions.DatabaseExecutorSpec{
+								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 									ImageRef: image.Ref{
 										Repository: "a",
 										Tag:        "b",
@@ -133,7 +133,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 								},
 							},
 							Templates: dynakube.TemplatesSpec{
-								DatabaseExecutor: extensions.DatabaseExecutorSpec{
+								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 									ImageRef: image.Ref{
 										Repository: "a",
 										Tag:        "b",
@@ -176,7 +176,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 									Tag:        "b",
 								},
 							},
-							DatabaseExecutor: extensions.DatabaseExecutorSpec{
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: image.Ref{
 									Repository: "repo",
 									Tag:        "tag",
@@ -214,7 +214,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 									Tag:        "b",
 								},
 							},
-							DatabaseExecutor: extensions.DatabaseExecutorSpec{
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: image.Ref{
 									Repository: "repo",
 									Tag:        "tag",
@@ -249,7 +249,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 									UseEphemeralVolume:    true,
 									PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 								},
-								DatabaseExecutor: extensions.DatabaseExecutorSpec{
+								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 									ImageRef: image.Ref{
 										Repository: "repo",
 										Tag:        "tag",
@@ -295,7 +295,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 						Tag:        "otc-tag",
 					},
 				},
-				DatabaseExecutor: extensions.DatabaseExecutorSpec{
+				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 					ImageRef: image.Ref{
 						Repository: "repo",
 						Tag:        "tag",
@@ -321,7 +321,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 							ExtensionExecutionController: extensions.ExecutionControllerSpec{
 								ImageRef: imgRef,
 							},
-							DatabaseExecutor: extensions.DatabaseExecutorSpec{
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: imgRef,
 							},
 						},
@@ -346,7 +346,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 							ExtensionExecutionController: extensions.ExecutionControllerSpec{
 								ImageRef: imgRef,
 							},
-							DatabaseExecutor: extensions.DatabaseExecutorSpec{
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: imgRef,
 							},
 						},
@@ -377,7 +377,7 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 							ExtensionExecutionController: extensions.ExecutionControllerSpec{
 								ImageRef: imgRef,
 							},
-							DatabaseExecutor: extensions.DatabaseExecutorSpec{
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: imgRef,
 							},
 						},
