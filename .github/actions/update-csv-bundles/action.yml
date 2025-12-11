@@ -1,0 +1,137 @@
+name: "Update CSV bundles"
+description: "Generate and finalize OLM CSV bundles for a given version"
+
+inputs:
+  version:
+    description: "Version without v-prefix"
+    required: true
+  changelog-path:
+    description: "Path to the changelog file"
+    required: true
+  app-id:
+    description: "GitHub App ID for creating release PR"
+    required: true
+  private-key:
+    description: "GitHub App private key for creating release PR"
+    required: true
+
+outputs:
+  major_minor:
+    description: "Major.minor part of the version"
+    value: ${{ steps.vars.outputs.major_minor }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Derive release branch name
+      id: vars
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        MAJOR_MINOR="${VERSION%.*}"
+        echo "major_minor=${MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
+    - name: Checkout release branch
+      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      with:
+        ref: release-${{ steps.vars.outputs.major_minor }}
+        fetch-depth: 0
+        clean: false
+    - name: Setting properties
+      shell: bash
+      env:
+        CHANGELOG_CONTENT: ${{ inputs.changelog-path }}
+        DIGEST: ${{ inputs.digest }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        echo "Setting version to v${VERSION} in files"
+        yq -i ".appVersion = \"$VERSION\"" config/helm/chart/default/Chart.yaml
+        yq -i ".version = \"$VERSION\"" config/helm/chart/default/Chart.yaml
+
+        echo "Setting version in schema.yaml"
+        yq -i \
+          ".x-google-marketplace.publishedVersion = \"$VERSION\"" \
+          "config/helm/schema.yaml"
+
+        echo "Setting changelog in schema.yaml"
+
+        yq -i \
+          ".x-google-marketplace.publishedVersionMetadata.releaseNote = load_str(env(CHANGELOG_CONTENT))" \
+          "config/helm/schema.yaml"
+    - name: Install operator-sdk
+      shell: bash
+      env:
+        OPERATOR_SDK_VERSION: v1.36.0
+        VERSION: ${{ inputs.version }}
+      run: |
+          curl -OJL \
+          "https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk_linux_amd64"
+          chmod +x operator-sdk_linux_amd64
+          mv operator-sdk_linux_amd64  /usr/local/bin/operator-sdk
+          echo "Downloaded operator-sdk"
+    - name: Check Operator SDK
+      shell: bash
+      id: check-step
+      run: |
+        operator-sdk version
+    - name: Generate OLM bundles (openshift)
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        PLATFORM: openshift
+        CHANNELS: stable
+        DEFAULT_CHANNEL: stable
+        IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
+        OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}
+      run: |
+        make bundle
+    - name: Generate OLM bundles (kubernetes)
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        PLATFORM: kubernetes
+        CHANNELS: stable
+        DEFAULT_CHANNEL: stable
+        IMAGE: docker.io/dynatrace/dynatrace-operator
+        OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}
+      run: |
+        make bundle
+    - name: Finalize CSV files
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+
+        echo "Finalizing CSV files for Kubernetes"
+        ./.github/scripts/release/csv/finalize_csv_files.py \
+          --platform "kubernetes" \
+          --version "${VERSION}" \
+
+        echo "Finalizing CSV files for Openshift"
+        ./.github/scripts/release/csv/finalize_csv_files.py \
+          --platform "openshift" \
+          --version "${VERSION}" \
+    - name: Create GitHub app token
+      uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
+      id: create-github-app-token
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+    - name: Create CSV update PR
+      uses: peter-evans/create-pull-request@84ae59a2cdc2258d6fa0732dd66352dddae2a412 # v7.0.9
+      with:
+        base: release-${{ steps.vars.outputs.major_minor }}
+        branch: csv-${{ steps.vars.outputs.major_minor}}
+        token: ${{ steps.create-github-app-token.token }}
+        delete-branch: true
+        add-paths: |
+          config/olm/**
+          config/deploy/kubernetes/kustomization.yaml
+          config/deploy/openshift/kustomization.yaml
+          config/manifests/bases/**
+          config/helm/**
+        commit-message: "[Automatic] Update OLM bundles for v${{ inputs.version }}"
+        signoff: true
+        title: "[Automatic] Update OLM CSV bundles for v${{ inputs.version }}"
+        body: |
+            This PR updates the OLM bundles/CSVs on `release-${{ steps.vars.outputs.major_minor }}` for version `v${{ inputs.version }}`.
