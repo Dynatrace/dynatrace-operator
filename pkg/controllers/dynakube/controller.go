@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	logmondaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
@@ -28,8 +29,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -85,6 +86,8 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 		kspmReconcilerBuilder:               kspm.NewReconciler,
+
+		k8sEntityReconciler: k8sentity.NewReconciler(),
 	}
 }
 
@@ -100,12 +103,18 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
+type k8sEntityReconciler interface {
+	Reconcile(ctx context.Context, dtclient dtclient.Client, dk *dynakube.DynaKube) error
+}
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
 	client    client.Client
 	apiReader client.Reader
+
+	k8sEntityReconciler k8sEntityReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
@@ -337,6 +346,10 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 
+		componentErrors = append(componentErrors, err)
+	}
+
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient, dk); err != nil {
 		componentErrors = append(componentErrors, err)
 	}
 

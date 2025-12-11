@@ -2,8 +2,8 @@ package dynakube
 
 import (
 	"context"
+	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -27,12 +27,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
+	dynakubemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -115,6 +116,7 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 		assert.Equal(t, expectedDynakube.APIURL(), dk.APIURL())
 	})
 }
+
 func TestMinimalRequest(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
 		controller := &Controller{
@@ -339,30 +341,36 @@ func TestReconcileComponents(t *testing.T) {
 		},
 	}
 
+	expectReconcileError := func(t *testing.T, reconciler any, reconcileError *error, args ...any) {
+		t.Helper()
+		uniqueError := fmt.Errorf("BOOM %T", reconciler)
+
+		switch reconciler := reconciler.(type) {
+		case *controllermock.Reconciler:
+			reconciler.EXPECT().Reconcile(anyCtx).Return(uniqueError).Once()
+		case *dynakubemock.K8sEntityReconciler:
+			reconciler.EXPECT().Reconcile(anyCtx, args[0], args[1]).Return(uniqueError).Once()
+		default:
+			return
+		}
+
+		t.Cleanup(func() {
+			assert.ErrorIs(t, *reconcileError, uniqueError)
+		})
+	}
+
 	t.Run("all components reconciled, even in case of errors", func(t *testing.T) {
 		dk := dkBaser.DeepCopy()
 		fakeClient := fake.NewClientWithIndex(dk)
-		// ReconcileCodeModuleCommunicationHosts
+
 		mockOneAgentReconciler := controllermock.NewReconciler(t)
-		mockOneAgentReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
-
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
-
 		mockInjectionReconciler := controllermock.NewReconciler(t)
-		mockInjectionReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
-
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
-		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
-
 		mockExtensionReconciler := controllermock.NewReconciler(t)
-		mockExtensionReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
-
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		mockOtelcReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
-
 		mockKSPMReconciler := controllermock.NewReconciler(t)
-		mockKSPMReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
+		k8sEntityReconciler := dynakubemock.NewK8sEntityReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -375,14 +383,22 @@ func TestReconcileComponents(t *testing.T) {
 			extensionReconcilerBuilder:     createExtensionReconcilerBuilder(mockExtensionReconciler),
 			otelcReconcilerBuilder:         createOtelcReconcilerBuilder(mockOtelcReconciler),
 			kspmReconcilerBuilder:          createKSPMReconcilerBuilder(mockKSPMReconciler),
+			k8sEntityReconciler:            k8sEntityReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 
-		err := controller.reconcileComponents(ctx, mockedDtc, nil, dk)
+		var err error
+		expectReconcileError(t, mockOneAgentReconciler, &err)
+		expectReconcileError(t, mockActiveGateReconciler, &err)
+		expectReconcileError(t, mockInjectionReconciler, &err)
+		expectReconcileError(t, mockLogMonitoringReconciler, &err)
+		expectReconcileError(t, mockExtensionReconciler, &err)
+		expectReconcileError(t, mockOtelcReconciler, &err)
+		expectReconcileError(t, mockKSPMReconciler, &err)
+		expectReconcileError(t, k8sEntityReconciler, &err, mockedDtc, dk)
 
+		err = controller.reconcileComponents(ctx, mockedDtc, nil, dk)
 		require.Error(t, err)
-		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 7) // ActiveGate, Extension, OtelC, OneAgent LogMonitoring, Injection and KSPM reconcilers
 	})
 
 	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
@@ -390,13 +406,9 @@ func TestReconcileComponents(t *testing.T) {
 		fakeClient := fake.NewClientWithIndex(dk)
 
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
-		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
-
 		mockExtensionReconciler := controllermock.NewReconciler(t)
-		mockExtensionReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
-
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		mockOtelcReconciler.EXPECT().Reconcile(anyCtx).Return(errors.New("BOOM")).Once()
+		k8sEntityReconciler := dynakubemock.NewK8sEntityReconciler(t)
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
@@ -408,14 +420,18 @@ func TestReconcileComponents(t *testing.T) {
 			logMonitoringReconcilerBuilder: createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
 			extensionReconcilerBuilder:     createExtensionReconcilerBuilder(mockExtensionReconciler),
 			otelcReconcilerBuilder:         createOtelcReconcilerBuilder(mockOtelcReconciler),
+			k8sEntityReconciler:            k8sEntityReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
 
-		err := controller.reconcileComponents(ctx, mockedDtc, nil, dk)
+		var err error
+		expectReconcileError(t, mockActiveGateReconciler, &err)
+		expectReconcileError(t, mockExtensionReconciler, &err)
+		expectReconcileError(t, mockOtelcReconciler, &err)
+		expectReconcileError(t, k8sEntityReconciler, &err, mockedDtc, dk)
 
+		err = controller.reconcileComponents(ctx, mockedDtc, nil, dk)
 		require.Error(t, err)
-		// goerrors.Join concats errors with \n
-		assert.Len(t, strings.Split(err.Error(), "\n"), 3) // ActiveGate, Extension, OtelC, no OneAgent connection info is not an error
 	})
 }
 
@@ -468,6 +484,9 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockKSPMReconciler := controllermock.NewReconciler(t)
 	mockKSPMReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
+	mockK8sEntityReconciler := dynakubemock.NewK8sEntityReconciler(t)
+	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, mockClient, mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })).Return(nil)
+
 	fakeIstio := fakeistio.NewSimpleClientset()
 
 	baseController := &Controller{
@@ -485,6 +504,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		oneAgentReconcilerBuilder:           createOneAgentReconcilerBuilder(mockOneAgentReconciler),
 		otelcReconcilerBuilder:              createOtelcReconcilerBuilder(mockOtelcReconciler),
 		proxyReconcilerBuilder:              createProxyReconcilerBuilder(mockProxyReconciler),
+		k8sEntityReconciler:                 mockK8sEntityReconciler,
 	}
 
 	request := reconcile.Request{
@@ -1044,10 +1064,6 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 	t.Setenv(k8senv.AppVersion, "1.0.0")
 
 	return &apiextensionsv1.CustomResourceDefinition{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "CustomResourceDefinition",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8scrd.DynaKubeName,
 			Labels: map[string]string{
