@@ -9,7 +9,7 @@ tests:
           of: Role
       - equal:
           path: .metadata.name
-          value: dynatrace-sql-extension-executor
+          value: dynatrace-sql-ext-exec
 
   - it: should create RoleBinding
     documentIndex: 1
@@ -18,7 +18,7 @@ tests:
           of: RoleBinding
       - equal:
           path: .metadata.name
-          value: dynatrace-sql-extension-executor
+          value: dynatrace-sql-ext-exec
 
   - it: Role has correct permissions for finding database pods
     documentIndex: 0
@@ -27,7 +27,7 @@ tests:
           of: Role
       - equal:
           path: metadata.name
-          value: dynatrace-sql-extension-executor
+          value: dynatrace-sql-ext-exec
       - isNotEmpty:
           path: metadata.labels
       - isNotEmpty:
@@ -51,7 +51,7 @@ tests:
           of: Role
       - equal:
           path: metadata.name
-          value: dynatrace-sql-extension-executor
+          value: dynatrace-sql-ext-exec
       - isNotEmpty:
           path: metadata.labels
       - contains:

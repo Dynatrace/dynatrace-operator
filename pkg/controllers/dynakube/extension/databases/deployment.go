@@ -25,7 +25,7 @@ const (
 	readinessProbePath       = "/health/ready"
 	userGroupID        int64 = 1000
 	// Keep in sync with helm chart
-	defaultServiceAccount = "dynatrace-sql-extension-executor"
+	defaultServiceAccount = "dynatrace-sql-ext-exec"
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
 

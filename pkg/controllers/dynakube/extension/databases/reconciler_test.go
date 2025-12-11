@@ -299,7 +299,7 @@ func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.Name + "-sql-extension-executor-" + db.ID,
+			Name:      dk.Name + extensions.SQLExecutorInfix + db.ID,
 			Namespace: testNamespaceName,
 			Labels:    labels,
 		},
