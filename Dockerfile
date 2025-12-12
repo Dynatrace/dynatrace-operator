@@ -19,7 +19,6 @@ ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
-ARG GODEBUG_ARG
 ARG GOFIPS140=off
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
@@ -79,6 +78,8 @@ LABEL name="Dynatrace Operator" \
       vcs-url="https://github.com/Dynatrace/dynatrace-operator.git" \
       vcs-type="git" \
       changelog-url="https://github.com/Dynatrace/dynatrace-operator/releases"
+
+ARG GODEBUG_ARG
 
 ENV OPERATOR=dynatrace-operator \
     USER_UID=1001 \
