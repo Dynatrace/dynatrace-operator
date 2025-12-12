@@ -11,8 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/eec"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -220,6 +218,7 @@ func TestReconciler_legacyCleanup(t *testing.T) {
 	t.Run("clean up when extensions are enabled", func(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
+		conditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionsControllerStatefulSet", "test")
 
 		fakeClient := fake.NewClient(append([]client.Object{dk}, legacyResources(dk)...)...)
 		r := NewReconciler(fakeClient, fakeClient, dk)
@@ -232,8 +231,9 @@ func TestReconciler_legacyCleanup(t *testing.T) {
 	t.Run("clean up when extensions are disabled", func(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions = nil
-		conditions.SetStatefulSetCreated(dk.Conditions(), eec.ExtensionControllerStatefulSetConditionType, "test")
-		conditions.SetStatefulSetCreated(dk.Conditions(), tls.ConditionType, "test")
+		conditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionControllerStatefulSet", "test")
+		conditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionsControllerStatefulSet", "test")
+		conditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionsTLSSecret", "test")
 		conditions.SetServiceCreated(dk.Conditions(), serviceConditionType, "test")
 
 		fakeClient := fake.NewClient(append([]client.Object{dk}, legacyResources(dk)...)...)
@@ -291,4 +291,6 @@ func assertLegacyResourcesCleanedUp(t *testing.T, clt client.Client, dk *dynakub
 		err := clt.Get(t.Context(), client.ObjectKeyFromObject(obj), obj)
 		assert.Errorf(t, err, "%T %s still exists", obj, obj.GetName())
 	}
+	cond := meta.FindStatusCondition(dk.Status.Conditions, "ExtensionsControllerStatefulSet")
+	assert.Nil(t, cond, "unexpected condition: %+v", cond)
 }

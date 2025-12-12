@@ -1,3 +1,3 @@
 package eec
 
-const ExtensionControllerStatefulSetConditionType string = "ExtensionsControllerStatefulSet"
+const extensionControllerStatefulSetConditionType string = "ExtensionControllerStatefulSet"
