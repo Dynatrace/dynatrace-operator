@@ -19,7 +19,12 @@ ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
+ARG GODEBUG
 ARG GOFIPS140=off
+
+# ${variable:+word} indicates that if variable is set then word
+# will be the result, otherwise the result is the empty string.
+ENV GODEBUG=${GODEBUG:+fips140=only,tlsmlkem=0}
 
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
