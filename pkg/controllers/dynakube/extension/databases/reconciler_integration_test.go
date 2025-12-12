@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -32,7 +32,7 @@ func TestReconciler(t *testing.T) {
 		integrationtests.CreateKubernetesObject(t, t.Context(), clt, getMatchingDeployment(dk))
 
 		dk.Spec.Extensions.Databases = nil
-		conditions.SetDeploymentsApplied(dk, conditionType, []string{"test"})
+		k8sconditions.SetDeploymentsApplied(dk, conditionType, []string{"test"})
 		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
 
 		deployment := getReconciledDeployment(t, clt, dk)

@@ -31,7 +31,7 @@ const (
 	DataIngestTokenConditionType string = "DataIngestToken"
 )
 
-// Possible reasons for APIToken and PaaSToken conditions.
+// Possible reasons for APIToken and PaaSToken k8sconditions.
 const (
 	// ReasonTokenReady is set when a token has passed verifications.
 	ReasonTokenReady string = "TokenReady"

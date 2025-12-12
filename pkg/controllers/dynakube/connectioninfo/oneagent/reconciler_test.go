@@ -11,8 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +59,7 @@ func TestReconcile(t *testing.T) {
 				Endpoints:  testOutdated,
 			},
 		}
-		conditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
+		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		dk.Spec = dynakube.DynaKubeSpec{}
 
@@ -91,7 +91,7 @@ func TestReconcile(t *testing.T) {
 		dk.Spec = dynakube.DynaKubeSpec{}
 		dk.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
 
-		conditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
+		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		fakeClient := fake.NewClient(dk)
 		dtc := dtclientmock.NewClient(t)
@@ -104,7 +104,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 		require.NotNil(t, condition)
-		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason)
+		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason)
 	})
 
 	t.Run("set correct condition on dynatrace-client error", func(t *testing.T) {
@@ -116,7 +116,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
-		assertCondition(t, dk, metav1.ConditionFalse, conditions.DynatraceAPIErrorReason)
+		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.DynatraceAPIErrorReason)
 	})
 
 	t.Run("set correct condition on kube-client error", func(t *testing.T) {
@@ -128,7 +128,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.Error(t, err)
 
-		assertCondition(t, dk, metav1.ConditionFalse, conditions.KubeAPIErrorReason)
+		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.KubeAPIErrorReason)
 	})
 
 	t.Run("store OneAgent connection info to DynaKube status + create secret", func(t *testing.T) {
@@ -153,7 +153,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason)
+		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason)
 	})
 	t.Run("update OneAgent connection info + secret", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -167,7 +167,7 @@ func TestReconcile(t *testing.T) {
 				Endpoints:  testOutdated,
 			},
 		}
-		conditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
+		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		rec := r.(*reconciler)
@@ -184,7 +184,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason, dk.OneAgent().GetTenantSecret()+" created")
+		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason, dk.OneAgent().GetTenantSecret()+" created")
 	})
 	t.Run("do not update OneAgent connection info within timeout", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -197,7 +197,7 @@ func TestReconcile(t *testing.T) {
 				Endpoints:  testOutdated,
 			},
 		}
-		conditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
+		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
@@ -211,7 +211,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testOutdated), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason, "testing created")
+		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason, "testing created")
 	})
 	t.Run("update OneAgent connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -225,7 +225,7 @@ func TestReconcile(t *testing.T) {
 				Endpoints:  testOutdated,
 			},
 		}
-		conditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
+		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
@@ -239,7 +239,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason, dk.OneAgent().GetTenantSecret()+" created")
+		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason, dk.OneAgent().GetTenantSecret()+" created")
 	})
 
 	t.Run("update OneAgent connection info in case conditions is in 'False' state ", func(t *testing.T) {
@@ -268,7 +268,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[connectioninfo.TenantTokenKey])
 
-		assertCondition(t, dk, metav1.ConditionTrue, conditions.SecretCreatedReason)
+		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.SecretCreatedReason)
 	})
 }
 

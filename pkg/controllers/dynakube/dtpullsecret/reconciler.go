@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -50,8 +50,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if conditions.IsOutdated(r.timeprovider, r.dk, PullSecretConditionType) {
-		conditions.SetSecretOutdated(r.dk.Conditions(), PullSecretConditionType,
+	if k8sconditions.IsOutdated(r.timeprovider, r.dk, PullSecretConditionType) {
+		k8sconditions.SetSecretOutdated(r.dk.Conditions(), PullSecretConditionType,
 			extendWithPullSecretSuffix(r.dk.Name)+" is not present or outdated")
 
 		err := r.reconcilePullSecret(ctx)
@@ -70,7 +70,7 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) er
 
 	err := r.secrets.Delete(ctx, secret)
 	if err != nil && !k8serrors.IsNotFound(err) {
-		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
 
 		return errors.WithMessagef(err, "failed to delete secret %s", secret.Name)
 	}
@@ -89,7 +89,7 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context) error {
 		k8ssecret.SetType(corev1.SecretTypeDockerConfigJson),
 	)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -97,12 +97,12 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context) error {
 	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret", "name", secret.Name)
-		conditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, errors.WithMessage(err, "failed to create or update secret"))
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), PullSecretConditionType, errors.WithMessage(err, "failed to create or update secret"))
 
 		return errors.WithMessage(err, "failed to create or update secret")
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), PullSecretConditionType, secret.Name)
+	k8sconditions.SetSecretCreated(r.dk.Conditions(), PullSecretConditionType, secret.Name)
 
 	return nil
 }

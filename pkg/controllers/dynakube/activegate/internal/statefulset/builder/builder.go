@@ -1,7 +1,7 @@
 package builder
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
+	builder "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/generic"
 	appsv1 "k8s.io/api/apps/v1"
 )
 

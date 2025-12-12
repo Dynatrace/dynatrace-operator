@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -72,13 +72,13 @@ func TestReconcile(t *testing.T) {
 		require.NotEmpty(t, dk.Conditions())
 		assert.Equal(t, conditionType, (*dk.Conditions())[0].Type)
 		assert.Equal(t, metav1.ConditionTrue, (*dk.Conditions())[0].Status)
-		assert.Equal(t, conditions.SecretCreatedReason, (*dk.Conditions())[0].Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, (*dk.Conditions())[0].Reason)
 		assert.Equal(t, "dynakube-extension-controller-tls created", (*dk.Conditions())[0].Message)
 	})
 	t.Run("do not renew self-signed tls secret if it exists", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = ""
-		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extension-controller-tls")
+		k8sconditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extension-controller-tls")
 
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("self-signed tls secret is deleted", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "dummy-value"
-		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extension-controller-tls")
+		k8sconditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extension-controller-tls")
 
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)
@@ -122,7 +122,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("self-signed tls secret is deleted if extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions = nil
-		conditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extension-controller-tls")
+		k8sconditions.SetSecretCreated(dk.Conditions(), conditionType, "dynakube-extension-controller-tls")
 
 		fakeClient := fake.NewClient()
 		fakeClient = mockSelfSignedTLSSecret(t, fakeClient, dk)

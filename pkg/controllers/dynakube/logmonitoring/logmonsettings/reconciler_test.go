@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -73,7 +73,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, conditions.OptionalScopeMissingReason)
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
 	})
 
 	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
@@ -96,7 +96,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, conditions.OptionalScopeMissingReason)
+		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
 	})
 }
 

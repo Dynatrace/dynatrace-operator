@@ -14,8 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	kubesystem "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context()))
 
 		_ = getStatefulSet(t, clt, dk)
-		assertCondition(t, dk, metav1.ConditionTrue, conditions.StatefulSetCreatedReason, testName+"-activegate created")
+		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.StatefulSetCreatedReason, testName+"-activegate created")
 	})
 	t.Run("update statefulset", func(t *testing.T) {
 		r, clt, dk := createDefaultReconciler(t)
@@ -121,7 +121,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		assert.Equal(t, 1, found)
-		assertCondition(t, dk, metav1.ConditionTrue, conditions.StatefulSetCreatedReason, testName+"-activegate created")
+		assertCondition(t, dk, metav1.ConditionTrue, k8sconditions.StatefulSetCreatedReason, testName+"-activegate created")
 	})
 	t.Run("statefulset error is logged in condition", func(t *testing.T) {
 		r, clt, dk := createDefaultReconciler(t)
@@ -135,7 +135,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context())
 		require.Error(t, err)
 
-		assertCondition(t, dk, metav1.ConditionFalse, conditions.KubeAPIErrorReason, "A problem occurred when using the Kubernetes API: "+err.Error())
+		assertCondition(t, dk, metav1.ConditionFalse, k8sconditions.KubeAPIErrorReason, "A problem occurred when using the Kubernetes API: "+err.Error())
 	})
 }
 

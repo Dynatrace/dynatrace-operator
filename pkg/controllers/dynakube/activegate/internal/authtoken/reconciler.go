@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -73,7 +73,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 			return r.ensureAuthTokenSecret(ctx)
 		}
 
-		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -81,7 +81,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 	if isSecretOutdated(secret) {
 		log.Info("activeGateAuthToken is outdated, creating new one")
 
-		conditions.SetSecretOutdated(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret is outdated, update in progress")
+		k8sconditions.SetSecretOutdated(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret is outdated, update in progress")
 
 		if err := r.deleteSecret(ctx, secret); err != nil {
 			return errors.WithStack(err)
@@ -107,7 +107,7 @@ func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
 func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]byte, error) {
 	authTokenInfo, err := r.dtc.GetActiveGateAuthToken(ctx, r.dk.Name)
 	if err != nil {
-		conditions.SetDynatraceAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
@@ -124,14 +124,14 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 		secretName,
 		secretData)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.WithStack(err)
 	}
 
 	err = r.secrets.WithOwner(r.dk).Create(ctx, secret)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return errors.Errorf("failed to create secret '%s': %v", secretName, err)
 	}
@@ -143,7 +143,7 @@ func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]b
 
 func (r *Reconciler) deleteSecret(ctx context.Context, secret *corev1.Secret) error {
 	if err := r.secrets.Delete(ctx, secret); err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
 		return err
 	}

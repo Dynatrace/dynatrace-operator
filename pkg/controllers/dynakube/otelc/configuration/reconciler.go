@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	corev1 "k8s.io/api/core/v1"
@@ -64,14 +64,14 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
 
 	changed, err := query.CreateOrUpdate(ctx, newConfigMap)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	} else if changed {
-		conditions.SetConfigMapOutdated(r.dk.Conditions(), conditionType, newConfigMap.Name) // needed so the timestamp updates, will never actually show up in the status
+		k8sconditions.SetConfigMapOutdated(r.dk.Conditions(), conditionType, newConfigMap.Name) // needed so the timestamp updates, will never actually show up in the status
 	}
 
-	conditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), conditionType, newConfigMap.Name)
+	k8sconditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), conditionType, newConfigMap.Name)
 
 	return nil
 }
@@ -90,7 +90,7 @@ func (r *Reconciler) prepareConfigMap() (*corev1.ConfigMap, error) {
 		k8sconfigmap.SetLabels(coreLabels),
 	)
 	if err != nil {
-		conditions.SetConfigMapGenFailed(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetConfigMapGenFailed(r.dk.Conditions(), conditionType, err)
 
 		return nil, err
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +38,7 @@ func TestTokenCreation(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEmpty(t, secret)
 		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType))
-		assert.Equal(t, conditions.SecretCreatedReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
 		assert.NotEmpty(t, dk.KSPM().TokenSecretHash)
 	})
 
@@ -51,13 +51,13 @@ func TestTokenCreation(t *testing.T) {
 
 		err := r.ensureKSPMSecret(ctx)
 		require.Error(t, err)
-		assert.Equal(t, conditions.KubeAPIErrorReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
+		assert.Equal(t, k8sconditions.KubeAPIErrorReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
 	})
 
 	t.Run("removes secret if exists", func(t *testing.T) {
 		dk := createDynaKube(false)
 		dk.KSPM().TokenSecretHash = "something"
-		conditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
+		k8sconditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
 
 		objs := []client.Object{
 			&corev1.Secret{

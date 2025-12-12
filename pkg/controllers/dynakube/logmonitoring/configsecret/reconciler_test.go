@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +40,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only clean up if not standalone", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		conditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "testing")
+		k8sconditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "testing")
 
 		mockK8sClient := createK8sClientWithConfigSecret()
 
@@ -73,7 +73,7 @@ func TestReconcile(t *testing.T) {
 		require.NotNil(t, condition)
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotEmpty(t, oldTransitionTime)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
 		err = reconciler.Reconcile(context.Background())
@@ -98,7 +98,7 @@ func TestReconcile(t *testing.T) {
 		require.NotNil(t, condition)
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotEmpty(t, oldTransitionTime)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		reconciler.dk.Spec.NetworkZone = "test-zone"
 		reconciler.dk.Spec.Proxy = &value.Source{
@@ -117,7 +117,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynakube(false)
 
 		mockK8sClient := createK8sClientWithOneAgentTenantSecret(dk, tokenValue)
-		conditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "this is a test")
+		k8sconditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
 		err := reconciler.Reconcile(ctx)
@@ -146,7 +146,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
 		condition := meta.FindStatusCondition(*dk.Conditions(), LmcConditionType)
-		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
+		assert.Equal(t, k8sconditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
