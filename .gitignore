@@ -102,6 +102,7 @@ kind-logs-*
 /csi.db
 /node_modules
 
+test/e2e/testdata/secrets/*
 test/testdata/secrets/*
 *.prof
 

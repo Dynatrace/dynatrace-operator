@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/pkg/errors"
@@ -58,7 +58,7 @@ func (r *Reconciler) deleteConfigMap(ctx context.Context, configMap *corev1.Conf
 	err := r.configMaps.Delete(ctx, configMap)
 
 	if err != nil && !k8serrors.IsNotFound(err) {
-		conditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)
 
 		return errors.WithMessagef(err, "failed to delete configMap %s", configMap.Name)
 	}
@@ -78,7 +78,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
 		k8sconfigmap.SetLabels(k8slabel.NewCoreLabels(r.dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()),
 	)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, err)
 
 		return errors.WithStack(err)
 	}
@@ -86,12 +86,12 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
 	_, err = r.configMaps.CreateOrUpdate(ctx, configMap)
 	if err != nil {
 		log.Info("could not create or update config map", "name", configMap.Name)
-		conditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, errors.WithMessage(err, "failed to create or update config map"))
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), configMapConditionType, errors.WithMessage(err, "failed to create or update config map"))
 
 		return errors.WithMessage(err, "failed to create or update config map")
 	}
 
-	conditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), configMapConditionType, configMap.Name)
+	k8sconditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), configMapConditionType, configMap.Name)
 
 	return nil
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -54,12 +54,12 @@ func TestConfigMapCreation(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEmpty(t, apiEndpointConfigMap)
 		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType))
-		assert.Equal(t, conditions.ConfigMapCreatedOrUpdatedReason, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType).Reason)
+		assert.Equal(t, k8sconditions.ConfigMapCreatedOrUpdatedReason, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType).Reason)
 	})
 
 	t.Run("removes config map if exists but we don't need it", func(t *testing.T) {
 		dk := createDynaKube(false)
-		conditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.OtlpAPIEndpointConfigMapName)
+		k8sconditions.SetConfigMapCreatedOrUpdated(dk.Conditions(), configMapConditionType, consts.OtlpAPIEndpointConfigMapName)
 
 		objs := []client.Object{
 			&corev1.ConfigMap{

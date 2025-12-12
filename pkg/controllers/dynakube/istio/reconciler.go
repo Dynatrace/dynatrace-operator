@@ -10,7 +10,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -114,7 +114,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		return nil
 	}
 
-	if !conditions.IsOutdated(r.timeProvider, dk, getConditionTypeName(ActiveGateComponent)) {
+	if !k8sconditions.IsOutdated(r.timeProvider, dk, getConditionTypeName(ActiveGateComponent)) {
 		log.Info("condition still within time threshold...skipping further reconciliation")
 
 		return nil

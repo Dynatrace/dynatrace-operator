@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 )
 
@@ -31,13 +31,13 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel stri
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
+	if !k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
 		log.Info("api token missing optional scope, skipping reconciliation", "scope", dtclient.TokenScopeSettingsRead)
 
 		return nil
 	}
 
-	if !conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite) {
+	if !k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite) {
 		log.Info("api token missing optional scope, skipping reconciliation", "scope", dtclient.TokenScopeSettingsWrite)
 
 		return nil

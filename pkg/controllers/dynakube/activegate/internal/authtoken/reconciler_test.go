@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -74,7 +74,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 	})
 	t.Run("reconcile outdated auth token", func(t *testing.T) {
 		dk := newDynaKube()
@@ -91,7 +91,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		firstTransition := condition.LastTransitionTime
 
 		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
@@ -119,7 +119,7 @@ func TestReconcile(t *testing.T) {
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
 
 		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
@@ -150,7 +150,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		firstTransition := condition.LastTransitionTime
 
 		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
@@ -179,7 +179,7 @@ func TestReconcile(t *testing.T) {
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
 
 		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{

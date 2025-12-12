@@ -1,7 +1,7 @@
 package authtoken
 
 import (
-	cond "github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	cond "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

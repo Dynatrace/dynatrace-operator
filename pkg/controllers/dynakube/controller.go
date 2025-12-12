@@ -27,11 +27,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	kubesystem "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -503,9 +503,9 @@ func (controller *Controller) updateOptionalScopesConditions(dkStatus *dynakube.
 		case !ok: // no enabled feature uses the `scope` -> doesn't need to be in the status
 			_ = meta.RemoveStatusCondition(&dkStatus.Conditions, conditionType)
 		case available:
-			conditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
+			k8sconditions.SetOptionalScopeAvailable(&dkStatus.Conditions, conditionType, scope+" optional scope available")
 		case !available:
-			conditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
+			k8sconditions.SetOptionalScopeMissing(&dkStatus.Conditions, conditionType, scope+" optional scope not available, some features may not work")
 		}
 	}
 }

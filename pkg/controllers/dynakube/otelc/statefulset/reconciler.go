@@ -7,9 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
@@ -76,7 +76,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	if r.dk.TelemetryIngest().IsEnabled() {
 		if !r.checkDataIngestTokenExists(ctx) {
 			msg := "data ingest token is missing, but it's required for telemetery ingest"
-			conditions.SetDataIngestTokenMissing(r.dk.Conditions(), dynakube.TokenConditionType, msg)
+			k8sconditions.SetDataIngestTokenMissing(r.dk.Conditions(), dynakube.TokenConditionType, msg)
 
 			log.Error(errors.New(msg), "could not create or update statefulset")
 
@@ -111,7 +111,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		setVolumes(r.dk),
 	)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -119,12 +119,12 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.OtelCollectorStatefulsetName() + " statefulset")
-		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
-	conditions.SetStatefulSetCreated(r.dk.Conditions(), conditionType, sts.Name)
+	k8sconditions.SetStatefulSetCreated(r.dk.Conditions(), conditionType, sts.Name)
 
 	return nil
 }

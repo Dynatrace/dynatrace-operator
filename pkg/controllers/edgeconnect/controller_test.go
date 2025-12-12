@@ -11,12 +11,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	edgeconnectmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/edgeconnect"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/oci/registry"
@@ -259,7 +259,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, ec.Name+"-"+consts.EdgeConnectSecretSuffix+" created", condition.Message)
 	})
 
@@ -290,7 +290,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.SecretGenerationFailed, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretGenerationFailed, condition.Reason)
 		assert.Contains(t, condition.Message, "Failed to generate secret: failed to get clientSecret")
 	})
 
@@ -329,7 +329,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*ec.Conditions(), consts.SecretConfigConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.SecretGenerationFailed, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretGenerationFailed, condition.Reason)
 		assert.Contains(t, condition.Message, "Failed to generate secret: BOOM")
 	})
 }

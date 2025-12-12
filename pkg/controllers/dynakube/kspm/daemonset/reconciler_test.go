@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,7 +46,7 @@ func TestReconcile(t *testing.T) {
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotNil(t, condition)
 		require.NotEmpty(t, oldTransitionTime)
-		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
 		err = reconciler.Reconcile(context.Background())
@@ -69,7 +69,7 @@ func TestReconcile(t *testing.T) {
 		previousDaemonSet.Namespace = dk.Namespace
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
-		conditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "this is a test")
+		k8sconditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
 		err := reconciler.Reconcile(ctx)
@@ -98,7 +98,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
-		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
+		assert.Equal(t, k8sconditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }

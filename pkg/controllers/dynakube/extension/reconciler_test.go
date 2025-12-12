@@ -11,8 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
@@ -51,7 +51,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		dk := createDynakube()
 
 		// mock SecretCreated condition
-		conditions.SetSecretCreated(dk.Conditions(), secretConditionType, dk.Extensions().GetTokenSecretName())
+		k8sconditions.SetSecretCreated(dk.Conditions(), secretConditionType, dk.Extensions().GetTokenSecretName())
 
 		// mock secret
 		secretToken, _ := dttoken.New(eecConsts.TokenSecretValuePrefix)
@@ -104,7 +104,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), secretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, dk.Extensions().GetTokenSecretName()+" created", condition.Message)
 	})
 	t.Run("Extension SecretCreated failure condition is set when error", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), secretConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
+		assert.Equal(t, k8sconditions.KubeAPIErrorReason, condition.Reason)
 		assert.Contains(t, condition.Message, "A problem occurred when using the Kubernetes API")
 	})
 	t.Run("Extension secret migration", func(t *testing.T) {
@@ -142,7 +142,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		oldSecret, err := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
 		require.NoError(t, err)
 
-		conditions.SetSecretCreated(dk.Conditions(), secretConditionType, oldSecret.Name)
+		k8sconditions.SetSecretCreated(dk.Conditions(), secretConditionType, oldSecret.Name)
 
 		fakeClient := fake.NewClient(oldSecret)
 		r := NewReconciler(fakeClient, fakeClient, dk)
@@ -164,7 +164,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), secretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, dk.Extensions().GetTokenSecretName()+" created", condition.Message)
 	})
 }
@@ -191,7 +191,7 @@ func TestReconciler_ReconcileService(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), serviceConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.ServiceCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.ServiceCreatedReason, condition.Reason)
 		assert.Equal(t, dk.Name+eecConsts.ExtensionControllerSuffix+" created", condition.Message)
 	})
 

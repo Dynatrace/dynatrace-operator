@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
@@ -68,7 +68,7 @@ func TestReconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
-		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
+		assert.Equal(t, k8sconditions.DynatraceAPIErrorReason, condition.Reason)
 	})
 
 	t.Run("all image versions were updated", func(t *testing.T) {
