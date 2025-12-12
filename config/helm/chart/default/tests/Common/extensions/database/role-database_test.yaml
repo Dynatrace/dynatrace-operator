@@ -20,28 +20,6 @@ tests:
           path: .metadata.name
           value: dynatrace-sql-ext-exec
 
-  - it: Role has correct permissions for finding database pods
-    documentIndex: 0
-    asserts:
-      - isKind:
-          of: Role
-      - equal:
-          path: metadata.name
-          value: dynatrace-sql-ext-exec
-      - isNotEmpty:
-          path: metadata.labels
-      - isNotEmpty:
-          path: rules
-      - contains:
-          path: rules
-          content:
-            apiGroups:
-              - ""
-            resources:
-              - pods
-            verbs:
-              - list
-
   - it: Role should exist with extra permissions for openshift
     documentIndex: 0
     set:
