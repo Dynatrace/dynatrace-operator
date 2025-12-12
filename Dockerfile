@@ -24,12 +24,12 @@ ARG GOFIPS140=off
 
 # ${variable:+word} indicates that if variable is set then word
 # will be the result, otherwise the result is the empty string.
-ENV GODEBUG=${GODEBUG:+fips140=only,tlsmlkem=0}
+#ENV GODEBUG=${GODEBUG:+fips140=only,tlsmlkem=0}
 
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     --mount=type=cache,target="/go/pkg" \
-    CGO_ENABLED=0 GOFIPS140="${GOFIPS140}" GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    CGO_ENABLED=0 GOFIPS140="${GOFIPS140}" GODEBUG="${GODEBUG}" GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
