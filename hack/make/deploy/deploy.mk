@@ -1,5 +1,6 @@
 ENABLE_CSI ?= true
 DEBUG_LOGS ?= true
+HA_WEBHOOK ?= true
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 
@@ -28,6 +29,7 @@ deploy: manifests/crd/helm
 			--atomic \
 			--set installCRD=true \
 			--set csidriver.enabled=$(ENABLE_CSI) \
+			--set webhook.highAvailability=$(HA_WEBHOOK) \
 			--set manifests=true \
 			--set image=$(IMAGE_URI) \
 			--set debugLogs=$(DEBUG_LOGS) \
