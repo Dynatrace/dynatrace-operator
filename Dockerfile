@@ -19,7 +19,7 @@ ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
-ARG GODEBUG
+ARG GODEBUG_ARG
 ARG GOFIPS140=off
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
@@ -83,7 +83,7 @@ LABEL name="Dynatrace Operator" \
 ENV OPERATOR=dynatrace-operator \
     USER_UID=1001 \
     USER_NAME=dynatrace-operator \
-    GODEBUG=${GODEBUG:+fips140=only,tlsmlkem=0}
+    GODEBUG=${GODEBUG_ARG:+fips140=only,tlsmlkem=0}
 
 RUN /usr/local/bin/user_setup
 
