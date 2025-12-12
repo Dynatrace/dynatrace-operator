@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -105,7 +104,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		setPersistentVolumeClaim(r.dk),
 	)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ExtensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
@@ -113,17 +112,18 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
-		conditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), ExtensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	conditions.SetStatefulSetCreated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, desiredSts.Name)
+	conditions.SetStatefulSetCreated(r.dk.Conditions(), ExtensionControllerStatefulSetConditionType, desiredSts.Name)
 
 	return nil
 }
 
-func (r *reconciler) deleteLegacyStatefulset(ctx context.Context) error {
+// TODO: Remove as part of DAQ-18375
+func (r *reconciler) deleteLegacyStatefulset(ctx context.Context) {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.dk.Name + "-extensions-controller",
@@ -131,7 +131,7 @@ func (r *reconciler) deleteLegacyStatefulset(ctx context.Context) error {
 		},
 	}
 
-	return client.IgnoreNotFound(r.client.Delete(ctx, sts))
+	_ = r.client.Delete(ctx, sts)
 }
 
 func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {

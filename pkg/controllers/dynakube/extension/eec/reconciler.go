@@ -33,13 +33,11 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	defer r.deleteLegacyStatefulset(ctx)
-
 	if ext := r.dk.Extensions(); !ext.IsAnyEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), extensionControllerStatefulSetConditionType) == nil {
+		if meta.FindStatusCondition(*r.dk.Conditions(), ExtensionControllerStatefulSetConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), extensionControllerStatefulSetConditionType)
+		defer meta.RemoveStatusCondition(r.dk.Conditions(), ExtensionControllerStatefulSetConditionType)
 
 		sts, err := k8sstatefulset.Build(r.dk, ext.GetExecutionControllerStatefulsetName(), corev1.Container{})
 		if err != nil {
@@ -53,20 +51,24 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 			log.Error(err, "failed to clean up "+ext.GetExecutionControllerStatefulsetName()+" statufulset")
 		}
 
+		r.deleteLegacyStatefulset(ctx)
+
 		return nil
 	}
 
 	if r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), ExtensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		return errors.New("tenantUUID unknown")
 	}
 
 	if r.dk.Status.KubeSystemUUID == "" {
-		conditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
+		conditions.SetStatefulSetOutdated(r.dk.Conditions(), ExtensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		return errors.New("kubeSystemUUID unknown")
 	}
+
+	defer r.deleteLegacyStatefulset(ctx)
 
 	return r.createOrUpdateStatefulset(ctx)
 }

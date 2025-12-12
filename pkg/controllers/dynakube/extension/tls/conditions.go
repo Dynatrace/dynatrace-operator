@@ -1,3 +1,3 @@
 package tls
 
-const conditionType string = "ExtensionsTLSSecret"
+const ConditionType string = "ExtensionsTLSSecret"

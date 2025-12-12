@@ -11,12 +11,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
-	defer r.deleteLegacyServce(ctx)
-
 	if !r.dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
 			return nil
@@ -35,8 +32,12 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 			log.Error(err, "failed to clean up extension service")
 		}
 
+		r.deleteLegacyService(ctx)
+
 		return nil
 	}
+
+	defer r.deleteLegacyService(ctx)
 
 	return r.createOrUpdateService(ctx)
 }
@@ -84,7 +85,8 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 	)
 }
 
-func (r *reconciler) deleteLegacyServce(ctx context.Context) error {
+// TODO: Remove as part of DAQ-18375
+func (r *reconciler) deleteLegacyService(ctx context.Context) {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.dk.Name + "-extensions-controller",
@@ -92,5 +94,5 @@ func (r *reconciler) deleteLegacyServce(ctx context.Context) error {
 		},
 	}
 
-	return client.IgnoreNotFound(r.client.Delete(ctx, svc))
+	_ = r.client.Delete(ctx, svc)
 }

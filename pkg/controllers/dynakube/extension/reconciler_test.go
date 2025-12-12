@@ -11,6 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/eec"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -230,6 +232,9 @@ func TestReconciler_legacyCleanup(t *testing.T) {
 	t.Run("clean up when extensions are disabled", func(t *testing.T) {
 		dk := createDynakube()
 		dk.Spec.Extensions = nil
+		conditions.SetStatefulSetCreated(dk.Conditions(), eec.ExtensionControllerStatefulSetConditionType, "test")
+		conditions.SetStatefulSetCreated(dk.Conditions(), tls.ConditionType, "test")
+		conditions.SetServiceCreated(dk.Conditions(), serviceConditionType, "test")
 
 		fakeClient := fake.NewClient(append([]client.Object{dk}, legacyResources(dk)...)...)
 		r := NewReconciler(fakeClient, fakeClient, dk)
