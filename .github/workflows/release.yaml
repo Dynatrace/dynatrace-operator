@@ -339,7 +339,7 @@ jobs:
             - [x] PR is labeled accordingly
 
   update-csv-bundles:
-    needs: [prepare, build-push, signing, run-preflight-rhcc, release]
+    needs: release
     runs-on: ubuntu-24.04
     if: ${{ !contains(github.ref, '-rc.') }}
     permissions:
