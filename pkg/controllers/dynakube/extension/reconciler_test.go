@@ -289,7 +289,7 @@ func legacyResources(dk *dynakube.DynaKube) []client.Object {
 func assertLegacyResourcesCleanedUp(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
 	for _, obj := range legacyResources(dk) {
 		err := clt.Get(t.Context(), client.ObjectKeyFromObject(obj), obj)
-		assert.Errorf(t, err, "%T %s still exists", obj, obj.GetName())
+		require.Errorf(t, err, "%T %s still exists", obj, obj.GetName())
 	}
 	cond := meta.FindStatusCondition(dk.Status.Conditions, "ExtensionsControllerStatefulSet")
 	assert.Nil(t, cond, "unexpected condition: %+v", cond)
