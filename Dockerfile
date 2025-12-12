@@ -29,7 +29,7 @@ ARG GOFIPS140=off
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     --mount=type=cache,target="/go/pkg" \
-    CGO_ENABLED=0 GOFIPS140="${GOFIPS140}" GODEBUG="${GODEBUG}" GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    CGO_ENABLED=0 GOFIPS140="${GOFIPS140}" GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
