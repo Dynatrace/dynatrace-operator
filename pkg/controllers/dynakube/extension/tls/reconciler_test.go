@@ -1,7 +1,6 @@
 package tls
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -40,13 +39,13 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
 		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
-		err = fakeClient.Get(context.Background(), key, &secret)
+		err = fakeClient.Get(t.Context(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
 		assert.Equal(t, corev1.Secret{}, secret)
@@ -59,13 +58,13 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
 		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
-		err = fakeClient.Get(context.Background(), key, &secret)
+		err = fakeClient.Get(t.Context(), key, &secret)
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, secret)
@@ -85,13 +84,13 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
 		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
-		err = fakeClient.Get(context.Background(), key, &secret)
+		err = fakeClient.Get(t.Context(), key, &secret)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, secret)
@@ -107,13 +106,13 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
 		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
-		err = fakeClient.Get(context.Background(), key, &secret)
+		err = fakeClient.Get(t.Context(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
 		assert.Empty(t, secret)
@@ -129,13 +128,13 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(fakeClient, fakeClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var secret corev1.Secret
 
 		key := client.ObjectKey{Name: dk.Extensions().GetSelfSignedTLSSecretName(), Namespace: testNamespaceName}
-		err = fakeClient.Get(context.Background(), key, &secret)
+		err = fakeClient.Get(t.Context(), key, &secret)
 
 		require.True(t, k8serrors.IsNotFound(err))
 		assert.Equal(t, corev1.Secret{}, secret)
@@ -194,7 +193,7 @@ func getTestDynakube() *dynakube.DynaKube {
 func mockSelfSignedTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
 	tlsSecret := getSelfSignedTLSSecret(dk)
 
-	err := client.Create(context.Background(), &tlsSecret)
+	err := client.Create(t.Context(), &tlsSecret)
 	require.NoError(t, err)
 
 	return client

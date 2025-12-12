@@ -1,7 +1,6 @@
 package extension
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -36,12 +35,12 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		// assert extensions token is not generated
 		var secretFound corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.True(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are empty
@@ -61,23 +60,23 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		secretMock, _ := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
 
 		fakeClient := fake.NewClient()
-		fakeClient.Create(context.Background(), secretMock)
+		fakeClient.Create(t.Context(), secretMock)
 		r := NewReconciler(fakeClient, fakeClient, dk)
 
 		// assert extensions token is there before reconciliation
 		var secretFound corev1.Secret
-		err := fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err := fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.False(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are not empty
 		require.NotEmpty(t, dk.Conditions())
 
 		// reconcile
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		// assert extensions token is deleted after reconciliation
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.True(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are empty
@@ -89,12 +88,12 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		// assert extensions token is generated
 		var secretFound corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.NoError(t, err)
 		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
 		require.NotEmpty(t, secretFound.Data[consts.DatasourceTokenSecretKey])
@@ -113,7 +112,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.Error(t, err)
 
 		// assert extensions token condition is added
@@ -147,12 +146,12 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		fakeClient := fake.NewClient(oldSecret)
 		r := NewReconciler(fakeClient, fakeClient, dk)
 
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		// assert extensions token is generated
 		var secretFound corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
@@ -177,12 +176,12 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 
 		r := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
 		require.NoError(t, err)
 		assert.NotNil(t, svc)
 
@@ -202,12 +201,12 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 
 		r := &reconciler{client: mockK8sClient, apiReader: mockK8sClient, dk: dk, timeProvider: timeprovider.New()}
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})

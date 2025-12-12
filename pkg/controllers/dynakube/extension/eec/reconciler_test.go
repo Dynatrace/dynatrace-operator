@@ -1,7 +1,6 @@
 package eec
 
 import (
-	"context"
 	"strconv"
 	"testing"
 
@@ -77,11 +76,11 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	mockK8sClient := fake.NewClient(dk)
 	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+	err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 	require.NoError(t, err)
 
 	return statefulSet
@@ -90,7 +89,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
 	tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 
-	err := client.Create(context.Background(), &tlsSecret)
+	err := client.Create(t.Context(), &tlsSecret)
 	require.NoError(t, err)
 
 	return client
@@ -120,11 +119,11 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -136,11 +135,11 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.Error(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -153,11 +152,11 @@ func TestConditions(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.Error(t, err)
 
 		assert.True(t, errors.IsNotFound(err))
@@ -208,22 +207,22 @@ func TestSecretHashAnnotation(t *testing.T) {
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
 
 		// then update the TLS Secret and call reconcile again
 		updatedTLSSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
-		err = mockK8sClient.Update(context.Background(), &updatedTLSSecret)
+		err = mockK8sClient.Update(t.Context(), &updatedTLSSecret)
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(context.Background())
+		err = reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
