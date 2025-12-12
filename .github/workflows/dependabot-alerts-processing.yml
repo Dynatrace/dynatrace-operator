@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   triage-critical:
-    environment: E2E
+    environment: copilot
     runs-on: ubuntu-latest
     steps:
       # Step 1: Cache last run timestamp
