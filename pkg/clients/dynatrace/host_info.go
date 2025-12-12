@@ -27,7 +27,7 @@ func (e V1HostEntityAPINotAvailableErr) Error() string {
 	return fmt.Sprintf("the api/v1/entity/infrastructure/hosts endpoint is not available (error 404) on the tenant (%s) ", e.APIURL)
 }
 
-type hostInfoResponse struct {
+type HostInfoResponse struct {
 	EntityID      string   `json:"entityId"`
 	NetworkZoneID string   `json:"networkZoneId"`
 	IPAddresses   []string `json:"ipAddresses"`
@@ -39,7 +39,7 @@ type hostEntityMap map[string]string
 // Update adds or overwrites the IP-to-Entity mapping if the IP already existed
 // The reason we do this "overwrite check" is somewhat unknown, it used to be part of a "caching" logic, however that cache was actually never really used.
 // Kept it "as is" mainly to not introduce new behavior, it is unknown how the API we use handles repeated IP usage. But it can be just dead code.
-func (entityMap hostEntityMap) Update(info hostInfoResponse, entityID string) {
+func (entityMap hostEntityMap) Update(info HostInfoResponse, entityID string) {
 	for _, ip := range info.IPAddresses {
 		if oldEntityID, ok := entityMap[ip]; ok {
 			log.Info("hosts mapping: duplicate IP, replacing HOST entity to 'newer' one", "ip", ip, "new", entityID, "old", oldEntityID)
@@ -132,8 +132,8 @@ func (dtc *dynatraceClient) createHostEntityMapFromResponse(response []byte) (ho
 	return ipHostMapping, nil
 }
 
-func (dtc *dynatraceClient) extractHostInfoResponse(response []byte) ([]hostInfoResponse, error) {
-	var hostInfoResponses []hostInfoResponse
+func (dtc *dynatraceClient) extractHostInfoResponse(response []byte) ([]HostInfoResponse, error) {
+	var hostInfoResponses []HostInfoResponse
 
 	err := json.Unmarshal(response, &hostInfoResponses)
 	if err != nil {

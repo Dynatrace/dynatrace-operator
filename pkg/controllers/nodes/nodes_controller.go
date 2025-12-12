@@ -55,6 +55,17 @@ func NewController(mgr manager.Manager) *Controller {
 	}
 }
 
+func NewControllerFromClient(clt client.Client) *Controller {
+	return &Controller{
+		client:                 clt,
+		apiReader:              clt,
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(clt),
+		runLocal:               kubesystem.IsRunLocally(),
+		podNamespace:           os.Getenv(k8senv.PodNamespace),
+		timeProvider:           timeprovider.New(),
+	}
+}
+
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) { //nolint: revive
 	nodeName := request.Name
 	dk, err := controller.determineDynakubeForNode(nodeName)
