@@ -7,9 +7,6 @@ metadata:
   labels:
     {{- include "dynatrace-operator.databaseDatasourceLabels" . | nindent 4 }}
 rules:
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["list"]
   {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
   - apiGroups:
       - security.openshift.io
