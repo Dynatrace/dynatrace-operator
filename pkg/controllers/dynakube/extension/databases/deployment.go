@@ -25,7 +25,7 @@ const (
 	readinessProbePath       = "/health/ready"
 	userGroupID        int64 = 1000
 	// Keep in sync with helm chart
-	defaultServiceAccount = "dynatrace-sql-extension-executor"
+	defaultServiceAccount = "dynatrace-sql-ext-exec"
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
 
@@ -57,7 +57,7 @@ func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKu
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
 // Do NOT modify maps produced by this function.
 func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
-	appLabels := k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag)
+	appLabels := k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag)
 
 	deploymentLabels := appLabels.BuildLabels()
 	matchLabels := appLabels.BuildMatchLabels()
@@ -86,7 +86,7 @@ func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
 
 func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev1.Container {
 	pullPolicy := corev1.PullIfNotPresent
-	if dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag == "latest" {
+	if dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag == "latest" {
 		// For initial testing latest image is used, so let runtime pull updates if they're available.
 		// Maybe move this into the imageRef, e.g. imageRef.PullPolicy()
 		pullPolicy = corev1.PullAlways
@@ -94,7 +94,7 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev
 
 	container := corev1.Container{
 		Name:            "sql-executor",
-		Image:           dk.Spec.Templates.DatabaseExecutor.ImageRef.String(),
+		Image:           dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String(),
 		ImagePullPolicy: pullPolicy,
 		Args:            buildContainerArgs(dk),
 		Env:             buildContainerEnvs(),

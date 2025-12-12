@@ -8285,35 +8285,6 @@ spec:
                 type: object
               templates:
                 properties:
-                  databaseExecutor:
-                    properties:
-                      imageRef:
-                        properties:
-                          repository:
-                            example: docker.io/dynatrace/image-name
-                            type: string
-                          tag:
-                            type: string
-                        type: object
-                      tolerations:
-                        items:
-                          properties:
-                            effect:
-                              type: string
-                            key:
-                              type: string
-                            operator:
-                              type: string
-                            tolerationSeconds:
-                              format: int64
-                              type: integer
-                            value:
-                              type: string
-                          type: object
-                        type: array
-                    required:
-                    - imageRef
-                    type: object
                   extensionExecutionController:
                     properties:
                       annotations:
@@ -9023,6 +8994,35 @@ spec:
                           - whenUnsatisfiable
                           type: object
                         type: array
+                    type: object
+                  sqlExtensionExecutor:
+                    properties:
+                      imageRef:
+                        properties:
+                          repository:
+                            example: docker.io/dynatrace/image-name
+                            type: string
+                          tag:
+                            type: string
+                        type: object
+                      tolerations:
+                        items:
+                          properties:
+                            effect:
+                              type: string
+                            key:
+                              type: string
+                            operator:
+                              type: string
+                            tolerationSeconds:
+                              format: int64
+                              type: integer
+                            value:
+                              type: string
+                          type: object
+                        type: array
+                    required:
+                    - imageRef
                     type: object
                 type: object
               tokens:

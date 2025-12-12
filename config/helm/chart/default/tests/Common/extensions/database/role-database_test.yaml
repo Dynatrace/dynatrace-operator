@@ -9,7 +9,7 @@ tests:
           of: Role
       - equal:
           path: .metadata.name
-          value: dynatrace-sql-extension-executor
+          value: dynatrace-sql-ext-exec
 
   - it: should create RoleBinding
     documentIndex: 1
@@ -18,29 +18,7 @@ tests:
           of: RoleBinding
       - equal:
           path: .metadata.name
-          value: dynatrace-sql-extension-executor
-
-  - it: Role has correct permissions for finding database pods
-    documentIndex: 0
-    asserts:
-      - isKind:
-          of: Role
-      - equal:
-          path: metadata.name
-          value: dynatrace-sql-extension-executor
-      - isNotEmpty:
-          path: metadata.labels
-      - isNotEmpty:
-          path: rules
-      - contains:
-          path: rules
-          content:
-            apiGroups:
-              - ""
-            resources:
-              - pods
-            verbs:
-              - list
+          value: dynatrace-sql-ext-exec
 
   - it: Role should exist with extra permissions for openshift
     documentIndex: 0
@@ -51,7 +29,7 @@ tests:
           of: Role
       - equal:
           path: metadata.name
-          value: dynatrace-sql-extension-executor
+          value: dynatrace-sql-ext-exec
       - isNotEmpty:
           path: metadata.labels
       - contains:

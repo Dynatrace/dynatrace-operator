@@ -54,7 +54,7 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 						Tag:        "some-tag",
 					},
 				},
-				DatabaseExecutor: extensions.DatabaseExecutorSpec{
+				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 					ImageRef: image.Ref{
 						Repository: "some-repo",
 						Tag:        "some-tag",
@@ -158,7 +158,7 @@ func TestUnusedVolumes(t *testing.T) {
 						Tag:        "some-tag",
 					},
 				},
-				DatabaseExecutor: extensions.DatabaseExecutorSpec{
+				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 					ImageRef: image.Ref{
 						Repository: "some-repo",
 						Tag:        "some-tag",
@@ -223,7 +223,7 @@ func TestHostPathDatabaseVolume(t *testing.T) {
 							Tag:        "some-tag",
 						},
 					},
-					DatabaseExecutor: extensions.DatabaseExecutorSpec{
+					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 						ImageRef: image.Ref{
 							Repository: "some-repo",
 							Tag:        "some-tag",

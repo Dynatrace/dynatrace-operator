@@ -272,7 +272,7 @@ func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
 
 func WithExtensionsDBExecutorImageRefSpec(repo, tag string) Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.Templates.DatabaseExecutor.ImageRef = image.Ref{
+		dk.Spec.Templates.SQLExtensionExecutor.ImageRef = image.Ref{
 			Repository: repo,
 			Tag:        tag,
 		}

@@ -33,7 +33,7 @@ SDK_PARAMS=(
 --extra-service-accounts dynatrace-otel-collector
 --extra-service-accounts dynatrace-edgeconnect
 --extra-service-accounts dynatrace-extension-controller
---extra-service-accounts dynatrace-sql-extension-executor
+--extra-service-accounts dynatrace-sql-ext-exec
 --extra-service-accounts dynatrace-logmonitoring
 --extra-service-accounts dynatrace-node-config-collector
 )
