@@ -39,6 +39,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	defer r.deleteLegacySelfSignedTLSSecret(ctx)
+
 	if ext := r.dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
@@ -46,7 +48,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 		return nil
 	}
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+
+	meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
 	return r.deleteSelfSignedTLSSecret(ctx)
 }
@@ -76,6 +79,17 @@ func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 			Namespace: r.dk.Namespace,
 		},
 	})
+}
+
+func (r *reconciler) deleteLegacySelfSignedTLSSecret(ctx context.Context) error {
+	err := r.secrets.Delete(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.dk.Name + "-extensions-controller-tls",
+			Namespace: r.dk.Namespace,
+		},
+	})
+
+	return client.IgnoreNotFound(err)
 }
 
 func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {

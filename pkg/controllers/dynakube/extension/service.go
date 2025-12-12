@@ -9,10 +9,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *reconciler) reconcileService(ctx context.Context) error {
+	defer r.deleteLegacyServce(ctx)
+
 	if !r.dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
 			return nil
@@ -29,8 +33,6 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 		err = k8sservice.Query(r.client, r.apiReader, log).Delete(ctx, svc)
 		if err != nil {
 			log.Error(err, "failed to clean up extension service")
-
-			return nil
 		}
 
 		return nil
@@ -80,4 +82,15 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 		k8sservice.SetLabels(coreLabels.BuildLabels()),
 		k8sservice.SetType(corev1.ServiceTypeClusterIP),
 	)
+}
+
+func (r *reconciler) deleteLegacyServce(ctx context.Context) error {
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.dk.Name + "-extensions-controller",
+			Namespace: r.dk.Namespace,
+		},
+	}
+
+	return client.IgnoreNotFound(r.client.Delete(ctx, svc))
 }

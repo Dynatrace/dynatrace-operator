@@ -33,6 +33,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	defer r.deleteLegacyStatefulset(ctx)
+
 	if ext := r.dk.Extensions(); !ext.IsAnyEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), extensionControllerStatefulSetConditionType) == nil {
 			return nil
@@ -49,8 +51,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		err = k8sstatefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 		if err != nil {
 			log.Error(err, "failed to clean up "+ext.GetExecutionControllerStatefulsetName()+" statufulset")
-
-			return nil
 		}
 
 		return nil
