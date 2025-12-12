@@ -58,9 +58,7 @@ func runBenchmarkReconcile(b *testing.B, config benchmarkConfig) {
 		if i >= config.NumNodes {
 			i = 0
 		}
-		result, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
-		require.NoError(b, err)
-		require.NotNil(b, result)
+		benchmarkedFunc(b, controller, i)
 		i++
 	}
 	config.ReportMetrics(b)
@@ -88,11 +86,7 @@ func runBenchmarkOnDelete(b *testing.B, config benchmarkConfig) {
 
 	// 4. Initial reconcile to ensure nodes are known to the controller
 	controller := nodes.NewControllerFromClient(clt)
-	for i := range config.NumNodes {
-		result, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
-		require.NoError(b, err)
-		require.NotNil(b, result)
-	}
+	onDeleteSetupFunc(b, controller, config)
 
 	// 5. Remove all the nodes, so the reconcile will process deletions
 	config.RemoveNodes(b, clt)
@@ -106,10 +100,25 @@ func runBenchmarkOnDelete(b *testing.B, config benchmarkConfig) {
 		if i >= config.NumNodes {
 			i = 0
 		}
-		result, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
-		require.NoError(b, err)
-		require.NotNil(b, result)
+		benchmarkedFunc(b, controller, i)
 		i++
 	}
 	config.ReportMetrics(b)
+}
+
+func onDeleteSetupFunc(b *testing.B, controller *nodes.Controller, config benchmarkConfig) {
+	b.Helper()
+	for i := range config.NumNodes {
+		result, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
+		require.NoError(b, err)
+		require.NotNil(b, result)
+	}
+}
+
+func benchmarkedFunc(b *testing.B, controller *nodes.Controller, i int) {
+	b.Helper()
+	// Example target function that could be benchmarked
+	result, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
+	require.NoError(b, err)
+	require.NotNil(b, result)
 }
