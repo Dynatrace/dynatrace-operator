@@ -1,6 +1,6 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$BUILDPLATFORM golang:1.25.5@sha256:20b91eda7a9627c127c0225b0d4e8ec927b476fa4130c6760928b849d769c149 AS operator-build
+FROM --platform=$BUILDPLATFORM golang:tip-20251206 as operator-build
 
 WORKDIR /app
 
@@ -19,11 +19,11 @@ ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
-
+ARG GOFIPS140=off
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     --mount=type=cache,target="/go/pkg" \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    CGO_ENABLED=0 GOFIPS140="${GOFIPS140}" GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
@@ -79,9 +79,12 @@ LABEL name="Dynatrace Operator" \
       vcs-type="git" \
       changelog-url="https://github.com/Dynatrace/dynatrace-operator/releases"
 
+ARG GODEBUG_ARG
+
 ENV OPERATOR=dynatrace-operator \
     USER_UID=1001 \
-    USER_NAME=dynatrace-operator
+    USER_NAME=dynatrace-operator \
+    GODEBUG=${GODEBUG_ARG:+fips140=only,tlsmlkem=0}
 
 RUN /usr/local/bin/user_setup
 
