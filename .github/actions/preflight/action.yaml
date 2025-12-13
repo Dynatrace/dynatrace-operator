@@ -1,15 +1,13 @@
 name: Preflight
 description: Does the preflight check
 inputs:
-  version:
-    description: The version the image is for
+  platforms:
+    description: The platforms for which the image will be built
+    default: linux/amd64,linux/arm64
     required: true
-  registry:
-    description: The registry where the image is uploaded
-    required: true
-  repository:
-    description: The repository in the registry where the image is uploaded
-    required: true
+  images:
+    description: Base names of the image tags
+    required: false
   report-name:
     description: The name of the output report
     required: true
@@ -27,6 +25,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+  - name: Build image metadata
+    uses: ./.github/actions/metadata
+    id: meta
+    with:
+      platforms: ${{ inputs.platforms }}
+      images: ${{ inputs.images }}
   - name: Run preflight on image
     shell: bash
     env:
@@ -34,9 +38,8 @@ runs:
       RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
       # renovate datasource=github-releases depName=redhat-openshift-ecosystem/openshift-preflight
       PREFLIGHT_VERSION: 1.15.2
-      IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
     run: |
-      hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_URI}}" "${{ inputs.report-name }}" "${{ inputs.should-submit }}"
+      hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ steps.meta.outputs.tags }}" "${{ inputs.report-name }}" "${{ inputs.should-submit }}"
   - name: Upload report
     uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
     with:
