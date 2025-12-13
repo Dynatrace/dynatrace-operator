@@ -19,7 +19,7 @@ jobs:
     steps:
       # Step 1: Cache last run timestamp
       - name: Cache last run timestamp
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: last-run.txt
           key: dependabot-triage-lastrun-${{ github.run_id }}
