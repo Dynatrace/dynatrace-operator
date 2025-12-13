@@ -7,12 +7,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestNameStartsWithDigit(t *testing.T) {
 	t.Run("dynakube name starts with digit", func(t *testing.T) {
-		assertDenied(t, []string{errorNoDNS1053Label}, &dynakube.DynaKube{
+		assertDenied(t, []string{errorNoDNS1053LabelPrefix}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "1dynakube",
 			},
@@ -97,4 +99,20 @@ func TestNameTooLong(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNoNameViolationOnTooLongName(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: strings.Repeat("a", 64),
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: "https://tenantid.doma.in/api",
+		},
+	}
+
+	_, err := runValidators(dk)
+	msg := fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
+	require.ErrorContains(t, err, msg)
+	assert.NotContains(t, err.Error(), errorNoDNS1053LabelPrefix)
 }
