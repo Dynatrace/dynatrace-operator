@@ -151,7 +151,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("problem with k8s request => visible in conditions", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		boomClient := createBOOMK8sClient()
+		boomClient := createBOOMK8sClient(t)
 
 		reconciler := NewReconciler(boomClient,
 			boomClient, dk)
@@ -406,7 +406,9 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 	}
 }
 
-func createBOOMK8sClient() client.Client {
+func createBOOMK8sClient(t *testing.T) client.Client {
+	t.Helper()
+
 	boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 			return errors.New("BOOM")
