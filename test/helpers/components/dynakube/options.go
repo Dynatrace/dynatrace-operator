@@ -278,9 +278,3 @@ func WithExtensionsDBExecutorImageRefSpec(repo, tag string) Option {
 		}
 	}
 }
-
-func WithCustomPullSecret(secretName string) Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.CustomPullSecret = secretName
-	}
-}
