@@ -1,4 +1,4 @@
-package csijob
+package settings
 
 import (
 	"encoding/json"
