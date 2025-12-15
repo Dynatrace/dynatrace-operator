@@ -1,7 +1,6 @@
 package endpoint
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -32,7 +31,7 @@ const (
 )
 
 func TestConfigMapCreation(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("creates config map if it does not exist", func(t *testing.T) {
 		dk := createDynaKube(true)

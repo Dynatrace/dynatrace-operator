@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -39,7 +38,7 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
@@ -59,7 +58,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.StatefulSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(context.Background())
+		err = reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var sts appsv1.StatefulSet
@@ -124,22 +123,22 @@ func TestSecretHashAnnotation(t *testing.T) {
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		originalSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
 
 		// then update the TLS Secret and call reconcile again
 		updatedTLSSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
-		err = mockK8sClient.Update(context.Background(), &updatedTLSSecret)
+		err = mockK8sClient.Update(t.Context(), &updatedTLSSecret)
 		require.NoError(t, err)
 
-		err = reconciler.Reconcile(context.Background())
+		err = reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
 		resultingSecretHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsSecretHash]
@@ -395,28 +394,30 @@ func getTestDynakube() *dynakube.DynaKube {
 }
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) *appsv1.StatefulSet {
+	t.Helper()
 	mockK8sClient := fake.NewClient(dk)
 	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 	for _, obj := range objs {
-		err := mockK8sClient.Create(context.Background(), obj)
+		err := mockK8sClient.Create(t.Context(), obj)
 		require.NoError(t, err)
 	}
 
-	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+	err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}
-	err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+	err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 	require.NoError(t, err)
 
 	return statefulSet
 }
 
 func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
+	t.Helper()
 	tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 
-	err := client.Create(context.Background(), &tlsSecret)
+	err := client.Create(t.Context(), &tlsSecret)
 	require.NoError(t, err)
 
 	return client
