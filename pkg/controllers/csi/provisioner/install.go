@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/settings"
+	jobsettings "github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 )
@@ -107,7 +107,7 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		APIReader:    provisioner.apiReader,
 		Client:       provisioner.kubeClient,
 		PathResolver: provisioner.path,
-		CSIJob:       settings.GetSettings(),
+		CSIJob:       jobsettings.GetSettings(),
 	}
 
 	return provisioner.jobInstallerBuilder(ctx, props)
