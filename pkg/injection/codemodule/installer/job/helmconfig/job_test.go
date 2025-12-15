@@ -1,4 +1,4 @@
-package settings
+package helmconfig
 
 import (
 	"sync"
@@ -12,23 +12,23 @@ import (
 
 func TestGet(t *testing.T) {
 	t.Run("empty env -> use fallback", func(t *testing.T) {
-		t.Setenv(SettingsJSONEnv, "")
+		t.Setenv(JSONEnv, "")
 
-		m := GetSettings()
-		assert.Equal(t, fallbackSettings, m)
+		m := Get()
+		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it
-		settings = Settings{}
+		conf = Config{}
 	})
 
 	t.Run("messy env -> use fallback", func(t *testing.T) {
-		t.Setenv(SettingsJSONEnv, "this is not json :(")
+		t.Setenv(JSONEnv, "this is not json :(")
 
-		m := GetSettings()
-		assert.Equal(t, fallbackSettings, m)
+		m := Get()
+		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it
-		settings = Settings{}
+		conf = Config{}
 	})
 
 	t.Run("correct env -> set correctly", func(t *testing.T) {
@@ -42,28 +42,30 @@ func TestGet(t *testing.T) {
               "resources": {"requests":{"cpu":"100m","memory":"200Mi"},"limits":{"cpu":"500m","memory":"500Mi"}}
 			}
 		}`
-		expected := Settings{
-			Tolerations: []corev1.Toleration{
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Key:      "test-key1",
-					Operator: corev1.TolerationOpExists,
+		expected := Config{
+			CSIDaemonSetConfig: CSIDaemonSetConfig{
+				Tolerations: []corev1.Toleration{
+					{
+						Effect:   corev1.TaintEffectNoSchedule,
+						Key:      "test-key1",
+						Operator: corev1.TolerationOpExists,
+					},
+					{
+						Effect:   corev1.TaintEffectNoSchedule,
+						Key:      "test-key2",
+						Operator: corev1.TolerationOpExists,
+					},
 				},
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Key:      "test-key2",
-					Operator: corev1.TolerationOpExists,
+				Annotations: map[string]string{
+					"test-annotation1": "test-value1",
+					"test-annotation2": "test-value2",
+				},
+				Labels: map[string]string{
+					"test-label1": "test-value1",
+					"test-label2": "test-value2",
 				},
 			},
-			Annotations: map[string]string{
-				"test-annotation1": "test-value1",
-				"test-annotation2": "test-value2",
-			},
-			Labels: map[string]string{
-				"test-label1": "test-value1",
-				"test-label2": "test-value2",
-			},
-			Job: JobSettings{
+			Job: JobConfig{
 				SecurityContext: corev1.SecurityContext{
 					AllowPrivilegeEscalation: ptr.To(false),
 					Privileged:               ptr.To(false),
@@ -96,13 +98,13 @@ func TestGet(t *testing.T) {
 			},
 		}
 
-		t.Setenv(SettingsJSONEnv, jsonValue)
+		t.Setenv(JSONEnv, jsonValue)
 
-		m := GetSettings()
+		m := Get()
 		assert.Equal(t, expected, m)
 
 		once = sync.Once{} // need to reset it
-		settings = Settings{}
+		conf = Config{}
 	})
 
 	t.Run("run only once", func(t *testing.T) {
@@ -114,17 +116,17 @@ func TestGet(t *testing.T) {
 			}
 		}`
 
-		t.Setenv(SettingsJSONEnv, jsonValue)
+		t.Setenv(JSONEnv, jsonValue)
 
-		m := GetSettings()
-		assert.Equal(t, fallbackSettings, m)
+		m := Get()
+		assert.Equal(t, fallback, m)
 
-		t.Setenv(SettingsJSONEnv, "boom")
+		t.Setenv(JSONEnv, "boom")
 
-		m = GetSettings()
-		assert.Equal(t, fallbackSettings, m)
+		m = Get()
+		assert.Equal(t, fallback, m)
 
 		once = sync.Once{} // need to reset it
-		settings = Settings{}
+		conf = Config{}
 	})
 }

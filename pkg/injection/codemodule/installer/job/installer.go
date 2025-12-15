@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
-	jobsettings "github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sjob"
@@ -20,7 +20,7 @@ import (
 )
 
 type Properties struct {
-	CSIJob       jobsettings.Settings
+	CSIJob       helmconfig.Config
 	Owner        client.Object
 	APIReader    client.Reader
 	Client       client.Client
