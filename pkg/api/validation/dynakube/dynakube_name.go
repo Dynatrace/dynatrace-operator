@@ -21,27 +21,30 @@ const (
     When using SQL extension executors, the Deployment name format requires the DynaKube name to be shorter than usual.`
 )
 
-func nameViolatesDNS1035(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func nameInvalid(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if dk.Name == "" {
 		// Make unit testing easier. This can never happen in an actual cluster.
 		return ""
 	}
 
+	// Always call this before DNS1035 validation to prevent false positives due to too long name.
+	if err := nameTooLong(dk); err != "" {
+		return err
+	}
+
+	return nameViolatesDNS1035(dk)
+}
+
+func nameViolatesDNS1035(dk *dynakube.DynaKube) string {
 	errs := validation.IsDNS1035Label(dk.Name)
-	if len(errs) == 0 || (len(errs) == 1 && len(dk.Name) > validation.DNS1035LabelMaxLength) {
-		// The length check of the DNS-1035 validation function failed. Do not report an invalid name.
+	if len(errs) == 0 {
 		return ""
 	}
 
 	return errorNoDNS1053Label
 }
 
-func nameTooLong(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.Name == "" {
-		// Make unit testing easier. This can never happen in an actual cluster.
-		return ""
-	}
-
+func nameTooLong(dk *dynakube.DynaKube) string {
 	nameLen := len(dk.Name)
 	maxLength := dynakube.MaxNameLength
 
