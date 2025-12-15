@@ -1,7 +1,6 @@
 package istio
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -52,7 +51,7 @@ func TestSplitCommunicationHost(t *testing.T) {
 }
 
 func TestReconcileIPServiceEntry(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	component := "best-component"
 	dk := createTestDynaKube()
 
@@ -104,7 +103,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 }
 
 func TestReconcileFQDNServiceEntry(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	component := "best-component"
 	owner := createTestDynaKube()
 
@@ -168,7 +167,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 }
 
 func TestReconcileAPIUrl(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dk := createTestDynaKube()
 
 	t.Run("nil => error", func(t *testing.T) {
@@ -217,7 +216,7 @@ func TestReconcileAPIUrl(t *testing.T) {
 }
 
 func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("nil => error", func(t *testing.T) {
 		dk := createTestDynaKube()
@@ -322,7 +321,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 }
 
 func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("nil => error", func(t *testing.T) {
 		dk := createTestDynaKube()
