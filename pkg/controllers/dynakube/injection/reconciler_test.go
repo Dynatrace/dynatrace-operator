@@ -61,6 +61,8 @@ const (
 	testAPIURL = "https://" + testHost + "/e/" + testUUID + "/api"
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestReconciler(t *testing.T) {
 	t.Run("add injection", func(t *testing.T) {
 		expectedOneAgentConnectionInfo := dtclient.OneAgentConnectionInfo{
@@ -132,16 +134,16 @@ func TestReconciler(t *testing.T) {
 			dk,
 		)
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetLatestAgentVersion", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
-		dtClient.On("GetOneAgentConnectionInfo", mock.AnythingOfType("context.backgroundCtx")).Return(expectedOneAgentConnectionInfo, nil)
-		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
-		dtClient.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(dtclient.GetRulesSettingsResponse{}, nil)
+		dtClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("", nil)
+		dtClient.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(expectedOneAgentConnectionInfo, nil)
+		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		dtClient.EXPECT().GetRulesSettings(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(dtclient.GetRulesSettingsResponse{}, nil)
 
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
 
-		err := rec.Reconcile(context.Background())
+		err := rec.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		assertSecretFound(t, clt, dk.OneAgent().GetTenantSecret(), dk.Namespace)
@@ -151,14 +153,14 @@ func TestReconciler(t *testing.T) {
 		assertSecretFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
 
-		_, err = istioClient.GetServiceEntry(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		_, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
-		_, err = istioClient.GetServiceEntry(context.Background(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		_, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 
-		_, err = istioClient.GetVirtualService(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		_, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
-		_, err = istioClient.GetVirtualService(context.Background(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		_, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 	})
 	t.Run("remove injection", func(t *testing.T) {
@@ -195,7 +197,7 @@ func TestReconciler(t *testing.T) {
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
 
-		err := rec.Reconcile(context.Background())
+		err := rec.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		assertSecretNotFound(t, clt, consts.BootstrapperInitSecretName, testNamespace)
@@ -210,26 +212,26 @@ func TestReconciler(t *testing.T) {
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType))
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
 
-		obj, err := istioClient.GetServiceEntry(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		obj, err := istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 		assert.Nil(t, obj)
-		obj, err = istioClient.GetServiceEntry(context.Background(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 		assert.Nil(t, obj)
 
-		virtualService, err := istioClient.GetVirtualService(context.Background(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		virtualService, err := istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 		assert.Nil(t, virtualService)
 
 		istioClient.Owner.SetNamespace(testNamespace2)
-		obj, err = istioClient.GetServiceEntry(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 		assert.NotNil(t, obj)
-		obj, err = istioClient.GetServiceEntry(context.Background(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 		assert.NotNil(t, obj)
 
-		virtualService, err = istioClient.GetVirtualService(context.Background(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		virtualService, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 	})
@@ -268,7 +270,7 @@ func TestReconciler(t *testing.T) {
 		rec.connectionInfoReconciler = fakeReconciler
 		rec.versionReconciler = fakeVersionReconciler
 
-		err := rec.Reconcile(context.Background())
+		err := rec.Reconcile(t.Context())
 		require.Error(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType)
@@ -289,17 +291,17 @@ func TestRemoveAppInjection(t *testing.T) {
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
 
-	err := rec.Reconcile(context.Background())
+	err := rec.Reconcile(t.Context())
 	require.NoError(t, err)
 
 	var namespace corev1.Namespace
-	err = clt.Get(context.Background(), client.ObjectKey{Name: testNamespace, Namespace: ""}, &namespace)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: testNamespace, Namespace: ""}, &namespace)
 	require.NoError(t, err)
 	assert.Nil(t, namespace.Labels)
 	require.NotNil(t, namespace.Annotations)
 	assert.Equal(t, "true", namespace.Annotations[mapper.UpdatedViaDynakubeAnnotation])
 
-	err = clt.Get(context.Background(), client.ObjectKey{Name: testNamespace2, Namespace: ""}, &namespace)
+	err = clt.Get(t.Context(), client.ObjectKey{Name: testNamespace2, Namespace: ""}, &namespace)
 	require.NoError(t, err)
 	require.NotNil(t, namespace.Labels)
 	assert.Equal(t, testDynakube2, namespace.Labels[dtwebhook.InjectionInstanceLabel])
@@ -318,7 +320,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(context.Background())
+		err := rec.setupOneAgentInjection(t.Context())
 		require.NoError(t, err)
 	})
 
@@ -330,7 +332,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(context.Background())
+		err := rec.setupOneAgentInjection(t.Context())
 		require.NoError(t, err)
 	})
 
@@ -342,7 +344,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(context.Background())
+		err := rec.setupOneAgentInjection(t.Context())
 		require.NoError(t, err)
 	})
 
@@ -354,7 +356,7 @@ func TestSetupOneAgentInjection(t *testing.T) {
 		rec.versionReconciler = createVersionReconcilerMock(t)
 		rec.connectionInfoReconciler = createReconcilerMock(t)
 
-		err := rec.setupOneAgentInjection(context.Background())
+		err := rec.setupOneAgentInjection(t.Context())
 		require.NoError(t, err)
 	})
 }
@@ -368,7 +370,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
-		err := rec.setupEnrichmentInjection(context.Background())
+		err := rec.setupEnrichmentInjection(t.Context())
 		require.NoError(t, err)
 	})
 
@@ -380,13 +382,13 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec.enrichmentRulesReconciler = createReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
 
-		err := rec.setupEnrichmentInjection(context.Background())
+		err := rec.setupEnrichmentInjection(t.Context())
 		require.NoError(t, err)
 	})
 }
 
 func TestGenerateCorrectInitSecret(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-dynakube",
@@ -425,7 +427,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		)
 
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
@@ -662,38 +664,34 @@ func clientVirtualService(name string, namespaceName string) *istiov1beta1.Virtu
 
 func assertSecretFound(t *testing.T, clt client.Client, secretName string, secretNamespace string) {
 	var secret corev1.Secret
-	err := clt.Get(context.Background(), client.ObjectKey{Name: secretName, Namespace: secretNamespace}, &secret)
+	err := clt.Get(t.Context(), client.ObjectKey{Name: secretName, Namespace: secretNamespace}, &secret)
 	require.NoError(t, err, "%s.%s secret not found, error: %s", secretName, secretNamespace, err)
 }
 
 func assertSecretNotFound(t *testing.T, clt client.Client, secretName string, secretNamespace string) {
 	var secret corev1.Secret
-	err := clt.Get(context.Background(), client.ObjectKey{Name: secretName, Namespace: secretNamespace}, &secret)
+	err := clt.Get(t.Context(), client.ObjectKey{Name: secretName, Namespace: secretNamespace}, &secret)
 	require.Error(t, err, "%s.%s secret found, error: %s ", secretName, secretNamespace, err)
 	assert.True(t, k8serrors.IsNotFound(err), "%s.%s secret, unexpected error: %s", secretName, secretNamespace, err)
 }
 
 func createReconcilerMock(t *testing.T) controllers.Reconciler {
 	connectionInfoReconciler := controllermock.NewReconciler(t)
-	connectionInfoReconciler.On("Reconcile",
-		mock.AnythingOfType("context.backgroundCtx")).Return(nil)
+	connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
 
 	return connectionInfoReconciler
 }
 
 func createUncalledReconcilerMock(t *testing.T) controllers.Reconciler {
 	connectionInfoReconciler := controllermock.NewReconciler(t)
-	connectionInfoReconciler.On("Reconcile",
-		mock.AnythingOfType("context.backgroundCtx")).Return(nil).Maybe()
+	connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Maybe()
 
 	return connectionInfoReconciler
 }
 
 func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.On("ReconcileCodeModules",
-		mock.AnythingOfType("context.backgroundCtx"),
-		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+	versionReconciler.EXPECT().ReconcileCodeModules(anyCtx, mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
 
 	return versionReconciler
 }
