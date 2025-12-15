@@ -17,7 +17,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
 )
 
-const notReadyRequeueDuration = 30 * time.Second
+const (
+	notReadyRequeueDuration       = 30 * time.Second
+	csiPriorityClassName          = "dynatrace-high-priority"
+	csiPriority             int32 = 1000000
+)
 
 var errNotReady = errors.New("download job is not ready yet")
 
@@ -101,13 +105,15 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 	}
 
 	props := &job.Properties{
-		ImageURI:     imageURI,
-		Owner:        &dk,
-		PullSecrets:  pullSecrets,
-		APIReader:    provisioner.apiReader,
-		Client:       provisioner.kubeClient,
-		PathResolver: provisioner.path,
-		CSIJob:       csijob.GetSettings(),
+		ImageURI:          imageURI,
+		Owner:             &dk,
+		PullSecrets:       pullSecrets,
+		APIReader:         provisioner.apiReader,
+		Client:            provisioner.kubeClient,
+		PathResolver:      provisioner.path,
+		CSIJob:            csijob.GetSettings(),
+		PriorityClassName: csiPriorityClassName,
+		Priority:          csiPriority,
 	}
 
 	return provisioner.jobInstallerBuilder(ctx, props)

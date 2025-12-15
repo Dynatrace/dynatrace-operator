@@ -365,6 +365,9 @@ func mockJobInstallerBuilder(t *testing.T, mockedInstaller *installermock.Instal
 			assert.Empty(t, props.PullSecrets)
 		}
 
+		assert.Equal(t, csiPriorityClassName, props.PriorityClassName)
+		assert.Equal(t, csiPriority, props.Priority)
+
 		return mockedInstaller
 	}
 }

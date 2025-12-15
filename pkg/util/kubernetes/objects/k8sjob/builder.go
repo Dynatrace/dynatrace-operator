@@ -103,6 +103,13 @@ func SetActiveDeadlineSeconds(deadline int64) builder.Option[*batchv1.Job] {
 	}
 }
 
+func SetPriorityClass(priorityClassName string, priority int32) builder.Option[*batchv1.Job] {
+	return func(s *batchv1.Job) {
+		s.Spec.Template.Spec.PriorityClassName = priorityClassName
+		s.Spec.Template.Spec.Priority = &priority
+	}
+}
+
 func AddLabels(labels map[string]string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
 		s.Labels = maputils.MergeMap(labels, s.Labels)
