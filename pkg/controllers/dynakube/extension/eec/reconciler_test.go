@@ -73,6 +73,7 @@ func getTestDynakube() *dynakube.DynaKube {
 }
 
 func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+	t.Helper()
 	mockK8sClient := fake.NewClient(dk)
 	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
@@ -87,6 +88,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 }
 
 func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
+	t.Helper()
 	tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 
 	err := client.Create(t.Context(), &tlsSecret)

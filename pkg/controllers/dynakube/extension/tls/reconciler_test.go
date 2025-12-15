@@ -191,6 +191,7 @@ func getTestDynakube() *dynakube.DynaKube {
 }
 
 func mockSelfSignedTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
+	t.Helper()
 	tlsSecret := getSelfSignedTLSSecret(dk)
 
 	err := client.Create(t.Context(), &tlsSecret)
