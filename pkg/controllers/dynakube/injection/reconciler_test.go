@@ -263,7 +263,7 @@ func TestReconciler(t *testing.T) {
 		})
 
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
-		fakeReconciler := createUncalledReconcilerMock(t)
+		fakeReconciler := createReconcilerMock(t)
 		fakeVersionReconciler := createVersionReconcilerMock(t)
 
 		rec := NewReconciler(boomClient, boomClient, nil, istioClient, dk).(*Reconciler)
@@ -285,8 +285,8 @@ func TestRemoveAppInjection(t *testing.T) {
 		CloudNativeFullStack: nil,
 	})
 	rec.versionReconciler = createVersionReconcilerMock(t)
-	rec.connectionInfoReconciler = createUncalledReconcilerMock(t)
-	rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
+	rec.connectionInfoReconciler = createReconcilerMock(t)
+	rec.enrichmentRulesReconciler = createReconcilerMock(t)
 
 	setCodeModulesInjectionCreatedCondition(rec.dk.Conditions())
 	setMetadataEnrichmentCreatedCondition(rec.dk.Conditions())
@@ -367,7 +367,7 @@ func TestSetupEnrichmentInjection(t *testing.T) {
 		rec := createReconciler(clt, testDynakube, testNamespaceDynatrace, oneagent.Spec{
 			CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 		})
-		rec.enrichmentRulesReconciler = createUncalledReconcilerMock(t)
+		rec.enrichmentRulesReconciler = createReconcilerMock(t)
 		rec.dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 
 		err := rec.setupEnrichmentInjection(t.Context())
@@ -678,13 +678,6 @@ func assertSecretNotFound(t *testing.T, clt client.Client, secretName string, se
 func createReconcilerMock(t *testing.T) controllers.Reconciler {
 	connectionInfoReconciler := controllermock.NewReconciler(t)
 	connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(nil)
-
-	return connectionInfoReconciler
-}
-
-func createUncalledReconcilerMock(t *testing.T) controllers.Reconciler {
-	connectionInfoReconciler := controllermock.NewReconciler(t)
-	connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Maybe()
 
 	return connectionInfoReconciler
 }
