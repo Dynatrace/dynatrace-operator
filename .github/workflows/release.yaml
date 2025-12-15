@@ -339,7 +339,7 @@ jobs:
             - [x] PR is labeled accordingly
 
   update-csv-bundles:
-    name: Update OLM CSV bundles
+    name: Update Operatorhub Bundles
     needs: release
     runs-on: ubuntu-24.04
     if: ${{ !contains(github.ref, '-rc.') }}
