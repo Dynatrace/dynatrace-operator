@@ -10,7 +10,9 @@ import (
 )
 
 const (
-	errorNoDNS1053LabelPrefix = `The DynaKube name violates DNS-1035, `
+	errorNoDNS1053Label = `The DynaKube name violates DNS-1035, ` +
+		// This error message is copied from the apimachinery validation code.
+		`a DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')`
 
 	errorNameTooLong = `The length limit for the name of a DynaKube is %d, because it is the base for the name of resources related to the DynaKube. (example: dkName-activegate-<some-hash>).
     The limit is necessary because kubernetes uses the name of some resources (example: StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)`
@@ -27,12 +29,11 @@ func nameViolatesDNS1035(_ context.Context, _ *Validator, dk *dynakube.DynaKube)
 
 	errs := validation.IsDNS1035Label(dk.Name)
 	if len(errs) == 0 || (len(errs) == 1 && len(dk.Name) > validation.DNS1035LabelMaxLength) {
-		// The length check of the validation function failed. Do not report a regex violation.
+		// The length check of the DNS-1035 validation function failed. Do not report an invalid name.
 		return ""
 	}
 
-	// The regex validation error is added at the end.
-	return errorNoDNS1053LabelPrefix + errs[len(errs)-1]
+	return errorNoDNS1053Label
 }
 
 func nameTooLong(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {

@@ -10,11 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 func TestNameStartsWithDigit(t *testing.T) {
 	t.Run("dynakube name starts with digit", func(t *testing.T) {
-		assertDenied(t, []string{errorNoDNS1053LabelPrefix}, &dynakube.DynaKube{
+		assertDenied(t, []string{errorNoDNS1053Label}, &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "1dynakube",
 			},
@@ -101,6 +102,20 @@ func TestNameTooLong(t *testing.T) {
 	}
 }
 
+func TestInvalidNameErrorMatches(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo.bar",
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: "https://tenantid.doma.in/api",
+		},
+	}
+	upstreamErr := validation.IsDNS1035Label(dk.Name)
+	require.Len(t, upstreamErr, 1)
+	assertDenied(t, []string{upstreamErr[0]}, dk)
+}
+
 func TestNoNameViolationOnTooLongName(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -114,5 +129,5 @@ func TestNoNameViolationOnTooLongName(t *testing.T) {
 	_, err := runValidators(dk)
 	msg := fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
 	require.ErrorContains(t, err, msg)
-	assert.NotContains(t, err.Error(), errorNoDNS1053LabelPrefix)
+	assert.NotContains(t, err.Error(), errorNoDNS1053Label)
 }
