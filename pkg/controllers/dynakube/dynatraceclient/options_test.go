@@ -17,18 +17,20 @@ const (
 	testNetworkZone = "zone-1"
 )
 
-func createTestDynakubeWithProxy(proxy value.Source) *dynakube.DynaKube {
-	dk := &dynakube.DynaKube{
-		Spec: dynakube.DynaKubeSpec{
-			Proxy: &proxy,
-		},
-	}
-	dk.Namespace = testNamespace
-
-	return dk
-}
-
 func TestOptions(t *testing.T) {
+	createTestDynakubeWithProxy := func(t *testing.T, proxy value.Source) *dynakube.DynaKube {
+		t.Helper()
+
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				Proxy: &proxy,
+			},
+		}
+		dk.Namespace = testNamespace
+
+		return dk
+	}
+
 	t.Run("Test append network zone", func(t *testing.T) {
 		opts := newOptions(t.Context())
 
@@ -70,7 +72,7 @@ func TestOptions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, opts.Opts)
 
-		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(value.Source{Value: testValue}))
+		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(t, value.Source{Value: testValue}))
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -86,7 +88,7 @@ func TestOptions(t *testing.T) {
 				},
 			})
 		opts = newOptions(t.Context())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -94,7 +96,7 @@ func TestOptions(t *testing.T) {
 	t.Run("AppendProxySettings handles missing or malformed secret", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		opts := newOptions(t.Context())
-		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
+		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
@@ -108,7 +110,7 @@ func TestOptions(t *testing.T) {
 				Data: map[string][]byte{},
 			})
 		opts = newOptions(t.Context())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
