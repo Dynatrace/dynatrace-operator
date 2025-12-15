@@ -6,7 +6,6 @@ const (
 	AgCertificateAndPrivateKeyField = "server.p12"
 	AgSecretName                    = "ag-ca"
 	TelemetryIngestTLSSecretName    = "telemetry-ingest-tls"
-	DevRegistryPullSecretName       = "devregistry"
 
 	EecImageRepo           = "public.ecr.aws/dynatrace/dynatrace-eec"
 	EecImageTag            = "1.327.30.20251107-111521"

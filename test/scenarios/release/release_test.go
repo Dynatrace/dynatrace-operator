@@ -40,6 +40,7 @@ func TestMain(m *testing.M) {
 		if !envConfig.FailFast() {
 			return operator.Uninstall(true)(ctx, envConfig)
 		}
+
 		return ctx, nil
 	})
 
