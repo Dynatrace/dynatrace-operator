@@ -291,7 +291,7 @@ tests:
                         "labels": {},
                         "job": {
                           "securityContext": {"allowPrivilegeEscalation":true,"privileged":true,"readOnlyRootFilesystem":true,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s0"},"seccompProfile":{"type":"RuntimeDefault"}},
-                          "resources": {"requests":{"cpu":"300m","memory":"100Mi"}}
+                          "resources": {"requests":{"cpu":"200m","memory":"30Mi"}}
                         }
                       }
                 image: image-name
