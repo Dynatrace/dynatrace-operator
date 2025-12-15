@@ -86,6 +86,27 @@ func TestGetHelmOptions(t *testing.T) {
 				filepath.Join(project.RootDir(), "config", "helm", "chart", "default"),
 			},
 		}, opts)
+
+		// "make" should fail if reinvoked
+		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\nexit 1"), os.ModePerm)) //nolint:gosec
+
+		opts, err = getHelmOptions("", "test", false)
+		require.NoError(t, err)
+		assertOptions(t, &helm.Opts{
+			Namespace:   "dynatrace",
+			ReleaseName: "dynatrace-operator",
+			Args: []string{
+				"--create-namespace",
+				"--install",
+				"--set", "platform=test",
+				"--set", "installCRD=true",
+				"--set", "csidriver.enabled=false",
+				"--set", "manifests=true",
+				"--set", "debugLogs=true",
+				"--set", "image=repo:tag",
+				filepath.Join(project.RootDir(), "config", "helm", "chart", "default"),
+			},
+		}, opts)
 	})
 
 	t.Run("no image found", func(t *testing.T) {
