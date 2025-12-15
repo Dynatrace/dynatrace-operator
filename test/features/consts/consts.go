@@ -16,6 +16,6 @@ const (
 	KSPMImageTag           = "1.5.2"
 	OtelCollectorImageRepo = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 	OtelCollectorImageTag  = "latest"
-	DBExecutorImageRepo    = "478983378254.dkr.ecr.us-east-1.amazonaws.com/dynatrace/dynatrace-database-datasource-executor"
-	DBExecutorImageTag     = "1.329.0.20251113-072946"
+	DBExecutorImageRepo    = "public.ecr.aws/dynatrace/dynatrace-database-datasource-executor"
+	DBExecutorImageTag     = "1.327.41.20251114-153023"
 )
