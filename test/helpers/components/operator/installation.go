@@ -175,24 +175,31 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 	), nil
 }
 
+// Cache image ref on first invocation to allow switching branches.
+var imageRef string
+
 func getImageRef(rootDir string) (string, error) {
-	command := exec.Command("make", "-C", rootDir, "deploy/show-image-ref")
-	command.Env = os.Environ()
-	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
-	command.Stdout = stdout
-	command.Stderr = stderr
-	err := command.Run()
-	if err != nil || stderr.String() != "" {
-		return "", fmt.Errorf("%s: %w", stderr, err)
-	}
-	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
-	stdout.Reset()
-	for _, line := range lines {
-		// make prints things to stdout, e.g. make[1]: Entering directory
-		if !strings.HasPrefix(line, "make[") {
-			stdout.WriteString(line)
+	if imageRef == "" {
+		command := exec.Command("make", "-C", rootDir, "deploy/show-image-ref")
+		command.Env = os.Environ()
+		stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
+		command.Stdout = stdout
+		command.Stderr = stderr
+		err := command.Run()
+		if err != nil || stderr.String() != "" {
+			return "", fmt.Errorf("%s: %w", stderr, err)
 		}
+		lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+		stdout.Reset()
+		for _, line := range lines {
+			// make prints things to stdout, e.g. make[1]: Entering directory
+			if !strings.HasPrefix(line, "make[") {
+				stdout.WriteString(line)
+			}
+		}
+
+		imageRef = stdout.String()
 	}
 
-	return stdout.String(), nil
+	return imageRef, nil
 }
