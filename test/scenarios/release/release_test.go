@@ -27,6 +27,10 @@ func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(helpers.SetScheme)
+	if !cfg.FailFast() {
+		testEnv.Finish(operator.Uninstall(true))
+	}
+
 	testEnv.BeforeEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		return operator.Install(releaseTag, true)(ctx, envConfig) // TODO: add logic to get releaseTag in a dynamic way instead of hard coding it
 	})
