@@ -30,7 +30,7 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dk := createDynakube(true)
@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(context.Background())
+		err = reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 		reconciler := NewReconciler(boomClient,
 			boomClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
