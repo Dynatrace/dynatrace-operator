@@ -21,14 +21,12 @@ import (
 )
 
 const (
-	testDynakubeName              = "dynakube"
-	testNamespaceName             = "dynatrace"
-	testEecPullSecret             = "eec-pull-secret"
-	testEecImageRepository        = "repo/dynatrace-eec"
-	testEecImageTag               = "1.289.0"
-	testTenantUUID                = "abc12345"
-	testKubeSystemUUID            = "12345"
-	testCustomConfigConfigMapName = "eec-custom-config"
+	testDynakubeName       = "dynakube"
+	testNamespaceName      = "dynatrace"
+	testEecImageRepository = "repo/dynatrace-eec"
+	testEecImageTag        = "1.289.0"
+	testTenantUUID         = "abc12345"
+	testKubeSystemUUID     = "12345"
 )
 
 func TestReconcile(t *testing.T) {
