@@ -300,13 +300,11 @@ jobs:
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
 
   run-preflight:
-    name: Run preflight on quay.io without submitting results when merging to main
+    name: Run preflight on ghcr.io without submitting results when merging to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: Release
     needs: [build-push, prepare]
     runs-on: ubuntu-24.04
-    env:
-      SCAN_REGISTRY: "quay.io"
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -314,7 +312,7 @@ jobs:
         uses: ./.github/actions/preflight
         with:
           version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.SCAN_REGISTRY }}
+          registry: ${{ env.DOCKER_REGISTRY }}
           repository: ${{ env.DOCKER_REPOSITORY }}
           report-name: "preflight.json"
           should-submit: "false"
