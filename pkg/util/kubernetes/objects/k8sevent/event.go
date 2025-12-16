@@ -12,5 +12,5 @@ const (
 )
 
 func SendCrdVersionMismatch(eventRecorder record.EventRecorder, object client.Object) {
-	eventRecorder.Eventf(object, corev1.EventTypeWarning, crdVersionMismatchReason, crdVersionMismatchMessage)
+	eventRecorder.Event(object, corev1.EventTypeWarning, crdVersionMismatchReason, crdVersionMismatchMessage)
 }
