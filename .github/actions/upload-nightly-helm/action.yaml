@@ -4,7 +4,7 @@ inputs:
   registry-url:
     description: URL for the OCI registry
     required: false
-    default: quay.io
+    default: ghcr.io
   registry-namespace:
     description: Repository in the OCI registry
     required: false
