@@ -53,6 +53,7 @@ var (
 					corev1.ResourceMemory: resource.MustParse("100Mi"),
 				},
 			},
+			PriorityClassName: "dynatrace-high-priority",
 		},
 	}
 
@@ -60,8 +61,9 @@ var (
 )
 
 type JobSettings struct {
-	SecurityContext corev1.SecurityContext      `json:"securityContext"`
-	Resources       corev1.ResourceRequirements `json:"resources"`
+	SecurityContext   corev1.SecurityContext      `json:"securityContext"`
+	Resources         corev1.ResourceRequirements `json:"resources"`
+	PriorityClassName string                      `json:"priorityClassName"`
 }
 type Settings struct {
 	Annotations map[string]string   `json:"annotations"`
