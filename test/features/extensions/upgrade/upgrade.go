@@ -32,17 +32,21 @@ func Feature(t *testing.T) features.Feature {
 	previousVersionDynakube.ConvertFrom(&testDynakube)
 	componentDynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, *previousVersionDynakube)
 
-	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+	legacyName := testDynakube.Name + "-extensions-controller"
+
+	builder.Assess("extension execution controller started", statefulset.WaitFor(legacyName, testDynakube.Namespace))
 
 	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	// update to snapshot
-	withCSI := false
+	withCSI := true
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
 
-	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension execution controller started after upgrade", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started after upgrade", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+
+	builder.Assess("legacy extensions executor controller deleted", statefulset.WaitForDeletion(legacyName, testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 

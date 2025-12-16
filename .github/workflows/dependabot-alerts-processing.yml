@@ -1,4 +1,4 @@
-name: Dependabot Critical -> Assign to Copilot (Fine-grained-PAT)
+name: Dependabot Critical -> Assign to Copilot (App Authentication)
 
 on:
   workflow_dispatch: {}
@@ -14,20 +14,31 @@ concurrency:
 
 jobs:
   triage-critical:
+    environment: copilot
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Cache last run timestamp
       - name: Cache last run timestamp
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: last-run.txt
           key: dependabot-triage-lastrun-${{ github.run_id }}
           restore-keys: |
             dependabot-triage-lastrun-
 
+      # Step 2: Generate App Installation Token
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.AI_VULN_APP_ID }}
+          private_key: ${{ secrets.AI_VULN_APP_PRIVATE_KEY }}
+
+      # Step 3: Fetch Dependabot alerts and create consolidated issue using the App token
       - name: Fetch new Dependabot critical alerts and create consolidated issue
         uses: actions/github-script@v8
         with:
-          github-token: ${{ secrets.REPO_SPONSOR_PAT }}
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
             const fs = require('fs');
             const owner = context.repo.owner;
@@ -51,17 +62,14 @@ jobs:
 
             const currentRunTime = new Date();
 
-            // Updated to request max 100 per page and use link header for pagination
             async function listCriticalDependabotAlerts(owner, repo) {
               const perPage = 100;
               let allAlerts = [];
-            // let url = `/repos/${owner}/${repo}/dependabot/alerts?state=open&severity=critical&per_page=${perPage}`;
               let url = `/repos/${owner}/${repo}/dependabot/alerts?state=open&per_page=${perPage}`;
               while (url) {
                 const res = await github.request(`GET ${url}`);
                 allAlerts = allAlerts.concat(res.data);
 
-                // Parse Link header for next page if present
                 const link = res.headers.link;
                 let nextPageUrl = null;
                 if (link) {
@@ -69,8 +77,6 @@ jobs:
                   for (const l of links) {
                     const match = l.match(/<([^>]+)>;\s*rel="next"/);
                     if (match) {
-                      // Next page exists, set url for next fetch
-                      // GitHub returns full URL, so trim host prefix if present
                       let next = match[1];
                       if (next.startsWith("https://api.github.com")) {
                         next = next.replace("https://api.github.com", "");
@@ -95,7 +101,6 @@ jobs:
                     owner,
                     repo,
                     state: "open",
-                    // labels: "security,dependabot,critical,verification:pending",
                     labels: "security,dependabot,verification:pending",
                     per_page: perPage,
                     page
@@ -317,11 +322,11 @@ jobs:
                       owner,
                       repo,
                       issue_number: created.data.number,
-                      body: "Automatic assignment to the Copilot coding agent (copilot-swe-agent) could not be completed. Ensure the agent is enabled for this repository and that this GitHub token can assign issues to it."
+                      body: "Automatic assignment to the Copilot coding agent (copilot-swe-agent) could not be completed. Ensure the agent is enabled for this repository and that this GitHub token can assign issues to bots."
                     });
                     core.warning(`Copilot assignment unavailable; created issue #${created.data.number} with fallback label.`);
                   } else if (e.status === 403) {
-                    core.error(`Issues API denied (403). Verify the personal access token has 'Issues: Read and write' and is allowed for this repository. Message: ${e.message}`);
+                    core.error(`Issues API denied (403). Verify the App token has 'Issues: Read and write' and is allowed for this repository. Message: ${e.message}`);
                     throw e;
                   } else {
                     core.error(`Issue creation/assignment error: ${e.status || ""} ${e.message}`);
