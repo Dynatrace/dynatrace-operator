@@ -97,7 +97,8 @@ startupProbe:
       "labels": {{ .Values.csidriver.labels | toJson }},
       "job": {
         "securityContext": {{ .Values.csidriver.job.securityContext | toJson }},
-        "resources": {{ .Values.csidriver.job.resources | toJson }}
+        "resources": {{ .Values.csidriver.job.resources | toJson }},
+        "priorityClassName": {{ include "dynatrace-operator.CSIPriorityClassName" . | toJson }}
       }
     }
 {{- end -}}

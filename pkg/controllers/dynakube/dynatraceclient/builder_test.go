@@ -1,7 +1,6 @@
 package dynatraceclient
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -23,7 +22,7 @@ const (
 )
 
 func TestBuildDynatraceClient(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("BuildDynatraceClient works with minimal setup", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
