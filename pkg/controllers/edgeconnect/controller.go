@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -31,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -42,7 +44,8 @@ const (
 	fastUpdateInterval    = 1 * time.Minute
 	defaultUpdateInterval = 30 * time.Minute
 
-	finalizerName = "server"
+	controllerName = "edgeconnect-controller"
+	finalizerName  = "server"
 )
 
 var (
@@ -63,6 +66,7 @@ type Controller struct {
 	// that reads objects from the cache and writes to the api-server
 	client                   client.Client
 	apiReader                client.Reader
+	eventRecorder            record.EventRecorder
 	registryClientBuilder    registry.ClientBuilder
 	config                   *rest.Config
 	timeProvider             *timeprovider.Provider
@@ -78,6 +82,7 @@ func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
 		client:                   mgr.GetClient(),
 		apiReader:                mgr.GetAPIReader(),
+		eventRecorder:            mgr.GetEventRecorderFor(controllerName),
 		registryClientBuilder:    registry.NewClient,
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),
@@ -89,7 +94,7 @@ func NewController(mgr manager.Manager) *Controller {
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&edgeconnect.EdgeConnect{}).
-		Named("edgeconnect-controller").
+		Named(controllerName).
 		Owns(&appsv1.Deployment{}).
 		Complete(controller)
 }
@@ -98,11 +103,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	_log := log.WithValues("namespace", request.Namespace, "name", request.Name)
 
 	_log.Info("reconciling EdgeConnect")
-
-	_, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.EdgeConnectName)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
 
 	ec, err := controller.getEdgeConnect(ctx, request.Name, request.Namespace)
 	if err != nil {
@@ -113,6 +113,16 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		_log.Debug("EdgeConnect object does not exist")
 
 		return reconcile.Result{}, nil
+	}
+
+	isCrdLatestVersion, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.EdgeConnectName)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !isCrdLatestVersion {
+		_log.Debug("sending k8s event about CRD version mismatch")
+		k8sevent.SendCrdVersionMismatch(controller.eventRecorder, ec)
 	}
 
 	if deletionTimestamp := ec.GetDeletionTimestamp(); deletionTimestamp != nil {

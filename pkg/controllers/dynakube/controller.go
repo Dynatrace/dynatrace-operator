@@ -31,6 +31,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -40,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -50,6 +52,8 @@ const (
 	fastUpdateInterval    = 1 * time.Minute
 	changesUpdateInterval = 5 * time.Minute
 	defaultUpdateInterval = 30 * time.Minute
+
+	controllerName = "dynakube-controller"
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -62,13 +66,14 @@ func Add(mgr manager.Manager, _ string) error {
 }
 
 func NewController(mgr manager.Manager, clusterID string) *Controller {
-	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetConfig(), clusterID)
+	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetEventRecorderFor(controllerName), mgr.GetConfig(), clusterID)
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, config *rest.Config, clusterID string) *Controller {
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, eventRecorder record.EventRecorder, config *rest.Config, clusterID string) *Controller {
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,
+		eventRecorder:          eventRecorder,
 		config:                 config,
 		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
 		clusterID:              clusterID,
@@ -94,7 +99,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynakube.DynaKube{}).
-		Named("dynakube-controller").
+		Named(controllerName).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.Deployment{}).
@@ -111,8 +116,9 @@ type k8sEntityReconciler interface {
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client    client.Client
-	apiReader client.Reader
+	client        client.Client
+	apiReader     client.Reader
+	eventRecorder record.EventRecorder
 
 	k8sEntityReconciler k8sEntityReconciler
 
@@ -148,11 +154,6 @@ type Controller struct {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
-	_, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.DynaKubeName)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -160,6 +161,16 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
 
 		return reconcile.Result{}, nil
+	}
+
+	isCrdLatestVersion, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.DynaKubeName)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !isCrdLatestVersion {
+		log.Debug("sending k8s event about CRD version mismatch")
+		k8sevent.SendCrdVersionMismatch(controller.eventRecorder, dk)
 	}
 
 	oldStatus := *dk.Status.DeepCopy()
