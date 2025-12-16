@@ -145,7 +145,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(ctx context.Context, url string
 		return "", errors.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
-	hash := sha256.New() //nolint:gosec
+	hash := sha256.New()
 	_, err = io.Copy(writer, io.TeeReader(resp.Body, hash))
 
 	return hex.EncodeToString(hash.Sum(nil)), err
