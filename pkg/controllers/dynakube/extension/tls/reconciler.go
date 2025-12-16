@@ -40,13 +40,19 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if ext := r.dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
+		defer r.deleteLegacySelfSignedTLSSecret(ctx)
+
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
 
 	if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 		return nil
 	}
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+
+	defer func() {
+		r.deleteLegacySelfSignedTLSSecret(ctx)
+		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+	}()
 
 	return r.deleteSelfSignedTLSSecret(ctx)
 }
@@ -73,6 +79,16 @@ func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 	return r.secrets.Delete(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.dk.Extensions().GetSelfSignedTLSSecretName(),
+			Namespace: r.dk.Namespace,
+		},
+	})
+}
+
+// TODO: Remove as part of DAQ-18375
+func (r *reconciler) deleteLegacySelfSignedTLSSecret(ctx context.Context) {
+	_ = r.secrets.Delete(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.dk.Name + "-extensions-controller-tls",
 			Namespace: r.dk.Namespace,
 		},
 	})
