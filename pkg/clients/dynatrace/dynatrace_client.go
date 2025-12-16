@@ -2,7 +2,7 @@ package dynatrace
 
 import (
 	"context"
-	"crypto/md5" //nolint:gosec
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -145,7 +145,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(ctx context.Context, url string
 		return "", errors.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
-	hash := md5.New() //nolint:gosec
+	hash := sha256.New()
 	_, err = io.Copy(writer, io.TeeReader(resp.Body, hash))
 
 	return hex.EncodeToString(hash.Sum(nil)), err
