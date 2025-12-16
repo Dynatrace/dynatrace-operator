@@ -1,7 +1,6 @@
 package k8sevent
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -9,9 +8,9 @@ import (
 
 const (
 	crdVersionMismatchReason  = "CrdVersionMismatch"
-	crdVersionMismatchMessage = "The CustomResourceDefinition %s doesn't match version with the operator. Please update the CRD to avoid potential issues."
+	crdVersionMismatchMessage = "The CustomResourceDefinition doesn't match version with the operator. Please update the CRD to avoid potential issues."
 )
 
 func SendCrdVersionMismatch(eventRecorder record.EventRecorder, object client.Object) {
-	eventRecorder.Eventf(object, corev1.EventTypeWarning, crdVersionMismatchReason, crdVersionMismatchMessage, k8scrd.DynaKubeName)
+	eventRecorder.Eventf(object, corev1.EventTypeWarning, crdVersionMismatchReason, crdVersionMismatchMessage)
 }
