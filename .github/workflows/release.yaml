@@ -339,7 +339,8 @@ jobs:
             - [x] PR is labeled accordingly
 
   update-csv-bundles:
-    needs: prepare
+    name: Update Operatorhub Bundles
+    needs: release
     runs-on: ubuntu-24.04
     if: ${{ !contains(github.ref, '-rc.') }}
     permissions:
