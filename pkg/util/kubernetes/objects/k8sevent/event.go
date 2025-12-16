@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	crdVersionMismatchReason  = "CrdVersionMismatch"
+	crdVersionMismatchReason  = "CRDVersionMismatch"
 	crdVersionMismatchMessage = "The CustomResourceDefinition doesn't match version with the operator. Please update the CRD to avoid potential issues."
 )
 
-func SendCrdVersionMismatch(eventRecorder record.EventRecorder, object client.Object) {
+func SendCRDVersionMismatch(eventRecorder record.EventRecorder, object client.Object) {
 	eventRecorder.Event(object, corev1.EventTypeWarning, crdVersionMismatchReason, crdVersionMismatchMessage)
 }

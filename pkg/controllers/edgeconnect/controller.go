@@ -122,7 +122,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	if !isCrdLatestVersion {
 		_log.Debug("sending k8s event about CRD version mismatch")
-		k8sevent.SendCrdVersionMismatch(controller.eventRecorder, ec)
+		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, ec)
 	}
 
 	if deletionTimestamp := ec.GetDeletionTimestamp(); deletionTimestamp != nil {

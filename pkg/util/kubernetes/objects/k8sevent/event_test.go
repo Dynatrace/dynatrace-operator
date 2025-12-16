@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-func TestSendCrdVersionMismatch(t *testing.T) {
+func TestSendCRDVersionMismatch(t *testing.T) {
 	t.Run("sends event for DynaKube object", func(t *testing.T) {
 		recorder := record.NewFakeRecorder(10)
 		dk := &dynakube.DynaKube{
@@ -22,7 +22,7 @@ func TestSendCrdVersionMismatch(t *testing.T) {
 			},
 		}
 
-		SendCrdVersionMismatch(recorder, dk)
+		SendCRDVersionMismatch(recorder, dk)
 
 		select {
 		case event := <-recorder.Events:
@@ -43,7 +43,7 @@ func TestSendCrdVersionMismatch(t *testing.T) {
 			},
 		}
 
-		SendCrdVersionMismatch(recorder, ec)
+		SendCRDVersionMismatch(recorder, ec)
 
 		select {
 		case event := <-recorder.Events:
@@ -67,7 +67,7 @@ func TestSendCrdVersionMismatch(t *testing.T) {
 
 		// Should compile and run without errors
 		require.NotPanics(t, func() {
-			SendCrdVersionMismatch(recorder, pod)
+			SendCRDVersionMismatch(recorder, pod)
 		})
 
 		// Verify event was sent
