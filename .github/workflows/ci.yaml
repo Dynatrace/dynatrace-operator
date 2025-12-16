@@ -14,7 +14,7 @@ permissions:
 
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
-  DOCKER_REGISTRY: quay.io
+  DOCKER_REGISTRY: ghcr.io
   DOCKER_REPOSITORY: dynatrace/dynatrace-operator
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
   PR_PLATFORMS: linux/amd64,linux/arm64
@@ -282,15 +282,17 @@ jobs:
     if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Build images
     runs-on: ubuntu-24.04
+    permissions:
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Login to Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build image
         uses: ./.github/actions/build-push-image
         with:
@@ -312,7 +314,7 @@ jobs:
         uses: ./.github/actions/preflight
         with:
           version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.DOCKER_REGISTRY }}
+          registry: ${{ env.SCAN_REGISTRY }}
           repository: ${{ env.DOCKER_REPOSITORY }}
           report-name: "preflight.json"
           should-submit: "false"
