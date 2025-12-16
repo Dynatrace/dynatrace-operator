@@ -136,18 +136,18 @@ func TestBuildJob(t *testing.T) {
 		assert.Equal(t, props.PathResolver.RootDir, container.VolumeMounts[0].MountPath)
 	})
 
-	t.Run("job uses priority class when set", func(t *testing.T) {
-		priorityClassName := "dynatrace-high-priority"
-		priority := int32(1000000)
+	t.Run("job uses priority class from csijob settings", func(t *testing.T) {
+		settings := csijob.GetSettings()
+		if settings.Job.PriorityClassName == "" {
+			settings.Job.PriorityClassName = "dynatrace-high-priority"
+		}
 
 		props := &Properties{
-			Owner:             &owner,
-			ImageURI:          imageURI,
-			PullSecrets:       pullSecrets,
-			PathResolver:      metadata.PathResolver{RootDir: "root"},
-			CSIJob:            csijob.GetSettings(),
-			PriorityClassName: priorityClassName,
-			Priority:          priority,
+			Owner:        &owner,
+			ImageURI:     imageURI,
+			PullSecrets:  pullSecrets,
+			PathResolver: metadata.PathResolver{RootDir: "root"},
+			CSIJob:       settings,
 		}
 		inst := &Installer{
 			nodeName: nodeName,
@@ -158,8 +158,7 @@ func TestBuildJob(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, job)
 
-		assert.Equal(t, priorityClassName, job.Spec.Template.Spec.PriorityClassName)
-		assert.Equal(t, priority, *job.Spec.Template.Spec.Priority)
+		assert.Equal(t, settings.Job.PriorityClassName, job.Spec.Template.Spec.PriorityClassName)
 	})
 }
 

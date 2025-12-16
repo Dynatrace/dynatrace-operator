@@ -75,7 +75,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		k8sjob.SetActiveDeadlineSeconds(activeDeadlineSeconds),
 		k8sjob.SetTTLSecondsAfterFinished(ttlSecondsAfterFinished),
 		k8sjob.SetServiceAccount(provisionerServiceAccount),
-		k8sjob.SetPriorityClass(inst.props.PriorityClassName, inst.props.Priority),
+		k8sjob.SetPriorityClassName(inst.props.CSIJob.Job.PriorityClassName),
 	)
 }
 

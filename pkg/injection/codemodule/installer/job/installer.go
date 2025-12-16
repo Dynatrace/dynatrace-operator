@@ -20,15 +20,13 @@ import (
 )
 
 type Properties struct {
-	CSIJob            csijob.Settings
-	Owner             client.Object
-	APIReader         client.Reader
-	Client            client.Client
-	ImageURI          string
-	PathResolver      metadata.PathResolver
-	PullSecrets       []string
-	PriorityClassName string
-	Priority          int32
+	CSIJob       csijob.Settings
+	Owner        client.Object
+	APIReader    client.Reader
+	Client       client.Client
+	ImageURI     string
+	PathResolver metadata.PathResolver
+	PullSecrets  []string
 }
 
 func NewInstaller(ctx context.Context, props *Properties) installer.Installer {
