@@ -112,6 +112,8 @@ func createDynaKube(activeGateEnabled bool) dynakube.DynaKube {
 }
 
 func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk dynakube.DynaKube) (dtEndpoint string, noProxy string) {
+	t.Helper()
+
 	er := endpoint.NewReconciler(clt, clt, &dk)
 	err := er.Reconcile(ctx)
 	require.NoError(t, err)

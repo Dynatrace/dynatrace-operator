@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -41,11 +40,11 @@ func TestService(t *testing.T) {
 	t.Run("create service if it does not exist", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 8)
@@ -102,11 +101,11 @@ func TestService(t *testing.T) {
 				string(otelcgen.StatsdProtocol),
 			},
 		})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, service.Spec.Ports, 2)
@@ -127,7 +126,7 @@ func TestService(t *testing.T) {
 		}
 
 		mockK8sClient := fake.NewFakeClient()
-		err := mockK8sClient.Create(context.Background(), &corev1.Service{
+		err := mockK8sClient.Create(t.Context(), &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      dk.TelemetryIngest().GetDefaultServiceName(),
 				Namespace: dk.Namespace,
@@ -139,11 +138,11 @@ func TestService(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -158,7 +157,7 @@ func TestService(t *testing.T) {
 		}
 
 		mockK8sClient := fake.NewFakeClient()
-		err := mockK8sClient.Create(context.Background(), &corev1.Service{
+		err := mockK8sClient.Create(t.Context(), &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testServiceName,
 				Namespace: dk.Namespace,
@@ -170,11 +169,11 @@ func TestService(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -183,11 +182,11 @@ func TestService(t *testing.T) {
 	t.Run("update from default service to custom service", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, dk.Status.Conditions, 1)
@@ -199,11 +198,11 @@ func TestService(t *testing.T) {
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{
 			ServiceName: testServiceName,
 		}
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.TelemetryIngest().GetDefaultServiceName(), Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -214,11 +213,11 @@ func TestService(t *testing.T) {
 		dk := getTestDynakube(&telemetryingest.Spec{
 			ServiceName: testServiceName,
 		})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: testServiceName, Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: dk.Namespace}, service)
 		require.NoError(t, err)
 
 		require.Len(t, dk.Status.Conditions, 1)
@@ -228,11 +227,11 @@ func TestService(t *testing.T) {
 
 		// update
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: testServiceName, Namespace: dk.Namespace}, service)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: dk.Namespace}, service)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
