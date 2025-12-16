@@ -31,6 +31,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -50,6 +51,8 @@ const (
 	fastUpdateInterval    = 1 * time.Minute
 	changesUpdateInterval = 5 * time.Minute
 	defaultUpdateInterval = 30 * time.Minute
+
+	controllerName = "dynakube-controller"
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -94,7 +97,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynakube.DynaKube{}).
-		Named("dynakube-controller").
+		Named(controllerName).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.Deployment{}).
@@ -148,7 +151,7 @@ type Controller struct {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
-	_, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.DynaKubeName)
+	isCrdLatestVersion, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.DynaKubeName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -166,6 +169,13 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	controller.requeueAfter = defaultUpdateInterval
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
+
+	 if !isCrdLatestVersion {
+		err = k8sevent.SendCrdVersionMismatch(ctx, controller.client, dk, k8scrd.DynaKubeName)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 
 	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
 
