@@ -35,14 +35,14 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Only clean up if not standalone", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		conditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "testing")
 
-		mockK8sClient := createK8sClientWithConfigSecret()
+		mockK8sClient := createK8sClientWithConfigSecret(t)
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient, dk)
@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: GetSecretName((dk.Name)), Namespace: dk.Namespace}, &secret)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: GetSecretName((dk.Name)), Namespace: dk.Namespace}, &secret)
 		require.True(t, k8serrors.IsNotFound(err))
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), LmcConditionType)
@@ -60,7 +60,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		mockK8sClient := createK8sClientWithOneAgentTenantSecret(dk, tokenValue)
+		mockK8sClient := createK8sClientWithOneAgentTenantSecret(t, dk, tokenValue)
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient, dk)
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(context.Background())
+		err = reconciler.Reconcile(t.Context())
 
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, dk)
@@ -85,7 +85,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Create and update works with no-proxy/proxy/network-zone", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		mockK8sClient := createK8sClientWithOneAgentTenantSecret(dk, tokenValue)
+		mockK8sClient := createK8sClientWithOneAgentTenantSecret(t, dk, tokenValue)
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient, dk)
@@ -108,7 +108,7 @@ func TestReconcile(t *testing.T) {
 			exp.NoProxyKey: "test-no-proxy",
 		}
 
-		err = reconciler.Reconcile(context.Background())
+		err = reconciler.Reconcile(t.Context())
 
 		require.NoError(t, err)
 		checkSecretForValue(t, mockK8sClient, dk)
@@ -116,7 +116,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition + secret", func(t *testing.T) {
 		dk := createDynakube(false)
 
-		mockK8sClient := createK8sClientWithOneAgentTenantSecret(dk, tokenValue)
+		mockK8sClient := createK8sClientWithOneAgentTenantSecret(t, dk, tokenValue)
 		conditions.SetSecretCreated(dk.Conditions(), LmcConditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
@@ -136,12 +136,12 @@ func TestReconcile(t *testing.T) {
 	t.Run("problem with k8s request => visible in conditions", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		boomClient := createBOOMK8sClient()
+		boomClient := createBOOMK8sClient(t)
 
 		reconciler := NewReconciler(boomClient,
 			boomClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
@@ -152,8 +152,10 @@ func TestReconcile(t *testing.T) {
 }
 
 func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.DynaKube) {
+	t.Helper()
+
 	var secret corev1.Secret
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: GetSecretName((dk.Name)), Namespace: dk.Namespace}, &secret)
+	err := k8sClient.Get(t.Context(), client.ObjectKey{Name: GetSecretName(dk.Name), Namespace: dk.Namespace}, &secret)
 	require.NoError(t, err)
 
 	deploymentConfig, ok := secret.Data[DeploymentConfigFilename]
@@ -219,7 +221,9 @@ func createDynakube(isLogMonitoringEnabled bool) *dynakube.DynaKube {
 	}
 }
 
-func createBOOMK8sClient() client.Client {
+func createBOOMK8sClient(t *testing.T) client.Client {
+	t.Helper()
+
 	boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 			return errors.New("BOOM")
@@ -238,9 +242,11 @@ func createBOOMK8sClient() client.Client {
 	return boomClient
 }
 
-func createK8sClientWithOneAgentTenantSecret(dk *dynakube.DynaKube, token string) client.Client {
+func createK8sClientWithOneAgentTenantSecret(t *testing.T, dk *dynakube.DynaKube, token string) client.Client {
+	t.Helper()
+
 	mockK8sClient := fake.NewClient()
-	_ = mockK8sClient.Create(context.Background(),
+	_ = mockK8sClient.Create(t.Context(),
 		&corev1.Secret{
 			Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(token)},
 			ObjectMeta: metav1.ObjectMeta{
@@ -253,9 +259,9 @@ func createK8sClientWithOneAgentTenantSecret(dk *dynakube.DynaKube, token string
 	return mockK8sClient
 }
 
-func createK8sClientWithConfigSecret() client.Client {
+func createK8sClientWithConfigSecret(t *testing.T) client.Client {
 	mockK8sClient := fake.NewClient()
-	_ = mockK8sClient.Create(context.Background(),
+	_ = mockK8sClient.Create(t.Context(),
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      GetSecretName(dkName),

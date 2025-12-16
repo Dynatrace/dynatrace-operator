@@ -1,7 +1,6 @@
 package istio
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -31,7 +30,7 @@ func boomReaction(_ clienttest.Action) (handled bool, ret runtime.Object, err er
 }
 
 func TestGetVirtualService(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
 		expectedVirtualService := createTestEmptyVirtualService()
@@ -67,7 +66,7 @@ func TestGetVirtualService(t *testing.T) {
 }
 
 func TestCreateVirtualService(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
 		expectedVirtualService := createTestEmptyVirtualService()
@@ -115,7 +114,7 @@ func TestCreateVirtualService(t *testing.T) {
 }
 
 func TestUpdateVirtualService(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
 		expectedResourceVersion := "1.2.3"
@@ -178,7 +177,7 @@ func TestUpdateVirtualService(t *testing.T) {
 }
 
 func TestCreateOrUpdateVirtualService(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("create", func(t *testing.T) {
 		expectedVirtualService := createTestEmptyVirtualService()
@@ -264,7 +263,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 }
 
 func TestDeleteVirtualService(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
 		virtualService := createTestEmptyVirtualService()
@@ -298,7 +297,7 @@ func TestDeleteVirtualService(t *testing.T) {
 }
 
 func TestGetServiceEntry(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
 		expectedServiceEntry := createTestEmptyServiceEntry()
@@ -334,7 +333,7 @@ func TestGetServiceEntry(t *testing.T) {
 }
 
 func TestCreateServiceEntry(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
 		expectedServiceEntry := createTestEmptyServiceEntry()
@@ -382,7 +381,7 @@ func TestCreateServiceEntry(t *testing.T) {
 }
 
 func TestUpdateServiceEntry(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
 		expectedResourceVersion := "1.2.3"
@@ -445,7 +444,7 @@ func TestUpdateServiceEntry(t *testing.T) {
 }
 
 func TestCreateOrUpdateServiceEntry(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("create", func(t *testing.T) {
 		expectedServiceEntry := createTestEmptyServiceEntry()
@@ -531,7 +530,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 }
 
 func TestDeleteServiceEntry(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("success", func(t *testing.T) {
 		serviceEntry := createTestEmptyServiceEntry()

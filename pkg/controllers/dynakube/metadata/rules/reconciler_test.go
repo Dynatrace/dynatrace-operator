@@ -21,8 +21,10 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("no error if not enabled", func(t *testing.T) {
 		dk := createDynaKube()
@@ -76,7 +78,7 @@ func TestReconcile(t *testing.T) {
 		conditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 
 		futureTime := timeprovider.New()
 		futureTime.Set(time.Now().Add(time.Hour))
@@ -102,7 +104,7 @@ func TestReconcile(t *testing.T) {
 		expectedResponse := createRulesResponse()
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -126,7 +128,7 @@ func TestReconcile(t *testing.T) {
 		expectedResponse := createRulesResponse()
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -143,7 +145,7 @@ func TestReconcile(t *testing.T) {
 		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 
 		dtc := dtclientmock.NewClient(t)
-		dtc.On("GetRulesSettings", mock.AnythingOfType("context.backgroundCtx"), dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
+		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
