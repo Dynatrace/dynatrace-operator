@@ -12,8 +12,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,6 +33,9 @@ const (
 	testNamespaceName         = "dynatrace"
 	testOtelPullSecret        = "otelc-pull-secret"
 	testTelemetryIngestSecret = "test-ts-secret"
+	testKubeSystemUUID        = "123e4567-e89b-12d3-a456-426614174000"
+	testKubernetesClusterName = "test-cluster"
+	testKubernetesClusterMEID = "12345678901234567890"
 )
 
 func TestReconcile(t *testing.T) {
@@ -65,6 +69,7 @@ func TestReconcile(t *testing.T) {
 		}, &sts)
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, sts)
+		assert.Contains(t, sts.Annotations, hasher.AnnotationHash)
 	})
 	t.Run("Only runs when required, and cleans up condition + statefulset", func(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
@@ -172,7 +177,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
 		statefulSet := getStatefulset(t, dk)
 		appLabels := buildAppLabels(dk.Name)
-		assert.Equal(t, topology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		assert.Equal(t, k8stopology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
@@ -204,7 +209,7 @@ func TestAffinity(t *testing.T) {
 		dk := getTestDynakubeWithExtensions()
 		statefulSet := getStatefulset(t, dk)
 
-		expectedAffinity := node.Affinity()
+		expectedAffinity := k8saffinity.NewMultiArchNodeAffinity()
 
 		assert.Equal(t, expectedAffinity, *statefulSet.Spec.Template.Spec.Affinity)
 	})
@@ -363,6 +368,11 @@ func getTestDynakubeWithExtensions() *dynakube.DynaKube {
 			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
 			Templates:  dynakube.TemplatesSpec{OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{}},
 		},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID:        testKubeSystemUUID,
+			KubernetesClusterMEID: testKubernetesClusterMEID,
+			KubernetesClusterName: testKubernetesClusterName,
+		},
 	}
 }
 
@@ -374,6 +384,11 @@ func getTestDynakube() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{},
+		Status: dynakube.DynaKubeStatus{
+			KubeSystemUUID:        testKubeSystemUUID,
+			KubernetesClusterMEID: testKubernetesClusterMEID,
+			KubernetesClusterName: testKubernetesClusterName,
+		},
 	}
 
 	return dk

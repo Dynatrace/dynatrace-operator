@@ -16,9 +16,9 @@
   ],
   baseBranches: [
     "$default",
-    "release-1.5",
     "release-1.6",
     "release-1.7",
+    "release-1.8",
   ],
   enabledManagers: [
     "regex",
@@ -43,36 +43,28 @@
         "(^|/|\\.)third-party-licenses.sh$",
       ],
       matchStrings: [
-        "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s",
+        "depName=(?<depName>.*?)\\s.*?_VERSION\\s?\\??=\\s?(?<currentValue>.*)",
+        "depName=(?<depName>.*?)\\s.*?go\\sinstall\\s.*?@(?<currentValue>.*?);?\\s",
       ],
       datasourceTemplate: "go",
     },
     {
       fileMatch: [
-        "(^|/|\\.)ci.yaml$",
+        ".*\\.ya?ml$",
+        "(^|/|\\.)cleanup-node-fs.sh$",
       ],
       matchStrings: [
-        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
+        "# ?renovate datasource=(?<datasource>.*?) depName=(?<depName>[^\\s]+)[^\\n]*\\n[ \\t]*[^:]*:\\s*\"?(?<currentValue>[^\"\\s]+)\"?",
       ],
-      datasourceTemplate: "go",
-    },
-    {
-      fileMatch: [
-        "(^|/|\\.)action.yaml$",
-      ],
-      matchStrings: [
-        "depName=(?<depName>.*?)\\s.*?PREFLIGHT_VERSION\\:\\s(?<currentValue>.*)\\s",
-      ],
-      datasourceTemplate: "github-releases",
     },
   ],
   packageRules: [
     {
       matchBaseBranches: [
         "$default",
-        "release-1.5",
         "release-1.6",
         "release-1.7",
+        "release-1.8",
       ],
       matchUpdateTypes: [
         "major",

@@ -1,4 +1,4 @@
-## Location to install dependencies to
+# Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
@@ -9,31 +9,29 @@ GOBIN ?= $(LOCALBIN)
 LOCALBIN_NPM ?= $(shell pwd)/node_modules/.bin
 
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-KUSTOMIZE_VERSION ?= v5.7.1
+KUSTOMIZE_VERSION ?= v5.8.0
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 CONTROLLER_GEN_VERSION ?= v0.19.0
 # renovate depName=github.com/golangci/golangci-lint/v2
-GOLANGCI_LINT_VERSION ?= v2.5.0
+GOLANGCI_LINT_VERSION ?= v2.6.2
 # renovate depName=golang.org/x/tools
-GOLANG_TOOLS_VERSION ?= v0.38.0
+GOLANG_TOOLS_VERSION ?= v0.40.0
 # renovate depName=github.com/vektra/mockery
-MOCKERY_VERSION ?= v3.5.5
+MOCKERY_VERSION ?= v3.6.1
 # renovate depName=github.com/igorshubovych/markdownlint-cli
-MARKDOWNLINT_CLI_VERSION ?= v0.45.0
+MARKDOWNLINT_CLI_VERSION ?= v0.47.0
+# renovate depName=github.com/tcort/markdown-link-check
+MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 # renovate depName=github.com/helm-unittest/helm-unittest
 HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 CYCLONEDX_GOMOD_VERSION ?= v1.9.0
 # renovate depName=github.com/mikefarah/yq/v4
-YQ_VERSION ?= v4.48.1
+YQ_VERSION ?= v4.49.2
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.17.0
-# renovate depName=github.com/dkorunic/betteralign/cmd/betteralign
-BETTERALIGN_VERSION ?= v0.7.3
-#SETUP_ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
-SETUP_ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
+GO_TEST_COVERAGE_VERSION ?= v2.18.0
 
-## Tool Binaries
+# Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
@@ -45,8 +43,17 @@ GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 PYTHON ?= $(LOCALBIN)/.venv/bin/python3
 MARKDOWNLINT ?= $(LOCALBIN_NPM)/markdownlint
+MARKDOWN_LINK_CHECK ?= $(LOCALBIN_NPM)/markdown-link-check
 
-ENVTEST_K8S_VERSION = $(shell go list -m -f "{{ .Version }}" k8s.io/api | sed 's/v0/1/' )
+#ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
+ENVTEST_VERSION ?= $(shell v='$(call gomodver,sigs.k8s.io/controller-runtime)'; \
+	[ -n "$$v" ] || { echo "Set ENVTEST_VERSION manually (controller-runtime replace has no tag)" >&2; exit 1; }; \
+	printf '%s\n' "$$v" | sed -E 's/^v?([0-9]+)\.([0-9]+).*/release-\1.\2/')
+
+#ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
+ENVTEST_K8S_VERSION ?= $(shell v='$(call gomodver,k8s.io/api)'; \
+	[ -n "$$v" ] || { echo "Set ENVTEST_K8S_VERSION manually (k8s.io/api replace has no tag)" >&2; exit 1; }; \
+	printf '%s\n' "$$v" | sed -E 's/^v?[0-9]+\.([0-9]+).*/1.\1/')
 
 ## Install all prerequisites
 prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint
@@ -88,7 +95,7 @@ prerequisites/yq:
 
 ## Install setup-envtest locally
 prerequisites/envtest:
-	$(call go-install-tool,$(SETUP_ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(SETUP_ENVTEST_VERSION))
+	$(call go-install-tool,$(SETUP_ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
 
 ## Setup envtest binaries for the specified Kubernetes version
 prerequisites/setup-envtest: prerequisites/envtest
@@ -102,13 +109,17 @@ prerequisites/setup-envtest: prerequisites/envtest
 	@echo "Setup of envtest binaries completed."
 
 ## Install 'helm' if it is missing
-## TODO: Have version accessible by renovate?
 prerequisites/helm-unittest:
+## TODO: Have version accessible by renovate?
 	hack/helm/install-unittest-plugin.sh $(HELMUNITTEST_VERSION)
 
 ## Install 'markdownlint' if it is missing
 prerequisites/markdownlint:
-	npm install --force markdownlint-cli@$(MARKDOWNLINT_CLI_VERSION)
+	npm install markdownlint-cli@$(MARKDOWNLINT_CLI_VERSION)
+
+## Install 'markdown-link-check' if it is missing
+prerequisites/markdown-link-check:
+	npm install markdown-link-check@$(MARKDOWN_LINK_CHECK_VERSION)
 
 ## Install python dependencies
 prerequisites/python:
@@ -133,4 +144,8 @@ GOBIN=$(LOCALBIN) go install $${package} ;\
 mv $(1) $(1)-$(3) ;\
 } ;\
 ln -sf $$(realpath $(1)-$(3)) $(1)
+endef
+
+define gomodver
+$(shell go list -m -f '{{if .Replace}}{{.Replace.Version}}{{else}}{{.Version}}{{end}}' $(1) 2>/dev/null)
 endef

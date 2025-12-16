@@ -5,10 +5,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/service"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -26,15 +27,17 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 			return err
 		}
 
-		err = service.Query(r.client, r.apiReader, log).Delete(ctx, svc)
+		err = k8sservice.Query(r.client, r.apiReader, log).Delete(ctx, svc)
 		if err != nil {
 			log.Error(err, "failed to clean up extension service")
-
-			return nil
 		}
+
+		r.deleteLegacyService(ctx)
 
 		return nil
 	}
+
+	defer r.deleteLegacyService(ctx)
 
 	return r.createOrUpdateService(ctx)
 }
@@ -47,7 +50,7 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 		return err
 	}
 
-	_, err = service.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
+	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update extension service")
 		conditions.SetKubeAPIError(r.dk.Conditions(), serviceConditionType, err)
@@ -61,8 +64,8 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 }
 
 func (r *reconciler) buildService() (*corev1.Service, error) {
-	coreLabels := labels.NewCoreLabels(r.dk.Name, labels.ExtensionComponentLabel)
-	appLabels := labels.NewAppLabels(labels.ExtensionComponentLabel, r.dk.Name, labels.ExtensionComponentLabel, "")
+	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.ExtensionComponentLabel)
+	appLabels := k8slabel.NewAppLabels(k8slabel.ExtensionComponentLabel, r.dk.Name, k8slabel.ExtensionComponentLabel, "")
 
 	svcPorts := []corev1.ServicePort{
 		{
@@ -73,11 +76,23 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 		},
 	}
 
-	return service.Build(r.dk,
+	return k8sservice.Build(r.dk,
 		r.dk.Extensions().GetServiceName(),
 		appLabels.BuildMatchLabels(),
 		svcPorts,
-		service.SetLabels(coreLabels.BuildLabels()),
-		service.SetType(corev1.ServiceTypeClusterIP),
+		k8sservice.SetLabels(coreLabels.BuildLabels()),
+		k8sservice.SetType(corev1.ServiceTypeClusterIP),
 	)
+}
+
+// TODO: Remove as part of DAQ-18375
+func (r *reconciler) deleteLegacyService(ctx context.Context) {
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.dk.Name + "-extensions-controller",
+			Namespace: r.dk.Namespace,
+		},
+	}
+
+	_ = r.client.Delete(ctx, svc)
 }

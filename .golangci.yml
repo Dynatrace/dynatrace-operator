@@ -16,7 +16,6 @@ linters:
     - gocheckcompilerdirectives
     - gochecksumtype
     - gocognit
-    - goconst
     - gocritic
     - gocyclo
     - godot
@@ -64,10 +63,6 @@ linters:
     - wsl_v5
     - zerologlint
   settings:
-    goconst:
-      ignore-string-values:
-        - "true"
-        - "false"
     depguard:
       rules:
         all:
@@ -272,6 +267,8 @@ linters:
           - dupl
           - perfsprint
           - wsl_v5
+          - dupl
+          - govet
         path: _(test|gen)\.go
       - linters:
           - govet
@@ -280,10 +277,6 @@ linters:
           - thelper
           - wsl_v5
         path: (test/*)
-      - linters:
-          - dupl
-          - govet
-        path: _(test|gen)\.go
       - linters:
           - gosec
         path: pkg/webhook/validation/proxy_url_test.go
@@ -299,9 +292,6 @@ linters:
       - linters:
           - godot
         path-except: pkg/api/(.+)\.go
-      - linters:
-          - goconst
-        path: (.+)_test\.go
     paths:
       - pkg/api/v1alpha1/dynakube
       - pkg/api/v1alpha1/edgeconnect

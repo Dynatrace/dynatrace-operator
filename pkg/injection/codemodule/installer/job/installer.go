@@ -9,10 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	jobutil "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/job"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sjob"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,16 +29,14 @@ type Properties struct {
 	PullSecrets  []string
 }
 
-func NewInstaller(ctx context.Context, fs afero.Fs, props *Properties) installer.Installer {
+func NewInstaller(ctx context.Context, props *Properties) installer.Installer {
 	return &Installer{
-		fs:       fs,
 		props:    props,
-		nodeName: env.GetNodeName(),
+		nodeName: k8senv.GetNodeName(),
 	}
 }
 
 type Installer struct {
-	fs       afero.Fs
 	props    *Properties
 	nodeName string
 }
@@ -47,7 +44,7 @@ type Installer struct {
 func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
 	log.Info("installing agent via Job", "image", inst.props.ImageURI, "target dir", targetDir)
 
-	err := inst.fs.MkdirAll(inst.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
+	err := os.MkdirAll(inst.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create the base shared agent directory", "err", err)
 
@@ -65,8 +62,8 @@ func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool
 		return false, nil
 	}
 
-	if err := symlink.CreateForCurrentVersionIfNotExists(inst.fs, targetDir); err != nil {
-		_ = inst.fs.RemoveAll(targetDir)
+	if err := symlink.CreateForCurrentVersionIfNotExists(targetDir); err != nil {
+		_ = os.RemoveAll(targetDir)
 
 		log.Info("failed to create symlink for agent installation", "err", err)
 
@@ -80,7 +77,7 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 	if inst.isAlreadyPresent(targetDir) {
 		log.Info("agent already installed", "image", inst.props.ImageURI, "target dir", targetDir)
 
-		_ = inst.fs.RemoveAll(inst.props.PathResolver.AgentJobWorkDirForJob(jobName))
+		_ = os.RemoveAll(inst.props.PathResolver.AgentJobWorkDirForJob(jobName))
 
 		return true, inst.query().DeleteForNamespace(ctx, jobName, inst.props.Owner.GetNamespace(), &client.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationBackground)})
 	}
@@ -111,11 +108,11 @@ func (inst *Installer) isReady(ctx context.Context, targetDir, jobName string) (
 }
 
 func (inst *Installer) isAlreadyPresent(targetDir string) bool {
-	_, err := inst.fs.Stat(targetDir)
+	_, err := os.Stat(targetDir)
 
 	return !os.IsNotExist(err)
 }
 
-func (inst *Installer) query() jobutil.QueryObject {
-	return jobutil.Query(inst.props.Client, inst.props.APIReader, log)
+func (inst *Installer) query() k8sjob.QueryObject {
+	return k8sjob.Query(inst.props.Client, inst.props.APIReader, log)
 }

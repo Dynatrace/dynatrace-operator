@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/injection"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring"
 	logmondaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
@@ -28,11 +29,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -68,9 +69,8 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,
-		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		config:                 config,
-		operatorNamespace:      os.Getenv(env.PodNamespace),
+		operatorNamespace:      os.Getenv(k8senv.PodNamespace),
 		clusterID:              clusterID,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
@@ -86,6 +86,8 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, co
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 		kspmReconcilerBuilder:               kspm.NewReconciler,
+
+		k8sEntityReconciler: k8sentity.NewReconciler(),
 	}
 }
 
@@ -101,13 +103,18 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
+type k8sEntityReconciler interface {
+	Reconcile(ctx context.Context, dtclient dtclient.Client, dk *dynakube.DynaKube) error
+}
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
 	client    client.Client
 	apiReader client.Reader
-	fs        afero.Afero
+
+	k8sEntityReconciler k8sEntityReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
@@ -140,6 +147,11 @@ type Controller struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
+
+	_, err := k8scrd.IsLatestVersion(ctx, controller.apiReader, k8scrd.DynaKubeName)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
@@ -337,6 +349,10 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient, dk); err != nil {
+		componentErrors = append(componentErrors, err)
+	}
+
 	extensionReconciler := controller.extensionReconcilerBuilder(controller.client, controller.apiReader, dk)
 
 	err = extensionReconciler.Reconcile(ctx)
@@ -348,7 +364,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling otel-collector")
 
-	otelcReconciler := controller.otelcReconcilerBuilder(controller.client, controller.apiReader, dk)
+	otelcReconciler := controller.otelcReconcilerBuilder(dynatraceClient, controller.client, controller.apiReader, dk)
 
 	err = otelcReconciler.Reconcile(ctx)
 	if err != nil {

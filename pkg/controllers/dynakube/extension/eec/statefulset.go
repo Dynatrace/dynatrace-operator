@@ -11,11 +11,11 @@ import (
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/topology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	containerName      = "extensions-controller"
-	serviceAccountName = "dynatrace-extensions-controller"
+	containerName      = "extension-controller"
+	serviceAccountName = "dynatrace-extension-controller"
 
 	// Env variable names
 	envTenantID                     = "TenantId"
@@ -83,49 +83,55 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		return err
 	}
 
-	topologySpreadConstraints := topology.MaxOnePerNode(appLabels)
+	topologySpreadConstraints := k8stopology.MaxOnePerNode(appLabels)
 	if len(r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints) > 0 {
 		topologySpreadConstraints = r.dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
 	}
 
-	desiredSts, err := statefulset.Build(r.dk, r.dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(r.dk),
-		statefulset.SetReplicas(1),
-		statefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		statefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
-		statefulset.SetAllAnnotations(nil, templateAnnotations),
-		statefulset.SetAffinity(buildAffinity()),
-		statefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
-		statefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
-		statefulset.SetServiceAccount(serviceAccountName),
-		statefulset.SetSecurityContext(buildPodSecurityContext(r.dk)),
-		statefulset.SetRollingUpdateStrategyType(),
+	desiredSts, err := k8sstatefulset.Build(r.dk, r.dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(r.dk),
+		k8sstatefulset.SetReplicas(1),
+		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
+		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), r.dk.Spec.Templates.ExtensionExecutionController.Labels),
+		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),
+		k8sstatefulset.SetAffinity(buildAffinity()),
+		k8sstatefulset.SetTolerations(r.dk.Spec.Templates.ExtensionExecutionController.Tolerations),
+		k8sstatefulset.SetTopologySpreadConstraints(topologySpreadConstraints),
+		k8sstatefulset.SetServiceAccount(serviceAccountName),
+		k8sstatefulset.SetSecurityContext(buildPodSecurityContext(r.dk)),
+		k8sstatefulset.SetRollingUpdateStrategyType(),
 		setImagePullSecrets(r.dk.ImagePullSecretReferences()),
 		setVolumes(r.dk),
 		setPersistentVolumeClaim(r.dk),
 	)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	if err := hasher.AddAnnotation(desiredSts); err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
-
-		return err
-	}
-
-	_, err = statefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
+	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
-		conditions.SetKubeAPIError(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, err)
+		conditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	conditions.SetStatefulSetCreated(r.dk.Conditions(), extensionsControllerStatefulSetConditionType, desiredSts.Name)
+	conditions.SetStatefulSetCreated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, desiredSts.Name)
 
 	return nil
+}
+
+// TODO: Remove as part of DAQ-18375
+func (r *reconciler) deleteLegacyStatefulset(ctx context.Context) {
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.dk.Name + "-extensions-controller",
+			Namespace: r.dk.Namespace,
+		},
+	}
+
+	_ = r.client.Delete(ctx, sts)
 }
 
 func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
@@ -155,12 +161,12 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	return templateAnnotations, nil
 }
 
-func buildAppLabels(dynakubeName string) *labels.AppLabels {
-	return labels.NewAppLabels(labels.ExtensionComponentLabel, dynakubeName, labels.ExtensionComponentLabel, "")
+func buildAppLabels(dynakubeName string) *k8slabel.AppLabels {
+	return k8slabel.NewAppLabels(k8slabel.ExtensionComponentLabel, dynakubeName, k8slabel.ExtensionComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {
-	return node.Affinity()
+	return k8saffinity.NewMultiArchNodeAffinity()
 }
 
 func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o *appsv1.StatefulSet) {

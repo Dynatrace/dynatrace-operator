@@ -12,8 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -62,7 +62,7 @@ func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
 		Long: "Pack logs and manifests useful for troubleshooting into single tarball",
-		RunE: run(),
+		RunE: run,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if archiveToStdoutFlagValue {
 				return nil
@@ -82,7 +82,7 @@ func New() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, env.DefaultNamespace(), "Specify a different Namespace.")
+	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, k8senv.DefaultNamespace(), "Specify a different Namespace.")
 	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
 	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, defaultSimFileSize, "Simulated log files, size in MiB (default 10)")
 	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
@@ -91,35 +91,33 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().IntVar(&NumEventsFlagValue, numEventsFlagName, DefaultNumEvents, fmt.Sprintf("Number of events to be fetched (default %d)", DefaultNumEvents))
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		time.Sleep(time.Duration(delayFlagValue) * time.Second)
+func run(cmd *cobra.Command, args []string) error {
+	time.Sleep(time.Duration(delayFlagValue) * time.Second)
 
-		logBuffer := bytes.Buffer{}
-		log := newSupportArchiveLogger(&logBuffer)
-		installconfig.ReadModulesToLogger(log)
-		version.LogVersionToLogger(log)
+	logBuffer := bytes.Buffer{}
+	log := newSupportArchiveLogger(&logBuffer)
+	installconfig.ReadModulesToLogger(log)
+	version.LogVersionToLogger(log)
 
-		archiveTargetFile := os.Stdout
-		supportArchive := newZipArchive(archiveTargetFile)
+	archiveTargetFile := os.Stdout
+	supportArchive := newZipArchive(archiveTargetFile)
 
-		defer archiveTargetFile.Close()
-		defer supportArchive.Close()
+	defer archiveTargetFile.Close()
+	defer supportArchive.Close()
 
-		err := runCollectors(log, supportArchive)
-		if err != nil {
-			return err
-		}
-
-		// make sure to run this collector at the very end
-		newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
-
-		return nil
+	err := runCollectors(log, supportArchive)
+	if err != nil {
+		return err
 	}
+
+	// make sure to run this collector at the very end
+	newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
+
+	return nil
 }
 
 func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) string {
-	podName := os.Getenv(env.PodName)
+	podName := os.Getenv(k8senv.PodName)
 	if podName != "" {
 		options := metav1.GetOptions{}
 
@@ -128,7 +126,7 @@ func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) stri
 			return defaultOperatorAppName
 		}
 
-		return pod.Labels[labels.AppNameLabel]
+		return pod.Labels[k8slabel.AppNameLabel]
 	}
 
 	return defaultOperatorAppName
@@ -155,7 +153,7 @@ func runCollectors(log logd.Logger, supportArchive archiver) error {
 	pods := clientSet.CoreV1().Pods(namespaceFlagValue)
 	appName := getAppNameLabel(ctx, pods)
 
-	logInfof(log, "%s=%s", labels.AppNameLabel, appName)
+	logInfof(log, "%s=%s", k8slabel.AppNameLabel, appName)
 
 	fileSize := loadsimFileSizeFlagValue * Mebi
 	collectors := []collector{

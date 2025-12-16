@@ -81,7 +81,7 @@ func NewMultiCapability(dk *dynakube.DynaKube) Capability {
 		capabilityArgs = append(capabilityArgs, "extension_controller")
 	}
 
-	if dk.TelemetryIngest().IsEnabled() {
+	if dk.TelemetryIngest().IsEnabled() || dk.OTLPExporterConfiguration().IsEnabled() {
 		capabilityArgs = append(capabilityArgs, "log_analytics_collector", "generic_ingest", "otlp_ingest")
 	}
 
@@ -94,8 +94,8 @@ func BuildServiceName(dynakubeName string) string {
 	return dynakubeName + "-" + consts.MultiActiveGateName
 }
 
-// BuilDNSEntryPoint will create a string listing of the full DNS entry points for the Service of the ActiveGate in the provided DynaKube
-// example: https://34.118.233.238:443,https://dynakube-activegate.dynatrace:443
+// BuildDNSEntryPoint will create a string listing of the full DNS entry points for the Service of the ActiveGate in the provided DynaKube.
+// Example: https://34.118.233.238:443,https://dynakube-activegate.dynatrace:443
 func BuildDNSEntryPoint(dk dynakube.DynaKube) string {
 	entries := []string{}
 
@@ -148,4 +148,27 @@ func buildServiceDomainName(dynakubeName string, namespaceName string) string {
 
 func buildDNSEntry(host string) string {
 	return fmt.Sprintf("https://%s/communication", host)
+}
+
+func SwitchCapability(dk *dynakube.DynaKube, capability activegate.Capability, wantEnabled bool) {
+	hasEnabled := dk.ActiveGate().IsMode(capability.DisplayName)
+	capabilities := &dk.Spec.ActiveGate.Capabilities
+
+	if wantEnabled && !hasEnabled {
+		*capabilities = append(*capabilities, capability.DisplayName)
+	}
+
+	if !wantEnabled && hasEnabled {
+		*capabilities = removeCapability(*capabilities, capability.DisplayName)
+	}
+}
+
+func removeCapability(capabilities []activegate.CapabilityDisplayName, removeMe activegate.CapabilityDisplayName) []activegate.CapabilityDisplayName {
+	for i, capability := range capabilities {
+		if capability == removeMe {
+			return append(capabilities[:i], capabilities[i+1:]...)
+		}
+	}
+
+	return capabilities
 }

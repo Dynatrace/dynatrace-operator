@@ -248,7 +248,7 @@ func (in *TemplatesSpec) DeepCopyInto(out *TemplatesSpec) {
 	}
 	in.KspmNodeConfigurationCollector.DeepCopyInto(&out.KspmNodeConfigurationCollector)
 	in.OpenTelemetryCollector.DeepCopyInto(&out.OpenTelemetryCollector)
-	in.DatabaseExecutor.DeepCopyInto(&out.DatabaseExecutor)
+	in.SQLExtensionExecutor.DeepCopyInto(&out.SQLExtensionExecutor)
 	in.ExtensionExecutionController.DeepCopyInto(&out.ExtensionExecutionController)
 }
 

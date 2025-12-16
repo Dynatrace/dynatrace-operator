@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -92,15 +92,15 @@ func TestReconcileSpec(t *testing.T) {
 			executorIDLabelKey:        db.ID,
 			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
 		})
-		assert.Contains(t, deploy.Labels, labels.AppComponentLabel)
-		assert.Contains(t, deploy.Labels, labels.AppManagedByLabel)
-		assert.Contains(t, deploy.Labels, labels.AppVersionLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppComponentLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppManagedByLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppVersionLabel)
 		assert.Equal(t, deploy.Labels, deploy.Spec.Template.Labels)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
 		for _, vol := range deploy.Spec.Template.Spec.Volumes {
 			switch vol.Name {
-			case userDataVolumeName:
+			case tmpVolumeName:
 				assert.NotNil(t, vol.EmptyDir)
 			case tokenVolumeName:
 				assert.NotNil(t, vol.Secret)
@@ -120,17 +120,21 @@ func TestReconcileSpec(t *testing.T) {
 		assert.NotNil(t, container.LivenessProbe)
 		assert.NotNil(t, container.ReadinessProbe)
 		assert.NotNil(t, container.SecurityContext)
-		assert.Equal(t, dk.Spec.Templates.DatabaseExecutor.ImageRef.String(), container.Image)
+		assert.Equal(t, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String(), container.Image)
 		assert.Equal(t, corev1.PullIfNotPresent, container.ImagePullPolicy)
 		assert.NotEmpty(t, container.Resources.Requests)
 		assert.NotEmpty(t, container.Resources.Limits)
 		assert.Len(t, container.Args, 3)
+		assert.Contains(t, container.Args, "--podid=$(POD_UID)")
+		assert.Contains(t, container.Args, "--idtoken="+tokenMountPath+"/"+tokenVolumeName)
 		assert.Len(t, container.Env, 1)
+		assert.Equal(t, "POD_UID", container.Env[0].Name)
+		assert.Equal(t, "metadata.uid", container.Env[0].ValueFrom.FieldRef.FieldPath)
 		assert.Len(t, container.VolumeMounts, 4)
 		for _, mnt := range container.VolumeMounts {
 			switch mnt.Name {
-			case userDataVolumeName:
-				assert.Equal(t, userDataMountPath, mnt.MountPath)
+			case tmpVolumeName:
+				assert.Equal(t, tmpMountPath, mnt.MountPath)
 			case tokenVolumeName:
 				assert.Equal(t, tokenMountPath, mnt.MountPath)
 			case certsVolumeName:
@@ -145,7 +149,7 @@ func TestReconcileSpec(t *testing.T) {
 
 	t.Run("override image pull policy", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag = "latest"
+		dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag = "latest"
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
 		assert.Equal(t, corev1.PullAlways, deploy.Spec.Template.Spec.Containers[0].ImagePullPolicy)
 	})
@@ -275,7 +279,7 @@ func getTestDynakube() *dynakube.DynaKube {
 				},
 			},
 			Templates: dynakube.TemplatesSpec{
-				DatabaseExecutor: extensions.DatabaseExecutorSpec{
+				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 					ImageRef: image.Ref{
 						Repository: testExecutorImageRepository,
 						Tag:        testExecutorImageTag,
@@ -295,7 +299,7 @@ func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.Name + "-db-datasource-" + db.ID,
+			Name:      dk.Name + extensions.SQLExecutorInfix + db.ID,
 			Namespace: testNamespaceName,
 			Labels:    labels,
 		},

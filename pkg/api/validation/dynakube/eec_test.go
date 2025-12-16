@@ -36,6 +36,18 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 									Tag:        "b",
 								},
 							},
+							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
+							},
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
+							},
 						},
 					},
 				}))
@@ -60,6 +72,12 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 								ExtensionExecutionController: extensions.ExecutionControllerSpec{
 									ImageRef: image.Ref{
 										Repository: "a",
+									},
+								},
+								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+									ImageRef: image.Ref{
+										Repository: "a",
+										Tag:        "b",
 									},
 								},
 							},
@@ -88,6 +106,12 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 										Tag: "b",
 									},
 								},
+								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+									ImageRef: image.Ref{
+										Repository: "a",
+										Tag:        "b",
+									},
+								},
 							},
 						},
 					}))
@@ -106,6 +130,14 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 							ActiveGate: activegate.Spec{
 								Capabilities: []activegate.CapabilityDisplayName{
 									activegate.KubeMonCapability.DisplayName,
+								},
+							},
+							Templates: dynakube.TemplatesSpec{
+								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+									ImageRef: image.Ref{
+										Repository: "a",
+										Tag:        "b",
+									},
 								},
 							},
 						},
@@ -138,6 +170,18 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 								UseEphemeralVolume:    false,
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 							},
+							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
+							},
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+								ImageRef: image.Ref{
+									Repository: "repo",
+									Tag:        "tag",
+								},
+							},
 						},
 					},
 				}))
@@ -163,6 +207,18 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 									Tag:        "b",
 								},
 								UseEphemeralVolume: true,
+							},
+							OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+								ImageRef: image.Ref{
+									Repository: "a",
+									Tag:        "b",
+								},
+							},
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+								ImageRef: image.Ref{
+									Repository: "repo",
+									Tag:        "tag",
+								},
 							},
 						},
 					},
@@ -192,6 +248,12 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 									},
 									UseEphemeralVolume:    true,
 									PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
+								},
+								SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+									ImageRef: image.Ref{
+										Repository: "repo",
+										Tag:        "tag",
+									},
 								},
 							},
 						},
@@ -227,6 +289,18 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: imgRef,
 				},
+				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+					ImageRef: image.Ref{
+						Repository: "otc/repo",
+						Tag:        "otc-tag",
+					},
+				},
+				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
+					ImageRef: image.Ref{
+						Repository: "repo",
+						Tag:        "tag",
+					},
+				},
 			},
 			ActiveGate: agSpec,
 		},
@@ -245,6 +319,9 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 						APIURL: "https://f.q.d.n/123",
 						Templates: dynakube.TemplatesSpec{
 							ExtensionExecutionController: extensions.ExecutionControllerSpec{
+								ImageRef: imgRef,
+							},
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: imgRef,
 							},
 						},
@@ -267,6 +344,9 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 						APIURL: testAPIURL,
 						Templates: dynakube.TemplatesSpec{
 							ExtensionExecutionController: extensions.ExecutionControllerSpec{
+								ImageRef: imgRef,
+							},
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: imgRef,
 							},
 						},
@@ -295,6 +375,9 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 						Extensions: nil,
 						Templates: dynakube.TemplatesSpec{
 							ExtensionExecutionController: extensions.ExecutionControllerSpec{
+								ImageRef: imgRef,
+							},
+							SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 								ImageRef: imgRef,
 							},
 						},

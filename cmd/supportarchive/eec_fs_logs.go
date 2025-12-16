@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/remotecommand"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,8 +23,8 @@ const (
 	diagLogCollectorName = "fsLogCollector"
 	eecExtensionsPath    = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 	fileNotFoundMarker   = "<NOT FOUND>"
-	LabelEecPodName      = "dynatrace-extensions-controller"
-	eecContainerName     = "extensions-controller"
+	LabelEecPodName      = "dynatrace-extension-controller"
+	eecContainerName     = "extension-controller"
 )
 
 type fsLogCollector struct {
@@ -63,8 +63,8 @@ func (flc fsLogCollector) Name() string {
 func (flc fsLogCollector) getControllerPodList() (*corev1.PodList, error) {
 	ls := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			labels.AppNameLabel:      LabelEecPodName,
-			labels.AppManagedByLabel: flc.appName,
+			k8slabel.AppNameLabel:      LabelEecPodName,
+			k8slabel.AppManagedByLabel: flc.appName,
 		},
 	}
 

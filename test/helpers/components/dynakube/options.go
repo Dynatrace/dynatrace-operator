@@ -176,7 +176,7 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.Applicati
 	}
 }
 
-func WithExtensionsEnabledSpec(promEnabled bool) Option {
+func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 	return func(dk *dynakube.DynaKube) {
 		if promEnabled {
 			dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
@@ -257,6 +257,24 @@ func WithOTelCollectorImageRefSpec(repo, tag string) Option {
 				Repository: repo,
 				Tag:        tag,
 			},
+		}
+	}
+}
+
+func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
+	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.Extensions == nil {
+			dk.Spec.Extensions = &extensions.Spec{}
+		}
+		dk.Spec.Extensions.Databases = databases
+	}
+}
+
+func WithExtensionsDBExecutorImageRefSpec(repo, tag string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Templates.SQLExtensionExecutor.ImageRef = image.Ref{
+			Repository: repo,
+			Tag:        tag,
 		}
 	}
 }

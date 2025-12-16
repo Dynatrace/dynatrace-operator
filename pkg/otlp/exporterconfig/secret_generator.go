@@ -7,8 +7,8 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -46,12 +46,29 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 	}
 
 	if len(data) != 0 {
-		err = s.createSourceForWebhook(ctx, dk, data)
+		err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
 		if err != nil {
 			return err
 		}
 
-		err = s.createSecretForNamespaces(ctx, consts.OTLPExporterSecretName, namespaces, dk, data)
+		err = s.createSecretForNamespaces(ctx, consts.OTLPExporterSecretName, ConfigConditionType, namespaces, dk, data)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	certs, certErr := s.generateCerts(ctx, dk)
+	if certErr != nil {
+		return errors.WithStack(certErr)
+	}
+
+	if len(certs) != 0 {
+		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs)
+		if err != nil {
+			return err
+		}
+
+		err = s.createSecretForNamespaces(ctx, consts.OTLPExporterCertsSecretName, CertsConditionType, namespaces, dk, certs)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -68,6 +85,13 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 		return errors.WithStack(err)
 	}
 
+	err = cleanupCerts(ctx, client, apiReader, namespaces, dk)
+	if err != nil {
+		log.Error(err, "failed to cleanup OTLP exporter certs secrets")
+
+		return errors.WithStack(err)
+	}
+
 	return nil
 }
 
@@ -80,14 +104,14 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 
 	var tokens corev1.Secret
 	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
 	if _, ok := tokens.Data[dtclient.DataIngestToken]; !ok {
 		err := errors.New("data ingest token not found in tokens secret")
-		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
@@ -97,42 +121,74 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 	return data, nil
 }
 
-func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretName string, nsList []corev1.Namespace, dk *dynakube.DynaKube, data map[string][]byte) error {
-	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
+func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
+	data := map[string][]byte{}
+
+	var (
+		agCert []byte
+		err    error
+	)
+
+	switch {
+	case dk.ActiveGate().HasCaCert():
+		agCert, err = dk.ActiveGateTLSCert(ctx, s.apiReader)
+	case dk.Spec.TrustedCAs != "":
+		agCert, err = dk.TrustedCAs(ctx, s.apiReader)
+	default:
+		return data, nil
+	}
+
+	if err != nil {
+		conditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
+
+		return nil, errors.WithStack(err)
+	}
+
+	if len(agCert) == 0 {
+		return nil, errors.New("no active gate tls certificate found")
+	}
+
+	data[ActiveGateCertDataName] = agCert
+
+	return data, nil
+}
+
+func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretName, conditionType string, nsList []corev1.Namespace, dk *dynakube.DynaKube, data map[string][]byte) error { //nolint:revive
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+		conditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	err = s.secrets.CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	log.Info("done updating OTLP exporter config secrets")
-	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), ConditionType, consts.OTLPExporterSecretName)
+	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, secretName)
 
 	return nil
 }
 
-func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, data map[string][]byte) error {
-	coreLabels := k8slabels.NewCoreLabels(dk.Name, k8slabels.WebhookComponentLabel)
+func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, name string, conditionType string, data map[string][]byte) error {
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
 
-	secret, err := k8ssecret.BuildForNamespace(GetSourceConfigSecretName(dk.Name), dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.BuildForNamespace(name, dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), ConditionType, err)
+		conditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	_, err = s.secrets.WithOwner(dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConditionType, err)
+		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -141,7 +197,7 @@ func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynaku
 }
 
 func cleanupConfig(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
-	defer meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
+	defer meta.RemoveStatusCondition(dk.Conditions(), ConfigConditionType)
 
 	nsList := make([]string, 0, len(namespaces))
 	for _, ns := range namespaces {
@@ -156,4 +212,22 @@ func cleanupConfig(ctx context.Context, client client.Client, apiReader client.R
 	}
 
 	return secrets.DeleteForNamespaces(ctx, consts.OTLPExporterSecretName, nsList)
+}
+
+func cleanupCerts(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
+	defer meta.RemoveStatusCondition(dk.Conditions(), CertsConditionType)
+
+	nsList := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		nsList = append(nsList, ns.Name)
+	}
+
+	secrets := k8ssecret.Query(client, apiReader, log)
+
+	err := secrets.DeleteForNamespace(ctx, GetSourceCertsSecretName(dk.Name), dk.Namespace)
+	if err != nil {
+		log.Error(err, "failed to delete the source OTLP exporter certs secret", "name", GetSourceCertsSecretName(dk.Name))
+	}
+
+	return secrets.DeleteForNamespaces(ctx, consts.OTLPExporterCertsSecretName, nsList)
 }

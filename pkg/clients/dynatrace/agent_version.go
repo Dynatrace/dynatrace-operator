@@ -8,23 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (dtc *dynatraceClient) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
-	if len(ip) == 0 {
-		return "", errors.New("ip is invalid")
-	}
-
-	hostInfo, err := dtc.getHostInfoForIP(ctx, ip)
-	if err != nil {
-		return "", err
-	}
-
-	if hostInfo.entityID == "" {
-		return "", errors.New("entity id not set for host")
-	}
-
-	return hostInfo.entityID, nil
-}
-
 // TODO: the `arch` params should be removed and instead always the "github.com/Dynatrace/dynatrace-operator/pkg/arch" should be used
 
 // GetLatestAgent gets the latest agent package for the given OS and installer type.
@@ -35,9 +18,9 @@ func (dtc *dynatraceClient) GetLatestAgent(ctx context.Context, os, installerTyp
 
 	url := dtc.getLatestAgentURL(os, installerType, flavor, arch, technologies, skipMetadata)
 
-	md5, err := dtc.makeRequestForBinary(ctx, url, dynatracePaaSToken, writer)
+	sha256, err := dtc.makeRequestForBinary(ctx, url, dynatracePaaSToken, writer)
 	if err == nil {
-		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "md5", md5)
+		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "sha256", sha256)
 	}
 
 	return err
@@ -100,18 +83,18 @@ func (dtc *dynatraceClient) GetAgent(ctx context.Context, os, installerType, fla
 
 	url := dtc.getAgentURL(os, installerType, flavor, arch, version, technologies, skipMetadata)
 
-	md5, err := dtc.makeRequestForBinary(ctx, url, dynatracePaaSToken, writer)
+	sha256, err := dtc.makeRequestForBinary(ctx, url, dynatracePaaSToken, writer)
 	if err == nil {
-		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "md5", md5)
+		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "sha256", sha256)
 	}
 
 	return err
 }
 
 func (dtc *dynatraceClient) GetAgentViaInstallerURL(ctx context.Context, url string, writer io.Writer) error {
-	md5, err := dtc.makeRequestForBinary(ctx, url, installerURLToken, writer)
+	sha256, err := dtc.makeRequestForBinary(ctx, url, installerURLToken, writer)
 	if err == nil {
-		log.Info("downloaded agent file using given url", "url", url, "md5", md5)
+		log.Info("downloaded agent file using given url", "url", url, "sha256", sha256)
 	}
 
 	return err

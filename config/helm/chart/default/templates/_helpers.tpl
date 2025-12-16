@@ -101,3 +101,8 @@ startupProbe:
       }
     }
 {{- end -}}
+
+{{- define "dynatrace-operator.app-version-env" -}}
+- name: APP_VERSION
+  value: {{ .Chart.AppVersion | quote }}
+{{- end -}}

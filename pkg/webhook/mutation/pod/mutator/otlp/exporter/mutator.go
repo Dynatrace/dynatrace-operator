@@ -3,16 +3,24 @@ package exporter
 import (
 	"fmt"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+)
+
+const (
+	activeGateTrustedCertVolumeName = "otlp-dynatrace-certs"
+	exporterCertsMountPath          = "/etc/dynatrace/ssl"
 )
 
 var (
@@ -114,6 +122,8 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		},
 	}
 
+	shouldAddCertificate := request.DynaKube.ActiveGate().HasCaCert() || request.DynaKube.Spec.TrustedCAs != ""
+
 	override := otlpExporterConfig.IsOverrideEnvVarsEnabled()
 
 	// Create per-signal injectors
@@ -121,6 +131,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 		&traceInjector{cfg: otlpExporterConfig},
 		&metricsInjector{cfg: otlpExporterConfig},
 		&logsInjector{cfg: otlpExporterConfig},
+		&noProxyInjector{dk: request.DynaKube},
 	}
 
 	mutated := false
@@ -132,17 +143,37 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 			continue
 		}
 
+		if shouldAddCertificate {
+			ensureCertificateVolumeMounted(c)
+		}
+
 		// need to add the token env var first so that it can be used in other env vars
-		c.Env = env.AddOrUpdate(c.Env, dtAPITokenEnvVar)
+		c.Env = k8senv.AddOrUpdate(c.Env, dtAPITokenEnvVar)
 
 		for _, inj := range injectors {
-			if inj.Inject(c, apiURL, override) {
+			if inj.Inject(c, apiURL, shouldAddCertificate) {
 				mutated = true
 			}
 		}
 	}
 
+	if shouldAddCertificate && mutated {
+		addActiveGateCertVolume(request.DynaKube, request.Pod)
+	}
+
 	return mutated, nil
+}
+
+func ensureCertificateVolumeMounted(c *corev1.Container) {
+	if k8smount.Contains(c.VolumeMounts, activeGateTrustedCertVolumeName) {
+		return
+	}
+
+	c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+		Name:      activeGateTrustedCertVolumeName,
+		MountPath: exporterCertsMountPath,
+		ReadOnly:  true,
+	})
 }
 
 func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, override bool) bool {
@@ -174,6 +205,7 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, over
 		OTLPMetricsHeadersEnv,
 		OTLPMetricsCertificateEnv,
 		OTLPMetricsProtocolEnv,
+		OTLPMetricsExporterTemporalityPreference,
 		// logs exporter env var
 		OTLPLogsEndpointEnv,
 		OTLPLogsHeadersEnv,
@@ -182,7 +214,7 @@ func shouldSkipContainer(request dtwebhook.BaseRequest, c corev1.Container, over
 	}
 
 	for _, envVar := range envVarsToCheck {
-		if env.IsIn(c.Env, envVar) {
+		if k8senv.Contains(c.Env, envVar) {
 			return true
 		}
 	}
@@ -199,4 +231,32 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 		pod.Annotations[dtwebhook.AnnotationOTLPInjected] = "false"
 		pod.Annotations[dtwebhook.AnnotationOTLPReason] = reason
 	}
+}
+
+func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) {
+	if !dk.ActiveGate().HasCaCert() && dk.Spec.TrustedCAs == "" {
+		return
+	}
+
+	// avoid duplicate volume additions on reinvocation or multiple container matches
+	if k8svolume.Contains(pod.Spec.Volumes, activeGateTrustedCertVolumeName) {
+		return
+	}
+
+	defaultMode := int32(420)
+	agCertVolume := corev1.Volume{
+		Name: activeGateTrustedCertVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				DefaultMode: &defaultMode,
+				SecretName:  consts.OTLPExporterCertsSecretName,
+			},
+		},
+	}
+
+	if pod.Spec.Volumes == nil {
+		pod.Spec.Volumes = []corev1.Volume{}
+	}
+
+	pod.Spec.Volumes = append(pod.Spec.Volumes, agCertVolume)
 }

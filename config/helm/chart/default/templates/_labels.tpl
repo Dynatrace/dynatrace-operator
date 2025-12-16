@@ -104,9 +104,9 @@ app.kubernetes.io/component: oneagent
 {{/*
 Extensions Controller (EEC) labels
 */}}
-{{- define "dynatrace-operator.extensionsControllerLabels" -}}
+{{- define "dynatrace-operator.extensionControllerLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: dynatrace-extensions-controller
+app.kubernetes.io/component: dynatrace-extension-controller
 {{- end -}}
 
 {{/*
@@ -114,7 +114,7 @@ OpenTelemetry Collector (OTelC) labels
 */}}
 {{- define "dynatrace-operator.openTelemetryCollectorLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: dynatrace-opentelemetry-collector
+app.kubernetes.io/component: dynatrace-otel-collector
 {{- end -}}
 
 {{/*
@@ -131,4 +131,12 @@ KSPM labels
 {{- define "dynatrace-operator.kspmLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: kspm
+{{- end -}}
+
+{{/*
+Database Extensions Executor labels
+*/}}
+{{- define "dynatrace-operator.databaseDatasourceLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: dynatrace-sql-extension-executor
 {{- end -}}

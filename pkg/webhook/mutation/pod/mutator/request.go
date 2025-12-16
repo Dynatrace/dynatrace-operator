@@ -2,9 +2,10 @@ package mutator
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -58,10 +59,18 @@ func (req *BaseRequest) PodName() string {
 		return ""
 	}
 
-	return pod.GetName(*req.Pod)
+	return k8spod.GetName(*req.Pod)
 }
 
-func (req *BaseRequest) NewContainers(isInjected func(corev1.Container) bool) (newContainers []*corev1.Container) {
+func (req *BaseRequest) IsSplitMountsEnabled() bool {
+	if value, found := req.Pod.Annotations[AnnotationInjectionSplitMounts]; found && strings.ToLower(value) == "true" {
+		return true
+	}
+
+	return req.DynaKube.OneAgent().IsClassicFullStackMode()
+}
+
+func (req *BaseRequest) NewContainers(isInjected func(corev1.Container, *BaseRequest) bool) (newContainers []*corev1.Container) {
 	newContainers = []*corev1.Container{}
 
 	for i := range req.Pod.Spec.Containers {
@@ -70,7 +79,7 @@ func (req *BaseRequest) NewContainers(isInjected func(corev1.Container) bool) (n
 			continue
 		}
 
-		if isInjected(*container) {
+		if isInjected(*container, req) {
 			continue
 		}
 

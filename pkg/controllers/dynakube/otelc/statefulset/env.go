@@ -66,7 +66,7 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort},
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
-		{Name: envK8sClusterName, Value: dk.Name},
+		{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName},
 		{Name: envK8sClusterUID, Value: dk.Status.KubeSystemUUID},
 		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
 	}
@@ -137,7 +137,10 @@ func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 }
 
 func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
-	noProxyValues := []string{}
+	noProxyValues := []string{
+		"$(KUBERNETES_SERVICE_HOST)",
+		"kubernetes.default",
+	}
 
 	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
 		noProxyValues = append(noProxyValues, ext.GetServiceNameFQDN())

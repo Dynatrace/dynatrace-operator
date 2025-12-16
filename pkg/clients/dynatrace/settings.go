@@ -54,8 +54,7 @@ const (
 	fieldsQueryParam               = "fields"
 	kubernetesSettingsNeededFields = "value,scope"
 
-	schemaIDsQueryParam        = "schemaIds"
-	kubernetesSettingsSchemaID = "builtin:cloud.kubernetes"
+	schemaIDsQueryParam = "schemaIds"
 )
 
 func (dtc *dynatraceClient) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
@@ -70,7 +69,7 @@ func (dtc *dynatraceClient) GetK8sClusterME(ctx context.Context, kubeSystemUUID 
 
 	q := req.URL.Query()
 	q.Add(pageSizeQueryParam, entitiesPageSize)
-	q.Add(schemaIDsQueryParam, kubernetesSettingsSchemaID)
+	q.Add(schemaIDsQueryParam, KubernetesSettingsSchemaID)
 	q.Add(fieldsQueryParam, kubernetesSettingsNeededFields)
 	q.Add(filterQueryParam, fmt.Sprintf("value.clusterId='%s'", kubeSystemUUID))
 	req.URL.RawQuery = q.Encode()
@@ -88,7 +87,7 @@ func (dtc *dynatraceClient) GetK8sClusterME(ctx context.Context, kubeSystemUUID 
 
 	err = dtc.unmarshalToJSON(res, &resDataJSON)
 	if err != nil {
-		return K8sClusterME{}, errors.WithMessage(err, "error parsing response body")
+		return K8sClusterME{}, err
 	}
 
 	if len(resDataJSON.Settings) == 0 {
@@ -129,9 +128,8 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntity(ctx context.Context, m
 
 	var resDataJSON GetSettingsResponse
 
-	err = dtc.unmarshalToJSON(res, &resDataJSON)
-	if err != nil {
-		return GetSettingsResponse{}, errors.WithMessage(err, "error parsing response body")
+	if err := dtc.unmarshalToJSON(res, &resDataJSON); err != nil {
+		return GetSettingsResponse{}, err
 	}
 
 	return resDataJSON, nil
@@ -165,7 +163,7 @@ func (dtc *dynatraceClient) GetSettingsForLogModule(ctx context.Context, monitor
 
 	err = dtc.unmarshalToJSON(res, &resDataJSON)
 	if err != nil {
-		return GetLogMonSettingsResponse{}, errors.WithMessage(err, "error parsing response body")
+		return GetLogMonSettingsResponse{}, err
 	}
 
 	return resDataJSON, nil

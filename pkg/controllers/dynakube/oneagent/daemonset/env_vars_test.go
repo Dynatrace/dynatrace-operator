@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	logmonitoringds "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
-	k8senv "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,7 +27,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		envVars, _ := dsBuilder.environmentVariables()
 
 		assert.Contains(t, envVars, corev1.EnvVar{Name: dtClusterID, ValueFrom: nil})
-		assert.True(t, k8senv.IsIn(envVars, dtNodeName))
+		assert.True(t, k8senv.Contains(envVars, dtNodeName))
 	})
 	t.Run("returns all when everything is turned on", func(t *testing.T) {
 		clusterID := "test"
@@ -86,7 +86,7 @@ func TestEnvironmentVariables(t *testing.T) {
 }
 
 func assertEnvVarNameAndValue(t *testing.T, envVars []corev1.EnvVar, name, value string) {
-	env := k8senv.FindEnvVar(envVars, name)
+	env := k8senv.Find(envVars, name)
 	assert.Equal(t, name, env.Name)
 	assert.Equal(t, value, env.Value)
 }
@@ -101,7 +101,7 @@ func TestAddNodeNameEnv(t *testing.T) {
 }
 
 func assertNodeNameEnv(t *testing.T, envs []corev1.EnvVar) {
-	env := k8senv.FindEnvVar(envs, dtNodeName)
+	env := k8senv.Find(envs, dtNodeName)
 	assert.Equal(t, dtNodeName, env.Name)
 	assert.Equal(t, "spec.nodeName", env.ValueFrom.FieldRef.FieldPath)
 }
@@ -121,7 +121,7 @@ func TestAddClusterIDEnv(t *testing.T) {
 }
 
 func assertClusterIDEnv(t *testing.T, envs []corev1.EnvVar, clusterID string) {
-	env := k8senv.FindEnvVar(envs, dtClusterID)
+	env := k8senv.Find(envs, dtClusterID)
 	assert.Equal(t, dtClusterID, env.Name)
 	assert.Equal(t, clusterID, env.Value)
 }
@@ -144,7 +144,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 }
 
 func assertDeploymentMetadataEnv(t *testing.T, envs []corev1.EnvVar, dynakubeName string) {
-	env := k8senv.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
+	env := k8senv.Find(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 	assert.Equal(t, deploymentmetadata.EnvDtDeploymentMetadata, env.Name)
 	assert.Equal(t,
 		deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakubeName),
@@ -174,7 +174,7 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 }
 
 func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.DynaKube) {
-	env := k8senv.FindEnvVar(envs, connectioninfo.EnvDtTenant)
+	env := k8senv.Find(envs, connectioninfo.EnvDtTenant)
 	assert.Equal(t, connectioninfo.EnvDtTenant, env.Name)
 	assert.Equal(t,
 		dk.OneAgent().GetConnectionInfoConfigMapName(),
@@ -185,7 +185,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.Dy
 		env.ValueFrom.ConfigMapKeyRef.Key,
 	)
 
-	env = k8senv.FindEnvVar(envs, connectioninfo.EnvDtServer)
+	env = k8senv.Find(envs, connectioninfo.EnvDtServer)
 	assert.Equal(t, connectioninfo.EnvDtServer, env.Name)
 	assert.Equal(t,
 		dk.OneAgent().GetConnectionInfoConfigMapName(),
@@ -242,7 +242,7 @@ func TestAddProxyEnvs(t *testing.T) {
 
 // deprecated
 func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dk *dynakube.DynaKube) {
-	env := k8senv.FindEnvVar(envs, proxyEnv)
+	env := k8senv.Find(envs, proxyEnv)
 	assert.Equal(t, proxyEnv, env.Name)
 	assert.Equal(t, dk.Spec.Proxy.Value, env.Value)
 
@@ -290,16 +290,16 @@ func TestAddReadOnlyEnv(t *testing.T) {
 }
 
 func assertReadOnlyEnv(t *testing.T, envs []corev1.EnvVar) {
-	env := k8senv.FindEnvVar(envs, oneagentReadOnlyMode)
+	env := k8senv.Find(envs, oneagentReadOnlyMode)
 	assert.Equal(t, oneagentReadOnlyMode, env.Name)
 	assert.Equal(t, "true", env.Value)
 }
 
 func assertLogMonitoringEnv(t *testing.T, envs []corev1.EnvVar) {
-	env := k8senv.FindEnvVar(envs, logmonitoringds.KubeletIPAddressEnv)
+	env := k8senv.Find(envs, logmonitoringds.KubeletIPAddressEnv)
 	require.NotNil(t, env)
 	assert.NotEmpty(t, env.ValueFrom)
-	env = k8senv.FindEnvVar(envs, logmonitoringds.KubeletNodeNameEnv)
+	env = k8senv.Find(envs, logmonitoringds.KubeletNodeNameEnv)
 	require.NotNil(t, env)
 	assert.NotEmpty(t, env.ValueFrom)
 }

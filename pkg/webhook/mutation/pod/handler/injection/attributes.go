@@ -6,8 +6,7 @@ import (
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	corev1 "k8s.io/api/core/v1"
@@ -29,10 +28,12 @@ func addPodAttributes(request *dtwebhook.MutationRequest) error {
 		UserDefined: map[string]string{},
 	}
 
+	setDeprecatedAttributes(&attrs)
+
 	envs := []corev1.EnvVar{
-		{Name: K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
-		{Name: K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
-		{Name: K8sNodeNameEnv, ValueFrom: env.NewEnvVarSourceForField("spec.nodeName")},
+		{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
+		{Name: K8sPodUIDEnv, ValueFrom: k8senv.NewSourceForField("metadata.uid")},
+		{Name: K8sNodeNameEnv, ValueFrom: k8senv.NewSourceForField("spec.nodeName")},
 	}
 
 	request.InstallContainer.Env = append(request.InstallContainer.Env, envs...)
@@ -59,7 +60,7 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 			ContainerName: c.Name,
 		})
 
-		volumes.AddConfigVolumeMount(c)
+		volumes.AddConfigVolumeMount(c, request.BaseRequest)
 	}
 
 	if len(attributes) > 0 {
@@ -76,8 +77,17 @@ func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
 	return false, nil
 }
 
-func isInjected(container corev1.Container) bool {
-	return mounts.IsPathIn(container.VolumeMounts, volumes.ConfigMountPath)
+func isInjected(container corev1.Container, request *dtwebhook.BaseRequest) bool {
+	if request.IsSplitMountsEnabled() {
+		if (request.DynaKube.OneAgent().IsAppInjectionNeeded() && !volumes.HasSplitOneAgentMounts(&container)) ||
+			(request.DynaKube.MetadataEnrichment().IsEnabled() && !volumes.HasSplitEnrichmentMounts(&container)) {
+			return false
+		}
+
+		return true
+	} else {
+		return volumes.HasCommonConfigVolumeMounts(&container)
+	}
 }
 
 func createImageInfo(imageURI string) containerattr.ImageInfo { // TODO: move to bootstrapper repo

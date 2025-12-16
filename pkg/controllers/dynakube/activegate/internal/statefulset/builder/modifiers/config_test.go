@@ -41,6 +41,11 @@ func createBuilderForTesting() builder.Builder {
 									HTTPGet: &corev1.HTTPGetAction{},
 								},
 							},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{},
+								},
+							},
 						},
 					},
 				},

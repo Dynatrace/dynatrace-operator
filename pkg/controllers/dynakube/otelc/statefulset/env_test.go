@@ -44,9 +44,9 @@ func TestEnvironmentVariables(t *testing.T) {
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: testKubernetesClusterName}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUID, Value: testKubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: testKubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
 		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Extensions().GetTokenSecretName()},
@@ -93,9 +93,9 @@ func TestEnvironmentVariables(t *testing.T) {
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
 		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Name}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: testKubernetesClusterName}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUID, Value: testKubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: testKubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
 
 		assert.Equal(t, corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
@@ -188,7 +188,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace.svc",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 		{
 			name:            "telemetryIngest, public AG, with proxy secret",
@@ -198,7 +198,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default",
 		},
 		{
 			name:            "telemetryIngest, local AG, with proxy secret",
@@ -208,7 +208,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "dynakube-activegate.dynatrace.svc",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-activegate.dynatrace",
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy secret",
@@ -218,7 +218,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
-			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace.svc",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 	}
 
@@ -277,7 +277,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace.svc",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 		{
 			name:            "telemetryIngest, public AG, with proxy value",
@@ -287,7 +287,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default",
 		},
 		{
 			name:            "telemetryIngest, local AG, with proxy value",
@@ -297,7 +297,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "dynakube-activegate.dynatrace.svc",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-activegate.dynatrace",
 		},
 		{
 			name:            "telemetryIngest, extensions, local AG, with proxy value",
@@ -307,7 +307,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
-			expectedNoProxy: "dynakube-extensions-controller.dynatrace,dynakube-activegate.dynatrace.svc",
+			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 	}
 
@@ -355,7 +355,7 @@ func TestCustomNoProxy(t *testing.T) {
 			},
 		}
 		noProxy := getDynakubeNoProxyEnvValue(dk)
-		assert.Equal(t, dk.Name+"-activegate."+dk.Namespace+".svc", noProxy)
+		assert.Equal(t, "$(KUBERNETES_SERVICE_HOST),kubernetes.default,"+dk.Name+"-activegate."+dk.Namespace, noProxy)
 	})
 
 	t.Run("no-proxy ff used", func(t *testing.T) {
@@ -376,7 +376,7 @@ func TestCustomNoProxy(t *testing.T) {
 			},
 		}
 		noProxy := getDynakubeNoProxyEnvValue(dk)
-		assert.Equal(t, dk.Name+"-activegate."+dk.Namespace+".svc"+","+expectedNoProxyValue, noProxy)
+		assert.Equal(t, "$(KUBERNETES_SERVICE_HOST),kubernetes.default,"+dk.Name+"-activegate."+dk.Namespace+","+expectedNoProxyValue, noProxy)
 	})
 }
 

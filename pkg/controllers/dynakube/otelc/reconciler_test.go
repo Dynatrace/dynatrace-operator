@@ -2,6 +2,7 @@ package otelc
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -14,8 +15,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -42,30 +43,34 @@ func TestNoProxyConsistency(t *testing.T) {
 		clt := createClient(t, &dk)
 
 		dtEndpoint, noProxy := reconcile(t, ctx, clt, dk)
-		// NO_PROXY    = noProxy
-		// DT_ENDPOINT = scheme :// hostname=noProxy / path
-		assert.Contains(t, dtEndpoint, "/"+noProxy+"/")
+
+		noProxyHostnames := strings.Split(noProxy, ",")
+
+		// NO_PROXY    = ..,hostname,..
+		// DT_ENDPOINT = scheme :// hostname / path
+		assert.Contains(t, dtEndpoint, "/"+noProxyHostnames[2]+"/")
 	})
 
-	t.Run("NO_PROXY matches DT_ENDPOINT if proxy is set and cluster AG defined", func(t *testing.T) {
+	t.Run("NO_PROXY does not contain DT_ENDPOINT if proxy is set and cluster AG defined", func(t *testing.T) {
 		dk := createDynaKube(false)
 
 		clt := createClient(t, &dk)
 
 		dtEndpoint, noProxy := reconcile(t, ctx, clt, dk)
+
 		assert.Equal(t, dk.APIURL()+"/v2/otlp", dtEndpoint)
-		assert.Empty(t, noProxy)
+		assert.Equal(t, "$(KUBERNETES_SERVICE_HOST),kubernetes.default", noProxy)
 	})
 }
 
 func createClient(t *testing.T, dk *dynakube.DynaKube) client.WithWatch {
-	testTokensSecret, err := secret.Build(dk, dk.Name, map[string][]byte{
+	testTokensSecret, err := k8ssecret.Build(dk, dk.Name, map[string][]byte{
 		dtclient.APIToken:        []byte(testToken),
 		dtclient.DataIngestToken: []byte(testToken),
 	})
 	require.NoError(t, err)
 
-	testConfig, err := configmap.Build(dk, dk.Name+consts.TelemetryCollectorConfigmapSuffix, map[string]string{consts.ConfigFieldName: "test"})
+	testConfig, err := k8sconfigmap.Build(dk, dk.Name+consts.TelemetryCollectorConfigmapSuffix, map[string]string{consts.ConfigFieldName: "test"})
 	require.NoError(t, err)
 
 	return fake.NewFakeClient(testTokensSecret, testConfig)

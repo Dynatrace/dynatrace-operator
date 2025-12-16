@@ -1,0 +1,132 @@
+name: E2E tests on kind
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  check-comment:
+    name: Check for trigger comment
+    if: github.event.issue.pull_request
+    runs-on: ubuntu-24.04
+    outputs:
+      triggered: ${{ steps.check-comment.outputs.triggered }}
+      detected-command: ${{ steps.check-comment.outputs.detected-command }}
+      pr_branch: ${{ steps.check-comment.outputs.pr_branch }}
+      pr_sha: ${{ steps.check-comment.outputs.pr_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Check comment and get PR details
+        id: check-comment
+        uses: ./.github/actions/check-comment
+        with:
+          allowed-commands: '/run-e2e-kind'
+
+  run-e2e-kind:
+    name: Run E2E tests on kind
+    needs: check-comment
+    if: needs.check-comment.outputs.triggered == 'true' && needs.check-comment.outputs.detected-command == '/run-e2e-kind'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Comment with workflow link
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🚀 E2E workflow started! [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nℹ️ Please note that currently only the edgeconnect tests without a proxy (\`test/e2e/edgeconnect/normal\`) are being run.`
+            });
+      - name: Checkout PR
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          ref: ${{ needs.check-comment.outputs.pr_sha }}
+          fetch-depth: 0
+      - name: Setup up kind
+        uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # v1.13.0
+        with:
+          # renovate datasource=github-releases depName=github.com/kubernetes-sigs/kind
+          version: v0.30.0
+          install_only: true
+      - name: Set up go
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        with:
+          go-version-file: "./go.mod"
+      - name: Set up helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          # renovate datasource=github-releases depName=helm/helm
+          version: v4.0.4
+      - name: Store test tenant secrets
+        run: |
+          ./.github/scripts/prepare-e2e-secrets.sh
+        env:
+          TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
+          TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
+          TENANT1_APITOKEN_NOSETTINGS: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
+          TENANT1_DATAINGESTTOKEN: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
+          TENANT1_OAUTH_CLIENT_ID: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
+          TENANT1_OAUTH_SECRET: ${{ secrets.TENANT1_OAUTH_SECRET }}
+          TENANT1_OAUTH_URN: ${{ secrets.TENANT1_OAUTH_URN }}
+          TENANT2_NAME: ${{ secrets.TENANT2_NAME }}
+          TENANT2_APITOKEN: ${{ secrets.TENANT2_APITOKEN }}
+          TENANT2_DATAINGESTTOKEN: ${{ secrets.TENANT2_DATAINGESTTOKEN }}
+      - name: Check and wait for image availability
+        run: |
+          IMAGE="dynatrace/dynatrace-operator"
+          TAG="snapshot-$(hack/build/ci/sanitize-branch-name.sh "${{ needs.check-comment.outputs.pr_branch }}")"
+
+          ./hack/build/ci/check-image-available.sh "$IMAGE" "$TAG"
+      - name: Start kind cluster
+        run: |
+          # We use the startup script instead of the kind-action to start the cluster to be able to pin the k8s version
+          make kind/setup
+          kubectl wait --for=condition=Ready pods --all -n kube-system --timeout=300s
+      - name: Run E2E tests on kind
+        id: run-e2e
+        run: |
+          # The latest image build for this branch will be used
+          export BRANCH="${{ needs.check-comment.outputs.pr_branch }}"
+          echo The branch is $BRANCH
+
+          make test/e2e/edgeconnect/normal
+      - name: Comment on PR - Success
+        if: success()
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ E2E tests on kind cluster passed successfully!\n\n[View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+            });
+      - name: Comment on PR - Failure
+        if: failure()
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '❌ E2E tests on kind cluster failed.\n\n[View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+            });
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: e2e-kind-test-results
+          path: results/
+          if-no-files-found: ignore
+      - name: Cleanup kind cluster
+        if: always()
+        run: |
+          kind delete cluster --name kind || true

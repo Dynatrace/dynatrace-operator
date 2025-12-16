@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -124,4 +125,16 @@ func (dk *DynaKube) APIRequestThreshold() time.Duration {
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
 	return timeProvider.IsOutdated(&dk.Status.DynatraceAPI.LastTokenScopeRequest, dk.APIRequestThreshold())
+}
+
+func (dk *DynaKube) IsCodeModulesStatusReady() bool {
+	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsPublicRegistry() {
+		if dk.OneAgent().GetCodeModulesImage() == "" {
+			return false
+		}
+	} else if dk.OneAgent().GetCodeModulesVersion() == "" || dk.OneAgent().GetCodeModulesVersion() == string(status.CustomImageVersionSource) {
+		return false
+	}
+
+	return true
 }

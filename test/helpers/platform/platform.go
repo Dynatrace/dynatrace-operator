@@ -33,8 +33,15 @@ func (p *Resolver) IsOpenshift() (bool, error) {
 	}
 
 	_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
+	if err == nil {
+		return true, nil
+	}
 
-	return !k8serrors.IsNotFound(err), nil
+	if k8serrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return false, err
 }
 
 func (p *Resolver) GetPlatform() (string, error) {

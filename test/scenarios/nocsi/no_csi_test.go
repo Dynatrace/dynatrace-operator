@@ -13,6 +13,7 @@ import (
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/standard"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/features/extensions"
+	"github.com/Dynatrace/dynatrace-operator/test/features/extensions/dbexecutor"
 	"github.com/Dynatrace/dynatrace-operator/test/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/kspm"
 	"github.com/Dynatrace/dynatrace-operator/test/features/logmonitoring"
@@ -35,11 +36,11 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(
 		helpers.SetScheme,
-		operator.InstallViaMake(false),
+		operator.InstallLocal(false),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
-		testEnv.Finish(operator.UninstallViaMake(false))
+		testEnv.Finish(operator.Uninstall(false))
 	}
 
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
@@ -60,6 +61,10 @@ func TestNoCSI_metadata_enrichment(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.MetadataEnrichment(t))
 }
 
+func TestNoCSI_otlp_exporter_configuration(t *testing.T) {
+	testEnv.Test(t, applicationmonitoring.OTLPExporterConfiguration(t))
+}
+
 func TestNoCSI_labelversion(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.LabelVersionDetection(t))
 }
@@ -78,6 +83,14 @@ func TestNoCSI_edgeconnect_install(t *testing.T) {
 
 func TestNoCSI_edgeconnect_install_provisioner(t *testing.T) {
 	testEnv.Test(t, edgeconnect.ProvisionerModeFeature(t))
+}
+
+func TestNoCSI_edgeconnect_install_proxy_http(t *testing.T) {
+	testEnv.Test(t, edgeconnect.WithHTTPProxy(t))
+}
+
+func TestNoCSI_edgeconnect_install_proxy_https(t *testing.T) {
+	testEnv.Test(t, edgeconnect.WithHTTPSProxy(t))
 }
 
 func TestNoCSI_custom_edgeconnect(t *testing.T) {
@@ -127,4 +140,8 @@ func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
 
 func TestNoCSI_kspm(t *testing.T) {
 	testEnv.Test(t, kspm.Feature(t))
+}
+
+func TestNoCSI_extensions_db_executor(t *testing.T) {
+	testEnv.Test(t, dbexecutor.Feature(t))
 }

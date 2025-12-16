@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	extensionsSelfSignedTLSCommonNameSuffix = "extensions-controller"
+	extensionsSelfSignedTLSCommonNameSuffix = "extension-controller"
 )
 
 type reconciler struct {
@@ -40,13 +40,19 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if ext := r.dk.Extensions(); ext.IsAnyEnabled() && ext.NeedsSelfSignedTLS() {
+		defer r.deleteLegacySelfSignedTLSSecret(ctx)
+
 		return r.reconcileSelfSignedTLSSecret(ctx)
 	}
 
 	if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 		return nil
 	}
-	defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+
+	defer func() {
+		r.deleteLegacySelfSignedTLSSecret(ctx)
+		meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+	}()
 
 	return r.deleteSelfSignedTLSSecret(ctx)
 }
@@ -73,6 +79,16 @@ func (r *reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
 	return r.secrets.Delete(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.dk.Extensions().GetSelfSignedTLSSecretName(),
+			Namespace: r.dk.Namespace,
+		},
+	})
+}
+
+// TODO: Remove as part of DAQ-18375
+func (r *reconciler) deleteLegacySelfSignedTLSSecret(ctx context.Context) {
+	_ = r.secrets.Delete(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.dk.Name + "-extensions-controller-tls",
 			Namespace: r.dk.Namespace,
 		},
 	})
@@ -105,7 +121,7 @@ func (r *reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
 		return err
 	}
 
-	coreLabels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.ExtensionComponentLabel)
+	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.ExtensionComponentLabel)
 	secretData := map[string][]byte{consts.TLSCrtDataName: pemCert, consts.TLSKeyDataName: pemPk}
 
 	secret, err := k8ssecret.Build(r.dk, r.dk.Extensions().GetSelfSignedTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))

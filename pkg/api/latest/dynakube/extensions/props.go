@@ -4,6 +4,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 )
 
+const SQLExecutorInfix = "-sql-ext-exec-"
+
 func (e *Extensions) SetName(name string) {
 	e.name = name
 }
@@ -49,7 +51,7 @@ func (e *Extensions) GetSelfSignedTLSSecretName() string {
 }
 
 func (e *Extensions) GetExecutionControllerStatefulsetName() string {
-	return e.name + "-extensions-controller"
+	return e.name + "-extension-controller"
 }
 
 func (e *Extensions) GetTokenSecretName() string {
@@ -69,5 +71,5 @@ func (e *Extensions) GetServiceName() string {
 }
 
 func (e *Extensions) GetDatabaseDatasourceName(id string) string {
-	return e.name + "-db-datasource-" + id
+	return e.name + SQLExecutorInfix + id
 }

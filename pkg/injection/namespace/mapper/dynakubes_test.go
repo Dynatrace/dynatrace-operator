@@ -1,7 +1,6 @@
 package mapper
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -15,6 +14,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestMapFromDynakube(t *testing.T) {
@@ -24,14 +24,14 @@ func TestMapFromDynakube(t *testing.T) {
 
 	t.Run("Add to namespace", func(t *testing.T) {
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
 		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Len(t, ns.Labels, 2)
 		assert.Len(t, ns.Annotations, 1)
@@ -43,14 +43,14 @@ func TestMapFromDynakube(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
 		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Len(t, ns.Labels, 2)
 		assert.Len(t, ns.Annotations, 1)
@@ -62,14 +62,14 @@ func TestMapFromDynakube(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(movedDk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", movedDk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", movedDk)
 
 		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
 		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
 		assert.Len(t, ns.Annotations, 1)
@@ -82,7 +82,7 @@ func TestMapFromDynakube(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(dk, conflictingDk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", conflictingDk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", conflictingDk)
 
 		err := dm.MapFromDynakube()
 
@@ -92,14 +92,14 @@ func TestMapFromDynakube(t *testing.T) {
 		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		namespace := createNamespace("kube-something", nil)
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
 		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
 		assert.Empty(t, ns.Annotations)
@@ -109,14 +109,14 @@ func TestMapFromDynakube(t *testing.T) {
 		dk := createDynakubeWithAppInject("appMonitoring", metav1.LabelSelector{})
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
 		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
 		assert.Empty(t, ns.Annotations)
@@ -128,14 +128,14 @@ func TestMapFromDynakube(t *testing.T) {
 		}
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
 		require.NoError(t, err)
 
 		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Len(t, ns.Labels, 1)
 		assert.Len(t, ns.Annotations, 1)
@@ -150,46 +150,51 @@ func TestUnmapFromDynaKube(t *testing.T) {
 	namespace := createNamespace("ns1", labels)
 	namespace2 := createNamespace("ns2", labels)
 
+	createSecret := func(t *testing.T, c client.Client, name, namespace string) {
+		t.Helper()
+		c.Create(t.Context(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}})
+	}
+
 	t.Run("Remove from no ns => no error", func(t *testing.T) {
 		clt := fake.NewClient()
 
-		namespaces, err := GetNamespacesForDynakube(context.Background(), clt, dk.Name)
+		namespaces, err := GetNamespacesForDynakube(t.Context(), clt, dk.Name)
 		require.NoError(t, err)
 
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", dk)
 		err = dm.UnmapFromDynaKube(namespaces)
 		require.NoError(t, err)
 	})
 	t.Run("Remove from everywhere, multiple entries", func(t *testing.T) {
 		clt := fake.NewClient(namespace, namespace2)
 
-		namespaces, err := GetNamespacesForDynakube(context.Background(), clt, dk.Name)
+		namespaces, err := GetNamespacesForDynakube(t.Context(), clt, dk.Name)
 		require.NoError(t, err)
 
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		dm := NewDynakubeMapper(t.Context(), clt, clt, "dynatrace", dk)
 		err = dm.UnmapFromDynaKube(namespaces)
 		require.NoError(t, err)
 
 		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
 		assert.Len(t, ns.Annotations, 1)
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace2.Name}, &ns)
+		err = clt.Get(t.Context(), types.NamespacedName{Name: namespace2.Name}, &ns)
 		require.NoError(t, err)
 		assert.Empty(t, ns.Labels)
 		assert.Len(t, ns.Annotations, 1)
 	})
-	t.Run("Remove "+consts.BootstrapperInitSecretName+", "+consts.BootstrapperInitCertsSecretName+" and "+consts.OTLPExporterSecretName+" secrets", func(t *testing.T) {
+	t.Run("Remove "+consts.BootstrapperInitSecretName+", "+consts.BootstrapperInitCertsSecretName+" and "+consts.OTLPExporterSecretName+" secrets"+" and "+consts.OTLPExporterCertsSecretName+" secrets", func(t *testing.T) {
 		clt := fake.NewClient(namespace, namespace2)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		namespaces, err := GetNamespacesForDynakube(ctx, clt, dk.Name)
 		require.NoError(t, err)
 
-		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: namespace.Name}})
-		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitCertsSecretName, Namespace: namespace.Name}})
-		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.OTLPExporterSecretName, Namespace: namespace.Name}})
+		createSecret(t, clt, consts.BootstrapperInitSecretName, namespace.Name)
+		createSecret(t, clt, consts.BootstrapperInitCertsSecretName, namespace.Name)
+		createSecret(t, clt, consts.OTLPExporterSecretName, namespace.Name)
 
 		dm := NewDynakubeMapper(ctx, clt, clt, "dynatrace", dk)
 		err = dm.UnmapFromDynaKube(namespaces)
@@ -201,6 +206,8 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitCertsSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPExporterSecretName, Namespace: namespace.Name}, &secret)
+		assert.True(t, k8serrors.IsNotFound(err))
+		err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPExporterCertsSecretName, Namespace: namespace.Name}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Remove "+consts.BootstrapperInitSecretName, func(t *testing.T) {
@@ -216,14 +223,14 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		ns2 := createNamespace("ns-bootstrapper2", labels)
 
 		clt := fake.NewClient(ns, ns2)
-		ctx := context.Background()
+		ctx := t.Context()
 
 		namespaces, err := GetNamespacesForDynakube(ctx, clt, dkNodeImagePull.Name)
 		require.NoError(t, err)
 
 		var secretNS1 corev1.Secret
 
-		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}})
+		createSecret(t, clt, consts.BootstrapperInitSecretName, ns.Name)
 
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns.Name}, &secretNS1)
 		require.NoError(t, err)
@@ -233,7 +240,7 @@ func TestUnmapFromDynaKube(t *testing.T) {
 
 		var secretNS2 corev1.Secret
 
-		clt.Create(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: consts.BootstrapperInitSecretName, Namespace: ns2.Name}})
+		createSecret(t, clt, consts.BootstrapperInitSecretName, ns2.Name)
 
 		err = clt.Get(ctx, types.NamespacedName{Name: consts.BootstrapperInitSecretName, Namespace: ns2.Name}, &secretNS2)
 		require.NoError(t, err)

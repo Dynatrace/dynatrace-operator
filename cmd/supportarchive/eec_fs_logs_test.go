@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/supportarchive/remotecommand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	eecPodName   = "dynakube-extensions-controller-0"
+	eecPodName   = "dynakube-extension-controller-0"
 	eecNamespace = "dynatrace"
 
-	zipLsFileName           = "logs/dynakube-extensions-controller-0/ls.txt"
-	zipDiagExecutorFileName = "logs/dynakube-extensions-controller-0/var/lib/dynatrace/remotepluginmodule/log/extensions/diagnostics/diag_executor.log"
+	zipLsFileName           = "logs/dynakube-extension-controller-0/ls.txt"
+	zipDiagExecutorFileName = "logs/dynakube-extension-controller-0/var/lib/dynatrace/remotepluginmodule/log/extensions/diagnostics/diag_executor.log"
 
 	lsOutput = `/var/lib/dynatrace/remotepluginmodule/log/extensions/:
 datasources
@@ -46,8 +46,8 @@ func TestFsLog(t *testing.T) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
-					labels.AppNameLabel:      LabelEecPodName,
-					labels.AppManagedByLabel: "dynatrace-operator",
+					k8slabel.AppNameLabel:      LabelEecPodName,
+					k8slabel.AppManagedByLabel: "dynatrace-operator",
 				},
 				Name:      eecPodName,
 				Namespace: eecNamespace,

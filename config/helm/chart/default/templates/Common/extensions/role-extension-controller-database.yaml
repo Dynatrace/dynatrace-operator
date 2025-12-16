@@ -1,0 +1,39 @@
+{{- if (and .Values.rbac.extensions.database.create .Values.rbac.extensions.create)}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name:  dynatrace-extension-controller-database
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.databaseDatasourceLabels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - nonroot-v2
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+  {{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name:  dynatrace-extension-controller-database
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.databaseDatasourceLabels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-extension-controller
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name:  dynatrace-extension-controller-database
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}

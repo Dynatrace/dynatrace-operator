@@ -2,12 +2,12 @@
 // +groupName=dynatrace.com
 // +versionName=v1alpha2
 // +kubebuilder:validation:Optional
+
 package edgeconnect
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +24,7 @@ type EdgeConnectSpec struct { //nolint:revive
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Amount of replicas for your EdgeConnect (the default value is: 1)
-	Replicas *int32 `json:"replicas"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Node selector to control the selection of nodes for the EdgeConnect pods
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
@@ -40,7 +40,7 @@ type EdgeConnectSpec struct { //nolint:revive
 	ServiceAccountName *string `json:"serviceAccountName,omitempty"`
 
 	// Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
-	AutoUpdate *bool `json:"autoUpdate"`
+	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 
 	// Overrides the default image
 	ImageRef image.Ref `json:"imageRef,omitempty"`
@@ -101,35 +101,7 @@ type KubernetesAutomationSpec struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-// EdgeConnectStatus defines the observed state of EdgeConnect.
-type EdgeConnectStatus struct { //nolint:revive
-	// Defines the current state (Running, Updating, Error, ...)
-	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
-
-	// Version used for the Edgeconnect image
-	Version status.VersionStatus `json:"version,omitempty"`
-
-	// Indicates when the resource was last updated
-	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
-
-	// kube-system namespace uid
-	KubeSystemUID string `json:"kubeSystemUID,omitempty"`
-
-	// Conditions includes status about the current state of the instance
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// SetPhase sets the status phase on the EdgeConnect object.
-func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
-	upd := phase != dk.DeploymentPhase
-	dk.DeploymentPhase = phase
-
-	return upd
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// EdgeConnect is the Schema for the EdgeConnect API
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -138,6 +110,8 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
+
+// EdgeConnect is the Schema for the EdgeConnect API.
 type EdgeConnect struct {
 	Spec              EdgeConnectSpec `json:"spec,omitempty"`
 	metav1.TypeMeta   `json:",inline"`
@@ -147,10 +121,10 @@ type EdgeConnect struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// EdgeConnectList contains a list of EdgeConnect
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
+
+// EdgeConnectList contains a list of EdgeConnect.
 type EdgeConnectList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

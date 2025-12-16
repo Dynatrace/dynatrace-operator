@@ -3,10 +3,15 @@ package exporter
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
@@ -15,6 +20,7 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 	tests := []struct {
 		name           string
 		cfg            *otlp.ExporterConfiguration
+		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -22,21 +28,32 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 		{
 			name:           "nil config -> disabled",
 			cfg:            nil,
+			addCertificate: true, // even if requested, should not inject
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config without traces -> disabled",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
-			name:           "config with traces -> enabled and injects",
+			name:           "config with traces -> enabled and injects (no cert)",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
+			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPTraceEndpointEnv, OTLPTraceProtocolEnv},
+			expectEnvVars:  []string{OTLPTraceEndpointEnv, OTLPTraceProtocolEnv, OTLPTraceHeadersEnv},
+		},
+		{
+			name:           "config with traces -> enabled and injects (with cert)",
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Traces: &otlp.TracesSignal{}}}},
+			addCertificate: true,
+			expectEnabled:  true,
+			expectInjected: true,
+			expectEnvVars:  []string{OTLPTraceEndpointEnv, OTLPTraceProtocolEnv, OTLPTraceHeadersEnv, OTLPTraceCertificateEnv},
 		},
 	}
 
@@ -46,11 +63,13 @@ func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Equal(t, tt.expectEnabled, inj.isEnabled())
 
 			c := &corev1.Container{}
-			injected := inj.Inject(c, apiURL, false)
+			injected := inj.Inject(c, apiURL, tt.addCertificate)
 			assert.Equal(t, tt.expectInjected, injected)
 
+			assert.Len(t, c.Env, len(tt.expectEnvVars))
+
 			for _, envName := range tt.expectEnvVars {
-				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
+				assert.True(t, k8senv.Contains(c.Env, envName), "expected env var %s to be injected", envName)
 			}
 		})
 	}
@@ -62,6 +81,7 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 	tests := []struct {
 		name           string
 		cfg            *otlp.ExporterConfiguration
+		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -69,21 +89,32 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 		{
 			name:           "nil config -> disabled",
 			cfg:            nil,
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config without metrics -> disabled",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
-			name:           "config with metrics -> enabled and injects",
+			name:           "config with metrics -> enabled and injects (no cert)",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
+			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv},
+			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsExporterTemporalityPreference},
+		},
+		{
+			name:           "config with metrics -> enabled and injects (with cert)",
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Metrics: &otlp.MetricsSignal{}}}},
+			addCertificate: true,
+			expectEnabled:  true,
+			expectInjected: true,
+			expectEnvVars:  []string{OTLPMetricsEndpointEnv, OTLPMetricsProtocolEnv, OTLPMetricsHeadersEnv, OTLPMetricsCertificateEnv, OTLPMetricsExporterTemporalityPreference},
 		},
 	}
 
@@ -93,11 +124,13 @@ func TestMetricsInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Equal(t, tt.expectEnabled, inj.isEnabled())
 
 			c := &corev1.Container{}
-			injected := inj.Inject(c, apiURL, true) // override flag shouldn't matter for injection presence
+			injected := inj.Inject(c, apiURL, tt.addCertificate) // override flag shouldn't matter for injection presence
 			assert.Equal(t, tt.expectInjected, injected)
 
+			assert.Len(t, c.Env, len(tt.expectEnvVars))
+
 			for _, envName := range tt.expectEnvVars {
-				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
+				assert.True(t, k8senv.Contains(c.Env, envName), "expected env var %s to be injected", envName)
 			}
 		})
 	}
@@ -109,6 +142,7 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 	tests := []struct {
 		name           string
 		cfg            *otlp.ExporterConfiguration
+		addCertificate bool
 		expectEnabled  bool
 		expectInjected bool
 		expectEnvVars  []string
@@ -116,21 +150,32 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 		{
 			name:           "nil config -> disabled",
 			cfg:            nil,
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
 			name:           "config without logs -> disabled",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{}},
+			addCertificate: true,
 			expectEnabled:  false,
 			expectInjected: false,
 		},
 		{
-			name:           "config with logs -> enabled and injects",
+			name:           "config with logs -> enabled and injects (no cert)",
 			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
+			addCertificate: false,
 			expectEnabled:  true,
 			expectInjected: true,
-			expectEnvVars:  []string{OTLPLogsEndpointEnv, OTLPLogsProtocolEnv},
+			expectEnvVars:  []string{OTLPLogsEndpointEnv, OTLPLogsProtocolEnv, OTLPLogsHeadersEnv},
+		},
+		{
+			name:           "config with logs -> enabled and injects (with cert)",
+			cfg:            &otlp.ExporterConfiguration{Spec: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{Logs: &otlp.LogsSignal{}}}},
+			addCertificate: true,
+			expectEnabled:  true,
+			expectInjected: true,
+			expectEnvVars:  []string{OTLPLogsEndpointEnv, OTLPLogsProtocolEnv, OTLPLogsHeadersEnv, OTLPLogsCertificateEnv},
 		},
 	}
 
@@ -140,11 +185,152 @@ func TestLogsInjectorIsEnabledAndInject(t *testing.T) {
 			assert.Equal(t, tt.expectEnabled, inj.isEnabled())
 
 			c := &corev1.Container{}
-			injected := inj.Inject(c, apiURL, false)
+			injected := inj.Inject(c, apiURL, tt.addCertificate)
 			assert.Equal(t, tt.expectInjected, injected)
 
+			assert.Len(t, c.Env, len(tt.expectEnvVars))
+
 			for _, envName := range tt.expectEnvVars {
-				assert.True(t, env.IsIn(c.Env, envName), "expected env var %s to be injected", envName)
+				assert.True(t, k8senv.Contains(c.Env, envName), "expected env var %s to be injected", envName)
+			}
+		})
+	}
+}
+
+func TestNoProxyInjector_Inject(t *testing.T) {
+	type args struct {
+		containsNoProxy     bool
+		activeGateEnabled   bool
+		featureFlagDisabled bool
+		noProxyValue        string
+	}
+
+	const agFQDN = "dynakube-activegate.dynatrace"
+
+	makeDynakube := func(activeGateEnabled, featureFlagDisabled, hasProxy bool) *dynakube.DynaKube {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+			},
+		}
+
+		if activeGateEnabled {
+			dk.Spec.ActiveGate = activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.MetricsIngestCapability.DisplayName,
+				},
+			}
+		}
+
+		if featureFlagDisabled {
+			dk.Annotations = map[string]string{
+				exp.OTLPInjectionSetNoProxy: "false",
+			}
+		}
+
+		if hasProxy {
+			dk.Spec.Proxy = &value.Source{Value: "proxy"}
+		}
+
+		return dk
+	}
+
+	tests := []struct {
+		name          string
+		args          args
+		expectMutated bool
+		expectValue   string
+	}{
+		{
+			name: "NO_PROXY not present",
+			args: args{
+				containsNoProxy:   false,
+				activeGateEnabled: true,
+				noProxyValue:      "",
+			},
+			expectMutated: true,
+			expectValue:   agFQDN,
+		},
+		{
+			name: "NO_PROXY present, empty",
+			args: args{
+				containsNoProxy:   true,
+				activeGateEnabled: true,
+				noProxyValue:      "",
+			},
+			expectMutated: true,
+			expectValue:   agFQDN,
+		},
+		{
+			name: "NO_PROXY present, value not containing FQDN",
+			args: args{
+				containsNoProxy:   true,
+				activeGateEnabled: true,
+				noProxyValue:      "foo,bar",
+			},
+			expectMutated: true,
+			expectValue:   "foo,bar," + agFQDN,
+		},
+		{
+			name: "NO_PROXY present, value already contains FQDN",
+			args: args{
+				containsNoProxy:   true,
+				activeGateEnabled: true,
+				noProxyValue:      agFQDN,
+			},
+			expectMutated: false,
+			expectValue:   agFQDN,
+		},
+		{
+			name: "NO_PROXY present, value already contains FQDN and other entries",
+			args: args{
+				containsNoProxy:   true,
+				activeGateEnabled: true,
+				noProxyValue:      "foo," + agFQDN + ",bar",
+			},
+			expectMutated: false,
+			expectValue:   "foo," + agFQDN + ",bar",
+		},
+		{
+			name: "feature flag disabled",
+			args: args{
+				activeGateEnabled:   true,
+				featureFlagDisabled: true,
+				noProxyValue:        "foo",
+			},
+			expectMutated: false,
+		},
+		{
+			name: "ActiveGate disabled",
+			args: args{
+				activeGateEnabled: false,
+				noProxyValue:      "foo",
+			},
+			expectMutated: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := makeDynakube(tt.args.activeGateEnabled, tt.args.featureFlagDisabled, tt.expectMutated)
+
+			inj := &noProxyInjector{dk: *dk}
+
+			c := &corev1.Container{}
+
+			if tt.args.containsNoProxy {
+				c.Env = append(c.Env, corev1.EnvVar{Name: NoProxyEnv, Value: tt.args.noProxyValue})
+			}
+
+			mutated := inj.Inject(c, "", false)
+
+			assert.Equal(t, tt.expectMutated, mutated)
+
+			if tt.expectValue != "" {
+				assert.Equal(t, tt.expectValue, k8senv.Find(c.Env, NoProxyEnv).Value)
+			} else {
+				assert.Nil(t, k8senv.Find(c.Env, NoProxyEnv))
 			}
 		})
 	}

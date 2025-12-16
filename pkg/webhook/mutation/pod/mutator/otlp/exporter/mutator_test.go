@@ -9,7 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	otelcactivegate "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -133,7 +134,7 @@ func TestMutator_IsInjected(t *testing.T) {
 	})
 }
 
-func TestMutator_Mutate(t *testing.T) {
+func TestMutator_Mutate(t *testing.T) { //nolint:revive
 	t.Run("no OTLP exporter configuration present on DynaKube - do not modify anything", func(t *testing.T) {
 		m := Mutator{}
 
@@ -205,6 +206,11 @@ func TestMutator_Mutate(t *testing.T) {
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsProtocolEnv,
 			Value: "http/protobuf",
+		})
+
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPMetricsExporterTemporalityPreference,
+			Value: OTLPMetricsExporterAggregationTemporalityDelta,
 		})
 
 		// verify logs exporter env vars
@@ -300,10 +306,10 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify no headers or token env vars were added due to skip
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("general otlp exporter user defined env vars present, do not add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -340,22 +346,22 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify traces exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceProtocolEnv))
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsProtocolEnv))
 
 		// verify no headers or token env vars were added due to skip
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("general otlp exporter user defined env vars present, override enabled, add specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -398,8 +404,8 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify traces exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceProtocolEnv))
 
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -414,8 +420,8 @@ func TestMutator_Mutate(t *testing.T) {
 
 		// headers for metrics are added, traces/logs are not
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{Name: OTLPMetricsHeadersEnv, Value: OTLPAuthorizationHeader})
-		assert.False(t, env.IsIn(containerEnvVars, OTLPTraceHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPTraceHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsHeadersEnv))
 
 		// verify DT_API_TOKEN secret ref env var
 		assertTokenEnvVarIsSet(t, containerEnvVars)
@@ -459,17 +465,17 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsProtocolEnv))
 
 		// verify no headers or token env vars were added due to skip
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsHeadersEnv))
-		assert.False(t, env.IsIn(containerEnvVars, DynatraceAPITokenEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsHeadersEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, DynatraceAPITokenEnv))
 	})
 	t.Run("specific otlp exporter user defined env vars present, override enabled, add other specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -532,8 +538,8 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify logs exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsProtocolEnv))
 	})
 	t.Run("one specific otlp exporter user defined env vars present, override disabled, do not add other specific OTLP exporter env vars", func(t *testing.T) {
 		m := Mutator{}
@@ -574,12 +580,77 @@ func TestMutator_Mutate(t *testing.T) {
 		})
 
 		// verify metrics exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPMetricsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPMetricsProtocolEnv))
 
 		// verify logs exporter env vars are not added
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsEndpointEnv))
-		assert.False(t, env.IsIn(containerEnvVars, OTLPLogsProtocolEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsEndpointEnv))
+		assert.False(t, k8senv.Contains(containerEnvVars, OTLPLogsProtocolEnv))
+	})
+	t.Run("activegate with ca cert and override enabled -> mounts cert volume and injects certificate env vars", func(t *testing.T) {
+		m := Mutator{}
+
+		dk := getTestDynakube()
+		dk.Spec.APIURL = "http://my-cluster/api"
+		// Enable ActiveGate capability + TLS secret so HasCaCert() is true
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
+		dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "dummy-uuid"
+
+		override := true
+		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override
+
+		request := createTestMutationRequest(t, dk)
+		err := m.Mutate(request)
+		require.NoError(t, err)
+
+		// Volume referencing certificate secret must be present
+		volFound := false
+		for _, v := range request.Pod.Spec.Volumes {
+			if v.Name == activeGateTrustedCertVolumeName {
+				volFound = true
+				require.NotNil(t, v.Secret)
+				assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
+
+				break
+			}
+		}
+		assert.True(t, volFound, "expected cert volume")
+
+		certPath := getCertificatePath()
+		for _, c := range request.Pod.Spec.Containers {
+			mountFound := false
+			for _, mnt := range c.VolumeMounts {
+				if mnt.Name == activeGateTrustedCertVolumeName && mnt.MountPath == exporterCertsMountPath {
+					mountFound = true
+					assert.True(t, mnt.ReadOnly)
+
+					break
+				}
+			}
+			assert.True(t, mountFound, "expected cert mount on container %s", c.Name)
+
+			// Certificate env vars injected because addCertificate=true passed to injectors
+			for _, e := range c.Env {
+				if e.Name == OTLPTraceCertificateEnv || e.Name == OTLPMetricsCertificateEnv || e.Name == OTLPLogsCertificateEnv {
+					assert.Equal(t, certPath, e.Value)
+				}
+			}
+
+			assert.True(t, k8senv.Contains(c.Env, OTLPTraceCertificateEnv))
+			assert.True(t, k8senv.Contains(c.Env, OTLPMetricsCertificateEnv))
+			assert.True(t, k8senv.Contains(c.Env, OTLPLogsCertificateEnv))
+
+			// assert NO_PROXY is set
+			noProxyEnv := k8senv.Find(c.Env, NoProxyEnv)
+			require.NotNil(t, noProxyEnv)
+			assert.Equal(t, otelcactivegate.GetServiceFQDN(&request.DynaKube), noProxyEnv.Value)
+		}
+		// Init containers should not have the mount
+		for _, c := range request.Pod.Spec.InitContainers {
+			for _, mnt := range c.VolumeMounts {
+				assert.NotEqual(t, activeGateTrustedCertVolumeName, mnt.Name)
+			}
+		}
 	})
 }
 
@@ -621,6 +692,56 @@ func TestMutator_Reinvoke(t *testing.T) {
 		mutated := m.Reinvoke(request.ToReinvocationRequest())
 
 		require.False(t, mutated)
+	})
+}
+
+func Test_ensureCertificateVolumeMounted(t *testing.T) {
+	newContainer := func() corev1.Container { return corev1.Container{Name: "app"} }
+
+	t.Run("adds mount when absent", func(t *testing.T) {
+		c := newContainer()
+		require.Empty(t, c.VolumeMounts)
+		ensureCertificateVolumeMounted(&c)
+		require.Len(t, c.VolumeMounts, 1)
+		vm := c.VolumeMounts[0]
+		assert.Equal(t, activeGateTrustedCertVolumeName, vm.Name)
+		assert.Equal(t, exporterCertsMountPath, vm.MountPath)
+		assert.True(t, vm.ReadOnly)
+	})
+
+	t.Run("does not duplicate mount", func(t *testing.T) {
+		c := newContainer()
+		c.VolumeMounts = []corev1.VolumeMount{{Name: activeGateTrustedCertVolumeName, MountPath: exporterCertsMountPath, ReadOnly: true}}
+		ensureCertificateVolumeMounted(&c)
+		assert.Len(t, c.VolumeMounts, 1)
+	})
+}
+
+func Test_addActiveGateCertVolume(t *testing.T) {
+	newPod := func() *corev1.Pod { return &corev1.Pod{} }
+	baseDK := func() dynakube.DynaKube { return dynakube.DynaKube{} }
+
+	t.Run("no activegate -> no volume", func(t *testing.T) {
+		dk := baseDK() // ActiveGate not enabled
+		pod := newPod()
+		addActiveGateCertVolume(dk, pod)
+		assert.Empty(t, pod.Spec.Volumes)
+	})
+
+	t.Run("activegate with cert secret -> volume added once", func(t *testing.T) {
+		dk := baseDK()
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName}, TLSSecretName: "custom-tls"}
+		pod := newPod()
+		addActiveGateCertVolume(dk, pod)
+		require.Len(t, pod.Spec.Volumes, 1)
+		v := pod.Spec.Volumes[0]
+		assert.Equal(t, activeGateTrustedCertVolumeName, v.Name)
+		require.NotNil(t, v.Secret)
+		assert.Equal(t, consts.OTLPExporterCertsSecretName, v.Secret.SecretName)
+
+		// second call should not duplicate
+		addActiveGateCertVolume(dk, pod)
+		assert.Len(t, pod.Spec.Volumes, 1)
 	})
 }
 

@@ -17,7 +17,8 @@ const (
 	AnnotationInjected = AnnotationPrefix + ".dynatrace.com/injected"
 	AnnotationReason   = AnnotationPrefix + ".dynatrace.com/reason"
 
-	MissingTenantUUIDReason = "MissingTenantUUID"
+	MissingTenantUUIDReason      = "MissingTenantUUID"
+	DynaKubeStatusNotReadyReason = "DynaKubeStatusNotReady"
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.

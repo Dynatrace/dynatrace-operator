@@ -86,6 +86,8 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
+                  - name: DT_OPERATOR_IMAGE
+                    value: image-name
                   - name: DT_HOST_AVAILABILITY_DETECTION
                     value: "true"
                   - name: modules.json
@@ -103,6 +105,8 @@ tests:
                       }
                   - name: GOMEMLIMIT
                     value: 116MiB
+                  - name: APP_VERSION
+                    value: 1.0.1
                 ports:
                   - containerPort: 10080
                     name: livez
@@ -283,6 +287,8 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
+                  - name: DT_OPERATOR_IMAGE
+                    value: image-name
                   - name: DT_HOST_AVAILABILITY_DETECTION
                     value: "true"
                   - name: modules.json
@@ -300,6 +306,8 @@ tests:
                       }
                   - name: GOMEMLIMIT
                     value: 116MiB
+                  - name: APP_VERSION
+                    value: 1.0.1
                 ports:
                   - containerPort: 10080
                     name: livez
@@ -549,6 +557,30 @@ tests:
           content:
             name: GOMEMLIMIT
             value: 1677MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - convert from Gi float
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 1.5Gi
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 1383MiB
+
+  - it: should set GOMEMLIMIT to 90% of the limit - convert from G float
+    set:
+      platform: kubernetes
+      operator.limits:
+        memory: 1.5G
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMEMLIMIT
+            value: 1258MiB
 
   - it: should set GOMEMLIMIT to 90% of the limit - small value
     set:

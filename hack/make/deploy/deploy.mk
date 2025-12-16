@@ -3,6 +3,15 @@ DEBUG_LOGS ?= true
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 
+## Display the image name used to deploy the helm chart
+deploy/show-image-ref:
+	@echo $(IMAGE_URI)
+
+## Display the image name used to deploy the FIPS helm chart
+deploy/show-image-ref/fips:
+	@# Don't call make here to omit the make[1] lines for normal CLI usage.
+	@echo $(IMAGE_URI)-fips
+
 ## Deploy the operator without the csi-driver
 deploy/no-csi:
 	@make ENABLE_CSI=false $(@D)
@@ -32,7 +41,3 @@ undeploy:
 
 	helm uninstall dynatrace-operator \
 			--namespace dynatrace
-
-## Remove all Dynatrace Operator resources from the cluster
-cleanup:
-	@./hack/cluster/cleanup-dynatrace-objects.sh

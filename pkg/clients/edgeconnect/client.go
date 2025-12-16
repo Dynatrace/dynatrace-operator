@@ -3,6 +3,8 @@ package edgeconnect
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -20,9 +23,11 @@ const (
 
 type client struct {
 	clientcredentials.Config
-	ctx        context.Context
-	httpClient *http.Client
-	baseURL    string
+	ctx               context.Context
+	httpClient        *http.Client
+	baseURL           string
+	customCA          []byte
+	disableKeepAlives bool
 }
 
 // Option can be passed to NewClient and customizes the created client instance.
@@ -45,6 +50,39 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 	httpClient := c.Client(c.ctx)
 	if httpClient == nil {
 		return nil, errors.New("can't create http client for edge connect")
+	}
+
+	ot, ok := httpClient.Transport.(*oauth2.Transport)
+	if !ok {
+		return nil, errors.New("unexpected transport type")
+	}
+
+	if ot.Base == nil {
+		ot.Base = &http.Transport{}
+	}
+
+	if c.disableKeepAlives {
+		if t, ok := ot.Base.(*http.Transport); ok {
+			t.DisableKeepAlives = true
+		}
+	}
+
+	if c.customCA != nil {
+		rootCAs, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, errors.Wrap(err, "read system certificates")
+		}
+
+		if ok := rootCAs.AppendCertsFromPEM(c.customCA); !ok {
+			return nil, errors.New("append custom certs")
+		}
+
+		t := ot.Base.(*http.Transport)
+		if t.TLSClientConfig == nil {
+			t.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+		}
+
+		t.TLSClientConfig.RootCAs = rootCAs
 	}
 
 	c.httpClient = httpClient
@@ -70,11 +108,23 @@ func WithOauthScopes(scopes []string) func(*client) {
 	}
 }
 
+func WithCustomCA(caData []byte) func(*client) {
+	return func(c *client) {
+		c.customCA = caData
+	}
+}
+
 // WithContext can set context for client
 // NB: via context you can override default http client to add Proxy or CA certificates
 func WithContext(ctx context.Context) func(*client) {
 	return func(c *client) {
 		c.ctx = ctx
+	}
+}
+
+func WithKeepAlive(keepAlive bool) func(*client) {
+	return func(c *client) {
+		c.disableKeepAlives = !keepAlive
 	}
 }
 

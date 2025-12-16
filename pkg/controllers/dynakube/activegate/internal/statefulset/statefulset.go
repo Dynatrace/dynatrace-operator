@@ -10,11 +10,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -95,6 +96,7 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 				Annotations: map[string]string{
 					consts.AnnotationActiveGateConfigurationHash: statefulSetBuilder.configHash,
 					consts.AnnotationActiveGateTenantTokenHash:   statefulSetBuilder.dynakube.Status.ActiveGate.ConnectionInfo.TenantTokenHash,
+					mutator.AnnotationInjectionSplitMounts:       "true",
 				},
 			},
 		},
@@ -108,10 +110,10 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 	sts.Spec.Template.Labels = maputils.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
 }
 
-func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
+func (statefulSetBuilder Builder) buildAppLabels() *k8slabel.AppLabels {
 	version := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 
-	return labels.NewAppLabels(labels.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, consts.MultiActiveGateName, version)
+	return k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, consts.MultiActiveGateName, version)
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
@@ -229,6 +231,20 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			FailureThreshold:    3,
 			TimeoutSeconds:      2,
 		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/rest/state",
+					Port:   intstr.IntOrString{IntVal: consts.HTTPSContainerPort},
+					Scheme: "HTTPS",
+				},
+			},
+			InitialDelaySeconds: 90,
+			PeriodSeconds:       30,
+			FailureThreshold:    2,
+			TimeoutSeconds:      1,
+			SuccessThreshold:    1,
+		},
 		SecurityContext: modifiers.GetSecurityContext(false),
 		VolumeMounts:    statefulSetBuilder.buildVolumeMounts(),
 	}
@@ -273,9 +289,9 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 	var affinity corev1.Affinity
 	if statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.TenantRegistryVersionSource || statefulSetBuilder.dynakube.Status.ActiveGate.Source == status.CustomVersionVersionSource {
-		affinity = node.AMDOnlyAffinity()
+		affinity = k8saffinity.NewAMDOnlyNodeAffinity()
 	} else {
-		affinity = node.Affinity()
+		affinity = k8saffinity.NewMultiArchNodeAffinity()
 	}
 
 	return &affinity
@@ -309,7 +325,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 		sts.Spec.PersistentVolumeClaimRetentionPolicy = defaultPVCRetentionPolicy()
 	}
 
-	statefulset.SetPVCAnnotation()(sts)
+	k8sstatefulset.SetPVCAnnotation()(sts)
 }
 
 func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {

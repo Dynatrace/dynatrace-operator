@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -36,7 +36,7 @@ var (
 func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
-		RunE: run(),
+		RunE: run,
 	}
 
 	addFlags(cmd)
@@ -46,29 +46,27 @@ func New() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&dynakubeFlagValue, dynakubeFlagName, dynakubeFlagShorthand, "", "Specify a different Dynakube name.")
-	cmd.PersistentFlags().StringVarP(&namespaceFlagValue, namespaceFlagName, namespaceFlagShorthand, env.DefaultNamespace(), "Specify a different Namespace.")
+	cmd.PersistentFlags().StringVarP(&namespaceFlagValue, namespaceFlagName, namespaceFlagShorthand, k8senv.DefaultNamespace(), "Specify a different Namespace.")
 }
 
 func clusterOptions(opts *cluster.Options) {
 	opts.Scheme = scheme.Scheme
 }
 
-func run() func(*cobra.Command, []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		version.LogVersion()
-		logd.LogBaseLoggerSettings()
+func run(cmd *cobra.Command, args []string) error {
+	version.LogVersion()
+	logd.LogBaseLoggerSettings()
 
-		kubeConfig, err := config.GetConfig()
-		if err != nil {
-			return err
-		}
-
-		log := NewTroubleshootLoggerToWriter(os.Stdout)
-
-		RunTroubleshootCmd(cmd.Context(), log, namespaceFlagValue, kubeConfig)
-
-		return nil
+	kubeConfig, err := config.GetConfig()
+	if err != nil {
+		return err
 	}
+
+	log := NewTroubleshootLoggerToWriter(os.Stdout)
+
+	RunTroubleshootCmd(cmd.Context(), log, namespaceFlagValue, kubeConfig)
+
+	return nil
 }
 
 func RunTroubleshootCmd(ctx context.Context, log logd.Logger, namespaceName string, kubeConfig *rest.Config) {

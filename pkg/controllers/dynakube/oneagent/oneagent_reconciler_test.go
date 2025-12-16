@@ -17,7 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
@@ -276,11 +276,11 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	expectedLabels := map[string]string{
-		labels.AppNameLabel:      labels.OneAgentComponentLabel,
-		labels.AppComponentLabel: "classicfullstack",
-		labels.AppCreatedByLabel: name,
-		labels.AppVersionLabel:   oldComponentVersion,
-		labels.AppManagedByLabel: version.AppName,
+		k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
+		k8slabel.AppComponentLabel: "classicfullstack",
+		k8slabel.AppCreatedByLabel: name,
+		k8slabel.AppVersionLabel:   oldComponentVersion,
+		k8slabel.AppManagedByLabel: version.AppName,
 	}
 
 	t.Run("Status.OneAgent.Instances set, if autoUpdate is true", func(t *testing.T) {

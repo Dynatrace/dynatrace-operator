@@ -1,0 +1,46 @@
+{{- if (and .Values.rbac.extensions.prometheus.create .Values.rbac.extensions.create (eq (include "dynatrace-operator.openshiftOrOlm" .) "true")) }}
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-extension-controller-prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.extensionControllerLabels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-extension-controller-prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.extensionControllerLabels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-extension-controller
+roleRef:
+  kind: Role
+  name: dynatrace-extension-controller-prometheus
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}

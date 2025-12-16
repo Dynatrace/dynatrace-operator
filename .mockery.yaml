@@ -34,6 +34,11 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
       Reconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube:
+    interfaces:
+      k8sEntityReconciler:
+        config:
+          structname: '{{ .InterfaceName | firstUpper }}'
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     interfaces:
       Reconciler:
@@ -54,19 +59,10 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler:
     interfaces:
       Handler:
-  sigs.k8s.io/controller-runtime/pkg/manager:
-    config:
-      dir: "test/mocks/{{.SrcPackagePath}}"
-    interfaces:
-      Manager:
-  sigs.k8s.io/controller-runtime/pkg/reconcile:
-    config:
-      dir: "test/mocks/{{.SrcPackagePath}}"
-    interfaces:
-      Reconciler:
   k8s.io/client-go/kubernetes/typed/core/v1:
     config:
       dir: "test/mocks/{{.SrcPackagePath}}"
+      include-auto-generated: true
     interfaces:
       PodInterface:
   github.com/container-storage-interface/spec/lib/go/csi:

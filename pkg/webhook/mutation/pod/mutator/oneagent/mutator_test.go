@@ -7,8 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -242,7 +243,7 @@ func TestMutate(t *testing.T) {
 			// update each container
 			assert.NotEqual(t, original.Pod.Spec.Containers[i], request.Pod.Spec.Containers[i])
 
-			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i]))
+			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i], nil))
 		}
 
 		assert.True(t, mut.IsInjected(request.BaseRequest))
@@ -260,7 +261,7 @@ func TestMutate(t *testing.T) {
 		assert.Contains(t, request.InstallContainer.Args, "--"+configure.InstallPathFlag+"="+expectedInstallPath)
 
 		for _, c := range request.Pod.Spec.Containers {
-			preload := env.FindEnvVar(c.Env, PreloadEnv)
+			preload := k8senv.Find(c.Env, PreloadEnv)
 			require.NotNil(t, preload)
 			assert.Contains(t, preload.Value, expectedInstallPath)
 		}
@@ -299,6 +300,7 @@ func TestMutate(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
 		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		request.DynaKube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "example"
+		request.DynaKube.Status.CodeModules.Version = "1.2.3"
 
 		err := mut.Mutate(request)
 		require.NoError(t, err)
@@ -322,13 +324,13 @@ func TestReinvoke(t *testing.T) {
 
 		for i := range request.Pod.Spec.Containers {
 			// only update not-injected
-			if containerIsInjected(original.Pod.Spec.Containers[i]) {
+			if containerIsInjected(original.Pod.Spec.Containers[i], nil) {
 				assert.Equal(t, original.Pod.Spec.Containers[i], request.Pod.Spec.Containers[i])
 			} else {
 				assert.NotEqual(t, original.Pod.Spec.Containers[i], request.Pod.Spec.Containers[i])
 			}
 
-			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i]))
+			assert.True(t, containerIsInjected(request.Pod.Spec.Containers[i], nil))
 		}
 	})
 
@@ -343,7 +345,7 @@ func TestReinvoke(t *testing.T) {
 		require.True(t, updated)
 
 		for _, c := range request.Pod.Spec.Containers {
-			preload := env.FindEnvVar(c.Env, PreloadEnv)
+			preload := k8senv.Find(c.Env, PreloadEnv)
 			require.NotNil(t, preload)
 			assert.Contains(t, preload.Value, expectedInstallPath)
 		}
@@ -387,23 +389,23 @@ func TestAddOneAgentToContainer(t *testing.T) {
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
-		dtMetaEnv := env.FindEnvVar(container.Env, DynatraceMetadataEnv)
+		dtMetaEnv := k8senv.Find(container.Env, DynatraceMetadataEnv)
 		require.NotNil(t, dtMetaEnv)
 		assert.Contains(t, dtMetaEnv.Value, kubeSystemUUID)
 
-		dtZoneEnv := env.FindEnvVar(container.Env, NetworkZoneEnv)
+		dtZoneEnv := k8senv.Find(container.Env, NetworkZoneEnv)
 		require.NotNil(t, dtZoneEnv)
 		assert.Equal(t, networkZone, dtZoneEnv.Value)
 
-		preload := env.FindEnvVar(container.Env, PreloadEnv)
+		preload := k8senv.Find(container.Env, PreloadEnv)
 		require.NotNil(t, preload)
 		assert.Contains(t, preload.Value, installPath)
 
-		storageEnv := env.FindEnvVar(container.Env, DtStorageEnv)
+		storageEnv := k8senv.Find(container.Env, DtStorageEnv)
 		require.NotNil(t, storageEnv)
 		assert.Contains(t, storageEnv.Value, DtStoragePath)
 
-		assert.True(t, containerIsInjected(container))
+		assert.True(t, containerIsInjected(container, nil))
 	})
 }
 
@@ -423,6 +425,22 @@ func createTestMutationRequestWithoutInjectedContainers() *dtwebhook.MutationReq
 						{
 							Name:  "sample-container-2",
 							Image: "sample-image-2",
+						},
+					},
+				},
+			},
+			DynaKube: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
+							CodeModulesImage: "testimage",
+						},
+					},
+				}},
+				Status: dynakube.DynaKubeStatus{
+					CodeModules: oneagent.CodeModulesStatus{
+						VersionStatus: status.VersionStatus{
+							ImageID: "testimage",
 						},
 					},
 				},

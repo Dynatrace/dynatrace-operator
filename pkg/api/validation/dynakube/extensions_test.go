@@ -64,6 +64,19 @@ func TestExtensionsWithoutK8SMonitoring(t *testing.T) {
 	)
 }
 
+func TestExtensionsWithoutOtelcImage(t *testing.T) {
+	t.Run("error when image is not specified", func(t *testing.T) {
+		assertDenied(t, []string{errorOtelCollectorMissingImage},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:     testAPIURL,
+					Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+				},
+			})
+	})
+}
+
 func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -74,6 +87,18 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 			APIURL: apiURL,
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
+					ImageRef: image.Ref{
+						Repository: "repo/image",
+						Tag:        "version",
+					},
+				},
+				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+					ImageRef: image.Ref{
+						Repository: "repo/otel-collector",
+						Tag:        "version",
+					},
+				},
+				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
 					ImageRef: image.Ref{
 						Repository: "repo/image",
 						Tag:        "version",

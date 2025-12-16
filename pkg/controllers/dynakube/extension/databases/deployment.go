@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,12 +25,12 @@ const (
 	readinessProbePath       = "/health/ready"
 	userGroupID        int64 = 1000
 	// Keep in sync with helm chart
-	defaultServiceAccount = "dynatrace-database-extensions-executor"
+	defaultServiceAccount = "dynatrace-sql-ext-exec"
 	// Must contain the ID specified in the DynaKube CR.
 	executorIDLabelKey = "extensions.dynatrace.com/executor.id"
 
-	userDataVolumeName    = "user-data"
-	userDataMountPath     = "/var/userdata"
+	tmpVolumeName         = "tmp-data"
+	tmpMountPath          = "/tmp"
 	tokenVolumeName       = "auth-token"
 	tokenMountPath        = "/var/run/dynatrace/executor/token"
 	certsVolumeName       = "https-certs"
@@ -57,7 +57,7 @@ func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKu
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
 // Do NOT modify maps produced by this function.
 func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
-	appLabels := labels.NewAppLabels(labels.DatabaseDatasourceLabel, dk.Name, labels.DatabaseDatasourceLabel, dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag)
+	appLabels := k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag)
 
 	deploymentLabels := appLabels.BuildLabels()
 	matchLabels := appLabels.BuildMatchLabels()
@@ -86,15 +86,15 @@ func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
 
 func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev1.Container {
 	pullPolicy := corev1.PullIfNotPresent
-	if dk.Spec.Templates.DatabaseExecutor.ImageRef.Tag == "latest" {
+	if dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag == "latest" {
 		// For initial testing latest image is used, so let runtime pull updates if they're available.
 		// Maybe move this into the imageRef, e.g. imageRef.PullPolicy()
 		pullPolicy = corev1.PullAlways
 	}
 
 	container := corev1.Container{
-		Name:            "database-datasource",
-		Image:           dk.Spec.Templates.DatabaseExecutor.ImageRef.String(),
+		Name:            "sql-executor",
+		Image:           dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String(),
 		ImagePullPolicy: pullPolicy,
 		Args:            buildContainerArgs(dk),
 		Env:             buildContainerEnvs(),
@@ -134,7 +134,7 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) corev
 
 func buildContainerArgs(dk *dynakube.DynaKube) []string {
 	return []string{
-		"--podid=$(POD_NAME)",
+		"--podid=$(POD_UID)",
 		fmt.Sprintf("--url=https://%s:%d", dk.Extensions().GetServiceNameFQDN(), consts.ExtensionsDatasourceTargetPort),
 		"--idtoken=" + tokenMountPath + "/" + tokenVolumeName,
 	}
@@ -143,21 +143,21 @@ func buildContainerArgs(dk *dynakube.DynaKube) []string {
 func buildContainerEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
-			Name: "POD_NAME",
+			Name: "POD_UID",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
+					FieldPath: "metadata.uid",
 				},
 			},
 		},
 	}
 }
 
-func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+func GetDefaultVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
-			Name:      userDataVolumeName,
-			MountPath: userDataMountPath,
+			Name:      tmpVolumeName,
+			MountPath: tmpMountPath,
 		},
 		{
 			Name:      tokenVolumeName,
@@ -179,13 +179,19 @@ func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []
 		})
 	}
 
+	return volumeMounts
+}
+
+func buildVolumeMounts(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.VolumeMount {
+	volumeMounts := GetDefaultVolumeMounts(dk)
+
 	return append(volumeMounts, dbSpec.VolumeMounts...)
 }
 
 func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
-			Name: userDataVolumeName,
+			Name: tmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -264,9 +270,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
-		RunAsNonRoot: ptr.To(true),
-		RunAsGroup:   ptr.To(userGroupID),
-		RunAsUser:    ptr.To(userGroupID),
+		FSGroup: ptr.To(userGroupID),
 	}
 }
 
@@ -275,6 +279,9 @@ func buildContainerSecurityContext() *corev1.SecurityContext {
 		Privileged:               ptr.To(false),
 		AllowPrivilegeEscalation: ptr.To(false),
 		ReadOnlyRootFilesystem:   ptr.To(true),
+		RunAsNonRoot:             ptr.To(true),
+		RunAsGroup:               ptr.To(userGroupID),
+		RunAsUser:                ptr.To(userGroupID),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -312,7 +319,7 @@ func sanitizedListLabels(deploymentLabels map[string]string) client.MatchingLabe
 	// Remove instance-specific keys to ensure we get all related deployments.
 	delete(deploymentLabels, executorIDLabelKey)
 	delete(deploymentLabels, consts.DatasourceLabelKey)
-	delete(deploymentLabels, labels.AppVersionLabel)
+	delete(deploymentLabels, k8slabel.AppVersionLabel)
 
 	return deploymentLabels
 }

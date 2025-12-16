@@ -1,29 +1,39 @@
 # Coding style guide
 
-- [General](#general)
-- [Function Parameter and Return-Value Order](#function-parameter-and-return-value-order)
-- [Cuddling of statements](#cuddling-of-statements)
-- [Reconciler vs Controller](#reconciler-vs-controller)
-  - [A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests](#a-controller-is-a-struct-that-directly-handles-the-reconcile-requests)
-  - [A **Reconciler** is a struct that **INDIRECTLY** handles the reconcile Requests](#a-reconciler-is-a-struct-that-indirectly-handles-the-reconcile-requests)
-- [Errors](#errors)
-  - [Do's](#dos)
-  - [Don'ts](#donts)
-- [Naming](#naming)
-  - [Do's](#dos-1)
-  - [Don'ts](#donts-1)
-- [Logging](#logging)
-  - [Do's](#dos-1)
-  - [Don'ts](#donts-1)
-  - [Debug logs](#debug-logs)
-- [Testing](#testing)
-  - [Do's](#dos-2)
-  - [Don'ts](#donts-2)
-- [E2E testing guide](#e2e-testing-guide)
-- [Code Review](#code-review)
+- [Coding style guide](#coding-style-guide)
+  - [General](#general)
+  - [Function Parameter and Return-Value Order](#function-parameter-and-return-value-order)
+  - [Cuddling of statements](#cuddling-of-statements)
+  - [Go struct field alignment](#go-struct-field-alignment)
+  - [K8s utils packages](#k8s-utils-packages)
+  - [Reconciler vs Controller](#reconciler-vs-controller)
+    - [A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests](#a-controller-is-a-struct-that-directly-handles-the-reconcile-requests)
+    - [A **Reconciler** is a struct that **INDIRECTLY** handles the reconcile Requests](#a-reconciler-is-a-struct-that-indirectly-handles-the-reconcile-requests)
+  - [Secret/ConfigMap handling](#secretconfigmap-handling)
+    - [Example](#example)
+  - [Errors](#errors)
+    - [Do's](#dos)
+    - [Don'ts](#donts)
+  - [Naming](#naming)
+    - [Do's](#dos-1)
+    - [Don'ts](#donts-1)
+  - [Logging](#logging)
+    - [Do's](#dos-2)
+    - [Don'ts](#donts-2)
+    - [Debug logs](#debug-logs)
+      - [Show the flow](#show-the-flow)
+      - [Something's wrong](#somethings-wrong)
+      - [Logging additional info](#logging-additional-info)
+      - [Pre-configured local logger](#pre-configured-local-logger)
+  - [Testing](#testing)
+    - [Do's](#dos-3)
+    - [Don'ts](#donts-3)
+  - [E2E testing guide](#e2e-testing-guide)
+  - [Code Review](#code-review)
 
 ## General
 
+- Consider the [Effective Go](https://go.dev/doc/effective_go#package-names) guidelines when naming packages
 - Use descriptive (variable) names
   - Shortnames for known Kubernetes Objects are fine. (`ns` for namespace)
   - Avoid "stuttering". (In the `beepboop` package don't call you `struct` `BeepBoopController`, but just `Controller`)
@@ -36,6 +46,8 @@
 - Run the linters locally before opening a PR, it will save you time.
   - There is a pre-commit hook that you can configure via `make prerequisites/setup-pre-commit`
 - Avoid using the `path` package for operations on filesystem paths. Use "path/filepath" package.
+- Apply appropriate [godoc comment formatting](https://go.dev/doc/comment) to ensure that editors can properly display it.
+  Codegen markers should not be part of godoc unless it's not ergonomic to implement (as is the case for most CRD fields).
 
 ## Function Parameter and Return-Value Order
 
@@ -107,6 +119,17 @@ And why you do not need to use it:
 When to use it:
 
 - If you have a scenario (for specific `structs`), where you **can back it up with benchmarks** that it makes a significant difference.
+
+## K8s utils packages
+
+We have a few utils packages for k8s objects, that we use to avoid code duplication. They can be found in the `pkg/util/kubernetes` folder. It has 2 subfolders:
+
+- `objects` contains utils for k8s objects, example "object": `pod`, `deployment`, etc
+- `fields` contains utils for k8s fields, example "field": `env`, `container`, etc
+
+Each package within these folders should have a single responsibility, and be self-contained.
+
+- To avoid name conflicts with variables/functions (example: `env`, `pod`, `container` are popular variable names), we prefix the package names with `k8s`. (example: `k8senv`, `k8spod`, `k8scontainer`, etc)
 
 ## Reconciler vs Controller
 
@@ -461,7 +484,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
   - Writing helper functions for a whole package can backfire quickly as it binds tests together unnecessary.
     - example: Change 1 helper function -> break 3 tests but fix 2 -> probably should be split into test specific helpers
     - For simpler common setups func it can still make sense.
-  - All helper func must use `t.Helper()` as their first-line, for improved error reporting.
+  - All helper functions that do assertions must use `t.Helper()` as their first-line, for improved error reporting.
 - Defining (testing) `consts` per-test is preferred to defining (testing) `consts` per-package
   - Figuring out what is `myTestConst52` that is defined 3 files over and used by 12 tests is not fun to maintain and easy to follow.
 - Use `t.Run` and give a title that describes what you are testing in that run.

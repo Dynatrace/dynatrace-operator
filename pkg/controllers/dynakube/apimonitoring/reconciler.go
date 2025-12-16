@@ -2,31 +2,31 @@ package apimonitoring
 
 import (
 	"context"
+	goerrors "errors"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/pkg/errors"
 )
 
-type Reconciler struct {
-	dtc dtclient.Client
+var errMissingKubeSystemUUID = goerrors.New("no kube-system namespace UUID given")
 
-	k8sEntityReconciler controllers.Reconciler
-	dk                  *dynakube.DynaKube
-	clusterLabel        string
+type Reconciler struct {
+	dtc          dtclient.Client
+	dk           *dynakube.DynaKube
+	clusterLabel string
 }
 
 type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler
 
 func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler {
 	return &Reconciler{
-		dtc:                 dtc,
-		dk:                  dk,
-		clusterLabel:        clusterLabel,
-		k8sEntityReconciler: k8sentity.NewReconciler(dtc, dk),
+		dtc:          dtc,
+		dk:           dk,
+		clusterLabel: clusterLabel,
 	}
 }
 
@@ -59,12 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, error) {
 	if r.dk.Status.KubeSystemUUID == "" {
-		return "", errors.New("no kube-system namespace UUID given")
-	}
-
-	err := r.k8sEntityReconciler.Reconcile(ctx)
-	if err != nil {
-		return "", err
+		return "", errMissingKubeSystemUUID
 	}
 
 	var k8sEntity dtclient.K8sClusterME
@@ -82,8 +77,7 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 	}
 
 	if settings.TotalCount > 0 {
-		_, err = r.handleKubernetesAppEnabled(ctx, k8sEntity)
-		if err != nil {
+		if err := r.handleKubernetesAppEnabled(ctx, k8sEntity); err != nil {
 			return "", err
 		}
 
@@ -95,23 +89,22 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
 
-	if r.dk.Status.KubernetesClusterMEID == "" {
-		// the CreateOrUpdateKubernetesSetting call will create the ME(monitored-entity) if no scope was given (scope == entity-id), this happens on the "first run"
-		// so we have to run the entity reconciler AGAIN to set it in the status.
-		err := r.k8sEntityReconciler.Reconcile(ctx)
-		if err != nil {
-			return "", err
-		}
-	}
-
 	return objectID, nil
 }
 
-func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity dtclient.K8sClusterME) (string, error) {
+func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity dtclient.K8sClusterME) error {
 	if r.dk.FF().IsK8sAppEnabled() {
 		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.AppTransitionSchemaID)
 		if err != nil {
-			return "", errors.WithMessage(err, "error trying to check if app setting exists")
+			if !dtclient.IsNotFound(err) {
+				return errors.WithMessage(err, "error trying to check if app setting exists")
+			}
+
+			if shouldLogMissingAppTransitionSchema(k8sEntity.ID) {
+				log.Info("skipping app-transition creation due to missing schema", "meID", k8sEntity.ID, "schemaID", dtclient.AppTransitionSchemaID)
+			}
+
+			return nil
 		}
 
 		if appSettings.TotalCount == 0 {
@@ -121,15 +114,36 @@ func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity d
 				if err != nil {
 					log.Info("schema app-transition.kubernetes failed to set", "meID", meID, "err", err)
 
-					return "", err
-				} else {
-					log.Info("schema app-transition.kubernetes set to true", "meID", meID, "transitionSchemaObjectID", transitionSchemaObjectID)
-
-					return transitionSchemaObjectID, nil
+					return err
 				}
+
+				log.Info("schema app-transition.kubernetes set to true", "meID", meID, "transitionSchemaObjectID", transitionSchemaObjectID)
 			}
 		}
 	}
 
-	return "", nil
+	return nil
+}
+
+const logCacheTimeout = 5 * time.Minute
+
+var logCache = make(map[string]time.Time)
+var timeNow = time.Now
+
+// NOT THREAD-SAFE!!!
+func shouldLogMissingAppTransitionSchema(meID string) bool {
+	// Limit cache size to prevent excessive memory usage at the cost of potentially spamming the logs.
+	const maxCacheSize = 100
+	if len(logCache) >= maxCacheSize {
+		return true
+	}
+
+	lastLog, exists := logCache[meID]
+	if !exists || timeNow().Sub(lastLog) > logCacheTimeout {
+		logCache[meID] = timeNow()
+
+		return true
+	}
+
+	return false
 }

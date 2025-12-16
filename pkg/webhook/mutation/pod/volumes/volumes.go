@@ -3,8 +3,9 @@ package volumes
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
@@ -30,7 +31,7 @@ const (
 )
 
 func AddConfigVolume(pod *corev1.Pod) {
-	if volumes.IsIn(pod.Spec.Volumes, ConfigVolumeName) {
+	if k8svolume.Contains(pod.Spec.Volumes, ConfigVolumeName) {
 		return
 	}
 
@@ -57,22 +58,29 @@ func AddConfigVolume(pod *corev1.Pod) {
 	)
 }
 
-func AddConfigVolumeMount(container *corev1.Container) {
-	if mounts.IsPathIn(container.VolumeMounts, ConfigMountPath) {
-		return
+func AddConfigVolumeMount(container *corev1.Container, request *dtwebhook.BaseRequest) {
+	if request.IsSplitMountsEnabled() {
+		addSplitMounts(container, request)
+	} else {
+		addCommonConfigVolumeMount(container)
 	}
+}
 
-	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      ConfigVolumeName,
-			MountPath: ConfigMountPath,
-			SubPath:   container.Name,
-		},
-	)
+func addCommonConfigVolumeMount(container *corev1.Container) {
+	vm := corev1.VolumeMount{
+		Name:      ConfigVolumeName,
+		MountPath: ConfigMountPath,
+		SubPath:   container.Name,
+	}
+	container.VolumeMounts = k8smount.Append(container.VolumeMounts, vm)
+}
+
+func HasCommonConfigVolumeMounts(container *corev1.Container) bool {
+	return k8smount.ContainsPath(container.VolumeMounts, ConfigMountPath)
 }
 
 func AddInitConfigVolumeMount(container *corev1.Container) {
-	if mounts.IsPathIn(container.VolumeMounts, InitConfigMountPath) {
+	if k8smount.ContainsPath(container.VolumeMounts, InitConfigMountPath) {
 		return
 	}
 
@@ -85,7 +93,7 @@ func AddInitConfigVolumeMount(container *corev1.Container) {
 }
 
 func AddInputVolume(pod *corev1.Pod) {
-	if volumes.IsIn(pod.Spec.Volumes, InputVolumeName) {
+	if k8svolume.Contains(pod.Spec.Volumes, InputVolumeName) {
 		return
 	}
 
@@ -119,7 +127,7 @@ func AddInputVolume(pod *corev1.Pod) {
 }
 
 func AddInitInputVolumeMount(container *corev1.Container) {
-	if mounts.IsPathIn(container.VolumeMounts, InitInputMountPath) {
+	if k8smount.ContainsPath(container.VolumeMounts, InitInputMountPath) {
 		return
 	}
 

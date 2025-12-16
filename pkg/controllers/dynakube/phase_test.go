@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -580,7 +580,7 @@ func createDeployment(dk *dynakube.DynaKube, replicas, readyReplicas int32) *app
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: dk.Namespace,
-			Labels:    labels.NewAppLabels(labels.DatabaseDatasourceLabel, dk.Name, labels.DatabaseDatasourceLabel, "").BuildLabels(),
+			Labels:    k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, "").BuildLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,

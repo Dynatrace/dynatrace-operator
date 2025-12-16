@@ -62,6 +62,8 @@ type DynaKubeStatus struct { //nolint:revive
 	KubernetesClusterName string `json:"kubernetesClusterName,omitempty"`
 
 	// Conditions includes status about the current state of the instance
+	// +listType=map
+	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 

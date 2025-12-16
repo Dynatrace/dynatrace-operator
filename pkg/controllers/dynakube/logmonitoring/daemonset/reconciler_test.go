@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,6 +91,7 @@ func TestReconcile(t *testing.T) {
 		}, &daemonset)
 		require.False(t, k8serrors.IsNotFound(err))
 		assert.NotEmpty(t, daemonset)
+		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 	})
 
 	t.Run("Create and update works with ME not set", func(t *testing.T) {
@@ -183,8 +184,6 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.NotEmpty(t, daemonset.Spec.Template.Labels)
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Affinity)
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
-		require.Len(t, daemonset.Annotations, 1)
-		assert.Contains(t, daemonset.Annotations, hasher.AnnotationHash)
 		require.Len(t, daemonset.Spec.Template.Annotations, 1)
 		assert.Contains(t, daemonset.Spec.Template.Annotations, annotationTenantTokenHash)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)
@@ -373,7 +372,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		init := daemonset.Spec.Template.Spec.InitContainers[0]
 		require.NotContains(t, init.Args, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
 
-		require.Nil(t, env.FindEnvVar(init.Env, entityEnv))
+		require.Nil(t, k8senv.Find(init.Env, entityEnv))
 	})
 }
 

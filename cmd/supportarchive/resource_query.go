@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,8 +32,8 @@ func getQueries(namespace string, appName string) []resourceQuery {
 	allQueries := make([]resourceQuery, 0)
 	allQueries = append(allQueries, getInjectedNamespaceQueryGroup().getQueries()...)
 	allQueries = append(allQueries, getOperatorNamespaceQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppNameLabel).getQueries()...)
-	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppManagedByLabel).getQueries()...)
+	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, k8slabel.AppNameLabel).getQueries()...)
+	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, k8slabel.AppManagedByLabel).getQueries()...)
 	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
 	allQueries = append(allQueries, getConfigMapQueryGroup(namespace).getQueries()...)
 	allQueries = append(allQueries, getEventsQueryGroup(namespace).getQueries()...)

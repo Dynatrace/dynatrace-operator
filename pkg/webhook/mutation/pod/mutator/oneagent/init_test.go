@@ -13,9 +13,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/mounts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,9 +30,97 @@ func TestMutateInitContainer(t *testing.T) {
 		},
 		Image: "webhook-image",
 		Resources: corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("30m", "30Mi"), // add some defaults
+			Requests: k8sresource.NewResourceList("30m", "30Mi"), // add some defaults
 		},
 	}
+
+	t.Run("status not ready - no version", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+
+		dk := dynakube.DynaKube{}
+		dk.Name = "no-version-set"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.ErrorAs(t, err, &webhook.MutatorError{})
+		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
+	})
+
+	t.Run("status not ready - no image", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+
+		dk := dynakube.DynaKube{}
+		dk.Name = "no-version-set"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = "example"
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.ErrorAs(t, err, &webhook.MutatorError{})
+		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
+	})
+
+	t.Run("status not ready - image set, version is needed", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+
+		dk := dynakube.DynaKube{}
+		dk.Name = "no-version-set"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Status.CodeModules.ImageID = "example"
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.ErrorAs(t, err, &webhook.MutatorError{})
+		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
+	})
+
+	t.Run("status not ready - version set, image is needed", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+
+		dk := dynakube.DynaKube{}
+		dk.Name = "no-version-set"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = "example"
+		dk.Status.CodeModules.Version = "example"
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.ErrorAs(t, err, &webhook.MutatorError{})
+		require.ErrorAs(t, err, &CodeModulesStatusNotReadyErr{})
+	})
 
 	t.Run("csi-scenario -> custom init-resources", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
@@ -41,8 +129,9 @@ func TestMutateInitContainer(t *testing.T) {
 		dk.Name = "csi-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("40m", "40Mi"),
+			Requests: k8sresource.NewResourceList("40m", "40Mi"),
 		}
+		dk.Status.CodeModules.Version = "1.2.3"
 		pod := &corev1.Pod{}
 
 		request := &webhook.MutationRequest{
@@ -56,13 +145,13 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		csiVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		csiVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
 		require.NoError(t, err)
 		require.NotNil(t, csiVolume.CSI)
 		require.NotNil(t, csiVolume.CSI.ReadOnly)
 		require.True(t, *csiVolume.CSI.ReadOnly)
 
-		csiMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		csiMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
 		require.NoError(t, err)
 		require.True(t, csiMount.ReadOnly)
 
@@ -77,6 +166,7 @@ func TestMutateInitContainer(t *testing.T) {
 
 		dk := dynakube.DynaKube{}
 		dk.Name = "csi-scenario"
+		dk.Status.CodeModules.Version = "1.2.3"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		pod := &corev1.Pod{}
 
@@ -91,13 +181,13 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		csiVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		csiVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
 		require.NoError(t, err)
 		require.NotNil(t, csiVolume.CSI)
 		require.NotNil(t, csiVolume.CSI.ReadOnly)
 		require.True(t, *csiVolume.CSI.ReadOnly)
 
-		csiMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		csiMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
 		require.NoError(t, err)
 		require.True(t, csiMount.ReadOnly)
 
@@ -132,11 +222,11 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		emptyDirVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		emptyDirVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
 		require.NoError(t, err)
 		require.NotNil(t, emptyDirVolume.EmptyDir)
 
-		emptyDirMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		emptyDirMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
 		require.NoError(t, err)
 		require.False(t, emptyDirMount.ReadOnly)
 
@@ -159,6 +249,7 @@ func TestMutateInitContainer(t *testing.T) {
 			exp.OANodeImagePullKey: "true",
 		}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 		dk.Status.CodeModules.ImageID = image
 		pod := &corev1.Pod{}
 
@@ -173,11 +264,11 @@ func TestMutateInitContainer(t *testing.T) {
 		err := mutateInitContainer(request, installPath)
 		require.NoError(t, err)
 
-		emptyDirVolume, err := volumes.GetByName(request.Pod.Spec.Volumes, BinVolumeName)
+		emptyDirVolume, err := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
 		require.NoError(t, err)
 		require.NotNil(t, emptyDirVolume.EmptyDir)
 
-		emptyDirMount, err := mounts.GetByName(request.InstallContainer.VolumeMounts, BinVolumeName)
+		emptyDirMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
 		require.NoError(t, err)
 		require.False(t, emptyDirMount.ReadOnly)
 
@@ -197,7 +288,7 @@ func TestMutateInitContainer(t *testing.T) {
 		dk.Name = "zip-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("40m", "40Mi"),
+			Requests: k8sresource.NewResourceList("40m", "40Mi"),
 		}
 		dk.Status.CodeModules.Version = version
 		pod := &corev1.Pod{}
@@ -230,8 +321,9 @@ func TestMutateInitContainer(t *testing.T) {
 		}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
-			Requests: resources.NewResourceList("40m", "40Mi"),
+			Requests: k8sresource.NewResourceList("40m", "40Mi"),
 		}
+		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 		dk.Status.CodeModules.ImageID = image
 		pod := &corev1.Pod{}
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -30,7 +30,7 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
 
-	webhookPod, err := pod.Get(ctx, apiReader, webhookPodName, webhookNamespace)
+	webhookPod, err := k8spod.Get(ctx, apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func newWebhook( //nolint:revive
 			kubeClient,
 			apiReader,
 			otlpexporter.New(),
-			otlpresourceattributes.New(),
+			otlpresourceattributes.New(metaClient),
 		),
 		kubeClient:       kubeClient,
 		apiReader:        apiReader,
@@ -119,7 +119,7 @@ func registerLivezEndpoint(mgr manager.Manager) {
 }
 
 func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
-	webhookContainer, err := container.FindContainerInPod(webhookPod, dtwebhook.WebhookContainerName)
+	webhookContainer, err := k8scontainer.FindInPod(webhookPod, dtwebhook.WebhookContainerName)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

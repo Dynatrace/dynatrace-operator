@@ -6,10 +6,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
-	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 		defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 
-		query := daemonset.Query(r.client, r.apiReader, log)
+		query := k8sdaemonset.Query(r.client, r.apiReader, log)
 
 		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetDaemonSetName(), Namespace: r.dk.Namespace}})
 		if err != nil {
@@ -60,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	updated, err := daemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
+	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
 	if err != nil {
 		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
@@ -81,34 +80,29 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	labels := k8slabels.NewCoreLabels(r.dk.Name, k8slabels.KSPMComponentLabel)
+	labels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.KSPMComponentLabel)
 	templateAnnotations := map[string]string{tokenSecretHashAnnotation: r.dk.KSPM().TokenSecretHash}
 	maps.Copy(templateAnnotations, r.dk.KSPM().Annotations)
 
-	affinity := node.AMDOnlyAffinity()
+	affinity := k8saffinity.NewAMDOnlyNodeAffinity()
 	if r.dk.KSPM().NodeAffinity != nil {
 		affinity.NodeAffinity = r.dk.KSPM().NodeAffinity
 	}
 
-	ds, err := daemonset.Build(r.dk, r.dk.KSPM().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
-		daemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.KSPM().Labels),
-		daemonset.SetAllAnnotations(r.dk.KSPM().Annotations, templateAnnotations),
-		daemonset.SetServiceAccount(serviceAccountName),
-		daemonset.SetAffinity(affinity),
-		daemonset.SetPriorityClass(r.dk.KSPM().PriorityClassName),
-		daemonset.SetNodeSelector(r.dk.KSPM().NodeSelector),
-		daemonset.SetTolerations(r.dk.KSPM().Tolerations),
-		daemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
-		daemonset.SetUpdateStrategy(r.getUpdateStrategy()),
-		daemonset.SetVolumes(getVolumes(*r.dk)),
-		daemonset.SetAutomountServiceAccountToken(false),
-		daemonset.SetHostPID(true),
+	ds, err := k8sdaemonset.Build(r.dk, r.dk.KSPM().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
+		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.KSPM().Labels),
+		k8sdaemonset.SetAllAnnotations(r.dk.KSPM().Annotations, templateAnnotations),
+		k8sdaemonset.SetServiceAccount(serviceAccountName),
+		k8sdaemonset.SetAffinity(affinity),
+		k8sdaemonset.SetPriorityClass(r.dk.KSPM().PriorityClassName),
+		k8sdaemonset.SetNodeSelector(r.dk.KSPM().NodeSelector),
+		k8sdaemonset.SetTolerations(r.dk.KSPM().Tolerations),
+		k8sdaemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
+		k8sdaemonset.SetUpdateStrategy(r.getUpdateStrategy()),
+		k8sdaemonset.SetVolumes(getVolumes(*r.dk)),
+		k8sdaemonset.SetAutomountServiceAccountToken(false),
+		k8sdaemonset.SetHostPID(true),
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	err = hasher.AddAnnotation(ds)
 	if err != nil {
 		return nil, err
 	}
