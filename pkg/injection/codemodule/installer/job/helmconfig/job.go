@@ -84,12 +84,6 @@ type Config struct {
 }
 
 func Get() Config {
-	Read()
-
-	return conf
-}
-
-func Read() {
 	once.Do(func() {
 		confJSON := os.Getenv(JSONEnv)
 		if confJSON == "" {
@@ -111,4 +105,6 @@ func Read() {
 
 		log.Info("envvar content read and set", "envvar", JSONEnv, "value", confJSON)
 	})
+
+	return conf
 }
