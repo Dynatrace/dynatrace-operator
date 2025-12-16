@@ -484,7 +484,7 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
   - Writing helper functions for a whole package can backfire quickly as it binds tests together unnecessary.
     - example: Change 1 helper function -> break 3 tests but fix 2 -> probably should be split into test specific helpers
     - For simpler common setups func it can still make sense.
-  - All helper func must use `t.Helper()` as their first-line, for improved error reporting.
+  - All helper functions that do assertions must use `t.Helper()` as their first-line, for improved error reporting.
 - Defining (testing) `consts` per-test is preferred to defining (testing) `consts` per-package
   - Figuring out what is `myTestConst52` that is defined 3 files over and used by 12 tests is not fun to maintain and easy to follow.
 - Use `t.Run` and give a title that describes what you are testing in that run.
