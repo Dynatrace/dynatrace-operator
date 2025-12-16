@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	crdVersionMismatchLabel = "crd-name"
+	crdVersionMismatchLabel   = "crd-name"
 	crdVersionMismatchReason  = "CrdVersionMismatch"
 	crdVersionMismatchMessage = "The CustomResourceDefinition %s doesn't match version with the operator. Please update the CRD to avoid potential issues."
 )
@@ -49,7 +49,8 @@ func SendCrdVersionMismatch(ctx context.Context, client client.Client, dk *dynak
 	event.SetNamespace(dk.Namespace)
 	event.SetGroupVersionKind(dk.GroupVersionKind())
 	event.SetOwnerReferences(dk.OwnerReferences)
-	
+
 	log.Debug("sending k8s event %s", crdVersionMismatchReason)
+
 	return client.Create(ctx, &event)
 }

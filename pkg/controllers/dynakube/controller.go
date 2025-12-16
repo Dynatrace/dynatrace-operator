@@ -170,7 +170,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
-	 if !isCrdLatestVersion {
+	if !isCrdLatestVersion {
 		err = k8sevent.SendCrdVersionMismatch(ctx, controller.client, dk, k8scrd.DynaKubeName)
 		if err != nil {
 			return reconcile.Result{}, err
