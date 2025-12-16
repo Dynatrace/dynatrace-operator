@@ -135,6 +135,29 @@ func TestBuildJob(t *testing.T) {
 		assert.Equal(t, job.Spec.Template.Spec.Volumes[0].Name, container.VolumeMounts[0].Name)
 		assert.Equal(t, props.PathResolver.RootDir, container.VolumeMounts[0].MountPath)
 	})
+
+	t.Run("job uses priority class from csijob settings", func(t *testing.T) {
+		settings := helmconfig.Get()
+		settings.Job.PriorityClassName = "custom-priority-class"
+
+		props := &Properties{
+			Owner:        &owner,
+			ImageURI:     imageURI,
+			PullSecrets:  pullSecrets,
+			PathResolver: metadata.PathResolver{RootDir: "root"},
+			CSIJob:       settings,
+		}
+		inst := &Installer{
+			nodeName: nodeName,
+			props:    props,
+		}
+
+		job, err := inst.buildJob(name, targetDir)
+		require.NoError(t, err)
+		require.NotNil(t, job)
+
+		assert.Equal(t, settings.Job.PriorityClassName, job.Spec.Template.Spec.PriorityClassName)
+	})
 }
 
 func setupDataDir(t *testing.T) string {

@@ -39,7 +39,8 @@ func TestGet(t *testing.T) {
 			"labels": {"test-label1":"test-value1","test-label2":"test-value2"},
 			"job": {
 			  "securityContext": {"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL","DAC_OVERRIDE"]},"privileged":false,"readOnlyRootFilesystem":false,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s1"},"seccompProfile":{"type":"RuntimeDefault"}},
-              "resources": {"requests":{"cpu":"100m","memory":"200Mi"},"limits":{"cpu":"500m","memory":"500Mi"}}
+              "resources": {"requests":{"cpu":"100m","memory":"200Mi"},"limits":{"cpu":"500m","memory":"500Mi"}},
+			  "priorityClassName": "example-priority"
 			}
 		}`
 		expected := Config{
@@ -95,6 +96,7 @@ func TestGet(t *testing.T) {
 						corev1.ResourceMemory: resource.MustParse("500Mi"),
 					},
 				},
+				PriorityClassName: "example-priority",
 			},
 		}
 

@@ -17,7 +17,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 )
 
-const notReadyRequeueDuration = 30 * time.Second
+const (
+	notReadyRequeueDuration = 30 * time.Second
+)
 
 var errNotReady = errors.New("download job is not ready yet")
 

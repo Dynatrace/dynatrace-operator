@@ -58,6 +58,7 @@ var (
 					corev1.ResourceMemory: resource.MustParse("30Mi"),
 				},
 			},
+			PriorityClassName: "dynatrace-high-priority",
 		},
 	}
 
@@ -66,8 +67,9 @@ var (
 
 // JobConfig holds settings specific to the CodeModule installer Job that were defined in the helm chart.
 type JobConfig struct {
-	SecurityContext corev1.SecurityContext      `json:"securityContext"`
-	Resources       corev1.ResourceRequirements `json:"resources"`
+	SecurityContext   corev1.SecurityContext      `json:"securityContext"`
+	Resources         corev1.ResourceRequirements `json:"resources"`
+	PriorityClassName string                      `json:"priorityClassName"`
 }
 
 // CSIDaemonSetConfig holds settings inherited from the CSI DaemonSet.
