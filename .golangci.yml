@@ -11,6 +11,7 @@ linters:
     - dogsled
     - dupl
     - durationcheck
+    - errcheck
     - errorlint
     - forbidigo
     - gocheckcompilerdirectives
@@ -265,12 +266,14 @@ linters:
     rules:
       - linters:
           - dupl
+          - errcheck
           - perfsprint
           - wsl_v5
           - dupl
           - govet
         path: _(test|gen)\.go
       - linters:
+          - errcheck
           - govet
           - noctx
           - perfsprint

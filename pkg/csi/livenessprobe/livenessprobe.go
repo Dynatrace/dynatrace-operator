@@ -52,7 +52,10 @@ func (s *Server) Start(ctx context.Context) error {
 		sctx, cancelFunc := context.WithTimeout(context.Background(), s.probeTimeout)
 		defer cancelFunc()
 
-		httpServer.Shutdown(sctx)
+		err := httpServer.Shutdown(sctx)
+		if err != nil {
+			log.Error(err, "failed to shutdown HTTP server")
+		}
 
 		log.Info("stopped HTTP server")
 	}()
@@ -73,7 +76,12 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 	conn, err := connection.Connect(ctx, s.csiAddress, nil, connection.WithTimeout(s.probeTimeout))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+
+		_, err := w.Write([]byte(err.Error()))
+		if err != nil {
+			log.Error(err, "failed to write response")
+		}
+
 		log.Error(err, "failed to establish connection to CSI driver")
 
 		return
@@ -85,7 +93,12 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 	ready, err := rpc.Probe(ctx, conn)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+
+		_, err := w.Write([]byte(err.Error()))
+		if err != nil {
+			log.Error(err, "failed to write response")
+		}
+
 		log.Error(err, "health check failed")
 
 		return
@@ -93,14 +106,24 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 
 	if !ready {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("driver is not ready"))
+
+		_, err := w.Write([]byte("driver is not ready"))
+		if err != nil {
+			log.Error(err, "failed to write response")
+		}
+
 		log.Error(nil, "driver is not ready")
 
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`ok`))
+
+	_, err = w.Write([]byte(`ok`))
+	if err != nil {
+		log.Error(err, "failed to write response")
+	}
+
 	log.Debug("health check succeeded")
 }
 
