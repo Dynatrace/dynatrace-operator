@@ -82,6 +82,7 @@ tests:
                 - events
               verbs:
                 - create
+                - patch
                 - get
                 - list
             - apiGroups:
