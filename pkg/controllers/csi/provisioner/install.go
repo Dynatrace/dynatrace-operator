@@ -12,12 +12,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
 )
 
-const notReadyRequeueDuration = 30 * time.Second
+const (
+	notReadyRequeueDuration = 30 * time.Second
+)
 
 var errNotReady = errors.New("download job is not ready yet")
 
@@ -107,7 +109,7 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 		APIReader:    provisioner.apiReader,
 		Client:       provisioner.kubeClient,
 		PathResolver: provisioner.path,
-		CSIJob:       csijob.GetSettings(),
+		CSIJob:       helmconfig.Get(),
 	}
 
 	return provisioner.jobInstallerBuilder(ctx, props)

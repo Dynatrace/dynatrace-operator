@@ -40,8 +40,10 @@ const (
 	testClusterID = "test-cluster-id"
 )
 
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
+
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
@@ -131,8 +133,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		connectionInfoReconciler := controllermock.NewReconciler(t)
-		connectionInfoReconciler.On("Reconcile",
-			mock.AnythingOfType("context.backgroundCtx")).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
+		connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
 
 		fakeClient := fake.NewClient()
 		reconciler := &Reconciler{
@@ -159,9 +160,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		versionReconciler := versionmock.NewReconciler(t)
-		versionReconciler.On("ReconcileOneAgent",
-			mock.AnythingOfType("context.backgroundCtx"),
-			mock.AnythingOfType("*dynakube.DynaKube")).Return(errors.New("BOOM")).Once()
+		versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, mock.AnythingOfType("*dynakube.DynaKube")).Return(errors.New("BOOM")).Once()
 
 		fakeClient := fake.NewClient()
 		reconciler := &Reconciler{
@@ -178,7 +177,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
@@ -245,7 +244,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		name      = "dynakube"
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	base := dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
@@ -660,12 +659,12 @@ func TestInstanceStatus(t *testing.T) {
 		apiReader: fakeClient,
 	}
 
-	err := reconciler.reconcileInstanceStatuses(context.Background(), dk)
+	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
 	require.NoError(t, err)
 	assert.NotEmpty(t, t, dk.Status.OneAgent.Instances)
 	instances := dk.Status.OneAgent.Instances
 
-	err = reconciler.reconcileInstanceStatuses(context.Background(), dk)
+	err = reconciler.reconcileInstanceStatuses(t.Context(), dk)
 	require.NoError(t, err)
 	assert.Equal(t, instances, dk.Status.OneAgent.Instances)
 }
@@ -710,7 +709,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 		apiReader: fakeClient,
 	}
 
-	err := reconciler.reconcileInstanceStatuses(context.Background(), dk)
+	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
 	require.NoError(t, err)
 	assert.Empty(t, dk.Status.OneAgent.Instances)
 }
@@ -721,7 +720,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 		testTenantEndpoints = "test-endpoints"
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	dk := newDynaKube()
 	dk.Status = dynakube.DynaKubeStatus{
 		OneAgent: oneagent.Status{
@@ -767,17 +766,14 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 
 func createConnectionInfoReconcilerMock(t *testing.T) controllers.Reconciler {
 	connectionInfoReconciler := controllermock.NewReconciler(t)
-	connectionInfoReconciler.On("Reconcile",
-		mock.AnythingOfType("context.backgroundCtx")).Return(nil).Once()
+	connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
 	return connectionInfoReconciler
 }
 
 func createVersionReconcilerMock(t *testing.T) versions.Reconciler {
 	versionReconciler := versionmock.NewReconciler(t)
-	versionReconciler.On("ReconcileOneAgent",
-		mock.AnythingOfType("context.backgroundCtx"),
-		mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
+	versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, mock.AnythingOfType("*dynakube.DynaKube")).Return(nil).Once()
 
 	return versionReconciler
 }

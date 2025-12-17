@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
@@ -14,7 +13,7 @@ func TestStatefulSet(t *testing.T) {
 
 	clt := integrationtests.SetupTestEnvironment(t)
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	dk := getTestDynakubeWithExtensions()
 
