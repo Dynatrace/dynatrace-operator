@@ -234,8 +234,8 @@ csidriver:
         type: RuntimeDefault
     resources:
       requests:
-        cpu: 300m
-        memory: 100Mi
+        cpu: 200m
+        memory: 30Mi
 
 rbac:
   activeGate:

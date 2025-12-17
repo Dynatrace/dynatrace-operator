@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/csijob"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job/helmconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,7 +87,7 @@ func TestBuildJob(t *testing.T) {
 			ImageURI:     imageURI,
 			PullSecrets:  pullSecrets,
 			PathResolver: metadata.PathResolver{RootDir: "root"},
-			CSIJob:       csijob.GetSettings(),
+			CSIJob:       helmconfig.Get(),
 		}
 		inst := &Installer{
 			nodeName: nodeName,
@@ -137,10 +137,8 @@ func TestBuildJob(t *testing.T) {
 	})
 
 	t.Run("job uses priority class from csijob settings", func(t *testing.T) {
-		settings := csijob.GetSettings()
-		if settings.Job.PriorityClassName == "" {
-			settings.Job.PriorityClassName = "dynatrace-high-priority"
-		}
+		settings := helmconfig.Get()
+		settings.Job.PriorityClassName = "custom-priority-class"
 
 		props := &Properties{
 			Owner:        &owner,
