@@ -1,6 +1,8 @@
 package provisioner
 
 import (
+	"os"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner"
@@ -91,6 +93,7 @@ func createManager(config *rest.Config, namespace string) (manager.Manager, erro
 		Metrics: server.Options{
 			BindAddress: metricsBindAddress,
 		},
+		PprofBindAddress:       os.Getenv("PPROF_BIND_ADDRESS"),
 		HealthProbeBindAddress: probeAddress,
 		LivenessEndpointName:   livenessEndpointName,
 	}
