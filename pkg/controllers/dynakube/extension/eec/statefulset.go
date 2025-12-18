@@ -122,6 +122,18 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	return nil
 }
 
+// TODO: Remove as part of DAQ-18375
+func (r *reconciler) deleteLegacyStatefulset(ctx context.Context) {
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.dk.Name + "-extensions-controller",
+			Namespace: r.dk.Namespace,
+		},
+	}
+
+	_ = r.client.Delete(ctx, sts)
+}
+
 func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
 	templateAnnotations := map[string]string{}
 

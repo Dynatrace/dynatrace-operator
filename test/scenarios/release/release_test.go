@@ -26,18 +26,23 @@ const releaseTag = "1.7.1"
 func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
-	testEnv.Setup(
-		helpers.SetScheme,
-		operator.Install(releaseTag, true), // TODO: add logic to get releaseTag in a dynamic way instead of hard coding it
-	)
-	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
+	testEnv.Setup(helpers.SetScheme)
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.Uninstall(true))
 	}
 
-	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {
+	testEnv.BeforeEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
+		return operator.Install(releaseTag, true)(ctx, envConfig) // TODO: add logic to get releaseTag in a dynamic way instead of hard coding it
+	})
+
+	testEnv.AfterEachTest(func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		if t.Failed() {
-			events.LogEvents(ctx, c, t)
+			events.LogEvents(ctx, envConfig, t)
+		}
+
+		// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
+		if !envConfig.FailFast() {
+			return operator.Uninstall(true)(ctx, envConfig)
 		}
 
 		return ctx, nil

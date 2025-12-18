@@ -128,6 +128,9 @@ tests:
                   cpu: 50m
                   memory: 100Mi
               securityContext:
+                capabilities:
+                  drop:
+                    - ALL
                 runAsUser: 0
                 privileged: false
                 allowPrivilegeEscalation: false
@@ -291,7 +294,8 @@ tests:
                         "labels": {},
                         "job": {
                           "securityContext": {"allowPrivilegeEscalation":true,"privileged":true,"readOnlyRootFilesystem":true,"runAsNonRoot":false,"runAsUser":0,"seLinuxOptions":{"level":"s0"},"seccompProfile":{"type":"RuntimeDefault"}},
-                          "resources": {"requests":{"cpu":"300m","memory":"100Mi"}}
+                          "resources": {"requests":{"cpu":"200m","memory":"30Mi"}},
+                          "priorityClassName": "dynatrace-high-priority"
                         }
                       }
                 image: image-name
@@ -363,6 +367,10 @@ tests:
                     cpu: 20m
                     memory: 30Mi
                 securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
                   privileged: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: false
@@ -396,6 +404,9 @@ tests:
                     memory: 30Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
                   privileged: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: false

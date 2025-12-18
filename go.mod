@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/Dynatrace/dynatrace-bootstrapper v1.1.3
 	github.com/container-storage-interface/spec v1.12.0
-	github.com/docker/cli v29.1.2+incompatible
+	github.com/docker/cli v29.1.3+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-containerregistry v0.20.7
@@ -41,7 +41,7 @@ require (
 	k8s.io/mount-utils v0.34.3
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	sigs.k8s.io/controller-runtime v0.22.4
-	sigs.k8s.io/e2e-framework v0.3.0
+	sigs.k8s.io/e2e-framework v0.6.0
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -102,7 +102,7 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/vbatts/tar-split v0.12.2 // indirect
-	github.com/vladimirvivien/gexe v0.2.0 // indirect
+	github.com/vladimirvivien/gexe v0.4.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.141.0 // indirect

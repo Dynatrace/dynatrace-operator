@@ -1,7 +1,6 @@
 package extension
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -17,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -36,12 +36,12 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		// assert extensions token is not generated
 		var secretFound corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.True(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are empty
@@ -61,23 +61,23 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		secretMock, _ := k8ssecret.Build(dk, testName+"-extensions-token", secretData)
 
 		fakeClient := fake.NewClient()
-		fakeClient.Create(context.Background(), secretMock)
+		fakeClient.Create(t.Context(), secretMock)
 		r := NewReconciler(fakeClient, fakeClient, dk)
 
 		// assert extensions token is there before reconciliation
 		var secretFound corev1.Secret
-		err := fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err := fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.False(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are not empty
 		require.NotEmpty(t, dk.Conditions())
 
 		// reconcile
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		// assert extensions token is deleted after reconciliation
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.True(t, k8serrors.IsNotFound(err))
 
 		// assert conditions are empty
@@ -89,12 +89,12 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		// assert extensions token is generated
 		var secretFound corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.NoError(t, err)
 		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
 		require.NotEmpty(t, secretFound.Data[consts.DatasourceTokenSecretKey])
@@ -113,7 +113,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
 		r := NewReconciler(fake.NewClient(), misconfiguredReader, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 		require.Error(t, err)
 
 		// assert extensions token condition is added
@@ -147,12 +147,12 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		fakeClient := fake.NewClient(oldSecret)
 		r := NewReconciler(fakeClient, fakeClient, dk)
 
-		err = r.Reconcile(context.Background())
+		err = r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		// assert extensions token is generated
 		var secretFound corev1.Secret
-		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testName + "-extensions-token", Namespace: testNamespace}, &secretFound)
 		require.NoError(t, err)
 
 		require.NotEmpty(t, secretFound.Data[eecConsts.TokenSecretKey])
@@ -177,12 +177,12 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 
 		r := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
 		require.NoError(t, err)
 		assert.NotNil(t, svc)
 
@@ -202,14 +202,45 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		mockK8sClient := fake.NewClient(dk)
 
 		r := &reconciler{client: mockK8sClient, apiReader: mockK8sClient, dk: dk, timeProvider: timeprovider.New()}
-		err := r.Reconcile(context.Background())
+		err := r.Reconcile(t.Context())
 
 		require.NoError(t, err)
 
 		var svc corev1.Service
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
+	})
+}
+
+func TestReconciler_legacyCleanup(t *testing.T) {
+	t.Run("clean up when extensions are enabled", func(t *testing.T) {
+		dk := createDynakube()
+		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
+		conditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionsControllerStatefulSet", "test")
+
+		fakeClient := fake.NewClient(append([]client.Object{dk}, legacyResources(dk)...)...)
+		r := NewReconciler(fakeClient, fakeClient, dk)
+		err := r.Reconcile(t.Context())
+		require.NoError(t, err)
+
+		assertLegacyResourcesCleanedUp(t, fakeClient, dk)
+	})
+
+	t.Run("clean up when extensions are disabled", func(t *testing.T) {
+		dk := createDynakube()
+		dk.Spec.Extensions = nil
+		conditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionControllerStatefulSet", "test")
+		conditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionsControllerStatefulSet", "test")
+		conditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionsTLSSecret", "test")
+		conditions.SetServiceCreated(dk.Conditions(), serviceConditionType, "test")
+
+		fakeClient := fake.NewClient(append([]client.Object{dk}, legacyResources(dk)...)...)
+		r := NewReconciler(fakeClient, fakeClient, dk)
+		err := r.Reconcile(t.Context())
+		require.NoError(t, err)
+
+		assertLegacyResourcesCleanedUp(t, fakeClient, dk)
 	})
 }
 
@@ -229,4 +260,36 @@ func createDynakube() *dynakube.DynaKube {
 			KubeSystemUUID: "abc",
 		},
 	}
+}
+
+func legacyResources(dk *dynakube.DynaKube) []client.Object {
+	return []client.Object{
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.Name + "-extensions-controller-tls",
+				Namespace: dk.Namespace,
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.Name + "-extensions-controller",
+				Namespace: dk.Namespace,
+			},
+		},
+		&appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.Name + "-extensions-controller",
+				Namespace: dk.Namespace,
+			},
+		},
+	}
+}
+
+func assertLegacyResourcesCleanedUp(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
+	for _, obj := range legacyResources(dk) {
+		err := clt.Get(t.Context(), client.ObjectKeyFromObject(obj), obj)
+		require.Errorf(t, err, "%T %s still exists", obj, obj.GetName())
+	}
+	cond := meta.FindStatusCondition(dk.Status.Conditions, "ExtensionsControllerStatefulSet")
+	assert.Nil(t, cond, "unexpected condition: %+v", cond)
 }

@@ -33,6 +33,9 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	// TODO: Remove as part of DAQ-18375
+	meta.RemoveStatusCondition(r.dk.Conditions(), "ExtensionsControllerStatefulSet")
+
 	if ext := r.dk.Extensions(); !ext.IsAnyEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), extensionControllerStatefulSetConditionType) == nil {
 			return nil
@@ -49,9 +52,9 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		err = k8sstatefulset.Query(r.client, r.apiReader, log).Delete(ctx, sts)
 		if err != nil {
 			log.Error(err, "failed to clean up "+ext.GetExecutionControllerStatefulsetName()+" statufulset")
-
-			return nil
 		}
+
+		r.deleteLegacyStatefulset(ctx)
 
 		return nil
 	}
@@ -67,6 +70,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 		return errors.New("kubeSystemUUID unknown")
 	}
+
+	defer r.deleteLegacyStatefulset(ctx)
 
 	return r.createOrUpdateStatefulset(ctx)
 }
