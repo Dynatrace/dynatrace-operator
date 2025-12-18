@@ -68,7 +68,7 @@ func goServe(server *grpc.Server, wg *sync.WaitGroup, listener net.Listener, sta
 
 		err := server.Serve(listener)
 		if err != nil {
-			panic(err)
+			panic(err.Error())
 		}
 	})
 }
