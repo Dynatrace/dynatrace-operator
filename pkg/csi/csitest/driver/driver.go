@@ -4,14 +4,9 @@ import (
 	"net"
 	"sync"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-)
-
-var (
-	log = logd.Get().WithName("csitest-driver")
 )
 
 // https://github.com/kubernetes-csi/csi-test/blob/master/driver/driver.go
@@ -73,7 +68,7 @@ func goServe(server *grpc.Server, wg *sync.WaitGroup, listener net.Listener, sta
 
 		err := server.Serve(listener)
 		if err != nil {
-			log.Error(err, "failed to serve")
+			panic(err) //nolint:revive
 		}
 	})
 }
