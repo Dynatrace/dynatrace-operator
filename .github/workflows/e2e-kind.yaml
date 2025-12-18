@@ -58,8 +58,7 @@ jobs:
       - name: Set up go
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
-          go-version-file: "./go.mod"
-          check-latest: true # Always check for the latest patch release
+          go-version: 'stable' # Latest stable version
       - name: Set up helm
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:

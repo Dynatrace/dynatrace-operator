@@ -76,8 +76,7 @@ runs:
     - name: Set up go
       uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
       with:
-        go-version-file: "${{ github.workspace }}/target/go.mod"
-        check-latest: true # Always check for the latest patch release
+        go-version: 'stable' # Latest stable version
     - name: Set up helm
       uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
       with:
