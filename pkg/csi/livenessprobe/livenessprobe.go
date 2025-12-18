@@ -75,7 +75,6 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := connection.Connect(ctx, s.csiAddress, nil, connection.WithTimeout(s.probeTimeout))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		writeResponse(w, http.StatusInternalServerError, err.Error())
 		log.Error(err, "failed to establish connection to CSI driver")
 
@@ -87,7 +86,6 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 
 	ready, err := rpc.Probe(ctx, conn)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		writeResponse(w, http.StatusInternalServerError, err.Error())
 		log.Error(err, "health check failed")
 
@@ -95,15 +93,11 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !ready {
-		w.WriteHeader(http.StatusInternalServerError)
 		writeResponse(w, http.StatusInternalServerError, "driver is not ready")
 		log.Error(nil, "driver is not ready")
 
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-
 	writeResponse(w, http.StatusOK, "ok")
 
 	log.Debug("health check succeeded")
