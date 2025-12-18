@@ -32,7 +32,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	previousVersionDynakube := &dynakubev1beta5.DynaKube{}
-	previousVersionDynakube.ConvertFrom(&testDynakube)
+	_ = previousVersionDynakube.ConvertFrom(&testDynakube)
 	dynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, *previousVersionDynakube)
 
 	// Register sample app install

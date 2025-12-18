@@ -29,7 +29,7 @@ func Feature(t *testing.T) features.Feature {
 	testDynakube := *componentDynakube.New(options...)
 
 	previousVersionDynakube := &dynakubev1beta5.DynaKube{}
-	previousVersionDynakube.ConvertFrom(&testDynakube)
+	_ =previousVersionDynakube.ConvertFrom(&testDynakube)
 	componentDynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, *previousVersionDynakube)
 
 	legacyName := testDynakube.Name + "-extensions-controller"

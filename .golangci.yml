@@ -273,7 +273,6 @@ linters:
           - govet
         path: _(test|gen)\.go
       - linters:
-          - errcheck
           - govet
           - noctx
           - perfsprint
