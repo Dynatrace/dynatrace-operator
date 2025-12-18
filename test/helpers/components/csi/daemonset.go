@@ -36,9 +36,6 @@ func WaitForDaemonset(namespace string) env.Func {
 
 func cleanUpPodConsumer(ctx context.Context, resource *resources.Resources) daemonset.PodConsumer {
 	return func(p corev1.Pod) {
-		_, err := pod.Exec(ctx, resource, p, "server", "rm", "-rf", dtcsi.DataPath)
-		if err != nil {
-			panic("failed to clean up pod storage: " + err.Error())
-		}
+		_, _ = pod.Exec(ctx, resource, p, "server", "rm", "-rf", dtcsi.DataPath)
 	}
 }
