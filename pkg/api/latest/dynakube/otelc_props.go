@@ -1,7 +1,9 @@
 package dynakube
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/consts"
+
 func (dk *DynaKube) OtelCollectorStatefulsetName() string {
-	return dk.Name + "-otel-collector"
+	return dk.Name + consts.OTELCollectorNameSuffix
 }
 
 func (dk *DynaKube) IsAGCertificateNeeded() bool {
