@@ -329,18 +329,8 @@ func TestVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
-				ReadOnly:  false,
-			},
-			{
 				Name:      runtimeVolumeName,
 				MountPath: runtimeMountPath,
-				ReadOnly:  false,
-			},
-			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -362,18 +352,8 @@ func TestVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
-				ReadOnly:  false,
-			},
-			{
 				Name:      runtimeVolumeName,
 				MountPath: runtimeMountPath,
-				ReadOnly:  false,
-			},
-			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -410,18 +390,8 @@ func TestVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
-				ReadOnly:  false,
-			},
-			{
 				Name:      runtimeVolumeName,
 				MountPath: runtimeMountPath,
-				ReadOnly:  false,
-			},
-			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -473,18 +443,8 @@ func TestVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
-				ReadOnly:  false,
-			},
-			{
 				Name:      runtimeVolumeName,
 				MountPath: runtimeMountPath,
-				ReadOnly:  false,
-			},
-			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -514,18 +474,8 @@ func TestVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
-				ReadOnly:  false,
-			},
-			{
 				Name:      runtimeVolumeName,
 				MountPath: runtimeMountPath,
-				ReadOnly:  false,
-			},
-			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -693,7 +643,11 @@ func TestTolerations(t *testing.T) {
 }
 
 func TestPersistentVolumeClaim(t *testing.T) {
-	testDefaultPVCSpec := func(statefulSet *appsv1.StatefulSet) {
+	t.Run("no PVC spec, UseEphemeralVolume set to false", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = false
+		statefulSet := getStatefulset(t, dk)
+
 		require.Len(t, statefulSet.Spec.VolumeClaimTemplates, 1)
 
 		require.Len(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.AccessModes, 1)
@@ -713,14 +667,6 @@ func TestPersistentVolumeClaim(t *testing.T) {
 		require.NotNil(t, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy)
 		assert.Equal(t, appsv1.DeletePersistentVolumeClaimRetentionPolicyType, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy.WhenDeleted)
 		assert.Equal(t, appsv1.DeletePersistentVolumeClaimRetentionPolicyType, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy.WhenScaled)
-	}
-
-	t.Run("no PVC spec, UseEphemeralVolume set to false", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = false
-		statefulSet := getStatefulset(t, dk)
-
-		testDefaultPVCSpec(statefulSet)
 	})
 	t.Run("no PVC spec, UseEphemeralVolume set to true", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -873,18 +819,6 @@ func TestVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
@@ -918,18 +852,6 @@ func TestVolumes(t *testing.T) {
 						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
@@ -991,18 +913,6 @@ func TestVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
@@ -1036,18 +946,6 @@ func TestVolumes(t *testing.T) {
 						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
@@ -1098,18 +996,6 @@ func TestVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
 				Name: httpsCertVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
@@ -1154,18 +1040,6 @@ func TestVolumes(t *testing.T) {
 						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{

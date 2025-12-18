@@ -51,26 +51,20 @@ const (
 	envEecHTTPSCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
 	envEecHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
-	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
-	customCertificateMountPath         = "/var/lib/dynatrace/remotepluginmodule/secrets/extensions"
+	eecTokenMountPath                  = "/secrets/tokens"
+	customCertificateMountPath         = "/secrets/extensions"
 	customCertificateVolumeName        = "extension-custom-certs"
-	logMountPath                       = "/var/lib/dynatrace/remotepluginmodule/log"
 	runtimeVolumeName                  = "agent-runtime"
-	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
-	configurationVolumeName            = "runtime-configuration"
-	configurationMountPath             = "/var/lib/dynatrace/remotepluginmodule/agent/conf"
+	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule"
 	customConfigVolumeName             = "custom-config"
-	customConfigMountPath              = "/var/lib/dynatrace/remotepluginmodule/secrets/config"
+	customConfigMountPath              = "/secrets/config"
 	activeGateTrustedCertVolumeName    = "server-certs"
-	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/remotepluginmodule/secrets/ag"
+	activeGateTrustedCertMountPath     = "/secrets/ag"
 	activeGateTrustedCertSecretKeyPath = "server.crt"
 	httpsCertVolumeName                = "https-certs"
-	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
+	httpsCertMountPath                 = "/secrets/https"
 	runtimeConfigurationFilename       = "runtimeConfiguration"
 	serviceURLScheme                   = "https://"
-
-	// misc
-	logVolumeName = "log"
 
 	userGroupID int64 = 1001
 )
@@ -282,18 +276,8 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      logVolumeName,
-			MountPath: logMountPath,
-			ReadOnly:  false,
-		},
-		{
 			Name:      runtimeVolumeName,
 			MountPath: runtimeMountPath,
-			ReadOnly:  false,
-		},
-		{
-			Name:      configurationVolumeName,
-			MountPath: configurationMountPath,
 			ReadOnly:  false,
 		},
 		{
@@ -341,18 +325,6 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName:  dk.Extensions().GetTokenSecretName(),
 						DefaultMode: &mode,
 					},
-				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
