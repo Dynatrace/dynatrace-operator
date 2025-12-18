@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -32,7 +33,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	previousVersionDynakube := &dynakubev1beta5.DynaKube{}
-	_ = previousVersionDynakube.ConvertFrom(&testDynakube)
+	require.NoError(t, previousVersionDynakube.ConvertFrom(&testDynakube))
 	dynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, *previousVersionDynakube)
 
 	// Register sample app install
