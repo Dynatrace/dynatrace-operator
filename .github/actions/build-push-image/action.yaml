@@ -31,7 +31,7 @@ runs:
     - name: Set up Golang
       uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
       with:
-        go-version-file: "${{ github.workspace }}/go.mod"
+        go-version: 'stable' # Latest stable version
     - name: Prepare build parameters
       id: prep
       shell: bash

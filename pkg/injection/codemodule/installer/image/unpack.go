@@ -21,7 +21,7 @@ type imagePullInfo struct {
 	targetDir     string
 }
 
-func (installer *Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, imageName string) error { //nolint
+func (installer *Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, imageName string) error {
 	img, err := installer.pullImageInfo(imageName)
 	if err != nil {
 		log.Info("pullImageInfo", "error", err)

@@ -171,6 +171,8 @@ linters:
             - 13
         - name: banned-characters
           disabled: true
+        - name: forbidden-call-in-wg-go
+          disabled: true
         - name: file-header
           disabled: true
         - name: package-directory-mismatch # TODO: might make sense to reenable it if we do a bigger refactor of packages
