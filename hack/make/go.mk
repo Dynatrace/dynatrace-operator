@@ -1,21 +1,21 @@
 LOCAL_GO_VERSION := $(shell go version | awk '{print $$3}')
 DOCKER_GO_VERSION := $(shell cat Dockerfile | grep golang | cut -d "@" -f1 | cut -d ":" -f2)
+
 ## Check go version
 go/check-version:
 	@if [ "$(LOCAL_GO_VERSION)" != "go$(DOCKER_GO_VERSION)" ]; then \
-		echo "Go version mismatch: Local version is $(LOCAL_GO_VERSION) but Dockerfile requires go$(DOCKER_GO_VERSION)"; \
-		exit 1; \
+		printf "\033[0;31mGo version mismatch: Local version is $(LOCAL_GO_VERSION) but Dockerfile requires go$(DOCKER_GO_VERSION)\033[0m\n"; \
 	fi
 
 ## Runs golangci-lint
-go/golangci:
+go/golangci: go/check-version
 	$(GOLANGCI_LINT) run --fix --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s
 
 ## Runs all the linting tools
 go/lint: prerequisites/go-linting go/golangci go/deadcode
 
 ## Runs all go unit and integration tests and writes the coverprofile to coverage.txt
-go/test: prerequisites/setup-envtest
+go/test: prerequisites/setup-envtest go/check-version
 	go test ./... -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 
 ## Runs all go unit tests and opens coverage report in a browser
