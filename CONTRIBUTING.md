@@ -64,7 +64,6 @@ If the bug flew under the radar, and got discovered later:
 
 ## Quick start
 
-> [!NOTE] go version
 > We are very picky about the go version we use for development.
 > Because of some inconsistencies between go versions and golangci-lint and what we use in CI,
 
