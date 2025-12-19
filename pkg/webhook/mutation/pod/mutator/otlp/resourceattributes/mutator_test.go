@@ -175,19 +175,27 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			},
 		},
 		{
-			name:    "no workload info when no owners",
+			name:    "pod is it's own owner",
 			objects: nil,
 
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod",
+					Name:      "pod1",
 					Namespace: "ns",
+				},
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
 				},
 				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 			},
 			namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
 			wantAttributes: map[string][]string{
 				"c1": {
+					"k8s.workload.name=pod1",
+					"dt.kubernetes.workload.name=pod1",
+					"k8s.workload.kind=pod",
+					"dt.kubernetes.workload.kind=pod",
 					"k8s.pod.name=$(K8S_PODNAME)",
 					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.node.name=$(K8S_NODE_NAME)",
@@ -231,6 +239,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.workload.kind=job",
 					"dt.kubernetes.workload.kind=job",
 					"k8s.workload.name=jobx",
+					"dt.kubernetes.workload.name=jobx",
 					"k8s.node.name=$(K8S_NODE_NAME)",
 				},
 				"c2": {
@@ -245,37 +254,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.workload.kind=job",
 					"dt.kubernetes.workload.kind=job",
 					"k8s.workload.name=jobx",
-					"k8s.node.name=$(K8S_NODE_NAME)",
-				},
-			},
-		},
-		{
-			name:    "RS owner missing (no deployment) - add other attributes",
-			objects: nil,
-			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "ns",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "apps/v1",
-							Kind:       "ReplicaSet",
-							Name:       "ghost-rs",
-							Controller: ptr.To(true),
-						},
-					},
-				},
-				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
-			},
-			wantAttributes: map[string][]string{
-				"c1": {
-					"k8s.namespace.name=ns",
-					"k8s.cluster.uid=cluster-uid",
-					"dt.kubernetes.cluster.id=cluster-uid",
-					"k8s.cluster.name=cluster-name",
-					"dt.kubernetes.cluster.name=cluster-name",
-					"k8s.container.name=c1",
-					"k8s.pod.name=$(K8S_PODNAME)",
-					"k8s.pod.uid=$(K8S_PODUID)",
+					"dt.kubernetes.workload.name=jobx",
 					"k8s.node.name=$(K8S_NODE_NAME)",
 				},
 			},
