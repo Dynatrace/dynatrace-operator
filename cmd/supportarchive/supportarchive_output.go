@@ -27,9 +27,8 @@ func newSupportArchiveOutputCollector(log logd.Logger, supportArchive archiver, 
 
 func (vc supportArchiveOutputCollector) Do() error {
 	logInfof(vc.log, "Storing support archive output into %s", SupportArchiveOutputFileName)
-	vc.supportArchive.addFile(SupportArchiveOutputFileName, vc.output)
 
-	return nil
+	return vc.supportArchive.addFile(SupportArchiveOutputFileName, vc.output)
 }
 func (vc supportArchiveOutputCollector) Name() string {
 	return supportArchiveCollectorName
