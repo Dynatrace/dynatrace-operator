@@ -67,28 +67,28 @@ If the bug flew under the radar, and got discovered later:
 > We are very picky about the go version we use for development.
 > Because of some inconsistencies between go versions and golangci-lint and what we use in CI,
 
-0. Make sure you are using latest stable go version, the best palace to check is inside [`Dockerfile`](./Dockerfile)
+1. Make sure you are using latest stable go version, the best palace to check is inside [`Dockerfile`](./Dockerfile)
 
 ```sh
 make go/check-version
 ````
 
-1. Read the [coding style guide](doc/coding-style-guide.md).
+2. Read the [coding style guide](doc/coding-style-guide.md).
 
-2. Fork the dynatrace-operator repository and get the source code:
+3. Fork the dynatrace-operator repository and get the source code:
 
     ```sh
     git clone https://github.com/<your_username>/dynatrace-operator
     cd dynatrace-operator
     ```
 
-3. Install development prerequisites:
+4. Install development prerequisites:
 
    ```sh
    make prerequisites
    ```
 
-4. Create a new branch to work on:
+5. Create a new branch to work on:
 
     > Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`.
 
@@ -96,7 +96,7 @@ make go/check-version
    git checkout -b feature/your-branch
    ```
 
-5. Once the changes are finished, make sure there are no warnings in the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
+6. Once the changes are finished, make sure there are no warnings in the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
 
     > **NOTE:**
     > Unit tests can also be automatically run via pre-commit hook, installed by running `make prerequisites/setup-pre-commit`.
@@ -107,7 +107,7 @@ make go/check-version
     make test/e2e/<scope_of_the_changes>
     ```
 
-6. To test your changes on a cluster use
+7. To test your changes on a cluster use
 
     > Pushing to the default container registry (`quay.io/dynatrace/dynatrace-operator`) requires specific permissions.
     > You can use your own container registry by setting the `IMAGE` environment variable to a different value.
@@ -119,9 +119,9 @@ make go/check-version
     make build && make deploy
     ```
 
-7. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
+8. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
 
-8. A maintainer will review the pull request and make comments. It's preferable to add additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
+9. A maintainer will review the pull request and make comments. It's preferable to add additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
 
 ## Unit tests
 
