@@ -17,7 +17,11 @@ import (
 const (
 	// MaxNameLength is the maximum length of a DynaKube's name, we tend to add suffixes to the name to avoid name collisions for resources related to the DynaKube. (example: dkName-activegate-<some-hash>)
 	// The limit is necessary because kubernetes uses the name of some resources (ActiveGate StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)
-	MaxNameLength = 40
+	//
+	// Here are the maximum name lengths for Pod-owning resources that the operator deploys:
+	//  - Deployment/DaemonSet: 57. Longer names will lead to the name being truncated at the end in order to make space for the Pod name.
+	//  - StatefulSet: 53. Longer names will lead to failing Pod creation due to exceeding the 63 character limit for the label value.
+	MaxNameLength = 32
 
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix = "-pull-secret"
@@ -69,7 +73,7 @@ func (dk *DynaKube) PullSecretName() string {
 	return dk.Name + PullSecretSuffix
 }
 
-// PullSecretsNames returns the names of the pull secrets to be used for immutable images.
+// PullSecretNames returns the names of the pull secrets to be used for immutable images.
 func (dk *DynaKube) PullSecretNames() []string {
 	names := []string{
 		dk.Name + PullSecretSuffix,
