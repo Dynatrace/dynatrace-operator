@@ -61,7 +61,10 @@ func (checker *CorrectnessChecker) migrateAppMounts() {
 		}
 	}
 
-	os.MkdirAll(checker.path.AppMountsBaseDir(), os.ModePerm)
+	err = os.MkdirAll(checker.path.AppMountsBaseDir(), os.ModePerm)
+	if err != nil {
+		log.Error(err, "failed to create app mounts base directory")
+	}
 
 	for _, appMount := range oldAppMounts {
 		oldPath := filepath.Dir(appMount.Path)
@@ -95,7 +98,10 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 			continue
 		}
 
-		os.MkdirAll(checker.path.DynaKubeDir(dk.Name), os.ModePerm)
+		err := os.MkdirAll(checker.path.DynaKubeDir(dk.Name), os.ModePerm)
+		if err != nil {
+			log.Error(err, "failed to create dynakube directory")
+		}
 
 		newPath := checker.path.OsAgentDir(dk.Name)
 

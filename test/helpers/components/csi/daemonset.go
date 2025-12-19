@@ -36,6 +36,6 @@ func WaitForDaemonset(namespace string) env.Func {
 
 func cleanUpPodConsumer(ctx context.Context, resource *resources.Resources) daemonset.PodConsumer {
 	return func(p corev1.Pod) {
-		pod.Exec(ctx, resource, p, "server", "rm", "-rf", dtcsi.DataPath)
+		_, _ = pod.Exec(ctx, resource, p, "server", "rm", "-rf", dtcsi.DataPath)
 	}
 }

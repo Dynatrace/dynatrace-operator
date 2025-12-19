@@ -111,9 +111,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// make sure to run this collector at the very end
-	newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
-
-	return nil
+	return newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
 }
 
 func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) string {
