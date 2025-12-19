@@ -64,14 +64,14 @@ If the bug flew under the radar, and got discovered later:
 
 ## Quick start
 
-> We are very picky about the go version we use for development.
-> Because of some inconsistencies between go versions and golangci-lint and what we use in CI,
+> **Important:** Use the exact Go version specified in the Dockerfile.
+> Mismatched versions can cause golangci-lint inconsistencies and CI failures.
 
-1. Make sure you are using latest stable go version, the best palace to check is inside [`Dockerfile`](./Dockerfile)
+1. Verify your Go version matches the [`Dockerfile`](./Dockerfile):
 
 ```sh
 make go/check-version
-````
+```
 
 2. Read the [coding style guide](doc/coding-style-guide.md).
 
