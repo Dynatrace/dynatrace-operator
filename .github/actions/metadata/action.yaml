@@ -5,9 +5,6 @@ inputs:
     description: The platforms for which the image will be built
     default: linux/amd64,linux/arm64
     required: true
-  annotation:
-    description: The annotation added to the built image
-    required: false
   dockerfile:
     description: The path to the Dockerfile to be used
     default: ./Dockerfile
@@ -89,5 +86,4 @@ runs:
           # all other branches including 'release-*' branches except 'main'
           type=raw,value=snapshot-${{ steps.sanitize.outputs.ref_name }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
         annotations: |
-          ${{ inputs.annotation }}
           version=${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
