@@ -73,7 +73,6 @@ If the bug flew under the radar, and got discovered later:
 make go/check-version
 ````
 
-
 1. Read the [coding style guide](doc/coding-style-guide.md).
 
 2. Fork the dynatrace-operator repository and get the source code:
