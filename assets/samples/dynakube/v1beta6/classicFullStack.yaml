@@ -1,0 +1,232 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+
+  # Required: Dynatrace apiUrl including the `/api` path at the end.
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Optional: Name of the secret holding the tokens used for connecting to Dynatrace.
+  #
+  # tokens: ""
+
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment
+  #
+  # customPullSecret: "custom-pull-secret"
+
+  # Optional: Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
+  #
+  # skipCertCheck: false
+
+  # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+  #
+  # proxy:
+  #   value: my-proxy-url.com
+  #   valueFrom: name-of-my-proxy-secret
+
+  # Optional: Add custom RootCAs from a configmap.
+  #
+  # trustedCAs: name-of-my-ca-configmap
+
+  # Optional: Set a network zone for the OneAgent and ActiveGate pods.
+  #
+  # networkZone: name-of-my-network-zone
+
+  # Optional: Configure istio to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate pods.
+  #
+  # enableIstio: true
+
+  # Optional: Minimum minutes between Dynatrace API requests.
+  #
+  # dynatraceApiRequestThreshold: 15
+
+  # Configuration for Metadata Enrichment.
+  #
+  # metadataEnrichment:
+  #   enabled: true
+
+    # Optional: The namespaces where you want Dynatrace Operator to inject
+    #
+    # namespaceSelector:
+    #   matchLabels:
+    #     app: my-app
+    #   matchExpressions:
+    #   - key: app
+    #     operator: In
+    #     values: [my-frontend, my-backend, my-database]
+
+  # Configuration for Log monitoring.
+  #
+  # logMonitoring: {}
+
+    # Optional: Specifies the rules and conditions for matching ingest attributes.
+    #
+    # ingestRuleMatchers:
+    #   - attribute: "k8s.namespace.name"
+    #     values:
+    #       - "kube-system"
+    #       - "dynatrace"
+    #       - "default"
+    #   - attribute: "k8s.pod.annotation",
+    #     values:
+    #       - "logs.dynatrace.com/ingest=true"
+    #       - "category=security"
+
+  # Configuration for OneAgent
+  #
+  oneAgent:
+    # Optional: Set a host group for OneAgent
+    #
+    # hostGroup: ""
+
+    classicFullStack:
+      # Optional: Specify the node selector that controls on which nodes OneAgent will be deployed.
+      #
+      # nodeSelector: {}
+
+      # Optional: Assign a priority class to the OneAgent pods.
+      #
+      # priorityClassName: priority-class
+
+      # Optional: Tolerations to include with the OneAgent DaemonSet.
+      #
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+
+      # Optional: Resource settings for OneAgent container.
+      #
+      # oneAgentResources:
+      #   requests:
+      #     cpu: 100m
+      #     memory: 512Mi
+      #   limits:
+      #     cpu: 300m
+      #     memory: 1.5Gi
+
+      # Optional: Set additional arguments to the OneAgent installer.
+      #
+      # args: []
+
+      # Optional: Set additional environment variables for the OneAgent pods.
+      #
+      # env: []
+
+      # Optional: Disable automatic restarts of OneAgent pods in case a new version is available
+      #
+      # autoUpdate: true
+
+      # Optional: Set the DNS Policy for OneAgent pods.
+      #
+      # dnsPolicy: "ClusterFirstWithHostNet"
+
+      # Optional: Add custom OneAgent annotations.
+      #
+      # annotations:
+      #   custom: annotation
+
+      # Optional: Add custom labels to OneAgent pods
+      #
+      # labels:
+      #   custom: label
+
+      # Optional: Use a custom OneAgent image.
+      #
+      # image: ""
+
+      # Optional: The OneAgent version to be used.
+      # Example: <major>.<minor>.<release>.<timestamp>, e.g. 1.200.0.20240101-000000
+      #
+      # version: ""
+
+      # Optional: The SecComp Profile that will be configured in order to run in secure computing mode.
+      #
+      # secCompProfile: ""
+
+  # Configuration for ActiveGate instances.
+  #
+  activeGate:
+    # Defines the ActiveGate capabilities
+    #
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+      - dynatrace-api
+
+    # Optional: Amount of replicas of ActiveGate pods.
+    #
+    # replicas: 1
+
+    # Optional: Use a custom ActiveGate image
+    #
+    # image: ""
+
+    # Optional: Set the ActiveGate group
+    #
+    # group: ""
+
+    # Optional: Add a custom properties file by providing it as a value or by referencing it from a secret.
+    #
+    # customProperties:
+    #   value: |
+    #     [connectivity]
+    #     networkZone=
+    #   valueFrom: myCustomPropertiesSecret
+
+    # Optional: Resource settings for ActiveGate container.
+    #
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1.5Gi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
+
+    # Optional: Specify the node selector that controls on which nodes ActiveGate will be deployed.
+    #
+    # nodeSelector: {}
+
+    # Optional: Set tolerations for the ActiveGate pods.
+    #
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+    #   operator: Exists
+
+    # Optional: Add custom labels to ActiveGate pods
+    #
+    # labels:
+    #   custom: label
+
+    # Optional: Add custom environment variables to ActiveGate pods
+    #
+    # env: []
+
+    # Optional: Name of a secret containing ActiveGate TLS certificate, key, and password.
+    #
+    # tlsSecretName: "my-tls-secret"
+
+    # Optional: Set the DNS policy for ActiveGate pods.
+    #
+    # dnsPolicy: "Default"
+
+    # Optional: Assign a priority class to the ActiveGate pods.
+    #
+    # priorityClassName: priority-class
+
+    # Optional: Add custom annotations to ActiveGate pods
+    #
+    # annotations:
+    #   custom: annotation
+
+    # Optional: Add TopologySpreadConstraints to the ActiveGate pods
+    #
+    # topologySpreadConstraints: []

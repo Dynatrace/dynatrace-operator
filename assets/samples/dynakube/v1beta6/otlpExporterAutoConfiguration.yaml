@@ -1,0 +1,68 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+
+spec:
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+
+  # Required: Dynatrace apiUrl including the `/api` path at the end.
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Optional: Name of the secret holding the tokens used for connecting to Dynatrace.
+  #
+  # tokens: ""
+
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment
+  #
+  # customPullSecret: "custom-pull-secret"
+
+  # Optional: Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
+  #
+  # skipCertCheck: false
+
+  # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+  #
+  # proxy:
+  #   value: my-proxy-url.com
+  #   valueFrom: name-of-my-proxy-secret
+
+  # Optional: Add custom RootCAs from a configmap.
+  #
+  # trustedCAs: name-of-my-ca-configmap
+
+  # Optional: Set a network zone for the OneAgent and ActiveGate pods.
+  #
+  # networkZone: name-of-my-network-zone
+
+  # Optional: Configure istio to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate pods.
+  #
+  # enableIstio: true
+
+  # Optional: Minimum minutes between Dynatrace API requests.
+  #
+  # dynatraceApiRequestThreshold: 15
+
+  # Enable automatic configuration of the OTLP exporter in applications that are instrumented with OpenTelemetry SDKs.
+  # Without a local in-cluster ActiveGate ingested data is sent directly to your tenant.
+  otlpExporterConfiguration:
+
+    # Configure for which signals the OTLP exporter configuration should be automatically injected.
+    signals:
+      metrics: {}
+      traces: {}
+      logs: {}
+
+      # Optional: The namespaces where you want Dynatrace Operator to inject the OTLP exporter configuration.
+      #
+      # namespaceSelector:
+      #   matchLabels:
+      #     app: my-app
+      #   matchExpressions:
+      #   - key: app
+      #     operator: In
+      #     values: [my-frontend, my-backend, my-database]
+
+      # Optional: Override OTLP configuration environment variables in case they are already set in the application pods.
+      # overrideEnvVars: true

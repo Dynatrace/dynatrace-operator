@@ -1,0 +1,177 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+
+spec:
+  # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+
+  # Required: Dynatrace apiUrl including the `/api` path at the end.
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Optional: Name of the secret holding the tokens used for connecting to Dynatrace.
+  #
+  # tokens: ""
+
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment
+  #
+  # customPullSecret: "custom-pull-secret"
+
+  # Optional: Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
+  #
+  # skipCertCheck: false
+
+  # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+  #
+  # proxy:
+  #   value: my-proxy-url.com
+  #   valueFrom: name-of-my-proxy-secret
+
+  # Optional: Add custom RootCAs from a configmap.
+  #
+  # trustedCAs: name-of-my-ca-configmap
+
+  # Optional: Set a network zone for the OneAgent and ActiveGate pods.
+  #
+  # networkZone: name-of-my-network-zone
+
+  # Optional: Configure istio to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate pods.
+  #
+  # enableIstio: true
+
+  # Optional: Minimum minutes between Dynatrace API requests.
+  #
+  # dynatraceApiRequestThreshold: 15
+
+  # Activate a local in-cluster ActiveGate to ingest telemetry data.
+  activeGate:
+    # Defines the ActiveGate capabilities
+    #
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+      - dynatrace-api
+
+    # Optional: Amount of replicas of ActiveGate pods.
+    #
+    # replicas: 1
+
+    # Optional: Use a custom ActiveGate image
+    #
+    # image: ""
+
+    # Optional: Set the ActiveGate group
+    #
+    # group: ""
+
+    # Optional: Add a custom properties file by providing it as a value or by referencing it from a secret.
+    #
+    # customProperties:
+    #   value: |
+    #     [connectivity]
+    #     networkZone=
+    #   valueFrom: myCustomPropertiesSecret
+
+    # Optional: Resource settings for ActiveGate container.
+    #
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1.5Gi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
+
+    # Optional: Specify the node selector that controls on which nodes ActiveGate will be deployed.
+    #
+    # nodeSelector: {}
+
+    # Optional: Set tolerations for the ActiveGate pods.
+    #
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+    #   operator: Exists
+
+    # Optional: Add custom labels to ActiveGate pods
+    #
+    # labels:
+    #   custom: label
+
+    # Optional: Add custom environment variables to ActiveGate pods
+    #
+    # env: []
+
+    # Optional: Name of a secret containing ActiveGate TLS certificate, key, and password.
+    #
+    # tlsSecretName: "my-tls-secret"
+
+    # Optional: Set the DNS policy for ActiveGate pods.
+    #
+    # dnsPolicy: "Default"
+
+    # Optional: Assign a priority class to the ActiveGate pods.
+    #
+    # priorityClassName: priority-class
+
+    # Optional: Add custom annotations to ActiveGate pods
+    #
+    # annotations:
+    #   custom: annotation
+
+    # Optional: Add TopologySpreadConstraints to the ActiveGate pods
+    #
+    # topologySpreadConstraints: []
+
+  # Enable telemetry ingest. Ingested data is sent to the local in-cluster ActiveGate.
+  telemetryIngest:
+
+    # All protocols are enabled, you can choose to enable only the ones you need
+    protocols:
+    - otlp
+    - zipkin
+    - jaeger
+    - statsd
+
+    # Optional: Name of secret holding a TLS certificate to secure the telemetry ingest endpoints.
+    #
+    tlsRefName: my-tls-secret
+
+    # Optional: Name of the telemetry ingest service that your applications should use.
+    # This will result in the service name telemetry-ingest.dynatrace.svc
+    #
+    serviceName: telemetry-ingest
+
+  templates:
+    otelCollector:
+      # Optional: Configure the image for the OTel Collector pods.
+      imageRef:
+        repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
+        tag: <tag>
+
+      # Optional: Add custom labels to OTel Collector pods.
+      #
+      # labels:
+      #   custom: label
+
+      # Optional: Add custom annotations to OTel Collector pods.
+      #
+      # annotations:
+      #   custom: annotation
+
+      # Optional: Number of replicas for the OTel Collector pods.
+      #
+      # replicas: 1
+
+      # Optional: Tolerations to include with the OTel Collector deployment.
+      #
+      # tolerations: {}
+
+      # Optional: Resource settings for OTel collector container.
+      #
+      # resources: {}
+
+      # Optional: Add TopologySpreadConstraints to the OTel Collector pods
+      #
+      # topologySpreadConstraints: []
