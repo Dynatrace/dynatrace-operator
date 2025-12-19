@@ -1,6 +1,7 @@
 package resourceattributes
 
 import (
+	"net/url"
 	"strings"
 	"testing"
 
@@ -342,6 +343,49 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			}
 		})
 	}
+}
+
+func Test_Mutator_EncodesClusterNameWithSpecialChars(t *testing.T) {
+	_ = appsv1.AddToScheme(scheme.Scheme)
+	_ = corev1.AddToScheme(scheme.Scheme)
+
+	baseDK := latestdynakube.DynaKube{}
+	baseDK.Status.KubeSystemUUID = "cluster-uid"
+	baseDK.Status.KubernetesClusterName = "bh-eks-test1 with space=equals,comma"
+	baseDK.Status.KubernetesClusterMEID = "cluster-meid"
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Namespace: "ns"},
+		Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+	}
+
+	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
+
+	client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+	mut := New(client)
+
+	req := dtwebhook.NewMutationRequest(
+		t.Context(),
+		namespace,
+		nil,
+		pod,
+		baseDK,
+	)
+	err := mut.Mutate(req)
+	require.NoError(t, err)
+
+	var ra string
+	for _, e := range pod.Spec.Containers[0].Env {
+		if e.Name == "OTEL_RESOURCE_ATTRIBUTES" {
+			ra = e.Value
+
+			break
+		}
+	}
+	require.NotEmpty(t, ra, "OTEL_RESOURCE_ATTRIBUTES must be set")
+
+	expected := "k8s.cluster.name=" + url.QueryEscape("bh-eks-test1 with space=equals,comma")
+	assert.Contains(t, ra, expected)
 }
 
 // Abort mutation if owner reference cannot be resolved, be consistent with metadata mutator
