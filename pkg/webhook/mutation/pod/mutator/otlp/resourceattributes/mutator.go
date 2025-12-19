@@ -70,7 +70,7 @@ func (m *Mutator) mutate(ctx context.Context, request *dtwebhook.BaseRequest) (b
 		}
 	}
 
-	annotationAttributes := SanitizeMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
+	annotationAttributes := sanitizeMap(metadata.CopyMetadataFromNamespace(request.Pod, request.Namespace, request.DynaKube))
 
 	for i := range request.Pod.Spec.Containers {
 		c := &request.Pod.Spec.Containers[i]
@@ -116,6 +116,8 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 		"k8s.pod.uid":                  "$(K8S_PODUID)",
 		"k8s.node.name":                "$(K8S_NODE_NAME)",
 	}
+
+	kubernetesMetaDataAttributes = sanitizeMap(kubernetesMetaDataAttributes)
 
 	// add workload Attributes (only once fetched per pod, but appended per container to env var if not already present)
 	if ownerInfo != nil {
