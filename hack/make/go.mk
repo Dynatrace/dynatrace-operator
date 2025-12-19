@@ -1,3 +1,12 @@
+LOCAL_GO_VERSION := $(shell go version | awk '{print $$3}')
+DOCKER_GO_VERSION := $(shell cat Dockerfile | grep golang | cut -d "@" -f1 | cut -d ":" -f2)
+## Check go version
+go/check-version:
+	@if [ "$(LOCAL_GO_VERSION)" != "go$(DOCKER_GO_VERSION)" ]; then \
+		echo "Go version mismatch: Local version is $(LOCAL_GO_VERSION) but Dockerfile requires go$(DOCKER_GO_VERSION)"; \
+		exit 1; \
+	fi
+
 ## Runs golangci-lint
 go/golangci:
 	$(GOLANGCI_LINT) run --fix --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s

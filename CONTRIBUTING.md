@@ -70,15 +70,7 @@ If the bug flew under the radar, and got discovered later:
 0. Make sure you are using latest stable go version, the best palace to check is inside [`Dockerfile`](./Dockerfile)
 
 ```sh
-cat Dockerfile | grep golang | awk '{print $3}'
-golang:1.25.5@sha256:20b91eda7a9627c127c0225b0d4e8ec927b476fa4130c6760928b849d769c149
-```
-
-and local go version
-
-```sh
-go version | awk '{print $3}'
-go1.25.5
+make go/check-version
 ````
 
 
