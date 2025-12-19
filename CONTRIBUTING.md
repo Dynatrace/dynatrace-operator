@@ -64,6 +64,25 @@ If the bug flew under the radar, and got discovered later:
 
 ## Quick start
 
+> [!NOTE] go version
+> We are very picky about the go version we use for development.
+> Because of some inconsistencies between go versions and golangci-lint and what we use in CI,
+
+0. Make sure you are using latest stable go version, the best palace to check is inside [`Dockerfile`](./Dockerfile)
+
+```sh
+cat Dockerfile | grep golang | awk '{print $3}'
+golang:1.25.5@sha256:20b91eda7a9627c127c0225b0d4e8ec927b476fa4130c6760928b849d769c149
+```
+
+and local go version
+
+```sh
+go version | awk '{print $3}'
+go1.25.5
+````
+
+
 1. Read the [coding style guide](doc/coding-style-guide.md).
 
 2. Fork the dynatrace-operator repository and get the source code:
