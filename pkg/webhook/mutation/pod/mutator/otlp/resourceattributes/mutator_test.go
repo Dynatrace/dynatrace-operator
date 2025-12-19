@@ -374,18 +374,11 @@ func Test_Mutator_EncodesClusterNameWithSpecialChars(t *testing.T) {
 	err := mut.Mutate(req)
 	require.NoError(t, err)
 
-	var ra string
-	for _, e := range pod.Spec.Containers[0].Env {
-		if e.Name == "OTEL_RESOURCE_ATTRIBUTES" {
-			ra = e.Value
-
-			break
-		}
-	}
-	require.NotEmpty(t, ra, "OTEL_RESOURCE_ATTRIBUTES must be set")
+	resourceAttributes := k8senv.Find(pod.Spec.Containers[0].Env, "OTEL_RESOURCE_ATTRIBUTES").Value
+	require.NotEmpty(t, resourceAttributes, "OTEL_RESOURCE_ATTRIBUTES must be set")
 
 	expected := "k8s.cluster.name=" + url.QueryEscape("bh-eks-test1 with space=equals,comma")
-	assert.Contains(t, ra, expected)
+	assert.Contains(t, resourceAttributes, expected)
 }
 
 // Abort mutation if owner reference cannot be resolved, be consistent with metadata mutator
