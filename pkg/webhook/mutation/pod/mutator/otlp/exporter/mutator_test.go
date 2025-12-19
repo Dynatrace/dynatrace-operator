@@ -135,6 +135,17 @@ func TestMutator_IsInjected(t *testing.T) {
 }
 
 func TestMutator_Mutate(t *testing.T) { //nolint:revive
+	const (
+		testCustomTracesEndpoint     = "http://user-endpoint/api/v2/otlp/traces"
+		testCustomMetricsEndpoint    = "http://user-endpoint/api/v2/otlp/metrics"
+		testCustomLogsEndpoint       = "http://user-endpoint/api/v2/otlp/logs"
+		testCustomProtocol           = "grpc"
+		testDynatraceTracesEndpoint  = "http://my-cluster/api/v2/otlp/v1/traces"
+		testDynatraceMetricsEndpoint = "http://my-cluster/api/v2/otlp/v1/metrics"
+		testDynatraceLogsEndpoint    = "http://my-cluster/api/v2/otlp/v1/logs"
+		testDynatraceProtocol        = "http/protobuf"
+	)
+
 	t.Run("no OTLP exporter configuration present on DynaKube - do not modify anything", func(t *testing.T) {
 		m := Mutator{}
 
@@ -189,23 +200,23 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify traces exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/v1/traces",
+			Value: testDynatraceTracesEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceProtocolEnv,
-			Value: "http/protobuf",
+			Value: testDynatraceProtocol,
 		})
 
 		// verify metrics exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
+			Value: testDynatraceMetricsEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsProtocolEnv,
-			Value: "http/protobuf",
+			Value: testDynatraceProtocol,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
@@ -216,18 +227,79 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify logs exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/v1/logs",
+			Value: testDynatraceLogsEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsProtocolEnv,
-			Value: "http/protobuf",
+			Value: testDynatraceProtocol,
 		})
 
 		// verify headers env vars added with Authorization header referencing DT_API_TOKEN
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{Name: OTLPTraceHeadersEnv, Value: OTLPAuthorizationHeader})
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{Name: OTLPMetricsHeadersEnv, Value: OTLPAuthorizationHeader})
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{Name: OTLPLogsHeadersEnv, Value: OTLPAuthorizationHeader})
+
+		// verify DT_API_TOKEN secret ref env var
+		assertTokenEnvVarIsSet(t, containerEnvVars)
+	})
+	t.Run("no user defined env vars present, only metrics configured, add only metrics OTLP exporter env vars", func(t *testing.T) {
+		m := Mutator{}
+
+		dk := getTestDynakube()
+		dk.Spec.OTLPExporterConfiguration = &otlp.ExporterConfigurationSpec{
+			Signals: otlp.SignalConfiguration{
+				Metrics: &otlp.MetricsSignal{},
+			},
+		}
+
+		request := createTestMutationRequest(t, dk)
+
+		request.DynaKube.Spec.APIURL = "http://my-cluster/api"
+
+		err := m.Mutate(request)
+
+		require.NoError(t, err)
+
+		containerEnvVars := request.Pod.Spec.Containers[0].Env
+
+		// verify traces exporter env vars not set
+		assert.NotContains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPTraceEndpointEnv,
+			Value: testDynatraceTracesEndpoint,
+		})
+
+		assert.NotContains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPTraceProtocolEnv,
+			Value: testDynatraceProtocol,
+		})
+
+		// verify metrics exporter env vars
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPMetricsEndpointEnv,
+			Value: testDynatraceMetricsEndpoint,
+		})
+
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPMetricsProtocolEnv,
+			Value: testDynatraceProtocol,
+		})
+
+		// verify logs exporter env vars not set
+		assert.NotContains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPLogsEndpointEnv,
+			Value: testDynatraceLogsEndpoint,
+		})
+
+		assert.NotContains(t, containerEnvVars, corev1.EnvVar{
+			Name:  OTLPLogsProtocolEnv,
+			Value: testDynatraceProtocol,
+		})
+
+		// verify headers env vars added with Authorization header referencing DT_API_TOKEN
+		assert.NotContains(t, containerEnvVars, corev1.EnvVar{Name: OTLPTraceHeadersEnv, Value: OTLPAuthorizationHeader})
+		assert.Contains(t, containerEnvVars, corev1.EnvVar{Name: OTLPMetricsHeadersEnv, Value: OTLPAuthorizationHeader})
+		assert.NotContains(t, containerEnvVars, corev1.EnvVar{Name: OTLPLogsHeadersEnv, Value: OTLPAuthorizationHeader})
 
 		// verify DT_API_TOKEN secret ref env var
 		assertTokenEnvVarIsSet(t, containerEnvVars)
@@ -242,27 +314,27 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
 			{
 				Name:  OTLPTraceEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/traces",
+				Value: testCustomTracesEndpoint,
 			},
 			{
 				Name:  OTLPTraceProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 			{
 				Name:  OTLPMetricsEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/metrics",
+				Value: testCustomMetricsEndpoint,
 			},
 			{
 				Name:  OTLPMetricsProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 			{
 				Name:  OTLPLogsEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/logs",
+				Value: testCustomLogsEndpoint,
 			},
 			{
 				Name:  OTLPLogsProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 		}
 
@@ -275,34 +347,34 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify traces exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/traces",
+			Value: testCustomTracesEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceProtocolEnv,
-			Value: "grpc",
+			Value: testCustomProtocol,
 		})
 
 		// verify metrics exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/metrics",
+			Value: testCustomMetricsEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsProtocolEnv,
-			Value: "grpc",
+			Value: testCustomProtocol,
 		})
 
 		// verify logs exporter env vars
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/logs",
+			Value: testCustomLogsEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPLogsProtocolEnv,
-			Value: "grpc",
+			Value: testCustomProtocol,
 		})
 
 		// verify no headers or token env vars were added due to skip
@@ -325,7 +397,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 			},
 			{
 				Name:  OTLPExporterProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 		}
 
@@ -342,7 +414,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPExporterProtocolEnv,
-			Value: "grpc",
+			Value: testCustomProtocol,
 		})
 
 		// verify traces exporter env vars are not added
@@ -383,7 +455,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 			},
 			{
 				Name:  OTLPExporterProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 		}
 
@@ -400,7 +472,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPExporterProtocolEnv,
-			Value: "grpc",
+			Value: testCustomProtocol,
 		})
 
 		// verify traces exporter env vars are not added
@@ -410,12 +482,12 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
+			Value: testDynatraceMetricsEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsProtocolEnv,
-			Value: "http/protobuf",
+			Value: testDynatraceProtocol,
 		})
 
 		// headers for metrics are added, traces/logs are not
@@ -439,11 +511,11 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
 			{
 				Name:  OTLPTraceEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/traces",
+				Value: testCustomTracesEndpoint,
 			},
 			{
 				Name:  OTLPTraceProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 		}
 
@@ -456,12 +528,12 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify user defined env vars are kept as they are
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/traces",
+			Value: testCustomTracesEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceProtocolEnv,
-			Value: "grpc",
+			Value: testCustomProtocol,
 		})
 
 		// verify metrics exporter env vars are not added
@@ -493,19 +565,19 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
 			{
 				Name:  OTLPTraceEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/traces",
+				Value: testCustomTracesEndpoint,
 			},
 			{
 				Name:  OTLPTraceProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 			{
 				Name:  OTLPMetricsEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/metrics",
+				Value: testCustomMetricsEndpoint,
 			},
 			{
 				Name:  OTLPMetricsProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 		}
 
@@ -518,23 +590,23 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify user defined env vars are kept as they are
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/traces",
+			Value: testCustomTracesEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceProtocolEnv,
-			Value: "grpc",
+			Value: testCustomProtocol,
 		})
 
 		// verify metrics exporter env vars are added
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsEndpointEnv,
-			Value: "http://my-cluster/api/v2/otlp/v1/metrics",
+			Value: testDynatraceMetricsEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPMetricsProtocolEnv,
-			Value: "http/protobuf",
+			Value: testDynatraceProtocol,
 		})
 
 		// verify logs exporter env vars are not added
@@ -554,11 +626,11 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		request.Pod.Spec.Containers[0].Env = []corev1.EnvVar{
 			{
 				Name:  OTLPTraceEndpointEnv,
-				Value: "http://user-endpoint/api/v2/otlp/traces",
+				Value: testCustomTracesEndpoint,
 			},
 			{
 				Name:  OTLPTraceProtocolEnv,
-				Value: "grpc",
+				Value: testCustomProtocol,
 			},
 		}
 
@@ -571,12 +643,12 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		// verify user defined env vars are kept as they are
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceEndpointEnv,
-			Value: "http://user-endpoint/api/v2/otlp/traces",
+			Value: testCustomTracesEndpoint,
 		})
 
 		assert.Contains(t, containerEnvVars, corev1.EnvVar{
 			Name:  OTLPTraceProtocolEnv,
-			Value: "grpc",
+			Value: testCustomProtocol,
 		})
 
 		// verify metrics exporter env vars are not added

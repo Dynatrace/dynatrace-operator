@@ -151,11 +151,13 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 						},
 					},
 				},
-				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1", Env: []corev1.EnvVar{{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "foo=bar"}}}}},
+				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1", Env: []corev1.EnvVar{{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "foo=bar,five=even,john=dow"}}}}},
 			},
 			wantAttributes: map[string][]string{
 				"c1": {
-					"foo=bar", // pre-existing
+					"foo=bar",   // pre-existing
+					"five=even", // pre-existing
+					"john=dow",  // pre-existing
 					"k8s.namespace.name=ns",
 					"k8s.cluster.uid=cluster-uid",
 					"dt.kubernetes.cluster.id=cluster-uid",
@@ -173,15 +175,27 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			},
 		},
 		{
-			name:    "no workload info when no owners",
+			name:    "pod is it's own owner",
 			objects: nil,
+
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{Namespace: "ns"},
-				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "pod1",
+					Namespace: "ns",
+				},
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 			},
 			namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
 			wantAttributes: map[string][]string{
 				"c1": {
+					"k8s.workload.name=pod1",
+					"dt.kubernetes.workload.name=pod1",
+					"k8s.workload.kind=pod",
+					"dt.kubernetes.workload.kind=pod",
 					"k8s.pod.name=$(K8S_PODNAME)",
 					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.node.name=$(K8S_NODE_NAME)",
@@ -220,12 +234,12 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.name=cluster-name",
 					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c1",
+					"k8s.pod.name=$(K8S_PODNAME)",
+					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.workload.kind=job",
 					"dt.kubernetes.workload.kind=job",
 					"k8s.workload.name=jobx",
 					"dt.kubernetes.workload.name=jobx",
-					"k8s.pod.name=$(K8S_PODNAME)",
-					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.node.name=$(K8S_NODE_NAME)",
 				},
 				"c2": {
@@ -235,20 +249,19 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					"k8s.cluster.name=cluster-name",
 					"dt.entity.kubernetes_cluster=cluster-meid",
 					"k8s.container.name=c2",
+					"k8s.pod.name=$(K8S_PODNAME)",
+					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.workload.kind=job",
 					"dt.kubernetes.workload.kind=job",
 					"k8s.workload.name=jobx",
 					"dt.kubernetes.workload.name=jobx",
-					"k8s.pod.name=$(K8S_PODNAME)",
-					"k8s.pod.uid=$(K8S_PODUID)",
 					"k8s.node.name=$(K8S_NODE_NAME)",
 				},
 			},
 		},
 		{
-			name:      "container excluded via annotation is skipped",
-			objects:   nil,
-			namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
+			name:    "container excluded via annotation is skipped",
+			objects: nil,
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace:   "ns",
@@ -317,6 +330,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					// ensure that each expected attribute appears exactly once
 					assert.Equal(t, 1, count, "expected attr %s to appear exactly once; got %v", expected, resourceAttributes)
 				}
+
 				// verify env vars for pod/node references present with correct field paths
 				var podNameVar, podUIDVar, nodeNameVar *corev1.EnvVar
 
