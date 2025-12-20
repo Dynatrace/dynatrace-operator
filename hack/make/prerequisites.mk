@@ -29,7 +29,7 @@ CYCLONEDX_GOMOD_VERSION ?= v1.9.0
 # renovate depName=github.com/mikefarah/yq/v4
 YQ_VERSION ?= v4.49.2
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.18.0
+GO_TEST_COVERAGE_VERSION ?= v2.18.2
 
 # Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
