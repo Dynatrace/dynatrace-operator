@@ -52,10 +52,24 @@ func TestSanitizeMap(t *testing.T) {
 	input := map[string]string{
 		annotKey: annotVal,
 	}
-	attrs := SanitizeMap(input)
+	attrs := sanitizeMap(input)
 	require.Len(t, attrs, 1)
 	encoded := url.QueryEscape(annotVal)
 	assert.Equal(t, encoded, attrs["service.name"])
+}
+
+func TestSanitizeMapPreservesEnvRefsAndEncodesValues(t *testing.T) {
+	input := map[string]string{
+		"k8s.pod.name":     "$(K8S_PODNAME)",
+		"k8s.cluster.name": "bh-eks-test1 with space=equals,comma",
+	}
+
+	sanitized := sanitizeMap(input)
+
+	assert.Equal(t, "$(K8S_PODNAME)", sanitized["k8s.pod.name"])
+
+	expected := url.QueryEscape("bh-eks-test1 with space=equals,comma")
+	assert.Equal(t, expected, sanitized["k8s.cluster.name"])
 }
 
 func TestAttributesMerge(t *testing.T) {
@@ -94,7 +108,7 @@ func TestAttributes(t *testing.T) {
 	require.True(t, found)
 	annotKey := "custom.key"
 	annotVal := "value:with/special chars"
-	mapAttrs := SanitizeMap(map[string]string{annotKey: annotVal})
+	mapAttrs := sanitizeMap(map[string]string{annotKey: annotVal})
 	mutated := envAttrs.Merge(mapAttrs)
 	assert.True(t, mutated)
 	// ensure encoded value is present
