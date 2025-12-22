@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -137,44 +137,27 @@ func (collector k8sResourceCollector) readWebhookConfigurations() (*unstructured
 
 func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstructured.UnstructuredList, error) {
 	resourceList := &unstructured.UnstructuredList{}
-	resourceList.SetGroupVersionKind(toGroupVersionKind(v1.SchemeGroupVersion, v1.CustomResourceDefinition{}))
+	resourceList.SetGroupVersionKind(toGroupVersionKind(apiextensionsv1.SchemeGroupVersion, apiextensionsv1.CustomResourceDefinition{}))
 
-	_, resources, err := collector.discoveryClient.ServerGroupsAndResources()
-	if err != nil {
+	var dynaKube apiextensionsv1.CustomResourceDefinition
+	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dynakubes.dynatrace.com"}, &dynaKube); err != nil {
 		return nil, err
 	}
 
-	crds := map[string]unstructured.Unstructured{}
-
-	for _, resource := range resources {
-		if strings.Contains(resource.GroupVersion, crdNameSuffix) {
-			for _, apiResource := range resource.APIResources {
-				// Not only the CRDs but also their statuses are listed. As we are only interested in the CRDs I have to exclude those statuses
-				if !strings.Contains(apiResource.Name, "/status") {
-					var crd v1.CustomResourceDefinition
-
-					err = collector.apiReader.Get(collector.context, client.ObjectKey{Name: fmt.Sprintf("%s.%s", apiResource.Name, crdNameSuffix)}, &crd)
-					if err != nil {
-						return nil, err
-					}
-
-					crds[apiResource.Name] = collector.getCRD(crd)
-				}
-			}
-		}
+	var edgeConnect apiextensionsv1.CustomResourceDefinition
+	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "edgeconnects.dynatrace.com"}, &edgeConnect); err != nil {
+		return nil, err
 	}
 
-	for _, crd := range crds {
-		resourceList.Items = append(resourceList.Items, crd)
-	}
+	resourceList.Items = append(resourceList.Items, collector.getCRD(dynaKube), collector.getCRD(edgeConnect))
 
 	return resourceList, nil
 }
 
-func (collector k8sResourceCollector) getCRD(customResourceDefinition v1.CustomResourceDefinition) unstructured.Unstructured {
+func (collector k8sResourceCollector) getCRD(customResourceDefinition apiextensionsv1.CustomResourceDefinition) unstructured.Unstructured {
 	return unstructured.Unstructured{
 		Object: map[string]any{
-			"apiVersion": v1.GroupName,
+			"apiVersion": apiextensionsv1.GroupName,
 			"kind":       CRDKindName,
 			"metadata":   customResourceDefinition.ObjectMeta,
 			"spec":       customResourceDefinition.Spec,

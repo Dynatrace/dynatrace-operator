@@ -24,12 +24,16 @@ func newSupportArchiveLogger(logBuffer *bytes.Buffer) logd.Logger {
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	return logd.Logger{
-		Logger: ctrlzap.New(ctrlzap.WriteTo(io.MultiWriter(os.Stderr, logBuffer)), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(supportArchiveLoggerName),
+		Logger: ctrlzap.New(
+			ctrlzap.WriteTo(io.MultiWriter(os.Stderr, logBuffer)),
+			ctrlzap.Encoder(zapcore.NewConsoleEncoder(config)),
+			// Omit this file from the stacktrace
+			ctrlzap.RawZapOpts(zap.AddCallerSkip(1)),
+		).WithName(supportArchiveLoggerName),
 	}
 }
 
 func logInfof(log logd.Logger, format string, v ...any) {
-	log.V(1).Info("foobar")
 	log.Info(fmt.Sprintf(format, v...))
 }
 
