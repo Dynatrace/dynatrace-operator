@@ -26,6 +26,9 @@ func WaitFor(name string, namespace string) env.Func {
 	}
 }
 
+// WaitForDaemonset wait until DaemonSet status numberReady and desiredNumberScheduled are equal.
+// For cases when resources should already be in this state, e.g. after the initial DynaKube install,
+// [IsReady] should be used instead.
 func WaitForDaemonset(name string, namespace string) features.Func {
 	return helpers.ToFeatureFunc(WaitFor(name, namespace), true)
 }

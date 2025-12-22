@@ -9,17 +9,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
-
-func WaitForStatefulSet(dk *dynakube.DynaKube, component string) features.Func {
-	return statefulset.WaitFor(GetActiveGateStateFulSetName(dk, component), dk.Namespace)
-}
 
 func GetActiveGateStateFulSetName(dk *dynakube.DynaKube, component string) string {
 	return fmt.Sprintf("%s-%s", dk.Name, component)
