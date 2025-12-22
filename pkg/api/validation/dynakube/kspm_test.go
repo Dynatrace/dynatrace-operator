@@ -94,7 +94,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 	})
 
 	t.Run("missing kubemon but kspm enabled", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 1,
+		assertDenied(t, []string{errorKSPMMissingKubemon},
 			&dynakube.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
@@ -116,7 +116,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 	})
 
 	t.Run("both kspm and kubemon enabled, automatic k8s monitoring disabled", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 2,
+		assertDenied(t, []string{errorKSPMMissingKubemon},
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -148,7 +148,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 	})
 
 	t.Run("missing kubemon, automatic k8s monitoring disabled, but kspm enabled", func(t *testing.T) {
-		assertAllowedWithWarnings(t, 1,
+		assertDenied(t, []string{errorKSPMMissingKubemon},
 			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,

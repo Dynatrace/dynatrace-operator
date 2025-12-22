@@ -70,7 +70,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		require.NotNil(t, initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, oacommon.DefaultGroup, *initContainer.SecurityContext.RunAsGroup)
 
-		assert.Nil(t, initContainer.SecurityContext.SeccompProfile)
+		assert.NotNil(t, initContainer.SecurityContext.SeccompProfile)
 	})
 	t.Run("take security context from user container", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -131,7 +131,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 	})
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{exp.InjectionSeccompKey: "true"}
+		dk.Annotations = map[string]string{exp.InjectionSeccompKey: "true"} //nolint:staticcheck
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
@@ -362,6 +362,9 @@ func Test_securityContextForInitContainer(t *testing.T) {
 				RunAsUser:    ptr.To(int64(0)),
 				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
 				RunAsNonRoot: ptr.To(false),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			},
 		},
 		{
@@ -381,6 +384,9 @@ func Test_securityContextForInitContainer(t *testing.T) {
 				RunAsUser:    ptr.To(oacommon.DefaultGroup), // user takes precedence
 				RunAsGroup:   ptr.To(int64(0)),
 				RunAsNonRoot: ptr.To(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			},
 		},
 		{
@@ -398,6 +404,9 @@ func Test_securityContextForInitContainer(t *testing.T) {
 				RunAsUser:    ptr.To(int64(10)),
 				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
 				RunAsNonRoot: ptr.To(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			},
 		},
 		{
@@ -417,6 +426,9 @@ func Test_securityContextForInitContainer(t *testing.T) {
 				RunAsUser:    ptr.To(oacommon.DefaultGroup),
 				RunAsGroup:   ptr.To(int64(10)),
 				RunAsNonRoot: ptr.To(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			},
 		},
 		{
@@ -436,6 +448,9 @@ func Test_securityContextForInitContainer(t *testing.T) {
 				RunAsUser:    ptr.To(oacommon.DefaultGroup),
 				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
 				RunAsNonRoot: ptr.To(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			},
 		},
 		{
@@ -453,6 +468,9 @@ func Test_securityContextForInitContainer(t *testing.T) {
 				RunAsUser:    ptr.To(int64(10)), // user takes precedence
 				RunAsGroup:   ptr.To(int64(0)),
 				RunAsNonRoot: ptr.To(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			},
 		},
 		{
@@ -471,12 +489,15 @@ func Test_securityContextForInitContainer(t *testing.T) {
 				},
 				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
 				RunAsNonRoot: ptr.To(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
 			},
 		},
 		{
-			title: "init seccomp ff",
+			title: "init seccomp ff set to true",
 			dk: dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "true"}},
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "true"}}, //nolint:staticcheck
 			},
 			isOpenShift: true,
 			podSc:       corev1.PodSecurityContext{},
@@ -492,6 +513,26 @@ func Test_securityContextForInitContainer(t *testing.T) {
 				RunAsGroup:     ptr.To(oacommon.DefaultGroup),
 				RunAsNonRoot:   ptr.To(true),
 				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+			},
+		},
+		{
+			title: "init seccomp ff set to false",
+			dk: dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "false"}}, //nolint:staticcheck
+			},
+			isOpenShift: true,
+			podSc:       corev1.PodSecurityContext{},
+			expectedOut: corev1.SecurityContext{
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
+				Privileged:               ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsGroup:   ptr.To(oacommon.DefaultGroup),
+				RunAsNonRoot: ptr.To(true),
 			},
 		},
 	}

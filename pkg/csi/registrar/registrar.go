@@ -62,7 +62,12 @@ func (s Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	defer removeExistingSocketFile(socketPath)
+	defer func() {
+		err := removeExistingSocketFile(socketPath)
+		if err != nil {
+			log.Error(err, "failed to clean up socket file")
+		}
+	}()
 
 	var oldmask int
 	if runtime.GOOS == "linux" {
