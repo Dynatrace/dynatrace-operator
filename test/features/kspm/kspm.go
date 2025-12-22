@@ -32,7 +32,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("kspm node config collector started", daemonset.WaitForDaemonset(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("kspm node config collector started", daemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 

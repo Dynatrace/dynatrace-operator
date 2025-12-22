@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -81,7 +82,7 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 }
 
 func assessActiveGate(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	builder.Assess("ActiveGate started", activegate.WaitForStatefulSet(dk, "activegate"))
+	builder.Assess("ActiveGate started", statefulset.IsReady(activegate.GetActiveGateStateFulSetName(dk, "activegate"), dk.Namespace))
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers(dk))
 	builder.Assess("ActiveGate modules are active", checkActiveModules(dk))
 	if dk.Spec.Proxy != nil {

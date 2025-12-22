@@ -34,9 +34,9 @@ func Feature(t *testing.T) features.Feature {
 
 	legacyName := testDynakube.Name + "-extensions-controller"
 
-	builder.Assess("extension execution controller started", statefulset.WaitFor(legacyName, testDynakube.Namespace))
+	builder.Assess("extension execution controller started", statefulset.IsReady(legacyName, testDynakube.Namespace))
 
-	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	// update to snapshot
 	withCSI := true

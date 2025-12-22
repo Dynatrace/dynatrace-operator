@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -53,7 +54,7 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
 	// Check if the ActiveGate could start up
-	builder.Assess("ActiveGate started", activegate.WaitForStatefulSet(&testDynakube, "activegate"))
+	builder.Assess("ActiveGate started", statefulset.IsReady(activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate"), testDynakube.Namespace))
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
