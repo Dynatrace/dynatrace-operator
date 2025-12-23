@@ -84,13 +84,15 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
-		injectionReconcilerBuilder:          injection.NewReconciler,
-		istioReconcilerBuilder:              istio.NewReconciler,
-		extensionReconcilerBuilder:          extension.NewReconciler,
-		otelcReconcilerBuilder:              otelc.NewReconciler,
-		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
-		proxyReconcilerBuilder:              proxy.NewReconciler,
-		kspmReconcilerBuilder:               kspm.NewReconciler,
+		injectionReconcilerBuilder: func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) injectionReconciler {
+			return injection.NewPOCReconciler(client, apiReader, dynatraceClient, istioClient, dk)
+		},
+		istioReconcilerBuilder:         istio.NewReconciler,
+		extensionReconcilerBuilder:     extension.NewReconciler,
+		otelcReconcilerBuilder:         otelc.NewReconciler,
+		logMonitoringReconcilerBuilder: logmonitoring.NewReconciler,
+		proxyReconcilerBuilder:         proxy.NewReconciler,
+		kspmReconcilerBuilder:          kspm.NewReconciler,
 
 		k8sEntityReconciler: k8sentity.NewReconciler(),
 	}
@@ -112,6 +114,21 @@ type k8sEntityReconciler interface {
 	Reconcile(ctx context.Context, dtclient dtclient.Client, dk *dynakube.DynaKube) error
 }
 
+type injectionReconciler interface {
+	SetupInitContainer(ctx context.Context) error
+	TeardownInitContainer(ctx context.Context) error
+	SetupOTLP(ctx context.Context) error
+	TeardownOTLP(ctx context.Context) error
+}
+
+type injectionReconcilerBuilder func(
+	client client.Client,
+	apiReader client.Reader,
+	dynatraceClient dtclient.Client,
+	istioClient *istio.Client,
+	dk *dynakube.DynaKube,
+) injectionReconciler
+
 // Controller reconciles a DynaKube object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -130,7 +147,7 @@ type Controller struct {
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
 	oneAgentReconcilerBuilder           oneagent.ReconcilerBuilder
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
-	injectionReconcilerBuilder          injection.ReconcilerBuilder
+	injectionReconcilerBuilder          injectionReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
 	extensionReconcilerBuilder          extension.ReconcilerBuilder
 	otelcReconcilerBuilder              otelc.ReconcilerBuilder
@@ -403,13 +420,20 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling app injection")
 
-	err = controller.injectionReconcilerBuilder(
+	injectionReconciler := controller.injectionReconcilerBuilder(
 		controller.client,
 		controller.apiReader,
 		dynatraceClient,
 		istioClient,
 		dk,
-	).Reconcile(ctx)
+	)
+
+	if injection.IsInitContainerEnabled(dk) {
+		err = injectionReconciler.SetupInitContainer(ctx)
+	} else {
+		err = injectionReconciler.TeardownInitContainer(ctx)
+	}
+
 	if err != nil {
 		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
@@ -420,6 +444,18 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		}
 
 		log.Info("could not reconcile app injection")
+
+		componentErrors = append(componentErrors, err)
+	}
+
+	if injection.IsOTLPEnabled(dk) {
+		err = injectionReconciler.SetupOTLP(ctx)
+	} else {
+		err = injectionReconciler.TeardownOTLP(ctx)
+	}
+
+	if err != nil {
+		log.Info("could not reconcile otlp injection")
 
 		componentErrors = append(componentErrors, err)
 	}

@@ -67,30 +67,46 @@ func NewReconciler(
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	var setupErrors []error
-	if err := r.setupOneAgentInjection(ctx); err != nil {
-		setupErrors = append(setupErrors, err)
+//nolint:revive
+func NewPOCReconciler(
+	client client.Client,
+	apiReader client.Reader,
+	dynatraceClient dynatrace.Client,
+	istioClient *istio.Client,
+	dk *dynakube.DynaKube,
+) *Reconciler {
+	var istioReconciler istio.Reconciler = nil
+
+	if istioClient != nil {
+		istioReconciler = istio.NewReconciler(istioClient)
 	}
 
-	if err := r.setupEnrichmentInjection(ctx); err != nil {
-		setupErrors = append(setupErrors, err)
+	return &Reconciler{
+		client:                    client,
+		apiReader:                 apiReader,
+		dk:                        dk,
+		dynatraceClient:           dynatraceClient,
+		istioReconciler:           istioReconciler,
+		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
+		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
+		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dk),
 	}
+}
 
-	if len(setupErrors) > 0 {
-		return goerrors.Join(setupErrors...)
-	}
+func IsInitContainerEnabled(dk *dynakube.DynaKube) bool {
+	return dk.OneAgent().IsAppInjectionNeeded() || dk.MetadataEnrichment().IsEnabled()
+}
 
-	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichment().IsEnabled() && !r.dk.OTLPExporterConfiguration().IsEnabled() {
-		defer r.unmap(ctx)
-	} else {
-		dkMapper := r.createDynakubeMapper(ctx)
+func IsOTLPEnabled(dk *dynakube.DynaKube) bool {
+	return dk.OTLPExporterConfiguration().IsEnabled()
+}
 
-		if err := dkMapper.MapFromDynakube(); err != nil {
-			log.Info("update of a map of namespaces failed")
-
-			setupErrors = append(setupErrors, err)
-		}
+func (r *Reconciler) SetupInitContainer(ctx context.Context) error {
+	if err := goerrors.Join(
+		r.setupOneAgentInjection(ctx),
+		r.setupEnrichmentInjection(ctx),
+	); err != nil {
+		return err
 	}
 
 	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
@@ -98,16 +114,107 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.setupInitSecret(ctx, namespaces); err != nil {
-		setupErrors = append(setupErrors, err)
+	dkMapper := r.createDynakubeMapper(ctx)
+
+	err = goerrors.Join(
+		dkMapper.MapFromDynakube(),
+		r.generateInitSecret(ctx, namespaces),
+	)
+
+	if err != nil {
+		return err
 	}
 
-	if err := r.setupOTLPSecret(ctx, namespaces); err != nil {
-		setupErrors = append(setupErrors, err)
+	log.Info("init container injection provisioned")
+
+	return nil
+}
+
+func (r *Reconciler) SetupOTLP(ctx context.Context) error {
+	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
+	if err != nil {
+		return err
 	}
 
-	if len(setupErrors) > 0 {
-		return goerrors.Join(setupErrors...)
+	dkMapper := r.createDynakubeMapper(ctx)
+
+	err = goerrors.Join(
+		dkMapper.MapFromDynakube(),
+		r.generateOTLPSecret(ctx, namespaces),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	log.Info("otlp injection provisioned")
+
+	return nil
+}
+
+func (r *Reconciler) TeardownInitContainer(ctx context.Context) error {
+	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
+	if err != nil {
+		return err
+	}
+
+	r.cleanupInitSecret(ctx, namespaces)
+
+	if !IsOTLPEnabled(r.dk) {
+		r.unmap(ctx)
+	}
+
+	log.Info("init container injection cleaned up")
+
+	return nil
+}
+
+func (r *Reconciler) TeardownOTLP(ctx context.Context) error {
+	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
+	if err != nil {
+		return err
+	}
+
+	r.cleanupOTLPSecret(ctx, namespaces)
+
+	if !IsInitContainerEnabled(r.dk) {
+		r.unmap(ctx)
+	}
+
+	log.Info("otlp injection cleaned up")
+
+	return nil
+}
+
+func (r *Reconciler) Reconcile(ctx context.Context) error {
+	if err := goerrors.Join(
+		r.setupOneAgentInjection(ctx),
+		r.setupEnrichmentInjection(ctx),
+	); err != nil {
+		return err
+	}
+
+	namespaces, err := mapper.GetNamespacesForDynakube(ctx, r.apiReader, r.dk.Name)
+	if err != nil {
+		return err
+	}
+
+	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.MetadataEnrichment().IsEnabled() && !r.dk.OTLPExporterConfiguration().IsEnabled() {
+		defer r.unmap(ctx)
+	} else {
+		dkMapper := r.createDynakubeMapper(ctx)
+
+		if err = dkMapper.MapFromDynakube(); err != nil {
+			log.Info("update of a map of namespaces failed")
+		}
+	}
+
+	if err := goerrors.Join(
+		err,
+		r.setupInitSecret(ctx, namespaces),
+		r.setupOTLPSecret(ctx, namespaces),
+	); err != nil {
+		return err
 	}
 
 	log.Info("app injection reconciled")
