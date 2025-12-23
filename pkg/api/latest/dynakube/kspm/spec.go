@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	TokenSecretKey          = "kspm-token"
-	NodeCollectorNameSuffix = "node-config-collector"
+	TokenSecretKey = "kspm-token"
 )
 
 type Kspm struct {
