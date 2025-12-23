@@ -368,6 +368,7 @@ func TestOTLPWebhook(t *testing.T) {
 			}
 			maps.Copy(ns.Labels, nsMetadataLabels)
 			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
+
 			dummyWebhookPod := getDummyWebhookPod()
 			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
 			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
@@ -508,110 +509,6 @@ func TestOTLPWebhook(t *testing.T) {
 		assert.Equal(t, url.QueryEscape(nsMetadataAnnotations[testCostCenterAnnotation]), gotResourceAttributes["dt.cost.costcenter"])
 		assert.Equal(t, url.QueryEscape(nsMetadataLabels[testSecContextLabel]), gotResourceAttributes["dt.security_context"])
 		assert.Equal(t, url.QueryEscape(nsMetadataLabels[testCustomMetadataLabel]), gotResourceAttributes["k8s.namespace.label."+testCustomMetadataLabel])
-	})
-
-	t.Run("skip injection when general OTEL exporter env preset and override disabled", func(t *testing.T) {
-		apiURL := "https://example.live.dynatrace.com"
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: apiURL,
-				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-					NamespaceSelector: metav1.LabelSelector{
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-						},
-					},
-					Signals: otlpspec.SignalConfiguration{
-						Metrics: &otlpspec.MetricsSignal{},
-						Logs:    &otlpspec.LogsSignal{},
-						Traces:  &otlpspec.TracesSignal{},
-					},
-				},
-			},
-		}
-
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(p *corev1.Pod) {
-			p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env,
-				corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"},
-				corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"},
-			)
-		})
-
-		app := pod.Spec.Containers[0]
-		assert.Contains(t, app.Env, corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"})
-		assert.Contains(t, app.Env, corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"})
-
-		assert.False(t, k8senv.Contains(app.Env, exporter.DynatraceAPITokenEnv))
-		assert.False(t, k8senv.Contains(app.Env, exporter.OTLPTraceEndpointEnv))
-		assert.False(t, k8senv.Contains(app.Env, exporter.OTLPLogsEndpointEnv))
-		assert.False(t, k8senv.Contains(app.Env, exporter.OTLPMetricsEndpointEnv))
-		assert.False(t, k8senv.Contains(app.Env, exporter.OTLPTraceHeadersEnv))
-		assert.False(t, k8senv.Contains(app.Env, exporter.OTLPLogsHeadersEnv))
-		assert.False(t, k8senv.Contains(app.Env, exporter.OTLPMetricsHeadersEnv))
-	})
-
-	t.Run("inject when invalid general env is preset (typo)", func(t *testing.T) {
-		apiURL := "https://example.live.dynatrace.com"
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: apiURL,
-				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-					NamespaceSelector: metav1.LabelSelector{ // match test namespace label applied earlier
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-						},
-					},
-					Signals: otlpspec.SignalConfiguration{
-						Metrics: &otlpspec.MetricsSignal{},
-						Logs:    &otlpspec.LogsSignal{},
-						Traces:  &otlpspec.TracesSignal{},
-					},
-				},
-			},
-		}
-
-		apiTokenSecret := getOTLPExporterSecret(testNamespace)
-		createObject(t, clt, apiTokenSecret)
-
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(p *corev1.Pod) {
-			p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env,
-				corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_ENDPOINT", Value: "https://my-collector.example.com/otlp"},
-				corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-			)
-		})
-
-		app := pod.Spec.Containers[0]
-
-		dtTokenEnv := k8senv.Find(app.Env, exporter.DynatraceAPITokenEnv)
-		require.NotNil(t, dtTokenEnv, "expected DT_API_TOKEN env var to be injected")
-
-		assert.True(t, k8senv.Contains(app.Env, exporter.OTLPTraceEndpointEnv))
-		assert.True(t, k8senv.Contains(app.Env, exporter.OTLPLogsEndpointEnv))
-		assert.True(t, k8senv.Contains(app.Env, exporter.OTLPMetricsEndpointEnv))
-		assert.True(t, k8senv.Contains(app.Env, exporter.OTLPTraceHeadersEnv))
-		assert.True(t, k8senv.Contains(app.Env, exporter.OTLPLogsHeadersEnv))
-		assert.True(t, k8senv.Contains(app.Env, exporter.OTLPMetricsHeadersEnv))
-
-		assert.True(t, k8senv.Contains(app.Env, "OTLP_EXPORTER_OTLP_ENDPOINT"))
-		assert.True(t, k8senv.Contains(app.Env, "OTLP_EXPORTER_OTLP_PROTOCOL"))
 	})
 
 	t.Run("otlp exporter attribute precedence", func(t *testing.T) {
@@ -933,6 +830,142 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 			},
 		},
 	}
+}
+
+func setupOTLPWebhookEnv(t *testing.T) client.Client {
+	t.Helper()
+
+	return integrationtests.SetupWebhookTestEnvironment(t,
+		getWebhookInstallOptions(),
+
+		func(mgr ctrl.Manager) error {
+			ns := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: testNamespace,
+					Labels: map[string]string{
+						podmutator.InjectionInstanceLabel: "dynakube",
+					},
+					Annotations: nsMetadataAnnotations,
+				},
+			}
+			maps.Copy(ns.Labels, nsMetadataLabels)
+			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
+
+			dummyWebhookPod := getDummyWebhookPod()
+			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
+			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
+
+			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
+		},
+	)
+}
+
+func TestOTLPExporterSkipWhenGeneralOTELPreset(t *testing.T) {
+	clt := setupOTLPWebhookEnv(t)
+
+	apiURL := "https://example.live.dynatrace.com"
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				exp.InjectionAutomaticKey: "true",
+			},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: apiURL,
+			OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
+				NamespaceSelector: metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
+					},
+				},
+				Signals: otlpspec.SignalConfiguration{
+					Metrics: &otlpspec.MetricsSignal{},
+					Logs:    &otlpspec.LogsSignal{},
+					Traces:  &otlpspec.TracesSignal{},
+				},
+			},
+		},
+	}
+
+	createDynaKube(t, clt, dk)
+
+	pod := createPod(t, clt, func(p *corev1.Pod) {
+		p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env,
+			corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"},
+			corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"},
+		)
+	})
+
+	app := pod.Spec.Containers[0]
+	assert.Contains(t, app.Env, corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"})
+	assert.Contains(t, app.Env, corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"})
+
+	assert.False(t, k8senv.Contains(app.Env, exporter.DynatraceAPITokenEnv))
+	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPTraceEndpointEnv))
+	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPLogsEndpointEnv))
+	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPMetricsEndpointEnv))
+	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPTraceHeadersEnv))
+	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPLogsHeadersEnv))
+	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPMetricsHeadersEnv))
+}
+
+func TestOTLPExporterInjectWhenInvalidGeneralEnvPreset(t *testing.T) {
+	clt := setupOTLPWebhookEnv(t)
+
+	apiURL := "https://example.live.dynatrace.com"
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				exp.InjectionAutomaticKey: "true",
+			},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: apiURL,
+			OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
+				NamespaceSelector: metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
+					},
+				},
+				Signals: otlpspec.SignalConfiguration{
+					Metrics: &otlpspec.MetricsSignal{},
+					Logs:    &otlpspec.LogsSignal{},
+					Traces:  &otlpspec.TracesSignal{},
+				},
+			},
+		},
+	}
+
+	apiTokenSecret := getOTLPExporterSecret(testNamespace)
+	createObject(t, clt, apiTokenSecret)
+
+	createDynaKube(t, clt, dk)
+
+	pod := createPod(t, clt, func(p *corev1.Pod) {
+		p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env,
+			corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_ENDPOINT", Value: "https://my-collector.example.com/otlp"},
+			corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+		)
+	})
+
+	app := pod.Spec.Containers[0]
+
+	dtTokenEnv := k8senv.Find(app.Env, exporter.DynatraceAPITokenEnv)
+	require.NotNil(t, dtTokenEnv, "expected DT_API_TOKEN env var to be injected")
+
+	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPTraceEndpointEnv))
+	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPLogsEndpointEnv))
+	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPMetricsEndpointEnv))
+	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPTraceHeadersEnv))
+	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPLogsHeadersEnv))
+	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPMetricsHeadersEnv))
+
+	assert.True(t, k8senv.Contains(app.Env, "OTLP_EXPORTER_OTLP_ENDPOINT"))
+	assert.True(t, k8senv.Contains(app.Env, "OTLP_EXPORTER_OTLP_PROTOCOL"))
 }
 
 func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *corev1.Pod {
