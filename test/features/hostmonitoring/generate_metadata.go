@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -33,9 +34,7 @@ var expectedMetadataAttributes = []string{
 	"k8s.cluster.name",
 	"k8s.cluster.uid",
 	"k8s.node.name",
-	// commented out on purpose
-	// test's DynaKube does not have KubernetesClusterMEID set in status
-	// "dt.entity.kubernetes_cluster",
+	"dt.entity.kubernetes_cluster",
 }
 
 func GenerateMetadata(t *testing.T) features.Feature {
@@ -45,14 +44,16 @@ func GenerateMetadata(t *testing.T) features.Feature {
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithActiveGate(),
 		componentDynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
 	}
 	testDynakube := *componentDynakube.New(options...)
 
 	// Register Dynakube install
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-
 	builder.Assess("OneAgent started", daemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+
 	builder.Assess("Checking if all OneAgent pods have generated metadata", oneAgentHaveGeneratedMetadata(testDynakube))
 
 	// Register sample, dynakube and operator uninstall
