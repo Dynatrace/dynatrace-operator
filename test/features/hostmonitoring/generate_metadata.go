@@ -51,7 +51,7 @@ func GenerateMetadata(t *testing.T) features.Feature {
 
 	// Register Dynakube install
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	builder.Assess("OneAgent started", daemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
+	builder.Assess("OneAgent started", daemonset.WaitForDaemonset(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("Checking if all OneAgent pods have generated metadata", oneAgentHaveGeneratedMetadata(testDynakube))
@@ -101,7 +101,6 @@ func getGeneratedMetadataFromPod(ctx context.Context, t *testing.T, resource *re
 	assert.Zero(t, result.StdErr.Len())
 	assert.NotEmpty(t, result.StdOut)
 
-	// fmt.Printf("generated metadata: \n%s", result.StdOut.String())
 	return parseGeneratedMetadata(result.StdOut.String())
 }
 
