@@ -49,16 +49,16 @@ spec:
   #
   # metadataEnrichment:
   #   enabled: true
-
-    # Optional: The namespaces where you want Dynatrace Operator to inject
-    #
-    # namespaceSelector:
-    #   matchLabels:
-    #     app: my-app
-    #   matchExpressions:
-    #   - key: app
-    #     operator: In
-    #     values: [my-frontend, my-backend, my-database]
+  #
+  #   Optional: The namespaces where you want Dynatrace Operator to inject metadata
+  #
+  #   namespaceSelector:
+  #     matchLabels:
+  #       app: my-app
+  #     matchExpressions:
+  #     - key: app
+  #       operator: In
+  #       values: [my-frontend, my-backend, my-database]
 
   # Configuration for ActiveGate instances.
   #

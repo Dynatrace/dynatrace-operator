@@ -46,19 +46,19 @@ spec:
   # dynatraceApiRequestThreshold: 15
 
   # Configuration for Metadata Enrichment.
-  #
+  
   # metadataEnrichment:
   #   enabled: true
-
-    # Optional: The namespaces where you want Dynatrace Operator to inject
-    #
-    # namespaceSelector:
-    #   matchLabels:
-    #     app: my-app
-    #   matchExpressions:
-    #   - key: app
-    #     operator: In
-  #     values: [my-frontend, my-backend, my-database]
+  #
+  #   Optional: The namespaces where you want Dynatrace Operator to inject metadata
+  #
+  #   namespaceSelector:
+  #     matchLabels:
+  #       app: my-app
+  #     matchExpressions:
+  #     - key: app
+  #       operator: In
+  #       values: [my-frontend, my-backend, my-database]
 
   kspm:
     #  Define the host paths that are mounted to the container.
@@ -163,7 +163,7 @@ spec:
       #
       # updateStrategy: {}
 
-      # Optional: Add custom labels to NNode Configuration Collector pods
+      # Optional: Add custom labels to Node Configuration Collector pods
       #
       # labels:
       #   custom: label

@@ -70,7 +70,7 @@ spec:
     #       - "kube-system"
     #       - "dynatrace"
     #       - "default"
-    #   - attribute: "k8s.pod.annotation",
+    #   - attribute: "k8s.pod.annotation"
     #     values:
     #       - "logs.dynatrace.com/ingest=true"
     #       - "category=security"
