@@ -30,7 +30,7 @@ const (
 	generateMetadataFile = "/var/lib/dynatrace/enrichment/dt_node_metadata.properties"
 )
 
-var expectedMetadataAttributes = []string{
+var expectedMetadataFields = []string{
 	"k8s.cluster.name",
 	"k8s.cluster.uid",
 	"k8s.node.name",
@@ -72,18 +72,18 @@ func oneAgentHaveGeneratedMetadata(dk dynakube.DynaKube) features.Func {
 			Namespace: dk.Namespace,
 		})
 
-		err := q.ForEachPod(accessGeneratedMetadataAttributes(ctx, t, r))
+		err := q.ForEachPod(assertGeneratedMetadataFields(ctx, t, r))
 		require.NoError(t, err)
 
 		return ctx
 	}
 }
 
-func accessGeneratedMetadataAttributes(ctx context.Context, t *testing.T, resource *resources.Resources) daemonset.PodConsumer {
+func assertGeneratedMetadataFields(ctx context.Context, t *testing.T, resource *resources.Resources) daemonset.PodConsumer {
 	return func(pod corev1.Pod) {
 		generatedMetadata := getGeneratedMetadataFromPod(ctx, t, resource, pod)
 		assert.NotEmpty(t, generatedMetadata, "generated metadata should not be empty")
-		for _, attribute := range expectedMetadataAttributes {
+		for _, attribute := range expectedMetadataFields {
 			assert.Containsf(t, generatedMetadata, attribute, "generated metadata should contain %s attribute", attribute)
 			assert.NotEmptyf(t, generatedMetadata[attribute], "generated metadata %s attribute should not be empty", attribute)
 		}
@@ -102,10 +102,10 @@ func getGeneratedMetadataFromPod(ctx context.Context, t *testing.T, resource *re
 	assert.NotEmpty(t, result.StdOut)
 
 	// fmt.Printf("generated metadata: \n%s", result.StdOut.String())
-	return parseNodeMetadata(result.StdOut.String())
+	return parseGeneratedMetadata(result.StdOut.String())
 }
 
-func parseNodeMetadata(text string) map[string]string {
+func parseGeneratedMetadata(text string) map[string]string {
 	numColumns := 2
 	var m = make(map[string]string)
 	scanner := bufio.NewScanner(strings.NewReader(text))
