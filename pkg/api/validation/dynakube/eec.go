@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	errorExtensionExecutionControllerImageNotSpecified       = `DynaKube's specification enables the Prometheus feature, make sure you correctly specify the ExtensionExecutionController image.`
+	errorExtensionExecutionControllerImageNotSpecified       = `DynaKube's specification enables extensions, make sure you correctly specify the ExtensionExecutionController image.`
 	errorExtensionExecutionControllerInvalidPVCConfiguration = `DynaKube specifies a PVC for the extension controller while ephemeral volume is also enabled. These settings are mutually exclusive, please choose only one.`
 	warningConflictingAPIURLForExtensions                    = `You are already using a Dynakube ('%s') that enables extensions. Having multiple Dynakubes with same '.spec.apiUrl' and '.spec.extensions' enabled can have severe side-effects on “sum” and “count” metrics and cause double-billing.`
 )
