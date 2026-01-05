@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -137,30 +138,34 @@ func TestWebhook(t *testing.T) {
 		validation.SetupWebhookWithManager,
 	)
 
-	versions := []string{
-		"v1beta3",
+	servedVersions := []string{
 		"v1beta4",
 		"v1beta5",
 	}
 	seenGVKs := sets.New[string]()
 
-	for _, version := range versions {
+	for _, version := range servedVersions {
 		t.Run(version, func(t *testing.T) {
 			compareWebhookResult(t, clt, version, "default", seenGVKs)
+		})
+	}
+
+	unServedVersions := []string{
+		"v1beta3",
+	}
+	for _, version := range unServedVersions {
+		t.Run(version, func(t *testing.T) {
+			oldObj := readTestData(t, version, "default")
+
+			err := clt.Create(t.Context(), oldObj)
+			require.True(t, meta.IsNoMatchError(err))
 		})
 	}
 }
 
 func compareWebhookResult(t *testing.T, clt client.Client, version, name string, seen sets.Set[string]) {
 	t.Helper()
-	oldData, err := os.ReadFile(filepath.Join("testdata", version+"-"+name+".yaml"))
-	require.NoError(t, err)
-
-	// Use unstructured to
-	// a) not duplicate conversion code and
-	// b) simulate external tools like kubectl
-	oldObj := &unstructured.Unstructured{}
-	require.NoError(t, yaml.Unmarshal(oldData, &oldObj.Object))
+	oldObj := readTestData(t, version, name)
 
 	require.NoError(t, clt.Create(t.Context(), oldObj))
 	t.Cleanup(func() {
@@ -194,4 +199,18 @@ func compareWebhookResult(t *testing.T, clt client.Client, version, name string,
 	require.NoError(t, err)
 
 	assert.Equal(t, string(expectData), string(gotData))
+}
+
+func readTestData(t *testing.T, version, name string) *unstructured.Unstructured {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("testdata", version+"-"+name+".yaml"))
+	require.NoError(t, err)
+
+	// Use unstructured to
+	// a) not duplicate conversion code and
+	// b) simulate external tools like kubectl
+	obj := &unstructured.Unstructured{}
+	require.NoError(t, yaml.Unmarshal(data, &obj.Object))
+
+	return obj
 }
