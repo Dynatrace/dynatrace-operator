@@ -117,6 +117,10 @@ func TestNoCSI_host_monitoring_without_csi(t *testing.T) {
 	testEnv.Test(t, hostmonitoring.WithoutCSI(t))
 }
 
+func TestNoCSI_host_monitoring_generate_metadata(t *testing.T) {
+	testEnv.Test(t, hostmonitoring.GenerateMetadata(t))
+}
+
 func TestNoCSI_cloudnative(t *testing.T) {
 	const istioEnabled, withCSI = false, false
 	testEnv.Test(t, cloudnativeStandard.Feature(t, istioEnabled, withCSI))
