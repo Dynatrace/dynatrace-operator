@@ -3,7 +3,6 @@
 package hostmonitoring
 
 import (
-	"bufio"
 	"context"
 	"strings"
 	"testing"
@@ -51,7 +50,7 @@ func GenerateMetadata(t *testing.T) features.Feature {
 
 	// Register Dynakube install
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	builder.Assess("OneAgent started", daemonset.WaitForDaemonset(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
+	builder.Assess("OneAgent started", daemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("Checking if all OneAgent pods have generated metadata", oneAgentHaveGeneratedMetadata(testDynakube))
@@ -105,23 +104,19 @@ func getGeneratedMetadataFromPod(ctx context.Context, t *testing.T, resource *re
 }
 
 func parseGeneratedMetadata(text string) map[string]string {
-	numColumns := 2
 	var m = make(map[string]string)
-	scanner := bufio.NewScanner(strings.NewReader(text))
 
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
+	for line := range strings.Lines(text) {
+		l := strings.TrimSpace(line)
+		if l == "" {
 			continue
 		}
 
-		parts := strings.SplitN(line, "=", numColumns)
-		if len(parts) != numColumns {
+		key, value, found := strings.Cut(l, "=")
+		if !found {
 			continue
 		}
 
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
 		m[key] = value
 	}
 
