@@ -31,31 +31,6 @@ func TestWebhook(t *testing.T) {
 					},
 					Webhooks: []admissionv1.ValidatingWebhook{
 						{
-							Name: "v1beta3.dynakube.webhook.dynatrace.com",
-							ClientConfig: admissionv1.WebhookClientConfig{
-								Service: &admissionv1.ServiceReference{
-									Path: ptr.To("/validate-dynatrace-com-v1beta3-dynakube"),
-								},
-							},
-							Rules: []admissionv1.RuleWithOperations{
-								{
-									Operations: []admissionv1.OperationType{
-										admissionv1.Create,
-										admissionv1.Update,
-									},
-									Rule: admissionv1.Rule{
-										APIGroups:   []string{"dynatrace.com"},
-										APIVersions: []string{"v1beta3"},
-										Resources:   []string{"dynakubes"},
-									},
-								},
-							},
-							MatchPolicy:             ptr.To(admissionv1.Exact),
-							SideEffects:             ptr.To(admissionv1.SideEffectClassNone),
-							TimeoutSeconds:          ptr.To[int32](10),
-							AdmissionReviewVersions: []string{"v1"},
-						},
-						{
 							Name: "v1beta4.dynakube.webhook.dynatrace.com",
 							ClientConfig: admissionv1.WebhookClientConfig{
 								Service: &admissionv1.ServiceReference{
@@ -138,7 +113,6 @@ func TestWebhook(t *testing.T) {
 	)
 
 	versions := []string{
-		"v1beta3",
 		"v1beta4",
 		"v1beta5",
 	}
