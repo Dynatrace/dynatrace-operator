@@ -158,7 +158,6 @@ func TestWebhook(t *testing.T) {
 			oldObj := readTestData(t, version, "default")
 
 			err := clt.Create(t.Context(), oldObj)
-			require.Error(t, err)
 			require.True(t, meta.IsNoMatchError(err))
 		})
 	}
