@@ -7,7 +7,7 @@ spec:
   # Documentation:
   # https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/edgeconnect/edge-connect-provision
 
-  apiServer: "https://example.dev.apps.dynatracelabs.com"
+  apiServer: "example.dev.apps.dynatracelabs.com"
   replicas: 1
 
   oauth:
