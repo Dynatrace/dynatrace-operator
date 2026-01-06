@@ -18,8 +18,8 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.49.0
-	go.opentelemetry.io/collector/config/configtls v1.48.0
-	go.opentelemetry.io/collector/confmap v1.48.0
+	go.opentelemetry.io/collector/config/configtls v1.49.0
+	go.opentelemetry.io/collector/confmap v1.49.0
 	go.opentelemetry.io/collector/pipeline v1.48.0
 	go.opentelemetry.io/collector/service v0.142.0
 	go.uber.org/zap v1.27.1
@@ -71,7 +71,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-tpm v0.9.7 // indirect
+	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
@@ -107,9 +107,9 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/component/componentstatus v0.142.0 // indirect
 	go.opentelemetry.io/collector/component/componenttest v0.142.0 // indirect
-	go.opentelemetry.io/collector/config/configopaque v1.48.0 // indirect
+	go.opentelemetry.io/collector/config/configopaque v1.49.0 // indirect
 	go.opentelemetry.io/collector/config/configtelemetry v0.142.0 // indirect
-	go.opentelemetry.io/collector/confmap/xconfmap v0.142.0 // indirect
+	go.opentelemetry.io/collector/confmap/xconfmap v0.143.0 // indirect
 	go.opentelemetry.io/collector/connector v0.142.0 // indirect
 	go.opentelemetry.io/collector/connector/connectortest v0.142.0 // indirect
 	go.opentelemetry.io/collector/connector/xconnector v0.142.0 // indirect
