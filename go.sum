@@ -202,8 +202,8 @@ go.opentelemetry.io/collector/config/configtelemetry v0.142.0 h1:hidlUz9WXTYhrcS
 go.opentelemetry.io/collector/config/configtelemetry v0.142.0/go.mod h1:Xjw2+DpNLjYtx596EHSWBy0dNQRiJ2H+BlWU907lO40=
 go.opentelemetry.io/collector/config/configtls v1.48.0 h1:+099UpRcmp1H+Y+kekr/WYDfZw9yWBGRfD84xA0+J+g=
 go.opentelemetry.io/collector/config/configtls v1.48.0/go.mod h1:qSbIUUcstn7Hsj//rBWdN4/sxurjl0970OcUQW2tBho=
-go.opentelemetry.io/collector/confmap v1.48.0 h1:vGhg25NEUX5DiYziJEw2siwdzsvtXBRZVuYyLVinFR8=
-go.opentelemetry.io/collector/confmap v1.48.0/go.mod h1:8tJHJowmvUkJ8AHzZ6SaH61dcWbdfRE9Sd/hwsKLgRE=
+go.opentelemetry.io/collector/confmap v1.49.0 h1:QUUymb4To6wgxDpD5USPkFqqsTe97vIEUmAmldXsvOM=
+go.opentelemetry.io/collector/confmap v1.49.0/go.mod h1:nXdTzIrHuIJ6Q30Woy/JgeHRnCvEmao6AEFZJiP28T4=
 go.opentelemetry.io/collector/confmap/xconfmap v0.142.0 h1:SNfuFP8TA0PmUkx6ryY63uNjLN2HMh5VeGO++IYdPgA=
 go.opentelemetry.io/collector/confmap/xconfmap v0.142.0/go.mod h1:FXuX6B8b7Ub7qkLqloWKanmPhADL18EEkaFptcd4eDQ=
 go.opentelemetry.io/collector/connector v0.142.0 h1:8IHsthuYBhOgdwdIsoc4X4/jyK2qcY/NmjH6w+iq0cw=
