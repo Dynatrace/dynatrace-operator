@@ -1,7 +1,8 @@
-package operator
+package crdcleanup
 
 import (
 	"context"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -19,49 +20,49 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func runCRDCleanup(cfg *rest.Config, namespace string) error {
-	crdCleanupManager, err := createCRDCleanupManager(cfg, namespace)
+func RunCleanup(cfg *rest.Config, namespace string) error {
+	crdCleanupManager, err := createManager(cfg, namespace)
 	if err != nil {
 		return err
 	}
 
-	ctx, cancelFn := context.WithCancel(context.Background())
+	ctx, stopManager := context.WithCancel(context.Background())
 
 	// Start the manager in a goroutine to make liveness probe available
 	managerErrChan := make(chan error, 1)
 
 	go func() {
-		if err := crdCleanupManager.Start(ctx); err != nil {
-			managerErrChan <- err
-		}
+		err := crdCleanupManager.Start(ctx)
+		managerErrChan <- err
 	}()
 
-	cleanupErr := performCRDStorageVersionsCleanup(ctx, crdCleanupManager.GetClient())
+	cleanupErr := performCRDStorageVersionsCleanup(ctx, crdCleanupManager.GetAPIReader(), crdCleanupManager.GetClient())
+	stopManager()
 
-	cancelFn()
+	managerErr := <-managerErrChan
 
-	select {
-	case err := <-managerErrChan:
-		if cleanupErr == nil {
-			return err
-		}
-
-		return cleanupErr
-	default:
+	if cleanupErr != nil {
 		return cleanupErr
 	}
+
+	return managerErr
 }
 
-func createCRDCleanupManager(cfg *rest.Config, namespace string) (manager.Manager, error) {
+func createManager(cfg *rest.Config, namespace string) (manager.Manager, error) {
+	immediatelly := time.Duration(0)
 	crdCleanupManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
 		Cache: cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
 				namespace: {},
 			},
+			ByObject: map[client.Object]cache.ByObject{
+				&apiextensionsv1.CustomResourceDefinition{}: {},
+			},
 		},
-		HealthProbeBindAddress: healthProbeBindAddress,
-		LivenessEndpointName:   livenessEndpointName,
+		HealthProbeBindAddress:  healthProbeBindAddress,
+		LivenessEndpointName:    livenessEndpointName,
+		GracefulShutdownTimeout: &immediatelly,
 	})
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -78,14 +79,13 @@ func createCRDCleanupManager(cfg *rest.Config, namespace string) (manager.Manage
 // performCRDStorageVersionsCleanup performs cleanup of CRD storage versions before operator startup.
 // It checks if the DynaKube CRD has multiple storage versions and if so, reads and writes
 // all DynaKube instances to migrate them to the current storage version.
-// TODO gakr: Add working unit and integration tests for this function.
 // TODO gakr: Include logic for EdgeConnect CRD
-func performCRDStorageVersionsCleanup(ctx context.Context, clt client.Client) error {
+func performCRDStorageVersionsCleanup(ctx context.Context, apiReader client.Reader, apiClient client.Client) error {
 	log.Info("starting CRD storage version cleanup")
 
 	var crd apiextensionsv1.CustomResourceDefinition
 
-	err := clt.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
+	err := apiReader.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
 	if err != nil {
 		log.Info("failed to get DynaKube CRD, skipping cleanup", "error", err)
 
@@ -112,7 +112,7 @@ func performCRDStorageVersionsCleanup(ctx context.Context, clt client.Client) er
 	// List all DynaKube instances
 	var dynakubeList dynakube.DynaKubeList
 
-	err = clt.List(ctx, &dynakubeList, &client.ListOptions{
+	err = apiReader.List(ctx, &dynakubeList, &client.ListOptions{
 		Namespace: k8senv.DefaultNamespace(),
 	})
 	if err != nil {
@@ -129,7 +129,7 @@ func performCRDStorageVersionsCleanup(ctx context.Context, clt client.Client) er
 			"name", dk.Name,
 			"namespace", dk.Namespace)
 
-		err = clt.Update(ctx, dk)
+		err = apiClient.Update(ctx, dk)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update DynaKube %s/%s", dk.Namespace, dk.Name)
 		}
@@ -138,7 +138,7 @@ func performCRDStorageVersionsCleanup(ctx context.Context, clt client.Client) er
 	// Remove the old storage versions from the CRD status
 	crd.Status.StoredVersions = []string{latest.GroupVersion.Version}
 
-	err = clt.Status().Update(ctx, &crd)
+	err = apiClient.Status().Update(ctx, &crd)
 	if err != nil {
 		return errors.Wrap(err, "failed to update DynaKube CRD status")
 	}

@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 
+	"github.com/Dynatrace/dynatrace-operator/cmd/operator/crdcleanup"
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
@@ -79,8 +80,9 @@ func runInPod(kubeCfg *rest.Config) error {
 		}
 	}
 
-	err = runCRDCleanup(kubeCfg, namespace)
+	err = crdcleanup.RunCleanup(kubeCfg, namespace)
 	if err != nil {
+		// Cleanup failure should not block operator startup
 		log.Info("CRD cleanup failed, proceeding to start operator", "error", err)
 	}
 
@@ -112,7 +114,7 @@ func runLocally(kubeCfg *rest.Config) error {
 	}
 
 	// Run CRD cleanup before starting the operator
-	err = runCRDCleanup(kubeCfg, namespace)
+	err = crdcleanup.RunCleanup(kubeCfg, namespace)
 	if err != nil {
 		return err
 	}
