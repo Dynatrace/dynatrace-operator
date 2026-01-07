@@ -49,7 +49,7 @@ func NewPod(podName, namespaceName, targetURL string, options ...Option) *corev1
 			Containers: []corev1.Container{
 				{
 					Name:  curlContainerName,
-					Image: "curlimages/curl",
+					Image: "docker.io/curlimages/curl",
 					Command: []string{
 						"curl",
 					},
