@@ -12,6 +12,7 @@ env:
 
 jobs:
   prepare:
+    if: github.repository_owner == 'Dynatrace'
     permissions:
       contents: read
     name: Prepare properties
@@ -28,6 +29,7 @@ jobs:
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
   build-push:
+    if: github.repository_owner == 'Dynatrace'
     name: Build images
     needs: [prepare]
     runs-on: ubuntu-24.04
@@ -50,6 +52,7 @@ jobs:
       digest: ${{ steps.build-image.outputs.digest }}
 
   signing:
+    if: github.repository_owner == 'Dynatrace'
     name: Sign the image index/manifests + Add SBOM
     environment: Release
     needs: [prepare, build-push]
@@ -90,6 +93,7 @@ jobs:
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
   release:
+    if: github.repository_owner == 'Dynatrace'
     name: Create release
     needs: [prepare, build-push, signing]
     environment: Release
