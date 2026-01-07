@@ -7,7 +7,7 @@ spec:
   # Documentation:
   # https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/edgeconnect/kubernetes-automation/edge-connect-kubernetes-automation-operator-supported-setup
 
-  apiServer: "https://example.dev.apps.dynatracelabs.com"
+  apiServer: "example.dev.apps.dynatracelabs.com"
   replicas: 1
 
   # The service account has to have the proper permissions that match the purpose of the
