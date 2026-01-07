@@ -44,37 +44,36 @@ spec:
   # dynatraceApiRequestThreshold: 15
 
   # Configuration for Metadata Enrichment.
-  
+  #
   # metadataEnrichment:
   #   enabled: true
 
-  #   Optional: The namespaces where you want Dynatrace Operator to inject metadata
-  #
-  #   namespaceSelector:
-  #     matchLabels:
-  #       app: my-app
-  #     matchExpressions:
-  #     - key: app
-  #       operator: In
-  #       values: [my-frontend, my-backend, my-database]
+    # Optional: The namespaces where you want Dynatrace Operator to inject
+    #
+    # namespaceSelector:
+    #   matchLabels:
+    #     app: my-app
+    #   matchExpressions:
+    #   - key: app
+    #     operator: In
+    #     values: [my-frontend, my-backend, my-database]
 
   # Configuration for Log monitoring.
   #
   # logMonitoring: {}
 
-  # Optional (replaces logMonitoring: {}): Log monitoring with rules and conditions for matching ingest attributes.
-  # 
-  # logMonitoring:
-  #   ingestRuleMatchers:
-  #     - attribute: "k8s.namespace.name"
-  #       values:
-  #         - "kube-system"
-  #         - "dynatrace"
-  #         - "default"
-  #     - attribute: "k8s.pod.annotation"
-  #       values:
-  #         - "logs.dynatrace.com/ingest=true"
-  #         - "category=security"
+    # Optional: Specifies the rules and conditions for matching ingest attributes.
+    #
+    # ingestRuleMatchers:
+    #   - attribute: "k8s.namespace.name"
+    #     values:
+    #       - "kube-system"
+    #       - "dynatrace"
+    #       - "default"
+    #   - attribute: "k8s.pod.annotation"
+    #     values:
+    #       - "logs.dynatrace.com/ingest=true"
+    #       - "category=security"
 
   # Configuration for OneAgent
   #

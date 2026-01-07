@@ -163,7 +163,7 @@ spec:
       #
       # updateStrategy: {}
 
-      # Optional: Add custom labels to NNode Configuration Collector pods
+      # Optional: Add custom labels to Node Configuration Collector pods
       #
       # labels:
       #   custom: label
