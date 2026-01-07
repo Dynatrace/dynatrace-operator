@@ -4,13 +4,20 @@ package daemonset
 
 import (
 	"context"
+	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 type PodConsumer func(pod corev1.Pod)
@@ -64,4 +71,16 @@ func (query *Query) ForEachPod(actionFunc PodConsumer) error {
 	}
 
 	return nil
+}
+
+func IsReady(name, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		ds := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}
+		ready, err := conditions.New(resources).DaemonSetReady(ds)(ctx)
+		require.NoError(t, err)
+		assert.True(t, ready)
+
+		return ctx
+	}
 }

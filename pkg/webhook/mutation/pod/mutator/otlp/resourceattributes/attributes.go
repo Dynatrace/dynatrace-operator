@@ -28,13 +28,17 @@ func NewAttributesFromEnv(envs []corev1.EnvVar, name string) (Attributes, bool) 
 	return res, found
 }
 
-func SanitizeMap(input map[string]string) Attributes {
+func sanitizeMap(input map[string]string) Attributes {
 	res := make(map[string]string)
 
 	for key, value := range input {
 		// apply percent encoding to prevent errors when passing attribute values with special characters to the OTEL SDKs
 		// see https://opentelemetry.io/docs/specs/otel/resource/sdk/#specifying-resource-information-via-an-environment-variable
-		res[key] = url.QueryEscape(value)
+		if strings.HasPrefix(value, "$(") && strings.HasSuffix(value, ")") {
+			res[key] = value
+		} else {
+			res[key] = url.QueryEscape(value)
+		}
 	}
 
 	return res

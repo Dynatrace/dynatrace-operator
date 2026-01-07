@@ -21,7 +21,7 @@ import (
 )
 
 func TestTokenCreation(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("creates secret if it does not exist", func(t *testing.T) {
 		clt := fake.NewFakeClient()

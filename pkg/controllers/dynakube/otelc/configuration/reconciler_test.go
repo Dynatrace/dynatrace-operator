@@ -1,7 +1,6 @@
 package configuration
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -38,11 +37,11 @@ func TestConfigurationConfigMap(t *testing.T) {
 	t.Run("create configmap if it does not exist", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(context.Background())
+		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
 		require.NoError(t, err)
 
 		configMap := &corev1.ConfigMap{}
-		err = mockK8sClient.Get(context.Background(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, configMap)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, configMap)
 		require.NoError(t, err)
 
 		_, ok := configMap.Data[consts.ConfigFieldName]

@@ -42,6 +42,7 @@ const (
 // +k8s:openapi-gen=true
 // +kubebuilder:deprecatedversion:warning="This dynakube API version is deprecated and will be removed in a future operator version. Please visit our documentation for details and timeline."
 // +kubebuilder:object:root=true
+// +kubebuilder:unservedversion
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace,shortName={dk,dks}
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`

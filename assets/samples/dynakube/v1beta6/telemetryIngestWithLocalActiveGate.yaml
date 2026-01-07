@@ -1,8 +1,9 @@
-apiVersion: dynatrace.com/v1beta3
+apiVersion: dynatrace.com/v1beta6
 kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
+
 spec:
   # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 
@@ -43,115 +44,7 @@ spec:
   #
   # dynatraceApiRequestThreshold: 15
 
-  # Configuration for Metadata Enrichment.
-  #
-  # metadataEnrichment:
-  #   enabled: true
-
-    # Optional: The namespaces where you want Dynatrace Operator to inject
-    #
-    # namespaceSelector:
-    #   matchLabels:
-    #     app: my-app
-    #   matchExpressions:
-    #   - key: app
-    #     operator: In
-    #     values: [my-frontend, my-backend, my-database]
-
-  # Configuration for Log monitoring.
-  #
-  # logMonitoring: {}
-  
-    # Optional: Specifies the rules and conditions for matching ingest attributes.
-    #
-    # ingestRuleMatchers:
-    #   - attribute: "k8s.namespace.name"
-    #     values:
-    #       - "kube-system"
-    #       - "dynatrace"
-    #       - "default"
-    #   - attribute: "k8s.pod.annotation",
-    #     values:
-    #       - "logs.dynatrace.com/ingest=true"
-    #       - "category=security"
-
-  # Configuration for OneAgent
-  #
-  oneAgent:
-    # Optional: Set a host group for OneAgent
-    #
-    # hostGroup: ""
-
-    classicFullStack:
-      # Optional: Specify the node selector that controls on which nodes OneAgent will be deployed.
-      #
-      # nodeSelector: {}
-
-      # Optional: Assign a priority class to the OneAgent pods.
-      #
-      # priorityClassName: priority-class
-
-      # Optional: Tolerations to include with the OneAgent DaemonSet.
-      #
-      tolerations:
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/master
-          operator: Exists
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/control-plane
-          operator: Exists
-
-      # Optional: Resource settings for OneAgent container.
-      #
-      # oneAgentResources:
-      #   requests:
-      #     cpu: 100m
-      #     memory: 512Mi
-      #   limits:
-      #     cpu: 300m
-      #     memory: 1.5Gi
-
-      # Optional: Set additional arguments to the OneAgent installer.
-      #
-      # args: []
-
-      # Optional: Set additional environment variables for the OneAgent pods.
-      #
-      # env: []
-
-      # Optional: Disable automatic restarts of OneAgent pods in case a new version is available
-      #
-      # autoUpdate: true
-
-      # Optional: Set the DNS Policy for OneAgent pods.
-      #
-      # dnsPolicy: "ClusterFirstWithHostNet"
-
-      # Optional: Add custom OneAgent annotations.
-      #
-      # annotations:
-      #   custom: annotation
-
-      # Optional: Add custom labels to OneAgent pods
-      #
-      # labels:
-      #   custom: label
-
-      # Optional: Use a custom OneAgent image.
-      #
-      # image: ""
-
-      # Optional: The OneAgent version to be used.
-      # Example: <major>.<minor>.<release>.<timestamp>, e.g. 1.200.0.20240101-000000
-      #
-      # version: ""
-
-      # Optional: The SecComp Profile that will be configured in order to run in secure computing mode.
-      #
-      # secCompProfile: ""
-
-  # Configuration for ActiveGate instances.
-  #
+  # Activate a local in-cluster ActiveGate to ingest telemetry data.
   activeGate:
     # Defines the ActiveGate capabilities
     #
@@ -230,3 +123,55 @@ spec:
     # Optional: Add TopologySpreadConstraints to the ActiveGate pods
     #
     # topologySpreadConstraints: []
+
+  # Enable telemetry ingest. Ingested data is sent to the local in-cluster ActiveGate.
+  telemetryIngest:
+
+    # All protocols are enabled, you can choose to enable only the ones you need
+    protocols:
+    - otlp
+    - zipkin
+    - jaeger
+    - statsd
+
+    # Optional: Name of secret holding a TLS certificate to secure the telemetry ingest endpoints.
+    #
+    tlsRefName: my-tls-secret
+
+    # Optional: Name of the telemetry ingest service that your applications should use.
+    # This will result in the service name telemetry-ingest.dynatrace.svc
+    #
+    serviceName: telemetry-ingest
+
+  templates:
+    otelCollector:
+      # Optional: Configure the image for the OTel Collector pods.
+      imageRef:
+        repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
+        tag: <tag>
+
+      # Optional: Add custom labels to OTel Collector pods.
+      #
+      # labels:
+      #   custom: label
+
+      # Optional: Add custom annotations to OTel Collector pods.
+      #
+      # annotations:
+      #   custom: annotation
+
+      # Optional: Number of replicas for the OTel Collector pods.
+      #
+      # replicas: 1
+
+      # Optional: Tolerations to include with the OTel Collector deployment.
+      #
+      # tolerations: {}
+
+      # Optional: Resource settings for OTel collector container.
+      #
+      # resources: {}
+
+      # Optional: Add TopologySpreadConstraints to the OTel Collector pods
+      #
+      # topologySpreadConstraints: []

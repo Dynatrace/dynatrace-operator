@@ -69,7 +69,7 @@ func (dk *DynaKube) PullSecretName() string {
 	return dk.Name + PullSecretSuffix
 }
 
-// PullSecretsNames returns the names of the pull secrets to be used for immutable images.
+// PullSecretNames returns the names of the pull secrets to be used for immutable images.
 func (dk *DynaKube) PullSecretNames() []string {
 	names := []string{
 		dk.Name + PullSecretSuffix,

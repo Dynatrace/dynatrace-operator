@@ -190,6 +190,10 @@ test/e2e/logmonitoring/optionalscopes: manifests/crd/helm
 test/e2e/hostmonitoring/withoutcsi: manifests/crd/helm
 	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "host_monitoring_without_csi" $(SKIPCLEANUP)
 
+## Runs Host Monitoring generate metadata tests
+test/e2e/hostmonitoring/generate-metadata: manifests/crd/helm
+	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "host_monitoring_generate_metadata" $(SKIPCLEANUP)
+
 ## Runs CloudNative default e2e test only
 test/e2e/cloudnative/withoutcsi: manifests/crd/helm
 	$(GOTESTCMD) -timeout 20m ./test/scenarios/nocsi -run "cloudnative" $(SKIPCLEANUP)

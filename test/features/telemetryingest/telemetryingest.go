@@ -58,7 +58,7 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("otel collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("otel collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
 
@@ -92,7 +92,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
 
-	builder.Assess("otel collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("otel collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
 	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakube))
@@ -142,7 +142,7 @@ func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("otel collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("otel collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
 	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakube))
@@ -170,16 +170,16 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakubeZipkin)
 
-	builder.Assess("otel collector started", statefulset.WaitFor(testDynakubeZipkin.OtelCollectorStatefulsetName(), testDynakubeZipkin.Namespace))
+	builder.Assess("otel collector started", statefulset.IsReady(testDynakubeZipkin.OtelCollectorStatefulsetName(), testDynakubeZipkin.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakubeZipkin))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakubeZipkin))
 	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakubeZipkin))
 
 	var zipkinConfigResourceVersion string
-	builder.Assess("otel collector configuration timestamp", getOtelCollectorConfigResourceVersion(&testDynakubeZipkin, &zipkinConfigResourceVersion))
+	builder.Assess("otel collector zipkin configuration timestamp", getOtelCollectorConfigResourceVersion(&testDynakubeZipkin, &zipkinConfigResourceVersion))
 
 	var zipkinPodStartTS time.Time
-	builder.Assess("otel collector pod creation timestamp", getOtelCollectorPodTimestamp(&testDynakubeZipkin, &zipkinPodStartTS))
+	builder.Assess("otel collector zipkin pod creation timestamp", getOtelCollectorPodTimestamp(&testDynakubeZipkin, &zipkinPodStartTS))
 
 	optionsJaeger := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -190,21 +190,21 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	testDynakubeJaeger := *componentDynakube.New(optionsJaeger...)
 	componentDynakube.Update(builder, helpers.LevelAssess, testDynakubeJaeger)
 
-	builder.Assess("otel collector started", statefulset.WaitFor(testDynakubeJaeger.OtelCollectorStatefulsetName(), testDynakubeJaeger.Namespace))
-	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakubeJaeger))
-	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakubeJaeger))
+	builder.Assess("otel collector updated", statefulset.WaitFor(testDynakubeJaeger.OtelCollectorStatefulsetName(), testDynakubeJaeger.Namespace))
+	builder.Assess("otel collector config updated", checkOtelCollectorConfig(&testDynakubeJaeger))
+	builder.Assess("otel collector service updated", checkOtelCollectorService(&testDynakubeJaeger))
 
 	var jaegerConfigResourceVersion string
-	builder.Assess("otel collector configuration timestamp", getOtelCollectorConfigResourceVersion(&testDynakubeJaeger, &jaegerConfigResourceVersion))
-	builder.Assess("otel collector configuration updated", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+	builder.Assess("otel collector jaeger configuration timestamp", getOtelCollectorConfigResourceVersion(&testDynakubeJaeger, &jaegerConfigResourceVersion))
+	builder.Assess("otel collector jaeger configuration updated", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 		assert.NotEqual(t, jaegerConfigResourceVersion, zipkinConfigResourceVersion)
 
 		return ctx
 	})
 
 	var jaegerPodStartTS time.Time
-	builder.Assess("otel collector pod creation timestamp", getOtelCollectorPodTimestamp(&testDynakubeJaeger, &jaegerPodStartTS))
-	builder.Assess("otel collector pod restarted", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+	builder.Assess("otel collector jaeger pod creation timestamp", getOtelCollectorPodTimestamp(&testDynakubeJaeger, &jaegerPodStartTS))
+	builder.Assess("otel collector jaeger pod restarted", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 		assert.Greater(t, jaegerPodStartTS, zipkinPodStartTS)
 
 		return ctx
@@ -216,6 +216,7 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 
 	return builder.Feature()
 }
+
 func checkActiveGateContainer(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		componentActiveGate.CheckContainer(dk)

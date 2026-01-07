@@ -11,9 +11,9 @@ LOCALBIN_NPM ?= $(shell pwd)/node_modules/.bin
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
 KUSTOMIZE_VERSION ?= v5.8.0
 #renovate depName=sigs.k8s.io/controller-tools/cmd
-CONTROLLER_GEN_VERSION ?= v0.19.0
+CONTROLLER_GEN_VERSION ?= v0.20.0
 # renovate depName=github.com/golangci/golangci-lint/v2
-GOLANGCI_LINT_VERSION ?= v2.6.2
+GOLANGCI_LINT_VERSION ?= v2.7.2
 # renovate depName=golang.org/x/tools
 GOLANG_TOOLS_VERSION ?= v0.40.0
 # renovate depName=github.com/vektra/mockery
@@ -27,9 +27,9 @@ HELMUNITTEST_VERSION ?= v1.0.3
 # renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
 CYCLONEDX_GOMOD_VERSION ?= v1.9.0
 # renovate depName=github.com/mikefarah/yq/v4
-YQ_VERSION ?= v4.49.2
+YQ_VERSION ?= v4.50.1
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.18.0
+GO_TEST_COVERAGE_VERSION ?= v2.18.3
 
 # Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize

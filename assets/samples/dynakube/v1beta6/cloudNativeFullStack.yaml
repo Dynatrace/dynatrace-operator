@@ -1,10 +1,8 @@
-apiVersion: dynatrace.com/v1beta3
+apiVersion: dynatrace.com/v1beta6
 kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
-  # annotations:
-  #   feature.dynatrace.com/k8s-app-enabled: "true"
 spec:
   # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 
@@ -47,8 +45,8 @@ spec:
 
   # Configuration for Metadata Enrichment.
   #
-  # metadataEnrichment:
-  #   enabled: true
+  metadataEnrichment:
+    enabled: true
 
     # Optional: The namespaces where you want Dynatrace Operator to inject
     #
@@ -60,13 +58,132 @@ spec:
     #     operator: In
     #     values: [my-frontend, my-backend, my-database]
 
+  # Configuration for Log monitoring.
+  #
+  # logMonitoring: {}
+
+    # Optional: Specifies the rules and conditions for matching ingest attributes.
+    #
+    # ingestRuleMatchers:
+    #   - attribute: "k8s.namespace.name"
+    #     values:
+    #       - "kube-system"
+    #       - "dynatrace"
+    #       - "default"
+    #   - attribute: "k8s.pod.annotation",
+    #     values:
+    #       - "logs.dynatrace.com/ingest=true"
+    #       - "category=security"
+
+  # Configuration for OneAgent
+  #
+  oneAgent:
+    # Optional: Set a host group for OneAgent.
+    #
+    # hostGroup: ""
+
+    cloudNativeFullStack:
+
+      # Optional: The namespaces where you want Dynatrace Operator to inject
+      #
+      # namespaceSelector:
+      #   matchLabels:
+      #     app: my-app
+      #   matchExpressions:
+      #    - key: app
+      #      operator: In
+      #      values: [my-frontend, my-backend, my-database]
+
+      # Optional: Specify the node selector that controls on which nodes OneAgent will be deployed.
+      #
+      # nodeSelector: {}
+
+      # Optional: Assign a priority class to the OneAgent pods.
+      #
+      # priorityClassName: priority-class
+
+      # Optional: Tolerations to include with the OneAgent DaemonSet.
+      #
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+
+      # Optional: Resource settings for OneAgent container.
+      #
+      # oneAgentResources:
+      #   requests:
+      #     cpu: 100m
+      #     memory: 512Mi
+      #   limits:
+      #     cpu: 300m
+      #     memory: 1.5Gi
+
+      # Optional: Set additional arguments to the OneAgent installer.
+      #
+      # args: []
+
+      # Optional: Set additional environment variables for the OneAgent pods.
+      #
+      # env: []
+
+      # Optional: Disable automatic restarts of OneAgent pods in case a new version is available
+      #
+      # autoUpdate: true
+
+      # Optional: Set the DNS Policy for OneAgent pods.
+      #
+      # dnsPolicy: "ClusterFirstWithHostNet"
+
+      # Optional: Add custom OneAgent annotations.
+      #
+      # annotations:
+      #   custom: annotation
+
+      # Optional: Add custom labels to OneAgent pods
+      #
+      # labels:
+      #   custom: label
+
+      # Optional: Use a custom OneAgent image.
+      #
+      # image: ""
+
+      # Optional: The OneAgent version to be used.
+      # Example: <major>.<minor>.<release>.<timestamp>, e.g. 1.200.0.20240101-000000
+      #
+      # version: ""
+
+      # Optional: Define resources requests and limits for the initContainer.
+      #
+      # initResources:
+      #   requests:
+      #     cpu: 30m
+      #     memory: 30Mi
+      #   limits:
+      #     cpu: 100m
+      #     memory: 60Mi
+
+      # Optional: The OneAgent image that is used to inject into pods
+      #
+      # codeModulesImage: ""
+
+      # Optional: The SecComp Profile that will be configured in order to run in secure computing mode.
+      #
+      # secCompProfile: ""
+
   # Configuration for ActiveGate instances.
   #
   activeGate:
     # Defines the ActiveGate capabilities
     #
     capabilities:
+      - routing
       - kubernetes-monitoring
+      - dynatrace-api
 
     # Optional: Amount of replicas of ActiveGate pods.
     #

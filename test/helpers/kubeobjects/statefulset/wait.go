@@ -17,6 +17,9 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+// WaitFor wait until StatefulSet status replicas and readyReplicas are equal.
+// For cases when resources should already be in this state, e.g. after the initial DynaKube install,
+// [IsReady] should be used instead.
 func WaitFor(name string, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()

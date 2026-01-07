@@ -381,6 +381,7 @@ func TestCustomNoProxy(t *testing.T) {
 }
 
 func getWorkload(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+	t.Helper()
 	dataIngestToken := getTokens(dk.Name, dk.Namespace)
 	configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 

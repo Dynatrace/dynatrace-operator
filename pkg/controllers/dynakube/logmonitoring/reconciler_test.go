@@ -1,7 +1,6 @@
 package logmonitoring
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -15,7 +14,7 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("connection-info fail => error", func(t *testing.T) {
 		failOAConnectionInfo := createFailingReconciler(t)
@@ -83,6 +82,8 @@ func TestReconcile(t *testing.T) {
 }
 
 func createFailingReconciler(t *testing.T) *controllermock.Reconciler {
+	t.Helper()
+
 	failMock := controllermock.NewReconciler(t)
 	failMock.On("Reconcile", mock.Anything).Return(errors.New("BOOM"))
 
@@ -90,6 +91,8 @@ func createFailingReconciler(t *testing.T) *controllermock.Reconciler {
 }
 
 func createPassingReconciler(t *testing.T) *controllermock.Reconciler {
+	t.Helper()
+
 	passMock := controllermock.NewReconciler(t)
 	passMock.On("Reconcile", mock.Anything).Return(nil)
 

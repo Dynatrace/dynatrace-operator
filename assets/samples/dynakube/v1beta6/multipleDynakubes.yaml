@@ -1,4 +1,4 @@
-apiVersion: dynatrace.com/v1beta3
+apiVersion: dynatrace.com/v1beta6
 kind: DynaKube
 metadata:
   name: dynakube-application-monitoring
@@ -19,7 +19,7 @@ spec:
       - kubernetes-monitoring
 ---
 
-apiVersion: dynatrace.com/v1beta3
+apiVersion: dynatrace.com/v1beta6
 kind: DynaKube
 metadata:
   name: dynakube-cloud-native

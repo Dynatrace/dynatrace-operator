@@ -124,6 +124,9 @@ csidriver:
     type: RollingUpdate
   csiInit:
     securityContext:
+      capabilities:
+        drop:
+          - ALL
       runAsUser: 0
       privileged: false
       allowPrivilegeEscalation: false
@@ -182,6 +185,10 @@ csidriver:
         memory: 100Mi
   registrar:
     securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
       runAsUser: 0
       privileged: false
       readOnlyRootFilesystem: true
@@ -197,6 +204,9 @@ csidriver:
         memory: 30Mi
   livenessprobe:
     securityContext:
+      capabilities:
+        drop:
+          - ALL
       runAsUser: 0
       privileged: false
       allowPrivilegeEscalation: false
@@ -224,8 +234,8 @@ csidriver:
         type: RuntimeDefault
     resources:
       requests:
-        cpu: 300m
-        memory: 100Mi
+        cpu: 200m
+        memory: 30Mi
 
 rbac:
   activeGate:

@@ -1,7 +1,6 @@
 package dynatraceclient
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -18,20 +17,22 @@ const (
 	testNetworkZone = "zone-1"
 )
 
-func createTestDynakubeWithProxy(proxy value.Source) *dynakube.DynaKube {
-	dk := &dynakube.DynaKube{
-		Spec: dynakube.DynaKubeSpec{
-			Proxy: &proxy,
-		},
-	}
-	dk.Namespace = testNamespace
-
-	return dk
-}
-
 func TestOptions(t *testing.T) {
+	createTestDynakubeWithProxy := func(t *testing.T, proxy value.Source) *dynakube.DynaKube {
+		t.Helper()
+
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				Proxy: &proxy,
+			},
+		}
+		dk.Namespace = testNamespace
+
+		return dk
+	}
+
 	t.Run("Test append network zone", func(t *testing.T) {
-		opts := newOptions(context.Background())
+		opts := newOptions(t.Context())
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
@@ -45,7 +46,7 @@ func TestOptions(t *testing.T) {
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run("Test append cert check", func(t *testing.T) {
-		opts := newOptions(context.Background())
+		opts := newOptions(t.Context())
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
@@ -55,14 +56,14 @@ func TestOptions(t *testing.T) {
 		assert.NotNil(t, opts)
 		assert.NotEmpty(t, opts.Opts)
 
-		opts = newOptions(context.Background())
+		opts = newOptions(t.Context())
 		opts.appendCertCheck(true)
 
 		assert.NotNil(t, opts)
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run("Test append proxy settings", func(t *testing.T) {
-		opts := newOptions(context.Background())
+		opts := newOptions(t.Context())
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
@@ -71,7 +72,7 @@ func TestOptions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, opts.Opts)
 
-		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(value.Source{Value: testValue}))
+		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(t, value.Source{Value: testValue}))
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -86,16 +87,16 @@ func TestOptions(t *testing.T) {
 					dynakube.ProxyKey: []byte(testValue),
 				},
 			})
-		opts = newOptions(context.Background())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
+		opts = newOptions(t.Context())
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run("AppendProxySettings handles missing or malformed secret", func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		opts := newOptions(context.Background())
-		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
+		opts := newOptions(t.Context())
+		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
@@ -108,14 +109,14 @@ func TestOptions(t *testing.T) {
 				},
 				Data: map[string][]byte{},
 			})
-		opts = newOptions(context.Background())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(value.Source{ValueFrom: testName}))
+		opts = newOptions(t.Context())
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(t, value.Source{ValueFrom: testName}))
 
 		require.Error(t, err)
 		assert.Empty(t, opts.Opts)
 	})
 	t.Run("Test append trusted certificates", func(t *testing.T) {
-		opts := newOptions(context.Background())
+		opts := newOptions(t.Context())
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
@@ -140,7 +141,7 @@ func TestOptions(t *testing.T) {
 		assert.NotEmpty(t, opts.Opts)
 	})
 	t.Run("AppendTrustedCerts handles missing or malformed config map", func(t *testing.T) {
-		opts := newOptions(context.Background())
+		opts := newOptions(t.Context())
 
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
