@@ -7,7 +7,7 @@ on:
 
 env:
   IMAGE_REGISTRY: ghcr.io
-  # DOCKER_REPOSITORY is set in the "prepare" job below
+  IMAGE_REPOSITORY: dynatrace
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
 
 jobs:
@@ -23,16 +23,7 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
-      - name: Set Docker repository
-        id: set-docker-repository
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          # Avoid upper case characters
-          github_repository=$(echo "$GITHUB_REPOSITORY" | tr "[:upper:]" "[:lower:]")
-          echo "docker-repository=${github_repository}" >> "$GITHUB_OUTPUT"
     outputs:
-      docker_repository: ${{ steps.set-docker-repository.outputs.docker-repository }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
@@ -54,7 +45,7 @@ jobs:
         uses: ./.github/actions/build-push-image
         with:
           platforms: ${{ env.PLATFORMS }}
-          images: ${{ env.IMAGE_REGISTRY }}/${{ needs.prepare.outputs.docker_repository }}
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}
     outputs:
       digest: ${{ steps.build-image.outputs.digest }}
 
@@ -78,14 +69,14 @@ jobs:
       - name: Sign images
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ env.IMAGE_REGISTRY }}/${{ needs.prepare.outputs.docker_repository }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Create SBOM
         id: sbom
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ needs.prepare.outputs.docker_repository }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
@@ -93,7 +84,7 @@ jobs:
       - name: Upload SBOM
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ env.IMAGE_REGISTRY }}/${{ needs.prepare.outputs.docker_repository }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
