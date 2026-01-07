@@ -98,6 +98,7 @@ func (s *Server) probeRequest(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
 	writeResponse(w, http.StatusOK, "ok")
 
 	log.Debug("health check succeeded")
