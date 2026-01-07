@@ -12,29 +12,76 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-// cleanupCRDStorageVersions performs cleanup of CRD storage versions before operator startup.
+func runCRDCleanup(cfg *rest.Config, namespace string) error {
+	crdCleanupManager, err := createCRDCleanupManager(cfg, namespace)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancelFn := context.WithCancel(context.Background())
+
+	// Start the manager in a goroutine to make liveness probe available
+	managerErrChan := make(chan error, 1)
+	go func() {
+		if err := crdCleanupManager.Start(ctx); err != nil {
+			managerErrChan <- err
+		}
+	}()
+
+	cleanupErr := performCRDStorageVersionsCleanup(ctx, crdCleanupManager.GetClient())
+	cancelFn()
+
+	select {
+	case err := <-managerErrChan:
+		if cleanupErr == nil {
+			return err
+		}
+		return cleanupErr
+	default:
+		return cleanupErr
+	}
+}
+
+func createCRDCleanupManager(cfg *rest.Config, namespace string) (manager.Manager, error) {
+	crdCleanupManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme.Scheme,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				namespace: {},
+			},
+		},
+		HealthProbeBindAddress: healthProbeBindAddress,
+		LivenessEndpointName:   livenessEndpointName,
+	})
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	err = crdCleanupManager.AddHealthzCheck(livezEndpointName, healthz.Ping)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return crdCleanupManager, nil
+}
+
+// performCRDStorageVersionsCleanup performs cleanup of CRD storage versions before operator startup.
 // It checks if the DynaKube CRD has multiple storage versions and if so, reads and writes
 // all DynaKube instances to migrate them to the current storage version.
 // TODO gakr: Add working unit and integration tests for this function.
 // TODO gakr: Include logic for EdgeConnect CRD
-// TODO gakr: Fail gracefully if migration fails
-func cleanupCRDStorageVersions(cfg *rest.Config) error {
+func performCRDStorageVersionsCleanup(ctx context.Context, clt client.Client) error {
 	log.Info("starting CRD storage version cleanup")
 
-	clt, err := client.New(cfg, client.Options{
-		Scheme: scheme.Scheme,
-	})
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	ctx := context.Background()
-
 	var crd apiextensionsv1.CustomResourceDefinition
-	err = clt.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
+	err := clt.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
 	if err != nil {
 		log.Info("failed to get DynaKube CRD, skipping cleanup", "error", err)
 		return nil
