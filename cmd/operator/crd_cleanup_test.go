@@ -91,7 +91,7 @@ func TestCleanupCRDStorageVersions(t *testing.T) {
 		require.NoError(t, err)
 
 		err = performCRDStorageVersionsCleanup(ctx, clt)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = clt.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &crd)
 		require.NoError(t, err)
@@ -159,7 +159,7 @@ func TestCleanupCRDStorageVersions(t *testing.T) {
 		require.NoError(t, err)
 
 		err = performCRDStorageVersionsCleanup(ctx, clt)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = clt.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &crd)
 		require.NoError(t, err)

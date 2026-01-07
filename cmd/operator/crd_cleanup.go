@@ -3,7 +3,7 @@ package operator
 import (
 	"context"
 
-	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -29,6 +29,7 @@ func runCRDCleanup(cfg *rest.Config, namespace string) error {
 
 	// Start the manager in a goroutine to make liveness probe available
 	managerErrChan := make(chan error, 1)
+
 	go func() {
 		if err := crdCleanupManager.Start(ctx); err != nil {
 			managerErrChan <- err
@@ -36,6 +37,7 @@ func runCRDCleanup(cfg *rest.Config, namespace string) error {
 	}()
 
 	cleanupErr := performCRDStorageVersionsCleanup(ctx, crdCleanupManager.GetClient())
+
 	cancelFn()
 
 	select {
@@ -43,6 +45,7 @@ func runCRDCleanup(cfg *rest.Config, namespace string) error {
 		if cleanupErr == nil {
 			return err
 		}
+
 		return cleanupErr
 	default:
 		return cleanupErr
@@ -81,20 +84,24 @@ func performCRDStorageVersionsCleanup(ctx context.Context, clt client.Client) er
 	log.Info("starting CRD storage version cleanup")
 
 	var crd apiextensionsv1.CustomResourceDefinition
+
 	err := clt.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
 	if err != nil {
 		log.Info("failed to get DynaKube CRD, skipping cleanup", "error", err)
+
 		return nil
 	}
 
 	if len(crd.Status.StoredVersions) == 0 {
 		log.Info("DynaKube CRD has no storage versions, skipping cleanup")
+
 		return nil
 	}
 
 	if len(crd.Status.StoredVersions) == 1 && crd.Status.StoredVersions[0] == latest.GroupVersion.Version {
 		log.Info("DynaKube CRD has single, up-to-date storage version, no cleanup needed",
 			"storedVersions", crd.Status.StoredVersions)
+
 		return nil
 	}
 
@@ -104,6 +111,7 @@ func performCRDStorageVersionsCleanup(ctx context.Context, clt client.Client) er
 
 	// List all DynaKube instances
 	var dynakubeList dynakube.DynaKubeList
+
 	err = clt.List(ctx, &dynakubeList, &client.ListOptions{
 		Namespace: k8senv.DefaultNamespace(),
 	})
@@ -129,6 +137,7 @@ func performCRDStorageVersionsCleanup(ctx context.Context, clt client.Client) er
 
 	// Remove the old storage versions from the CRD status
 	crd.Status.StoredVersions = []string{latest.GroupVersion.Version}
+
 	err = clt.Status().Update(ctx, &crd)
 	if err != nil {
 		return errors.Wrap(err, "failed to update DynaKube CRD status")
