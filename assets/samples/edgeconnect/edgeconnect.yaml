@@ -4,7 +4,7 @@ metadata:
   name: edge-connect-sample
   namespace: dynatrace
 spec:
-  apiServer: "https://example.dev.apps.dynatracelabs.com"
+  apiServer: "example.dev.apps.dynatracelabs.com"
   oauth:
     clientSecret: my-secret-name
     endpoint: https://sso.sample.com/sso/oauth2/token
