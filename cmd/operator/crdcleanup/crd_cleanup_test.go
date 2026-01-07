@@ -1,4 +1,4 @@
-package operator
+package crdcleanup
 
 import (
 	"context"
@@ -60,7 +60,7 @@ func TestCleanupCRDStorageVersions(t *testing.T) {
 		clt, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
 		require.NoError(t, err)
 
-		err = performCRDStorageVersionsCleanup(context.Background(), clt)
+		err = performCRDStorageVersionsCleanup(context.Background(), clt, clt)
 		assert.NoError(t, err)
 	})
 
@@ -90,7 +90,7 @@ func TestCleanupCRDStorageVersions(t *testing.T) {
 		err = clt.Status().Update(ctx, &crd)
 		require.NoError(t, err)
 
-		err = performCRDStorageVersionsCleanup(ctx, clt)
+		err = performCRDStorageVersionsCleanup(ctx, clt, clt)
 		require.NoError(t, err)
 
 		err = clt.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &crd)
@@ -158,7 +158,7 @@ func TestCleanupCRDStorageVersions(t *testing.T) {
 		err = clt.Create(ctx, dk2)
 		require.NoError(t, err)
 
-		err = performCRDStorageVersionsCleanup(ctx, clt)
+		err = performCRDStorageVersionsCleanup(ctx, clt, clt)
 		require.NoError(t, err)
 
 		err = clt.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &crd)
