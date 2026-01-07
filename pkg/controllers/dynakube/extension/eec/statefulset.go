@@ -76,7 +76,7 @@ const (
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
-	appLabels := buildAppLabels(r.dk.Name)
+	appLabels := buildAppLabels(r.dk)
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
 	if err != nil {
@@ -161,8 +161,8 @@ func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]s
 	return templateAnnotations, nil
 }
 
-func buildAppLabels(dynakubeName string) *k8slabel.AppLabels {
-	return k8slabel.NewAppLabels(k8slabel.ExtensionComponentLabel, dynakubeName, k8slabel.ExtensionComponentLabel, "")
+func buildAppLabels(dk *dynakube.DynaKube) *k8slabel.AppLabels {
+	return k8slabel.NewAppLabels(k8slabel.ExtensionComponentLabel, dk.Name, k8slabel.ExtensionComponentLabel, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
 }
 
 func buildAffinity() corev1.Affinity {

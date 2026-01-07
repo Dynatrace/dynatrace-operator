@@ -238,7 +238,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
-		appLabels := buildAppLabels(dk.Name)
+		appLabels := buildAppLabels(dk)
 		assert.Equal(t, k8stopology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
@@ -615,7 +615,7 @@ func TestLabels(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		appLabels := buildAppLabels(dk.Name)
+		appLabels := buildAppLabels(dk)
 
 		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Labels)
 		assert.Equal(t, &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}, statefulSet.Spec.Selector)
@@ -631,7 +631,7 @@ func TestLabels(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		appLabels := buildAppLabels(dk.Name)
+		appLabels := buildAppLabels(dk)
 		podLabels := maputils.MergeMap(customLabels, appLabels.BuildLabels())
 
 		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Labels)
