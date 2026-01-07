@@ -79,9 +79,9 @@ func runInPod(kubeCfg *rest.Config) error {
 		}
 	}
 
-	err = cleanupCRDStorageVersions(kubeCfg)
+	err = runCRDCleanup(kubeCfg, namespace)
 	if err != nil {
-		return err
+		log.Info("CRD cleanup failed, proceeding to start operator", "error", err)
 	}
 
 	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
@@ -112,7 +112,7 @@ func runLocally(kubeCfg *rest.Config) error {
 	}
 
 	// Run CRD cleanup before starting the operator
-	err = cleanupCRDStorageVersions(kubeCfg)
+	err = runCRDCleanup(kubeCfg, namespace)
 	if err != nil {
 		return err
 	}
