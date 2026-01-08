@@ -145,6 +145,15 @@ jobs:
         id: set_slack_message
         env:
           TARGET_BRANCH: ${{ github.event.inputs.target || 'main' }}
+          K8S_CLUSTER_STATUS: ${{ needs.run-in-k8s.outputs.cluster_status }}
+          K8S_JOB_ID: ${{ needs.run-in-k8s.outputs.job_id }}
+          K8S_RESULT: ${{ needs.run-in-k8s.result }}
+          OCP_CLUSTER_STATUS: ${{ needs.run-in-ocp.outputs.cluster_status }}
+          OCP_JOB_ID: ${{ needs.run-in-ocp.outputs.job_id }}
+          OCP_RESULT: ${{ needs.run-in-ocp.result }}
+          OCP_FIPS_CLUSTER_STATUS: ${{ needs.run-in-ocp-fips.outputs.cluster_status }}
+          OCP_FIPS_JOB_ID: ${{ needs.run-in-ocp-fips.outputs.job_id }}
+          OCP_FIPS_RESULT: ${{ needs.run-in-ocp-fips.result }}
         run: |
           get_emoji() {
             if [ "$1" = "skipped" ]; then
@@ -155,18 +164,18 @@ jobs:
               echo "red_circle"
             fi
           }
-          K8S_STATUS=$(get_emoji "${{ needs.run-in-k8s.outputs.cluster_status }}" "${{ needs.run-in-k8s.result }}")
-          OCP_STATUS=$(get_emoji "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
-          OCP_FIPS_STATUS=$(get_emoji "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
+          K8S_STATUS=$(get_emoji "${K8S_CLUSTER_STATUS}" "${K8S_RESULT}")
+          OCP_STATUS=$(get_emoji "${OCP_CLUSTER_STATUS}" "${OCP_RESULT}")
+          OCP_FIPS_STATUS=$(get_emoji "${OCP_FIPS_CLUSTER_STATUS}" "${OCP_FIPS_RESULT}")
 
           echo "K8S_STATUS=$K8S_STATUS" >> $GITHUB_ENV
-          echo "K8S_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-k8s.outputs.job_id }}" >> $GITHUB_ENV
+          echo "K8S_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${K8S_JOB_ID}" >> $GITHUB_ENV
 
           echo "OCP_STATUS=$OCP_STATUS" >> $GITHUB_ENV
-          echo "OCP_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-ocp.outputs.job_id }}" >> $GITHUB_ENV
+          echo "OCP_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_JOB_ID}" >> $GITHUB_ENV
 
           echo "OCP_FIPS_STATUS=$OCP_FIPS_STATUS" >> $GITHUB_ENV
-          echo "OCP_FIPS_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ needs.run-in-ocp-fips.outputs.job_id }}" >> $GITHUB_ENV
+          echo "OCP_FIPS_JOB_ID=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${OCP_FIPS_JOB_ID}" >> $GITHUB_ENV
 
           echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
       - name: Notify failure in Slack

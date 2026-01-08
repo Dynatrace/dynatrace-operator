@@ -15,7 +15,7 @@ spec:
     # https://docs.dynatrace.com/docs/shortlink/account-api-authentication#create-an-oauth2-client
     #
     # Please consult https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/guides/operation/edgeconnect/edge-connect-provision
-    # for the scopes required specific to EdgeConnect with Kubernetes Automation enabled
+    # for the scopes required specific to EdgeConnect provisioner
     clientSecret: provisioner-oauth-client-secret
     endpoint: https://sso-dev.dynatracelabs.com/sso/oauth2/token
     resource: urn:dtaccount:cd99bbd6-3b73-467e-b1fb-c09b9db9e7cc
