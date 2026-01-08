@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/cmd/crdcleanup"
 	csiInit "github.com/Dynatrace/dynatrace-operator/cmd/csi/init"
 	"github.com/Dynatrace/dynatrace-operator/cmd/csi/livenessprobe"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/cmd/csi/provisioner"
@@ -62,6 +63,7 @@ func main() {
 	cmd.AddCommand(
 		webhook.New(),
 		operator.New(),
+		crdcleanup.New(),
 		troubleshoot.New(),
 		supportArchive.New(),
 		startupProbe.New(),
