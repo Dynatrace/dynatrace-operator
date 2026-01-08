@@ -363,8 +363,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
+				Name:      legacyLogVolumeName,
+				MountPath: legacyLogMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -373,8 +373,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  false,
 			},
 			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
+				Name:      legacyConfigurationVolumeName,
+				MountPath: legacyConfigurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -394,8 +394,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
+				Name:      legacyLogVolumeName,
+				MountPath: legacyLogMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -404,8 +404,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  false,
 			},
 			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
+				Name:      legacyConfigurationVolumeName,
+				MountPath: legacyConfigurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -439,8 +439,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
+				Name:      legacyLogVolumeName,
+				MountPath: legacyLogMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -449,8 +449,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  false,
 			},
 			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
+				Name:      legacyConfigurationVolumeName,
+				MountPath: legacyConfigurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -495,8 +495,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
+				Name:      legacyLogVolumeName,
+				MountPath: legacyLogMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -505,8 +505,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  false,
 			},
 			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
+				Name:      legacyConfigurationVolumeName,
+				MountPath: legacyConfigurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -533,8 +533,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
+				Name:      legacyLogVolumeName,
+				MountPath: legacyLogMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -543,8 +543,8 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				ReadOnly:  false,
 			},
 			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
+				Name:      legacyConfigurationVolumeName,
+				MountPath: legacyConfigurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -1078,13 +1078,13 @@ func TestLegacyVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
+				Name: legacyLogVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
-				Name: configurationVolumeName,
+				Name: legacyConfigurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
@@ -1126,13 +1126,13 @@ func TestLegacyVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
+				Name: legacyLogVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
-				Name: configurationVolumeName,
+				Name: legacyConfigurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
@@ -1196,13 +1196,13 @@ func TestLegacyVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
+				Name: legacyLogVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
-				Name: configurationVolumeName,
+				Name: legacyConfigurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
@@ -1244,13 +1244,13 @@ func TestLegacyVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
+				Name: legacyLogVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
-				Name: configurationVolumeName,
+				Name: legacyConfigurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
@@ -1303,13 +1303,13 @@ func TestLegacyVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
+				Name: legacyLogVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
-				Name: configurationVolumeName,
+				Name: legacyConfigurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
@@ -1362,13 +1362,13 @@ func TestLegacyVolumes(t *testing.T) {
 				},
 			},
 			{
-				Name: logVolumeName,
+				Name: legacyLogVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			{
-				Name: configurationVolumeName,
+				Name: legacyConfigurationVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},

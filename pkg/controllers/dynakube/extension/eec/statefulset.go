@@ -67,11 +67,11 @@ const (
 	runtimeConfigurationFilename       = "runtimeConfiguration"
 	serviceURLScheme                   = "https://"
 
-	configurationVolumeName = "runtime-configuration"
-	configurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf"
-	legacyRuntimeMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
-	logVolumeName           = "log"
-	logMountPath            = "/var/lib/dynatrace/remotepluginmodule/log"
+	legacyConfigurationVolumeName = "runtime-configuration"
+	legacyConfigurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf"
+	legacyRuntimeMountPath        = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
+	legacyLogVolumeName           = "log"
+	legacyLogMountPath            = "/var/lib/dynatrace/remotepluginmodule/log"
 
 	userGroupID int64 = 1001
 )
@@ -295,8 +295,8 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 				ReadOnly:  true,
 			},
 			{
-				Name:      logVolumeName,
-				MountPath: logMountPath,
+				Name:      legacyLogVolumeName,
+				MountPath: legacyLogMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -305,8 +305,8 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 				ReadOnly:  false,
 			},
 			{
-				Name:      configurationVolumeName,
-				MountPath: configurationMountPath,
+				Name:      legacyConfigurationVolumeName,
+				MountPath: legacyConfigurationMountPath,
 				ReadOnly:  false,
 			},
 			{
@@ -398,13 +398,13 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					},
 				},
 				{
-					Name: logVolumeName,
+					Name: legacyLogVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
 				{
-					Name: configurationVolumeName,
+					Name: legacyConfigurationVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
