@@ -36,10 +36,11 @@ runs:
   - name: Upload helm package to OCI registry
     id: push-helm-to-OCI
     shell: bash
+    env:
+      PATH_TO_HELM_CHART: "./helm-pkg/dynatrace-operator-${{ inputs.version-without-prefix }}.tgz"
+      REGISTRY_URL: "oci://${{ inputs.registry-url }}/${{ inputs.registry-namespace }}"
     run: |
-        hack/build/ci/push-helm-chart.sh \
-        "./helm-pkg/dynatrace-operator-${{ inputs.version-without-prefix }}.tgz" \
-        "oci://${{ inputs.registry-url }}/${{ inputs.registry-namespace }}"
+        hack/build/ci/push-helm-chart.sh
   - name: Sign OCI package with cosign
     uses: ./.github/actions/sign-image
     with:

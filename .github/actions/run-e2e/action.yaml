@@ -96,9 +96,11 @@ runs:
     - name: Check cluster status
       id: check_cluster_status
       shell: bash
+      env:
+        CLUSTER_STATUS: ${{ steps.create_cluster.outputs.cluster_status }}
       run: |
-        echo "Cluster status: ${{ steps.create_cluster.outputs.cluster_status }}"
-        if [[ "${{ steps.create_cluster.outputs.cluster_status }}" == "skipped" ]]; then
+        echo "Cluster status: ${CLUSTER_STATUS}"
+        if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
           echo "Cluster creation failed or was skipped. Skipping tests."
           echo "skip_tests=true" >> $GITHUB_OUTPUT
         fi

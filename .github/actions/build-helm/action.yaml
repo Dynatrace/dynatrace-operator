@@ -28,4 +28,9 @@ runs:
         token: ${{ inputs.github-token }}
     - name: Generate helm-package
       shell: bash
-      run: hack/build/ci/generate-helm-package.sh "${{ inputs.secring }}" "${{ inputs.passphrase }}" "${{ inputs.output-dir }}" "${{ inputs.version_without_prefix }}"
+      env:
+        OUTPUT_DIR: ${{ inputs.output-dir }}
+        PASSPHRASE: ${{ inputs.passphrase }}
+        SECRING: ${{ inputs.secring }}
+        VERSION_WITHOUT_PREFIX: ${{ inputs.version_without_prefix }}
+      run: hack/build/ci/generate-helm-package.sh
