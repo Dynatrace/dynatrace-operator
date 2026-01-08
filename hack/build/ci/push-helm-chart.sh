@@ -1,8 +1,5 @@
 #!/bin/bash
 
-readonly PATH_TO_HELM_CHART="${1}"
-readonly REGISTRY_URL="${2}"
-
 output=$(helm push "${PATH_TO_HELM_CHART}" "${REGISTRY_URL}" 2>&1)
 exit_status=$?
 

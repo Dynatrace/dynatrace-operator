@@ -2,14 +2,6 @@
 
 set -x
 
-readonly PREFLIGHT_VERSION="${1}"
-readonly IMAGE_URI="${2}"
-readonly PREFLIGHT_REPORT_NAME="${3}"
-readonly SHOULD_SUBMIT="${4:-false}"
-
-readonly PREFLIGHT_EXECUTABLE="preflight-linux-amd64"
-readonly PREFLIGHT_LOG="preflight.log"
-
 download_preflight() {
   curl -LO "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/${PREFLIGHT_VERSION}/${PREFLIGHT_EXECUTABLE}"
   sudo chmod +x "${PREFLIGHT_EXECUTABLE}"

@@ -101,12 +101,19 @@ jobs:
           base_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
       - name: List Changed Files
         run: |
-          echo "CI changed: ${{ steps.ci.outputs.all_changed_files }}"
-          echo "Go changed: ${{ steps.go-files.outputs.all_changed_files }}"
-          echo "Dockerfile changed: ${{ steps.dockerfile.outputs.all_changed_files }}"
-          echo "Helm changed: ${{ steps.helm.outputs.all_changed_files }}"
-          echo "Prerequisites changed: ${{ steps.prerequisites.outputs.all_changed_files }}"
-          echo "Markdown changed: ${{ steps.markdown.outputs.all_changed_files }}"
+          echo "CI changed: ${CHANGED_CI_FILES}"
+          echo "Go changed: ${CHANGED_GO_FILES}"
+          echo "Dockerfile changed: ${CHANGED_DOCKERFILE}"
+          echo "Helm changed: ${CHANGED_HELM_CONFIG_FILES}"
+          echo "Prerequisites changed: ${CHANGED_PREREQUISITES_MK_FILE}"
+          echo "Markdown changed: ${CHANGED_MARKDOWN_FILES}"
+        env:
+          CHANGED_CI_FILES: ${{ steps.ci.outputs.all_changed_files }}
+          CHANGED_DOCKERFILE: ${{ steps.dockerfile.outputs.all_changed_files }}
+          CHANGED_GO_FILES: ${{ steps.go-files.outputs.all_changed_files }}
+          CHANGED_HELM_CONFIG_FILES: ${{ steps.helm.outputs.all_changed_files }}
+          CHANGED_MARKDOWN_FILES: ${{ steps.markdown.outputs.all_changed_files }}
+          CHANGED_PREREQUISITES_MK_FILE: ${{ steps.prerequisites.outputs.all_changed_files }}
 
   helm-test:
     needs: [detect-changes]
