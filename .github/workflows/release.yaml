@@ -205,7 +205,7 @@ jobs:
       - name: Generate K8s manifests
         shell: bash
         env:
-          DIGEST: ${{needs.build-push.outputs.digest}}
+          DIGEST: ${{ needs.build-push.outputs.digest }}
           VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
           VERSION: ${{ needs.prepare.outputs.version }}
         run: |
