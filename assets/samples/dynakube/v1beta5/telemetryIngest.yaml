@@ -87,7 +87,7 @@ spec:
 
       # Optional: Tolerations to include with the OTel Collector deployment.
       #
-      # tolerations: {}
+      # tolerations: []
 
       # Optional: Resource settings for OTel collector container.
       #
