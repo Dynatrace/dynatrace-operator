@@ -49,8 +49,7 @@ jobs:
         id: meta
         run: |
           set -euo pipefail
-          base_ref='${{ github.event.pull_request.base.ref }}'
-          echo "Base ref: $base_ref"
+          echo "Base ref: $BASE_REF"
 
           versions_dirs="$(ls -d config/olm/kubernetes/*/ 2>/dev/null || true)"
           if [ -z "$versions_dirs" ]; then
@@ -62,28 +61,30 @@ jobs:
           version="$(python .github/scripts/release/directory_version.py "${versions_dirs}")"
           echo "Detected bundle version: $version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "branch=$base_ref" >> "$GITHUB_OUTPUT"
+          echo "branch=$BASE_REF" >> "$GITHUB_OUTPUT"
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
       - name: Clone and setup fork repository
         env:
           VERSION: ${{ steps.meta.outputs.version }}
           TEAM_TOKEN: ${{ secrets.TEAM_USER_TOKEN }}
         run: |
           set -euo pipefail
-          
+
           fork_clone_url="https://github.com/${FORK_REPOSITORY_URL}.git"
           fork_clone_url_with_token="${fork_clone_url/https:\/\//https:\/\/x-access-token:${TEAM_TOKEN}@}"
-          
+
           echo "Cloning fork ${FORK_REPOSITORY_URL}"
           git clone "${fork_clone_url_with_token}" fork-repo
           cd fork-repo
-          
+
           upstream_repo="${ORIGINAL_REPOSITORY_URL}"
           git remote add upstream "https://github.com/${upstream_repo}.git" || true
           git fetch upstream
-          
+
           branch_name="dynatrace-operator-${VERSION}"
           git checkout -B "${branch_name}" "upstream/main"
-          
+
           echo "FORK_REPO_DIR=$(pwd)" >> "$GITHUB_ENV"
           echo "BRANCH_NAME=${branch_name}" >> "$GITHUB_ENV"
       - name: Prepare bundle files for ${{ env.MARKETPLACE }}
@@ -92,28 +93,28 @@ jobs:
         run: |
           set -euo pipefail
           cd "${FORK_REPO_DIR}"
-          
+
           # Determine bundle source (kubernetes for community, openshift for others)
           if [ "${MARKETPLACE}" = "community" ]; then
             bundle_source="kubernetes"
           else
             bundle_source="openshift"
           fi
-          
+
           # Setup operator directory
           if [ "${MARKETPLACE}" = "redhat" ]; then
             operator_dir="operators/dynatrace-operator-rhmp/${VERSION}"
           else
             operator_dir="operators/dynatrace-operator/${VERSION}"
           fi
-          
+
           mkdir -p "${operator_dir}/manifests"
           mkdir -p "${operator_dir}/metadata"
-          
+
           # Copy bundle files
           cp -rf "../config/olm/${bundle_source}/${VERSION}/manifests" "${operator_dir}/"
           cp -rf "../config/olm/${bundle_source}/${VERSION}/metadata" "${operator_dir}/"
-          
+
           # Create Dockerfile for community marketplaces
           if [ "${MARKETPLACE}" = "community" ] || [ "${MARKETPLACE}" = "community-prod" ]; then
             echo "Creating Dockerfile for ${MARKETPLACE}"
@@ -123,23 +124,23 @@ jobs:
             echo "COPY manifests /manifests/" >> "${target_dockerfile}"
             echo "COPY metadata /metadata/" >> "${target_dockerfile}"
           fi
-          
+
           # Update package annotation for redhat
           if [ "${MARKETPLACE}" = "redhat" ]; then
             sed -i \
               "s/  operators.operatorframework.io.bundle.package.v1: dynatrace-operator/  operators.operatorframework.io.bundle.package.v1: dynatrace-operator-rhmp/" \
               "${operator_dir}/metadata/annotations.yaml"
           fi
-          
+
           # Determine last existing version and set spec.replaces
           if [ "${MARKETPLACE}" = "redhat" ]; then
             last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator-rhmp/*/)" 2>/dev/null || true)"
           else
             last_version="$(python ../.github/scripts/release/directory_version.py "$(ls -d operators/dynatrace-operator/*/)" 2>/dev/null || true)"
           fi
-          
+
           csv_file="${operator_dir}/manifests/dynatrace-operator.clusterserviceversion.yaml"
-          
+
           if [ -n "${last_version}" ]; then
             if [ "${MARKETPLACE}" = "redhat" ]; then
               yq -i ".spec.replaces = \"dynatrace-operator-rhmp.v${last_version}\"" "${csv_file}"
@@ -157,7 +158,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "${FORK_REPO_DIR}"
-          
+
           # Set IMAGE based on marketplace
           case "${MARKETPLACE}" in
             community)
@@ -181,7 +182,7 @@ jobs:
               exit 1
               ;;
           esac
-          
+
           # Prepare CSV files
           if [ "${MARKETPLACE}" = "redhat" ]; then
             csv_file="operators/dynatrace-operator-rhmp/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml"
@@ -203,11 +204,11 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
           cd "${FORK_REPO_DIR}"
-          
+
           # Rename CSV file
           mv "operators/dynatrace-operator-rhmp/${VERSION}/manifests/dynatrace-operator.clusterserviceversion.yaml" \
              "operators/dynatrace-operator-rhmp/${VERSION}/manifests/dynatrace-operator-rhmp.clusterserviceversion.yaml"
-          
+
           # Update metadata.name
           yq -i \
             ".metadata.name = \"dynatrace-operator-rhmp.v${VERSION}\"" \
@@ -217,18 +218,18 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
           cd "${FORK_REPO_DIR}"
-          
+
           git add -A
           if git diff-index --quiet HEAD; then
             echo "No changes to commit; nothing to push for ${MARKETPLACE}."
             exit 0
           fi
-          
+
           if [ "${MARKETPLACE}" = "redhat" ]; then
             operator_name="dynatrace-operator-rhmp"
           else
             operator_name="dynatrace-operator"
           fi
-          
+
           git commit -s -m "operator ${operator_name} (${VERSION})"
           git push origin "${BRANCH_NAME}"

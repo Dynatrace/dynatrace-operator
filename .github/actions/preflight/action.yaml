@@ -30,13 +30,17 @@ runs:
   - name: Run preflight on image
     shell: bash
     env:
-      RHCC_APITOKEN: ${{ inputs.pyxis-api-token }}
-      RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
+      IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
+      PREFLIGHT_EXECUTABLE: "preflight-linux-amd64"
+      PREFLIGHT_LOG: "preflight.log"
+      PREFLIGHT_REPORT_NAME: ${{ inputs.report-name }}
       # renovate datasource=github-releases depName=redhat-openshift-ecosystem/openshift-preflight
       PREFLIGHT_VERSION: 1.15.2
-      IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
+      RHCC_APITOKEN: ${{ inputs.pyxis-api-token }}
+      RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
+      SHOULD_SUBMIT: ${{ inputs.should-submit }}
     run: |
-      hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_URI}}" "${{ inputs.report-name }}" "${{ inputs.should-submit }}"
+      hack/build/ci/preflight.sh
   - name: Upload report
     uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
     with:
