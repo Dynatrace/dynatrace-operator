@@ -1,4 +1,4 @@
-apiVersion: dynatrace.com/v1beta3
+apiVersion: dynatrace.com/v1beta6
 kind: DynaKube
 metadata:
   name: dynakube
@@ -45,8 +45,8 @@ spec:
 
   # Configuration for Metadata Enrichment.
   #
-  metadataEnrichment:
-    enabled: true
+  # metadataEnrichment:
+  #   enabled: true
 
     # Optional: The namespaces where you want Dynatrace Operator to inject
     #
@@ -82,18 +82,7 @@ spec:
     #
     # hostGroup: ""
 
-    cloudNativeFullStack:
-    
-      # Optional: The namespaces where you want Dynatrace Operator to inject
-      #
-      # namespaceSelector:
-      #   matchLabels:
-      #     app: my-app
-      #   matchExpressions:
-      #    - key: app
-      #      operator: In
-      #      values: [my-frontend, my-backend, my-database]
-
+    hostMonitoring:
       # Optional: Specify the node selector that controls on which nodes OneAgent will be deployed.
       #
       # nodeSelector: {}
@@ -156,20 +145,6 @@ spec:
       # Example: <major>.<minor>.<release>.<timestamp>, e.g. 1.200.0.20240101-000000
       #
       # version: ""
-
-      # Optional: Define resources requests and limits for the initContainer.
-      #
-      # initResources:
-      #   requests:
-      #     cpu: 30m
-      #     memory: 30Mi
-      #   limits:
-      #     cpu: 100m
-      #     memory: 60Mi
-
-      # Optional: The OneAgent image that is used to inject into pods
-      #
-      # codeModulesImage: ""
 
       # Optional: The SecComp Profile that will be configured in order to run in secure computing mode.
       #

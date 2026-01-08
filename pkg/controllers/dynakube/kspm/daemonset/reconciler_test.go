@@ -30,7 +30,7 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Create and update works with minimal setup", func(t *testing.T) {
 		dk := createDynakube(true)
@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(context.Background())
+		err = reconciler.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -88,12 +88,12 @@ func TestReconcile(t *testing.T) {
 	t.Run("problem with k8s request => visible in conditions", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		boomClient := createBOOMK8sClient()
+		boomClient := createBOOMK8sClient(t)
 
 		reconciler := NewReconciler(boomClient,
 			boomClient, dk)
 
-		err := reconciler.Reconcile(context.Background())
+		err := reconciler.Reconcile(t.Context())
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
@@ -288,7 +288,9 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 	}
 }
 
-func createBOOMK8sClient() client.Client {
+func createBOOMK8sClient(t *testing.T) client.Client {
+	t.Helper()
+
 	boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 			return errors.New("BOOM")

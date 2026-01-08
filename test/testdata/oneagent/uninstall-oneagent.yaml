@@ -33,7 +33,7 @@ spec:
           - "300"
         command:
         - sleep
-        image: busybox:latest
+        image: docker.io/busybox:latest
         imagePullPolicy: Always
         name: uninstall-oneagent
         resources:

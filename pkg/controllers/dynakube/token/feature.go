@@ -31,11 +31,7 @@ func (feature *Feature) CollectOptionalScopes(availableScopes []string) map[stri
 	optionalScopes := map[string]bool{}
 
 	for _, scope := range feature.OptionalScopes {
-		if !slices.Contains(availableScopes, scope) {
-			optionalScopes[scope] = false
-		} else {
-			optionalScopes[scope] = true
-		}
+		optionalScopes[scope] = slices.Contains(availableScopes, scope)
 	}
 
 	return optionalScopes

@@ -2,6 +2,8 @@ package kspm
 
 import (
 	"slices"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 )
 
 func (kspm *Kspm) SetName(name string) {
@@ -17,7 +19,7 @@ func (kspm *Kspm) GetTokenSecretName() string {
 }
 
 func (kspm *Kspm) GetDaemonSetName() string {
-	return kspm.name + "-" + NodeCollectorNameSuffix
+	return kspm.name + consts.NodeCollectorNameSuffix
 }
 
 func (kspm *Kspm) GetUniqueMappedHostPaths() []string {

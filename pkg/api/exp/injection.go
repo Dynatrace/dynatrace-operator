@@ -15,7 +15,9 @@ const (
 	InjectionAutomaticKey             = FFPrefix + "automatic-injection"
 	InjectionLabelVersionDetectionKey = FFPrefix + "label-version-detection"
 	InjectionFailurePolicyKey         = FFPrefix + "injection-failure-policy"
-	InjectionSeccompKey               = FFPrefix + "init-container-seccomp-profile"
+
+	// Deprecated: This field will be removed in a future release.
+	InjectionSeccompKey = FFPrefix + "init-container-seccomp-profile"
 )
 
 // Deprecated: Dedicated field since v1beta3.
@@ -73,5 +75,5 @@ func (ff *FeatureFlags) GetInjectionFailurePolicy() string {
 }
 
 func (ff *FeatureFlags) HasInitSeccomp() bool {
-	return ff.getBoolWithDefault(InjectionSeccompKey, false)
+	return ff.getBoolWithDefault(InjectionSeccompKey, true)
 }

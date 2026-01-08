@@ -27,7 +27,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 	// Register dynakube install
 	dynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("one agent started", daemonset.WaitForDaemonset(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
+	builder.Assess("one agent started", daemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 
 	// Register sample, dynakube and operator uninstall
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)

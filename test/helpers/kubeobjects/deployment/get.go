@@ -4,12 +4,17 @@ package deployment
 
 import (
 	"context"
+	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 type PodConsumer func(pod corev1.Pod)
@@ -54,4 +59,15 @@ func (query *Query) ForEachPod(consumer PodConsumer) error {
 	}
 
 	return nil
+}
+
+func IsReady(name, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		deploy, err := NewQuery(ctx, resources, client.ObjectKey{Name: name, Namespace: namespace}).Get()
+		require.NoError(t, err)
+		assert.Equal(t, deploy.Status.Replicas, deploy.Status.ReadyReplicas)
+
+		return ctx
+	}
 }

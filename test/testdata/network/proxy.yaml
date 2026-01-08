@@ -73,7 +73,7 @@ spec:
     spec:
       serviceAccountName: proxy
       containers:
-      - image: ubuntu/squid
+      - image: docker.io/ubuntu/squid
         name: squid
         volumeMounts:
           - mountPath: /etc/squid/

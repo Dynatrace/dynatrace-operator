@@ -18,7 +18,7 @@ func TestGetAppName(t *testing.T) {
 
 	const alternativeNamespace = "weirednamespacename"
 
-	fakeClientSet := fake.NewSimpleClientset(
+	fakeClientSet := fake.NewClientset(
 		&corev1.Pod{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Pod",

@@ -1,10 +1,10 @@
-apiVersion: dynatrace.com/v1beta3
+apiVersion: dynatrace.com/v1beta6
 kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
-#  annotations:
-#    feature.dynatrace.com/oneagent-privileged: "true" # Required on Openshift
+  # annotations:
+  #   feature.dynatrace.com/oneagent-privileged: "true" # Required on Openshift
 spec:
   # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 

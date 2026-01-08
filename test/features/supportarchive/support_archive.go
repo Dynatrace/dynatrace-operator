@@ -113,9 +113,9 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckEcExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// check if components are running
-	builder.Assess("active gate pod is running", statefulset.WaitFor(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
-	builder.Assess("extensions execution controller started", statefulset.WaitFor(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("extension collector started", statefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("active gate pod is running", statefulset.IsReady(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
+	builder.Assess("extensions execution controller started", statefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
