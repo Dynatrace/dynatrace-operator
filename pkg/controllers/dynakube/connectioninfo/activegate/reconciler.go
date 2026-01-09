@@ -16,7 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -67,27 +66,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}
-
-	if !conditions.IsOutdated(r.timeProvider, r.dk, activeGateConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
-		if err != nil {
-			return err
-		}
-
-		condition := meta.FindStatusCondition(*r.dk.Conditions(), activeGateConnectionInfoConditionType)
-		if isSecretPresent {
-			log.Info(dynakube.GetCacheValidMessage(
-				"activegate connection info update",
-				condition.LastTransitionTime,
-				r.dk.APIRequestThreshold()))
-
-			return nil
-		}
-	}
-
-	conditions.SetSecretOutdated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
-
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo(ctx)
 	if err != nil {
 		conditions.SetDynatraceAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)

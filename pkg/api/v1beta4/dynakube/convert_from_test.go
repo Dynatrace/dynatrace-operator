@@ -357,7 +357,6 @@ func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec active
 func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubelatest.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
-	assert.Equal(t, oldStatus.DynatraceAPI.LastTokenScopeRequest, newStatus.DynatraceAPI.LastTokenScopeRequest)
 	assert.Equal(t, oldStatus.KubeSystemUUID, newStatus.KubeSystemUUID)
 	assert.Equal(t, oldStatus.Phase, newStatus.Phase)
 	assert.Equal(t, oldStatus.UpdatedTimestamp, newStatus.UpdatedTimestamp)
@@ -962,9 +961,6 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 				Source:             status.TenantRegistryVersionSource,
 				LastProbeTimestamp: &testTime,
 			},
-		},
-		DynatraceAPI: dynakubelatest.DynatraceAPIStatus{
-			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{
 			{

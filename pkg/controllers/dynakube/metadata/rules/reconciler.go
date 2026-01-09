@@ -41,12 +41,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dk, conditionType) {
-		return nil
-	}
-
-	conditions.SetStatusOutdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are outdated in the status")
-
 	if !conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
 		log.Info("metadata-enrichment rules are not set in the status because the optional scope is not available", "scope", dtclient.TokenScopeSettingsRead)
 		conditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the optional 'settings.read' scope is not available")

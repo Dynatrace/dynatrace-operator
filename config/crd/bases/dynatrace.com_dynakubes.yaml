@@ -9108,12 +9108,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              dynatraceApi:
-                properties:
-                  lastTokenScopeRequest:
-                    format: date-time
-                    type: string
-                type: object
               kspm:
                 properties:
                   tokenSecretHash:

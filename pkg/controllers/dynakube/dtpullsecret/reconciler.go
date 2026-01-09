@@ -50,16 +50,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if conditions.IsOutdated(r.timeprovider, r.dk, PullSecretConditionType) {
-		conditions.SetSecretOutdated(r.dk.Conditions(), PullSecretConditionType,
-			extendWithPullSecretSuffix(r.dk.Name)+" is not present or outdated")
+	err := r.reconcilePullSecret(ctx)
+	if err != nil {
+		log.Info("could not reconcile pull secret")
 
-		err := r.reconcilePullSecret(ctx)
-		if err != nil {
-			log.Info("could not reconcile pull secret")
-
-			return errors.WithStack(err)
-		}
+		return errors.WithStack(err)
 	}
 
 	return nil
