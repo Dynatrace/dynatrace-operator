@@ -31,6 +31,7 @@ func TestGetContainer(t *testing.T) {
 		assert.NotEmpty(t, mainContainer.Env)
 		assert.Len(t, mainContainer.Env, expectedBaseEnvLen)
 		assert.NotEmpty(t, mainContainer.SecurityContext)
+		assert.NotEmpty(t, mainContainer.SecurityContext.SeccompProfile)
 	})
 
 	t.Run("image-ref is respected", func(t *testing.T) {
