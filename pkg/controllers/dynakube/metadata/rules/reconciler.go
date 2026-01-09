@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -41,15 +41,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dk, conditionType) {
+	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, conditionType) {
 		return nil
 	}
 
-	conditions.SetStatusOutdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are outdated in the status")
+	k8sconditions.SetStatusOutdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are outdated in the status")
 
-	if !conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
+	if !k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead) {
 		log.Info("metadata-enrichment rules are not set in the status because the optional scope is not available", "scope", dtclient.TokenScopeSettingsRead)
-		conditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the optional 'settings.read' scope is not available")
+		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are not set in the status because the optional 'settings.read' scope is not available")
 
 		return nil
 	}
@@ -60,7 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	r.dk.Status.MetadataEnrichment.Rules = rules
-	conditions.SetStatusUpdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are up-to-date in the status")
+	k8sconditions.SetStatusUpdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are up-to-date in the status")
 	log.Info("update rules in the status", "len(rules)", len(rules))
 
 	return nil
@@ -69,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]metadataenrichment.Rule, error) {
 	rulesResponse, err := r.dtc.GetRulesSettings(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
-		conditions.SetDynatraceAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), conditionType, err)
 
 		return nil, errors.Join(err, errors.New("error trying to check if rules exist"))
 	}

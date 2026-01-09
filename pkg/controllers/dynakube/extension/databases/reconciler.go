@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -38,7 +38,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if err := deleteDeployments(ctx, r.client, r.dk, expectedDeploymentNames); err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
 	}
@@ -46,7 +46,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	for i, dbSpec := range ext.Databases {
 		replicas, err := r.getReplicas(ctx, expectedDeploymentNames[i], dbSpec.Replicas)
 		if err != nil {
-			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 			return err
 		}
@@ -68,14 +68,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		)
 		if err != nil {
 			// This error indicates that the scheme is missing required types and is unrecoverable.
-			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 			return err
 		}
 
 		changed, err := query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
 		if err != nil {
-			conditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 			return err
 		}
@@ -86,7 +86,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if len(expectedDeploymentNames) > 0 {
-		conditions.SetDeploymentsApplied(r.dk, conditionType, expectedDeploymentNames)
+		k8sconditions.SetDeploymentsApplied(r.dk, conditionType, expectedDeploymentNames)
 	} else {
 		_ = meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
 	}

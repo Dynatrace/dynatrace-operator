@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -49,7 +49,7 @@ func TestConfigurationConfigMap(t *testing.T) {
 
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, conditionType, dk.Status.Conditions[0].Type)
-		assert.Equal(t, conditions.ConfigMapCreatedOrUpdatedReason, dk.Status.Conditions[0].Reason)
+		assert.Equal(t, k8sconditions.ConfigMapCreatedOrUpdatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
 	})
 }

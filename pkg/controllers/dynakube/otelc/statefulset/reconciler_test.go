@@ -10,9 +10,9 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
@@ -55,7 +55,7 @@ func TestReconcile(t *testing.T) {
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotNil(t, condition)
 		require.NotEmpty(t, oldTransitionTime)
-		assert.Equal(t, conditions.StatefulSetCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.StatefulSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
 		err = reconciler.Reconcile(t.Context())
@@ -80,7 +80,7 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient := fake.NewClient(&previousSts)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		conditions.SetStatefulSetCreated(dk.Conditions(), conditionType, "this is a test")
+		k8sconditions.SetStatefulSetCreated(dk.Conditions(), conditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
 		err := reconciler.Reconcile(ctx)

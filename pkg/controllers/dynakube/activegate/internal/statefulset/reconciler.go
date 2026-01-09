@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/pkg/errors"
@@ -62,18 +62,18 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 	desiredSts, err := r.buildDesiredStatefulSet(ctx)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return err
 	}
 
 	updated, err := k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ActiveGateStatefulSetConditionType, err)
 
 		return err
 	} else if updated {
-		conditions.SetStatefulSetCreated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
+		k8sconditions.SetStatefulSetCreated(r.dk.Conditions(), ActiveGateStatefulSetConditionType, desiredSts.Name)
 	}
 
 	return nil

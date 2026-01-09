@@ -10,9 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -109,7 +109,7 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 		setPersistentVolumeClaim(r.dk),
 	)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
@@ -117,12 +117,12 @@ func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	_, err = k8sstatefulset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, desiredSts)
 	if err != nil {
 		log.Info("failed to create/update " + r.dk.Extensions().GetExecutionControllerStatefulsetName() + " statefulset")
-		conditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
 
 		return err
 	}
 
-	conditions.SetStatefulSetCreated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, desiredSts.Name)
+	k8sconditions.SetStatefulSetCreated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, desiredSts.Name)
 
 	return nil
 }

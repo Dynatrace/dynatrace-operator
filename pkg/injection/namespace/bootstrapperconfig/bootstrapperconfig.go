@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -97,20 +97,20 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	err = s.secrets.CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	log.Info("done updating init secrets")
-	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, GetSourceConfigSecretName(dk.Name))
+	k8sconditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, GetSourceConfigSecretName(dk.Name))
 
 	return nil
 }
@@ -218,7 +218,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 
 	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
@@ -239,7 +239,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 func (s *SecretGenerator) prepareDownloadConfig(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
 	var tokens corev1.Secret
 	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}

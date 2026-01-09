@@ -15,9 +15,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/stretchr/testify/assert"
@@ -154,7 +154,7 @@ func TestConditions(t *testing.T) {
 	t.Run("extensions are disabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions = nil
-		conditions.SetStatefulSetCreated(dk.Conditions(), extensionControllerStatefulSetConditionType, dk.Extensions().GetExecutionControllerStatefulsetName())
+		k8sconditions.SetStatefulSetCreated(dk.Conditions(), extensionControllerStatefulSetConditionType, dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		mockK8sClient := fake.NewClient(dk)
 

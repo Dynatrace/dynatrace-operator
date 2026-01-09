@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,7 +90,7 @@ func TestService(t *testing.T) {
 
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, serviceConditionType, dk.Status.Conditions[0].Type)
-		assert.Equal(t, conditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
+		assert.Equal(t, k8sconditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
 	})
 	t.Run("create service for specified protocols", func(t *testing.T) {
@@ -114,7 +114,7 @@ func TestService(t *testing.T) {
 
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, serviceConditionType, dk.Status.Conditions[0].Type)
-		assert.Equal(t, conditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
+		assert.Equal(t, k8sconditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
 	})
 	t.Run("default service name, remove service if it is not needed", func(t *testing.T) {
@@ -191,7 +191,7 @@ func TestService(t *testing.T) {
 
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, serviceConditionType, dk.Status.Conditions[0].Type)
-		assert.Equal(t, conditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
+		assert.Equal(t, k8sconditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
 
 		// update
@@ -222,7 +222,7 @@ func TestService(t *testing.T) {
 
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, serviceConditionType, dk.Status.Conditions[0].Type)
-		assert.Equal(t, conditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
+		assert.Equal(t, k8sconditions.ServiceCreatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
 
 		// update

@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	lmdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
@@ -146,12 +146,12 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 		condition := meta.FindStatusCondition(*dk.Conditions(), configsecret.LmcConditionType)
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 
 		condition = meta.FindStatusCondition(*dk.Conditions(), lmdaemonset.ConditionType)
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 
 		if scopesEnabled {
 			assert.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, logmonsettings.ConditionType))
@@ -160,7 +160,7 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 		}
 
 		for _, conditionType := range dtclient.OptionalScopes {
-			hasScope := conditions.IsOptionalScopeAvailable(dk, conditionType)
+			hasScope := k8sconditions.IsOptionalScopeAvailable(dk, conditionType)
 			assert.Equalf(t, scopesEnabled, hasScope, "expected %s condition to be %t", conditionType, scopesEnabled)
 		}
 
