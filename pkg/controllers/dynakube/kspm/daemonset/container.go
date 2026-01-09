@@ -39,7 +39,10 @@ func getSecurityContext() corev1.SecurityContext {
 		RunAsGroup:               ptr.To(runAs),
 		RunAsNonRoot:             ptr.To(true),
 		ReadOnlyRootFilesystem:   ptr.To(true),
-		Capabilities:             &corev1.Capabilities{Add: []corev1.Capability{"DAC_OVERRIDE"}, Drop: []corev1.Capability{"ALL"}},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"DAC_OVERRIDE"}, Drop: []corev1.Capability{"ALL"}},
 	}
 
 	return securityContext
