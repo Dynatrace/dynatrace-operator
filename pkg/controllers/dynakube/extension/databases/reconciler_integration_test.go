@@ -1,6 +1,7 @@
 package databases
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -124,6 +125,14 @@ func TestExtensionsDatabases(t *testing.T) {
 			{ID: "db2"},
 		})
 		require.NoError(t, err, "should create dynakube with two databases")
+	})
+	t.Run("database list is unique", func(t *testing.T) {
+		err := createDynakubeWithDatabaseSpec(t, clt, []extensions.DatabaseSpec{
+			{ID: "mysql"},
+			{ID: "mysql"},
+		})
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "invalid: spec.extensions.databases[1]: Duplicate value: {\"id\":\"mysql\"}")
 	})
 }
 
