@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
@@ -116,36 +115,22 @@ func TestPublishVolume(t *testing.T) {
 		varDir := path.AppMountVarDir(volumeCfg.VolumeID)
 		assert.DirExists(t, varDir)
 
-		mappedDir := path.AppMountMappedDir(volumeCfg.VolumeID)
-		assert.DirExists(t, mappedDir)
-
 		workDir := path.AppMountWorkDir(volumeCfg.VolumeID)
 		assert.DirExists(t, workDir)
 
-		isMountPoint, err := mounter.IsMountPoint(mappedDir)
+		// overlay is mounted directly to targetPath
+		isMountPoint, err := mounter.IsMountPoint(volumeCfg.TargetPath)
 		require.NoError(t, err)
 		assert.True(t, isMountPoint)
 
+		require.Len(t, mounter.MountPoints, 1)
 		overlayMount := mounter.MountPoints[0]
 		assert.Equal(t, "overlay", overlayMount.Device)
-		assert.Contains(t, overlayMount.Path, mappedDir)
+		assert.Equal(t, volumeCfg.TargetPath, overlayMount.Path)
 		require.Len(t, overlayMount.Opts, 3)
 		assert.Contains(t, overlayMount.Opts[0], testBinary) // lowerdir
 		assert.Contains(t, overlayMount.Opts[1], varDir)     // upperdir
 		assert.Contains(t, overlayMount.Opts[2], workDir)    // workdir
-
-		isMountPoint, err = mounter.IsMountPoint(volumeCfg.TargetPath)
-		require.NoError(t, err)
-		assert.True(t, isMountPoint)
-
-		bindMount := mounter.MountPoints[1]
-		if runtime.GOOS == "darwin" {
-			assert.Equal(t, mappedDir, bindMount.Device)
-		} else {
-			// this is what linux does, and what we actually care about
-			assert.Equal(t, "overlay", bindMount.Device)
-		}
-		assert.Equal(t, volumeCfg.TargetPath, bindMount.Path)
 	})
 }
 
