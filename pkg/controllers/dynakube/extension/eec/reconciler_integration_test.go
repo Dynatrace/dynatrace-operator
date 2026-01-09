@@ -8,8 +8,6 @@ import (
 )
 
 func TestStatefulSet(t *testing.T) {
-	t.Log("WELCOME")
-
 	clt := integrationtests.SetupTestEnvironment(t)
 
 	dk := getTestDynakube()

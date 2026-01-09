@@ -30,7 +30,7 @@ Check if default image or imageref is used
     {{- if (.Values.imageRef).repository -}}
         {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
     {{- else if hasPrefix "0.0.0-nightly-" .Chart.AppVersion -}}
-        {{- printf "%s:%s" "quay.io/dynatrace/dynatrace-operator" (.Chart.AppVersion | replace "0.0.0-" "") }}
+        {{- printf "%s:%s" "ghcr.io/dynatrace/dynatrace-operator" (.Chart.AppVersion | replace "0.0.0-" "") }}
     {{- else if eq (include "dynatrace-operator.platform" .) "openshift" -}}
         {{- printf "%s:v%s" "registry.connect.redhat.com/dynatrace/dynatrace-operator" .Chart.AppVersion }}
     {{- else if eq (include "dynatrace-operator.platform" .) "google-marketplace" -}}

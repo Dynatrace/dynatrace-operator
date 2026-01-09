@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -51,29 +52,33 @@ const (
 	envEecHTTPSCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
 	envEecHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
-	eecTokenMountPath                  = "/var/lib/dynatrace/remotepluginmodule/secrets/tokens"
-	customCertificateMountPath         = "/var/lib/dynatrace/remotepluginmodule/secrets/extensions"
+	eecTokenMountPath                  = "/secrets/tokens"
+	customCertificateMountPath         = "/secrets/extensions"
 	customCertificateVolumeName        = "extension-custom-certs"
-	logMountPath                       = "/var/lib/dynatrace/remotepluginmodule/log"
 	runtimeVolumeName                  = "agent-runtime"
-	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
-	configurationVolumeName            = "runtime-configuration"
-	configurationMountPath             = "/var/lib/dynatrace/remotepluginmodule/agent/conf"
+	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule"
 	customConfigVolumeName             = "custom-config"
-	customConfigMountPath              = "/var/lib/dynatrace/remotepluginmodule/secrets/config"
+	customConfigMountPath              = "/secrets/config"
 	activeGateTrustedCertVolumeName    = "server-certs"
-	activeGateTrustedCertMountPath     = "/var/lib/dynatrace/remotepluginmodule/secrets/ag"
+	activeGateTrustedCertMountPath     = "/secrets/ag"
 	activeGateTrustedCertSecretKeyPath = "server.crt"
 	httpsCertVolumeName                = "https-certs"
-	httpsCertMountPath                 = "/var/lib/dynatrace/remotepluginmodule/secrets/https"
+	httpsCertMountPath                 = "/secrets/https"
 	runtimeConfigurationFilename       = "runtimeConfiguration"
 	serviceURLScheme                   = "https://"
 
-	// misc
-	logVolumeName = "log"
+	legacyConfigurationVolumeName = "runtime-configuration"
+	legacyConfigurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf"
+	legacyRuntimeMountPath        = "/var/lib/dynatrace/remotepluginmodule/agent/runtime"
+	legacyLogVolumeName           = "log"
+	legacyLogMountPath            = "/var/lib/dynatrace/remotepluginmodule/log"
 
 	userGroupID int64 = 1001
 )
+
+func useLegacyMounts(dk *dynakube.DynaKube) bool {
+	return exp.NewFlags(dk.Annotations).UseEECLegacyMounts()
+}
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
 	appLabels := buildAppLabels(r.dk.Name)
@@ -241,30 +246,35 @@ func buildPodSecurityContext(dk *dynakube.DynaKube) *corev1.PodSecurityContext {
 }
 
 func buildContainerEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
+	var prefix string
+	if useLegacyMounts(dk) {
+		prefix = runtimeMountPath
+	}
+
 	containerEnvs := []corev1.EnvVar{
 		{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID},
 		{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ":443"},
-		{Name: envEecTokenPath, Value: eecTokenMountPath + "/" + eecConsts.TokenSecretKey},
+		{Name: envEecTokenPath, Value: prefix + eecTokenMountPath + "/" + eecConsts.TokenSecretKey},
 		{Name: envEecIngestPort, Value: strconv.Itoa(consts.ExtensionsDatasourceTargetPort)},
 		{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath},
 		{Name: envDsInstallDirName, Value: envDsInstallDir},
 		{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID},
 		{Name: envK8sExtServiceURL, Value: serviceURLScheme + dk.Extensions().GetServiceNameFQDN()},
-		{Name: envDSTokenPath, Value: eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey},
-		{Name: envHTTPSCertPathPem, Value: envEecHTTPSCertPathPem},
-		{Name: envHTTPSPrivKeyPathPem, Value: envEecHTTPSPrivKeyPathPem},
+		{Name: envDSTokenPath, Value: prefix + eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey},
+		{Name: envHTTPSCertPathPem, Value: prefix + envEecHTTPSCertPathPem},
+		{Name: envHTTPSPrivKeyPathPem, Value: prefix + envEecHTTPSPrivKeyPathPem},
 	}
 
 	if dk.ActiveGate().HasCaCert() {
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: envActiveGateTrustedCert})
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envActiveGateTrustedCertName, Value: prefix + envActiveGateTrustedCert})
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: prefix + customConfigMountPath + "/" + runtimeConfigurationFilename})
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates != "" {
-		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
+		containerEnvs = append(containerEnvs, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: prefix + customCertificateMountPath})
 	}
 
 	return containerEnvs
@@ -275,55 +285,98 @@ func buildActiveGateServiceName(dk *dynakube.DynaKube) string {
 }
 
 func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      consts.ExtensionsTokensVolumeName,
-			MountPath: eecTokenMountPath,
-			ReadOnly:  true,
-		},
-		{
-			Name:      logVolumeName,
-			MountPath: logMountPath,
-			ReadOnly:  false,
-		},
-		{
-			Name:      runtimeVolumeName,
-			MountPath: runtimeMountPath,
-			ReadOnly:  false,
-		},
-		{
-			Name:      configurationVolumeName,
-			MountPath: configurationMountPath,
-			ReadOnly:  false,
-		},
-		{
-			Name:      httpsCertVolumeName,
-			MountPath: httpsCertMountPath,
-			ReadOnly:  true,
-		},
+	var volumeMounts []corev1.VolumeMount
+
+	if useLegacyMounts(dk) {
+		volumeMounts = []corev1.VolumeMount{
+			{
+				Name:      consts.ExtensionsTokensVolumeName,
+				MountPath: runtimeMountPath + eecTokenMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      legacyLogVolumeName,
+				MountPath: legacyLogMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      runtimeVolumeName,
+				MountPath: legacyRuntimeMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      legacyConfigurationVolumeName,
+				MountPath: legacyConfigurationMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      httpsCertVolumeName,
+				MountPath: runtimeMountPath + httpsCertMountPath,
+				ReadOnly:  true,
+			},
+		}
+	} else {
+		volumeMounts = []corev1.VolumeMount{
+			{
+				Name:      consts.ExtensionsTokensVolumeName,
+				MountPath: eecTokenMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      runtimeVolumeName,
+				MountPath: runtimeMountPath,
+				ReadOnly:  false,
+			},
+			{
+				Name:      httpsCertVolumeName,
+				MountPath: httpsCertMountPath,
+				ReadOnly:  true,
+			},
+		}
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      customConfigVolumeName,
-			MountPath: customConfigMountPath,
-			ReadOnly:  true,
+			Name: customConfigVolumeName,
+			MountPath: func() string {
+				var prefix string
+				if useLegacyMounts(dk) {
+					prefix = runtimeMountPath
+				}
+
+				return prefix + customConfigMountPath
+			}(),
+			ReadOnly: true,
 		})
 	}
 
 	if dk.ActiveGate().HasCaCert() {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      activeGateTrustedCertVolumeName,
-			MountPath: activeGateTrustedCertMountPath,
-			ReadOnly:  true,
+			Name: activeGateTrustedCertVolumeName,
+			MountPath: func() string {
+				var prefix string
+				if useLegacyMounts(dk) {
+					prefix = runtimeMountPath
+				}
+
+				return prefix + activeGateTrustedCertMountPath
+			}(),
+			ReadOnly: true,
 		})
 	}
 
 	if dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates != "" {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      customCertificateVolumeName,
-			MountPath: customCertificateMountPath,
-			ReadOnly:  true,
+			Name: customCertificateVolumeName,
+			MountPath: func() string {
+				var prefix string
+				if useLegacyMounts(dk) {
+					prefix = runtimeMountPath
+				}
+
+				return prefix + customCertificateMountPath
+			}(),
+			ReadOnly: true,
 		})
 	}
 
@@ -333,36 +386,58 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
 		mode := int32(420)
-		o.Spec.Template.Spec.Volumes = []corev1.Volume{
-			{
-				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
+		if useLegacyMounts(dk) {
+			o.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: consts.ExtensionsTokensVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  dk.Extensions().GetTokenSecretName(),
+							DefaultMode: &mode,
+						},
 					},
 				},
-			},
-			{
-				Name: logVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: configurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dk.Extensions().GetTLSSecretName(),
+				{
+					Name: legacyLogVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
-			},
+				{
+					Name: legacyConfigurationVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
+					Name: httpsCertVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: dk.Extensions().GetTLSSecretName(),
+						},
+					},
+				},
+			}
+		} else {
+			o.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: consts.ExtensionsTokensVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  dk.Extensions().GetTokenSecretName(),
+							DefaultMode: &mode,
+						},
+					},
+				},
+				{
+					Name: httpsCertVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: dk.Extensions().GetTLSSecretName(),
+						},
+					},
+				},
+			}
 		}
 
 		if dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
