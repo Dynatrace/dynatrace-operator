@@ -22,7 +22,6 @@ type Spec struct {
 	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:MaxItems:=1
 	// +kubebuilder:validation:MinItems:=1
 	// +listType=map
 	// +listMapKey=id
