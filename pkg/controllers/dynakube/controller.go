@@ -49,9 +49,7 @@ import (
 )
 
 const (
-	fastUpdateInterval    = 1 * time.Minute
-	changesUpdateInterval = 5 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
+	fastUpdateInterval = 1 * time.Minute
 
 	controllerName = "dynakube-controller"
 )
@@ -154,6 +152,8 @@ type Controller struct {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
+	defer controller.resetRequeueAfter()
+
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -174,13 +174,34 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	oldStatus := *dk.Status.DeepCopy()
-	controller.requeueAfter = defaultUpdateInterval
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
-	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
+	if err == nil {
+		log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "automaticRequeueAfter", result.RequeueAfter.String())
+	}
 
 	return result, err
+}
+
+// resetRequeueAfter is necessary to clear the requeueAfter between reconciliations as we don't have static default value for this.
+func (controller *Controller) resetRequeueAfter() {
+	controller.requeueAfter = 0
+}
+
+func (controller *Controller) defaultRequeueInterval(dk dynakube.DynaKube) time.Duration {
+	// Using the LastTokenScopeRequest to determine the requeue interval is a hack for now.
+	// As every other Dynatrace API request's timestamp is stored as a Conditions entry, and most are not mandatory.
+	// This doesn't solve the problem of having inconsistent requeue intervals for different API requests, but it's better than a fixed interval.
+	duration := dk.Status.DynatraceAPI.LastTokenScopeRequest.Add(dk.APIRequestThreshold()).Sub(metav1.Now().Time)
+
+	// if the duration is zero then there won't be any requeue
+	// so we set it to a fast interval to make sure we requeue
+	if duration <= 0 {
+		return fastUpdateInterval
+	}
+
+	return duration
 }
 
 func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, dkNamespace string) (*dynakube.DynaKube, error) {
@@ -217,10 +238,10 @@ func (controller *Controller) handleError(
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
 			"errorCode", dynatraceapi.StatusCode(err), "errorMessage", dynatraceapi.Message(err))
 		// should we set the phase to error ?
+
 		return reconcile.Result{RequeueAfter: fastUpdateInterval}, nil
 
 	case err != nil:
-		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 		dk.Status.SetPhase(dynatracestatus.Error)
 		log.Error(err, "error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
@@ -232,7 +253,6 @@ func (controller *Controller) handleError(
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
-		controller.setRequeueAfterIfNewIsShorter(changesUpdateInterval)
 
 		if errClient := dk.UpdateStatus(ctx, controller.client); errClient != nil {
 			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
@@ -243,11 +263,13 @@ func (controller *Controller) handleError(
 		return reconcile.Result{}, err
 	}
 
+	controller.setRequeueAfterIfNewIsShorter(controller.defaultRequeueInterval(*dk))
+
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
 
 func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Duration) {
-	if controller.requeueAfter > requeueAfter {
+	if controller.requeueAfter <= 0 || controller.requeueAfter > requeueAfter {
 		controller.requeueAfter = requeueAfter
 	}
 }
