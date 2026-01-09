@@ -20,11 +20,9 @@ metadata:
   name: dynatrace-cleanup-crd
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.crdCleanupLabels" . | nindent 4 }}
   annotations:
-    "helm.sh/hook": pre-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
 rules:
   - apiGroups:
       - dynatrace.com
@@ -43,11 +41,9 @@ metadata:
   name: dynatrace-cleanup-crd
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.crdCleanupLabels" . | nindent 4 }}
   annotations:
-    "helm.sh/hook": pre-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: dynatrace-cleanup-crd

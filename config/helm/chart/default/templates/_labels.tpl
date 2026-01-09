@@ -47,6 +47,14 @@ app.kubernetes.io/component: operator
 {{- end -}}
 
 {{/*
+CRD cleanup labels
+*/}}
+{{- define "dynatrace-operator.crdCleanupLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: crd-cleanup
+{{- end -}}
+
+{{/*
 Operator selector labels
 */}}
 {{- define "dynatrace-operator.operatorSelectorLabels" -}}
