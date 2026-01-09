@@ -21,11 +21,16 @@ runs:
     - name: Attach sbom attestation to image
       shell: bash
       run: |
-        cosign attest -y --key env://COSIGN_PRIVATE_KEY  --type cyclonedx --predicate "${{ inputs.sbom }}" "${{ inputs.image }}"
+        cosign attest -y --key env://COSIGN_PRIVATE_KEY  --type cyclonedx --predicate "${SBOM}" "${IMAGE}"
       env:
         COSIGN_PRIVATE_KEY: ${{ inputs.signing-key }}
         COSIGN_PASSWORD: ${{ inputs.signing-password }}
+        IMAGE: ${{ inputs.image }}
+        SBOM: ${{ inputs.sbom }}
     - name: Attach sbom attestation to image and sign keyless
       shell: bash
       run: |
-        cosign attest -y  --type cyclonedx --predicate "${{ inputs.sbom }}" "${{ inputs.image }}"
+        cosign attest -y  --type cyclonedx --predicate "${SBOM}" "${IMAGE}"
+      env:
+        IMAGE: ${{ inputs.image }}
+        SBOM: ${{ inputs.sbom }}

@@ -14,8 +14,8 @@ permissions:
 
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
-  DOCKER_REGISTRY: quay.io
-  DOCKER_REPOSITORY: dynatrace/dynatrace-operator
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_NAME: dynatrace/dynatrace-operator
   PLATFORMS: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
   PR_PLATFORMS: linux/amd64,linux/arm64
 
@@ -101,12 +101,19 @@ jobs:
           base_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
       - name: List Changed Files
         run: |
-          echo "CI changed: ${{ steps.ci.outputs.all_changed_files }}"
-          echo "Go changed: ${{ steps.go-files.outputs.all_changed_files }}"
-          echo "Dockerfile changed: ${{ steps.dockerfile.outputs.all_changed_files }}"
-          echo "Helm changed: ${{ steps.helm.outputs.all_changed_files }}"
-          echo "Prerequisites changed: ${{ steps.prerequisites.outputs.all_changed_files }}"
-          echo "Markdown changed: ${{ steps.markdown.outputs.all_changed_files }}"
+          echo "CI changed: ${CHANGED_CI_FILES}"
+          echo "Go changed: ${CHANGED_GO_FILES}"
+          echo "Dockerfile changed: ${CHANGED_DOCKERFILE}"
+          echo "Helm changed: ${CHANGED_HELM_CONFIG_FILES}"
+          echo "Prerequisites changed: ${CHANGED_PREREQUISITES_MK_FILE}"
+          echo "Markdown changed: ${CHANGED_MARKDOWN_FILES}"
+        env:
+          CHANGED_CI_FILES: ${{ steps.ci.outputs.all_changed_files }}
+          CHANGED_DOCKERFILE: ${{ steps.dockerfile.outputs.all_changed_files }}
+          CHANGED_GO_FILES: ${{ steps.go-files.outputs.all_changed_files }}
+          CHANGED_HELM_CONFIG_FILES: ${{ steps.helm.outputs.all_changed_files }}
+          CHANGED_MARKDOWN_FILES: ${{ steps.markdown.outputs.all_changed_files }}
+          CHANGED_PREREQUISITES_MK_FILE: ${{ steps.prerequisites.outputs.all_changed_files }}
 
   helm-test:
     needs: [detect-changes]
@@ -283,29 +290,29 @@ jobs:
     if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Build images
     runs-on: ubuntu-24.04
+    permissions:
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Login to Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build image
         uses: ./.github/actions/build-push-image
         with:
           platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
-          images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
 
   run-preflight:
-    name: Run preflight on quay.io without submitting results when merging to main
+    name: Run preflight on ghcr.io without submitting results when merging to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: Release
     needs: [build-push, prepare]
     runs-on: ubuntu-24.04
-    env:
-      SCAN_REGISTRY: "quay.io"
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -313,7 +320,7 @@ jobs:
         uses: ./.github/actions/preflight
         with:
           version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.DOCKER_REGISTRY }}
-          repository: ${{ env.DOCKER_REPOSITORY }}
+          registry: ${{ env.IMAGE_REGISTRY }}
+          repository: ${{ env.IMAGE_NAME }}
           report-name: "preflight.json"
           should-submit: "false"
