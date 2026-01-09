@@ -1,0 +1,124 @@
+suite: test job for CRD cleanup
+templates:
+  - Common/crd/job-crd-cleanup.yaml
+tests:
+  - it: should exist with default values
+    set:
+      platform: kubernetes
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: dynatrace-operator-crd-cleanup
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: metadata.annotations
+      - equal:
+          path: spec.ttlSecondsAfterFinished
+          value: 600
+      - equal:
+          path: spec.backoffLimit
+          value: 3
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: dynatrace-cleanup-crd
+
+  - it: should have correct container configuration
+    set:
+      platform: kubernetes
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: crd-cleanup
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: crd-cleanup
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --namespace=NAMESPACE
+      - isNotEmpty:
+          path: spec.template.spec.containers[0].resources.requests
+      - isNotEmpty:
+          path: spec.template.spec.containers[0].resources.limits
+      - isNotEmpty:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should have apparmor annotation when enabled
+    set:
+      platform: kubernetes
+      operator:
+        apparmor: true
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-cleanup"]
+          value: runtime/default
+
+  - it: should not have apparmor annotation when disabled
+    set:
+      platform: kubernetes
+      operator:
+        apparmor: false
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-cleanup"]
+
+  - it: should have custom pull secret when specified
+    set:
+      platform: kubernetes
+      customPullSecret: my-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: my-secret
+
+  - it: should have node selector when specified
+    set:
+      platform: kubernetes
+      operator:
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+
+  - it: should have tolerations when specified
+    set:
+      platform: kubernetes
+      operator:
+        tolerations:
+          - key: "key1"
+            operator: "Equal"
+            value: "value1"
+            effect: "NoSchedule"
+    asserts:
+      - contains:
+          path: spec.template.spec.tolerations
+          content:
+            key: "key1"
+            operator: "Equal"
+            value: "value1"
+            effect: "NoSchedule"
+
+  - it: should have pod security context
+    set:
+      platform: kubernetes
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.securityContext
+
+  - it: should have node affinity
+    set:
+      platform: kubernetes
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.affinity
