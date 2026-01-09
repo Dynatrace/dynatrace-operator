@@ -14,6 +14,8 @@ const (
 	// Deprecated: Dedicated field since v1beta2.
 	APIRequestThresholdKey = FFPrefix + "dynatrace-api-request-threshold"
 
+	UseEECLegacyMountsKey = FFPrefix + "use-eec-legacy-mounts"
+
 	silentPhrase = "silent"
 	failPhrase   = "fail"
 
@@ -45,6 +47,10 @@ func (ff *FeatureFlags) GetNoProxy() string {
 
 func (ff *FeatureFlags) IsPublicRegistry() bool {
 	return ff.getBoolWithDefault(PublicRegistryKey, false)
+}
+
+func (ff *FeatureFlags) UseEECLegacyMounts() bool {
+	return ff.getBoolWithDefault(UseEECLegacyMountsKey, true)
 }
 
 // Deprecated: Do not use "disable" feature flags.
