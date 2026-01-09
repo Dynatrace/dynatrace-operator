@@ -1,0 +1,53 @@
+# Copyright 2026 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# For more information why the individual permissions are required see
+# https://github.com/Dynatrace/dynatrace-operator/blob/main/doc/roles/operator-roles.md
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynatrace-cleanup-crd
+  labels:
+    {{- include "dynatrace-operator.crdCleanupLabels" . | nindent 4 }}
+  annotations:
+    {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+      - customresourcedefinitions/status
+    resourceNames:
+      - dynakubes.dynatrace.com
+      - edgeconnects.dynatrace.com
+    verbs:
+      - get
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-cleanup-crd
+  labels:
+    {{- include "dynatrace-operator.crdCleanupLabels" . | nindent 4 }}
+  annotations:
+    {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-cleanup-crd
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: dynatrace-cleanup-crd
+  apiGroup: rbac.authorization.k8s.io

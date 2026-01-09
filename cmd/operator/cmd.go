@@ -77,6 +77,11 @@ func runInPod(kubeCfg *rest.Config) error {
 		if err != nil {
 			return err
 		}
+
+		err = runCRDCleanup(kubeCfg, namespace)
+		if err != nil {
+			return err
+		}
 	}
 
 	operatorManager, err := createOperatorManager(kubeCfg, namespace, isOLM)
@@ -102,6 +107,12 @@ func runLocally(kubeCfg *rest.Config) error {
 	namespace := os.Getenv(k8senv.PodNamespace)
 
 	err := runCertInit(kubeCfg, namespace)
+	if err != nil {
+		return err
+	}
+
+	// Run CRD cleanup before starting the operator
+	err = runCRDCleanup(kubeCfg, namespace)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdcleanup"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -14,24 +15,32 @@ import (
 )
 
 func runCertInit(cfg *rest.Config, namespace string) error {
-	certInitManager, err := createCertInitManager(cfg, namespace)
+	return runInitManager(cfg, namespace, certificates.AddInit)
+}
+
+func runCRDCleanup(cfg *rest.Config, namespace string) error {
+	return runInitManager(cfg, namespace, crdcleanup.AddInit)
+}
+
+func runInitManager(cfg *rest.Config, namespace string, addInitFn func(manager.Manager, string, context.CancelFunc) error) error {
+	mgr, err := createInitManager(cfg, namespace)
 	if err != nil {
 		return err
 	}
 
-	err = checkCRDs(certInitManager)
+	err = checkCRDs(mgr)
 	if err != nil {
 		return err
 	}
 
 	ctx, cancelFn := context.WithCancel(context.Background())
 
-	err = certificates.AddInit(certInitManager, namespace, cancelFn)
+	err = addInitFn(mgr, namespace, cancelFn)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	err = certInitManager.Start(ctx)
+	err = mgr.Start(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -39,7 +48,7 @@ func runCertInit(cfg *rest.Config, namespace string) error {
 	return nil
 }
 
-func createCertInitManager(cfg *rest.Config, namespace string) (manager.Manager, error) {
+func createInitManager(cfg *rest.Config, namespace string) (manager.Manager, error) {
 	controlManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
 		Cache: cache.Options{

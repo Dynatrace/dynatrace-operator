@@ -1,0 +1,55 @@
+suite: test clusterrole for CRD cleanup
+templates:
+  - Common/crd/clusterrole-cleanup-crd.yaml
+tests:
+  - it: ClusterRole should exist
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-cleanup-crd
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: metadata.annotations
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+                - customresourcedefinitions/status
+              resourceNames:
+                - dynakubes.dynatrace.com
+                - edgeconnects.dynatrace.com
+              verbs:
+                - get
+                - update
+
+  - it: ClusterRoleBinding should exist
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-cleanup-crd
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: metadata.annotations
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-cleanup-crd
+            namespace: NAMESPACE
+      - equal:
+          path: roleRef
+          value:
+            kind: ClusterRole
+            name: dynatrace-cleanup-crd
+            apiGroup: rbac.authorization.k8s.io
