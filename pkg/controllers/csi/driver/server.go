@@ -202,48 +202,29 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 	}
 
 	appMountDir := srv.path.AppMountForID(volumeInfo.VolumeID)
-
-	mappedDir := srv.path.AppMountMappedDir(volumeInfo.VolumeID) // Unmount follows symlinks, so no need to check for them here
-
-	_, err := os.Stat(mappedDir)
-	if os.IsNotExist(err) { // case for timed out mounts
-		_ = os.RemoveAll(appMountDir)
-
-		return
-	} else if err != nil {
-		log.Error(err, "unexpected error when checking for app mount folder, trying to unmount just to be sure")
+	needsCleanUp := []string{
+		srv.path.AppMountVarDir(volumeInfo.VolumeID),
+		srv.path.AppMountWorkDir(volumeInfo.VolumeID),
 	}
 
-	if err := srv.mounter.Unmount(mappedDir); err != nil {
-		// Just try to unmount, nothing really can go wrong, just have to handle errors
-		log.Error(err, "Unmount failed", "path", mappedDir)
-	} else {
-		// special handling is needed, because after upgrade/restart the mappedDir will be still busy
-		needsCleanUp := []string{
-			srv.path.AppMountVarDir(volumeInfo.VolumeID),
-			srv.path.AppMountWorkDir(volumeInfo.VolumeID),
-		}
+	for _, path := range needsCleanUp {
+		podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient
+		if podInfoSymlinkPath != "" {
+			_ = os.Remove(podInfoSymlinkPath)
 
-		for _, path := range needsCleanUp {
-			podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient instead of having to walk the whole fs during cleanup
-			if podInfoSymlinkPath != "" {
-				_ = os.Remove(podInfoSymlinkPath)
+			podInfoSymlinkDir := filepath.Dir(podInfoSymlinkPath)
 
-				podInfoSymlinkDir := filepath.Dir(podInfoSymlinkPath)
-
-				if entries, _ := os.ReadDir(podInfoSymlinkDir); len(entries) == 0 {
-					_ = os.Remove(podInfoSymlinkDir)
-				}
-			}
-
-			err := os.RemoveAll(path) // you see correctly, we don't keep the logs of the app mounts, will keep them when they will have a use
-			if err != nil {
-				log.Error(err, "failed to clean up unmounted volume dir", "path", path)
+			if entries, _ := os.ReadDir(podInfoSymlinkDir); len(entries) == 0 {
+				_ = os.Remove(podInfoSymlinkDir)
 			}
 		}
 
-		_ = os.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
+		if err := os.RemoveAll(path); err != nil {
+			log.Error(err, "failed to clean up unmounted volume dir", "path", path)
+		}
 	}
+
+	_ = os.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
 }
 
 func (srv *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
