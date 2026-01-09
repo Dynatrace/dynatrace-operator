@@ -24,6 +24,15 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Build image metadata
+      uses: ./.github/actions/metadata
+      id: meta
+      with:
+        platforms: ${{ inputs.platforms }}
+        annotation: ${{ inputs.annotation }}
+        dockerfile: ${{ inputs.dockerfile }}
+        images: ${{ inputs.images }}
+        suffix: ${{ inputs.suffix }}
     - name: Set up QEMU
       uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
     - name: Set up Docker Buildx
@@ -32,62 +41,23 @@ runs:
       uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
       with:
         go-version: 'stable' # Latest stable version
-    - name: Prepare build parameters
-      id: prep
-      shell: bash
-      run: |
-        hack/build/ci/prepare-build-variables.sh
     - name: Download third party licenses
       shell: bash
       run: |
         hack/build/ci/third-party-licenses.sh
-    - name: Set build date
+    - name: Prepare linker args
+      id: linker-args
       shell: bash
-      id: set-build-date
       run: |
-        echo "date=$(date --iso-8601)" >> $GITHUB_OUTPUT
-    - name: Docker metadata
-      uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
-      id: meta
-      env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ contains(inputs.platforms, ',') && 'manifest,index' || 'manifest' }}
-      with:
-        images: ${{ inputs.images }}
-        flavor: |
-          # prepend suffixes (like "fips") with a dash
-          suffix=${{ inputs.suffix != '' && format('-{0}', inputs.suffix) || '' }}
-        labels: |
-          # default retention policy
-          quay.expires-after=10d
-          # releases and snapshots of the main branch should never expire
-          ${{ ((github.ref_type == 'tag' && startsWith(github.ref_name, 'release-')) || github.ref_name == 'main') && 'quay.expires-after=' }}
-          # retention policy for nightly builds
-          ${{ github.event_name == 'schedule' && 'quay.expires-after=14d' }}
-          vcs-ref=${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          build-date=${{ steps.set-build-date.outputs.date }}
-        tags: |
-          # PRs
-          type=raw,value=snapshot-${{ github.head_ref }},enable=${{ github.event_name == 'pull_request' }}
-          # main branches (not including nightly builds)
-          type=raw,value=snapshot,enable=${{ github.ref_name == 'main' && github.event_name != 'schedule' }}
-          # nightly builds
-          type=raw,value=nightly-${{ steps.set-build-date.outputs.date }},enable=${{ github.event_name == 'schedule' }}
-          type=raw,value=nightly,enable=${{ github.event_name == 'schedule' }}
-          # tags
-          type=raw,value=${{ github.ref_name }},enable=${{ github.ref_type == 'tag' }}
-          # all other branches including 'release-*' branches except 'main'
-          type=raw,value=${{ steps.prep.outputs.docker_image_tag_without_prefix }},enable=${{ !(github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_type == 'tag') }},priority=0
-        annotations: |
-          ${{ inputs.annotation }}
-          version=${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+        go_linker_args=$(hack/build/create_go_linker_args.sh "${{ steps.meta.outputs.tag-names }}" "${{ github.sha }}")
+        echo "go_linker_args=${go_linker_args}" >> $GITHUB_OUTPUT
     - name: Build target
       id: build-target
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |
-          GO_LINKER_ARGS=${{ steps.prep.outputs.go_linker_args }}
-          GO_BUILD_TAGS=${{ steps.prep.outputs.go_build_tags }}
+          GO_LINKER_ARGS=${{ steps.linker-args.outputs.go_linker_args }}
         context: .
         file: ${{ inputs.dockerfile }}
         provenance: false
