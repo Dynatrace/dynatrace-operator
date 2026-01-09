@@ -19,25 +19,25 @@ metadata:
   labels:
     app.kubernetes.io/component: crd-cleanup
   annotations:
-    "helm.sh/hook": pre-upgrade
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
 spec:
   ttlSecondsAfterFinished: 600
   backoffLimit: 3
   template:
     metadata:
       labels:
-        {{- include "dynatrace-operator.commonLabels" . | nindent 8 }}
-        app.kubernetes.io/component: crd-cleanup
+        {{- include "dynatrace-operator.crdCleanupLabels" . | nindent 8 }}
       annotations:
-        dynatrace.com/inject: "false"
+        {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 8 }}
       {{- if (.Values.operator).apparmor}}
         container.apparmor.security.beta.kubernetes.io/crd-cleanup: runtime/default
       {{- end }}
     spec:
       restartPolicy: OnFailure
+      {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}
       serviceAccountName: dynatrace-cleanup-crd
+      securityContext:
+        {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}
@@ -59,10 +59,8 @@ spec:
             - --namespace={{ .Release.Namespace }}
           resources:
             requests:
-              cpu: 50m
-              memory: 64Mi
+              {{- toYaml (.Values.operator).requests | nindent 14 }}
             limits:
-              cpu: 100m
-              memory: 128Mi
+              {{- toYaml (.Values.operator).limits | nindent 14 }}
           securityContext:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}

@@ -107,3 +107,9 @@ startupProbe:
 - name: APP_VERSION
   value: {{ .Chart.AppVersion | quote }}
 {{- end -}}
+
+{{- define "dynatrace-operator.helmPreUpgradeHookAnnotations" -}}
+"helm.sh/hook": pre-upgrade
+"helm.sh/hook-weight": "-5"
+"helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+{{- end -}}
