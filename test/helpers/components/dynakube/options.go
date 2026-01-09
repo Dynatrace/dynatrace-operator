@@ -3,6 +3,8 @@
 package dynakube
 
 import (
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -12,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -192,6 +195,11 @@ func WithExtensionsEECImageRefSpec(repo, tag string) Option {
 		dk.Spec.Templates.ExtensionExecutionController.ImageRef = image.Ref{
 			Repository: repo,
 			Tag:        tag,
+		}
+		if !strings.Contains(repo, "public.ecr.aws/dynatrace/dynatrace-eec") {
+			// Use legacy mounts when using a public image until a fixed version is released
+			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
+			dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
 		}
 	}
 }
