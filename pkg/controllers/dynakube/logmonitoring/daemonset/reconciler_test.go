@@ -13,8 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only clean up if not standalone", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		conditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "testing")
+		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "testing")
 
 		previousDaemonSet := appsv1.DaemonSet{}
 		previousDaemonSet.Name = dk.LogMonitoring().GetDaemonSetName()
@@ -78,7 +78,7 @@ func TestReconcile(t *testing.T) {
 		require.NotNil(t, condition)
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotEmpty(t, oldTransitionTime)
-		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
 		err = reconciler.Reconcile(t.Context())
@@ -109,7 +109,7 @@ func TestReconcile(t *testing.T) {
 		require.NotNil(t, condition)
 		oldTransitionTime := condition.LastTransitionTime
 		require.NotEmpty(t, oldTransitionTime)
-		assert.Equal(t, conditions.DaemonSetSetCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
 		err = reconciler.Reconcile(t.Context())
@@ -132,7 +132,7 @@ func TestReconcile(t *testing.T) {
 		previousDaemonSet.Namespace = dk.Namespace
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
-		conditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "this is a test")
+		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
 		err := reconciler.Reconcile(ctx)
@@ -161,7 +161,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
 		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
-		assert.Equal(t, conditions.KubeAPIErrorReason, condition.Reason)
+		assert.Equal(t, k8sconditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
