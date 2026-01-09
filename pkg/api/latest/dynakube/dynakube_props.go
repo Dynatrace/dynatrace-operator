@@ -22,7 +22,7 @@ const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix = "-pull-secret"
 
-	DefaultMinRequestThresholdMinutes = 15
+	DefaultMinRequestThresholdMinutes = 5
 )
 
 var log = logd.Get().WithName("dynakube-v1beta6")
