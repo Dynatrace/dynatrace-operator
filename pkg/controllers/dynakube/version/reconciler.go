@@ -37,7 +37,13 @@ func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvid
 func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
 	updater := newCodeModulesUpdater(dk, r.dtClient)
 	if r.needsUpdate(updater, dk) {
-		return r.updateVersionStatuses(ctx, updater, dk)
+		err := r.updateVersionStatuses(ctx, updater, dk)
+		if err != nil {
+			return err
+		}
+		dk.Status.DynatraceAPI.AddRequest(updater.Name()+"-version-check", map[string]string{})
+
+		return nil
 	}
 
 	return nil
@@ -46,7 +52,13 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
 	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient)
 	if r.needsUpdate(updater, dk) {
-		return r.updateVersionStatuses(ctx, updater, dk)
+		err := r.updateVersionStatuses(ctx, updater, dk)
+		if err != nil {
+			return err
+		}
+		dk.Status.DynatraceAPI.AddRequest(updater.Name()+"-version-check", map[string]string{})
+
+		return nil
 	}
 
 	return nil
@@ -56,8 +68,12 @@ func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient)
 	if r.needsUpdate(updater, dk) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
+		if err != nil {
+			return err
+		}
+		dk.Status.DynatraceAPI.AddRequest(updater.Name()+"-version-check", map[string]string{})
 
-		return err
+		return nil
 	}
 
 	return nil
@@ -107,7 +123,8 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dk *dynakube.DynaKube) b
 		return true
 	}
 
-	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dk.APIRequestThreshold()) {
+	// TODO: needs more love
+	if !dk.Status.DynatraceAPI.IsRequestAllowed(updater.Name()+"-version-check", map[string]string{}) {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 
 		return false

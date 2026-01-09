@@ -9123,9 +9123,18 @@ spec:
                 x-kubernetes-list-type: map
               dynatraceApi:
                 properties:
+                  lastRequestPeriod:
+                    format: date-time
+                    type: string
                   lastTokenScopeRequest:
                     format: date-time
                     type: string
+                  requests:
+                    additionalProperties:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    type: object
                 type: object
               kspm:
                 properties:

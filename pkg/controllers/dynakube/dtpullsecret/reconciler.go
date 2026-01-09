@@ -50,6 +50,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
+	// TODO: why do we even care about a timestamp here? we should just check if the secret exists and is valid or not (is the same as the token provided by user)
 	if conditions.IsOutdated(r.timeprovider, r.dk, PullSecretConditionType) {
 		conditions.SetSecretOutdated(r.dk.Conditions(), PullSecretConditionType,
 			extendWithPullSecretSuffix(r.dk.Name)+" is not present or outdated")

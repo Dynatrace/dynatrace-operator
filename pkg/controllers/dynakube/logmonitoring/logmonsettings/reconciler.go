@@ -34,7 +34,10 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Recon
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !conditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
+	const apiName = "log-monitoring-settings"
+	apiProps := map[string]string{"meid": r.dk.Status.KubernetesClusterMEID}
+
+	if !r.dk.Status.DynatraceAPI.IsRequestAllowed(apiName, apiProps) {
 		return nil
 	}
 
@@ -70,6 +73,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	r.dk.Status.DynatraceAPI.AddRequest(apiName, apiProps)
 
 	return nil
 }

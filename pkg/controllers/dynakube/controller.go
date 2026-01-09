@@ -33,7 +33,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -174,6 +173,9 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	oldStatus := *dk.Status.DeepCopy()
+
+	dk.Status.DynatraceAPI.StartNewPeriod(dk.APIRequestThreshold())
+
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -504,16 +506,27 @@ func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient 
 }
 
 func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
-	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
+	const apiName = "token-scope-verification"
+	props := map[string]string{}
+	tokens := controller.tokens.AddFeatureScopesToTokens()
+
+	for _, token := range tokens {
+		tokenHash, err := hasher.GenerateSecureHash(token.Value)
+		if err != nil {
+			return err
+		}
+
+		props[token.Type+"_hash"] = tokenHash
+	}
+
+	if !dk.Status.DynatraceAPI.IsRequestAllowed(apiName, props) {
 		log.Info(dynakube.GetCacheValidMessage(
-			"token verification",
-			dk.Status.DynatraceAPI.LastTokenScopeRequest,
+			apiName,
+			dk.Status.DynatraceAPI.LastRequestPeriod,
 			dk.APIRequestThreshold()))
 
 		return lastErrorFromCondition(&dk.Status)
 	}
-
-	tokens := controller.tokens.AddFeatureScopesToTokens()
 
 	optionalScopes, err := tokens.VerifyScopes(ctx, dynatraceClient, *dk)
 	if err != nil {
@@ -522,9 +535,8 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 
 	log.Info("token verified")
 
-	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
-
 	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
+	dk.Status.DynatraceAPI.AddRequest(apiName, props)
 
 	return nil
 }

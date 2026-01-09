@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -70,6 +71,34 @@ type DynaKubeStatus struct { //nolint:revive
 type DynatraceAPIStatus struct {
 	// Time of the last token request
 	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
+
+	LastRequestPeriod metav1.Time                  `json:"lastRequestPeriod,omitempty"`
+	Requests          map[string]map[string]string `json:"requests,omitempty"`
+}
+
+func (api *DynatraceAPIStatus) StartNewPeriod(threshold time.Duration) {
+	if api.LastRequestPeriod.IsZero() || time.Since(api.LastRequestPeriod.Time) > threshold {
+		api.LastRequestPeriod = metav1.Now()
+		api.Requests = make(map[string]map[string]string)
+	}
+}
+
+func (api *DynatraceAPIStatus) IsRequestAllowed(apiName string, props map[string]string) bool {
+	if api.Requests == nil {
+		api.Requests = make(map[string]map[string]string)
+	}
+
+	prevProps, exists := api.Requests[apiName]
+
+	return !exists || !maps.Equal(props, prevProps)
+}
+
+func (api *DynatraceAPIStatus) AddRequest(apiName string, props map[string]string) {
+	if api.Requests == nil {
+		api.Requests = make(map[string]map[string]string)
+	}
+
+	api.Requests[apiName] = props
 }
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {

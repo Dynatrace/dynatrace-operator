@@ -114,6 +114,8 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		return nil
 	}
 
+	// TODO: why do we even care about a timestamp here? we care about if the istio Objects are present and valid or not
+	// we don't even do this for other istio reconciliations
 	if !conditions.IsOutdated(r.timeProvider, dk, getConditionTypeName(ActiveGateComponent)) {
 		log.Info("condition still within time threshold...skipping further reconciliation")
 

@@ -30,9 +30,12 @@ func NewReconciler() *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, dk *dynakube.DynaKube) error {
+	const apiName = "kubernetes-cluster-meid"
+	apiProps := map[string]string{"kubeuuid": dk.Status.KubeSystemUUID}
+
 	log.Info("start reconciling Kubernetes Cluster MEID")
 
-	if !conditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
+	if !dk.Status.DynatraceAPI.IsRequestAllowed(apiName, apiProps) {
 		log.Info("Kubernetes Cluster MEID not outdated, skipping reconciliation")
 
 		return nil
@@ -64,6 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, d
 	dk.Status.KubernetesClusterMEID = k8sEntity.ID
 	dk.Status.KubernetesClusterName = k8sEntity.Name
 	conditions.SetStatusUpdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is up to date")
+	dk.Status.DynatraceAPI.AddRequest(apiName, apiProps)
 
 	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", dk.Status.KubernetesClusterMEID)
 

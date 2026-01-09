@@ -67,19 +67,22 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
+	const apiName = "activegate-connection-info"
+	apiProps := map[string]string{
+		"networkZone": r.dk.Spec.NetworkZone,
+	}
 	secretNamespacedName := types.NamespacedName{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dk, activeGateConnectionInfoConditionType) {
+	if r.dk.Status.DynatraceAPI.IsRequestAllowed(apiName, apiProps) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
 		if err != nil {
 			return err
 		}
 
-		condition := meta.FindStatusCondition(*r.dk.Conditions(), activeGateConnectionInfoConditionType)
 		if isSecretPresent {
 			log.Info(dynakube.GetCacheValidMessage(
 				"activegate connection info update",
-				condition.LastTransitionTime,
+				r.dk.Status.DynatraceAPI.LastRequestPeriod,
 				r.dk.APIRequestThreshold()))
 
 			return nil
@@ -111,6 +114,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return errors.Wrap(err, "failed to generate TenantTokenHash")
 	}
 
+	r.dk.Status.DynatraceAPI.AddRequest(apiName, apiProps)
 	log.Info("activegate connection info updated")
 
 	return nil

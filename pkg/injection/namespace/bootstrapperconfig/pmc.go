@@ -17,7 +17,10 @@ import (
 )
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
-	if !conditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
+	const apiName = "process-module-config"
+	apiProps := map[string]string{}
+
+	if !dk.Status.DynatraceAPI.IsRequestAllowed(apiName, apiProps) {
 		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
 
 		sourceKey := client.ObjectKey{
@@ -61,6 +64,9 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 		return nil, err
 	}
 
+	dk.Status.DynatraceAPI.AddRequest(apiName, apiProps)
+
+	// TODO: This is BAAD, we should only "cache" the API call, and not the modifications done to it, as they can be changed independently (host group, proxy settings, ...)
 	pmc = pmc.
 		AddHostGroup(dk.OneAgent().GetHostGroup()).
 		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).

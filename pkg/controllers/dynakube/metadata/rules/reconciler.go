@@ -30,6 +30,11 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Recon
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	const apiName = "metadata-enrichment-rules"
+	apiProps := map[string]string{
+		"meid": r.dk.Status.KubernetesClusterMEID,
+	}
+
 	if !r.dk.MetadataEnrichment().IsEnabled() && !r.dk.FF().IsNodeImagePull() && !r.dk.OTLPExporterConfiguration().IsEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
 			return nil
@@ -41,7 +46,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dk, conditionType) {
+	if !r.dk.Status.DynatraceAPI.IsRequestAllowed(apiName, apiProps) {
 		return nil
 	}
 
@@ -62,6 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	r.dk.Status.MetadataEnrichment.Rules = rules
 	conditions.SetStatusUpdated(r.dk.Conditions(), conditionType, "Metadata-enrichment rules are up-to-date in the status")
 	log.Info("update rules in the status", "len(rules)", len(rules))
+	r.dk.Status.DynatraceAPI.AddRequest(apiName, apiProps)
 
 	return nil
 }
