@@ -1,9 +1,7 @@
 package crdstoragemigration
 
-import (
-	ctrl "sigs.k8s.io/controller-runtime"
-)
+import "github.com/Dynatrace/dynatrace-operator/pkg/logd"
 
 var (
-	log = ctrl.Log.WithName("crdstoragemigration.controller")
+	log = logd.Get().WithName("crd-storage-migration")
 )
