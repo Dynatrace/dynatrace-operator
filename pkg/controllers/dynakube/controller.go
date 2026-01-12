@@ -48,8 +48,7 @@ import (
 )
 
 const (
-	fastUpdateInterval    = 1 * time.Minute
-	changesUpdateInterval = 5 * time.Minute
+	fastUpdateInterval = 1 * time.Minute
 
 	controllerName = "dynakube-controller"
 )
@@ -176,8 +175,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
-	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
-
 	return result, err
 }
 
@@ -207,39 +204,50 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 func (controller *Controller) handleError(
 	ctx context.Context,
 	dk *dynakube.DynaKube,
-	err error,
+	reconcileErr error,
 	oldStatus dynakube.DynaKubeStatus,
 ) (reconcile.Result, error) {
 	switch {
-	case dynatraceapi.IsUnreachable(err):
+	case dynatraceapi.IsUnreachable(reconcileErr):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", dynatraceapi.StatusCode(err), "errorMessage", dynatraceapi.Message(err))
+			"errorCode", dynatraceapi.StatusCode(reconcileErr), "errorMessage", dynatraceapi.Message(reconcileErr))
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastUpdateInterval}, nil
 
-	case err != nil:
-		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+	case reconcileErr != nil:
 		dk.Status.SetPhase(dynatracestatus.Error)
-		log.Error(err, "error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
+		log.Info("error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
 	default:
 		dk.Status.SetPhase(controller.determineDynaKubePhase(ctx, dk))
 	}
 
-	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dk.Status); err != nil {
-		log.Error(err, "failed to generate hash for the status section")
+	isStatusDifferent, hashErr := hasher.IsDifferent(oldStatus, dk.Status)
+	if hashErr != nil {
+		log.Info("failed to generate hash for the status section")
+		reconcileErr = goerrors.Join(
+			reconcileErr,
+			errors.WithMessagef(hashErr, "failed to generate hash for the status section of DynaKube %s/%s", dk.Namespace, dk.Name),
+		)
+
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
-		controller.setRequeueAfterIfNewIsShorter(changesUpdateInterval)
 
-		if errClient := dk.UpdateStatus(ctx, controller.client); errClient != nil {
-			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
+		if updateErr := dk.UpdateStatus(ctx, controller.client); updateErr != nil {
+			log.Info("failed to update DynaKube status", "namespace", dk.Namespace, "name", dk.Name)
+			reconcileErr = goerrors.Join(
+				reconcileErr,
+				errors.WithMessagef(updateErr, "failed to update status of DynaKube %s/%s", dk.Namespace, dk.Name),
+			)
 		}
 	}
 
-	if err != nil {
-		return reconcile.Result{}, err
+	// needed so you don't see warning logs such as: "Warning: Reconciler returned both a non-zero result and a non-nil error. The result will always be ignored if the error is non-nil and the non-nil error causes requeuing with exponential backoff"
+	if reconcileErr != nil {
+		return reconcile.Result{}, reconcileErr
 	}
+
+	log.Info("reconciling DynaKube finished", "namespace", dk.Namespace, "name", dk.Name, "requeueAfter", controller.requeueAfter.String())
 
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
