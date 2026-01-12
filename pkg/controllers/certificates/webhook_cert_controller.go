@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/eventfilter"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
