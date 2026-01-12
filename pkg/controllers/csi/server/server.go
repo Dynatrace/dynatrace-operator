@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package csidriver
+package csiserver
 
 import (
 	"context"
@@ -29,10 +29,10 @@ import (
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
-	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
-	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/host"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
+	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/app"
+	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/host"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"

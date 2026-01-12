@@ -4,7 +4,7 @@ import (
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/csi/livenessprobe"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/livenessprobe"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
