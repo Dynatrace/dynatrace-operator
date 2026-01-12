@@ -227,11 +227,11 @@ func (controller *Controller) handleError(
 	isStatusDifferent, hashErr := hasher.IsDifferent(oldStatus, dk.Status)
 	if hashErr != nil {
 		log.Info("failed to generate hash for the status section")
+
 		reconcileErr = goerrors.Join(
 			reconcileErr,
 			errors.WithMessagef(hashErr, "failed to generate hash for the status section of DynaKube %s/%s", dk.Namespace, dk.Name),
 		)
-
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
 
