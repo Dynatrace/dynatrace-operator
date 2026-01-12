@@ -412,7 +412,7 @@ func testVolumesVsCSIDriver(t *testing.T, dk *dynakube.DynaKube, csi bool, csiVo
 	}
 }
 
-func testVolumeMountsVsCSIDriver(t *testing.T, dk *dynakube.DynaKube, csi bool, csiVolume bool, storageVolume bool, rootReadOnlyVolumeMount bool) {
+func testVolumeMountsVsCSIDriver(t *testing.T, dk *dynakube.DynaKube, csi bool, csiVolume bool, storageVolume bool, rootReadOnlyVolumeMount bool) { //nolint:revive
 	if csi {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 	} else {

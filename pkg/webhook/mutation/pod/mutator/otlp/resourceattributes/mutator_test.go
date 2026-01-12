@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit
+func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 	const (
 		testSecContextLabel          = "test-security-context-label"
 		testCostCenterAnnotation     = "test-cost-center-annotation"
