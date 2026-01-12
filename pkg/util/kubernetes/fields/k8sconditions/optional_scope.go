@@ -1,4 +1,4 @@
-package conditions
+package k8sconditions
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"

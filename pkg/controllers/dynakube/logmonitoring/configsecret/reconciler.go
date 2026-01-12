@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
@@ -82,14 +82,14 @@ func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 
 	changed, err := r.secrets.CreateOrUpdate(ctx, newSecret)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 
 		return err
 	} else if changed {
-		conditions.SetSecretOutdated(r.dk.Conditions(), LmcConditionType, newSecret.Name) // needed so the timestamp updates, will never actually show up in the status
+		k8sconditions.SetSecretOutdated(r.dk.Conditions(), LmcConditionType, newSecret.Name) // needed so the timestamp updates, will never actually show up in the status
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), LmcConditionType, newSecret.Name)
+	k8sconditions.SetSecretCreated(r.dk.Conditions(), LmcConditionType, newSecret.Name)
 
 	return nil
 }
@@ -110,7 +110,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context) (*corev1.Secret, error) 
 	if err != nil {
 		log.Info("failed to build the final secret")
 
-		conditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
+		k8sconditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 	if err != nil {
 		log.Info("failed to get the oneagent-tenant secret")
 
-		conditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 	if err != nil {
 		log.Info("failed to determine the tenantUUID")
 
-		conditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
+		k8sconditions.SetSecretGenFailed(r.dk.Conditions(), LmcConditionType, err)
 
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		if err != nil {
 			log.Info("failed get the proxy value")
 
-			conditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
+			k8sconditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 
 			return nil, err
 		}

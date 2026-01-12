@@ -20,8 +20,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
@@ -207,7 +207,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	_, err = query.CreateOrUpdate(ctx, configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
-		conditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
 
 		return err
 	}
@@ -257,7 +257,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
-		conditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
 
 		return err
 	}
@@ -279,7 +279,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context) error {
 			log.Info("removed oneagent daemonset with feature in name")
 		} else if !k8serrors.IsNotFound(err) {
 			log.Info("failed to remove oneagent daemonset with feature in name")
-			conditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
+			k8sconditions.SetKubeAPIError(r.dk.Conditions(), oaConditionType, err)
 
 			return err
 		}

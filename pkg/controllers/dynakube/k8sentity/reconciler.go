@@ -15,7 +15,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 )
 
@@ -32,18 +32,18 @@ func NewReconciler() *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling Kubernetes Cluster MEID")
 
-	if !conditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
+	if !k8sconditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
 		log.Info("Kubernetes Cluster MEID not outdated, skipping reconciliation")
 
 		return nil
 	}
 
-	conditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
+	k8sconditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
 
-	if !conditions.IsOptionalScopeAvailable(dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
+	if !k8sconditions.IsOptionalScopeAvailable(dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
 		msg := dynatrace.TokenScopeSettingsRead + " optional scope not available"
 		log.Info(msg)
-		conditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), meIDConditionType, msg)
 
 		return nil
 	}
@@ -63,7 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, d
 
 	dk.Status.KubernetesClusterMEID = k8sEntity.ID
 	dk.Status.KubernetesClusterName = k8sEntity.Name
-	conditions.SetStatusUpdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is up to date")
+	k8sconditions.SetStatusUpdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is up to date")
 
 	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", dk.Status.KubernetesClusterMEID)
 
