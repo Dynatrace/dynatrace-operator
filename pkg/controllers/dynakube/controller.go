@@ -218,7 +218,6 @@ func (controller *Controller) handleError(
 
 	case reconcileErr != nil:
 		dk.Status.SetPhase(dynatracestatus.Error)
-		log.Info("error reconciling DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
 	default:
 		dk.Status.SetPhase(controller.determineDynaKubePhase(ctx, dk))
@@ -226,20 +225,17 @@ func (controller *Controller) handleError(
 
 	isStatusDifferent, hashErr := hasher.IsDifferent(oldStatus, dk.Status)
 	if hashErr != nil {
-		log.Info("failed to generate hash for the status section")
-
 		reconcileErr = goerrors.Join(
 			reconcileErr,
-			errors.WithMessagef(hashErr, "failed to generate hash for the status section of DynaKube %s/%s", dk.Namespace, dk.Name),
+			errors.WithMessagef(hashErr, "failed to generate a hash for the DynaKube's status %s/%s", dk.Namespace, dk.Name),
 		)
 	} else if isStatusDifferent {
-		log.Info("status changed, updating DynaKube")
+		log.Info("status changed, updating the DynaKube", "namespace", dk.Namespace, "name", dk.Name)
 
 		if updateErr := dk.UpdateStatus(ctx, controller.client); updateErr != nil {
-			log.Info("failed to update DynaKube status", "namespace", dk.Namespace, "name", dk.Name)
 			reconcileErr = goerrors.Join(
 				reconcileErr,
-				errors.WithMessagef(updateErr, "failed to update status of DynaKube %s/%s", dk.Namespace, dk.Name),
+				errors.WithMessagef(updateErr, "failed to update the DynaKube's status %s/%s", dk.Namespace, dk.Name),
 			)
 		}
 	}
@@ -249,7 +245,7 @@ func (controller *Controller) handleError(
 		return reconcile.Result{}, reconcileErr
 	}
 
-	log.Info("reconciling DynaKube finished", "namespace", dk.Namespace, "name", dk.Name, "requeueAfter", controller.requeueAfter.String())
+	log.Info("finished DynaKube reconcile", "namespace", dk.Namespace, "name", dk.Name, "requeueAfter", controller.requeueAfter.String())
 
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
