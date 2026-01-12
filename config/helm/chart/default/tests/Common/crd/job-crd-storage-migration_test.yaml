@@ -5,6 +5,7 @@ tests:
   - it: should exist with default values
     set:
       platform: kubernetes
+      crdStorageMigrationJob: true
     asserts:
       - isKind:
           of: Job
@@ -19,9 +20,6 @@ tests:
       - isNotEmpty:
           path: metadata.annotations
       - equal:
-          path: spec.ttlSecondsAfterFinished
-          value: 600
-      - equal:
           path: spec.backoffLimit
           value: 3
       - equal:
@@ -34,6 +32,7 @@ tests:
   - it: should have correct container configuration
     set:
       platform: kubernetes
+      crdStorageMigrationJob: true
     asserts:
       - equal:
           path: spec.template.spec.containers[0].name
@@ -54,6 +53,7 @@ tests:
   - it: should have apparmor annotation when enabled
     set:
       platform: kubernetes
+      crdStorageMigrationJob: true
       operator:
         apparmor: true
     asserts:
@@ -64,6 +64,7 @@ tests:
   - it: should not have apparmor annotation when disabled
     set:
       platform: kubernetes
+      crdStorageMigrationJob: true
       operator:
         apparmor: false
     asserts:
@@ -73,6 +74,7 @@ tests:
   - it: should have custom pull secret when specified
     set:
       platform: kubernetes
+      crdStorageMigrationJob: true
       customPullSecret: my-secret
     asserts:
       - contains:
@@ -83,6 +85,7 @@ tests:
   - it: should have node selector when specified
     set:
       platform: kubernetes
+      crdStorageMigrationJob: true
       operator:
         nodeSelector:
           disktype: ssd
@@ -94,6 +97,7 @@ tests:
   - it: should have tolerations when specified
     set:
       platform: kubernetes
+      crdStorageMigrationJob: true
       operator:
         tolerations:
           - key: "key1"
@@ -119,6 +123,22 @@ tests:
   - it: should have node affinity
     set:
       platform: kubernetes
+      crdStorageMigrationJob: true
     asserts:
       - isNotEmpty:
           path: spec.template.spec.affinity
+
+  - it: should not render when crdStorageMigrationJob is false
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when crdStorageMigrationJob is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0

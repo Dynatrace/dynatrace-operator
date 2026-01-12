@@ -3,6 +3,8 @@ templates:
   - Common/crd/role-crd-storage-migration.yaml
 tests:
   - it: Role should exist
+    set:
+      crdStorageMigrationJob: true
     documentIndex: 0
     asserts:
       - isKind:
@@ -32,6 +34,8 @@ tests:
                 - update
 
   - it: RoleBinding should exist
+    set:
+      crdStorageMigrationJob: true
     documentIndex: 1
     asserts:
       - isKind:
@@ -57,3 +61,15 @@ tests:
             kind: Role
             name: dynatrace-crd-storage-migration
             apiGroup: rbac.authorization.k8s.io
+
+  - it: should not render when crdStorageMigrationJob is false
+    set:
+      crdStorageMigrationJob: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when crdStorageMigrationJob is not set
+    asserts:
+      - hasDocuments:
+          count: 0
