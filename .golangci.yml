@@ -273,6 +273,7 @@ linters:
           - wsl_v5
           - dupl
           - govet
+          - revive
         path: _(test|gen)\.go
       - linters:
           - govet

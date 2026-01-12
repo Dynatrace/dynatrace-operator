@@ -41,7 +41,7 @@ func defaultAuths(server string) Auths {
 	}
 }
 
-func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
+func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) {
 	dockerServer := httptest.NewTLSServer(testDockerServerHandler(http.MethodGet, handleUrls))
 
 	parsedServerURL, err := url.Parse(dockerServer.URL)

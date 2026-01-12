@@ -893,7 +893,7 @@ func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIsti
 	}
 }
 
-func assertCondition(t *testing.T, dk *dynakube.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) { //nolint:revive // argument-limit
+func assertCondition(t *testing.T, dk *dynakube.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) {
 	t.Helper()
 
 	actualCondition := meta.FindStatusCondition(dk.Status.Conditions, expectedConditionType)

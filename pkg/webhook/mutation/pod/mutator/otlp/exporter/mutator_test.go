@@ -134,7 +134,7 @@ func TestMutator_IsInjected(t *testing.T) {
 	})
 }
 
-func TestMutator_Mutate(t *testing.T) { //nolint:revive
+func TestMutator_Mutate(t *testing.T) {
 	const (
 		testCustomTracesEndpoint     = "http://user-endpoint/api/v2/otlp/traces"
 		testCustomMetricsEndpoint    = "http://user-endpoint/api/v2/otlp/metrics"
