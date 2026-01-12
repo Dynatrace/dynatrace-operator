@@ -411,7 +411,7 @@ func TestReconcileComponents(t *testing.T) {
 		k8sEntityReconciler := dynakubemock.NewK8sEntityReconciler(t)
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
-		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
+		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
 
 		controller := &Controller{
 			client:                         fakeClient,

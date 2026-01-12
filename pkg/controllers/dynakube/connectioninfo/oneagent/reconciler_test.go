@@ -53,7 +53,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("cleanup when oneagent is not needed", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -69,7 +69,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
-		assert.Empty(t, dk.Status.OneAgent.ConnectionInfoStatus)
+		assert.Empty(t, dk.Status.OneAgent.ConnectionInfo)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 		require.Nil(t, condition)
@@ -82,7 +82,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("does not cleanup when only host oneagent is needed", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -100,7 +100,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
-		assert.NotEmpty(t, dk.Status.OneAgent.ConnectionInfoStatus)
+		assert.NotEmpty(t, dk.Status.OneAgent.ConnectionInfo)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 		require.NotNil(t, condition)
@@ -143,10 +143,9 @@ func TestReconcile(t *testing.T) {
 		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
 
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
-		assert.Equal(t, getTestCommunicationHosts(), dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
-		assert.Equal(t, tenantTokenHash, dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash)
+		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfo.Endpoints)
+		assert.Equal(t, tenantTokenHash, dk.Status.OneAgent.ConnectionInfo.TenantTokenHash)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -161,7 +160,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -176,8 +175,8 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfo.Endpoints)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -191,7 +190,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
 		dtc := dtclientmock.NewClient(t)
 
-		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -203,8 +202,8 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
-		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
+		assert.Equal(t, testOutdated, dk.Status.OneAgent.ConnectionInfo.Endpoints)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -219,7 +218,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -231,8 +230,8 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfo.Endpoints)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -248,7 +247,7 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{
+		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
 			ConnectionInfo: communication.ConnectionInfo{
 				TenantUUID: testOutdated,
 				Endpoints:  testOutdated,
@@ -260,8 +259,8 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)
 
-		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
-		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+		assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dk.Status.OneAgent.ConnectionInfo.Endpoints)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -293,18 +292,16 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 			TenantToken: testTenantToken,
 			Endpoints:   "",
 		},
-		CommunicationHosts: nil,
 	}, nil)
 
 	fakeClient := fake.NewClient(dk)
 
 	r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 	err := r.Reconcile(ctx)
-	require.ErrorIs(t, err, NoOneAgentCommunicationHostsError)
+	require.ErrorIs(t, err, NoOneAgentCommunicationEndpointsError)
 
-	assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
-	assert.Empty(t, dk.Status.OneAgent.ConnectionInfoStatus.Endpoints)
-	assert.Empty(t, dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
+	assert.Equal(t, testTenantUUID, dk.Status.OneAgent.ConnectionInfo.TenantUUID)
+	assert.Empty(t, dk.Status.OneAgent.ConnectionInfo.Endpoints)
 
 	condition := meta.FindStatusCondition(*dk.Conditions(), oaConnectionInfoConditionType)
 	require.NotNil(t, condition)
@@ -338,41 +335,12 @@ func buildOneAgentTenantSecret(dk *dynakube.DynaKube, token string) *corev1.Secr
 	}
 }
 
-func getTestCommunicationHosts() []oneagent.CommunicationHostStatus {
-	return []oneagent.CommunicationHostStatus{
-		{
-			Protocol: "http",
-			Host:     "dummyhost",
-			Port:     42,
-		},
-		{
-			Protocol: "https",
-			Host:     "foobarhost",
-			Port:     84,
-		},
-	}
-}
-
 func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
-	testCommunicationHosts := getTestCommunicationHosts()
-
 	return dtclient.OneAgentConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   testTenantEndpoints,
-		},
-		CommunicationHosts: []dtclient.CommunicationHost{
-			{
-				Protocol: testCommunicationHosts[0].Protocol,
-				Host:     testCommunicationHosts[0].Host,
-				Port:     testCommunicationHosts[0].Port,
-			},
-			{
-				Protocol: testCommunicationHosts[1].Protocol,
-				Host:     testCommunicationHosts[1].Host,
-				Port:     testCommunicationHosts[1].Port,
-			},
 		},
 	}
 }

@@ -7,10 +7,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
-	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -45,12 +41,12 @@ func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dk *dynakube.DynaKube)
 		return errors.New("can't reconcile api url of nil dynakube")
 	}
 
-	apiHost, err := dtclient.ParseEndpoint(dk.Spec.APIURL)
+	apiCommunicationHost, err := NewCommunicationHost(dk.Spec.APIURL)
 	if err != nil {
 		return err
 	}
 
-	err = r.reconcileCommunicationHosts(ctx, []dtclient.CommunicationHost{apiHost}, OperatorComponent)
+	err = r.reconcileCommunicationHosts(ctx, []CommunicationHost{apiCommunicationHost}, OperatorComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}
@@ -67,26 +63,33 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
 
+	migrateDeprecatedCondition(dk.Conditions())
+
 	if !dk.OneAgent().IsAppInjectionNeeded() {
 		if isIstioConfigured(dk, CodeModuleComponent) {
 			log.Info("appinjection disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dk, CodeModuleComponent, OneAgentComponent)
+			return r.CleanupIstio(ctx, dk, CodeModuleComponent)
 		}
 
 		return nil
 	}
 
-	oneAgentCommunicationHosts := oaconnectioninfo.GetCommunicationHosts(dk)
-
-	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
+	oaCommunicationHosts, err := NewCommunicationHosts(dk.Status.OneAgent.ConnectionInfo.Endpoints)
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), CodeModuleComponent, err)
 
 		return err
 	}
 
-	if len(oneAgentCommunicationHosts) == 0 {
+	err = r.reconcileCommunicationHostsForComponent(ctx, oaCommunicationHosts, CodeModuleComponent)
+	if err != nil {
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), CodeModuleComponent, err)
+
+		return err
+	}
+
+	if len(oaCommunicationHosts) == 0 {
 		meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(CodeModuleComponent))
 
 		return nil
@@ -108,28 +111,27 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		if isIstioConfigured(dk, ActiveGateComponent) {
 			log.Info("activegate disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dk, ActiveGateComponent, strings.ToLower(ActiveGateComponent))
+			return r.CleanupIstio(ctx, dk, ActiveGateComponent)
 		}
 
 		return nil
 	}
 
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, getConditionTypeName(ActiveGateComponent)) {
-		log.Info("condition still within time threshold...skipping further reconciliation")
-
-		return nil
-	}
-
-	activeGateEndpoints := activegate.GetEndpointsAsCommunicationHosts(dk)
-
-	err := r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, strings.ToLower(ActiveGateComponent))
+	agCommunicationHosts, err := NewCommunicationHosts(dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), ActiveGateComponent, err)
 
 		return err
 	}
 
-	if len(activeGateEndpoints) == 0 {
+	err = r.reconcileCommunicationHostsForComponent(ctx, agCommunicationHosts, strings.ToLower(ActiveGateComponent))
+	if err != nil {
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), ActiveGateComponent, err)
+
+		return err
+	}
+
+	if len(agCommunicationHosts) == 0 {
 		meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(ActiveGateComponent))
 
 		return nil
@@ -140,8 +142,8 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *reconciler) CleanupIstio(ctx context.Context, dk *dynakube.DynaKube, conditionComponent string, component string) error {
-	meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(conditionComponent))
+func (r *reconciler) CleanupIstio(ctx context.Context, dk *dynakube.DynaKube, component string) error {
+	meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(component))
 
 	err1 := r.cleanupIPServiceEntry(ctx, component)
 	err2 := r.cleanupFQDNServiceEntry(ctx, component)
@@ -156,7 +158,7 @@ func isIstioConfigured(dk *dynakube.DynaKube, conditionComponent string) bool {
 	return istioCondition != nil
 }
 
-func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []dtclient.CommunicationHost, componentName string) error {
+func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []CommunicationHost, componentName string) error {
 	err := r.reconcileCommunicationHosts(ctx, comHosts, componentName)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
@@ -167,7 +169,7 @@ func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context
 	return nil
 }
 
-func (r *reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []dtclient.CommunicationHost, component string) error {
+func (r *reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []CommunicationHost, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
 	errIPServiceEntry := r.reconcileIPServiceEntry(ctx, ipHosts, component)
@@ -176,7 +178,7 @@ func (r *reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts [
 	return goerrors.Join(errIPServiceEntry, errFQDNServiceEntry)
 }
 
-func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqdnHosts []dtclient.CommunicationHost) {
+func splitCommunicationHost(comHosts []CommunicationHost) (ipHosts, fqdnHosts []CommunicationHost) {
 	for _, commHost := range comHosts {
 		if net.ParseIP(commHost.Host) != nil {
 			ipHosts = append(ipHosts, commHost)
@@ -188,7 +190,7 @@ func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqd
 	return
 }
 
-func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtclient.CommunicationHost, component string) error {
+func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []CommunicationHost, component string) error {
 	owner := r.client.Owner
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 
@@ -196,7 +198,7 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
-			k8slabel.NewCoreLabels(owner.GetName(), component).BuildLabels(),
+			k8slabel.NewCoreLabels(owner.GetName(), strings.ToLower(component)).BuildLabels(),
 		)
 
 		serviceEntry := buildServiceEntryIPs(objectMeta, ipHosts)
@@ -221,7 +223,7 @@ func (r *reconciler) cleanupIPServiceEntry(ctx context.Context, component string
 	return r.client.DeleteServiceEntry(ctx, entryName)
 }
 
-func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []dtclient.CommunicationHost, component string) error {
+func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []CommunicationHost, component string) error {
 	owner := r.client.Owner
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 
@@ -229,7 +231,7 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
-			k8slabel.NewCoreLabels(owner.GetName(), component).BuildLabels(),
+			k8slabel.NewCoreLabels(owner.GetName(), strings.ToLower(component)).BuildLabels(),
 		)
 
 		serviceEntry := buildServiceEntryFQDNs(objectMeta, fqdnHosts)

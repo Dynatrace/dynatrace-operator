@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
@@ -23,7 +22,7 @@ import (
 
 func TestSplitCommunicationHost(t *testing.T) {
 	t.Run("empty => no fail", func(t *testing.T) {
-		ipHosts, fqdnHosts := splitCommunicationHost([]dtclient.CommunicationHost{})
+		ipHosts, fqdnHosts := splitCommunicationHost([]CommunicationHost{})
 		require.Nil(t, ipHosts)
 		require.Nil(t, fqdnHosts)
 	})
@@ -33,7 +32,7 @@ func TestSplitCommunicationHost(t *testing.T) {
 		require.Nil(t, fqdnHosts)
 	})
 	t.Run("success", func(t *testing.T) {
-		comHosts := []dtclient.CommunicationHost{
+		comHosts := []CommunicationHost{
 			createTestIPCommunicationHost(),
 			createTestFQDNCommunicationHost(),
 			createTestIPCommunicationHost(),
@@ -75,7 +74,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, dk.Namespace)
 		reconciler := NewReconciler(istioClient).(*reconciler)
-		commHosts := []dtclient.CommunicationHost{
+		commHosts := []CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
@@ -93,7 +92,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 
 		istioClient := newTestingClient(fakeClient, dk.Namespace)
 		reconciler := NewReconciler(istioClient).(*reconciler)
-		commHosts := []dtclient.CommunicationHost{
+		commHosts := []CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
@@ -135,7 +134,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient).(*reconciler)
-		commHosts := []dtclient.CommunicationHost{
+		commHosts := []CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
 
@@ -157,7 +156,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient).(*reconciler)
-		commHosts := []dtclient.CommunicationHost{
+		commHosts := []CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
 
@@ -235,7 +234,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), OneAgentComponent)
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -245,15 +244,15 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
-		expectedIPName := BuildNameForIPServiceEntry(dk.GetName(), OneAgentComponent)
+		expectedIPName := BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent)
 		serviceEntry, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
 
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 
-		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForCodeModule")
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.NotNil(t, statusCondition)
-		require.Equal(t, "IstioForCodeModuleChanged", statusCondition.Reason)
+		require.Equal(t, "IstioForOneAgentChanged", statusCondition.Reason)
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		dk := createTestDynaKube()
@@ -266,9 +265,9 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dk)
 		require.Error(t, err)
 
-		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForCodeModule")
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.NotNil(t, statusCondition)
-		require.Equal(t, "IstioForCodeModuleFailed", statusCondition.Reason)
+		require.Equal(t, "IstioForOneAgentFailed", statusCondition.Reason)
 	})
 	t.Run("remove and cleanup if AppInjection is disabled", func(t *testing.T) {
 		dk := createTestDynaKube()
@@ -279,7 +278,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		err := r.ReconcileCodeModuleCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), OneAgentComponent)
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -289,15 +288,15 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
-		expectedIPName := BuildNameForIPServiceEntry(dk.GetName(), OneAgentComponent)
+		expectedIPName := BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent)
 		serviceEntry, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
 
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 
-		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForCodeModule")
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.NotNil(t, statusCondition)
-		require.Equal(t, "IstioForCodeModuleChanged", statusCondition.Reason)
+		require.Equal(t, "IstioForOneAgentChanged", statusCondition.Reason)
 
 		dk.Spec.OneAgent.CloudNativeFullStack = nil
 		dk.Spec.OneAgent.HostMonitoring = &oneagent.HostInjectSpec{}
@@ -305,7 +304,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		err = r.ReconcileCodeModuleCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForCodeModule")
+		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForOneAgent")
 		require.Nil(t, statusCondition)
 
 		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
@@ -400,24 +399,14 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NotNil(t, statusCondition)
 		require.Equal(t, "IstioForActiveGateChanged", statusCondition.Reason)
 
-		// disable endpoints, make request within api threshold
+		// disable endpoints
 		dk.Status.ActiveGate.ConnectionInfo.Endpoints = ""
 
 		err = r.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
 		statusCondition2 := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
-		require.NotNil(t, statusCondition2)
-
-		// advance time to be outside api threshold
-		rec2 := r.(*reconciler)
-		time := rec2.timeProvider.Now().Add(dk.APIRequestThreshold() * 2)
-		rec2.timeProvider.Set(time)
-		err = rec2.ReconcileActiveGateCommunicationHosts(ctx, dk)
-		require.NoError(t, err)
-
-		statusCondition3 := meta.FindStatusCondition(*dk.Conditions(), "IstioForActiveGate")
-		require.Nil(t, statusCondition3)
+		require.Nil(t, statusCondition2)
 	})
 	t.Run("verify removal of conditions when ActiveGate disabled", func(t *testing.T) {
 		dk := createTestDynaKube()
@@ -454,16 +443,16 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 	})
 }
 
-func createTestIPCommunicationHost() dtclient.CommunicationHost {
-	return dtclient.CommunicationHost{
+func createTestIPCommunicationHost() CommunicationHost {
+	return CommunicationHost{
 		Protocol: "http",
 		Host:     "42.42.42.42",
 		Port:     620,
 	}
 }
 
-func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
-	return dtclient.CommunicationHost{
+func createTestFQDNCommunicationHost() CommunicationHost {
+	return CommunicationHost{
 		Protocol: "http",
 		Host:     "something.test.io",
 		Port:     620,
@@ -497,18 +486,9 @@ func createTestDynaKube() *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-					CommunicationHosts: []oneagent.CommunicationHostStatus{
-						{
-							Protocol: fqdnHost.Protocol,
-							Host:     fqdnHost.Host,
-							Port:     fqdnHost.Port,
-						},
-						{
-							Protocol: ipHost.Protocol,
-							Host:     ipHost.Host,
-							Port:     ipHost.Port,
-						},
+				ConnectionInfo: oneagent.ConnectionInfo{
+					ConnectionInfo: communication.ConnectionInfo{
+						Endpoints: fqdnHost.String() + "," + ipHost.String(),
 					},
 				},
 			},

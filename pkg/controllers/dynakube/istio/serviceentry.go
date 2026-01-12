@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	istio "istio.io/api/networking/v1beta1"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,14 +16,14 @@ const (
 )
 
 func BuildNameForIPServiceEntry(ownerName, component string) string {
-	return ownerName + "-ip-" + component
+	return ownerName + "-ip-" + strings.ToLower(component)
 }
 
 func BuildNameForFQDNServiceEntry(ownerName, component string) string {
-	return ownerName + "-fqdn-" + component
+	return ownerName + "-fqdn-" + strings.ToLower(component)
 }
 
-func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.CommunicationHost) *istiov1beta1.ServiceEntry {
+func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []CommunicationHost) *istiov1beta1.ServiceEntry {
 	hosts := make([]string, len(hostHosts))
 	portSet := make(map[uint32]bool)
 
@@ -56,7 +55,7 @@ func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.Communi
 	}
 }
 
-func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1beta1.ServiceEntry {
+func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []CommunicationHost) *istiov1beta1.ServiceEntry {
 	var ports []*istio.ServicePort
 
 	portSet := make(map[uint32]bool)

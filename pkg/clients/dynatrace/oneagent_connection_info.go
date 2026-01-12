@@ -3,24 +3,13 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"hash/fnv"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
-	"golang.org/x/exp/maps"
 )
-
-// CommunicationHost => struct of connection endpoint
-type CommunicationHost struct {
-	Protocol string
-	Host     string
-	Port     uint32
-}
 
 type OneAgentConnectionInfo struct {
 	ConnectionInfo
-	CommunicationHosts []CommunicationHost
 }
 
 type oneAgentConnectionInfoJSONResponse struct {
@@ -69,25 +58,9 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 
 	tenantUUID := resp.TenantUUID
 	tenantToken := resp.TenantToken
-	communicationHosts := make(map[uint32]CommunicationHost, 0)
 	formattedCommunicationEndpoints := resp.FormattedCommunicationEndpoints
 
-	for _, s := range resp.CommunicationEndpoints {
-		e, err := ParseEndpoint(s)
-		if err != nil {
-			log.Info("failed to parse communication endpoint", "url", s)
-
-			continue
-		}
-
-		hash := fnv.New32a()
-		// Hash write implements Write interface, but never return err, so let's ignore it
-		_, _ = fmt.Fprintf(hash, "%s-%s-%d", e.Protocol, e.Host, e.Port)
-		communicationHosts[hash.Sum32()] = e
-	}
-
 	ci := OneAgentConnectionInfo{
-		CommunicationHosts: maps.Values(communicationHosts),
 		ConnectionInfo: ConnectionInfo{
 			TenantUUID:  tenantUUID,
 			TenantToken: tenantToken,

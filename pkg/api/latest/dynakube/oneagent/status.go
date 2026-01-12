@@ -25,7 +25,7 @@ type Status struct {
 	Healthcheck *containerv1.HealthConfig `json:"healthcheck,omitempty"`
 
 	// Information about OneAgent's connections
-	ConnectionInfoStatus ConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
+	ConnectionInfo ConnectionInfo `json:"connectionInfoStatus,omitempty"` // Left the "Status" suffix for compatibility
 }
 
 // +kubebuilder:object:generate=true
@@ -40,23 +40,9 @@ type Instance struct {
 
 // +kubebuilder:object:generate=true
 
-type ConnectionInfoStatus struct {
+type ConnectionInfo struct {
 	// Information for communicating with the tenant
 	communication.ConnectionInfo `json:",inline"`
 
-	// List of communication hosts
-	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
-}
-
-// +kubebuilder:object:generate=true
-
-type CommunicationHostStatus struct {
-	// Connection protocol
-	Protocol string `json:"protocol,omitempty"`
-
-	// Host domain
-	Host string `json:"host,omitempty"`
-
-	// Connection port
-	Port uint32 `json:"port,omitempty"`
+	// List of communication host
 }

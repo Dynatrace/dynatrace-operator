@@ -255,17 +255,7 @@ func (src *DynaKube) toOneAgentStatus(dst *dynakubelatest.DynaKube) { //nolint:d
 	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
 
-	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo
-	dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = make([]oneagentlatest.CommunicationHostStatus, 0)
-
-	for _, host := range src.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
-		dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts =
-			append(dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts, oneagentlatest.CommunicationHostStatus{
-				Protocol: host.Protocol,
-				Host:     host.Host,
-				Port:     host.Port,
-			})
-	}
+	dst.Status.OneAgent.ConnectionInfo.ConnectionInfo = src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo
 }
 
 func (src *DynaKube) toActiveGateStatus(dst *dynakubelatest.DynaKube) {

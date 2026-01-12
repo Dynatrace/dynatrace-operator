@@ -148,7 +148,7 @@ func TestWebhook(t *testing.T) {
 				MetadataEnrichment:    metadataEnrichmentStatus,
 				KubeSystemUUID:        testClusterUUID,
 				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+					ConnectionInfo: oneagent.ConnectionInfo{
 						ConnectionInfo: communication.ConnectionInfo{
 							TenantUUID: uuid.NewString(),
 						},
@@ -221,7 +221,7 @@ func TestWebhook(t *testing.T) {
 				MetadataEnrichment:    metadataEnrichmentStatus,
 				KubeSystemUUID:        testClusterUUID,
 				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+					ConnectionInfo: oneagent.ConnectionInfo{
 						ConnectionInfo: communication.ConnectionInfo{
 							TenantUUID: uuid.NewString(),
 						},
@@ -659,7 +659,7 @@ func TestOTLPWebhook(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+					ConnectionInfo: oneagent.ConnectionInfo{
 						ConnectionInfo: communication.ConnectionInfo{
 							TenantUUID: tenantUUID,
 						},
@@ -752,7 +752,7 @@ func TestOTLPWebhook(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+					ConnectionInfo: oneagent.ConnectionInfo{
 						ConnectionInfo: communication.ConnectionInfo{
 							TenantUUID: tenantUUID,
 						},
