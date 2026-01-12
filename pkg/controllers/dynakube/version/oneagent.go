@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -83,7 +83,7 @@ func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
 func (updater oneAgentUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
 	imageInfo, err := updater.dtClient.GetLatestOneAgentImage(ctx)
 	if err != nil {
-		conditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
+		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
 	}
 
 	return imageInfo, err
@@ -99,7 +99,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 		latestVersion, err = updater.dtClient.GetLatestAgentVersion(ctx, dtclient.OsUnix, dtclient.InstallerTypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
-			conditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
+			k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
 
 			return err
 		}

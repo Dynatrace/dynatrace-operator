@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -34,7 +34,7 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Recon
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !conditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
+	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
 		return nil
 	}
 
@@ -44,8 +44,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	hasReadScope := conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead)
-	hasWriteScope := conditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite)
+	hasReadScope := k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead)
+	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite)
 
 	var missingScopes []string
 	if !hasReadScope {
@@ -58,7 +58,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 
 	if len(missingScopes) > 0 {
 		message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing log monitoring setting and/or safely create new one."
-		conditions.SetOptionalScopeMissing(r.dk.Conditions(), ConditionType, message)
+		k8sconditions.SetOptionalScopeMissing(r.dk.Conditions(), ConditionType, message)
 		log.Info(message)
 
 		return nil

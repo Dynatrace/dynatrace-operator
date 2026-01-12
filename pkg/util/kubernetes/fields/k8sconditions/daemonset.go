@@ -1,4 +1,4 @@
-package conditions
+package k8sconditions
 
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -6,26 +6,26 @@ import (
 )
 
 const (
-	ServiceCreatedReason    = "ServiceCreated"
-	ServiceGenerationFailed = "ServiceGenerationFailed"
+	DaemonSetSetCreatedReason  = "DaemonSetCreated"
+	DaemonSetSetOutdatedReason = "DaemonSetOutdated"
 )
 
-func SetServiceCreated(conditions *[]metav1.Condition, conditionType, name string) {
+func SetDaemonSetCreated(conditions *[]metav1.Condition, conditionType, name string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  ServiceCreatedReason,
+		Reason:  DaemonSetSetCreatedReason,
 		Message: appendCreatedSuffix(name),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetServiceGenFailed(conditions *[]metav1.Condition, conditionType string, err error) {
+func SetDaemonSetOutdated(conditions *[]metav1.Condition, conditionType, name string) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
-		Reason:  ServiceGenerationFailed,
-		Message: "Failed to generate service: " + err.Error(),
+		Reason:  DaemonSetSetOutdatedReason,
+		Message: appendOutdatedSuffix(name),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

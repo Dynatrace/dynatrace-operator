@@ -5,9 +5,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
@@ -47,14 +47,14 @@ func (r *Reconciler) ensureKSPMSecret(ctx context.Context) error {
 
 		secretConfig, err := generateKSPMTokenSecret(r.dk.KSPM().GetTokenSecretName(), r.dk)
 		if err != nil {
-			conditions.SetSecretGenFailed(r.dk.Conditions(), kspmConditionType, err)
+			k8sconditions.SetSecretGenFailed(r.dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
 
 		tokenHash, err := hasher.GenerateHash(secretConfig.Data)
 		if err != nil {
-			conditions.SetSecretGenFailed(r.dk.Conditions(), kspmConditionType, err)
+			k8sconditions.SetSecretGenFailed(r.dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
@@ -62,15 +62,15 @@ func (r *Reconciler) ensureKSPMSecret(ctx context.Context) error {
 		err = r.secrets.Create(ctx, secretConfig)
 		if err != nil {
 			log.Info("could not create secret for kspm token", "name", secretConfig.Name)
-			conditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
+			k8sconditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
 
 		r.dk.KSPM().TokenSecretHash = tokenHash
-		conditions.SetSecretCreated(r.dk.Conditions(), kspmConditionType, r.dk.KSPM().GetTokenSecretName())
+		k8sconditions.SetSecretCreated(r.dk.Conditions(), kspmConditionType, r.dk.KSPM().GetTokenSecretName())
 	} else if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
 
 		return err
 	}

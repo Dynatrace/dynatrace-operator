@@ -1,4 +1,4 @@
-package conditions
+package k8sconditions
 
 import (
 	"k8s.io/apimachinery/pkg/api/meta"

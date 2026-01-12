@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -187,8 +187,8 @@ func (r *Reconciler) setupOneAgentInjection(ctx context.Context) error {
 func (r *Reconciler) generateInitSecret(ctx context.Context, namespaces []corev1.Namespace) error {
 	err := bootstrapperconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk, namespaces)
 	if err != nil {
-		if conditions.IsKubeAPIError(err) {
-			conditions.SetKubeAPIError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
+		if k8sconditions.IsKubeAPIError(err) {
+			k8sconditions.SetKubeAPIError(r.dk.Conditions(), codeModulesInjectionConditionType, err)
 		}
 
 		return err
@@ -200,8 +200,8 @@ func (r *Reconciler) generateInitSecret(ctx context.Context, namespaces []corev1
 func (r *Reconciler) generateOTLPSecret(ctx context.Context, namespaces []corev1.Namespace) error {
 	err := exporterconfig.NewSecretGenerator(r.client, r.apiReader, r.dynatraceClient).GenerateForDynakube(ctx, r.dk, namespaces)
 	if err != nil {
-		if conditions.IsKubeAPIError(err) {
-			conditions.SetKubeAPIError(r.dk.Conditions(), otlpExporterConfigurationConditionType, err)
+		if k8sconditions.IsKubeAPIError(err) {
+			k8sconditions.SetKubeAPIError(r.dk.Conditions(), otlpExporterConfigurationConditionType, err)
 		}
 
 		return err

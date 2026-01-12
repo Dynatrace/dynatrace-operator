@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -104,14 +104,14 @@ func (s *SecretGenerator) generateConfig(ctx context.Context, dk *dynakube.DynaK
 
 	var tokens corev1.Secret
 	if err := s.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
 	if _, ok := tokens.Data[dtclient.DataIngestToken]; !ok {
 		err := errors.New("data ingest token not found in tokens secret")
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 	}
 
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
 
 		return nil, errors.WithStack(err)
 	}
@@ -158,20 +158,20 @@ func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretN
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	err = s.secrets.CreateOrUpdateForNamespaces(ctx, secret, nsList)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	log.Info("done updating OTLP exporter config secrets")
-	conditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, secretName)
+	k8sconditions.SetSecretCreatedOrUpdated(dk.Conditions(), conditionType, secretName)
 
 	return nil
 }
@@ -181,14 +181,14 @@ func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynaku
 
 	secret, err := k8ssecret.BuildForNamespace(name, dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	_, err = s.secrets.WithOwner(dk).CreateOrUpdate(ctx, secret)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
