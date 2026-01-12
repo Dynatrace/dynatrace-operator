@@ -8,9 +8,6 @@ inputs:
   annotation:
     description: The annotation added to the built image
     required: false
-  dockerfile:
-    description: The path to the Dockerfile to be used
-    default: ./Dockerfile
   images:
     description: Base names of the image tags
     required: false
