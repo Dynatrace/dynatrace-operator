@@ -41,7 +41,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+				ConnectionInfo: oneagent.ConnectionInfo{
 					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: testTenant,
 					},

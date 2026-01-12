@@ -265,7 +265,7 @@ func splitArg(arg string) (string, string) {
 }
 
 func (oa *OneAgent) IsCommunicationRouteClear() bool {
-	return len(oa.ConnectionInfoStatus.CommunicationHosts) > 0
+	return len(oa.ConnectionInfo.Endpoints) > 0
 }
 
 func (oa *OneAgent) GetEnvironment() []corev1.EnvVar {
@@ -282,7 +282,7 @@ func (oa *OneAgent) GetEnvironment() []corev1.EnvVar {
 }
 
 func (oa *OneAgent) GetEndpoints() string {
-	return oa.ConnectionInfoStatus.Endpoints
+	return oa.ConnectionInfo.Endpoints
 }
 
 // GetCustomCodeModulesImage provides the image reference for the CodeModules provided in the Spec.

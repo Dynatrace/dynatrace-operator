@@ -178,7 +178,7 @@ func istioClient(t *testing.T, restConfig *rest.Config) *istioclientset.Clientse
 }
 
 func apiURLCommunicationHost(t *testing.T, dk dynakube.DynaKube) dtclient.CommunicationHost {
-	apiHost, err := dtclient.ParseEndpoint(dk.APIURL())
+	apiHost, err := dtclient.NewCommunicationHost(dk.APIURL())
 	require.NoError(t, err)
 
 	return apiHost

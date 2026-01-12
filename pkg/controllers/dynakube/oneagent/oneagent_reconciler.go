@@ -228,12 +228,12 @@ func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 	data := map[string]string{}
 
-	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
-		data[connectioninfo.TenantUUIDKey] = dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+	if dk.Status.OneAgent.ConnectionInfo.TenantUUID != "" {
+		data[connectioninfo.TenantUUIDKey] = dk.Status.OneAgent.ConnectionInfo.TenantUUID
 	}
 
-	if dk.Status.OneAgent.ConnectionInfoStatus.Endpoints != "" {
-		data[connectioninfo.CommunicationEndpointsKey] = dk.Status.OneAgent.ConnectionInfoStatus.Endpoints
+	if dk.Status.OneAgent.ConnectionInfo.Endpoints != "" {
+		data[connectioninfo.CommunicationEndpointsKey] = dk.Status.OneAgent.ConnectionInfo.Endpoints
 	}
 
 	return data

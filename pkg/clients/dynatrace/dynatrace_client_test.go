@@ -172,7 +172,6 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	// TODO: Fix this monster, this is not ok
 	testAgentVersionGetLatestAgentVersion(t, dtc)
 	testActiveGateVersionGetLatestActiveGateVersion(t, dtc)
-	testCommunicationHostsGetCommunicationHosts(t, dtc)
 	testSendEvent(t, dtc)
 	testGetTokenScopes(t, dtc)
 

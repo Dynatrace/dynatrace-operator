@@ -371,9 +371,9 @@ func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubelat
 
 	// OneAgent
 	assert.Equal(t, oldStatus.OneAgent.VersionStatus, newStatus.OneAgent.VersionStatus)
-	assert.Equal(t, oldStatus.OneAgent.ConnectionInfoStatus.Endpoints, newStatus.OneAgent.ConnectionInfoStatus.Endpoints)
-	assert.Equal(t, oldStatus.OneAgent.ConnectionInfoStatus.LastRequest, newStatus.OneAgent.ConnectionInfoStatus.LastRequest)
-	assert.Equal(t, oldStatus.OneAgent.ConnectionInfoStatus.TenantUUID, newStatus.OneAgent.ConnectionInfoStatus.TenantUUID)
+	assert.Equal(t, oldStatus.OneAgent.ConnectionInfoStatus.Endpoints, newStatus.OneAgent.ConnectionInfo.Endpoints)
+	assert.Equal(t, oldStatus.OneAgent.ConnectionInfoStatus.LastRequest, newStatus.OneAgent.ConnectionInfo.LastRequest)
+	assert.Equal(t, oldStatus.OneAgent.ConnectionInfoStatus.TenantUUID, newStatus.OneAgent.ConnectionInfo.TenantUUID)
 	assert.Equal(t, oldStatus.OneAgent.Healthcheck, newStatus.OneAgent.Healthcheck)
 	assert.Equal(t, oldStatus.OneAgent.LastInstanceStatusUpdate, newStatus.OneAgent.LastInstanceStatusUpdate)
 
@@ -382,15 +382,6 @@ func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubelat
 	for key, value := range oldStatus.OneAgent.Instances {
 		assert.Equal(t, value.IPAddress, newStatus.OneAgent.Instances[key].IPAddress)
 		assert.Equal(t, value.PodName, newStatus.OneAgent.Instances[key].PodName)
-	}
-
-	require.Equal(t, len(oldStatus.OneAgent.ConnectionInfoStatus.CommunicationHosts), len(newStatus.OneAgent.ConnectionInfoStatus.CommunicationHosts))
-
-	for i, oldHost := range oldStatus.OneAgent.ConnectionInfoStatus.CommunicationHosts {
-		newHost := newStatus.OneAgent.ConnectionInfoStatus.CommunicationHosts[i]
-		assert.Equal(t, oldHost.Host, newHost.Host)
-		assert.Equal(t, oldHost.Port, newHost.Port)
-		assert.Equal(t, oldHost.Protocol, newHost.Protocol)
 	}
 }
 
@@ -921,23 +912,11 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 			Healthcheck: &registryv1.HealthConfig{
 				Test: []string{"oa-health-check-test"},
 			},
-			ConnectionInfoStatus: oneagentlatest.ConnectionInfoStatus{
+			ConnectionInfo: oneagentlatest.ConnectionInfo{
 				ConnectionInfo: communication.ConnectionInfo{
 					LastRequest: testTime,
 					TenantUUID:  "oa-tenant-uuid",
 					Endpoints:   "oa-endpoints",
-				},
-				CommunicationHosts: []oneagentlatest.CommunicationHostStatus{
-					{
-						Protocol: "oa-protocol-1",
-						Host:     "oa-host-1",
-						Port:     1,
-					},
-					{
-						Protocol: "oa-protocol-2",
-						Host:     "oa-host-2",
-						Port:     2,
-					},
 				},
 			},
 		},

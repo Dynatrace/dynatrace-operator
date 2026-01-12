@@ -632,59 +632,6 @@ func (_c *Client_GetAgentViaInstallerURL_Call) RunAndReturn(run func(ctx context
 	return _c
 }
 
-// GetCommunicationHostForClient provides a mock function for the type Client
-func (_mock *Client) GetCommunicationHostForClient() (dynatrace.CommunicationHost, error) {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetCommunicationHostForClient")
-	}
-
-	var r0 dynatrace.CommunicationHost
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func() (dynatrace.CommunicationHost, error)); ok {
-		return returnFunc()
-	}
-	if returnFunc, ok := ret.Get(0).(func() dynatrace.CommunicationHost); ok {
-		r0 = returnFunc()
-	} else {
-		r0 = ret.Get(0).(dynatrace.CommunicationHost)
-	}
-	if returnFunc, ok := ret.Get(1).(func() error); ok {
-		r1 = returnFunc()
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_GetCommunicationHostForClient_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCommunicationHostForClient'
-type Client_GetCommunicationHostForClient_Call struct {
-	*mock.Call
-}
-
-// GetCommunicationHostForClient is a helper method to define mock.On call
-func (_e *Client_Expecter) GetCommunicationHostForClient() *Client_GetCommunicationHostForClient_Call {
-	return &Client_GetCommunicationHostForClient_Call{Call: _e.mock.On("GetCommunicationHostForClient")}
-}
-
-func (_c *Client_GetCommunicationHostForClient_Call) Run(run func()) *Client_GetCommunicationHostForClient_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Client_GetCommunicationHostForClient_Call) Return(communicationHost dynatrace.CommunicationHost, err error) *Client_GetCommunicationHostForClient_Call {
-	_c.Call.Return(communicationHost, err)
-	return _c
-}
-
-func (_c *Client_GetCommunicationHostForClient_Call) RunAndReturn(run func() (dynatrace.CommunicationHost, error)) *Client_GetCommunicationHostForClient_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetHostEntityIDForIP provides a mock function for the type Client
 func (_mock *Client) GetHostEntityIDForIP(ctx context.Context, ip string) (string, error) {
 	ret := _mock.Called(ctx, ip)

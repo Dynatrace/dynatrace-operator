@@ -165,7 +165,7 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 	require.NoError(t, err)
 
 	expectedLines := []string{
-		serverKey + "=" + fmt.Sprintf("{%s}", dk.Status.OneAgent.ConnectionInfoStatus.Endpoints),
+		serverKey + "=" + fmt.Sprintf("{%s}", dk.Status.OneAgent.ConnectionInfo.Endpoints),
 		tenantKey + "=" + tenantUUID,
 		tenantTokenKey + "=" + tokenValue,
 		hostIDSourceKey + "=k8s-node-name",
@@ -210,7 +210,7 @@ func createDynakube(isLogMonitoringEnabled bool) *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+				ConnectionInfo: oneagent.ConnectionInfo{
 					ConnectionInfo: communication.ConnectionInfo{
 						TenantUUID: "test-uuid",
 						Endpoints:  "https://endpoint1.com;https://endpoint2.com",
@@ -287,7 +287,7 @@ func TestAddAnnotations(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: oneagent.ConnectionInfo{
 							ConnectionInfo: communication.ConnectionInfo{
 								TenantTokenHash: "hash",
 							},
@@ -305,7 +305,7 @@ func TestAddAnnotations(t *testing.T) {
 			dk: dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: oneagent.ConnectionInfo{
 							ConnectionInfo: communication.ConnectionInfo{
 								TenantTokenHash: "hash",
 							},
@@ -329,7 +329,7 @@ func TestAddAnnotations(t *testing.T) {
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: oneagent.ConnectionInfo{
 							ConnectionInfo: communication.ConnectionInfo{
 								TenantTokenHash: "hash",
 							},
@@ -352,7 +352,7 @@ func TestAddAnnotations(t *testing.T) {
 				Status: dynakube.DynaKubeStatus{
 					ProxyURLHash: "proxy-hash",
 					OneAgent: oneagent.Status{
-						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: oneagent.ConnectionInfo{
 							ConnectionInfo: communication.ConnectionInfo{
 								TenantTokenHash: "hash",
 							},
@@ -376,7 +376,7 @@ func TestAddAnnotations(t *testing.T) {
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: oneagent.ConnectionInfo{
 							ConnectionInfo: communication.ConnectionInfo{
 								TenantTokenHash: "hash",
 							},

@@ -36,7 +36,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 	pmc = pmc.
 		AddHostGroup(dk.OneAgent().GetHostGroup()).
-		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).
+		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfo, tenantToken).
 		// set proxy explicitly empty, so old proxy settings get deleted where necessary
 		AddProxy("")
 

@@ -12,8 +12,7 @@ var (
 
 const (
 	OperatorComponent   = "operator"
-	OneAgentComponent   = "oneagent"
-	CodeModuleComponent = "CodeModule"
+	CodeModuleComponent = "OneAgent"
 	ActiveGateComponent = "ActiveGate"
 	IstioGVRName        = "networking.istio.io"
 	IstioGVRVersion     = "v1beta1"

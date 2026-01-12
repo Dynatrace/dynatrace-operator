@@ -3,15 +3,26 @@ package dynatrace
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"net/url"
+	"slices"
+	"sort"
+	"strings"
 )
 
-func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
-	return ParseEndpoint(dtc.url)
+// CommunicationHost => struct of connection endpoint
+type CommunicationHost struct {
+	Protocol string
+	Host     string
+	Port     uint32
 }
 
-func ParseEndpoint(s string) (CommunicationHost, error) {
-	u, err := url.ParseRequestURI(s)
+func (ch CommunicationHost) String() string {
+	return fmt.Sprintf("%s://%s:%d", ch.Protocol, ch.Host, ch.Port)
+}
+
+func NewCommunicationHost(endpoint string) (CommunicationHost, error) {
+	u, err := url.Parse(endpoint)
 	if err != nil {
 		return CommunicationHost{}, errors.New("failed to parse URL")
 	}
@@ -45,4 +56,32 @@ func ParseEndpoint(s string) (CommunicationHost, error) {
 		Host:     u.Hostname(),
 		Port:     p,
 	}, nil
+}
+
+// NewCommunicationHosts creates CommunicationHost slice from comma separated endpoints.
+// It removes duplicates and sorts the result for deterministic output.
+func NewCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
+	// we use a map to avoid duplicates, which cause problems in the past with the istio "integration"
+	comHosts := map[string]CommunicationHost{}
+
+	if len(endpoints) == 0 {
+		return []CommunicationHost{}, nil
+	}
+
+	for _, endpoint := range strings.Split(endpoints, ",") {
+		ch, err := NewCommunicationHost(endpoint)
+		if err != nil {
+			return nil, err
+		}
+
+		comHosts[ch.String()] = ch
+	}
+
+	// we have to sort the hosts to have a deterministic order for not constantly change the Status
+	sortedHosts := slices.Collect(maps.Values(comHosts))
+	sort.SliceStable(sortedHosts, func(i, j int) bool {
+		return sortedHosts[i].String() < sortedHosts[j].String()
+	})
+
+	return sortedHosts, nil
 }
