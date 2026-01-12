@@ -35,7 +35,6 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 
 	defer func() {
 		if err == nil {
-			updater.Target().LastProbeTimestamp = r.timeProvider.Now()
 			updater.Target().Source = currentSource
 		}
 	}()

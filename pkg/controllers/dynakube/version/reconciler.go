@@ -36,7 +36,7 @@ func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, timeProvid
 
 func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.DynaKube) error {
 	updater := newCodeModulesUpdater(dk, r.dtClient)
-	if r.needsUpdate(updater, dk) {
+	if r.needsUpdate(updater) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
 
@@ -45,7 +45,7 @@ func (r *reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 
 func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKube) error {
 	updater := newOneAgentUpdater(dk, r.apiReader, r.dtClient)
-	if r.needsUpdate(updater, dk) {
+	if r.needsUpdate(updater) {
 		return r.updateVersionStatuses(ctx, updater, dk)
 	}
 
@@ -54,7 +54,7 @@ func (r *reconciler) ReconcileOneAgent(ctx context.Context, dk *dynakube.DynaKub
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
 	updater := newActiveGateUpdater(dk, r.apiReader, r.dtClient)
-	if r.needsUpdate(updater, dk) {
+	if r.needsUpdate(updater) {
 		err := r.updateVersionStatuses(ctx, updater, dk)
 
 		return err
@@ -90,7 +90,7 @@ func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUp
 	return nil
 }
 
-func (r *reconciler) needsUpdate(updater StatusUpdater, dk *dynakube.DynaKube) bool {
+func (r *reconciler) needsUpdate(updater StatusUpdater) bool {
 	if !updater.IsEnabled() {
 		log.Info("skipping version status update for disabled section", "updater", updater.Name())
 
@@ -105,12 +105,6 @@ func (r *reconciler) needsUpdate(updater StatusUpdater, dk *dynakube.DynaKube) b
 
 	if hasCustomFieldChanged(updater) {
 		return true
-	}
-
-	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dk.APIRequestThreshold()) {
-		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
-
-		return false
 	}
 
 	return true

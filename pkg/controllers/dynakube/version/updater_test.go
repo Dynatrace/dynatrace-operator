@@ -32,7 +32,6 @@ func TestRun(t *testing.T) {
 		updater := newCustomImageUpdater(t, target, testImage.String())
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 		assert.Equal(t, testImage.String(), target.ImageID)
 		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
@@ -46,7 +45,6 @@ func TestRun(t *testing.T) {
 		updater := newCustomImageUpdater(t, target, "incorrect-uri")
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
 	})
@@ -61,7 +59,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
@@ -92,7 +89,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
 
 		// 2. call => it is custom version => should run
@@ -115,7 +111,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
 		assert.Equal(t, testImage.String(), target.ImageID)
 		assert.Equal(t, testImage.Tag, target.Version)
@@ -135,7 +130,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
 		assert.Empty(t, target.Version)
 		assert.Empty(t, target.ImageID)
@@ -154,7 +148,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 		assert.Empty(t, target.Version)
 	})
@@ -171,7 +164,6 @@ func TestRun(t *testing.T) {
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 	})
 }

@@ -158,7 +158,6 @@ func getCurrentStatus() edgeconnect.EdgeConnectStatus {
 		DeploymentPhase:  status.Running,
 		UpdatedTimestamp: metav1.Time{Time: time.Now()},
 		Version: status.VersionStatus{
-			LastProbeTimestamp: &metav1.Time{Time: time.Now()},
 			Source:             "a",
 			ImageID:            "b",
 			Version:            "c",

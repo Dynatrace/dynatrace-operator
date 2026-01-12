@@ -2,8 +2,6 @@
 // +k8s:openapi-gen=true
 package status
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 type VersionSource string
 
 const (
@@ -16,8 +14,6 @@ const (
 )
 
 type VersionStatus struct {
-	// Indicates when the last check for a new version was performed
-	LastProbeTimestamp *metav1.Time `json:"lastProbeTimestamp,omitempty"`
 	// Source of the image (tenant-registry, public-registry, ...)
 	Source VersionSource `json:"source,omitempty"`
 	// Image ID

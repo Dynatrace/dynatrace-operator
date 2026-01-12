@@ -53,22 +53,6 @@ func TestReconcile(t *testing.T) {
 		assert.Empty(t, dk.Status.Conditions)
 	})
 
-	t.Run("no update if not outdated", func(t *testing.T) {
-		dk := createDynaKube()
-		specialMessage := "TESTING" // if the special message does not change == condition didn't update
-		conditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
-
-		dtc := dtclientmock.NewClient(t)
-		reconciler := NewReconciler(dtc, &dk)
-
-		err := reconciler.Reconcile(ctx)
-
-		require.NoError(t, err)
-		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
-		require.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, specialMessage, dk.Status.Conditions[0].Message)
-	})
-
 	t.Run("update if outdated", func(t *testing.T) {
 		dk := createDynaKube()
 		conditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")

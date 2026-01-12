@@ -32,14 +32,6 @@ func NewReconciler() *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling Kubernetes Cluster MEID")
 
-	if !conditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
-		log.Info("Kubernetes Cluster MEID not outdated, skipping reconciliation")
-
-		return nil
-	}
-
-	conditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
-
 	if !conditions.IsOptionalScopeAvailable(dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
 		msg := dynatrace.TokenScopeSettingsRead + " optional scope not available"
 		log.Info(msg)

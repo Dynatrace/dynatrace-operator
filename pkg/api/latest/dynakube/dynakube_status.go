@@ -2,8 +2,6 @@ package dynakube
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
@@ -46,9 +44,6 @@ type DynaKubeStatus struct { //nolint:revive
 	// This annotation will cause the component to be restarted if the proxy changes.
 	ProxyURLHash string `json:"proxyURLHash,omitempty"`
 
-	// Observed state of Dynatrace API
-	DynatraceAPI DynatraceAPIStatus `json:"dynatraceApi,omitempty"`
-
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
@@ -65,20 +60,6 @@ type DynaKubeStatus struct { //nolint:revive
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-type DynatraceAPIStatus struct {
-	// Time of the last token request
-	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
-}
-
-func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
-	remaining := timeout - time.Since(lastRequestTimestamp.Time)
-
-	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago, %d minutes remaining until next request",
-		functionName,
-		int(timeout.Minutes()),
-		int(remaining.Minutes()))
 }
 
 // SetPhase sets the status phase on the DynaKube object.

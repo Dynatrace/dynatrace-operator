@@ -135,7 +135,7 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	*out = *in
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
 	in.ActiveGate.DeepCopyInto(&out.ActiveGate)
-	in.CodeModules.DeepCopyInto(&out.CodeModules)
+	out.CodeModules = in.CodeModules
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
 	out.Kspm = in.Kspm
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)

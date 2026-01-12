@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -15,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
 
@@ -36,7 +34,6 @@ func TestUpdate(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, "docker.io/dynatrace/edgeconnect:latest@"+fakeDigest, edgeConnect.Status.Version.ImageID)
-		require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
 
 		// check invalid digest
 		invalidImageVersion := registry.ImageVersion{Digest: "invaliddigest"}
@@ -65,7 +62,6 @@ func TestUpdate(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, fmt.Sprintf("docker.io/dynatrace/edgeconnect:%s@%s", customTag, fakeDigest), edgeConnect.Status.Version.ImageID)
-		require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
 	})
 
 	t.Run("custom registry used => registry NOT used", func(t *testing.T) {
@@ -79,7 +75,6 @@ func TestUpdate(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, customRegistry+":latest", edgeConnect.Status.Version.ImageID)
-		require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
 	})
 }
 
@@ -115,24 +110,10 @@ func TestReconcileRequired(t *testing.T) {
 		assert.True(t, updater.RequiresReconcile(), "initial reconcile always required")
 	})
 
-	t.Run("only reconcile every threshold minutes", func(t *testing.T) {
-		edgeConnect := createBasicEdgeConnect()
-		updater := newUpdater(fake.NewClient(), currentTime, fakeRegistryClient, edgeConnect)
-
-		edgeConnectTime := metav1.Now()
-		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
-		edgeConnect.Spec.AutoUpdate = ptr.To(true)
-		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
-
-		assert.False(t, updater.RequiresReconcile())
-	})
-
 	t.Run("reconcile as auto update was enabled and time is up", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
 		updater := newUpdater(fake.NewClient(), currentTime, fakeRegistryClient, edgeConnect)
 
-		edgeConnectTime := metav1.NewTime(currentTime.Now().Add(-time.Hour))
-		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
 		edgeConnect.Spec.AutoUpdate = ptr.To(true)
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 
@@ -143,8 +124,6 @@ func TestReconcileRequired(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
 		updater := newUpdater(fake.NewClient(), currentTime, fakeRegistryClient, edgeConnect)
 
-		edgeConnectTime := metav1.Now()
-		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
 		edgeConnect.Status.Version.ImageID = edgeConnect.Image()
 		edgeConnect.Spec.ImageRef = image.Ref{
 			Repository: "docker.io/dynatrace/superfancynew",

@@ -4,42 +4,15 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
-	if !conditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
-		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
-
-		sourceKey := client.ObjectKey{
-			Name:      GetSourceCertsSecretName(dk.Name),
-			Namespace: dk.Namespace,
-		}
-
-		targetKey := client.ObjectKey{
-			Name:      consts.BootstrapperInitSecretName,
-			Namespace: dk.Namespace,
-		}
-
-		source, err := k8ssecret.GetSecretFromSource(ctx, s.secrets, sourceKey, targetKey)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
-
-			return nil, err
-		} else if err == nil && source.Data[pmc.InputFileName] != nil {
-			return source.Data[pmc.InputFileName], nil
-		}
-	}
-
 	log.Debug("calling the Dynatrace API for ruxitagentproc content")
 
 	conditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated, update in progress")

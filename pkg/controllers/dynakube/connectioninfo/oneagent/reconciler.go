@@ -16,7 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -78,27 +77,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	secretNamespacedName := types.NamespacedName{Name: r.dk.OneAgent().GetTenantSecret(), Namespace: r.dk.Namespace}
-
-	if !conditions.IsOutdated(r.timeProvider, r.dk, oaConnectionInfoConditionType) {
-		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
-		if err != nil {
-			return err
-		}
-
-		condition := meta.FindStatusCondition(*r.dk.Conditions(), oaConnectionInfoConditionType)
-		if isSecretPresent {
-			log.Info(dynakube.GetCacheValidMessage(
-				"OneAgent connection info update",
-				condition.LastTransitionTime,
-				r.dk.APIRequestThreshold()))
-
-			return nil
-		}
-	}
-
-	conditions.SetSecretOutdated(r.dk.Conditions(), oaConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
-
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo(ctx)
 	if err != nil {
 		conditions.SetDynatraceAPIError(r.dk.Conditions(), oaConnectionInfoConditionType, err)
@@ -111,11 +89,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	log.Info("OneAgent connection info updated")
 
 	if len(connectionInfo.Endpoints) == 0 {
-		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
-	}
-
-	if len(connectionInfo.CommunicationHosts) == 0 {
-		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
+		log.Info("no OneAgent communication endpoints received")
 		setEmptyCommunicationHostsCondition(r.dk.Conditions())
 
 		return NoOneAgentCommunicationHostsError

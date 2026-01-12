@@ -179,41 +179,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 		assert.JSONEq(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
 	})
-	t.Run("Reconciliation only runs every 15 min", func(t *testing.T) {
-		dk := createTestDynakube()
-		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk, token.Tokens{
-			dtclient.APIToken: &token.Token{Value: testValue},
-		})
-
-		err := r.Reconcile(t.Context())
-
-		require.NoError(t, err)
-
-		var pullSecret corev1.Secret
-		err = fakeClient.Get(t.Context(),
-			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
-			&pullSecret)
-
-		require.NoError(t, err)
-
-		pullSecret.Data = nil
-		err = fakeClient.Update(t.Context(), &pullSecret)
-
-		require.NoError(t, err)
-
-		err = r.Reconcile(t.Context())
-
-		require.NoError(t, err)
-
-		err = fakeClient.Get(t.Context(),
-			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
-			&pullSecret)
-
-		require.NoError(t, err)
-		assert.NotNil(t, pullSecret)
-		assert.Empty(t, pullSecret.Data)
-	})
 	t.Run("Cleanup works", func(t *testing.T) {
 		dk := createTestDynakube()
 		fakeClient := fake.NewClient()

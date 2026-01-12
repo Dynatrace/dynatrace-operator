@@ -40,25 +40,16 @@ func newUpdater(
 func (u updater) RequiresReconcile() bool {
 	version := u.edgeConnect.Status.Version
 
-	isRequestOutdated := u.timeProvider.IsOutdated(version.LastProbeTimestamp, edgeconnect.DefaultMinRequestThreshold)
 	didCustomImageChange := !strings.HasPrefix(version.ImageID, u.edgeConnect.Image())
 
 	if didCustomImageChange || version.ImageID == "" {
 		return true
 	}
 
-	return isRequestOutdated && u.IsAutoUpdateEnabled()
+	return u.IsAutoUpdateEnabled()
 }
 
 func (u updater) Update(ctx context.Context) error {
-	var err error
-
-	defer func() {
-		if err == nil {
-			u.Target().LastProbeTimestamp = u.timeProvider.Now()
-		}
-	}()
-
 	image := u.edgeConnect.Image()
 	target := u.Target()
 

@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +21,7 @@ const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix = "-pull-secret"
 
-	DefaultMinRequestThresholdMinutes = 15
+	DefaultMinRequestThresholdMinutes = 10
 )
 
 var log = logd.Get().WithName("dynakube-v1beta6")
@@ -121,10 +120,6 @@ func (dk *DynaKube) GetDynatraceAPIRequestThreshold() uint16 {
 
 func (dk *DynaKube) APIRequestThreshold() time.Duration {
 	return time.Duration(dk.GetDynatraceAPIRequestThreshold()) * time.Minute
-}
-
-func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceAPI.LastTokenScopeRequest, dk.APIRequestThreshold())
 }
 
 func (dk *DynaKube) IsCodeModulesStatusReady() bool {

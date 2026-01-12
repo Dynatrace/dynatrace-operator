@@ -355,9 +355,6 @@ spec:
                 properties:
                   imageID:
                     type: string
-                  lastProbeTimestamp:
-                    format: date-time
-                    type: string
                   source:
                     type: string
                   type:
@@ -708,9 +705,6 @@ spec:
               version:
                 properties:
                   imageID:
-                    type: string
-                  lastProbeTimestamp:
-                    format: date-time
                     type: string
                   source:
                     type: string

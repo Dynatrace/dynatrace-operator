@@ -357,7 +357,6 @@ func compareActiveGateSpec(t *testing.T, oldSpec activegate.Spec, newSpec active
 func compareStatus(t *testing.T, oldStatus DynaKubeStatus, newStatus dynakubelatest.DynaKubeStatus) {
 	// Base
 	assert.Equal(t, oldStatus.Conditions, newStatus.Conditions)
-	assert.Equal(t, oldStatus.DynatraceAPI.LastTokenScopeRequest, newStatus.DynatraceAPI.LastTokenScopeRequest)
 	assert.Equal(t, oldStatus.KubeSystemUUID, newStatus.KubeSystemUUID)
 	assert.Equal(t, oldStatus.Phase, newStatus.Phase)
 	assert.Equal(t, oldStatus.UpdatedTimestamp, newStatus.UpdatedTimestamp)
@@ -909,7 +908,6 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 				Version:            "oa-version",
 				Type:               "oa-image-type",
 				Source:             status.CustomImageVersionSource,
-				LastProbeTimestamp: &testTime,
 			},
 			Instances: map[string]oneagentlatest.Instance{
 				"oa-instance-key-1": {
@@ -951,7 +949,6 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 				Version:            "ag-version",
 				Type:               "ag-image-type",
 				Source:             status.CustomVersionVersionSource,
-				LastProbeTimestamp: &testTime,
 			},
 		},
 		CodeModules: oneagentlatest.CodeModulesStatus{
@@ -960,11 +957,7 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 				Version:            "cm-version",
 				Type:               "cm-image-type",
 				Source:             status.TenantRegistryVersionSource,
-				LastProbeTimestamp: &testTime,
 			},
-		},
-		DynatraceAPI: dynakubelatest.DynatraceAPIStatus{
-			LastTokenScopeRequest: testTime,
 		},
 		Conditions: []metav1.Condition{
 			{

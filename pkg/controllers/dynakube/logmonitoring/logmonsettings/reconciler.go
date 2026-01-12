@@ -34,10 +34,6 @@ func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Recon
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !conditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
-		return nil
-	}
-
 	if !r.dk.LogMonitoring().IsEnabled() {
 		_ = meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
 

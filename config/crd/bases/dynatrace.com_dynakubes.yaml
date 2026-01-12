@@ -1709,9 +1709,6 @@ spec:
                     type: object
                   imageID:
                     type: string
-                  lastProbeTimestamp:
-                    format: date-time
-                    type: string
                   serviceIPs:
                     items:
                       type: string
@@ -1726,9 +1723,6 @@ spec:
               codeModules:
                 properties:
                   imageID:
-                    type: string
-                  lastProbeTimestamp:
-                    format: date-time
                     type: string
                   source:
                     type: string
@@ -1847,9 +1841,6 @@ spec:
                       type: object
                     type: object
                   lastInstanceStatusUpdate:
-                    format: date-time
-                    type: string
-                  lastProbeTimestamp:
                     format: date-time
                     type: string
                   source:
@@ -3666,9 +3657,6 @@ spec:
                     type: object
                   imageID:
                     type: string
-                  lastProbeTimestamp:
-                    format: date-time
-                    type: string
                   serviceIPs:
                     items:
                       type: string
@@ -3683,9 +3671,6 @@ spec:
               codeModules:
                 properties:
                   imageID:
-                    type: string
-                  lastProbeTimestamp:
-                    format: date-time
                     type: string
                   source:
                     type: string
@@ -3804,9 +3789,6 @@ spec:
                       type: object
                     type: object
                   lastInstanceStatusUpdate:
-                    format: date-time
-                    type: string
-                  lastProbeTimestamp:
                     format: date-time
                     type: string
                   source:
@@ -5628,9 +5610,6 @@ spec:
                     type: object
                   imageID:
                     type: string
-                  lastProbeTimestamp:
-                    format: date-time
-                    type: string
                   serviceIPs:
                     items:
                       type: string
@@ -5645,9 +5624,6 @@ spec:
               codeModules:
                 properties:
                   imageID:
-                    type: string
-                  lastProbeTimestamp:
-                    format: date-time
                     type: string
                   source:
                     type: string
@@ -5764,9 +5740,6 @@ spec:
                       type: object
                     type: object
                   lastInstanceStatusUpdate:
-                    format: date-time
-                    type: string
-                  lastProbeTimestamp:
                     format: date-time
                     type: string
                   source:
@@ -9041,9 +9014,6 @@ spec:
                     type: object
                   imageID:
                     type: string
-                  lastProbeTimestamp:
-                    format: date-time
-                    type: string
                   serviceIPs:
                     items:
                       type: string
@@ -9058,9 +9028,6 @@ spec:
               codeModules:
                 properties:
                   imageID:
-                    type: string
-                  lastProbeTimestamp:
-                    format: date-time
                     type: string
                   source:
                     type: string
@@ -9108,12 +9075,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              dynatraceApi:
-                properties:
-                  lastTokenScopeRequest:
-                    format: date-time
-                    type: string
-                type: object
               kspm:
                 properties:
                   tokenSecretHash:
@@ -9143,18 +9104,6 @@ spec:
                 properties:
                   connectionInfoStatus:
                     properties:
-                      communicationHosts:
-                        items:
-                          properties:
-                            host:
-                              type: string
-                            port:
-                              format: int32
-                              type: integer
-                            protocol:
-                              type: string
-                          type: object
-                        type: array
                       endpoints:
                         type: string
                       lastRequest:
@@ -9180,9 +9129,6 @@ spec:
                       type: object
                     type: object
                   lastInstanceStatusUpdate:
-                    format: date-time
-                    type: string
-                  lastProbeTimestamp:
                     format: date-time
                     type: string
                   source:

@@ -648,7 +648,6 @@ func getOldStatus() DynaKubeStatus {
 				Version:            "oa-version",
 				Type:               "oa-image-type",
 				Source:             status.CustomImageVersionSource,
-				LastProbeTimestamp: &testTime,
 			},
 			Instances: map[string]oneagent.Instance{
 				"oa-instance-key-1": {
@@ -690,7 +689,6 @@ func getOldStatus() DynaKubeStatus {
 				Version:            "ag-version",
 				Type:               "ag-image-type",
 				Source:             status.CustomVersionVersionSource,
-				LastProbeTimestamp: &testTime,
 			},
 		},
 		CodeModules: oneagent.CodeModulesStatus{
@@ -699,7 +697,6 @@ func getOldStatus() DynaKubeStatus {
 				Version:            "cm-version",
 				Type:               "cm-image-type",
 				Source:             status.TenantRegistryVersionSource,
-				LastProbeTimestamp: &testTime,
 			},
 		},
 		DynatraceAPI: DynatraceAPIStatus{
