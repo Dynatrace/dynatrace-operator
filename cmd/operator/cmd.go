@@ -9,7 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
@@ -77,7 +79,9 @@ func runInPod(kubeCfg *rest.Config) error {
 		if err != nil {
 			return err
 		}
+	}
 
+	if shouldRunCRDStorageMigrationInitManager() {
 		err = runCRDStorageMigration(kubeCfg, namespace)
 		if err != nil {
 			return err
@@ -111,9 +115,11 @@ func runLocally(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	err = runCRDStorageMigration(kubeCfg, namespace)
-	if err != nil {
-		return err
+	if shouldRunCRDStorageMigrationInitManager() {
+		err = runCRDStorageMigration(kubeCfg, namespace)
+		if err != nil {
+			return err
+		}
 	}
 
 	operatorManager, err := createOperatorManager(kubeCfg, namespace, false)
@@ -122,6 +128,10 @@ func runLocally(kubeCfg *rest.Config) error {
 	}
 
 	return errors.WithStack(operatorManager.Start(ctrl.SetupSignalHandler()))
+}
+
+func shouldRunCRDStorageMigrationInitManager() bool {
+	return envvars.GetBool(consts.CRDStorageMigrationEnvVar, true)
 }
 
 func checkCRDs(operatorManager manager.Manager) error {

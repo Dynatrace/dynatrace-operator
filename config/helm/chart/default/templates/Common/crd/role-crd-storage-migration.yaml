@@ -14,6 +14,7 @@
 
 # For more information why the individual permissions are required see
 # https://github.com/Dynatrace/dynatrace-operator/blob/main/doc/roles/operator-roles.md
+{{- if .Values.crdStorageMigrationJob }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -51,3 +52,4 @@ roleRef:
   kind: Role
   name: dynatrace-crd-storage-migration
   apiGroup: rbac.authorization.k8s.io
+{{- end }}

@@ -1,6 +1,7 @@
 ENABLE_CSI ?= true
 DEBUG_LOGS ?= true
 HA_WEBHOOK ?= true
+CRD_STORAGE_MIGRATION_JOB ?= false
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 IMAGE_PULL_POLICY ?= Always
@@ -35,6 +36,7 @@ deploy: manifests/crd/helm
 			--set image=$(IMAGE_URI) \
 			--set debugLogs=$(DEBUG_LOGS) \
 			--set debug=$(DEBUG) \
+			--set crdStorageMigrationJob=$(CRD_STORAGE_MIGRATION_JOB) \
 			--set imagePullPolicy=$(IMAGE_PULL_POLICY)
 
 ## Undeploy the current operator installation

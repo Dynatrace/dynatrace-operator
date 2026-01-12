@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+{{- if .Values.crdStorageMigrationJob }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -21,7 +22,6 @@ metadata:
   annotations:
     {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
 spec:
-  ttlSecondsAfterFinished: 600
   backoffLimit: 3
   template:
     metadata:
@@ -64,3 +64,4 @@ spec:
               {{- toYaml (.Values.operator).limits | nindent 14 }}
           securityContext:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}
+{{- end }}
