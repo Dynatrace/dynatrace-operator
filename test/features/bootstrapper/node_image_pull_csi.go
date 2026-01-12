@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	bootstrapperImage = "quay.io/dynatrace/dynatrace-bootstrapper:snapshot"
+	bootstrapperImage = "ghcr.io/dynatrace/dynatrace-bootstrapper:snapshot"
 )
 
 func InstallWithCSI(t *testing.T) features.Feature {
