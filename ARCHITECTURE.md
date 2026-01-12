@@ -175,8 +175,8 @@ It consists of multiple components:
 
 It can provide 2 types of volumes:
 
-1. [`app` volumes](./pkg/controllers/csi/driver/volumes/app): These volumes contain a single OneAgent code module, and are used for application monitoring. Uses overlayfs to minimize disk space usage.
-2. [`host` volumes](./pkg/controllers/csi/driver/volumes/host): These volumes are just an empty directory on the node, and are used by the host OneAgents to persist their data.
+1. [`app` volumes](./pkg/controllers/csi/server/volumes/app): These volumes contain a single OneAgent code module, and are used for application monitoring. Uses overlayfs to minimize disk space usage.
+2. [`host` volumes](./pkg/controllers/csi/server/volumes/host): These volumes are just an empty directory on the node, and are used by the host OneAgents to persist their data.
 
 **CSI Provisioner** [`cmd/csi/provisioner/`](./cmd/csi/provisioner/):
 
