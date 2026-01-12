@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -28,13 +28,13 @@ func (s *SecretGenerator) prepareEndpoints(ctx context.Context, dk *dynakube.Dyn
 	endpointPropertiesBuilder := strings.Builder{}
 
 	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsURLSecretField, fields[MetricsURLSecretField])); err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		return "", errors.WithStack(err)
 	}
 
 	if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsTokenSecretField, fields[MetricsTokenSecretField])); err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		return "", errors.WithStack(err)
 	}
@@ -47,7 +47,7 @@ func (s *SecretGenerator) prepareFieldsForEndpoints(ctx context.Context, dk *dyn
 
 	tokens, err := s.secrets.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace})
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}

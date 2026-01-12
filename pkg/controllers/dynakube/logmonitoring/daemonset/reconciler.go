@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	"github.com/pkg/errors"
@@ -63,14 +63,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
 	if err != nil {
-		conditions.SetKubeAPIError(r.dk.Conditions(), ConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), ConditionType, err)
 
 		return err
 	}
 
 	if updated {
-		conditions.SetDaemonSetOutdated(r.dk.Conditions(), ConditionType, r.dk.LogMonitoring().GetDaemonSetName()) // needed to reset the timestamp
-		conditions.SetDaemonSetCreated(r.dk.Conditions(), ConditionType, r.dk.LogMonitoring().GetDaemonSetName())
+		k8sconditions.SetDaemonSetOutdated(r.dk.Conditions(), ConditionType, r.dk.LogMonitoring().GetDaemonSetName()) // needed to reset the timestamp
+		k8sconditions.SetDaemonSetCreated(r.dk.Conditions(), ConditionType, r.dk.LogMonitoring().GetDaemonSetName())
 	}
 
 	return nil

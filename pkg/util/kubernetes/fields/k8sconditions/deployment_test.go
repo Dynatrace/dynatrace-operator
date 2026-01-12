@@ -1,4 +1,4 @@
-package conditions
+package k8sconditions
 
 import (
 	"testing"
