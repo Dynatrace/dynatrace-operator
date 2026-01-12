@@ -1,4 +1,4 @@
-package crdcleanup
+package crdstoragemigration
 
 import (
 	"context"
@@ -217,7 +217,7 @@ func TestReconcile(t *testing.T) {
 		assert.False(t, cancelCalled, "cancel should not be called when webhook is not ready")
 	})
 
-	t.Run("performs cleanup and calls cancel when webhook ready and cleanup needed", func(t *testing.T) {
+	t.Run("performs storage version migration and calls cancel when webhook ready and migration needed", func(t *testing.T) {
 		replicas := int32(1)
 		deployment := &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -289,7 +289,7 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, reconcile.Result{}, result)
-		assert.True(t, cancelCalled, "cancel should be called after successful cleanup")
+		assert.True(t, cancelCalled, "cancel should be called after successful storage version migration")
 
 		// Verify CRD was updated
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
@@ -298,7 +298,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, []string{"v1beta6"}, updatedCRD.Status.StoredVersions)
 	})
 
-	t.Run("calls cancel when cleanup not needed", func(t *testing.T) {
+	t.Run("calls cancel when storage version migration not needed", func(t *testing.T) {
 		replicas := int32(1)
 		deployment := &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -354,10 +354,10 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, reconcile.Result{}, result)
-		assert.True(t, cancelCalled, "cancel should be called even when cleanup not needed")
+		assert.True(t, cancelCalled, "cancel should be called even when storage version migration not needed")
 	})
 
-	t.Run("returns error when cleanup fails", func(t *testing.T) {
+	t.Run("returns error when storage version migration fails", func(t *testing.T) {
 		replicas := int32(1)
 		deployment := &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
@@ -422,14 +422,14 @@ func TestReconcile(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Equal(t, reconcile.Result{}, result)
-		assert.False(t, cancelCalled, "cancel should not be called when cleanup fails")
+		assert.False(t, cancelCalled, "cancel should not be called when storage version migration fails")
 	})
 }
 
-func TestControllerPerformCRDStorageVersionsCleanup(t *testing.T) {
+func TestControllerPerformCRDStorageVersionMigration(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("returns true when cleanup is performed", func(t *testing.T) {
+	t.Run("returns true when storage version migration is performed", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: DynaKubeCRDName,
@@ -471,13 +471,13 @@ func TestControllerPerformCRDStorageVersionsCleanup(t *testing.T) {
 			apiReader: clt,
 		}
 
-		cleanupNeeded, err := controller.performCRDStorageVersionsCleanup(ctx)
+		migrationNeeded, err := controller.performCRDStorageVersionMigration(ctx)
 
 		require.NoError(t, err)
-		assert.True(t, cleanupNeeded)
+		assert.True(t, migrationNeeded)
 	})
 
-	t.Run("returns false when cleanup not needed", func(t *testing.T) {
+	t.Run("returns false when storage version migration not needed", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: DynaKubeCRDName,
@@ -504,10 +504,10 @@ func TestControllerPerformCRDStorageVersionsCleanup(t *testing.T) {
 			apiReader: clt,
 		}
 
-		cleanupNeeded, err := controller.performCRDStorageVersionsCleanup(ctx)
+		migrationNeeded, err := controller.performCRDStorageVersionMigration(ctx)
 
 		require.NoError(t, err)
-		assert.False(t, cleanupNeeded)
+		assert.False(t, migrationNeeded)
 	})
 
 	t.Run("returns false and no error when CRD not found", func(t *testing.T) {
@@ -518,9 +518,9 @@ func TestControllerPerformCRDStorageVersionsCleanup(t *testing.T) {
 			apiReader: clt,
 		}
 
-		cleanupNeeded, err := controller.performCRDStorageVersionsCleanup(ctx)
+		migrationNeeded, err := controller.performCRDStorageVersionMigration(ctx)
 
 		require.NoError(t, err)
-		assert.False(t, cleanupNeeded)
+		assert.False(t, migrationNeeded)
 	})
 }

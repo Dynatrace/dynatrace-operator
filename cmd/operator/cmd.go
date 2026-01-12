@@ -78,7 +78,7 @@ func runInPod(kubeCfg *rest.Config) error {
 			return err
 		}
 
-		err = runCRDCleanup(kubeCfg, namespace)
+		err = runCRDStorageMigration(kubeCfg, namespace)
 		if err != nil {
 			return err
 		}
@@ -111,8 +111,7 @@ func runLocally(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	// Run CRD cleanup before starting the operator
-	err = runCRDCleanup(kubeCfg, namespace)
+	err = runCRDStorageMigration(kubeCfg, namespace)
 	if err != nil {
 		return err
 	}

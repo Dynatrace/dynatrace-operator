@@ -1,4 +1,4 @@
-package crdcleanup
+package crdstoragemigration
 
 import (
 	"context"
@@ -24,12 +24,12 @@ const (
 func AddInit(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
-		Named("crd-cleanup-controller").
+		Named("crd-storage-migration-controller").
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
-		Complete(newCRDCleanupController(mgr, cancelMgr))
+		Complete(newCRDStorageMigrationController(mgr, cancelMgr))
 }
 
-func newCRDCleanupController(mgr manager.Manager, cancelMgr context.CancelFunc) *Controller {
+func newCRDStorageMigrationController(mgr manager.Manager, cancelMgr context.CancelFunc) *Controller {
 	return &Controller{
 		cancelMgrFunc: cancelMgr,
 		client:        mgr.GetClient(),
@@ -44,7 +44,7 @@ type Controller struct {
 }
 
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("reconciling CRD storage version cleanup",
+	log.Info("reconciling CRD storage version migration",
 		"namespace", request.Namespace, "name", request.Name)
 
 	// There is a dependency on the webhook being ready to perform conversions
@@ -52,7 +52,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	err := controller.apiReader.Get(ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: request.Namespace}, &webhookDeployment)
 	if k8serrors.IsNotFound(err) {
-		log.Info("no webhook deployment found, skipping CRD cleanup")
+		log.Info("no webhook deployment found, skipping CRD storage version migration")
 
 		return reconcile.Result{}, nil
 	} else if err != nil {
@@ -60,20 +60,20 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	if !isWebhookReady(&webhookDeployment) {
-		log.Info("webhook deployment not ready yet, retrying CRD cleanup later")
+		log.Info("webhook deployment not ready yet, retrying CRD storage version migration later")
 
 		return reconcile.Result{RequeueAfter: RetryDuration}, nil
 	}
 
-	cleanupNeeded, err := controller.performCRDStorageVersionsCleanup(ctx)
+	migrationNeeded, err := controller.performCRDStorageVersionMigration(ctx)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	if !cleanupNeeded {
-		log.Info("CRD cleanup not needed or already completed")
+	if !migrationNeeded {
+		log.Info("CRD storage version migration not needed or already completed")
 	} else {
-		log.Info("CRD cleanup completed successfully")
+		log.Info("CRD storage version migration completed successfully")
 	}
 
 	controller.cancelMgr()
@@ -87,8 +87,8 @@ func (controller *Controller) cancelMgr() {
 	}
 }
 
-func (controller *Controller) performCRDStorageVersionsCleanup(ctx context.Context) (bool, error) {
-	return PerformCRDStorageVersionsCleanup(ctx, controller.client, controller.apiReader, k8senv.DefaultNamespace())
+func (controller *Controller) performCRDStorageVersionMigration(ctx context.Context) (bool, error) {
+	return PerformCRDStorageVersionMigration(ctx, controller.client, controller.apiReader, k8senv.DefaultNamespace())
 }
 
 func isWebhookReady(deployment *appsv1.Deployment) bool {

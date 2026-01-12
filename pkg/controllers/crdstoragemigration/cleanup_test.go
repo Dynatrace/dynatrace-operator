@@ -1,4 +1,4 @@
-package crdcleanup
+package crdstoragemigration
 
 import (
 	"context"
@@ -76,7 +76,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 
 	t.Run("returns false when CRD not found", func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		cleaned, err := PerformCRDStorageVersionsCleanup(ctx, fakeClient, fakeClient, testNamespace)
+		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
 		assert.False(t, cleaned)
@@ -106,7 +106,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(crd)
 
-		cleaned, err := PerformCRDStorageVersionsCleanup(ctx, fakeClient, fakeClient, testNamespace)
+		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
 		assert.False(t, cleaned)
@@ -135,7 +135,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient(crd)
-		cleaned, err := PerformCRDStorageVersionsCleanup(ctx, fakeClient, fakeClient, testNamespace)
+		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
 		assert.False(t, cleaned)
@@ -164,7 +164,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient(crd)
-		cleaned, err := PerformCRDStorageVersionsCleanup(ctx, fakeClient, fakeClient, testNamespace)
+		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.Error(t, err)
 		assert.False(t, cleaned)
@@ -224,7 +224,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(crd, dk1, dk2)
-		cleaned, err := PerformCRDStorageVersionsCleanup(ctx, fakeClient, fakeClient, testNamespace)
+		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
 		assert.True(t, cleaned)
@@ -264,7 +264,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(crd)
-		cleaned, err := PerformCRDStorageVersionsCleanup(ctx, fakeClient, fakeClient, testNamespace)
+		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
 		assert.True(t, cleaned)

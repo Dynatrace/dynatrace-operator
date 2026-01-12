@@ -14,10 +14,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: dynatrace-operator-crd-cleanup
+  name: dynatrace-operator-crd-storage-migration
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/component: crd-cleanup
+    {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 4 }}
   annotations:
     {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
 spec:
@@ -26,16 +26,16 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "dynatrace-operator.crdCleanupLabels" . | nindent 8 }}
+        {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 8 }}
       annotations:
         {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 8 }}
       {{- if (.Values.operator).apparmor}}
-        container.apparmor.security.beta.kubernetes.io/crd-cleanup: runtime/default
+        container.apparmor.security.beta.kubernetes.io/crd-storage-migration: runtime/default
       {{- end }}
     spec:
       restartPolicy: OnFailure
       {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}
-      serviceAccountName: dynatrace-cleanup-crd
+      serviceAccountName: dynatrace-crd-storage-migration
       securityContext:
         {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
       {{- if .Values.customPullSecret }}
@@ -51,11 +51,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: crd-cleanup
+        - name: crd-storage-migration
           image: {{ include "dynatrace-operator.image" . }}
           imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
           args:
-            - crd-cleanup
+            - crd-storage-migration
             - --namespace={{ .Release.Namespace }}
           resources:
             requests:

@@ -1,10 +1,10 @@
-package crdcleanup
+package crdstoragemigration
 
 import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	crdcleanupcontroller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdcleanup"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdstoragemigration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	use                    = "crd-cleanup"
+	use                    = "crd-storage-migration"
 	namespaceFlagName      = "namespace"
 	namespaceFlagShorthand = "n"
 )
@@ -55,18 +55,18 @@ func run(cmd *cobra.Command, args []string) error {
 		return errors.WithStack(err)
 	}
 
-	return performCRDCleanup(clt, namespaceFlagValue)
+	return performCRDStorageMigration(clt, namespaceFlagValue)
 }
 
-func performCRDCleanup(clt client.Client, namespace string) error {
+func performCRDStorageMigration(clt client.Client, namespace string) error {
 	ctx := context.Background()
 
 	var crd apiextensionsv1.CustomResourceDefinition
 
-	err := clt.Get(ctx, types.NamespacedName{Name: crdcleanupcontroller.DynaKubeCRDName}, &crd)
+	err := clt.Get(ctx, types.NamespacedName{Name: crdstoragemigration.DynaKubeCRDName}, &crd)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			log.Info("DynaKube CRD not found, nothing to clean up")
+			log.Info("DynaKube CRD not found, nothing to migrate")
 
 			return nil
 		}
@@ -74,7 +74,7 @@ func performCRDCleanup(clt client.Client, namespace string) error {
 		return errors.Wrap(err, "failed to get DynaKube CRD")
 	}
 
-	_, err = crdcleanupcontroller.PerformCRDStorageVersionsCleanup(ctx, clt, clt, namespace)
+	_, err = crdstoragemigration.PerformCRDStorageVersionMigration(ctx, clt, clt, namespace)
 
 	return err
 }

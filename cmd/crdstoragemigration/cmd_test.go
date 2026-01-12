@@ -1,4 +1,4 @@
-package crdcleanup
+package crdstoragemigration
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	crdcleanupcontroller "github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdcleanup"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdstoragemigration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -32,14 +32,14 @@ func TestNew(t *testing.T) {
 	})
 }
 
-func TestPerformCRDCleanup(t *testing.T) {
+func TestPerformCRDStorageMigration(t *testing.T) {
 	ctx := context.Background()
 	testNamespace := "dynatrace"
 
-	t.Run("performs cleanup when CRD has multiple storage versions", func(t *testing.T) {
+	t.Run("performs storage migration when CRD has multiple storage versions", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: crdcleanupcontroller.DynaKubeCRDName,
+				Name: crdstoragemigration.DynaKubeCRDName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -81,19 +81,19 @@ func TestPerformCRDCleanup(t *testing.T) {
 
 		clt := fake.NewClient(crd, ns, dk1, dk2)
 
-		err := performCRDCleanup(clt, testNamespace)
+		err := performCRDStorageMigration(clt, testNamespace)
 		require.NoError(t, err)
 
-		// Verify CRD status was updated => has to be the latest storage version only (in difference to the cleanupcrdcontroller, that sets it to the latest compiled version)
+		// Verify CRD status was updated => has to be the latest storage version only (in difference to the storage migration controller, that sets it to the latest compiled version)
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = clt.Get(ctx, client.ObjectKey{Name: crdcleanupcontroller.DynaKubeCRDName}, &updatedCRD)
+		err = clt.Get(ctx, client.ObjectKey{Name: crdstoragemigration.DynaKubeCRDName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta5"}, updatedCRD.Status.StoredVersions)
 	})
 
 	t.Run("gracefully handles missing CRD", func(t *testing.T) {
 		clt := fake.NewClient()
-		err := performCRDCleanup(clt, testNamespace)
+		err := performCRDStorageMigration(clt, testNamespace)
 		require.NoError(t, err)
 	})
 }

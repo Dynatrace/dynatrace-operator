@@ -1,4 +1,4 @@
-package crdcleanup
+package crdstoragemigration
 
 import (
 	"context"
@@ -17,7 +17,7 @@ const (
 	DynaKubeCRDName = k8scrd.DynaKubeName
 )
 
-func PerformCRDStorageVersionsCleanup(ctx context.Context, clt client.Client, apiReader client.Reader, namespace string) (bool, error) {
+func PerformCRDStorageVersionMigration(ctx context.Context, clt client.Client, apiReader client.Reader, namespace string) (bool, error) {
 	log.Info("starting CRD storage version cleanup")
 
 	var crd apiextensionsv1.CustomResourceDefinition

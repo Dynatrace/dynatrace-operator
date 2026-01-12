@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdcleanup"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdstoragemigration"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -18,8 +18,8 @@ func runCertInit(cfg *rest.Config, namespace string) error {
 	return runInitManager(cfg, namespace, certificates.AddInit)
 }
 
-func runCRDCleanup(cfg *rest.Config, namespace string) error {
-	return runInitManager(cfg, namespace, crdcleanup.AddInit)
+func runCRDStorageMigration(cfg *rest.Config, namespace string) error {
+	return runInitManager(cfg, namespace, crdstoragemigration.AddInit)
 }
 
 func runInitManager(cfg *rest.Config, namespace string, addInitFn func(manager.Manager, string, context.CancelFunc) error) error {

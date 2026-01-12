@@ -49,9 +49,9 @@ app.kubernetes.io/component: operator
 {{/*
 CRD cleanup labels
 */}}
-{{- define "dynatrace-operator.crdCleanupLabels" -}}
+{{- define "dynatrace-operator.crdStorageMigrationLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
-app.kubernetes.io/component: crd-cleanup
+app.kubernetes.io/component: crd-storage-migration
 {{- end -}}
 
 {{/*

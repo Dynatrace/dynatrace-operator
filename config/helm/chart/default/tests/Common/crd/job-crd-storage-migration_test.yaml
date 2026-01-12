@@ -1,6 +1,6 @@
 suite: test job for CRD cleanup
 templates:
-  - Common/crd/job-crd-cleanup.yaml
+  - Common/crd/job-crd-storage-migration.yaml
 tests:
   - it: should exist with default values
     set:
@@ -10,7 +10,7 @@ tests:
           of: Job
       - equal:
           path: metadata.name
-          value: dynatrace-operator-crd-cleanup
+          value: dynatrace-operator-crd-storage-migration
       - equal:
           path: metadata.namespace
           value: NAMESPACE
@@ -29,7 +29,7 @@ tests:
           value: OnFailure
       - equal:
           path: spec.template.spec.serviceAccountName
-          value: dynatrace-cleanup-crd
+          value: dynatrace-crd-storage-migration
 
   - it: should have correct container configuration
     set:
@@ -37,10 +37,10 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].name
-          value: crd-cleanup
+          value: crd-storage-migration
       - contains:
           path: spec.template.spec.containers[0].args
-          content: crd-cleanup
+          content: crd-storage-migration
       - contains:
           path: spec.template.spec.containers[0].args
           content: --namespace=NAMESPACE
@@ -58,7 +58,7 @@ tests:
         apparmor: true
     asserts:
       - equal:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-cleanup"]
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
           value: runtime/default
 
   - it: should not have apparmor annotation when disabled
@@ -68,7 +68,7 @@ tests:
         apparmor: false
     asserts:
       - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-cleanup"]
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
 
   - it: should have custom pull secret when specified
     set:
