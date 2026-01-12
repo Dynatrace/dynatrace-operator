@@ -6,6 +6,7 @@ import (
 
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -234,7 +235,7 @@ func TestReconcile(t *testing.T) {
 
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -293,7 +294,7 @@ func TestReconcile(t *testing.T) {
 
 		// Verify CRD was updated
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = clt.Get(ctx, client.ObjectKey{Name: DynaKubeCRDName}, &updatedCRD)
+		err = clt.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta6"}, updatedCRD.Status.StoredVersions)
 	})
@@ -315,7 +316,7 @@ func TestReconcile(t *testing.T) {
 
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -374,7 +375,7 @@ func TestReconcile(t *testing.T) {
 
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -432,7 +433,7 @@ func TestControllerPerformCRDStorageVersionMigration(t *testing.T) {
 	t.Run("returns true when storage version migration is performed", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -480,7 +481,7 @@ func TestControllerPerformCRDStorageVersionMigration(t *testing.T) {
 	t.Run("returns false when storage version migration not needed", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",

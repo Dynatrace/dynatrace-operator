@@ -6,7 +6,7 @@ import (
 
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdstoragemigration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +39,7 @@ func TestPerformCRDStorageMigration(t *testing.T) {
 	t.Run("performs storage migration when CRD has multiple storage versions", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: crdstoragemigration.DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -86,7 +86,7 @@ func TestPerformCRDStorageMigration(t *testing.T) {
 
 		// Verify CRD status was updated => has to be the latest storage version only (in difference to the storage migration controller, that sets it to the latest compiled version)
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = clt.Get(ctx, client.ObjectKey{Name: crdstoragemigration.DynaKubeCRDName}, &updatedCRD)
+		err = clt.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta5"}, updatedCRD.Status.StoredVersions)
 	})

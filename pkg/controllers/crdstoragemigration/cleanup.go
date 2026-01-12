@@ -12,17 +12,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// DynaKubeCRDName is the full name of the DynaKube CRD
-	DynaKubeCRDName = k8scrd.DynaKubeName
-)
-
 func PerformCRDStorageVersionMigration(ctx context.Context, clt client.Client, apiReader client.Reader, namespace string) (bool, error) {
 	log.Info("starting CRD storage version cleanup")
 
 	var crd apiextensionsv1.CustomResourceDefinition
 
-	err := apiReader.Get(ctx, types.NamespacedName{Name: DynaKubeCRDName}, &crd)
+	err := apiReader.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
 	if err != nil {
 		log.Info("failed to get DynaKube CRD, skipping cleanup", "error", err)
 

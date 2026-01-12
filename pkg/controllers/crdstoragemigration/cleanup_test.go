@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -85,7 +86,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 	t.Run("returns false when CRD has no storage versions", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -115,7 +116,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 	t.Run("returns false when CRD has single up-to-date storage version", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -144,7 +145,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 	t.Run("returns error when version provider returns empty string", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -174,7 +175,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 	t.Run("migrates DynaKube instances when multiple storage versions exist", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -231,7 +232,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 
 		// Verify CRD status was updated
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: DynaKubeCRDName}, &updatedCRD)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta2"}, updatedCRD.Status.StoredVersions)
 	})
@@ -239,7 +240,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 	t.Run("handles empty DynaKube list", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: DynaKubeCRDName,
+				Name: k8scrd.DynaKubeName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -271,7 +272,7 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 
 		// Verify CRD status was updated even without DynaKubes
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: DynaKubeCRDName}, &updatedCRD)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta2"}, updatedCRD.Status.StoredVersions)
 	})

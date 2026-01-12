@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdstoragemigration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -63,7 +64,7 @@ func performCRDStorageMigration(clt client.Client, namespace string) error {
 
 	var crd apiextensionsv1.CustomResourceDefinition
 
-	err := clt.Get(ctx, types.NamespacedName{Name: crdstoragemigration.DynaKubeCRDName}, &crd)
+	err := clt.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("DynaKube CRD not found, nothing to migrate")
