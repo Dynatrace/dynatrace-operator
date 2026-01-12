@@ -1,9 +1,9 @@
-package builder
+package generic
 
 import (
 	"testing"
 
-	buildermock "github.com/Dynatrace/dynatrace-operator/pkg/util/builder/mocks"
+	buildermock "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/generic/mocks"
 	modifiermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/util/builder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

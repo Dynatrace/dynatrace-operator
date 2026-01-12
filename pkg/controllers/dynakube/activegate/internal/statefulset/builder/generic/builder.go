@@ -1,4 +1,4 @@
-package builder
+package generic
 
 type Builder[T any] interface {
 	Build() (T, error)
@@ -10,7 +10,8 @@ type Modifier[T any] interface {
 	Modify(*T) error
 }
 
-type GenericBuilder[T any] struct {
+// noinspection GoNameStartsWithPackageName
+type GenericBuilder[T any] struct { // nolint: revive
 	data      *T
 	modifiers []Modifier[T]
 }
