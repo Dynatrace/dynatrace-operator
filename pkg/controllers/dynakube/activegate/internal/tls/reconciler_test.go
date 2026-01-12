@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -132,7 +132,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		condition := meta.FindStatusCondition(r.dk.Status.Conditions, conditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
+		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, fmt.Sprintf("%s created", agTLSSecret.Name), condition.Message)
 	})
 }

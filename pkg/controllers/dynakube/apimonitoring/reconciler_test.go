@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -84,7 +84,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("optional scope settings.read not available", func(t *testing.T) {
 		dk := newDynaKube()
-		conditions.SetOptionalScopeMissing(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "not available")
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "not available")
 		r := newTestReconciler(t, dk)
 
 		err := r.Reconcile(t.Context())
@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("optional scope settings.write not available", func(t *testing.T) {
 		dk := newDynaKube()
-		conditions.SetOptionalScopeMissing(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsWrite, "not available")
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsWrite, "not available")
 		r := newTestReconciler(t, dk)
 
 		err := r.Reconcile(t.Context())
@@ -279,8 +279,8 @@ func newDynaKube() *dynakube.DynaKube {
 			KubernetesClusterMEID: testMEID,
 		},
 	}
-	conditions.SetOptionalScopeAvailable(&dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead, "available")
-	conditions.SetOptionalScopeAvailable(&dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite, "available")
+	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead, "available")
+	k8sconditions.SetOptionalScopeAvailable(&dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite, "available")
 
 	return dk
 }

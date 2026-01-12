@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
@@ -75,7 +75,7 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
 	imgInfo, err := updater.dtClient.GetLatestCodeModulesImage(ctx)
 	if err != nil {
-		conditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
+		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
 	}
 
 	return imgInfo, err
@@ -102,7 +102,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
-		conditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
+		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
 
 		return err
 	}
