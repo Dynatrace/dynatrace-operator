@@ -6,12 +6,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestGetLatestStorageVersion(t *testing.T) {
@@ -76,7 +78,11 @@ func TestRun(t *testing.T) {
 	testNamespace := "test-namespace"
 
 	t.Run("returns no error when CRD not found", func(t *testing.T) {
-		fakeClient := fake.NewClient()
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				return errors.New("unexpected write operation")
+			},
+		})
 		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
@@ -104,7 +110,11 @@ func TestRun(t *testing.T) {
 				StoredVersions: []string{},
 			},
 		}
-		fakeClient := fake.NewClient(crd)
+		fakeClient := fake.NewClientWithInterceptorsAndObjects(interceptor.Funcs{
+			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				return errors.New("unexpected write operation")
+			},
+		}, crd)
 
 		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
@@ -133,7 +143,11 @@ func TestRun(t *testing.T) {
 				StoredVersions: []string{"v1beta1"},
 			},
 		}
-		fakeClient := fake.NewClient(crd)
+		fakeClient := fake.NewClientWithInterceptorsAndObjects(interceptor.Funcs{
+			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				return errors.New("unexpected write operation")
+			},
+		}, crd)
 		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
@@ -161,7 +175,11 @@ func TestRun(t *testing.T) {
 				StoredVersions: []string{"v1beta1", "v1beta2"},
 			},
 		}
-		fakeClient := fake.NewClient(crd)
+		fakeClient := fake.NewClientWithInterceptorsAndObjects(interceptor.Funcs{
+			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				return errors.New("unexpected write operation")
+			},
+		}, crd)
 		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.Error(t, err)
