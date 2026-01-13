@@ -15,14 +15,6 @@ import (
 )
 
 func runCertInit(cfg *rest.Config, namespace string) error {
-	return runInitManager(cfg, namespace, certificates.AddInit)
-}
-
-func runCRDStorageMigration(cfg *rest.Config, namespace string) error {
-	return runInitManager(cfg, namespace, crdstoragemigration.AddInit)
-}
-
-func runInitManager(cfg *rest.Config, namespace string, addInitFn func(manager.Manager, string, context.CancelFunc) error) error {
 	mgr, err := createInitManager(cfg, namespace)
 	if err != nil {
 		return err
@@ -33,9 +25,22 @@ func runInitManager(cfg *rest.Config, namespace string, addInitFn func(manager.M
 		return err
 	}
 
+	return runInitManager(mgr, namespace, certificates.AddInit)
+}
+
+func runCRDStorageMigration(cfg *rest.Config, namespace string) error {
+	mgr, err := createInitManager(cfg, namespace)
+	if err != nil {
+		return err
+	}
+
+	return runInitManager(mgr, namespace, crdstoragemigration.AddInit)
+}
+
+func runInitManager(mgr manager.Manager, namespace string, addInitFn func(manager.Manager, string, context.CancelFunc) error) error {
 	ctx, cancelFn := context.WithCancel(context.Background())
 
-	err = addInitFn(mgr, namespace, cancelFn)
+	err := addInitFn(mgr, namespace, cancelFn)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -71,19 +71,18 @@ func TestGetLatestStorageVersion(t *testing.T) {
 	})
 }
 
-func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
+func TestRun(t *testing.T) {
 	ctx := context.Background()
 	testNamespace := "test-namespace"
 
-	t.Run("returns false when CRD not found", func(t *testing.T) {
+	t.Run("returns no error when CRD not found", func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
-		assert.False(t, cleaned)
 	})
 
-	t.Run("returns false when CRD has no storage versions", func(t *testing.T) {
+	t.Run("returns no error when CRD has no storage versions", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: k8scrd.DynaKubeName,
@@ -107,13 +106,12 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(crd)
 
-		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
-		assert.False(t, cleaned)
 	})
 
-	t.Run("returns false when CRD has single up-to-date storage version", func(t *testing.T) {
+	t.Run("returns no error when CRD has single up-to-date storage version", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: k8scrd.DynaKubeName,
@@ -136,13 +134,12 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient(crd)
-		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
-		assert.False(t, cleaned)
 	})
 
-	t.Run("returns error when version provider returns empty string", func(t *testing.T) {
+	t.Run("returns error when no storage version is found", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: k8scrd.DynaKubeName,
@@ -165,10 +162,9 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient(crd)
-		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.Error(t, err)
-		assert.False(t, cleaned)
 		assert.Contains(t, err.Error(), "failed to determine target storage version")
 	})
 
@@ -225,10 +221,9 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(crd, dk1, dk2)
-		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
-		assert.True(t, cleaned)
 
 		// Verify CRD status was updated
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
@@ -265,10 +260,9 @@ func TestPerformCRDStorageVersionsCleanup(t *testing.T) {
 		}
 
 		fakeClient := fake.NewClient(crd)
-		cleaned, err := PerformCRDStorageVersionMigration(ctx, fakeClient, fakeClient, testNamespace)
+		err := Run(ctx, fakeClient, fakeClient, testNamespace)
 
 		require.NoError(t, err)
-		assert.True(t, cleaned)
 
 		// Verify CRD status was updated even without DynaKubes
 		var updatedCRD apiextensionsv1.CustomResourceDefinition

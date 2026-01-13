@@ -65,17 +65,12 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{RequeueAfter: RetryDuration}, nil
 	}
 
-	migrationNeeded, err := controller.performCRDStorageVersionMigration(ctx)
+	err = Run(ctx, controller.client, controller.apiReader, k8senv.DefaultNamespace())
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	if !migrationNeeded {
-		log.Info("CRD storage version migration not needed or already completed")
-	} else {
-		log.Info("CRD storage version migration completed successfully")
-	}
-
+	log.Info("CRD storage version migration controller completed successfully")
 	controller.cancelMgr()
 
 	return reconcile.Result{}, nil
@@ -85,10 +80,6 @@ func (controller *Controller) cancelMgr() {
 	if controller.cancelMgrFunc != nil {
 		controller.cancelMgrFunc()
 	}
-}
-
-func (controller *Controller) performCRDStorageVersionMigration(ctx context.Context) (bool, error) {
-	return PerformCRDStorageVersionMigration(ctx, controller.client, controller.apiReader, k8senv.DefaultNamespace())
 }
 
 func isWebhookReady(deployment *appsv1.Deployment) bool {

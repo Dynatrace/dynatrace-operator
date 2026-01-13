@@ -6,13 +6,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/crdstoragemigration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -56,26 +52,5 @@ func run(cmd *cobra.Command, args []string) error {
 		return errors.WithStack(err)
 	}
 
-	return performCRDStorageMigration(clt, namespaceFlagValue)
-}
-
-func performCRDStorageMigration(clt client.Client, namespace string) error {
-	ctx := context.Background()
-
-	var crd apiextensionsv1.CustomResourceDefinition
-
-	err := clt.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			log.Info("DynaKube CRD not found, nothing to migrate")
-
-			return nil
-		}
-
-		return errors.Wrap(err, "failed to get DynaKube CRD")
-	}
-
-	_, err = crdstoragemigration.PerformCRDStorageVersionMigration(ctx, clt, clt, namespace)
-
-	return err
+	return crdstoragemigration.Run(context.Background(), clt, clt, namespaceFlagValue)
 }
