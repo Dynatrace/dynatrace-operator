@@ -49,8 +49,10 @@ runs:
     - name: Prepare linker args
       id: linker-args
       shell: bash
+      env:
+        GITHUB_SHA: ${{ github.sha }}
       run: |
-        go_linker_args=$(hack/build/create_go_linker_args.sh "${{ steps.meta.outputs.tag-names }}" "${{ github.sha }}")
+        go_linker_args=$(hack/build/create_go_linker_args.sh "${{ steps.meta.outputs.tag-names }}" "${GITHUB_SHA}")
         echo "go_linker_args=${go_linker_args}" >> $GITHUB_OUTPUT
     - name: Build target
       id: build-target
