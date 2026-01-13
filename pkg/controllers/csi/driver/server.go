@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -196,10 +197,9 @@ func (srv *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 }
 
 func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
-	// targetPath always needs to be unmounted
-	if err := srv.mounter.Unmount(volumeInfo.TargetPath); err != nil {
-		log.Error(err, "Unmount failed", "path", volumeInfo.TargetPath)
-	}
+	_ = srv.unmountQuietly(volumeInfo.TargetPath)
+
+	_ = srv.unmountQuietly(srv.path.AppMountMappedDir(volumeInfo.VolumeID))
 
 	appMountDir := srv.path.AppMountForID(volumeInfo.VolumeID)
 	needsCleanUp := []string{
@@ -207,24 +207,66 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		srv.path.AppMountWorkDir(volumeInfo.VolumeID),
 	}
 
-	for _, path := range needsCleanUp {
-		podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo) // cleaning up the pod-info symlink here is far more efficient
-		if podInfoSymlinkPath != "" {
-			_ = os.Remove(podInfoSymlinkPath)
+	if err := srv.unmountQuietly(appMountDir); err == nil {
+		podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo)
 
-			podInfoSymlinkDir := filepath.Dir(podInfoSymlinkPath)
+		for _, path := range needsCleanUp {
+			if podInfoSymlinkPath != "" {
+				_ = os.Remove(podInfoSymlinkPath)
+				podInfoSymlinkDir := filepath.Dir(podInfoSymlinkPath)
 
-			if entries, _ := os.ReadDir(podInfoSymlinkDir); len(entries) == 0 {
-				_ = os.Remove(podInfoSymlinkDir)
+				if entries, _ := os.ReadDir(podInfoSymlinkDir); len(entries) == 0 {
+					_ = os.Remove(podInfoSymlinkDir)
+				}
 			}
-		}
 
-		if err := os.RemoveAll(path); err != nil {
-			log.Error(err, "failed to clean up unmounted volume dir", "path", path)
+			if err := os.RemoveAll(path); err != nil {
+				log.Error(err, "failed to clean up unmounted volume dir", "path", path)
+			}
 		}
 	}
 
-	_ = os.RemoveAll(appMountDir) // try to cleanup fully, but lets not spam the logs with errors
+	_ = os.RemoveAll(appMountDir)
+}
+
+func (srv *Server) unmountQuietly(path string) error {
+	if path == "" {
+		return nil
+	}
+
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			log.Debug("path already removed", "path", path)
+
+			return nil
+		}
+	}
+
+	err := srv.mounter.Unmount(path)
+	if err == nil {
+		return nil
+	}
+
+	if isOtherError(err) {
+		log.Debug("already unmounted", "path", path, "err", err)
+
+		return nil
+	}
+
+	// at this point we have an actual error we do not expect
+	log.Error(err, "unmount failed", "path", path)
+
+	return err
+}
+
+func isOtherError(err error) bool {
+	msg := strings.ToLower(err.Error())
+
+	return strings.Contains(msg, "not mounted") ||
+		strings.Contains(msg, "not a mount point") ||
+		strings.Contains(msg, "no such file") ||
+		strings.Contains(msg, "does not exist") ||
+		strings.Contains(msg, "invalid argument")
 }
 
 func (srv *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
