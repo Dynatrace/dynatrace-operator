@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"

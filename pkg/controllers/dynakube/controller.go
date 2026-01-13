@@ -32,7 +32,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -56,7 +56,7 @@ const (
 )
 
 func Add(mgr manager.Manager, _ string) error {
-	kubeSysUID, err := kubesystem.GetUID(context.Background(), mgr.GetAPIReader())
+	kubeSysUID, err := system.GetUID(context.Background(), mgr.GetAPIReader())
 	if err != nil {
 		return errors.WithStack(err)
 	}
