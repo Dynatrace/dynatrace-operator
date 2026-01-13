@@ -5,8 +5,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -32,7 +33,7 @@ func TestReconciler(t *testing.T) {
 		integrationtests.CreateKubernetesObject(t, t.Context(), clt, getMatchingDeployment(dk))
 
 		dk.Spec.Extensions.Databases = nil
-		conditions.SetDeploymentsApplied(dk, conditionType, []string{"test"})
+		k8sconditions.SetDeploymentsApplied(dk, conditionType, []string{"test"})
 		integrationtests.CreateDynakube(t, t.Context(), clt, dk)
 
 		deployment := getReconciledDeployment(t, clt, dk)
@@ -110,7 +111,7 @@ func TestExtensionsDatabases(t *testing.T) {
 		err := createDynakubeWithDatabaseID(t, clt, "super-long-value")
 		require.Error(t, err, "should not create dynakube with database ID longer than 8 characters")
 	})
-	t.Run("Valid database list length", func(t *testing.T) {
+	t.Run("Valid database list length with 1 entry", func(t *testing.T) {
 		err := createDynakubeWithDatabaseSpec(t, clt, []extensions.DatabaseSpec{})
 		require.NoError(t, err)
 		err = createDynakubeWithDatabaseSpec(t, clt, []extensions.DatabaseSpec{
@@ -118,12 +119,20 @@ func TestExtensionsDatabases(t *testing.T) {
 		})
 		require.NoError(t, err, "should create dynakube with one database")
 	})
-	t.Run("Invalid database list length", func(t *testing.T) {
+	t.Run("Valid database list length with 2 entries", func(t *testing.T) {
 		err := createDynakubeWithDatabaseSpec(t, clt, []extensions.DatabaseSpec{
 			{ID: "db1"},
 			{ID: "db2"},
 		})
-		require.Error(t, err, "should not create dynakube with more than one database")
+		require.NoError(t, err, "should create dynakube with two databases")
+	})
+	t.Run("database list is unique", func(t *testing.T) {
+		err := createDynakubeWithDatabaseSpec(t, clt, []extensions.DatabaseSpec{
+			{ID: "mysql"},
+			{ID: "mysql"},
+		})
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "invalid: spec.extensions.databases[1]: Duplicate value: {\"id\":\"mysql\"}")
 	})
 }
 

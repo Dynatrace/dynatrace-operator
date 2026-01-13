@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
 	corev1 "k8s.io/api/core/v1"
@@ -101,7 +101,7 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	newService, err := r.buildService()
 	if err != nil {
-		conditions.SetServiceGenFailed(r.dk.Conditions(), serviceConditionType, err)
+		k8sconditions.SetServiceGenFailed(r.dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
@@ -109,12 +109,12 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update telemetry service")
-		conditions.SetKubeAPIError(r.dk.Conditions(), serviceConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
 
-	conditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetServiceName())
+	k8sconditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.TelemetryIngest().GetServiceName())
 
 	return nil
 }

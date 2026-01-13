@@ -8,8 +8,8 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -69,7 +69,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	secretNamespacedName := types.NamespacedName{Name: r.dk.ActiveGate().GetTenantSecretName(), Namespace: r.dk.Namespace}
 
-	if !conditions.IsOutdated(r.timeProvider, r.dk, activeGateConnectionInfoConditionType) {
+	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, activeGateConnectionInfoConditionType) {
 		isSecretPresent, err := connectioninfo.IsTenantSecretPresent(ctx, r.secrets, secretNamespacedName, log)
 		if err != nil {
 			return err
@@ -86,11 +86,11 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		}
 	}
 
-	conditions.SetSecretOutdated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
+	k8sconditions.SetSecretOutdated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secretNamespacedName.Name+" is not present or outdated, update in progress") // Necessary to update the LastTransitionTime, also it is a nice failsafe
 
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo(ctx)
 	if err != nil {
-		conditions.SetDynatraceAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
+		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return errors.WithMessage(err, "failed to get ActiveGate connection info")
 	}
@@ -130,12 +130,12 @@ func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	_, err = r.secrets.CreateOrUpdate(ctx, secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
-		conditions.SetKubeAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
+		k8sconditions.SetKubeAPIError(r.dk.Conditions(), activeGateConnectionInfoConditionType, err)
 
 		return err
 	}
 
-	conditions.SetSecretCreated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secret.Name)
+	k8sconditions.SetSecretCreated(r.dk.Conditions(), activeGateConnectionInfoConditionType, secret.Name)
 
 	return nil
 }

@@ -2,7 +2,7 @@ package registrar
 
 import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/csi/registrar"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/registrar"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"

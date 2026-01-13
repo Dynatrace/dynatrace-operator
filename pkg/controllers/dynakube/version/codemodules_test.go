@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -123,7 +123,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		require.Error(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), cmConditionType)
-		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
+		assert.Equal(t, k8sconditions.DynatraceAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
@@ -205,7 +205,7 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), cmConditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, conditions.DynatraceAPIErrorReason, condition.Reason)
+		assert.Equal(t, k8sconditions.DynatraceAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }

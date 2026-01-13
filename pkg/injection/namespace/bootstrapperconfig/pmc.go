@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,7 +17,7 @@ import (
 )
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
-	if !conditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
+	if !k8sconditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
 		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
 
 		sourceKey := client.ObjectKey{
@@ -32,7 +32,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 		source, err := k8ssecret.GetSecretFromSource(ctx, s.secrets, sourceKey, targetKey)
 		if err != nil && !k8serrors.IsNotFound(err) {
-			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+			k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 			return nil, err
 		} else if err == nil && source.Data[pmc.InputFileName] != nil {
@@ -42,11 +42,11 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 	log.Debug("calling the Dynatrace API for ruxitagentproc content")
 
-	conditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated, update in progress")
+	k8sconditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated, update in progress")
 
 	pmc, err := s.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {
-		conditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 		Namespace: dk.Namespace,
 	}, connectioninfo.TenantTokenKey, log)
 	if err != nil {
-		conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 		proxy, err := dk.Proxy(ctx, s.apiReader)
 		if err != nil {
-			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+			k8sconditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
 
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 
 	marshaled, err := json.Marshal(pmc)
 	if err != nil {
-		conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
+		k8sconditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
 		log.Info("could not marshal process module config")
 
