@@ -30,7 +30,6 @@ runs:
       with:
         platforms: ${{ inputs.platforms }}
         annotation: ${{ inputs.annotation }}
-        dockerfile: ${{ inputs.dockerfile }}
         images: ${{ inputs.images }}
         suffix: ${{ inputs.suffix }}
     - name: Set up QEMU
