@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -31,7 +30,6 @@ func TestGetControllerAddFuncs(t *testing.T) {
 
 func TestShouldRunCRDStorageMigrationInInitManager(t *testing.T) {
 	t.Run("should run if not set", func(t *testing.T) {
-		os.Unsetenv("DT_CRD_STORAGE_MIGRATION")
 		assert.True(t, shouldRunCRDStorageMigrationInitManager())
 	})
 

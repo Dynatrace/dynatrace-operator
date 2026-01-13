@@ -16,63 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func TestGetLatestStorageVersion(t *testing.T) {
-	t.Run("returns storage version when marked as storage", func(t *testing.T) {
-		crd := &apiextensionsv1.CustomResourceDefinition{
-			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-					{
-						Name:    "v1alpha1",
-						Storage: false,
-					},
-					{
-						Name:    "v1beta1",
-						Storage: true,
-					},
-					{
-						Name:    "v1beta2",
-						Storage: false,
-					},
-				},
-			},
-		}
-
-		latestVersion := GetLatestStorageVersion(crd)
-		assert.Equal(t, "v1beta1", latestVersion)
-	})
-
-	t.Run("returns empty string when no storage version is marked", func(t *testing.T) {
-		crd := &apiextensionsv1.CustomResourceDefinition{
-			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-					{
-						Name:    "v1alpha1",
-						Storage: false,
-					},
-					{
-						Name:    "v1beta1",
-						Storage: false,
-					},
-				},
-			},
-		}
-
-		latestVersion := GetLatestStorageVersion(crd)
-		assert.Empty(t, latestVersion)
-	})
-
-	t.Run("returns empty string for empty versions list", func(t *testing.T) {
-		crd := &apiextensionsv1.CustomResourceDefinition{
-			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{},
-			},
-		}
-
-		latestVersion := GetLatestStorageVersion(crd)
-		assert.Empty(t, latestVersion)
-	})
-}
-
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 	testNamespace := "test-namespace"
@@ -110,7 +53,7 @@ func TestRun(t *testing.T) {
 				StoredVersions: []string{},
 			},
 		}
-		fakeClient := fake.NewClientWithInterceptorsAndObjects(interceptor.Funcs{
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 				return errors.New("unexpected write operation")
 			},
@@ -143,7 +86,7 @@ func TestRun(t *testing.T) {
 				StoredVersions: []string{"v1beta1"},
 			},
 		}
-		fakeClient := fake.NewClientWithInterceptorsAndObjects(interceptor.Funcs{
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 				return errors.New("unexpected write operation")
 			},
@@ -175,7 +118,7 @@ func TestRun(t *testing.T) {
 				StoredVersions: []string{"v1beta1", "v1beta2"},
 			},
 		}
-		fakeClient := fake.NewClientWithInterceptorsAndObjects(interceptor.Funcs{
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 				return errors.New("unexpected write operation")
 			},

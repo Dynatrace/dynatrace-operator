@@ -214,7 +214,7 @@ func TestReconcile(t *testing.T) {
 		result, err := controller.Reconcile(ctx, request)
 
 		require.NoError(t, err)
-		assert.Equal(t, reconcile.Result{RequeueAfter: RetryDuration}, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: retryDuration}, result)
 		assert.False(t, cancelCalled, "cancel should not be called when webhook is not ready")
 	})
 

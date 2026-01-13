@@ -37,7 +37,7 @@ func Run(ctx context.Context, clt client.Client, apiReader client.Reader, namesp
 		return nil
 	}
 
-	targetVersion := GetLatestStorageVersion(&crd)
+	targetVersion := k8scrd.GetLatestStorageVersion(&crd)
 	if targetVersion == "" {
 		return errors.New("failed to determine target storage version")
 	}
@@ -94,14 +94,4 @@ func Run(ctx context.Context, clt client.Client, apiReader client.Reader, namesp
 	log.Info("successfully migrated all DynaKube instances to current storage version")
 
 	return nil
-}
-
-func GetLatestStorageVersion(crd *apiextensionsv1.CustomResourceDefinition) string {
-	for _, version := range crd.Spec.Versions {
-		if version.Storage {
-			return version.Name
-		}
-	}
-
-	return ""
 }

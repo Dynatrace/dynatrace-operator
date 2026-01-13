@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+type initFunc func(manager.Manager, string, context.CancelFunc) error
+
 func runCertInit(cfg *rest.Config, namespace string) error {
 	mgr, err := createInitManager(cfg, namespace)
 	if err != nil {
@@ -37,7 +39,7 @@ func runCRDStorageMigration(cfg *rest.Config, namespace string) error {
 	return runInitManager(mgr, namespace, crdstoragemigration.AddInit)
 }
 
-func runInitManager(mgr manager.Manager, namespace string, addInitFn func(manager.Manager, string, context.CancelFunc) error) error {
+func runInitManager(mgr manager.Manager, namespace string, addInitFn initFunc) error {
 	ctx, cancelFn := context.WithCancel(context.Background())
 
 	err := addInitFn(mgr, namespace, cancelFn)

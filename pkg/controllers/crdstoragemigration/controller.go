@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	RetryDuration = 10 * time.Second
+	retryDuration = 10 * time.Second
 )
 
 func AddInit(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
@@ -62,7 +62,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	if !isWebhookReady(&webhookDeployment) {
 		log.Info("webhook deployment not ready yet, retrying CRD storage version migration later")
 
-		return reconcile.Result{RequeueAfter: RetryDuration}, nil
+		return reconcile.Result{RequeueAfter: retryDuration}, nil
 	}
 
 	err = Run(ctx, controller.client, controller.apiReader, k8senv.DefaultNamespace())
