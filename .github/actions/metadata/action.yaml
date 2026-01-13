@@ -33,14 +33,17 @@ runs:
     - name: Sanitize names
       id: sanitize
       shell: bash
+      env:
+        HEAD_REF: ${{ github.head_ref }}
+        REF_NAME: ${{ github.ref_name }}
       run: |
         # Sanitize names
-        ref_name=$(hack/build/ci/sanitize-branch-name.sh "${{ github.ref_name }}")
-        echo "ref_name=${ref_name}" >> $GITHUB_OUTPUT
-        echo "ref_name_without_prefix=${ref_name#v}" >> $GITHUB_OUTPUT
+        sanitized_ref_name=$(hack/build/ci/sanitize-branch-name.sh "${REF_NAME}")
+        echo "ref_name=${sanitized_ref_name}" >> $GITHUB_OUTPUT
+        echo "ref_name_without_prefix=${sanitized_ref_name#v}" >> $GITHUB_OUTPUT
 
-        head_ref=$(hack/build/ci/sanitize-branch-name.sh "${{ github.head_ref }}")
-        echo "head_ref=${head_ref}" >> $GITHUB_OUTPUT
+        sanitized_head_ref=$(hack/build/ci/sanitize-branch-name.sh "${HEAD_REF}")
+        echo "head_ref=${sanitized_head_ref}" >> $GITHUB_OUTPUT
     - name: Set build date
       shell: bash
       id: set-build-date
