@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	"github.com/Dynatrace/dynatrace-operator/test/features/supportarchive/functional"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
@@ -82,7 +81,7 @@ func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool)
 	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 
-	podList := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
+	podList := Filter(pods.Items, func(podItem corev1.Pod) bool {
 		label, ok := podItem.Labels[labelKey]
 
 		return ok && label == operator.DeploymentName
@@ -114,7 +113,7 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 
 	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 
-	podList := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
+	podList := Filter(pods.Items, func(podItem corev1.Pod) bool {
 		appNamelabel, okAppNamelabel := podItem.Labels[k8slabel.AppNameLabel]
 		appManagedByLabel, okAppManagedByLabel := podItem.Labels[k8slabel.AppManagedByLabel]
 

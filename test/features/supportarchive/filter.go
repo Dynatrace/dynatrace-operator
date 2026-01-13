@@ -1,4 +1,4 @@
-package functional
+package supportarchive
 
 func Filter[T any](arr []T, predicate func(val T) bool) []T {
 	ret := make([]T, 0)

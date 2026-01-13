@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/features/supportarchive/functional"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	edgeconnectComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
@@ -170,7 +169,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	pods := pod.List(t, ctx, environmentResources, namespace)
 	require.NotNil(t, pods.Items)
 
-	operatorPods := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
+	operatorPods := Filter(pods.Items, func(podItem corev1.Pod) bool {
 		return strings.Contains(podItem.Name, "dynatrace-operator")
 	})
 

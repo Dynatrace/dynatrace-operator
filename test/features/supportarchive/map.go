@@ -1,4 +1,4 @@
-package functional
+package supportarchive
 
 func Map[In any, Out any](arr []In, transformFn func(it In) Out) []Out {
 	ret := make([]Out, len(arr))

@@ -1,4 +1,4 @@
-package functional
+package supportarchive
 
 import (
 	"testing"
