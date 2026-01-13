@@ -169,7 +169,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	pods := pod.List(t, ctx, environmentResources, namespace)
 	require.NotNil(t, pods.Items)
 
-	operatorPods := Filter(pods.Items, func(podItem corev1.Pod) bool {
+	operatorPods := filter(pods.Items, func(podItem corev1.Pod) bool {
 		return strings.Contains(podItem.Name, "dynatrace-operator")
 	})
 

@@ -1,6 +1,6 @@
 package supportarchive
 
-func Filter[T any](arr []T, predicate func(val T) bool) []T {
+func filter[T any](arr []T, predicate func(val T) bool) []T {
 	ret := make([]T, 0)
 
 	for _, val := range arr {

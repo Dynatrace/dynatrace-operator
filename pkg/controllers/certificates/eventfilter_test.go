@@ -24,7 +24,7 @@ func TestForObjectNameAndNamespace(t *testing.T) {
 			Namespace: testNamespace1,
 		},
 	}
-	predicate := ForObjectNameAndNamespace(testName1, testNamespace1)
+	predicate := forObjectNameAndNamespace(testName1, testNamespace1)
 
 	assert.True(t, predicate.Generic(event.GenericEvent{
 		Object: deployment,

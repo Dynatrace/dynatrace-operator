@@ -81,7 +81,7 @@ func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool)
 	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 
-	podList := Filter(pods.Items, func(podItem corev1.Pod) bool {
+	podList := filter(pods.Items, func(podItem corev1.Pod) bool {
 		label, ok := podItem.Labels[labelKey]
 
 		return ok && label == operator.DeploymentName
@@ -113,7 +113,7 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 
 	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 
-	podList := Filter(pods.Items, func(podItem corev1.Pod) bool {
+	podList := filter(pods.Items, func(podItem corev1.Pod) bool {
 		appNamelabel, okAppNamelabel := podItem.Labels[k8slabel.AppNameLabel]
 		appManagedByLabel, okAppManagedByLabel := podItem.Labels[k8slabel.AppManagedByLabel]
 
