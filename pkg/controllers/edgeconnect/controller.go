@@ -23,7 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -269,7 +269,7 @@ func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, ec *ed
 	if ec.Status.KubeSystemUID == "" {
 		_log.Debug("reconcile EdgeConnect kube-system UID")
 
-		kubeSystemUID, err := kubesystem.GetUID(ctx, controller.apiReader)
+		kubeSystemUID, err := system.GetUID(ctx, controller.apiReader)
 		if err != nil {
 			return err
 		}
