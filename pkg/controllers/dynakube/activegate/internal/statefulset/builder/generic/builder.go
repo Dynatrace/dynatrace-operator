@@ -11,7 +11,7 @@ type Modifier[T any] interface {
 }
 
 // noinspection GoNameStartsWithPackageName
-type GenericBuilder[T any] struct { // nolint: revive
+type GenericBuilder[T any] struct { //nolint: revive
 	data      *T
 	modifiers []Modifier[T]
 }
