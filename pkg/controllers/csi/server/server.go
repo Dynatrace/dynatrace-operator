@@ -197,7 +197,9 @@ func (srv *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpubli
 }
 
 func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
-	_ = srv.unmountQuietly(volumeInfo.TargetPath)
+	if err := srv.mounter.Unmount(volumeInfo.TargetPath); err != nil {
+		log.Error(err, "Unmount failed", "path", volumeInfo.TargetPath)
+	}
 
 	_ = srv.unmountQuietly(srv.path.AppMountMappedDir(volumeInfo.VolumeID))
 
@@ -207,7 +209,7 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		srv.path.AppMountWorkDir(volumeInfo.VolumeID),
 	}
 
-	if err := srv.unmountQuietly(appMountDir); err == nil {
+	if err := srv.mounter.Unmount(appMountDir); err == nil {
 		podInfoSymlinkPath := srv.findPodInfoSymlink(volumeInfo)
 
 		for _, path := range needsCleanUp {
