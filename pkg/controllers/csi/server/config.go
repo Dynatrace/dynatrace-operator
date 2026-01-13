@@ -1,4 +1,4 @@
-package csidriver
+package csiserver
 
 import (
 	"time"
