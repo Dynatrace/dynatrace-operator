@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
-	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -67,7 +67,7 @@ func run(*cobra.Command, []string) error {
 		return err
 	}
 
-	err = csidriver.NewServer(createCsiOptions()).SetupWithManager(csiManager)
+	err = csiserver.NewServer(createCsiOptions()).SetupWithManager(csiManager)
 	if err != nil {
 		return err
 	}
