@@ -29,10 +29,10 @@ jobs:
       # Step 2: Generate App Installation Token
       - name: Generate GitHub App Token
         id: app-token
-        uses: tibdex/github-app-token@v2
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         with:
-          app_id: ${{ secrets.AI_VULN_APP_ID }}
-          private_key: ${{ secrets.AI_VULN_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.AI_VULN_APP_ID }}
+          private-key: ${{ secrets.AI_VULN_APP_PRIVATE_KEY }}
 
       # Step 3: Fetch Dependabot alerts and create consolidated issue using the App token
       - name: Fetch new Dependabot critical alerts and create consolidated issue
