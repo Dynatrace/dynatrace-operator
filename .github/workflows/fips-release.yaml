@@ -67,7 +67,8 @@ jobs:
           platforms: ${{ matrix.platform }}
           images: ${{ env.DOCKER_IMAGE }},${{ env.ECR_IMAGE }}
           suffix: ${{ matrix.image-postfix }}
-          dockerfile: ./fips.Dockerfile
+          dockerfile: ./Dockerfile
+          fips: 'true'
 
   index:
     name: Create image-index

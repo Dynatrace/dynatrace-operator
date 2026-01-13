@@ -60,7 +60,7 @@ jobs:
         id: dockerfile
         with:
           files: |
-            fips.Dockerfile
+            Dockerfile
           base_sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
       - name: List Changed Files
         run: |
@@ -120,8 +120,8 @@ jobs:
           platforms: ${{ matrix.platform }}
           images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           suffix: ${{ matrix.image-postfix }}
-          dockerfile: ./fips.Dockerfile
-
+          dockerfile: ./Dockerfile
+          fips: 'true'
   index:
     name: Create image-index
     needs: [detect-changes, prepare, build-images]

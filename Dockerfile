@@ -19,11 +19,11 @@ ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
-
+ARG GOFIPS140=off
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     --mount=type=cache,target="/go/pkg" \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    CGO_ENABLED=0 GOFIPS140="${GOFIPS140}" GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
@@ -79,9 +79,12 @@ LABEL name="Dynatrace Operator" \
       vcs-type="git" \
       changelog-url="https://github.com/Dynatrace/dynatrace-operator/releases"
 
+ARG GODEBUG_ARG
+
 ENV OPERATOR=dynatrace-operator \
     USER_UID=1001 \
-    USER_NAME=dynatrace-operator
+    USER_NAME=dynatrace-operator \
+    GODEBUG=${GODEBUG_ARG:+fips140=only,tlsmlkem=0}
 
 RUN /usr/local/bin/user_setup
 
