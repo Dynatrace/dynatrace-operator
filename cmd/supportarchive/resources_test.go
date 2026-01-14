@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,6 +45,10 @@ func TestManifestCollector_Success(t *testing.T) {
 		&appsv1.StatefulSet{
 			TypeMeta:   typeMeta("StatefulSet"),
 			ObjectMeta: objectMeta("statefulset1"),
+		},
+		&batchv1.Job{
+			TypeMeta:   typeMeta("Job"),
+			ObjectMeta: objectMeta("crd-storage-migration"),
 		},
 		&corev1.Namespace{
 			TypeMeta: metav1.TypeMeta{
@@ -145,6 +150,7 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/deployment/deployment1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/daemonset/daemonset1%s", testOperatorNamespace, manifestExtension),
+		fmt.Sprintf("%s/job/crd-storage-migration%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
@@ -199,12 +205,16 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	log := newSupportArchiveLogger(&logBuffer)
 
 	queries := getQueries(testOperatorNamespace, defaultOperatorAppName)
-	require.Len(t, queries, 18)
+	require.Len(t, queries, 20)
 
 	clt := fake.NewClientWithIndex(
 		&appsv1.StatefulSet{
 			TypeMeta:   typeMeta("StatefulSet"),
 			ObjectMeta: objectMeta("statefulset1"),
+		},
+		&batchv1.Job{
+			TypeMeta:   typeMeta("Job"),
+			ObjectMeta: objectMeta("crd-storage-migration"),
 		},
 		&corev1.Namespace{
 			TypeMeta: typeMeta("Namespace"),
@@ -270,20 +280,22 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
-	require.Len(t, zipReader.File, 8)
+	require.Len(t, zipReader.File, 9)
 	assert.Equal(t, expectedFilename(fmt.Sprintf("injected_namespaces/namespace-some-app-namespace%s", manifestExtension)), zipReader.File[0].Name)
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension)), zipReader.File[1].Name)
 
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension)), zipReader.File[2].Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/job/crd-storage-migration%s", testOperatorNamespace, manifestExtension)), zipReader.File[2].Name)
 
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension)), zipReader.File[3].Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension)), zipReader.File[3].Name)
 
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension)), zipReader.File[4].Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension)), zipReader.File[4].Name)
 
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension)), zipReader.File[5].Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension)), zipReader.File[5].Name)
 
-	crds := []string{zipReader.File[6].Name, zipReader.File[7].Name}
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension)), zipReader.File[6].Name)
+
+	crds := []string{zipReader.File[7].Name, zipReader.File[8].Name}
 	sort.Strings(crds)
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-dynakubes%s", "crds", manifestExtension)), crds[0])
 

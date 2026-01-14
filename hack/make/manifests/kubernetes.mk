@@ -1,6 +1,7 @@
 define generate_k8s_manifest
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
+		--no-hooks \
 		--set csidriver.enabled=$(1) \
 		--set installCRD=true \
 		--set platform="kubernetes" \

@@ -1,5 +1,4 @@
-{{- if .Values.rbac.supportability }}
-# Copyright 2021 Dynatrace LLC
+# Copyright 2026 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,47 +11,45 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# For more information why the individual permissions are required see
+# https://github.com/Dynatrace/dynatrace-operator/blob/main/doc/roles/operator-roles.md
+{{- if .Values.crdStorageMigrationJob }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: dynatrace-operator-supportability
+  name: dynatrace-crd-storage-migration
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 4 }}
+  annotations:
+    {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
 rules:
   - apiGroups:
-      - ""
+      - dynatrace.com
     resources:
-      - pods/log
-    verbs:
-      - get
-  - apiGroups:
-      - ""
-    resources:
-      - pods/exec
-    verbs:
-      - create
-  - apiGroups:
-      - batch
-    resources:
-      - jobs
+      - dynakubes
+      - edgeconnects
     verbs:
       - get
       - list
-
+      - watch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: dynatrace-operator-supportability
+  name: dynatrace-crd-storage-migration
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+    {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 4 }}
+  annotations:
+    {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: dynatrace-operator
+    name: dynatrace-crd-storage-migration
 roleRef:
   kind: Role
-  name: dynatrace-operator-supportability
+  name: dynatrace-crd-storage-migration
   apiGroup: rbac.authorization.k8s.io
-{{ end }}
+{{- end }}
