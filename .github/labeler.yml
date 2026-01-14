@@ -1,0 +1,65 @@
+activegate:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "pkg/controller/dynakube/activegate/**"
+      - "pkg/api/*/dynakube/activegate/*"
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+      - ".github/workflows/*"
+      - ".github/actions/**"
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "docs/*"
+      - "*.md"
+
+edgeconnect:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "pkg/controllers/edgeconnect/**"
+      - "pkg/api/*/edgeconnect/**"
+
+extensions:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "pkg/controller/dynakube/extension/**"
+      - "pkg/api/*/dynakube/extensions/*"
+
+helm:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "config/helm/chart/default/**"
+
+kspm:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "pkg/controller/dynakube/kspm/**"
+      - "pkg/api/*/dynakube/kspm/*"
+
+logmodule:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "pkg/controller/dynakube/logmonitoring/**"
+      - "pkg/api/*/dynakube/logmonitoring/*"
+
+oneagent:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "pkg/controller/dynakube/oneagent/**"
+      - "pkg/api/*/dynakube/oneagent/*"
+
+telemetry-ingest:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "pkg/controller/dynakube/otelc/**"
+      - "pkg/api/*/dynakube/telemetryingest/*"
+
+test:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "test/features/**"
+      - "test/helpers/**"
+      - "test/scenarios/**"
