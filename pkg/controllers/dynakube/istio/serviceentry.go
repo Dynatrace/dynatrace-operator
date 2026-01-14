@@ -30,7 +30,7 @@ func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []CommunicationHos
 	var ports []*istio.ServicePort
 
 	for i, commHost := range hostHosts {
-		portStr := strconv.Itoa(int(commHost.Port))
+		portStr := strconv.FormatUint(uint64(commHost.Port), 10)
 		protocolStr := strings.ToUpper(commHost.Protocol)
 		hosts[i] = commHost.Host
 
@@ -62,7 +62,7 @@ func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []CommunicationHost)
 	addresses := make([]string, len(commHosts))
 
 	for i, commHost := range commHosts {
-		portStr := strconv.Itoa(int(commHost.Port))
+		portStr := strconv.FormatUint(uint64(commHost.Port), 10)
 		addresses[i] = commHost.Host + subnetMask
 
 		if !portSet[commHost.Port] {

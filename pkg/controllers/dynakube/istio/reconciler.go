@@ -91,7 +91,7 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 		if isIstioConfigured(dk, codeModuleConditionName) {
 			log.Info("appinjection disabled, cleaning up")
 
-			err := r.cleanupIstio(ctx, dk, CodeModuleComponent)
+			err := r.cleanupIstio(ctx, CodeModuleComponent)
 			if err != nil {
 				// We don't error out here to avoid stuck reconciliations in case cleanup fails
 				log.Error(err, "failed to cleanup the istio configuration", "component", codeModuleConditionName)
@@ -139,7 +139,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 		if isIstioConfigured(dk, activeGateConditionName) {
 			log.Info("activegate disabled, cleaning up")
 
-			err := r.cleanupIstio(ctx, dk, ActiveGateComponent)
+			err := r.cleanupIstio(ctx, ActiveGateComponent)
 			if err != nil {
 				// We don't error out here to avoid stuck reconciliations in case cleanup fails
 				log.Error(err, "failed to cleanup the istio configuration", "component", activeGateConditionName)
@@ -176,7 +176,7 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *reconciler) cleanupIstio(ctx context.Context, dk *dynakube.DynaKube, component string) error {
+func (r *reconciler) cleanupIstio(ctx context.Context, component string) error {
 	err1 := r.cleanupIPServiceEntry(ctx, component)
 	err2 := r.cleanupFQDNServiceEntry(ctx, component)
 
