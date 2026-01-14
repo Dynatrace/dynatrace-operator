@@ -25,7 +25,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -201,7 +200,7 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 		log.Error(err, "Unmount failed", "path", volumeInfo.TargetPath)
 	}
 
-	_ = srv.unmountQuietly(srv.path.AppMountMappedDir(volumeInfo.VolumeID))
+	_ = srv.unmountMappedMount(srv.path.AppMountMappedDir(volumeInfo.VolumeID))
 
 	appMountDir := srv.path.AppMountForID(volumeInfo.VolumeID)
 	needsCleanUp := []string{
@@ -231,50 +230,24 @@ func (srv *Server) unmount(volumeInfo csivolumes.VolumeInfo) {
 	_ = os.RemoveAll(appMountDir)
 }
 
-func (srv *Server) unmountQuietly(path string) error {
+// unmountMappedMount unmounts the legacy mapped directory.
+// The mapped folder was just a bind mount to a binary folder, that only exists on "old mounts".
+func (srv *Server) unmountMappedMount(path string) error {
 	if path == "" {
 		return nil
 	}
 
-	if _, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			log.Debug("path already removed", "path", path)
-
-			return nil
-		}
-	}
-
-	err := srv.mounter.Unmount(path)
-	if err == nil {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil
 	}
 
-	if isOtherError(err) {
-		log.Debug("already unmounted", "path", path, "err", err)
-
-		return nil
-	}
-
-	// at this point we have an actual error we do not expect
-	log.Error(err, "unmount failed", "path", path)
-
-	return err
-}
-
-func isOtherError(err error) bool {
-	msg := strings.ToLower(err.Error())
-
-	return strings.Contains(msg, "not mounted") ||
-		strings.Contains(msg, "not a mount point") ||
-		strings.Contains(msg, "no such file") ||
-		strings.Contains(msg, "does not exist") ||
-		strings.Contains(msg, "invalid argument")
+	return srv.mounter.Unmount(path)
 }
 
 func (srv *Server) findPodInfoSymlink(volumeInfo csivolumes.VolumeInfo) string {
 	podInfoPath := srv.path.OverlayVarPodInfo(volumeInfo.VolumeID)
 
-	podInfoBytes, err := os.ReadFile(srv.path.OverlayVarPodInfo(volumeInfo.VolumeID))
+	podInfoBytes, err := os.ReadFile(podInfoPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return ""
