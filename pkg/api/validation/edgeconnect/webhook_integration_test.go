@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
+	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admissionregistration/v1"

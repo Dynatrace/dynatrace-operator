@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/pkg/errors"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -53,4 +54,14 @@ func IsLatestVersion(ctx context.Context, apiReader client.Reader, crdName strin
 	}
 
 	return true, nil
+}
+
+func GetLatestStorageVersion(crd *apiextensionsv1.CustomResourceDefinition) string {
+	for _, version := range crd.Spec.Versions {
+		if version.Storage {
+			return version.Name
+		}
+	}
+
+	return ""
 }

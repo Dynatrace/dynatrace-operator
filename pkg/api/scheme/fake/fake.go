@@ -56,10 +56,12 @@ func NewClientWithIndex(objs ...client.Object) client.Client {
 	return clientBuilder.Build()
 }
 
-func NewClientWithInterceptors(funcs interceptor.Funcs) client.Client {
+func NewClientWithInterceptors(funcs interceptor.Funcs, objs ...client.Object) client.Client {
 	clientBuilder := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
-		WithInterceptorFuncs(funcs)
+		WithInterceptorFuncs(funcs).
+		WithObjects(objs...).
+		WithStatusSubresource(objs...)
 
 	return clientBuilder.Build()
 }

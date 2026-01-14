@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/activegate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -46,7 +46,7 @@ func createClient() client.WithWatch {
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: kubesystem.Namespace,
+				Name: system.Namespace,
 				UID:  testUID,
 			},
 		}).
