@@ -11,7 +11,7 @@ const (
 )
 
 func disabledMetadataEnrichmentForInjectionModes(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.Spec.MetadataEnrichment.Enabled == nil || (dk.Spec.MetadataEnrichment.Enabled != nil && *dk.Spec.MetadataEnrichment.Enabled) {
+	if dk.Spec.MetadataEnrichment.Enabled == nil || *dk.Spec.MetadataEnrichment.Enabled {
 		return ""
 	}
 
