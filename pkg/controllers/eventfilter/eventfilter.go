@@ -1,11 +1,11 @@
-package certificates
+package eventfilter
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func forObjectNameAndNamespace(name string, namespace string) predicate.Predicate {
+func ForObjectNameAndNamespace(name string, namespace string) predicate.Predicate {
 	return predicate.NewPredicateFuncs(func(object client.Object) bool {
 		return isInNamespace(object, namespace) && hasName(object, name)
 	})

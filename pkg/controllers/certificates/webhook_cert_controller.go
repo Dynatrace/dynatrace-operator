@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
@@ -30,7 +31,7 @@ func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Named("webhook-cert-controller").
-		WithEventFilter(forObjectNameAndNamespace(webhook.DeploymentName, ns)).
+		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
 		Complete(newWebhookCertificateController(mgr, nil))
 }
 
@@ -38,7 +39,7 @@ func AddInit(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		Named("webhook-boostrap-controller").
-		WithEventFilter(forObjectNameAndNamespace(webhook.DeploymentName, ns)).
+		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
 		Complete(newWebhookCertificateController(mgr, cancelMgr))
 }
 
