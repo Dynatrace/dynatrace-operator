@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 type Option func(dk *dynakube.DynaKube)
@@ -84,12 +83,6 @@ func WithActiveGateModules(capabilities ...activegate.CapabilityDisplayName) Opt
 			Capabilities: []activegate.CapabilityDisplayName{},
 		}
 		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, capabilities...)
-	}
-}
-
-func WithMetadataEnrichment() Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
 	}
 }
 
