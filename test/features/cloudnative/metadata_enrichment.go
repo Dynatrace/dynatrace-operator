@@ -33,17 +33,17 @@ func AssessMetadataEnrichment(builder *features.FeatureBuilder, sampleApp *sampl
 
 func checkMetadataEnrichment(sampleApp *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
+		kubeResources := envConfig.Client().Resources()
 
 		// Use the logic to verify file presence and content
 		// We expect "deployment" kind for the sample app
 		deploymentName := sampleApp.Name()
 
-		pods := sampleApp.GetPods(ctx, t, resources)
+		pods := sampleApp.GetPods(ctx, t, kubeResources)
 		require.NotEmpty(t, pods.Items)
 
 		for _, podItem := range pods.Items {
-			enrichmentMetadata := getMetadataEnrichmentMetadataFromPod(ctx, t, resources, podItem)
+			enrichmentMetadata := getMetadataEnrichmentMetadataFromPod(ctx, t, kubeResources, podItem)
 			assert.Equal(t, "deployment", enrichmentMetadata.WorkloadKind)
 			assert.Equal(t, deploymentName, enrichmentMetadata.WorkloadName)
 		}

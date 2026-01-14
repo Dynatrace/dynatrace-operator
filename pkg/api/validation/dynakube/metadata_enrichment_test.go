@@ -86,4 +86,19 @@ func TestDisabledMetadataEnrichmentForInjectionModes(t *testing.T) {
 		}
 		assertAllowedWithoutWarnings(t, dk)
 	})
+	t.Run("no warning if no injection and disabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: ptr.To(false),
+				},
+			},
+		}
+		assertAllowedWithoutWarnings(t, dk)
+	})
 }
