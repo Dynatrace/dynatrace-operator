@@ -242,11 +242,12 @@ func (srv *Server) unmountMappedMount(path string) error {
 	}
 
 	log.Debug("unmounting old mapped dir", "path", path)
+
 	err := srv.mounter.Unmount(path)
 	if err != nil {
 		log.Debug("error during unmounting old mapped dir", "path", path, "error", err)
 	}
-	
+
 	return err
 }
 
