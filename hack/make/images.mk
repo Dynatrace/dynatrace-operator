@@ -1,4 +1,6 @@
-IMAGE ?= quay.io/dynatrace/dynatrace-operator
+REGISTRY ?= quay.io
+REPOSITORY ?= dynatrace
+IMAGE ?= "$(REGISTRY)/$(REPOSITORY)/dynatrace-operator"
 DEBUG ?= false
 OPERATOR_BUILD_PLATFORM ?= linux/amd64
 OPERATOR_BUILD_ARCH ?= $(shell echo "${OPERATOR_BUILD_PLATFORM}" | sed "s/.*\///")
