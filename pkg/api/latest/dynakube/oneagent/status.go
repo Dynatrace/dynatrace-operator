@@ -25,7 +25,7 @@ type Status struct {
 	Healthcheck *containerv1.HealthConfig `json:"healthcheck,omitempty"`
 
 	// Information about OneAgent's connections
-	ConnectionInfo ConnectionInfo `json:"connectionInfoStatus,omitempty"` // Left the "Status" suffix for compatibility
+	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitempty"` // Left the "Status" suffix for compatibility
 }
 
 // +kubebuilder:object:generate=true
@@ -36,13 +36,4 @@ type Instance struct {
 
 	// IP address of the pod
 	IPAddress string `json:"ipAddress,omitempty"`
-}
-
-// +kubebuilder:object:generate=true
-
-type ConnectionInfo struct {
-	// Information for communicating with the tenant
-	communication.ConnectionInfo `json:",inline"`
-
-	// List of communication host
 }

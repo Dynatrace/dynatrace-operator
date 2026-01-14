@@ -2,7 +2,6 @@ package istio
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -339,7 +338,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), strings.ToLower(ActiveGateComponent))
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -382,7 +381,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		err := r.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), strings.ToLower(ActiveGateComponent))
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -417,7 +416,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dk)
 		require.NoError(t, err)
 
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), strings.ToLower(ActiveGateComponent))
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dk.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -486,10 +485,8 @@ func createTestDynaKube() *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfo: oneagent.ConnectionInfo{
-					ConnectionInfo: communication.ConnectionInfo{
-						Endpoints: fqdnHost.String() + "," + ipHost.String(),
-					},
+				ConnectionInfo: communication.ConnectionInfo{
+					Endpoints: fqdnHost.String() + "," + ipHost.String(),
 				},
 			},
 			ActiveGate: activegate.Status{

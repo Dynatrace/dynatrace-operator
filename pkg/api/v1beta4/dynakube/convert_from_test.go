@@ -916,12 +916,10 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 			Healthcheck: &registryv1.HealthConfig{
 				Test: []string{"oa-health-check-test"},
 			},
-			ConnectionInfo: oneagentlatest.ConnectionInfo{
-				ConnectionInfo: communication.ConnectionInfo{
-					LastRequest: testTime,
-					TenantUUID:  "oa-tenant-uuid",
-					Endpoints:   "oa-endpoints",
-				},
+			ConnectionInfo: communication.ConnectionInfo{
+				LastRequest: testTime,
+				TenantUUID:  "oa-tenant-uuid",
+				Endpoints:   "oa-endpoints",
 			},
 		},
 		ActiveGate: activegatelatest.Status{

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -55,7 +55,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		meta.RemoveStatusCondition(r.dk.Conditions(), oaConnectionInfoConditionType)
-		r.dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{}
+		r.dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{}
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -111,7 +111,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	log.Info("OneAgent connection info updated")
 
 	if len(connectionInfo.Endpoints) == 0 {
-		log.Info("no OneAgent communication endpoints received, tenant API requests not yet throttled")
+		log.Info("no received OneAgent connection info, tenant API requests not yet throttled", "tenant", connectionInfo.TenantUUID)
 		setEmptyCommunicationHostsCondition(r.dk.Conditions())
 
 		return NoOneAgentCommunicationEndpointsError
@@ -127,7 +127,7 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return errors.Wrap(err, "failed to generate TenantTokenHash")
 	}
 
-	log.Info("received OneAgent communication endpoints", "communication endpoints", connectionInfo.Endpoints, "tenant", connectionInfo.TenantUUID)
+	log.Info("received OneAgent connection info", "communication endpoints", connectionInfo.Endpoints, "tenant", connectionInfo.TenantUUID)
 
 	return nil
 }

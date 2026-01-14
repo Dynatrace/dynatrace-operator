@@ -3,15 +3,37 @@ package istio
 import (
 	"context"
 	goerrors "errors"
+	"fmt"
 	"net"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	log = logd.Get().WithName("dynakube-istio")
+)
+
+const (
+	OperatorComponent = "operator"
+
+	CodeModuleComponent     = "oneagent"
+	codeModuleConditionName = "OneAgent"
+
+	ActiveGateComponent     = "activegate"
+	activeGateConditionName = "ActiveGate"
+
+	IstioGVRName    = "networking.istio.io"
+	IstioGVRVersion = "v1beta1"
+)
+
+var (
+	IstioGVR = fmt.Sprintf("%s/%s", IstioGVRName, IstioGVRVersion)
 )
 
 type Reconciler interface {
@@ -66,10 +88,16 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	migrateDeprecatedCondition(dk.Conditions())
 
 	if !dk.OneAgent().IsAppInjectionNeeded() {
-		if isIstioConfigured(dk, CodeModuleComponent) {
+		if isIstioConfigured(dk, codeModuleConditionName) {
 			log.Info("appinjection disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dk, CodeModuleComponent)
+			err := r.cleanupIstio(ctx, dk, CodeModuleComponent)
+			if err != nil {
+				// We don't error out here to avoid stuck reconciliations in case cleanup fails
+				log.Error(err, "failed to cleanup the istio configuration", "component", codeModuleConditionName)
+			}
+
+			meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(codeModuleConditionName))
 		}
 
 		return nil
@@ -77,25 +105,25 @@ func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 
 	oaCommunicationHosts, err := NewCommunicationHosts(dk.Status.OneAgent.ConnectionInfo.Endpoints)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dk.Conditions(), CodeModuleComponent, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), codeModuleConditionName, err)
 
 		return err
 	}
 
 	err = r.reconcileCommunicationHostsForComponent(ctx, oaCommunicationHosts, CodeModuleComponent)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dk.Conditions(), CodeModuleComponent, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), codeModuleConditionName, err)
 
 		return err
 	}
 
 	if len(oaCommunicationHosts) == 0 {
-		meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(CodeModuleComponent))
+		meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(codeModuleConditionName))
 
 		return nil
 	}
 
-	setServiceEntryUpdatedConditionForComponent(dk.Conditions(), CodeModuleComponent)
+	setServiceEntryUpdatedConditionForComponent(dk.Conditions(), codeModuleConditionName)
 
 	return nil
 }
@@ -108,10 +136,16 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	}
 
 	if !dk.ActiveGate().IsEnabled() {
-		if isIstioConfigured(dk, ActiveGateComponent) {
+		if isIstioConfigured(dk, activeGateConditionName) {
 			log.Info("activegate disabled, cleaning up")
 
-			return r.CleanupIstio(ctx, dk, ActiveGateComponent)
+			err := r.cleanupIstio(ctx, dk, ActiveGateComponent)
+			if err != nil {
+				// We don't error out here to avoid stuck reconciliations in case cleanup fails
+				log.Error(err, "failed to cleanup the istio configuration", "component", activeGateConditionName)
+			}
+
+			meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(activeGateConditionName))
 		}
 
 		return nil
@@ -119,32 +153,30 @@ func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 
 	agCommunicationHosts, err := NewCommunicationHosts(dk.Status.ActiveGate.ConnectionInfo.Endpoints)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dk.Conditions(), ActiveGateComponent, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName, err)
 
 		return err
 	}
 
-	err = r.reconcileCommunicationHostsForComponent(ctx, agCommunicationHosts, strings.ToLower(ActiveGateComponent))
+	err = r.reconcileCommunicationHostsForComponent(ctx, agCommunicationHosts, ActiveGateComponent)
 	if err != nil {
-		setServiceEntryFailedConditionForComponent(dk.Conditions(), ActiveGateComponent, err)
+		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName, err)
 
 		return err
 	}
 
 	if len(agCommunicationHosts) == 0 {
-		meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(ActiveGateComponent))
+		meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(activeGateConditionName))
 
 		return nil
 	}
 
-	setServiceEntryUpdatedConditionForComponent(dk.Conditions(), ActiveGateComponent)
+	setServiceEntryUpdatedConditionForComponent(dk.Conditions(), activeGateConditionName)
 
 	return nil
 }
 
-func (r *reconciler) CleanupIstio(ctx context.Context, dk *dynakube.DynaKube, component string) error {
-	meta.RemoveStatusCondition(dk.Conditions(), getConditionTypeName(component))
-
+func (r *reconciler) cleanupIstio(ctx context.Context, dk *dynakube.DynaKube, component string) error {
 	err1 := r.cleanupIPServiceEntry(ctx, component)
 	err2 := r.cleanupFQDNServiceEntry(ctx, component)
 
@@ -198,7 +230,7 @@ func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []Comm
 		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
-			k8slabel.NewCoreLabels(owner.GetName(), strings.ToLower(component)).BuildLabels(),
+			k8slabel.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
 		serviceEntry := buildServiceEntryIPs(objectMeta, ipHosts)
@@ -231,7 +263,7 @@ func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
-			k8slabel.NewCoreLabels(owner.GetName(), strings.ToLower(component)).BuildLabels(),
+			k8slabel.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
 		serviceEntry := buildServiceEntryFQDNs(objectMeta, fqdnHosts)

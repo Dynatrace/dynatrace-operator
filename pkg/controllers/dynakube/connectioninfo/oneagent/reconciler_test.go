@@ -53,11 +53,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("cleanup when oneagent is not needed", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
-			ConnectionInfo: communication.ConnectionInfo{
-				TenantUUID: testOutdated,
-				Endpoints:  testOutdated,
-			},
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+			TenantUUID: testOutdated,
+			Endpoints:  testOutdated,
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
@@ -82,11 +80,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("does not cleanup when only host oneagent is needed", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
-			ConnectionInfo: communication.ConnectionInfo{
-				TenantUUID: testOutdated,
-				Endpoints:  testOutdated,
-			},
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+			TenantUUID: testOutdated,
+			Endpoints:  testOutdated,
 		}
 		dk.Spec = dynakube.DynaKubeSpec{}
 		dk.Spec.OneAgent.ClassicFullStack = &oneagent.HostInjectSpec{}
@@ -160,11 +156,9 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
-			ConnectionInfo: communication.ConnectionInfo{
-				TenantUUID: testOutdated,
-				Endpoints:  testOutdated,
-			},
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+			TenantUUID: testOutdated,
+			Endpoints:  testOutdated,
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
@@ -190,11 +184,9 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(dk, buildOneAgentTenantSecret(dk, testOutdated))
 		dtc := dtclientmock.NewClient(t)
 
-		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
-			ConnectionInfo: communication.ConnectionInfo{
-				TenantUUID: testOutdated,
-				Endpoints:  testOutdated,
-			},
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+			TenantUUID: testOutdated,
+			Endpoints:  testOutdated,
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
@@ -218,11 +210,9 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
-			ConnectionInfo: communication.ConnectionInfo{
-				TenantUUID: testOutdated,
-				Endpoints:  testOutdated,
-			},
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+			TenantUUID: testOutdated,
+			Endpoints:  testOutdated,
 		}
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
@@ -247,11 +237,9 @@ func TestReconcile(t *testing.T) {
 		dtc := dtclientmock.NewClient(t)
 		dtc.EXPECT().GetOneAgentConnectionInfo(anyCtx).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		dk.Status.OneAgent.ConnectionInfo = oneagent.ConnectionInfo{
-			ConnectionInfo: communication.ConnectionInfo{
-				TenantUUID: testOutdated,
-				Endpoints:  testOutdated,
-			},
+		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+			TenantUUID: testOutdated,
+			Endpoints:  testOutdated,
 		}
 		setEmptyCommunicationHostsCondition(dk.Conditions())
 

@@ -252,7 +252,7 @@ func (src *DynaKube) toOneAgentStatus(dst *dynakubelatest.DynaKube) { //nolint:d
 	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
 
-	dst.Status.OneAgent.ConnectionInfo.ConnectionInfo = src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo
+	dst.Status.OneAgent.ConnectionInfo = src.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo
 }
 
 func (src *DynaKube) toActiveGateStatus(dst *dynakubelatest.DynaKube) {

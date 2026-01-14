@@ -16,11 +16,11 @@ const (
 )
 
 func BuildNameForIPServiceEntry(ownerName, component string) string {
-	return ownerName + "-ip-" + strings.ToLower(component)
+	return ownerName + "-ip-" + component
 }
 
 func BuildNameForFQDNServiceEntry(ownerName, component string) string {
-	return ownerName + "-fqdn-" + strings.ToLower(component)
+	return ownerName + "-fqdn-" + component
 }
 
 func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []CommunicationHost) *istiov1beta1.ServiceEntry {

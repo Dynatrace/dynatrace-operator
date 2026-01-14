@@ -251,7 +251,7 @@ func (dst *DynaKube) fromOneAgentStatus(src dynakubelatest.DynaKube) { //nolint:
 
 	dst.Status.OneAgent.LastInstanceStatusUpdate = src.Status.OneAgent.LastInstanceStatusUpdate
 	dst.Status.OneAgent.Healthcheck = src.Status.OneAgent.Healthcheck
-	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = src.Status.OneAgent.ConnectionInfo.ConnectionInfo
+	dst.Status.OneAgent.ConnectionInfoStatus.ConnectionInfo = src.Status.OneAgent.ConnectionInfo
 	dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = make([]oneagent.CommunicationHostStatus, 0)
 }
 

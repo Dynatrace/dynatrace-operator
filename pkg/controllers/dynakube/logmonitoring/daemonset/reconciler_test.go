@@ -393,11 +393,9 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfo: oneagent.ConnectionInfo{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID:      "test-uuid",
-						TenantTokenHash: "somehash",
-					},
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID:      "test-uuid",
+					TenantTokenHash: "somehash",
 				},
 			},
 			KubernetesClusterMEID: "test-cluster-me-id",

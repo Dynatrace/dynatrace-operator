@@ -72,7 +72,7 @@ func TestNewCommunicationHost(t *testing.T) {
 		},
 		{
 			name:        "unparseable input",
-			input:       "shouldnotbeparsed",
+			input:       "://::::",
 			expectError: true,
 		},
 	}

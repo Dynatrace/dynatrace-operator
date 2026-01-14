@@ -21,7 +21,5 @@ func migrateDeprecatedCondition(conditions *[]metav1.Condition) {
 	if depCondition != nil {
 		newConditionType := getConditionTypeName(CodeModuleComponent)
 		depCondition.Type = newConditionType
-		_ = meta.RemoveStatusCondition(conditions, depCondition.Type)
-		_ = meta.SetStatusCondition(conditions, *depCondition)
 	}
 }

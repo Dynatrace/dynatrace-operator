@@ -710,11 +710,9 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	dk := newDynaKube()
 	dk.Status = dynakube.DynaKubeStatus{
 		OneAgent: oneagent.Status{
-			ConnectionInfo: oneagent.ConnectionInfo{
-				ConnectionInfo: communication.ConnectionInfo{
-					TenantUUID: testTenantUUID,
-					Endpoints:  testTenantEndpoints,
-				},
+			ConnectionInfo: communication.ConnectionInfo{
+				TenantUUID: testTenantUUID,
+				Endpoints:  testTenantEndpoints,
 			},
 		},
 	}

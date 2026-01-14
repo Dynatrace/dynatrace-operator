@@ -100,7 +100,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	err = r.connectionInfoReconciler.Reconcile(ctx)
 	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) { // This only informational
-		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
+		log.Info("OneAgents are not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 
 		if r.dk.Spec.NetworkZone != "" {
 			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", r.dk.Spec.NetworkZone, "dynakube", r.dk.Name)

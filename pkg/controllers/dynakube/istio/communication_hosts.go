@@ -1,13 +1,14 @@
 package istio
 
 import (
-	"errors"
 	"fmt"
 	"maps"
 	"net/url"
 	"slices"
-	"sort"
+	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // CommunicationHost => struct of connection endpoint
@@ -24,7 +25,7 @@ func (ch CommunicationHost) String() string {
 func NewCommunicationHost(endpoint string) (CommunicationHost, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return CommunicationHost{}, errors.New("failed to parse URL")
+		return CommunicationHost{}, errors.WithMessage(err, "failed to parse URL")
 	}
 
 	if u.Scheme == "" {
@@ -45,10 +46,12 @@ func NewCommunicationHost(endpoint string) (CommunicationHost, error) {
 			p = 443
 		}
 	} else {
-		_, err := fmt.Sscan(rp, &p)
+		p64, err := strconv.ParseUint(rp, 10, 32)
 		if err != nil {
-			return CommunicationHost{}, errors.New("failed to parse port")
+			return CommunicationHost{}, errors.WithMessage(err, "failed to parse port")
 		}
+
+		p = uint32(p64)
 	}
 
 	return CommunicationHost{
@@ -68,7 +71,7 @@ func NewCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
 		return []CommunicationHost{}, nil
 	}
 
-	for _, endpoint := range strings.Split(endpoints, ",") {
+	for endpoint := range strings.SplitSeq(endpoints, ",") {
 		ch, err := NewCommunicationHost(endpoint)
 		if err != nil {
 			return nil, err
@@ -77,10 +80,10 @@ func NewCommunicationHosts(endpoints string) ([]CommunicationHost, error) {
 		comHosts[ch.String()] = ch
 	}
 
-	// we have to sort the hosts to have a deterministic order for not constantly change the Status
-	sortedHosts := slices.Collect(maps.Values(comHosts))
-	sort.SliceStable(sortedHosts, func(i, j int) bool {
-		return sortedHosts[i].String() < sortedHosts[j].String()
+	// we have to sort the hosts to have a deterministic order for easier testing.
+
+	sortedHosts := slices.SortedFunc(maps.Values(comHosts), func(a, b CommunicationHost) int {
+		return strings.Compare(a.String(), b.String())
 	})
 
 	return sortedHosts, nil
