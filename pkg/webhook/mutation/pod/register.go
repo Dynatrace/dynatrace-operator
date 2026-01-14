@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
@@ -106,7 +106,7 @@ func newWebhook( //nolint:revive
 		isOpenShift:      isOpenshift,
 		webhookNamespace: webhookPod.Namespace,
 		webhookPodImage:  webhookPodImage,
-		deployedViaOLM:   kubesystem.IsDeployedViaOlm(webhookPod),
+		deployedViaOLM:   system.IsDeployedViaOlm(webhookPod),
 		decoder:          decoder,
 	}, nil
 }

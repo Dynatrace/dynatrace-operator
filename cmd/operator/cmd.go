@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -49,7 +49,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if kubesystem.IsRunLocally() {
+	if system.IsRunLocally() {
 		log.Info("running locally in debug mode")
 
 		return runLocally(kubeCfg)
@@ -72,7 +72,7 @@ func runInPod(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	isOLM := kubesystem.IsDeployedViaOlm(*operatorPod)
+	isOLM := system.IsDeployedViaOlm(*operatorPod)
 
 	if !isOLM {
 		err = runCertInit(kubeCfg, namespace)

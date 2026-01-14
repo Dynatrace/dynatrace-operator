@@ -1,4 +1,4 @@
-package kubesystem
+package system
 
 import (
 	"context"
