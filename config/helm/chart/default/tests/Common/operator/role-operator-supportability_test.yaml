@@ -28,6 +28,13 @@ tests:
                 - pods/exec
               verbs:
                 - create
+            - apiGroups:
+                - batch
+              resources:
+                - jobs
+              verbs:
+                - get
+                - list
   - it: RoleBinding should exist
     documentIndex: 1
     asserts:
