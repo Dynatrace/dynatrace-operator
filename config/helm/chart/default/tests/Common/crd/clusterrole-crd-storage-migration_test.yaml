@@ -1,0 +1,71 @@
+suite: test clusterrole for CRD cleanup
+templates:
+  - Common/crd/clusterrole-crd-storage-migration.yaml
+tests:
+  - it: ClusterRole should exist
+    set:
+      crdStorageMigrationJob: true
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-crd-storage-migration
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: metadata.annotations
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+                - customresourcedefinitions/status
+              resourceNames:
+                - dynakubes.dynatrace.com
+                - edgeconnects.dynatrace.com
+              verbs:
+                - get
+                - update
+
+  - it: ClusterRoleBinding should exist
+    set:
+      crdStorageMigrationJob: true
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-crd-storage-migration
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: metadata.annotations
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-crd-storage-migration
+            namespace: NAMESPACE
+      - equal:
+          path: roleRef
+          value:
+            kind: ClusterRole
+            name: dynatrace-crd-storage-migration
+            apiGroup: rbac.authorization.k8s.io
+
+  - it: should not render when crdStorageMigrationJob is false
+    set:
+      crdStorageMigrationJob: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when crdStorageMigrationJob is not set
+    asserts:
+      - hasDocuments:
+          count: 0

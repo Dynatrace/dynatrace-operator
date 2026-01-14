@@ -71,6 +71,8 @@ spec:
               value: {{ include "dynatrace-operator.image" . }}
             - name: DT_HOST_AVAILABILITY_DETECTION
               value: "{{ .Values.operator.hostAvailabilityDetection }}"
+            - name: DT_CRD_STORAGE_MIGRATION
+              value: "{{ .Values.operator.crdStorageMigrationInitManager }}"
             {{- if .Values.debugLogs }}
             - name: LOG_LEVEL
               value: "debug"

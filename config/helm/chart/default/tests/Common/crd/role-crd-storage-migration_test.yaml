@@ -1,0 +1,75 @@
+suite: test role for CRD cleanup
+templates:
+  - Common/crd/role-crd-storage-migration.yaml
+tests:
+  - it: Role should exist
+    set:
+      crdStorageMigrationJob: true
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.name
+          value: dynatrace-crd-storage-migration
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: metadata.annotations
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - dynatrace.com
+              resources:
+                - dynakubes
+                - edgeconnects
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+
+  - it: RoleBinding should exist
+    set:
+      crdStorageMigrationJob: true
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-crd-storage-migration
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: metadata.annotations
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-crd-storage-migration
+      - equal:
+          path: roleRef
+          value:
+            kind: Role
+            name: dynatrace-crd-storage-migration
+            apiGroup: rbac.authorization.k8s.io
+
+  - it: should not render when crdStorageMigrationJob is false
+    set:
+      crdStorageMigrationJob: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when crdStorageMigrationJob is not set
+    asserts:
+      - hasDocuments:
+          count: 0
