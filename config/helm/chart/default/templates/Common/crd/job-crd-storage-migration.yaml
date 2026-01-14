@@ -1,0 +1,66 @@
+# Copyright 2026 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+{{- if .Values.crdStorageMigrationJob }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dynatrace-operator-crd-storage-migration
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 4 }}
+  annotations:
+    {{- include "dynatrace-operator.helmPreUpgradeHookAnnotations" . | nindent 4 }}
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 8 }}
+      annotations:
+      {{- if (.Values.operator).apparmor}}
+        container.apparmor.security.beta.kubernetes.io/crd-storage-migration: runtime/default
+      {{- end }}
+    spec:
+      restartPolicy: OnFailure
+      {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}
+      serviceAccountName: dynatrace-crd-storage-migration
+      securityContext:
+        {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
+      {{- if .Values.customPullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.customPullSecret }}
+      {{- end }}
+      {{- with .Values.operator.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operator.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: crd-storage-migration
+          image: {{ include "dynatrace-operator.image" . }}
+          imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+          args:
+            - crd-storage-migration
+            - --namespace={{ .Release.Namespace }}
+          resources:
+            requests:
+              {{- toYaml (.Values.operator).requests | nindent 14 }}
+            limits:
+              {{- toYaml (.Values.operator).limits | nindent 14 }}
+          securityContext:
+            {{- toYaml .Values.operator.securityContext | nindent 12 }}
+{{- end }}
