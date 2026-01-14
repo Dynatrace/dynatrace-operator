@@ -503,7 +503,7 @@ func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet)
 						ObjectMeta: metav1.ObjectMeta{
 							Name: runtimeVolumeName,
 						},
-						Spec: defaultPVCSpec(),
+						Spec: defaultPVCSpec(dk),
 					},
 				}
 			} else {
@@ -525,14 +525,19 @@ func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet)
 	}
 }
 
-func defaultPVCSpec() corev1.PersistentVolumeClaimSpec {
+func defaultPVCSpec(dk *dynakube.DynaKube) corev1.PersistentVolumeClaimSpec {
+	size := "2Gi"
+	if useLegacyMounts(dk) {
+		size = "1Gi"
+	}
+
 	return corev1.PersistentVolumeClaimSpec{
 		AccessModes: []corev1.PersistentVolumeAccessMode{
 			corev1.ReadWriteOnce,
 		},
 		Resources: corev1.VolumeResourceRequirements{
 			Requests: corev1.ResourceList{
-				corev1.ResourceStorage: resource.MustParse("1Gi"),
+				corev1.ResourceStorage: resource.MustParse(size),
 			},
 		},
 	}
