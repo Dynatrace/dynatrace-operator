@@ -8,18 +8,20 @@ ARG DEBUG_TOOLS
 # renovate depName=github.com/go-delve/delve/cmd/dlv
 RUN if [ "$DEBUG_TOOLS" = "true" ]; then GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.26.0; fi
 
+# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
+RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.9.0
+
 COPY go.mod go.sum ./
 RUN go mod download -x
 
 COPY pkg ./pkg
 COPY cmd ./cmd
-COPY .git /.git
+COPY .git ./.git
 
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
 ARG TARGETARCH
 ARG TARGETOS
-
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     --mount=type=cache,target="/go/pkg" \
@@ -27,8 +29,6 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
-# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
-RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.9.0
 RUN cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
