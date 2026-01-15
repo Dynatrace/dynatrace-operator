@@ -13,6 +13,8 @@ template: testify
 template-schema: '{{.Template}}.schema.json'
 packages:
   github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/remotecommand:
+    config:
+      dir: "{{.InterfaceDir}}/../mocks/remotecommand"
     interfaces:
       Executor:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:

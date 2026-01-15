@@ -8,8 +8,8 @@ import (
 	"io"
 	"testing"
 
+	mocks "github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/mocks/remotecommand"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/supportarchive/remotecommand"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
