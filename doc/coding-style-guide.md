@@ -492,6 +492,10 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
   - [Added in go 1.24](https://pkg.go.dev/testing#T.Context), so we don't really use it, update it where you change code
 - Use `<...>mock` as package import alias, in all cases, even if no alias would strictly be necessary.
   - Examples: `dtclientmock`, `controllermock`, `dtbuildermock`, `injectionmock`, `registrymock`
+- Mocks that are used in a single package should be defined in that package (in a `mocks/` subdirectory)
+  This keeps test code close to where it's used and avoids unnecessarily exporting mocks.
+  - Only mocks that are shared across multiple packages should live in `test/mocks/`
+  - Configure mockery to generate mocks in the appropriate location using the `dir` config option
 - Use this structure: (or table-tests)
   - The usage of `"` instead of ``` ` ``` in `t.Run` is important, as in VSCode you can't run individual tests if they are defined as ``` t.Run(`test`, ...) ```, but can when defined as``` t.Run("test", ...) ```.
 
