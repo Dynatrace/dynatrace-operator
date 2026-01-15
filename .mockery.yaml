@@ -22,6 +22,8 @@ packages:
     interfaces:
       Client:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
+    config:
+      dir: "{{.InterfaceDir}}/internal/capability/mocks/activegate"
     interfaces:
       CapabilityReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
