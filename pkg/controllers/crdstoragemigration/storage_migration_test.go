@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +33,7 @@ func TestRun(t *testing.T) {
 	t.Run("returns no error when CRD has no storage versions", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
+				Name: dkCrdName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -67,7 +66,7 @@ func TestRun(t *testing.T) {
 	t.Run("returns no error when CRD has single up-to-date storage version", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
+				Name: dkCrdName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -99,7 +98,7 @@ func TestRun(t *testing.T) {
 	t.Run("returns error when no storage version is found", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
+				Name: dkCrdName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -132,7 +131,7 @@ func TestRun(t *testing.T) {
 	t.Run("migrates DynaKube instances when multiple storage versions exist", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
+				Name: dkCrdName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -188,7 +187,7 @@ func TestRun(t *testing.T) {
 
 		// Verify CRD status was updated
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dkCrdName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta2"}, updatedCRD.Status.StoredVersions)
 	})
@@ -196,7 +195,7 @@ func TestRun(t *testing.T) {
 	t.Run("handles empty DynaKube list", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
+				Name: dkCrdName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -227,8 +226,65 @@ func TestRun(t *testing.T) {
 
 		// Verify CRD status was updated even without DynaKubes
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dkCrdName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta2"}, updatedCRD.Status.StoredVersions)
+	})
+}
+
+func TestGetLatestStorageVersion(t *testing.T) {
+	t.Run("returns storage version when marked as storage", func(t *testing.T) {
+		crd := &apiextensionsv1.CustomResourceDefinition{
+			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
+					{
+						Name:    "v1alpha1",
+						Storage: false,
+					},
+					{
+						Name:    "v1beta1",
+						Storage: true,
+					},
+					{
+						Name:    "v1beta2",
+						Storage: false,
+					},
+				},
+			},
+		}
+
+		latestVersion := getLatestStorageVersion(crd)
+		assert.Equal(t, "v1beta1", latestVersion)
+	})
+
+	t.Run("returns empty string when no storage version is marked", func(t *testing.T) {
+		crd := &apiextensionsv1.CustomResourceDefinition{
+			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
+					{
+						Name:    "v1alpha1",
+						Storage: false,
+					},
+					{
+						Name:    "v1beta1",
+						Storage: false,
+					},
+				},
+			},
+		}
+
+		latestVersion := getLatestStorageVersion(crd)
+		assert.Empty(t, latestVersion)
+	})
+
+	t.Run("returns empty string for empty versions list", func(t *testing.T) {
+		crd := &apiextensionsv1.CustomResourceDefinition{
+			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{},
+			},
+		}
+
+		latestVersion := getLatestStorageVersion(crd)
+		assert.Empty(t, latestVersion)
 	})
 }

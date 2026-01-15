@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/eventfilter"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -65,7 +65,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{RequeueAfter: retryDuration}, nil
 	}
 
-	err = Run(ctx, controller.client, controller.apiReader, k8senv.DefaultNamespace())
+	err = Run(ctx, controller.client, controller.apiReader, env.DefaultNamespace())
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}

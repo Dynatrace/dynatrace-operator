@@ -3,7 +3,6 @@ package crdstoragemigration
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/pkg/errors"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -13,12 +12,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const dkCrdName = "dynakubes.dynatrace.com"
+
 func Run(ctx context.Context, clt client.Client, apiReader client.Reader, namespace string) error {
 	log.Info("starting CRD storage version storage migration")
 
 	var crd apiextensionsv1.CustomResourceDefinition
 
-	err := apiReader.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd)
+	err := apiReader.Get(ctx, types.NamespacedName{Name: dkCrdName}, &crd)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("DynaKube CRD not found, skipping storage migration")
@@ -37,7 +38,7 @@ func Run(ctx context.Context, clt client.Client, apiReader client.Reader, namesp
 		return nil
 	}
 
-	targetVersion := k8scrd.GetLatestStorageVersion(&crd)
+	targetVersion := getLatestStorageVersion(&crd)
 	if targetVersion == "" {
 		return errors.New("failed to determine target storage version")
 	}
@@ -94,4 +95,14 @@ func Run(ctx context.Context, clt client.Client, apiReader client.Reader, namesp
 	log.Info("successfully migrated all DynaKube instances to current storage version")
 
 	return nil
+}
+
+func getLatestStorageVersion(crd *apiextensionsv1.CustomResourceDefinition) string {
+	for _, version := range crd.Spec.Versions {
+		if version.Storage {
+			return version.Name
+		}
+	}
+
+	return ""
 }

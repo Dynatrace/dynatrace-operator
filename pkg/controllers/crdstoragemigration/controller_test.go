@@ -6,7 +6,6 @@ import (
 
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -235,7 +234,7 @@ func TestReconcile(t *testing.T) {
 
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
+				Name: dkCrdName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -294,7 +293,7 @@ func TestReconcile(t *testing.T) {
 
 		// Verify CRD was updated
 		var updatedCRD apiextensionsv1.CustomResourceDefinition
-		err = clt.Get(ctx, client.ObjectKey{Name: k8scrd.DynaKubeName}, &updatedCRD)
+		err = clt.Get(ctx, client.ObjectKey{Name: dkCrdName}, &updatedCRD)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"v1beta6"}, updatedCRD.Status.StoredVersions)
 	})
@@ -316,7 +315,7 @@ func TestReconcile(t *testing.T) {
 
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
+				Name: dkCrdName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
@@ -375,7 +374,7 @@ func TestReconcile(t *testing.T) {
 
 		crd := &apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
+				Name: dkCrdName,
 			},
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
