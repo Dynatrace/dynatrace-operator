@@ -65,6 +65,8 @@ packages:
     interfaces:
       Mutator:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler:
+    config:
+      dir: "{{.InterfaceDir}}/../mocks/handler"
     interfaces:
       Handler:
   k8s.io/client-go/kubernetes/typed/core/v1:
