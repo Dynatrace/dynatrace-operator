@@ -30,6 +30,8 @@ packages:
     interfaces:
       StatusUpdater:
       Reconciler:
+        config:
+          dir: "{{.InterfaceDir}}/mocks"
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
     interfaces:
       Builder:
