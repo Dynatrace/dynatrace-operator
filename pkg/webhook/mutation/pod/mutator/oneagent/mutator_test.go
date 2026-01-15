@@ -299,7 +299,7 @@ func TestMutate(t *testing.T) {
 	t.Run("tenantUUID + cloudnative => update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
 		request.DynaKube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		request.DynaKube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "example"
+		request.DynaKube.Status.OneAgent.ConnectionInfo.TenantUUID = "example"
 		request.DynaKube.Status.CodeModules.Version = "1.2.3"
 
 		err := mut.Mutate(request)

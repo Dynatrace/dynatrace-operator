@@ -16,7 +16,7 @@ func setEmptyCommunicationHostsCondition(conditions *[]metav1.Condition) {
 		Type:    oaConnectionInfoConditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  EmptyCommunicationHostsReason,
-		Message: "No communication hosts for OneAgent are available",
+		Message: "No communication endpoints are available for the OneAgents",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

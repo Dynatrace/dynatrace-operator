@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1beta1"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
@@ -50,7 +49,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 					},
 				}}},
 		}
-		commHosts := []dtclient.CommunicationHost{{
+		commHosts := []CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
 			Protocol: protocolHTTPS,
@@ -80,7 +79,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 					},
 				}}},
 		}
-		commHosts := []dtclient.CommunicationHost{{
+		commHosts := []CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
 			Protocol: protocolHTTP,
@@ -90,7 +89,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		assert.Equal(t, expected, result)
 	})
 	t.Run("generate for invalid protocol", func(t *testing.T) {
-		commHosts := []dtclient.CommunicationHost{{
+		commHosts := []CommunicationHost{{
 			Host:     "42.42.42.42",
 			Port:     testPort,
 			Protocol: protocolHTTP,
@@ -124,13 +123,13 @@ func TestVirtualServiceTLSRoute(t *testing.T) {
 func TestBuildVirtualServiceSpec(t *testing.T) {
 	t.Run("is http route correctly set if protocol is 'http'", func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecHTTP(t)
-		result := buildVirtualServiceSpec([]dtclient.CommunicationHost{
+		result := buildVirtualServiceSpec([]CommunicationHost{
 			{Host: testHost1, Port: testPort1, Protocol: protocolHTTP},
 		})
 
 		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
-		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
+		result = buildVirtualServiceSpec([]CommunicationHost{
 			{Host: testHost2, Port: testPort2, Protocol: protocolHTTP},
 		})
 
@@ -138,13 +137,13 @@ func TestBuildVirtualServiceSpec(t *testing.T) {
 	})
 	t.Run("is TLS route correctly set if protocol is 'https'", func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecTLS(t)
-		result := buildVirtualServiceSpec([]dtclient.CommunicationHost{
+		result := buildVirtualServiceSpec([]CommunicationHost{
 			{Host: testHost1, Port: testPort1, Protocol: protocolHTTPS},
 		})
 
 		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
-		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
+		result = buildVirtualServiceSpec([]CommunicationHost{
 			{Host: testHost2, Port: testPort2, Protocol: protocolHTTPS},
 		})
 

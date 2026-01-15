@@ -264,10 +264,6 @@ func splitArg(arg string) (string, string) {
 	return key, value
 }
 
-func (oa *OneAgent) IsCommunicationRouteClear() bool {
-	return len(oa.ConnectionInfoStatus.CommunicationHosts) > 0
-}
-
 func (oa *OneAgent) GetEnvironment() []corev1.EnvVar {
 	switch {
 	case oa.IsCloudNativeFullstackMode():
@@ -282,7 +278,7 @@ func (oa *OneAgent) GetEnvironment() []corev1.EnvVar {
 }
 
 func (oa *OneAgent) GetEndpoints() string {
-	return oa.ConnectionInfoStatus.Endpoints
+	return oa.ConnectionInfo.Endpoints
 }
 
 // GetCustomCodeModulesImage provides the image reference for the CodeModules provided in the Spec.
