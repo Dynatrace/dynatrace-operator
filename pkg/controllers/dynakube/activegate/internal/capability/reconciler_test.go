@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
-	reconcilermock "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability/mocks"
+	reconcilermock "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/capability/mocks/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
