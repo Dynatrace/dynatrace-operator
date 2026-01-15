@@ -44,6 +44,7 @@ packages:
     interfaces:
       k8sEntityReconciler:
         config:
+          dir: "{{.InterfaceDir}}/mocks/k8sentityreconciler"
           structname: '{{ .InterfaceName | firstUpper }}'
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     config:
