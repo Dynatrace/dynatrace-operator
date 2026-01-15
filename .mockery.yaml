@@ -42,6 +42,8 @@ packages:
         config:
           structname: '{{ .InterfaceName | firstUpper }}'
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
+    config:
+      dir: "{{.InterfaceDir}}/../activegate/mocks/istio"
     interfaces:
       Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
