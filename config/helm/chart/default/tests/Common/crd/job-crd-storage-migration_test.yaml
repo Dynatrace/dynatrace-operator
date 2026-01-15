@@ -136,9 +136,10 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should not render when crdStorageMigrationJob is not set
+  - it: should render when crdStorageMigrationJob is not set
     set:
       platform: kubernetes
     asserts:
       - hasDocuments:
-          count: 0
+          count: 1
+
