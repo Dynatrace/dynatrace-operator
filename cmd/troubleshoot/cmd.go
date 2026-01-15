@@ -70,13 +70,6 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func RunTroubleshootCmd(ctx context.Context, log logd.Logger, namespaceName string, kubeConfig *rest.Config) {
-	err := checkOneAgentAPM(log, kubeConfig)
-	if err != nil {
-		logErrorf(log, "prerequisite checks failed, aborting (%v)", err)
-
-		return
-	}
-
 	apiReader, err := GetK8SClusterAPIReader(kubeConfig)
 	if err != nil {
 		return
