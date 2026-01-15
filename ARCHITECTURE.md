@@ -275,7 +275,7 @@ This command [`cmd/metadata/`](./cmd/metadata/) generates metadata files contain
 
 - Logging configuration and utilities
 
-[**`pkg/oci/`**](./pkg/oci/): OCI Image Handling
+[**`pkg/util/oci/`**](pkg/util/oci/): OCI Image Handling
 
 - Utilities for interacting with OCI registries and images
 

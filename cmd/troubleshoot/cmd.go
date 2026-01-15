@@ -8,9 +8,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/dockerkeychain"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -70,13 +70,6 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func RunTroubleshootCmd(ctx context.Context, log logd.Logger, namespaceName string, kubeConfig *rest.Config) {
-	err := checkOneAgentAPM(log, kubeConfig)
-	if err != nil {
-		logErrorf(log, "prerequisite checks failed, aborting (%v)", err)
-
-		return
-	}
-
 	apiReader, err := GetK8SClusterAPIReader(kubeConfig)
 	if err != nil {
 		return
