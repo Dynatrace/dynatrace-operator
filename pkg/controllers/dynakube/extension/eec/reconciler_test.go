@@ -902,9 +902,9 @@ func TestTolerations(t *testing.T) {
 }
 
 func TestPersistentVolumeClaim(t *testing.T) {
-	t.Run("no PVC spec, UseEphemeralVolume set to false", func(t *testing.T) {
+	t.Run("default PVC", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = false
+		disableLegacyVolumeMounts(dk)
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.VolumeClaimTemplates, 1)
@@ -914,7 +914,7 @@ func TestPersistentVolumeClaim(t *testing.T) {
 
 		assert.Empty(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Limits)
 		require.Len(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests, 1)
-		assert.Equal(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage], resource.MustParse("1Gi"))
+		assert.Equal(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage], resource.MustParse("2Gi"))
 
 		assert.Nil(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Selector)
 		assert.Nil(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.StorageClassName)
@@ -927,6 +927,14 @@ func TestPersistentVolumeClaim(t *testing.T) {
 		assert.Equal(t, appsv1.DeletePersistentVolumeClaimRetentionPolicyType, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy.WhenDeleted)
 		assert.Equal(t, appsv1.DeletePersistentVolumeClaimRetentionPolicyType, statefulSet.Spec.PersistentVolumeClaimRetentionPolicy.WhenScaled)
 	})
+
+	t.Run("legacy mounts default PVC size", func(t *testing.T) {
+		dk := getTestDynakube()
+		statefulSet := getStatefulset(t, dk)
+
+		assert.Equal(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage], resource.MustParse("1Gi"))
+	})
+
 	t.Run("no PVC spec, UseEphemeralVolume set to true", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
