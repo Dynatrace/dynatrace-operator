@@ -16,7 +16,7 @@ RUN go mod download -x
 
 COPY pkg ./pkg
 COPY cmd ./cmd
-#COPY .git ./.git
+COPY .git ./.git
 
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
