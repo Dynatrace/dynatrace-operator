@@ -9,6 +9,7 @@ ci:
     - any-glob-to-any-file:
       - ".github/workflows/*"
       - ".github/actions/**"
+      - "hack/build/ci/*"
 
 documentation:
   - changed-files:
