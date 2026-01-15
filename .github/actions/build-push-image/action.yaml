@@ -50,8 +50,11 @@ runs:
       shell: bash
       env:
         GITHUB_SHA: ${{ github.sha }}
+        TAG_NAMES: ${{ steps.meta.outputs.tag-names }}
       run: |
-        go_linker_args=$(hack/build/create_go_linker_args.sh "${{ steps.meta.outputs.tag-names }}" "${GITHUB_SHA}")
+        # Only pass the first tag to create_go_linker_args.sh
+        tag=$(echo "${TAG_NAMES}" | head -n 1)
+        go_linker_args=$(hack/build/create_go_linker_args.sh "${tag}" "${GITHUB_SHA}")
         echo "go_linker_args=${go_linker_args}" >> $GITHUB_OUTPUT
     - name: Build target
       id: build-target
