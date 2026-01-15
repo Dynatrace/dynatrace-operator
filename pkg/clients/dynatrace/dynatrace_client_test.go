@@ -172,7 +172,6 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	// TODO: Fix this monster, this is not ok
 	testAgentVersionGetLatestAgentVersion(t, dtc)
 	testActiveGateVersionGetLatestActiveGateVersion(t, dtc)
-	testCommunicationHostsGetCommunicationHosts(t, dtc)
 	testSendEvent(t, dtc)
 	testGetTokenScopes(t, dtc)
 
@@ -204,7 +203,7 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 	case agentVersions:
 		handleAvailableAgentVersions(request, writer)
 	case "/v1/deployment/installer/agent/connectioninfo":
-		handleCommunicationHosts(request, writer)
+		handleOACommunicationEndpoints(request, writer)
 	case "/v1/events":
 		handleSendEvent(request, writer)
 	case "/v2/apiTokens/lookup":
@@ -315,4 +314,26 @@ func handleInvalidRequest(request *http.Request, writer http.ResponseWriter) {
 func writeServerErrorResponse(w http.ResponseWriter, status int, srvErrResp string) {
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(srvErrResp))
+}
+
+func handleOACommunicationEndpoints(request *http.Request, writer http.ResponseWriter) {
+	commHostOutput := []byte(`{
+		"tenantUUID": "string",
+		"tenantToken": "string",
+		"communicationEndpoints": [
+		  "http://host1.domain.com",
+		  "https://host2.domain.com",
+		  "http://host3.domain.com",
+		  "http://12.0.9.1",
+		  "http://12.0.10.1"
+		]
+	}`)
+
+	switch request.Method {
+	case http.MethodGet:
+		writer.WriteHeader(http.StatusOK)
+		_, _ = writer.Write(commHostOutput)
+	default:
+		writeError(writer, http.StatusMethodNotAllowed)
+	}
 }
