@@ -43,6 +43,7 @@ rules:
       - security.openshift.io
     resourceNames:
       - privileged
+      - nonroot-v2
     resources:
       - securitycontextconstraints
     verbs:
