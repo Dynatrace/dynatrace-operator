@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 type Option func(dk *dynakube.DynaKube)
@@ -95,6 +96,12 @@ func WithActiveGateTLSSecret(tlsSecretName string) Option {
 func WithCustomActiveGateImage(imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.ActiveGate.Image = imageURI
+	}
+}
+
+func WithMetadataEnrichment() Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
 	}
 }
 
