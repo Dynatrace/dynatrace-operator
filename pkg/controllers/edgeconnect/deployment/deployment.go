@@ -113,6 +113,12 @@ func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
 			RunAsGroup:               ptr.To(unprivilegedGroup),
 			RunAsUser:                ptr.To(unprivilegedUser),
 			RunAsNonRoot:             ptr.To(true),
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{"ALL"},
+			},
 		},
 		VolumeMounts: prepareVolumeMounts(ec),
 	}
