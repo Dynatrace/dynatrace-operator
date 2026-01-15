@@ -50,9 +50,6 @@ type Client interface {
 
 	GetProcessModuleConfig(ctx context.Context, prevRevision uint) (*ProcessModuleConfig, error)
 
-	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
-	GetCommunicationHostForClient() (CommunicationHost, error)
-
 	// SendEvent posts events to dynatrace API
 	SendEvent(ctx context.Context, eventData *EventData) error
 

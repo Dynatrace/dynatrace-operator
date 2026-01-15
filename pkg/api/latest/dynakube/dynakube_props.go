@@ -102,8 +102,8 @@ func (dk *DynaKube) Tokens() string {
 }
 
 func (dk *DynaKube) TenantUUID() (string, error) {
-	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
-		return dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID, nil
+	if dk.Status.OneAgent.ConnectionInfo.TenantUUID != "" {
+		return dk.Status.OneAgent.ConnectionInfo.TenantUUID, nil
 	} else if dk.Status.ActiveGate.ConnectionInfo.TenantUUID != "" {
 		return dk.Status.ActiveGate.ConnectionInfo.TenantUUID, nil
 	}

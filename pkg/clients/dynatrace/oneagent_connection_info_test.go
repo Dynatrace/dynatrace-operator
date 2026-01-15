@@ -35,13 +35,6 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 			TenantToken: testTenantToken,
 			Endpoints:   testCommunicationEndpoint,
 		},
-		CommunicationHosts: []CommunicationHost{
-			{
-				Protocol: "https",
-				Host:     "tenant.dev.dynatracelabs.com",
-				Port:     443,
-			},
-		},
 	}
 
 	t.Run("no network zone", func(t *testing.T) {
@@ -75,11 +68,10 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 
 		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
 	})
-	t.Run("no communication hosts", func(t *testing.T) {
+	t.Run("no communication endpoints", func(t *testing.T) {
 		oneAgentJSONResponse.FormattedCommunicationEndpoints = ""
 		oneAgentJSONResponse.CommunicationEndpoints = []string{}
 
-		expectedOneAgentConnectionInfo.CommunicationHosts = []CommunicationHost{}
 		expectedOneAgentConnectionInfo.Endpoints = ""
 
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJSONResponse), "")
