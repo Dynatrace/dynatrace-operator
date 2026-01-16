@@ -35,6 +35,16 @@ rules:
     verbs:
       - get
       - update
+  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - nonroot-v2
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+  {{ end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
