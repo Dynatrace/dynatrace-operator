@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
 )
@@ -62,33 +61,6 @@ type Client interface {
 
 	// GetActiveGateConnectionInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
 	GetActiveGateConnectionInfo(ctx context.Context) (ActiveGateConnectionInfo, error)
-
-	// CreateOrUpdateKubernetesSetting returns the object id of the created k8s settings if successful, or an api error otherwise
-	CreateOrUpdateKubernetesSetting(ctx context.Context, name, kubeSystemUUID, scope string) (string, error)
-
-	// CreateLogMonitoringSetting returns the object id of the created logmonitoring settings if successful, or an api error otherwise
-	CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error)
-
-	// CreateOrUpdateKubernetesAppSetting returns the object id of the created k8s app settings if successful, or an api error otherwise
-	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
-
-	// GetK8sClusterME returns the Kubernetes Cluster Monitored Entity for the give kubernetes cluster.
-	// Uses the `settings.read` scope to list the `builtin:cloud.kubernetes` settings.
-	// - Only 1 such setting exists per tenant per kubernetes cluster
-	// - The `scope` for the setting is the ID (example: KUBERNETES_CLUSTER-A1234567BCD8EFGH) of the Kubernetes Cluster Monitored Entity
-	// - The `label` of the setting is the Name (example: my-dynakube) of the Kubernetes Cluster Monitored Entity
-	// In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exist, we return an empty object, without an error.
-	GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error)
-
-	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects,
-	// or an api error otherwise
-	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (GetSettingsResponse, error)
-
-	// GetSettingsForLogModule returns the settings response with the number of settings objects,
-	// or an api error otherwise
-	GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (GetLogMonSettingsResponse, error)
-
-	GetRulesSettings(ctx context.Context, kubeSystemUUID string, entityID string) (GetRulesSettingsResponse, error)
 
 	GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error)
 
