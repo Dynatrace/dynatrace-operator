@@ -1,5 +1,5 @@
 all: false
-dir: 'test/mocks/{{.InterfaceDirRelative}}'
+dir: 'test/mocks/{{trimPrefix "dynatrace-operator/" .InterfaceDirRelative}}'
 pkgname: mocks
 force-file-write: true
 formatter: goimports
