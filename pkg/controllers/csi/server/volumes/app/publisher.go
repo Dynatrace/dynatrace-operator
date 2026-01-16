@@ -115,13 +115,6 @@ func (pub *Publisher) isCodeModuleAvailable(volumeCfg *csivolumes.VolumeConfig) 
 }
 
 func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error {
-	mappedDir := pub.path.AppMountMappedDir(volumeCfg.VolumeID)
-
-	err := os.MkdirAll(mappedDir, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
 	upperDir, err := pub.prepareUpperDir(volumeCfg)
 	if err != nil {
 		return err
@@ -147,17 +140,19 @@ func (pub *Publisher) mountCodeModule(volumeCfg *csivolumes.VolumeConfig) error 
 		"workdir=" + workDir,
 	}
 
+	log.Info("mounting overlay directly to targetPath",
+		"targetPath", volumeCfg.TargetPath,
+		"lowerdir", lowerDir,
+		"upperdir", upperDir,
+		"workdir", workDir,
+	)
+
 	if err := os.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	if err := pub.mounter.Mount("overlay", mappedDir, "overlay", overlayOptions); err != nil {
-		return err
-	}
-
-	if err := pub.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
-		_ = pub.mounter.Unmount(mappedDir)
-
+	// Mount overlay directly at the targetPath
+	if err := pub.mounter.Mount("overlay", volumeCfg.TargetPath, "overlay", overlayOptions); err != nil {
 		return err
 	}
 
