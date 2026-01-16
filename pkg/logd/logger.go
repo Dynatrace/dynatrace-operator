@@ -1,14 +1,11 @@
 package logd
 
 import (
-	"io"
+	"context"
 	"os"
 	"sync"
 
 	"github.com/go-logr/logr"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
@@ -25,51 +22,64 @@ var (
 // derived loggers int the operator components.
 func Get() Logger {
 	baseLoggerOnce.Do(func() {
-		logLevel := readLogLevelFromEnv()
-		baseLogger = createLogger(NewPrettyLogWriter(), logLevel)
+		logLevel, err := readLogLevelFromEnv()
+		baseLogger = Logger{
+			Logger: newZapLogger(NewPrettyLogWriter(), logLevel),
+		}
+
+		if err != nil {
+			baseLogger.Error(err, "Failed to get log level from environment")
+		}
 	})
 
 	return baseLogger
 }
 
-func LogBaseLoggerSettings() {
-	logLevel := readLogLevelFromEnv()
-	baseLogger.Info("logging level", "logLevel", logLevel.String())
+func FromContext(ctx context.Context) Logger {
+	log := baseLogger
+
+	if ctx != nil {
+		if logger, err := logr.FromContext(ctx); err == nil {
+			log = Logger{logger}
+		}
+	}
+
+	return log
 }
 
-func createLogger(out io.Writer, logLevel zapcore.Level) Logger {
-	// It's important to create only one "main" logd to avoid excessive memory usage, creating a full logd is rather expensive,
-	// deriving other loggers by WithName is rather cheap
-	config := zap.NewProductionEncoderConfig()
-	config.EncodeTime = zapcore.ISO8601TimeEncoder
-	config.StacktraceKey = stacktraceKey
+func NewContext(ctx context.Context, logger Logger) context.Context {
+	return logr.NewContext(ctx, logger.Logger)
+}
 
-	return Logger{
-		ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewJSONEncoder(config)), ctrlzap.Level(logLevel)),
+func NewFromContext(ctx context.Context, name string, keysAndValues ...any) (context.Context, Logger) {
+	log := FromContext(ctx).WithName(name)
+	ctx = NewContext(ctx, log)
+
+	return ctx, log
+}
+
+func LogBaseLoggerSettings() {
+	logLevel, err := readLogLevelFromEnv()
+	if err != nil {
+		baseLogger.Error(err, "failed to read log level from environment variable")
+	} else {
+		baseLogger.Info("logging level", "LogLevel", logLevel.String())
 	}
 }
 
-func readLogLevelFromEnv() zapcore.Level {
+func readLogLevelFromEnv() (LogLevel, error) {
 	envLevel := os.Getenv(LogLevelEnv)
 
-	level, err := zapcore.ParseLevel(envLevel)
+	level, err := ParseLogLevel(envLevel)
 	if err != nil {
-		level = zapcore.InfoLevel
+		return DefaultLevel, err
 	}
 
-	return level
+	return level, err
 }
 
 type Logger struct {
 	logr.Logger
-}
-
-// Debug can be used for verbose output that is supposed to be  valuable for troubleshooting
-func (l *Logger) Debug(message string, keysAndValues ...any) {
-	kv := make([]any, 0)
-	kv = append(kv, keysAndValues...)
-
-	l.debugLog(message, kv...)
 }
 
 func (l Logger) WithName(name string) Logger {
@@ -80,15 +90,11 @@ func (l Logger) WithValues(keysAndValues ...any) Logger {
 	return Logger{l.Logger.WithValues(keysAndValues...)}
 }
 
-func (l *Logger) debugLog(message string, keysAndValues ...any) {
-	l.Logger.V(debugLogLevelElevation).Info(message, keysAndValues...)
-}
-
 // Write is for implementing the io.Writer interface,
 // this is meant to be used to pipe (using `log.SetOutput`) the logs from the stdlib's log library which we do not use directly
 // this workaround is necessary because the Webhook starts an http.Server, where we can't set the logger directly.
 func (l *Logger) Write(p []byte) (n int, err error) {
-	l.debugLog("stdlib log", "msg", string(p))
+	l.Debug("stdlib log", "msg", string(p))
 
 	return len(p), nil
 }

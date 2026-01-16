@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
@@ -76,6 +77,8 @@ const (
 )
 
 func (r *reconciler) createOrUpdateStatefulset(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	appLabels := buildAppLabels(r.dk.Name)
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx)
@@ -135,6 +138,8 @@ func (r *reconciler) deleteLegacyStatefulset(ctx context.Context) {
 }
 
 func (r *reconciler) buildTemplateAnnotations(ctx context.Context) (map[string]string, error) {
+	log := logd.FromContext(ctx)
+
 	templateAnnotations := map[string]string{}
 
 	if r.dk.Spec.Templates.ExtensionExecutionController.Annotations != nil {

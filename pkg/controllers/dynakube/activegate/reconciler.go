@@ -53,7 +53,7 @@ type ReconcilerBuilder func(clt client.Client,
 	tokens token.Tokens,
 ) controllers.Reconciler
 
-func NewReconciler(clt client.Client, //nolint
+func NewReconciler(clt client.Client,
 	apiReader client.Reader,
 	dk *dynakube.DynaKube,
 	dtc dtclient.Client,

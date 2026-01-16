@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -291,6 +292,8 @@ func buildContainerSecurityContext() *corev1.SecurityContext {
 }
 
 func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.DynaKube, keep []string) error {
+	log := logd.FromContext(ctx)
+
 	deployments, err := ListDeployments(ctx, clt, dk)
 	if err != nil {
 		return err

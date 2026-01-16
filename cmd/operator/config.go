@@ -1,8 +1,6 @@
 package operator
 
-import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-)
+import "github.com/Dynatrace/dynatrace-operator/pkg/logd"
 
 const (
 	metricsBindAddress     = ":8080"

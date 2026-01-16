@@ -27,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -152,13 +153,15 @@ type Controller struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
+	ctx, log := logd.NewFromContext(ctx, "dynakube", "namespace", request.Namespace, "name", request.Name)
+
+	log.Enter("reconciling DynaKube")
 
 	dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
 	} else if dk == nil {
-		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
+		log.Info("reconciling DynaKube finished, no DynaKube available", "result", "empty")
 
 		return reconcile.Result{}, nil
 	}
@@ -178,7 +181,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
-	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
+	log.Exit("reconciling DynaKube finished", "result", result)
 
 	return result, err
 }
@@ -212,6 +215,8 @@ func (controller *Controller) handleError(
 	err error,
 	oldStatus dynakube.DynaKubeStatus,
 ) (reconcile.Result, error) {
+	log := logd.FromContext(ctx)
+
 	switch {
 	case dynatraceapi.IsUnreachable(err):
 		log.Info("the Dynatrace API server is unavailable or request limit reached! trying again in one minute",
@@ -253,6 +258,8 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	var istioClient *istio.Client
 
 	var err error
@@ -318,7 +325,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	tokens, err := tokenReader.ReadTokens(ctx)
 	if err != nil {
-		controller.setConditionTokenError(dk, err)
+		controller.setConditionTokenError(ctx, dk, err)
 
 		return nil, err
 	}
@@ -331,24 +338,26 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	dynatraceClient, err := dynatraceClientBuilder.Build(ctx)
 	if err != nil {
-		controller.setConditionTokenError(dk, err)
+		controller.setConditionTokenError(ctx, dk, err)
 
 		return nil, err
 	}
 
 	err = controller.verifyTokens(ctx, dynatraceClient, dk)
 	if err != nil {
-		controller.setConditionTokenError(dk, err)
+		controller.setConditionTokenError(ctx, dk, err)
 
 		return nil, err
 	}
 
-	controller.setConditionTokenReady(dk, token.CheckForDataIngestToken(tokens))
+	controller.setConditionTokenReady(ctx, dk, token.CheckForDataIngestToken(tokens))
 
 	return dynatraceClient, nil
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	var componentErrors []error
 
 	log.Info("start reconciling ActiveGate")
@@ -482,6 +491,8 @@ func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient 
 }
 
 func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
+	log := logd.FromContext(ctx)
+
 	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",

@@ -1,7 +1,10 @@
 package dynakube
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -11,7 +14,7 @@ const (
 	TokenWithoutDataIngestConditionMessage = "Token ready, DataIngest token not provided"
 )
 
-func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
+func (controller *Controller) setConditionTokenError(ctx context.Context, dk *dynakube.DynaKube, err error) {
 	tokenErrorCondition := metav1.Condition{
 		Type:    dynakube.TokenConditionType,
 		Status:  metav1.ConditionFalse,
@@ -19,10 +22,10 @@ func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err 
 		Message: err.Error(),
 	}
 
-	controller.setAndLogCondition(dk, tokenErrorCondition)
+	controller.setAndLogCondition(ctx, dk, tokenErrorCondition)
 }
 
-func (controller *Controller) setConditionTokenReady(dk *dynakube.DynaKube, dataIngestTokenProvided bool) {
+func (controller *Controller) setConditionTokenReady(ctx context.Context, dk *dynakube.DynaKube, dataIngestTokenProvided bool) {
 	msg := TokenWithoutDataIngestConditionMessage
 	if dataIngestTokenProvided {
 		msg = TokenReadyConditionMessage
@@ -35,17 +38,18 @@ func (controller *Controller) setConditionTokenReady(dk *dynakube.DynaKube, data
 		Message: msg,
 	}
 
-	controller.setAndLogCondition(dk, tokenErrorCondition)
+	controller.setAndLogCondition(ctx, dk, tokenErrorCondition)
 }
 
 // TODO: Probably should be removed, as most of this is done inside meta.SetStatusCondition (except the logging) the removeDeprecatedConditionTypes already did its job, as it has been in since forever
-func (controller *Controller) setAndLogCondition(dk *dynakube.DynaKube, newCondition metav1.Condition) {
+func (controller *Controller) setAndLogCondition(ctx context.Context, dk *dynakube.DynaKube, newCondition metav1.Condition) {
+	log := logd.FromContext(ctx)
+
 	controller.removeDeprecatedConditionTypes(dk)
 	statusCondition := meta.FindStatusCondition(dk.Status.Conditions, newCondition.Type)
 
 	if newCondition.Reason != dynakube.ReasonTokenReady {
-		log.Info("problem with token detected",
-			"dynakube", dk.Name, "namespace", dk.Namespace,
+		log.Warn("problem with token detected",
 			"token", newCondition.Type,
 			"message", newCondition.Message)
 	}

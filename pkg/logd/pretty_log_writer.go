@@ -9,9 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const stacktraceKey = "stacktrace"
-const errorVerboseKey = "errorVerbose"
-
 func WithWriter(out io.Writer) func(prettifier *prettyLogWriter) {
 	return func(prettifier *prettyLogWriter) {
 		prettifier.out = out

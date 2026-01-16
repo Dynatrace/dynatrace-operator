@@ -25,7 +25,7 @@ type Reconciler struct {
 
 type ReconcilerBuilder func(dtc dynatrace.Client, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
 
-func NewReconciler(dtc dynatrace.Client, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler { //nolint
+func NewReconciler(dtc dynatrace.Client, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &Reconciler{
 		client:                  client,
 		apiReader:               apiReader,

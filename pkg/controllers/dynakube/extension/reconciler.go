@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/eec"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,11 +32,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 		apiReader:    apiReader,
 		dk:           dk,
 		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		secrets:      k8ssecret.Query(clt, apiReader, logd.Logger{}),
 	}
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	ctx, log := logd.NewFromContext(ctx, "extensions", "domain", "extensions")
+	r.secrets.Log = log
+
 	log.Info("start reconciling extensions")
 
 	err := r.reconcileSecret(ctx)

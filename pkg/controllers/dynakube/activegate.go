@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
@@ -23,6 +24,8 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dk *dynak
 }
 
 func (controller *Controller) setupAutomaticAPIMonitoring(ctx context.Context, dtc dynatrace.Client, dk *dynakube.DynaKube) {
+	log := logd.FromContext(ctx)
+
 	if dk.Status.KubeSystemUUID != "" &&
 		dk.FF().IsAutomaticK8sAPIMonitoring() &&
 		dk.ActiveGate().IsKubernetesMonitoringEnabled() {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/pkg/errors"
@@ -33,6 +34,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
+	ctx, log := logd.NewFromContext(ctx, "eec")
+
 	// TODO: Remove as part of DAQ-18375
 	meta.RemoveStatusCondition(r.dk.Conditions(), "ExtensionsControllerStatefulSet")
 

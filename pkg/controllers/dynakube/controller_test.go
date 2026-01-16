@@ -791,7 +791,7 @@ func TestTokenConditions(t *testing.T) {
 		}
 
 		controller := &Controller{}
-		controller.setAndLogCondition(dk, newCondition)
+		controller.setAndLogCondition(ctx, dk, newCondition)
 
 		assertCondition(t, dk, newCondition.Type, newCondition.Status, newCondition.Reason, newCondition.Message)
 	})

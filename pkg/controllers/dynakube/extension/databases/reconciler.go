@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/conditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +28,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	ctx, log := logd.NewFromContext(ctx, "sql-executor")
+
 	log.Debug("reconciling deployments")
 
 	query := k8sdeployment.Query(r.client, r.apiReader, log)
@@ -96,6 +99,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 // To work well with horizontal pod autoscalers, ensure that we use external changes to replicas and not overwrite it.
 func (r *Reconciler) getReplicas(ctx context.Context, name string, defaultReplicas *int32) (int32, error) {
+	log := logd.FromContext(ctx)
+
 	if defaultReplicas != nil {
 		return *defaultReplicas, nil
 	}

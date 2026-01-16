@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	stdLog "log"
 	"os"
 	"reflect"
 
@@ -41,6 +42,9 @@ func run(cmd *cobra.Command, args []string) error {
 	installconfig.ReadModules()
 	version.LogVersion()
 	logd.LogBaseLoggerSettings()
+
+	ctrl.SetLogger(log.WithName("controller-runtime").Logger)
+	stdLog.SetOutput(&log)
 
 	kubeCfg, err := config.GetConfig()
 	if err != nil {
