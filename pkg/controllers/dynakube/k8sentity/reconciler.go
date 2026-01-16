@@ -16,29 +16,23 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 )
 
 type Reconciler struct {
-	timeProvider *timeprovider.Provider
 }
 
 func NewReconciler() *Reconciler {
-	return &Reconciler{
-		timeProvider: timeprovider.New(),
-	}
+	return &Reconciler{}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dynatrace.Client, dk *dynakube.DynaKube) error {
 	log.Info("start reconciling Kubernetes Cluster MEID")
 
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
+	if dk.Status.DynatraceAPI.Throttled {
 		log.Info("Kubernetes Cluster MEID not outdated, skipping reconciliation")
 
 		return nil
 	}
-
-	k8sconditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is outdated in the status")
 
 	if !k8sconditions.IsOptionalScopeAvailable(dk, dynatrace.ConditionTypeAPITokenSettingsRead) {
 		msg := dynatrace.TokenScopeSettingsRead + " optional scope not available"

@@ -3,7 +3,6 @@ package oaconnectioninfo
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -163,8 +162,6 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetSecretCreated(dk.Conditions(), oaConnectionInfoConditionType, "testing")
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
-		rec := r.(*reconciler)
-		rec.timeProvider.Set(rec.timeProvider.Now().Add(time.Minute * 20))
 
 		err := r.Reconcile(ctx)
 		require.NoError(t, err)

@@ -17,7 +17,8 @@ import (
 )
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
-	if !k8sconditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
+	// TODO: This is BAAD, we should only "cache" the API call, and not the modifications done to it, as they can be changed independently (host group, proxy settings, ...)
+	if dk.Status.DynatraceAPI.Throttled {
 		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
 
 		sourceKey := client.ObjectKey{
@@ -41,8 +42,6 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	}
 
 	log.Debug("calling the Dynatrace API for ruxitagentproc content")
-
-	k8sconditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated, update in progress")
 
 	pmc, err := s.dtClient.GetProcessModuleConfig(ctx, 0)
 	if err != nil {

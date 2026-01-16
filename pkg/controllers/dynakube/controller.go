@@ -33,7 +33,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,7 +49,6 @@ import (
 
 const (
 	fastUpdateInterval    = 1 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
 
 	controllerName = "dynakube-controller"
 )
@@ -172,8 +170,9 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		k8sevent.SendCRDVersionMismatch(controller.eventRecorder, dk)
 	}
 
+	dk.ResetRequestPeriod()
+
 	oldStatus := *dk.Status.DeepCopy()
-	controller.requeueAfter = defaultUpdateInterval
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -223,6 +222,9 @@ func (controller *Controller) handleError(
 		dk.Status.SetPhase(controller.determineDynaKubePhase(ctx, dk))
 	}
 
+	dk.SetRequestPeriod()
+	controller.requeueAfter = dk.DefaultRequeueAfter()
+
 	isStatusDifferent, hashErr := hasher.IsDifferent(oldStatus, dk.Status)
 	if hashErr != nil {
 		reconcileErr = goerrors.Join(
@@ -251,7 +253,7 @@ func (controller *Controller) handleError(
 }
 
 func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Duration) {
-	if controller.requeueAfter > requeueAfter {
+	if controller.requeueAfter == 0 || controller.requeueAfter > requeueAfter {
 		controller.requeueAfter = requeueAfter
 	}
 }
@@ -486,10 +488,10 @@ func (controller *Controller) verifyTokens(ctx context.Context, dynatraceClient 
 }
 
 func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceClient dtclient.Client, dk *dynakube.DynaKube) error {
-	if !dk.IsTokenScopeVerificationAllowed(timeprovider.New()) {
+	if dk.Status.DynatraceAPI.Throttled {
 		log.Info(dynakube.GetCacheValidMessage(
 			"token verification",
-			dk.Status.DynatraceAPI.LastTokenScopeRequest,
+			dk.Status.DynatraceAPI.LastRequestPeriod,
 			dk.APIRequestThreshold()))
 
 		return lastErrorFromCondition(&dk.Status)
@@ -503,8 +505,6 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dynatraceCl
 	}
 
 	log.Info("token verified")
-
-	dk.Status.DynatraceAPI.LastTokenScopeRequest = metav1.Now()
 
 	controller.updateOptionalScopesConditions(&dk.Status, optionalScopes)
 

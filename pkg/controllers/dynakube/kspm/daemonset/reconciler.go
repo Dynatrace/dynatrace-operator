@@ -67,7 +67,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if updated {
-		k8sconditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, r.dk.KSPM().GetDaemonSetName()) // needed to reset the timestamp
 		k8sconditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, r.dk.KSPM().GetDaemonSetName())
 	}
 

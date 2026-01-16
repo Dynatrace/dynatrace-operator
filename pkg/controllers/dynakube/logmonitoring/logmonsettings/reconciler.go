@@ -9,7 +9,6 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -17,8 +16,6 @@ import (
 type reconciler struct {
 	dk  *dynakube.DynaKube
 	dtc dtclient.Client
-
-	timeProvider *timeprovider.Provider
 }
 
 type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
@@ -27,14 +24,13 @@ var _ ReconcilerBuilder = NewReconciler
 
 func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
-		dk:           dk,
-		dtc:          dtc,
-		timeProvider: timeprovider.New(),
+		dk:  dk,
+		dtc: dtc,
 	}
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
+	if r.dk.Status.DynatraceAPI.Throttled {
 		return nil
 	}
 

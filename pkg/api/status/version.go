@@ -17,6 +17,10 @@ const (
 
 type VersionStatus struct {
 	// Indicates when the last check for a new version was performed
+
+	// TODO: I am not riping this out, because that would effect previous versions as well AND EdgeConnect (perfect example of why sharing API structs is a bad idea).
+	// And I don't wish to deal with that right now.
+	// Also the days of this `VersionStatus` struct are hopefully numbered.
 	LastProbeTimestamp *metav1.Time `json:"lastProbeTimestamp,omitempty"`
 	// Source of the image (tenant-registry, public-registry, ...)
 	Source VersionSource `json:"source,omitempty"`

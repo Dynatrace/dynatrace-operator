@@ -32,13 +32,3 @@ func SetConfigMapGenFailed(conditions *[]metav1.Condition, conditionType string,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
-
-func SetConfigMapOutdated(conditions *[]metav1.Condition, conditionType, message string) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  ConfigMapOutdatedReason,
-		Message: message,
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}

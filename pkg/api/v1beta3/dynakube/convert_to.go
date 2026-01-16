@@ -228,9 +228,7 @@ func (src *DynaKube) toStatus(dst *dynakubelatest.DynaKube) {
 
 	dst.Status.Kspm.TokenSecretHash = src.Status.Kspm.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
-	dst.Status.DynatraceAPI = dynakubelatest.DynatraceAPIStatus{
-		LastTokenScopeRequest: src.Status.DynatraceAPI.LastTokenScopeRequest,
-	}
+	dst.Status.DynatraceAPI = dynakubelatest.DynatraceAPIStatus{}
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
 	dst.Status.KubernetesClusterMEID = src.Status.KubernetesClusterMEID

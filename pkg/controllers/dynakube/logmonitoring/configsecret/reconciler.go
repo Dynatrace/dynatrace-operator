@@ -80,13 +80,11 @@ func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 		return err
 	}
 
-	changed, err := r.secrets.CreateOrUpdate(ctx, newSecret)
+	_, err = r.secrets.CreateOrUpdate(ctx, newSecret)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(r.dk.Conditions(), LmcConditionType, err)
 
 		return err
-	} else if changed {
-		k8sconditions.SetSecretOutdated(r.dk.Conditions(), LmcConditionType, newSecret.Name) // needed so the timestamp updates, will never actually show up in the status
 	}
 
 	k8sconditions.SetSecretCreated(r.dk.Conditions(), LmcConditionType, newSecret.Name)

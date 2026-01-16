@@ -62,13 +62,11 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context) error {
 		return err
 	}
 
-	changed, err := query.CreateOrUpdate(ctx, newConfigMap)
+	_, err = query.CreateOrUpdate(ctx, newConfigMap)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 		return err
-	} else if changed {
-		k8sconditions.SetConfigMapOutdated(r.dk.Conditions(), conditionType, newConfigMap.Name) // needed so the timestamp updates, will never actually show up in the status
 	}
 
 	k8sconditions.SetConfigMapCreatedOrUpdated(r.dk.Conditions(), conditionType, newConfigMap.Name)

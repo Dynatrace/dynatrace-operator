@@ -59,16 +59,24 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
+	// TODO: this was misused, "Outdated" was only ever meant to reset the condition's timestamp
+	// which is in general just feels like an anti-pattern (we used it to use the condition's timestamp for throttling)
+	// The "lastTransitionTime" should only be updated when the status actually changes, so it can tell you how long was everything in a given state
+	// and the "state" is "is everything ok/expected" and not "is everything ok for this exact spec"
 	if r.dk.Status.ActiveGate.ConnectionInfo.TenantUUID == "" {
-		k8sconditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
+		err := errors.New("tenantUUID unknown, " + extensionControllerStatefulSetConditionType + " cannot be created")
 
-		return errors.New("tenantUUID unknown")
+		k8sconditions.SetStatefulSetGenFailed(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+
+		return err
 	}
 
 	if r.dk.Status.KubeSystemUUID == "" {
-		k8sconditions.SetStatefulSetOutdated(r.dk.Conditions(), extensionControllerStatefulSetConditionType, r.dk.Extensions().GetExecutionControllerStatefulsetName())
+		err := errors.New("kubeSystemUUID unknown, " + extensionControllerStatefulSetConditionType + " cannot be created")
 
-		return errors.New("kubeSystemUUID unknown")
+		k8sconditions.SetStatefulSetGenFailed(r.dk.Conditions(), extensionControllerStatefulSetConditionType, err)
+
+		return err
 	}
 
 	defer r.deleteLegacyStatefulset(ctx)

@@ -81,8 +81,6 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context) error {
 	if isSecretOutdated(secret) {
 		log.Info("activeGateAuthToken is outdated, creating new one")
 
-		k8sconditions.SetSecretOutdated(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, "secret is outdated, update in progress")
-
 		if err := r.deleteSecret(ctx, secret); err != nil {
 			return errors.WithStack(err)
 		}

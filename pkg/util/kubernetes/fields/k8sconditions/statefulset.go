@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	StatefulSetCreatedReason  = "StatefulSetCreated"
-	StatefulSetOutdatedReason = "StatefulSetOutdated"
+	StatefulSetCreatedReason   = "StatefulSetCreated"
+	StatefulSetGenFailedReason = "StatefulSetGenerationFailed"
 )
 
 func SetStatefulSetCreated(conditions *[]metav1.Condition, conditionType, name string) {
@@ -20,12 +20,12 @@ func SetStatefulSetCreated(conditions *[]metav1.Condition, conditionType, name s
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func SetStatefulSetOutdated(conditions *[]metav1.Condition, conditionType, name string) {
+func SetStatefulSetGenFailed(conditions *[]metav1.Condition, conditionType string, err error) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
-		Reason:  StatefulSetOutdatedReason,
-		Message: appendOutdatedSuffix(name),
+		Reason:  StatefulSetGenFailedReason,
+		Message: "Failed to generate statefulset: " + err.Error(),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

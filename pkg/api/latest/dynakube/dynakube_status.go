@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,20 +68,6 @@ type DynaKubeStatus struct { //nolint:revive
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type DynatraceAPIStatus struct {
-	// Time of the last token request
-	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
-}
-
-func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
-	remaining := timeout - time.Since(lastRequestTimestamp.Time)
-
-	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago, %d minutes remaining until next request",
-		functionName,
-		int(timeout.Minutes()),
-		int(remaining.Minutes()))
-}
-
 // SetPhase sets the status phase on the DynaKube object.
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
@@ -100,4 +87,62 @@ func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) erro
 	}
 
 	return errors.WithStack(err)
+}
+
+/* Looks like this live:
+dynatraceApi:
+  lastRequestPeriod: "2026-01-16T11:27:39Z"
+  prevConfig: 840bfa515181c7fb
+*/
+type DynatraceAPIStatus struct {
+	LastRequestPeriod metav1.Time `json:"lastRequestPeriod"`
+	PrevConfig        string      `json:"prevConfig"`
+	Throttled         bool        `json:"-"`
+}
+
+func (dk *DynaKube) DefaultRequeueAfter() time.Duration {
+	nextRequeue := dk.Status.DynatraceAPI.LastRequestPeriod.Add(dk.APIRequestThreshold()).Sub(metav1.Now().Time)
+
+	if nextRequeue <= 0 {
+		return time.Second
+	}
+
+	return nextRequeue
+}
+
+func (dk *DynaKube) ResetRequestPeriod() {
+	newConfigHash := dk.calcDTClientConfigHash()
+	if dk.Status.DynatraceAPI.LastRequestPeriod.IsZero() ||
+		time.Since(dk.Status.DynatraceAPI.LastRequestPeriod.Time) >= dk.APIRequestThreshold() ||
+		newConfigHash != dk.Status.DynatraceAPI.PrevConfig {
+		dk.Status.DynatraceAPI.Throttled = false
+		dk.Status.DynatraceAPI.PrevConfig = newConfigHash
+		// set it to zero, just in case we get an error and want to retry right away
+		dk.Status.DynatraceAPI.LastRequestPeriod = metav1.Time{}
+	} else {
+		dk.Status.DynatraceAPI.Throttled = true
+	}
+}
+
+func (dk *DynaKube) SetRequestPeriod() {
+	if !dk.Status.DynatraceAPI.Throttled {
+		dk.Status.DynatraceAPI.LastRequestPeriod = metav1.Now()
+	}
+}
+
+func (dk *DynaKube) calcDTClientConfigHash() string {
+	// TODO: Actually implement
+	// Don't put the Status in the hash calculation to avoid infinite loops (also it doesn't make sense)
+	hashedConfig, _ := hasher.GenerateSecureHash(dk.Spec)
+
+	return hashedConfig
+}
+
+func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
+	remaining := timeout - time.Since(lastRequestTimestamp.Time)
+
+	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago, %d minutes remaining until next request",
+		functionName,
+		int(timeout.Minutes()),
+		int(remaining.Minutes()))
 }

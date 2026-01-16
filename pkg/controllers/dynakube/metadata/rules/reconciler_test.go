@@ -83,9 +83,8 @@ func TestReconcile(t *testing.T) {
 		futureTime := timeprovider.New()
 		futureTime.Set(time.Now().Add(time.Hour))
 		reconciler := Reconciler{
-			dtc:          dtc,
-			dk:           &dk,
-			timeProvider: futureTime,
+			dtc: dtc,
+			dk:  &dk,
 		}
 
 		err := reconciler.Reconcile(ctx)

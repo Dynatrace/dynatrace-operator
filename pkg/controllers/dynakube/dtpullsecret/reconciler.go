@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -20,18 +19,16 @@ const (
 )
 
 type Reconciler struct {
-	dk           *dynakube.DynaKube
-	tokens       token.Tokens
-	timeprovider *timeprovider.Provider
-	secrets      k8ssecret.QueryObject
+	dk      *dynakube.DynaKube
+	tokens  token.Tokens
+	secrets k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
-		dk:           dk,
-		tokens:       tokens,
-		timeprovider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader, log),
+		dk:      dk,
+		tokens:  tokens,
+		secrets: k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -50,16 +47,12 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil
 	}
 
-	if k8sconditions.IsOutdated(r.timeprovider, r.dk, PullSecretConditionType) {
-		k8sconditions.SetSecretOutdated(r.dk.Conditions(), PullSecretConditionType,
-			extendWithPullSecretSuffix(r.dk.Name)+" is not present or outdated")
+	// no DT API request is made here
+	err := r.reconcilePullSecret(ctx)
+	if err != nil {
+		log.Info("could not reconcile pull secret")
 
-		err := r.reconcilePullSecret(ctx)
-		if err != nil {
-			log.Info("could not reconcile pull secret")
-
-			return errors.WithStack(err)
-		}
+		return errors.WithStack(err)
 	}
 
 	return nil
