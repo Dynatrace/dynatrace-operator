@@ -1,7 +1,6 @@
 package dynatrace
 
 import (
-	goerrors "errors"
 	"fmt"
 	"strings"
 
@@ -50,10 +49,4 @@ func hasServerErrorCode(err error, status int) bool {
 	ok := errors.As(err, &serverErr)
 
 	return ok && serverErr.Code == status
-}
-
-func IsNotFound(err error) bool {
-	var serverErr ServerError
-
-	return goerrors.As(err, &serverErr) && serverErr.Code == 404
 }

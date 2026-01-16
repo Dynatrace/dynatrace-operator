@@ -57,24 +57,6 @@ func (dtc *dynatraceClient) getHostsURL() string {
 	return dtc.url + "/v1/entity/infrastructure/hosts?relativeTime=30mins&includeDetails=false"
 }
 
-func (dtc *dynatraceClient) getSettingsURL(validate bool) string {
-	validationQuery := ""
-	if !validate {
-		validationQuery = "?validateOnly=false"
-	}
-
-	return fmt.Sprintf("%s/v2/settings/objects%s", dtc.url, validationQuery)
-}
-
-func (dtc *dynatraceClient) getEffectiveSettingsURL(validate bool) string {
-	validationQuery := ""
-	if !validate {
-		validationQuery = "?validateOnly=false"
-	}
-
-	return fmt.Sprintf("%s/v2/settings/effectiveValues%s", dtc.url, validationQuery)
-}
-
 func (dtc *dynatraceClient) getProcessModuleConfigURL() string {
 	return dtc.url + "/v1/deployment/installer/agent/processmoduleconfig?sections=general,agentType"
 }
