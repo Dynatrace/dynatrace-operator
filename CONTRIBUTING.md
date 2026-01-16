@@ -148,7 +148,7 @@ make prerequisites/mockery
 #### Adding a mock
 
 When adding a mock you have to add the mocked interface to .mockery.yaml.
-Take the following example of the builder package with the interfaces `Builder` and `Modifier`:
+Take the following example of the dynatraceclient package with the `Builder` interface:
 
 ```yaml
 quiet: False
@@ -159,13 +159,10 @@ filename: "{{.MockName}}.go"
 outpkg: mocks
 dir: "test/mocks{{.InterfaceDirRelative}}"
 packages:
-  github.com/Dynatrace/dynatrace-operator/pkg/util/builder:
-    config:
-      recursive: true
-     # all: true // or use all if mocks for all interfaces in a package/dir should be created
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
+    # all: true // or use all if mocks for all interfaces in a package/dir should be created
     interfaces:
       Builder:
-      Modifier:
 ```
 
 then run mockery by simple running
@@ -178,27 +175,24 @@ make go/gen_mocks
 
 To move our existing codebase to mockery you have to look out for these pitfalls:
 
-1. As a rule o thumb, use `mocks.NewXYZ(t)` function instead of `mocks.XYZ{}` struct when any expectation is defined (`On(..)`). It allows to easily detect cases when no expectations are need or new ones should be added.
+1. As a rule of thumb, use `mocks.NewXYZ(t)` function instead of `mocks.XYZ{}` struct when any expectation is defined (`On(..)`). It allows to easily detect cases when no expectations are needed or new ones should be added.
 
 2. Mocks require a reference parameter to `testingT`:
 
    ```go
    //...
-   b := GenericBuilder[mocks.Data]{}
-
-   modifierMock := mocks.NewModifier[mocks.Data](t) // <- t required here
+   builderMock := dtbuildermock.NewBuilder(t) // <- t required here
    //...
    ```
 
 3. Add call to `Maybe()` to return if it should be tested if the function is called at all:
 
     ```go
-    modifierMock.On("Modify", mock.Anything).Return(nil).Maybe()
-    modifierMock.On("Enabled").Return(false)
+    builderMock.On("Build", mock.Anything).Return(nil).Maybe()
 
-    actual, _ := b.AddModifier(modifierMock).Build()
-    modifierMock.AssertNotCalled(t, "Modify")
-    //modifierMock.AssertNumberOfCalls(t, "Modify", 0)
+    actual, _ := builderMock.Build()
+    builderMock.AssertCalled(t, "Build")
+    //builderMock.AssertNumberOfCalls(t, "Build", 1)
    ```
 
   > ❗ In the case of using multiple mock packages in the same test file, the standard package alias naming is `{struct}mock`, e.g. `clientmock`.

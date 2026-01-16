@@ -6,8 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/events"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler/injection"
@@ -33,17 +32,6 @@ func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNam
 	webhookPod, err := k8spod.Get(ctx, apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
 		return err
-	}
-
-	apmExists, err := oneagentapm.Exists(kubeConfig)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	if apmExists {
-		eventRecorder.SendOneAgentAPMWarningEvent(webhookPod)
-
-		return errors.New("OneAgentAPM object detected - the Dynatrace webhook will not inject until the deprecated OneAgent Operator has been fully uninstalled")
 	}
 
 	// the injected podMutator.client doesn't have permissions to Get(sth) from a different namespace
@@ -106,7 +94,7 @@ func newWebhook( //nolint:revive
 		isOpenShift:      isOpenshift,
 		webhookNamespace: webhookPod.Namespace,
 		webhookPodImage:  webhookPodImage,
-		deployedViaOLM:   kubesystem.IsDeployedViaOlm(webhookPod),
+		deployedViaOLM:   system.IsDeployedViaOlm(webhookPod),
 		decoder:          decoder,
 	}, nil
 }

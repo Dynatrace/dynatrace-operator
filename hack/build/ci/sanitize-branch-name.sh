@@ -3,8 +3,8 @@
 readonly BRANCH_NAME=${1}
 
 if [ -z "${BRANCH_NAME}" ]; then
-  echo "Usage: $0 <branch name>" >&2
-  exit 1
+  echo ""
+  exit 0
 fi
 
 echo "${BRANCH_NAME//[^a-zA-Z0-9_.-]/-}"

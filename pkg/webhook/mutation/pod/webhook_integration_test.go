@@ -21,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -32,6 +31,7 @@ import (
 	oneagentmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/exporter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
+	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -148,10 +148,8 @@ func TestWebhook(t *testing.T) {
 				MetadataEnrichment:    metadataEnrichmentStatus,
 				KubeSystemUUID:        testClusterUUID,
 				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-						ConnectionInfo: communication.ConnectionInfo{
-							TenantUUID: uuid.NewString(),
-						},
+					ConnectionInfo: communication.ConnectionInfo{
+						TenantUUID: uuid.NewString(),
 					},
 				},
 				CodeModules: oneagent.CodeModulesStatus{
@@ -221,10 +219,8 @@ func TestWebhook(t *testing.T) {
 				MetadataEnrichment:    metadataEnrichmentStatus,
 				KubeSystemUUID:        testClusterUUID,
 				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-						ConnectionInfo: communication.ConnectionInfo{
-							TenantUUID: uuid.NewString(),
-						},
+					ConnectionInfo: communication.ConnectionInfo{
+						TenantUUID: uuid.NewString(),
 					},
 				},
 				CodeModules: oneagent.CodeModulesStatus{
@@ -659,10 +655,8 @@ func TestOTLPWebhook(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-						ConnectionInfo: communication.ConnectionInfo{
-							TenantUUID: tenantUUID,
-						},
+					ConnectionInfo: communication.ConnectionInfo{
+						TenantUUID: tenantUUID,
 					},
 				},
 			},
@@ -752,10 +746,8 @@ func TestOTLPWebhook(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-						ConnectionInfo: communication.ConnectionInfo{
-							TenantUUID: tenantUUID,
-						},
+					ConnectionInfo: communication.ConnectionInfo{
+						TenantUUID: tenantUUID,
 					},
 				},
 			},

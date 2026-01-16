@@ -210,7 +210,7 @@ func AddAnnotations(source map[string]string, dk dynakube.DynaKube) map[string]s
 		annotation = maps.Clone(source)
 	}
 
-	annotation[TokenHashAnnotationKey] = dk.OneAgent().ConnectionInfoStatus.TenantTokenHash
+	annotation[TokenHashAnnotationKey] = dk.OneAgent().ConnectionInfo.TenantTokenHash
 
 	if dk.Spec.NetworkZone != "" {
 		annotation[NetworkZoneAnnotationKey] = dk.Spec.NetworkZone

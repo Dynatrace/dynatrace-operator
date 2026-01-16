@@ -9155,18 +9155,6 @@ spec:
                 properties:
                   connectionInfoStatus:
                     properties:
-                      communicationHosts:
-                        items:
-                          properties:
-                            host:
-                              type: string
-                            port:
-                              format: int32
-                              type: integer
-                            protocol:
-                              type: string
-                          type: object
-                        type: array
                       endpoints:
                         type: string
                       lastRequest:

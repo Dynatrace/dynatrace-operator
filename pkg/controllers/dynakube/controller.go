@@ -32,7 +32,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -56,7 +56,7 @@ const (
 )
 
 func Add(mgr manager.Manager, _ string) error {
-	kubeSysUID, err := kubesystem.GetUID(context.Background(), mgr.GetAPIReader())
+	kubeSysUID, err := system.GetUID(context.Background(), mgr.GetAPIReader())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -394,7 +394,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	err = logMonitoringReconciler.Reconcile(ctx)
 	if err != nil {
-		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 
 			return goerrors.Join(componentErrors...)
@@ -415,8 +415,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		dk,
 	).Reconcile(ctx)
 	if err != nil {
-		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
-			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
+			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 
@@ -440,8 +440,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	).
 		Reconcile(ctx)
 	if err != nil {
-		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) {
-			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
+		if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) {
+			// missing communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 

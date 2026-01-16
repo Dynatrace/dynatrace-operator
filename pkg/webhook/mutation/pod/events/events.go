@@ -52,10 +52,3 @@ func (er *EventRecorder) SendMissingDynaKubeEvent(namespaceName, dynakubeName st
 		missingDynakubeEvent,
 		template, namespaceName, dynakubeName)
 }
-
-func (er *EventRecorder) SendOneAgentAPMWarningEvent(webhookPod *corev1.Pod) {
-	er.recorder.Event(webhookPod,
-		corev1.EventTypeWarning,
-		IncompatibleCRDEvent,
-		"Unsupported OneAgentAPM CRD still present in cluster, please remove to proceed")
-}

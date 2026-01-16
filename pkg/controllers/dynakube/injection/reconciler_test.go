@@ -17,7 +17,7 @@ import (
 	versions "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -70,18 +70,6 @@ func TestReconciler(t *testing.T) {
 				TenantUUID:  testUUID,
 				TenantToken: testTenantToken,
 				Endpoints:   testCommunicationEndpoint,
-			},
-			CommunicationHosts: []dtclient.CommunicationHost{
-				{
-					Protocol: "https",
-					Host:     "tenant.dev.dynatracelabs.com",
-					Port:     443,
-				},
-				{
-					Protocol: "https",
-					Host:     "1.2.3.4",
-					Port:     443,
-				},
 			},
 		}
 		dk := &dynakube.DynaKube{
@@ -153,14 +141,14 @@ func TestReconciler(t *testing.T) {
 		assertSecretFound(t, clt, consts.OTLPExporterSecretName, testNamespace)
 		assertSecretNotFound(t, clt, consts.OTLPExporterSecretName, testNamespace2)
 
-		_, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		_, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
-		_, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		_, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
 
-		_, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		_, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
-		_, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		_, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
 	})
 	t.Run("remove injection", func(t *testing.T) {
@@ -212,26 +200,26 @@ func TestReconciler(t *testing.T) {
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), codeModulesInjectionConditionType))
 		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), otlpExporterConfigurationConditionType))
 
-		obj, err := istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		obj, err := istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
 		assert.Nil(t, obj)
-		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
 		assert.Nil(t, obj)
 
-		virtualService, err := istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		virtualService, err := istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
 		assert.Nil(t, virtualService)
 
 		istioClient.Owner.SetNamespace(testNamespace2)
-		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
 		assert.NotNil(t, obj)
-		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		obj, err = istioClient.GetServiceEntry(t.Context(), istio.BuildNameForIPServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
 		assert.NotNil(t, obj)
 
-		virtualService, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.OneAgentComponent))
+		virtualService, err = istioClient.GetVirtualService(t.Context(), istio.BuildNameForFQDNServiceEntry(dk.GetName(), istio.CodeModuleComponent))
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 	})
@@ -588,13 +576,13 @@ func clientEnrichmentInjection() client.Client {
 
 func setupIstioClientWithObjects(dk *dynakube.DynaKube) *istio.Client {
 	return newIstioTestingClient(fakeistio.NewSimpleClientset(
-		clientServiceEntry(istio.BuildNameForIPServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace),
-		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace),
-		clientServiceEntry(istio.BuildNameForIPServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace2),
-		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace2),
+		clientServiceEntry(istio.BuildNameForIPServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace),
+		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace),
+		clientServiceEntry(istio.BuildNameForIPServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace2),
+		clientServiceEntry(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace2),
 
-		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace),
-		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.OneAgentComponent), testNamespace2),
+		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace),
+		clientVirtualService(istio.BuildNameForFQDNServiceEntry(dk.Name, istio.CodeModuleComponent), testNamespace2),
 	), dk)
 }
 
