@@ -34,6 +34,8 @@ type dynatraceClient struct {
 	networkZone string
 
 	hostGroup string
+
+	config map[string]string
 }
 
 type tokenType int

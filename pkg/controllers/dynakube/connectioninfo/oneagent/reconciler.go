@@ -20,6 +20,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	apiName = "oneagent-connection-info"
+)
+
 type reconciler struct {
 	client       client.Client
 	dtc          dtclient.Client
@@ -55,6 +59,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		meta.RemoveStatusCondition(r.dk.Conditions(), oaConnectionInfoConditionType)
+		r.dk.Status.DynatraceAPI.RemoveRequest(apiName)
 		r.dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{}
 
 		return nil // clean-up shouldn't cause a failure
@@ -78,7 +83,6 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
-	const apiName = "oneagent-connection-info"
 	apiProps := map[string]string{
 		"networkZone": r.dk.Spec.NetworkZone,
 	}

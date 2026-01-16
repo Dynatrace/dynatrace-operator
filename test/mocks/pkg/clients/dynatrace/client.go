@@ -632,6 +632,52 @@ func (_c *Client_GetAgentViaInstallerURL_Call) RunAndReturn(run func(ctx context
 	return _c
 }
 
+// GetClientConfig provides a mock function for the type Client
+func (_mock *Client) GetClientConfig() map[string]string {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetClientConfig")
+	}
+
+	var r0 map[string]string
+	if returnFunc, ok := ret.Get(0).(func() map[string]string); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]string)
+		}
+	}
+	return r0
+}
+
+// Client_GetClientConfig_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetClientConfig'
+type Client_GetClientConfig_Call struct {
+	*mock.Call
+}
+
+// GetClientConfig is a helper method to define mock.On call
+func (_e *Client_Expecter) GetClientConfig() *Client_GetClientConfig_Call {
+	return &Client_GetClientConfig_Call{Call: _e.mock.On("GetClientConfig")}
+}
+
+func (_c *Client_GetClientConfig_Call) Run(run func()) *Client_GetClientConfig_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Client_GetClientConfig_Call) Return(stringToString map[string]string) *Client_GetClientConfig_Call {
+	_c.Call.Return(stringToString)
+	return _c
+}
+
+func (_c *Client_GetClientConfig_Call) RunAndReturn(run func() map[string]string) *Client_GetClientConfig_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetCommunicationHostForClient provides a mock function for the type Client
 func (_mock *Client) GetCommunicationHostForClient() (dynatrace.CommunicationHost, error) {
 	ret := _mock.Called()

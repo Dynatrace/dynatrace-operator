@@ -73,13 +73,15 @@ type DynatraceAPIStatus struct {
 	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
 
 	LastRequestPeriod metav1.Time                  `json:"lastRequestPeriod,omitempty"`
+	ClientConfig      map[string]string            `json:"clientConfig,omitempty"`
 	Requests          map[string]map[string]string `json:"requests,omitempty"`
 }
 
-func (api *DynatraceAPIStatus) StartNewPeriod(threshold time.Duration) {
-	if api.LastRequestPeriod.IsZero() || time.Since(api.LastRequestPeriod.Time) > threshold {
+func (api *DynatraceAPIStatus) StartNewPeriod(currentClientConfig map[string]string, threshold time.Duration) {
+	if !maps.Equal(api.ClientConfig, currentClientConfig) || api.LastRequestPeriod.IsZero() || time.Since(api.LastRequestPeriod.Time) > threshold {
 		api.LastRequestPeriod = metav1.Now()
 		api.Requests = make(map[string]map[string]string)
+		api.ClientConfig = currentClientConfig
 	}
 }
 
@@ -99,6 +101,10 @@ func (api *DynatraceAPIStatus) AddRequest(apiName string, props map[string]strin
 	}
 
 	api.Requests[apiName] = props
+}
+
+func (api *DynatraceAPIStatus) RemoveRequest(apiName string) {
+	delete(api.Requests, apiName)
 }
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {

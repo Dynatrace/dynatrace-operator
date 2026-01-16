@@ -174,8 +174,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	oldStatus := *dk.Status.DeepCopy()
 
-	dk.Status.DynatraceAPI.StartNewPeriod(dk.APIRequestThreshold())
-
 	err = controller.reconcileDynaKube(ctx, dk)
 	result, err := controller.handleError(ctx, dk, err, oldStatus)
 
@@ -359,6 +357,8 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 		return nil, err
 	}
+
+	dk.Status.DynatraceAPI.StartNewPeriod(dynatraceClient.GetClientConfig(), dk.APIRequestThreshold())
 
 	err = controller.verifyTokens(ctx, dynatraceClient, dk)
 	if err != nil {

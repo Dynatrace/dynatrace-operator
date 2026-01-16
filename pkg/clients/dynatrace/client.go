@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
 )
@@ -104,6 +105,9 @@ type Client interface {
 	// GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch.
 	// Returns the version as received from the server on success.
 	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)
+
+	// GetClientConfig returns the configurations of the client that is relevant for caching purposes.
+	GetClientConfig() map[string]string
 }
 
 const (
@@ -165,6 +169,11 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		return nil, errors.New("tokens are empty")
 	}
 
+	tokensHash, err := hasher.GenerateSecureHash(apiToken + paasToken)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to hash api token")
+	}
+
 	url = strings.TrimSuffix(url, "/")
 
 	dc := &dynatraceClient{
@@ -175,6 +184,10 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		httpClient: &http.Client{
 			Transport: http.DefaultTransport.(*http.Transport).Clone(),
 			Timeout:   15 * time.Minute,
+		},
+
+		config: map[string]string{
+			"tokens": tokensHash,
 		},
 	}
 
@@ -199,6 +212,8 @@ func SkipCertificateValidation(skip bool) Option {
 			}
 
 			t.TLSClientConfig.InsecureSkipVerify = true
+
+			c.config["skipCertValidation"] = "true"
 		}
 	}
 }
@@ -223,6 +238,9 @@ func Proxy(proxyURL string, noProxy string) Option {
 			NoProxy:    noProxy,
 		}
 		transport.Proxy = proxyWrapper(proxyConfig)
+
+		proxyHash, _ := hasher.GenerateSecureHash(proxyConfig)
+		dtclient.config["proxy"] = proxyHash
 	}
 }
 
@@ -251,17 +269,26 @@ func Certs(certs []byte) Option {
 		}
 
 		t.TLSClientConfig.RootCAs = rootCAs
+
+		certsHash, _ := hasher.GenerateSecureHash(certs)
+		c.config["certs"] = certsHash
 	}
 }
 
 func NetworkZone(networkZone string) Option {
 	return func(c *dynatraceClient) {
 		c.networkZone = networkZone
+		c.config["networkZone"] = networkZone
 	}
 }
 
 func HostGroup(hostGroup string) Option {
 	return func(c *dynatraceClient) {
 		c.hostGroup = hostGroup
+		c.config["hostGroup"] = hostGroup
 	}
+}
+
+func (cl dynatraceClient) GetClientConfig() map[string]string {
+	return cl.config
 }
