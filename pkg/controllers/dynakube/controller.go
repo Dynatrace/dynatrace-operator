@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
@@ -108,7 +109,7 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 type k8sEntityReconciler interface {
-	Reconcile(ctx context.Context, dtclient dtclient.Client, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error
 }
 
 // Controller reconciles a DynaKube object
@@ -364,7 +365,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient, dk); err != nil {
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
 		componentErrors = append(componentErrors, err)
 	}
 

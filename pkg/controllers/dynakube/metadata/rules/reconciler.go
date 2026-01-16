@@ -2,11 +2,12 @@ package rules
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -14,14 +15,14 @@ import (
 )
 
 type Reconciler struct {
-	dtc          dtclient.Client
+	dtc          settings.APIClient
 	dk           *dynakube.DynaKube
 	timeProvider *timeprovider.Provider
 }
 
-type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler
 
-func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &Reconciler{
 		dtc:          dtc,
 		dk:           dk,
@@ -67,17 +68,11 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) getEnrichmentRules(ctx context.Context) ([]metadataenrichment.Rule, error) {
-	rulesResponse, err := r.dtc.GetRulesSettings(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
+	rules, err := r.dtc.GetRules(ctx, r.dk.Status.KubeSystemUUID, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), conditionType, err)
 
-		return nil, errors.Join(err, errors.New("error trying to check if rules exist"))
-	}
-
-	var rules []metadataenrichment.Rule
-	// Shouldn't be necessary, because we only get a single item back from the API, but still, its more "complete" this way
-	for _, item := range rulesResponse.Items {
-		rules = append(rules, item.Value.Rules...)
+		return nil, fmt.Errorf("error trying to check if rules exist: %w", err)
 	}
 
 	return rules, nil

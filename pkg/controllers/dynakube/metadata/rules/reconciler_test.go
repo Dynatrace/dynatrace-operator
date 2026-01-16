@@ -12,7 +12,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -43,7 +43,7 @@ func TestReconcile(t *testing.T) {
 		dk.Status.MetadataEnrichment.Rules = createRules()
 		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, "TESTING")
 
-		dtc := dtclientmock.NewClient(t)
+		dtc := settingsmock.NewAPIClient(t)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -58,7 +58,7 @@ func TestReconcile(t *testing.T) {
 		specialMessage := "TESTING" // if the special message does not change == condition didn't update
 		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
 
-		dtc := dtclientmock.NewClient(t)
+		dtc := settingsmock.NewAPIClient(t)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -73,12 +73,12 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKube()
 		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 
-		expectedResponse := createRulesResponse()
+		expectedResponse := createRules()
 		specialMessage := "TESTING" // if the special message changes == condition updated
 		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		dtc := settingsmock.NewAPIClient(t)
+		dtc.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 
 		futureTime := timeprovider.New()
 		futureTime.Set(time.Now().Add(time.Hour))
@@ -101,10 +101,10 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKube()
 		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 
-		expectedResponse := createRulesResponse()
+		expectedResponse := createRules()
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		dtc := settingsmock.NewAPIClient(t)
+		dtc.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -125,10 +125,10 @@ func TestReconcile(t *testing.T) {
 			exp.OANodeImagePullKey: "true",
 		}
 
-		expectedResponse := createRulesResponse()
+		expectedResponse := createRules()
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		dtc := settingsmock.NewAPIClient(t)
+		dtc.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -144,8 +144,8 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKube()
 		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(dtclient.GetRulesSettingsResponse{}, errors.New("BOOM"))
+		dtc := settingsmock.NewAPIClient(t)
+		dtc.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, errors.New("BOOM"))
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -159,7 +159,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no update if optional scope missing", func(t *testing.T) {
 		dk := createDynaKube()
-		dtc := dtclientmock.NewClient(t)
+		dtc := settingsmock.NewAPIClient(t)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
@@ -185,18 +185,6 @@ func createDynaKube() dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			KubeSystemUUID: "kube-system-uuid",
-		},
-	}
-}
-
-func createRulesResponse() dtclient.GetRulesSettingsResponse {
-	return dtclient.GetRulesSettingsResponse{
-		Items: []dtclient.RuleItem{
-			{
-				Value: dtclient.RulesResponseValue{
-					Rules: createRules(),
-				},
-			},
 		},
 	}
 }

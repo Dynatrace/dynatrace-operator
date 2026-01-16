@@ -7,8 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -20,9 +21,9 @@ func TestReconcile(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
-			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 1}, nil)
+			Return(settings.GetSettingsResponse{TotalCount: 1}, nil)
 
 		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
 			LogMonitoring: &logmonitoring.Spec{},
@@ -39,9 +40,9 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
-			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 0}, nil)
+			Return(settings.GetSettingsResponse{TotalCount: 0}, nil)
 		mockClient.
 			On("CreateLogMonitoringSetting", mock.Anything, "meid", "", mock.Anything).
 			Return("test-object-id", nil)
@@ -61,7 +62,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 
 		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
 			LogMonitoring: &logmonitoring.Spec{},
@@ -77,7 +78,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -104,9 +105,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("error fetching log monitoring settings", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
-			Return(dtclient.GetLogMonSettingsResponse{}, errors.New("error when fetching settings"))
+			Return(settings.GetSettingsResponse{}, errors.New("error when fetching settings"))
 
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -127,7 +128,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("KubernetesClusterMEID is missing -> skip", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				KubernetesClusterMEID: "",
@@ -146,9 +147,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("log monitoring settings already exist", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
-			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 1}, nil)
+			Return(settings.GetSettingsResponse{TotalCount: 1}, nil)
 
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -168,9 +169,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("create log monitoring settings", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
-			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 0}, nil)
+			Return(settings.GetSettingsResponse{TotalCount: 0}, nil)
 		mockClient.On("CreateLogMonitoringSetting", mock.Anything, "meid", "cluster-name", mock.Anything).
 			Return("test-object-id", nil)
 
@@ -198,9 +199,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	})
 
 	t.Run("error creating log monitoring settings", func(t *testing.T) {
-		mockClient := dtclientmock.NewClient(t)
+		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
-			Return(dtclient.GetLogMonSettingsResponse{TotalCount: 0}, nil)
+			Return(settings.GetSettingsResponse{TotalCount: 0}, nil)
 		mockClient.On("CreateLogMonitoringSetting", mock.Anything, "meid", "cluster-name", mock.Anything).
 			Return("", errors.New("error when creating"))
 

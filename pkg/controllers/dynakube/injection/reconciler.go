@@ -63,7 +63,7 @@ func NewReconciler(
 		istioReconciler:           istioReconciler,
 		versionReconciler:         version.NewReconciler(apiReader, dynatraceClient, timeprovider.New().Freeze()),
 		connectionInfoReconciler:  oaconnectioninfo.NewReconciler(client, apiReader, dynatraceClient, dk),
-		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient, dk),
+		enrichmentRulesReconciler: rules.NewReconciler(dynatraceClient.AsV2().Settings, dk),
 	}
 }
 

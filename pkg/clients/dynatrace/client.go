@@ -101,6 +101,9 @@ type Client interface {
 	// GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch.
 	// Returns the version as received from the server on success.
 	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)
+
+	// AsV2 is a temporary adapter to gradually migrate to the v2 client.
+	AsV2() *V2Client
 }
 
 const (

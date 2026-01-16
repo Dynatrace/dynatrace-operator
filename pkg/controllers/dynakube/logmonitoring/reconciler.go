@@ -17,7 +17,6 @@ type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 	dk        *dynakube.DynaKube
-	dtc       dtclient.Client
 
 	configSecretReconciler           controllers.Reconciler
 	daemonsetReconciler              controllers.Reconciler
@@ -35,12 +34,11 @@ func NewReconciler(clt client.Client,
 		client:    clt,
 		apiReader: apiReader,
 		dk:        dk,
-		dtc:       dtc,
 
 		configSecretReconciler:           configsecret.NewReconciler(clt, apiReader, dk),
 		daemonsetReconciler:              daemonset.NewReconciler(clt, apiReader, dk),
 		oneAgentConnectionInfoReconciler: oaconnectioninfo.NewReconciler(clt, apiReader, dtc, dk),
-		logmonsettingsReconciler:         logmonsettings.NewReconciler(dtc, dk),
+		logmonsettingsReconciler:         logmonsettings.NewReconciler(dtc.AsV2().Settings, dk),
 	}
 }
 

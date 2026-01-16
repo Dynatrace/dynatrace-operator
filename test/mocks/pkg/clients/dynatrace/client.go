@@ -40,6 +40,52 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
+// AsV2 provides a mock function for the type Client
+func (_mock *Client) AsV2() *dynatrace.V2Client {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for AsV2")
+	}
+
+	var r0 *dynatrace.V2Client
+	if returnFunc, ok := ret.Get(0).(func() *dynatrace.V2Client); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dynatrace.V2Client)
+		}
+	}
+	return r0
+}
+
+// Client_AsV2_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AsV2'
+type Client_AsV2_Call struct {
+	*mock.Call
+}
+
+// AsV2 is a helper method to define mock.On call
+func (_e *Client_Expecter) AsV2() *Client_AsV2_Call {
+	return &Client_AsV2_Call{Call: _e.mock.On("AsV2")}
+}
+
+func (_c *Client_AsV2_Call) Run(run func()) *Client_AsV2_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *Client_AsV2_Call) Return(v2Client *dynatrace.V2Client) *Client_AsV2_Call {
+	_c.Call.Return(v2Client)
+	return _c
+}
+
+func (_c *Client_AsV2_Call) RunAndReturn(run func() *dynatrace.V2Client) *Client_AsV2_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateLogMonitoringSetting provides a mock function for the type Client
 func (_mock *Client) CreateLogMonitoringSetting(ctx context.Context, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error) {
 	ret := _mock.Called(ctx, scope, clusterName, ingestRuleMatchers)
