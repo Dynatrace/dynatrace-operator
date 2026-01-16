@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	handlermock "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mocks/handler"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +29,7 @@ func getTestSecurityContext() *corev1.SecurityContext {
 func TestCreateMutationRequestBase(t *testing.T) {
 	t.Run("should create a mutation request", func(t *testing.T) {
 		dk := getTestDynakube()
-		podWebhook := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t), getTestNamespace(), getTestPod(), dk)
+		podWebhook := createTestWebhook(t, NewMockHandler(t), NewMockHandler(t), getTestNamespace(), getTestPod(), dk)
 		mutationRequest, err := podWebhook.createMutationRequestBase(context.Background(), *createTestAdmissionRequest(getTestPod()))
 		require.NoError(t, err)
 		require.NotNil(t, mutationRequest)
@@ -46,7 +45,7 @@ func TestCreateMutationRequestBase(t *testing.T) {
 
 func TestGetPodFromRequest(t *testing.T) {
 	t.Run("should return the pod struct", func(t *testing.T) {
-		podWebhook := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t))
+		podWebhook := createTestWebhook(t, NewMockHandler(t), NewMockHandler(t))
 		expected := getTestPod()
 
 		pod, err := getPodFromRequest(*createTestAdmissionRequest(expected), podWebhook.decoder)
@@ -58,7 +57,7 @@ func TestGetPodFromRequest(t *testing.T) {
 func TestGetNamespaceFromRequest(t *testing.T) {
 	t.Run("should return the namespace struct", func(t *testing.T) {
 		expected := getTestNamespace()
-		podWebhook := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t), expected)
+		podWebhook := createTestWebhook(t, NewMockHandler(t), NewMockHandler(t), expected)
 
 		namespace, err := getNamespaceFromRequest(context.Background(), podWebhook.apiReader, *createTestAdmissionRequest(getTestPod()))
 		require.NoError(t, err)
@@ -78,7 +77,7 @@ func TestGetDynakubeName(t *testing.T) {
 func TestGetDynakube(t *testing.T) {
 	t.Run("should return the dynakube struct", func(t *testing.T) {
 		expected := getTestDynakube()
-		podWebhook := createTestWebhook(t, handlermock.NewHandler(t), handlermock.NewHandler(t), expected)
+		podWebhook := createTestWebhook(t, NewMockHandler(t), NewMockHandler(t), expected)
 
 		dynakube, err := podWebhook.getDynakube(context.Background(), testDynakubeName)
 		require.NoError(t, err)

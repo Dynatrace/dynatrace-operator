@@ -14,7 +14,10 @@ template-schema: '{{.Template}}.schema.json'
 packages:
   github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/remotecommand:
     config:
-      dir: "{{.InterfaceDir}}/../mocks/remotecommand"
+      dir: "{{.InterfaceDir}}/.."
+      pkgname: "supportarchive"
+      structname: "{{.Mock}}{{.InterfaceName}}"
+      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
     interfaces:
       Executor:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
@@ -25,15 +28,21 @@ packages:
       Client:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
     config:
-      dir: "{{.InterfaceDir}}/internal/capability/mocks/activegate"
+      dir: "{{.InterfaceDir}}/internal/capability"
+      pkgname: "capability"
+      structname: "{{.Mock}}{{.InterfaceName}}"
+      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
     interfaces:
       CapabilityReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
     interfaces:
       StatusUpdater:
-      Reconciler:
         config:
-          dir: "{{.InterfaceDir}}/mocks"
+          dir: "{{.InterfaceDir}}"
+          pkgname: "{{ .SrcPackageName }}"
+          structname: "{{.Mock}}{{.InterfaceName}}"
+          filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
     interfaces:
       Builder:
@@ -44,11 +53,16 @@ packages:
     interfaces:
       k8sEntityReconciler:
         config:
-          dir: "{{.InterfaceDir}}/mocks/k8sentityreconciler"
+          dir: "{{.InterfaceDir}}"
+          pkgname: "{{ .SrcPackageName }}"
+          filename: "mock_{{.InterfaceName | snakecase }}_test.go"
           structname: '{{ .InterfaceName | firstUpper }}'
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     config:
-      dir: "{{.InterfaceDir}}/../activegate/mocks/istio"
+      dir: "{{.InterfaceDir}}/../activegate"
+      pkgname: "activegate"
+      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+      structname: '{{.Mock}}{{ .InterfaceName | firstUpper }}'
     interfaces:
       Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
@@ -60,7 +74,10 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       recursive: true
-      dir: "pkg/controllers/dynakube/activegate/internal/statefulset/builder/mocks"
+      pkgname: "builder"
+      dir: "{{.InterfaceDir}}"
+      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+      structname: '{{.Mock}}{{ .InterfaceName | firstUpper }}'
     interfaces:
       Modifier:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator:
@@ -68,7 +85,10 @@ packages:
       Mutator:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler:
     config:
-      dir: "{{.InterfaceDir}}/../mocks/handler"
+      dir: "{{.InterfaceDir}}/.."
+      pkgname: "pod"
+      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+      structname: '{{.Mock}}{{ .InterfaceName | firstUpper }}'
     interfaces:
       Handler:
   k8s.io/client-go/kubernetes/typed/core/v1:

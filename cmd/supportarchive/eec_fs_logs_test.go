@@ -8,7 +8,6 @@ import (
 	"io"
 	"testing"
 
-	mocks "github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/mocks/remotecommand"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -64,7 +63,7 @@ func TestFsLog(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	rce := mocks.NewExecutor(t)
+	rce := NewMockExecutor(t)
 	stdErr := &bytes.Buffer{}
 
 	lsStdOut := &bytes.Buffer{}
