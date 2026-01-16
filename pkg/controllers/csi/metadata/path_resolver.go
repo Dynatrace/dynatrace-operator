@@ -79,7 +79,8 @@ func (pr PathResolver) AppMountForDK(dkName string) string {
 	return filepath.Join(pr.DynaKubeDir(dkName), dtcsi.SharedAppMountsDir)
 }
 
-// AppMountMappedDir replaces OverlayMappedDir, the directory where the overlay layers combine into
+// AppMountMappedDir replaces OverlayMappedDir, the directory where the overlay layers combine into.
+// It is only used for unmounting old mapped dir mounts.
 func (pr PathResolver) AppMountMappedDir(volumeID string) string {
 	return filepath.Join(pr.AppMountForID(volumeID), dtcsi.OverlayMappedDirPath)
 }
