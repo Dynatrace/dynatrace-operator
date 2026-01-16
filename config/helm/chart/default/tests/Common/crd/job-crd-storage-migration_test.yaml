@@ -1,0 +1,145 @@
+suite: test job for CRD cleanup
+templates:
+  - Common/crd/job-crd-storage-migration.yaml
+tests:
+  - it: should exist with default values
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: metadata.name
+          value: dynatrace-operator-crd-storage-migration
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: metadata.annotations
+      - equal:
+          path: spec.backoffLimit
+          value: 3
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: dynatrace-crd-storage-migration
+
+  - it: should have correct container configuration
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: crd-storage-migration
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: crd-storage-migration
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --namespace=NAMESPACE
+      - isNotEmpty:
+          path: spec.template.spec.containers[0].resources.requests
+      - isNotEmpty:
+          path: spec.template.spec.containers[0].resources.limits
+      - isNotEmpty:
+          path: spec.template.spec.containers[0].securityContext
+
+  - it: should have apparmor annotation when enabled
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+      operator:
+        apparmor: true
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+          value: runtime/default
+
+  - it: should not have apparmor annotation when disabled
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+      operator:
+        apparmor: false
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+
+  - it: should have custom pull secret when specified
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+      customPullSecret: my-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.imagePullSecrets
+          content:
+            name: my-secret
+
+  - it: should have node selector when specified
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+      operator:
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+
+  - it: should have tolerations when specified
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+      operator:
+        tolerations:
+          - key: "key1"
+            operator: "Equal"
+            value: "value1"
+            effect: "NoSchedule"
+    asserts:
+      - contains:
+          path: spec.template.spec.tolerations
+          content:
+            key: "key1"
+            operator: "Equal"
+            value: "value1"
+            effect: "NoSchedule"
+
+  - it: should have pod security context
+    set:
+      platform: kubernetes
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.securityContext
+
+  - it: should have node affinity
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+    asserts:
+      - isNotEmpty:
+          path: spec.template.spec.affinity
+
+  - it: should not render when crdStorageMigrationJob is false
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render when crdStorageMigrationJob is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 1
+

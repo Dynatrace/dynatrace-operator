@@ -56,7 +56,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
+		dk.Status.OneAgent.ConnectionInfo.TenantUUID = "test-tenant"
 		fakeClient := fake.NewClient(dk)
 
 		reconciler := &Reconciler{
@@ -133,7 +133,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		connectionInfoReconciler := controllermock.NewReconciler(t)
-		connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationHostsError).Once()
+		connectionInfoReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
 
 		fakeClient := fake.NewClient()
 		reconciler := &Reconciler{
@@ -145,7 +145,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		err := reconciler.Reconcile(ctx)
-		require.ErrorIs(t, err, oaconnectioninfo.NoOneAgentCommunicationHostsError)
+		require.ErrorIs(t, err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError)
 	})
 
 	t.Run("version reconcile fail => return immediately and bubble up error", func(t *testing.T) {
@@ -200,14 +200,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		Spec:       dkSpec,
 	}
 
-	dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
-	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{
-		{
-			Protocol: "http",
-			Host:     "dummyhost",
-			Port:     666,
-		},
-	}
+	dk.Status.OneAgent.ConnectionInfo.TenantUUID = "test-tenant"
 
 	fakeClient := fake.NewClient()
 	dtClient := dtclientmock.NewClient(t)
@@ -256,14 +249,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 			},
 		},
 	}
-	base.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "test-tenant"
-	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{
-		{
-			Protocol: "http",
-			Host:     "dummyhost",
-			Port:     666,
-		},
-	}
+	base.Status.OneAgent.ConnectionInfo.TenantUUID = "test-tenant"
 
 	c := fake.NewClient()
 	oldComponentVersion := "1.186.0.0-0"
@@ -724,18 +710,9 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	dk := newDynaKube()
 	dk.Status = dynakube.DynaKubeStatus{
 		OneAgent: oneagent.Status{
-			ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-				ConnectionInfo: communication.ConnectionInfo{
-					TenantUUID: testTenantUUID,
-					Endpoints:  testTenantEndpoints,
-				},
-				CommunicationHosts: []oneagent.CommunicationHostStatus{
-					{
-						Protocol: "http",
-						Host:     "dummyhost",
-						Port:     666,
-					},
-				},
+			ConnectionInfo: communication.ConnectionInfo{
+				TenantUUID: testTenantUUID,
+				Endpoints:  testTenantEndpoints,
 			},
 		},
 	}

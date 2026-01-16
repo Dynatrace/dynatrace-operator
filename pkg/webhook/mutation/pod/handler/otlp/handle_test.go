@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otlp/exporterconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/otlp/exporterconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	webhookmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"

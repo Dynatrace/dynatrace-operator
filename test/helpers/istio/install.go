@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
@@ -177,8 +176,8 @@ func istioClient(t *testing.T, restConfig *rest.Config) *istioclientset.Clientse
 	return client
 }
 
-func apiURLCommunicationHost(t *testing.T, dk dynakube.DynaKube) dtclient.CommunicationHost {
-	apiHost, err := dtclient.ParseEndpoint(dk.APIURL())
+func apiURLCommunicationHost(t *testing.T, dk dynakube.DynaKube) istio.CommunicationHost {
+	apiHost, err := istio.NewCommunicationHost(dk.APIURL())
 	require.NoError(t, err)
 
 	return apiHost

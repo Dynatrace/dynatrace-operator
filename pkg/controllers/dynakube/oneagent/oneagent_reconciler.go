@@ -99,8 +99,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	err = r.connectionInfoReconciler.Reconcile(ctx)
-	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationHostsError) { // This only informational
-		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
+	if errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) { // This only informational
+		log.Info("OneAgents are not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
 
 		if r.dk.Spec.NetworkZone != "" {
 			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", r.dk.Spec.NetworkZone, "dynakube", r.dk.Name)
@@ -228,12 +228,12 @@ func (r *Reconciler) deleteOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 func extractPublicData(dk *dynakube.DynaKube) map[string]string {
 	data := map[string]string{}
 
-	if dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
-		data[connectioninfo.TenantUUIDKey] = dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+	if dk.Status.OneAgent.ConnectionInfo.TenantUUID != "" {
+		data[connectioninfo.TenantUUIDKey] = dk.Status.OneAgent.ConnectionInfo.TenantUUID
 	}
 
-	if dk.Status.OneAgent.ConnectionInfoStatus.Endpoints != "" {
-		data[connectioninfo.CommunicationEndpointsKey] = dk.Status.OneAgent.ConnectionInfoStatus.Endpoints
+	if dk.Status.OneAgent.ConnectionInfo.Endpoints != "" {
+		data[connectioninfo.CommunicationEndpointsKey] = dk.Status.OneAgent.ConnectionInfo.Endpoints
 	}
 
 	return data

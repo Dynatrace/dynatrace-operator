@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,7 +45,7 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, client.WithWatch, *dyna
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: kubesystem.Namespace,
+				Name: system.Namespace,
 				UID:  testUID,
 			},
 		}).
@@ -245,7 +245,7 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: kubesystem.Namespace,
+				Name: system.Namespace,
 				UID:  testUID,
 			},
 		}).

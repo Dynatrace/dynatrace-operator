@@ -127,7 +127,7 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.0.4
+          version: v4.0.5
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -145,7 +145,7 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.0.4
+          version: v4.0.5
       - name: Run Linting
         id: helm-linting
         run: |
@@ -207,7 +207,7 @@ jobs:
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
           version: v3.17.3
-      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
       - name: Check deepcopy files are up-to-date
         id: deepcopy
         run: |
@@ -272,22 +272,6 @@ jobs:
       - name: Check markdown links
         run: make markdown/link-check
 
-  prepare:
-    name: Prepare properties
-    needs: [detect-changes]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-      - name: Prepare build parameters
-        id: prep
-        run: |
-          hack/build/ci/prepare-build-variables.sh
-    outputs:
-      labels: ${{ steps.prep.outputs.docker_image_labels }}
-      version: ${{ steps.prep.outputs.docker_image_tag }}
-
   build-push:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
@@ -314,7 +298,7 @@ jobs:
     name: Run preflight on ghcr.io without submitting results when merging to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: Release
-    needs: [build-push, prepare]
+    needs: [build-push]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -322,8 +306,7 @@ jobs:
       - name: Run preflight
         uses: ./.github/actions/preflight
         with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.IMAGE_REGISTRY }}
-          repository: ${{ env.IMAGE_NAME }}
+          platforms: ${{github.ref_protected && env.PLATFORMS || env.PR_PLATFORMS }}
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
           report-name: "preflight.json"
           should-submit: "false"

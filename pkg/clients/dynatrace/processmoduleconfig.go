@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
@@ -88,7 +88,7 @@ func (pmc *ProcessModuleConfig) removeProperty(index int) {
 	pmc.Properties = append(pmc.Properties[0:index], pmc.Properties[index+1:]...)
 }
 
-func (pmc *ProcessModuleConfig) AddConnectionInfo(oneAgentConnectionInfo oneagent.ConnectionInfoStatus, tenantToken string) *ProcessModuleConfig {
+func (pmc *ProcessModuleConfig) AddConnectionInfo(oneAgentConnectionInfo communication.ConnectionInfo, tenantToken string) *ProcessModuleConfig {
 	tenant := ProcessModuleProperty{
 		Section: generalSectionName,
 		Key:     "tenant",
@@ -236,7 +236,7 @@ func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) 
 	}
 
 	if len(resp.Properties) == 0 {
-		return nil, errors.New("no communication hosts available")
+		return nil, errors.New("no properties available")
 	}
 
 	return &resp, nil

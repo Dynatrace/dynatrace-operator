@@ -666,7 +666,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive
 		dk.Spec.APIURL = "http://my-cluster/api"
 		// Enable ActiveGate capability + TLS secret so HasCaCert() is true
 		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.MetricsIngestCapability.DisplayName}, TLSSecretName: "custom-tls-secret"}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = "dummy-uuid"
+		dk.Status.OneAgent.ConnectionInfo.TenantUUID = "dummy-uuid"
 
 		override := true
 		dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = &override

@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -49,7 +49,7 @@ func NewController(mgr manager.Manager) *Controller {
 		client:                 mgr.GetClient(),
 		apiReader:              mgr.GetAPIReader(),
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
-		runLocal:               kubesystem.IsRunLocally(),
+		runLocal:               system.IsRunLocally(),
 		podNamespace:           os.Getenv(k8senv.PodNamespace),
 		timeProvider:           timeprovider.New(),
 	}
@@ -60,7 +60,7 @@ func NewControllerFromClient(clt client.Client) *Controller {
 		client:                 clt,
 		apiReader:              clt,
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(clt),
-		runLocal:               kubesystem.IsRunLocally(),
+		runLocal:               system.IsRunLocally(),
 		podNamespace:           os.Getenv(k8senv.PodNamespace),
 		timeProvider:           timeprovider.New(),
 	}

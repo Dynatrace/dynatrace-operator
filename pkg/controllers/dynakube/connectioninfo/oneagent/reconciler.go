@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -41,7 +41,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dtc dtclient.Clie
 	}
 }
 
-var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
+var NoOneAgentCommunicationEndpointsError = errors.New("no communication endpoints for OneAgent are available")
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.OneAgent().IsAppInjectionNeeded() && !r.dk.OneAgent().IsDaemonsetRequired() && !r.dk.LogMonitoring().IsEnabled() {
@@ -55,7 +55,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		meta.RemoveStatusCondition(r.dk.Conditions(), oaConnectionInfoConditionType)
-		r.dk.Status.OneAgent.ConnectionInfoStatus = oneagent.ConnectionInfoStatus{}
+		r.dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{}
 
 		return nil // clean-up shouldn't cause a failure
 	}
@@ -111,14 +111,10 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 	log.Info("OneAgent connection info updated")
 
 	if len(connectionInfo.Endpoints) == 0 {
-		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
-	}
-
-	if len(connectionInfo.CommunicationHosts) == 0 {
-		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
+		log.Info("no received OneAgent connection info, tenant API requests not yet throttled", "tenant", connectionInfo.TenantUUID)
 		setEmptyCommunicationHostsCondition(r.dk.Conditions())
 
-		return NoOneAgentCommunicationHostsError
+		return NoOneAgentCommunicationEndpointsError
 	}
 
 	err = r.createTenantTokenSecret(ctx, r.dk.OneAgent().GetTenantSecret(), connectionInfo.ConnectionInfo)
@@ -126,31 +122,19 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return err
 	}
 
-	r.dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.TenantToken)
+	r.dk.Status.OneAgent.ConnectionInfo.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.TenantToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate TenantTokenHash")
 	}
 
-	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
+	log.Info("received OneAgent connection info", "communication endpoints", connectionInfo.Endpoints, "tenant", connectionInfo.TenantUUID)
 
 	return nil
 }
 
 func (r *reconciler) setDynakubeStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
-	r.dk.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dk.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
-	copyCommunicationHosts(&r.dk.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
-}
-
-func copyCommunicationHosts(dest *oneagent.ConnectionInfoStatus, src []dtclient.CommunicationHost) {
-	dest.CommunicationHosts = make([]oneagent.CommunicationHostStatus, 0, len(src))
-	for _, host := range src {
-		dest.CommunicationHosts = append(dest.CommunicationHosts, oneagent.CommunicationHostStatus{
-			Protocol: host.Protocol,
-			Host:     host.Host,
-			Port:     host.Port,
-		})
-	}
+	r.dk.Status.OneAgent.ConnectionInfo.TenantUUID = connectionInfo.TenantUUID
+	r.dk.Status.OneAgent.ConnectionInfo.Endpoints = connectionInfo.Endpoints
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
