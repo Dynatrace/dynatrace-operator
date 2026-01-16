@@ -777,7 +777,7 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
+		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
@@ -801,7 +801,7 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
+		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
@@ -825,7 +825,7 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
+		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
@@ -855,7 +855,7 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
+		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
@@ -884,7 +884,7 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
+		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
@@ -913,7 +913,7 @@ func TestAnnotations(t *testing.T) {
 				},
 			},
 		}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
+		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		expectedTemplateAnnotations := map[string]string{
 			webhook.AnnotationDynatraceInject: "false",
@@ -972,13 +972,6 @@ func TestDefaultArguments(t *testing.T) {
 			OneAgent: oneagent.Spec{
 				ClassicFullStack: &oneagent.HostInjectSpec{},
 			},
-		},
-	}
-	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []oneagent.CommunicationHostStatus{
-		{
-			Protocol: "http",
-			Host:     "dummyhost",
-			Port:     666,
 		},
 	}
 

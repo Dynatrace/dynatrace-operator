@@ -170,7 +170,7 @@ func (b *builder) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	templateAnnotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
 		webhook.AnnotationDynatraceInject: "false",
-		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash,
+		annotationTenantTokenHash:         dk.Status.OneAgent.ConnectionInfo.TenantTokenHash,
 		annotationEnableDaemonSetEviction: "false",
 	}
 

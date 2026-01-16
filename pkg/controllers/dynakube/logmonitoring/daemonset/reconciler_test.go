@@ -223,7 +223,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Annotations: customAnnotations,
 		}
-		dk.Status.OneAgent.ConnectionInfoStatus.TenantTokenHash = testTokenHash
+		dk.Status.OneAgent.ConnectionInfo.TenantTokenHash = testTokenHash
 
 		reconciler := NewReconciler(nil, fake.NewClient(), dk)
 		daemonset, err := reconciler.generateDaemonSet()
@@ -393,11 +393,9 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID:      "test-uuid",
-						TenantTokenHash: "somehash",
-					},
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID:      "test-uuid",
+					TenantTokenHash: "somehash",
 				},
 			},
 			KubernetesClusterMEID: "test-cluster-me-id",
