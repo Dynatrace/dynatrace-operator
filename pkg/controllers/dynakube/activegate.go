@@ -31,7 +31,7 @@ func (controller *Controller) setupAutomaticAPIMonitoring(ctx context.Context, d
 			clusterLabel = dk.Name
 		}
 
-		err := controller.apiMonitoringReconcilerBuilder(dtc, dk, clusterLabel).
+		err := controller.apiMonitoringReconcilerBuilder(dtc.AsV2().Settings, dk, clusterLabel).
 			Reconcile(ctx)
 		if err != nil {
 			log.Error(err, "could not create setting")

@@ -11,8 +11,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -31,11 +33,11 @@ var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 type testReconciler struct {
 	Reconciler
 
-	dtClient *dtclientmock.Client
+	dtClient *settingsmock.APIClient
 }
 
 func newTestReconciler(t *testing.T, dk *dynakube.DynaKube) *testReconciler {
-	dtClient := dtclientmock.NewClient(t)
+	dtClient := settingsmock.NewAPIClient(t)
 
 	return &testReconciler{
 		Reconciler: Reconciler{
@@ -47,8 +49,8 @@ func newTestReconciler(t *testing.T, dk *dynakube.DynaKube) *testReconciler {
 	}
 }
 
-func createMonitoredEntities() dtclient.K8sClusterME {
-	return dtclient.K8sClusterME{
+func createMonitoredEntities() settings.K8sClusterME {
+	return settings.K8sClusterME{
 		ID: "KUBERNETES_CLUSTER-119C75CCDA94799F", Name: "operator test entity 1",
 	}
 }
@@ -57,8 +59,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("create setting when no settings for the found monitored entities are existing", func(t *testing.T) {
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
-			Return(dtclient.GetSettingsResponse{}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
+			Return(settings.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, testMEID).
 			Return(testObjectID, nil).Once()
@@ -71,11 +73,11 @@ func TestReconcile(t *testing.T) {
 	t.Run("don't create setting when settings for the found monitored entities are existing", func(t *testing.T) {
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
-			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
+			Return(settings.GetSettingsResponse{TotalCount: 1}, nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
-			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.AppTransitionSchemaID).
+			Return(settings.GetSettingsResponse{TotalCount: 1}, nil).Once()
 
 		actual, err := r.createObjectIDIfNotExists(t.Context())
 		require.NoError(t, err)
@@ -103,11 +105,11 @@ func TestReconcile(t *testing.T) {
 	t.Run("app-transition schema not found", func(t *testing.T) {
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
-			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
+			Return(settings.GetSettingsResponse{TotalCount: 1}, nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
-			Return(dtclient.GetSettingsResponse{}, dtclient.ServerError{Code: 404}).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.AppTransitionSchemaID).
+			Return(settings.GetSettingsResponse{}, &core.HTTPError{StatusCode: 404}).Once()
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -118,8 +120,8 @@ func TestReconcile(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = ""
 		r := newTestReconciler(t, dk)
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{}, dtclient.KubernetesSettingsSchemaID).
-			Return(dtclient.GetSettingsResponse{}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.KubernetesSettingsSchemaID).
+			Return(settings.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, "").
 			Return(testObjectID, nil).Once()
@@ -147,8 +149,8 @@ func TestReconcileErrors(t *testing.T) {
 
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
-			Return(dtclient.GetSettingsResponse{}, expectErr).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
+			Return(settings.GetSettingsResponse{}, expectErr).Once()
 
 		actual, err := r.createObjectIDIfNotExists(t.Context())
 
@@ -161,8 +163,8 @@ func TestReconcileErrors(t *testing.T) {
 
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
-			Return(dtclient.GetSettingsResponse{}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
+			Return(settings.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, testMEID).
 			Return("", expectErr).Once()
@@ -178,11 +180,11 @@ func TestReconcileErrors(t *testing.T) {
 
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.KubernetesSettingsSchemaID).
-			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
+			Return(settings.GetSettingsResponse{TotalCount: 1}, nil).Once()
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{ID: testMEID}, dtclient.AppTransitionSchemaID).
-			Return(dtclient.GetSettingsResponse{}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.AppTransitionSchemaID).
+			Return(settings.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, testMEID).
 			Return("", expectErr).Once()
@@ -198,10 +200,10 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 	t.Run("don't create app setting due to empty MonitoredEntitys", func(t *testing.T) {
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{}, dtclient.AppTransitionSchemaID).
-			Return(dtclient.GetSettingsResponse{}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.AppTransitionSchemaID).
+			Return(settings.GetSettingsResponse{}, nil).Once()
 
-		err := r.handleKubernetesAppEnabled(t.Context(), dtclient.K8sClusterME{})
+		err := r.handleKubernetesAppEnabled(t.Context(), settings.K8sClusterME{})
 		require.NoError(t, err)
 	})
 
@@ -209,8 +211,8 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		entity := createMonitoredEntities()
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, entity, dtclient.AppTransitionSchemaID).
-			Return(dtclient.GetSettingsResponse{TotalCount: 1}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, entity, settings.AppTransitionSchemaID).
+			Return(settings.GetSettingsResponse{TotalCount: 1}, nil).Once()
 
 		err := r.handleKubernetesAppEnabled(t.Context(), entity)
 		require.NoError(t, err)
@@ -221,10 +223,10 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, dtclient.K8sClusterME{}, dtclient.AppTransitionSchemaID).
-			Return(dtclient.GetSettingsResponse{}, expectErr).Once()
+			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.AppTransitionSchemaID).
+			Return(settings.GetSettingsResponse{}, expectErr).Once()
 
-		err := r.handleKubernetesAppEnabled(t.Context(), dtclient.K8sClusterME{})
+		err := r.handleKubernetesAppEnabled(t.Context(), settings.K8sClusterME{})
 		require.ErrorIs(t, err, expectErr)
 	})
 
@@ -234,8 +236,8 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		entity := createMonitoredEntities()
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, entity, dtclient.AppTransitionSchemaID).
-			Return(dtclient.GetSettingsResponse{}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, entity, settings.AppTransitionSchemaID).
+			Return(settings.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, entity.ID).
 			Return("", expectErr).Once()
@@ -248,8 +250,8 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		entity := createMonitoredEntities()
 		r := newTestReconciler(t, newDynaKube())
 		r.dtClient.EXPECT().
-			GetSettingsForMonitoredEntity(anyCtx, entity, dtclient.AppTransitionSchemaID).
-			Return(dtclient.GetSettingsResponse{}, nil).Once()
+			GetSettingsForMonitoredEntity(anyCtx, entity, settings.AppTransitionSchemaID).
+			Return(settings.GetSettingsResponse{}, nil).Once()
 		r.dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, entity.ID).
 			Return("test", nil).Once()

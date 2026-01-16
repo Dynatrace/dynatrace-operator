@@ -7,6 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
@@ -15,14 +17,14 @@ import (
 var errMissingKubeSystemUUID = goerrors.New("no kube-system namespace UUID given")
 
 type Reconciler struct {
-	dtc          dtclient.Client
+	dtc          settings.APIClient
 	dk           *dynakube.DynaKube
 	clusterLabel string
 }
 
-type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler
+type ReconcilerBuilder func(dtc settings.APIClient, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler
 
-func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler {
+func NewReconciler(dtc settings.APIClient, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler {
 	return &Reconciler{
 		dtc:          dtc,
 		dk:           dk,
@@ -62,16 +64,16 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 		return "", errMissingKubeSystemUUID
 	}
 
-	var k8sEntity dtclient.K8sClusterME
+	var k8sEntity settings.K8sClusterME
 
 	if r.dk.Status.KubernetesClusterMEID != "" {
-		k8sEntity = dtclient.K8sClusterME{
+		k8sEntity = settings.K8sClusterME{
 			ID: r.dk.Status.KubernetesClusterMEID,
 		}
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.KubernetesSettingsSchemaID)
+	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.KubernetesSettingsSchemaID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -92,16 +94,16 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context) (string, err
 	return objectID, nil
 }
 
-func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity dtclient.K8sClusterME) error {
+func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity settings.K8sClusterME) error {
 	if r.dk.FF().IsK8sAppEnabled() {
-		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, dtclient.AppTransitionSchemaID)
+		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.AppTransitionSchemaID)
 		if err != nil {
-			if !dtclient.IsNotFound(err) {
+			if !core.IsNotFound(err) {
 				return errors.WithMessage(err, "error trying to check if app setting exists")
 			}
 
 			if shouldLogMissingAppTransitionSchema(k8sEntity.ID) {
-				log.Info("skipping app-transition creation due to missing schema", "meID", k8sEntity.ID, "schemaID", dtclient.AppTransitionSchemaID)
+				log.Info("skipping app-transition creation due to missing schema", "meID", k8sEntity.ID, "schemaID", settings.AppTransitionSchemaID)
 			}
 
 			return nil

@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	ag "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
@@ -386,6 +387,7 @@ func TestReconcileComponents(t *testing.T) {
 			k8sEntityReconciler:            mockK8sEntityReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
+		mockedDtc.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}}).Once()
 
 		var err error
 		expectReconcileError(t, mockOneAgentReconciler, &err)
@@ -395,7 +397,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockExtensionReconciler, &err)
 		expectReconcileError(t, mockOtelcReconciler, &err)
 		expectReconcileError(t, mockKSPMReconciler, &err, dk)
-		expectReconcileError(t, mockK8sEntityReconciler, &err, mockedDtc, dk)
+		expectReconcileError(t, mockK8sEntityReconciler, &err, &settings.Client{}, dk)
 
 		err = controller.reconcileComponents(ctx, mockedDtc, nil, dk)
 		require.Error(t, err)
@@ -423,12 +425,13 @@ func TestReconcileComponents(t *testing.T) {
 			k8sEntityReconciler:            k8sEntityReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
+		mockedDtc.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}}).Once()
 
 		var err error
 		expectReconcileError(t, mockActiveGateReconciler, &err)
 		expectReconcileError(t, mockExtensionReconciler, &err)
 		expectReconcileError(t, mockOtelcReconciler, &err)
-		expectReconcileError(t, k8sEntityReconciler, &err, mockedDtc, dk)
+		expectReconcileError(t, k8sEntityReconciler, &err, &settings.Client{}, dk)
 
 		err = controller.reconcileComponents(ctx, mockedDtc, nil, dk)
 		require.Error(t, err)
@@ -453,6 +456,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		dtclient.TokenScopeInstallerDownload,
 		dtclient.TokenScopeActiveGateTokenCreate,
 	}, nil)
+	mockClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}})
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDynatraceClientBuild(mockDtcBuilder, mockClient)
@@ -486,8 +490,10 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockKSPMReconciler := newMockdynakubeReconciler(t)
 	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
+	mockClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}})
+
 	mockK8sEntityReconciler := newMockk8sEntityReconciler(t)
-	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, mockClient, mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })).Return(nil)
+	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, &settings.Client{}, anyDynaKube).Return(nil)
 
 	fakeIstio := fakeistio.NewSimpleClientset()
 
@@ -590,7 +596,7 @@ func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injecti
 }
 
 func createAPIMonitoringReconcilerBuilder(reconciler controllers.Reconciler) apimonitoring.ReconcilerBuilder {
-	return func(_ dtclient.Client, _ *dynakube.DynaKube, _ string) controllers.Reconciler {
+	return func(_ settings.APIClient, _ *dynakube.DynaKube, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }

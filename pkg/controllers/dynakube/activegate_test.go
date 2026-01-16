@@ -8,6 +8,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,7 +96,9 @@ func TestReconcileActiveGate(t *testing.T) {
 			apiMonitoringReconcilerBuilder: createAPIMonitoringReconcilerBuilder(mockAPIMonitoringReconciler),
 		}
 
-		err := controller.reconcileActiveGate(t.Context(), dk, nil, nil)
+		mockClient := dtclientmock.NewClient(t)
+
+		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
 		require.NoError(t, err)
 	})
 	t.Run("reconcile automatic kubernetes api monitoring", func(t *testing.T) {
@@ -129,7 +134,10 @@ func TestReconcileActiveGate(t *testing.T) {
 			apiMonitoringReconcilerBuilder: createAPIMonitoringReconcilerBuilder(mockAPIMonitoringReconciler),
 		}
 
-		err := controller.reconcileActiveGate(t.Context(), dk, nil, nil)
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}})
+
+		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
 		require.NoError(t, err)
 	})
 	t.Run("reconcile automatic kubernetes api monitoring with custom cluster name", func(t *testing.T) {
@@ -168,7 +176,10 @@ func TestReconcileActiveGate(t *testing.T) {
 			apiMonitoringReconcilerBuilder: createAPIMonitoringReconcilerBuilder(mockAPIMonitoringReconciler),
 		}
 
-		err := controller.reconcileActiveGate(t.Context(), dk, nil, nil)
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}})
+
+		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
 		require.NoError(t, err)
 	})
 }

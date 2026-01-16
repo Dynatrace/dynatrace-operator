@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -40,7 +40,7 @@ func (_m *mockk8sEntityReconciler) EXPECT() *mockk8sEntityReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockk8sEntityReconciler
-func (_mock *mockk8sEntityReconciler) Reconcile(ctx context.Context, dtclient dynatrace.Client, dk *dynakube.DynaKube) error {
+func (_mock *mockk8sEntityReconciler) Reconcile(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error {
 	ret := _mock.Called(ctx, dtclient, dk)
 
 	if len(ret) == 0 {
@@ -48,7 +48,7 @@ func (_mock *mockk8sEntityReconciler) Reconcile(ctx context.Context, dtclient dy
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, dynatrace.Client, *dynakube.DynaKube) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.APIClient, *dynakube.DynaKube) error); ok {
 		r0 = returnFunc(ctx, dtclient, dk)
 	} else {
 		r0 = ret.Error(0)
@@ -63,21 +63,21 @@ type mockk8sEntityReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtclient dynatrace.Client
+//   - dtclient settings.APIClient
 //   - dk *dynakube.DynaKube
 func (_e *mockk8sEntityReconciler_Expecter) Reconcile(ctx interface{}, dtclient interface{}, dk interface{}) *mockk8sEntityReconciler_Reconcile_Call {
 	return &mockk8sEntityReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtclient, dk)}
 }
 
-func (_c *mockk8sEntityReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtclient dynatrace.Client, dk *dynakube.DynaKube)) *mockk8sEntityReconciler_Reconcile_Call {
+func (_c *mockk8sEntityReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube)) *mockk8sEntityReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 dynatrace.Client
+		var arg1 settings.APIClient
 		if args[1] != nil {
-			arg1 = args[1].(dynatrace.Client)
+			arg1 = args[1].(settings.APIClient)
 		}
 		var arg2 *dynakube.DynaKube
 		if args[2] != nil {
@@ -97,7 +97,7 @@ func (_c *mockk8sEntityReconciler_Reconcile_Call) Return(err error) *mockk8sEnti
 	return _c
 }
 
-func (_c *mockk8sEntityReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtclient dynatrace.Client, dk *dynakube.DynaKube) error) *mockk8sEntityReconciler_Reconcile_Call {
+func (_c *mockk8sEntityReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error) *mockk8sEntityReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

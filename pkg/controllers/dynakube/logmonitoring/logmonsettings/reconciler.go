@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -16,16 +17,16 @@ import (
 
 type reconciler struct {
 	dk  *dynakube.DynaKube
-	dtc dtclient.Client
+	dtc settings.APIClient
 
 	timeProvider *timeprovider.Provider
 }
 
-type ReconcilerBuilder func(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler
 
 var _ ReconcilerBuilder = NewReconciler
 
-func NewReconciler(dtc dtclient.Client, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
 	return &reconciler{
 		dk:           dk,
 		dtc:          dtc,

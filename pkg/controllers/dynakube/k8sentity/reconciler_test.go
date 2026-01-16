@@ -7,8 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,7 @@ var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestReconcile(t *testing.T) {
 	t.Run("no error + no run if no scope in status", func(t *testing.T) {
-		clt := dtclientmock.NewClient(t)
+		clt := settingsmock.NewAPIClient(t)
 		dk := createDynaKube()
 		dk.Status.Conditions = []metav1.Condition{}
 
@@ -39,10 +40,10 @@ func TestReconcile(t *testing.T) {
 		assert.Contains(t, condition.Message, dtclient.TokenScopeSettingsRead)
 	})
 	t.Run("no error if has valid kube system uuid", func(t *testing.T) {
-		clt := dtclientmock.NewClient(t)
+		clt := settingsmock.NewAPIClient(t)
 		clt.EXPECT().
 			GetK8sClusterME(anyCtx, "kube-system-uuid").
-			Return(dtclient.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil).Once()
+			Return(settings.K8sClusterME{ID: "KUBERNETES_CLUSTER-0E30FE4BF2007587", Name: "operator test entity 1"}, nil).Once()
 
 		dk := createDynaKube()
 
@@ -54,8 +55,8 @@ func TestReconcile(t *testing.T) {
 		require.NotEmpty(t, dk.Status.KubernetesClusterMEID)
 	})
 	t.Run("no error if no MEs are found", func(t *testing.T) {
-		clt := dtclientmock.NewClient(t)
-		clt.EXPECT().GetK8sClusterME(anyCtx, "kube-system-uuid").Return(dtclient.K8sClusterME{}, nil)
+		clt := settingsmock.NewAPIClient(t)
+		clt.EXPECT().GetK8sClusterME(anyCtx, "kube-system-uuid").Return(settings.K8sClusterME{}, nil)
 
 		dk := createDynaKube()
 
