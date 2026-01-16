@@ -48,9 +48,10 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry:
     interfaces:
       ImageGetter:
-  github.com/Dynatrace/dynatrace-operator/pkg/util/builder:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       recursive: true
+      dir: "pkg/controllers/dynakube/activegate/internal/statefulset/builder/mocks"
     interfaces:
       Modifier:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator:

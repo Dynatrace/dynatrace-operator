@@ -3,26 +3,26 @@ package builder
 import (
 	"testing"
 
-	buildermock "github.com/Dynatrace/dynatrace-operator/pkg/util/builder/mocks"
-	modifiermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/util/builder"
+	modifiermock "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 func TestBuilder(t *testing.T) {
 	t.Run("Simple, no modifiers", func(t *testing.T) {
-		b := GenericBuilder[buildermock.DataMock]{}
+		b := Builder{}
 		actual, err := b.Build()
 		require.NoError(t, err)
 
-		expected := buildermock.DataMock{}
+		expected := appsv1.StatefulSet{}
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("One modifier", func(t *testing.T) {
-		b := GenericBuilder[buildermock.DataMock]{}
+		b := Builder{}
 
-		modifierMock := modifiermock.NewModifier[buildermock.DataMock](t)
+		modifierMock := modifiermock.NewModifier(t)
 		modifierMock.On("Modify", mock.Anything).Return(nil)
 		modifierMock.On("Enabled").Return(true)
 
@@ -31,13 +31,13 @@ func TestBuilder(t *testing.T) {
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 1)
 
-		expected := buildermock.DataMock{}
-		assert.Equal(t, expected, actual)
+		expected := appsv1.StatefulSet{}
+		require.Equal(t, expected, actual)
 	})
 	t.Run("One modifier, not enabled", func(t *testing.T) {
-		b := GenericBuilder[buildermock.DataMock]{}
+		b := Builder{}
 
-		modifierMock := modifiermock.NewModifier[buildermock.DataMock](t)
+		modifierMock := modifiermock.NewModifier(t)
 		modifierMock.On("Modify", mock.Anything).Return(nil).Maybe()
 		modifierMock.On("Enabled").Return(false)
 
@@ -46,17 +46,17 @@ func TestBuilder(t *testing.T) {
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 0)
 
-		expected := buildermock.DataMock{}
-		assert.Equal(t, expected, actual)
+		expected := appsv1.StatefulSet{}
+		require.Equal(t, expected, actual)
 	})
 	t.Run("Two modifiers, one used twice", func(t *testing.T) {
-		b := GenericBuilder[buildermock.DataMock]{}
+		b := Builder{}
 
-		modifierMock0 := modifiermock.NewModifier[buildermock.DataMock](t)
+		modifierMock0 := modifiermock.NewModifier(t)
 		modifierMock0.On("Modify", mock.Anything).Return(nil)
 		modifierMock0.On("Enabled").Return(true)
 
-		modifierMock1 := modifiermock.NewModifier[buildermock.DataMock](t)
+		modifierMock1 := modifiermock.NewModifier(t)
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 		modifierMock1.On("Enabled").Return(true)
 
@@ -66,17 +66,17 @@ func TestBuilder(t *testing.T) {
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
 
-		expected := buildermock.DataMock{}
-		assert.Equal(t, expected, actual)
+		expected := appsv1.StatefulSet{}
+		require.Equal(t, expected, actual)
 	})
 	t.Run("Chain of modifiers", func(t *testing.T) {
-		b := GenericBuilder[buildermock.DataMock]{}
+		b := Builder{}
 
-		modifierMock0 := modifiermock.NewModifier[buildermock.DataMock](t)
+		modifierMock0 := modifiermock.NewModifier(t)
 		modifierMock0.On("Modify", mock.Anything).Return(nil)
 		modifierMock0.On("Enabled").Return(true)
 
-		modifierMock1 := modifiermock.NewModifier[buildermock.DataMock](t)
+		modifierMock1 := modifiermock.NewModifier(t)
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 		modifierMock1.On("Enabled").Return(true)
 
@@ -86,7 +86,7 @@ func TestBuilder(t *testing.T) {
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
 
-		expected := buildermock.DataMock{}
-		assert.Equal(t, expected, actual)
+		expected := appsv1.StatefulSet{}
+		require.Equal(t, expected, actual)
 	})
 }

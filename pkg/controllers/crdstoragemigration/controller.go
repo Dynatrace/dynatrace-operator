@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/eventfilter"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
