@@ -27,3 +27,24 @@ func TestGetControllerAddFuncs(t *testing.T) {
 		assert.Len(t, funcs, 2) // dk, ec
 	})
 }
+
+func TestShouldRunCRDStorageMigrationInInitManager(t *testing.T) {
+	t.Run("should run if not set", func(t *testing.T) {
+		assert.True(t, shouldRunCRDStorageMigrationInitManager())
+	})
+
+	t.Run("should run if set to true", func(t *testing.T) {
+		t.Setenv("DT_CRD_STORAGE_MIGRATION", "true")
+		assert.True(t, shouldRunCRDStorageMigrationInitManager())
+	})
+
+	t.Run("should run if set to something random", func(t *testing.T) {
+		t.Setenv("DT_CRD_STORAGE_MIGRATION", "job")
+		assert.True(t, shouldRunCRDStorageMigrationInitManager())
+	})
+
+	t.Run("should not run if set to false", func(t *testing.T) {
+		t.Setenv("DT_CRD_STORAGE_MIGRATION", "false")
+		assert.False(t, shouldRunCRDStorageMigrationInitManager())
+	})
+}

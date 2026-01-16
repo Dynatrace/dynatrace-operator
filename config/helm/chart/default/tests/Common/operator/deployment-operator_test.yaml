@@ -88,6 +88,8 @@ tests:
                         fieldPath: metadata.name
                   - name: DT_HOST_AVAILABILITY_DETECTION
                     value: "true"
+                  - name: DT_CRD_STORAGE_MIGRATION
+                    value: "true"
                   - name: modules.json
                     value: |
                       {
@@ -225,6 +227,28 @@ tests:
             name: DT_HOST_AVAILABILITY_DETECTION
             value: "false"
 
+  - it: should have env var DT_CRD_STORAGE_MIGRATION when set to init-manager
+    set:
+      platform: kubernetes
+      operator.crdStorageMigrationInitManager: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CRD_STORAGE_MIGRATION
+            value: "true"
+
+  - it: should have env var DT_CRD_STORAGE_MIGRATION when disabled
+    set:
+      platform: kubernetes
+      operator.crdStorageMigrationInitManager: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CRD_STORAGE_MIGRATION
+            value: "false"
+
   - it: should not have imagePullSecrets defined in spec
     set:
       platform: kubernetes
@@ -281,6 +305,8 @@ tests:
                       fieldRef:
                         fieldPath: metadata.name
                   - name: DT_HOST_AVAILABILITY_DETECTION
+                    value: "true"
+                  - name: DT_CRD_STORAGE_MIGRATION
                     value: "true"
                   - name: modules.json
                     value: |

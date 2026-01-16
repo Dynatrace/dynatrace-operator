@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -74,6 +75,7 @@ func getComponentsQueryGroup(namespace string, appName string, labelKey string) 
 			toGroupVersionKind(appsv1.SchemeGroupVersion, appsv1.StatefulSet{}),
 			toGroupVersionKind(appsv1.SchemeGroupVersion, appsv1.DaemonSet{}),
 			toGroupVersionKind(appsv1.SchemeGroupVersion, appsv1.ReplicaSet{}),
+			toGroupVersionKind(batchv1.SchemeGroupVersion, batchv1.Job{}),
 			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Service{}),
 			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Pod{}),
 		},
