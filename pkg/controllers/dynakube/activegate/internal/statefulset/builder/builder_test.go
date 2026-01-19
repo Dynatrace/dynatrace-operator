@@ -3,7 +3,6 @@ package builder
 import (
 	"testing"
 
-	modifiermock "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -22,7 +21,7 @@ func TestBuilder(t *testing.T) {
 	t.Run("One modifier", func(t *testing.T) {
 		b := Builder{}
 
-		modifierMock := modifiermock.NewModifier(t)
+		modifierMock := NewMockModifier(t)
 		modifierMock.On("Modify", mock.Anything).Return(nil)
 		modifierMock.On("Enabled").Return(true)
 
@@ -37,7 +36,7 @@ func TestBuilder(t *testing.T) {
 	t.Run("One modifier, not enabled", func(t *testing.T) {
 		b := Builder{}
 
-		modifierMock := modifiermock.NewModifier(t)
+		modifierMock := NewMockModifier(t)
 		modifierMock.On("Modify", mock.Anything).Return(nil).Maybe()
 		modifierMock.On("Enabled").Return(false)
 
@@ -52,11 +51,11 @@ func TestBuilder(t *testing.T) {
 	t.Run("Two modifiers, one used twice", func(t *testing.T) {
 		b := Builder{}
 
-		modifierMock0 := modifiermock.NewModifier(t)
+		modifierMock0 := NewMockModifier(t)
 		modifierMock0.On("Modify", mock.Anything).Return(nil)
 		modifierMock0.On("Enabled").Return(true)
 
-		modifierMock1 := modifiermock.NewModifier(t)
+		modifierMock1 := NewMockModifier(t)
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 		modifierMock1.On("Enabled").Return(true)
 
@@ -72,11 +71,11 @@ func TestBuilder(t *testing.T) {
 	t.Run("Chain of modifiers", func(t *testing.T) {
 		b := Builder{}
 
-		modifierMock0 := modifiermock.NewModifier(t)
+		modifierMock0 := NewMockModifier(t)
 		modifierMock0.On("Modify", mock.Anything).Return(nil)
 		modifierMock0.On("Enabled").Return(true)
 
-		modifierMock1 := modifiermock.NewModifier(t)
+		modifierMock1 := NewMockModifier(t)
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 		modifierMock1.On("Enabled").Return(true)
 

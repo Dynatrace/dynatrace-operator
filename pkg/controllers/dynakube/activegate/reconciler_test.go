@@ -21,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	istiomock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/istio"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -599,7 +598,7 @@ func mockVersionReconcileOnce(t *testing.T) version.Reconciler {
 func mockIstioReconcile(t *testing.T) istio.Reconciler {
 	t.Helper()
 
-	reconciler := istiomock.NewReconciler(t)
+	reconciler := NewMockReconciler(t)
 	reconciler.EXPECT().ReconcileActiveGateCommunicationHosts(anyCtx, anyDynakube).Return(nil)
 
 	return reconciler
