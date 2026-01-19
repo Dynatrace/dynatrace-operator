@@ -32,7 +32,8 @@ func (e *ServerError) Error() string {
 	fmt.Fprintf(&sb, "dynatrace server error %d: %s", e.Code, e.Message)
 
 	for _, v := range e.ConstraintViolations {
-		// Fprintf can cause up to 100x allocations
+		// Fprintf scales allocations linearly with the amount of items.
+		// WriteString only allocates when backing slice needs more space.
 		sb.WriteString("\n\t- ")
 		sb.WriteString(v.Path)
 		sb.WriteString(": ")
