@@ -116,7 +116,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.StatusUpdatedReason, condition.Reason)
 	})
 
-	t.Run("set rules correctly, even if only node image pull is set", func(t *testing.T) {
+	t.Run("no rules if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
 		k8sconditions.SetOptionalScopeAvailable(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "available")
 		dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
@@ -125,19 +125,13 @@ func TestReconcile(t *testing.T) {
 			exp.OANodeImagePullKey: "true",
 		}
 
-		expectedResponse := createRulesResponse()
-
 		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetRulesSettings(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 		reconciler := NewReconciler(dtc, &dk)
 
 		err := reconciler.Reconcile(ctx)
 
 		require.NoError(t, err)
-		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
-		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, k8sconditions.StatusUpdatedReason, condition.Reason)
+		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
 	})
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {

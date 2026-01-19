@@ -57,7 +57,7 @@ func TestAddSplitMounts(t *testing.T) {
 		assert.Len(t, container.VolumeMounts, 3)
 	})
 
-	t.Run("should add only oneagent mounts if enrichment is disabled", func(t *testing.T) {
+	t.Run("should add both mounts even if enrichment is disabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -76,8 +76,8 @@ func TestAddSplitMounts(t *testing.T) {
 		addSplitMounts(container, request)
 
 		assert.True(t, HasSplitOneAgentMounts(container))
-		assert.False(t, HasSplitEnrichmentMounts(container))
-		assert.Len(t, container.VolumeMounts, 1)
+		assert.True(t, HasSplitEnrichmentMounts(container))
+		assert.Len(t, container.VolumeMounts, 4)
 	})
 
 	t.Run("should add nothing if both are disabled", func(t *testing.T) {

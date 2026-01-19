@@ -152,10 +152,10 @@ func TestAddConfigVolumeMount(t *testing.T) {
 
 		AddConfigVolumeMount(container, request)
 
-		assert.Len(t, container.VolumeMounts, 1)
+		assert.Len(t, container.VolumeMounts, 4)
 
 		assert.True(t, HasSplitOneAgentMounts(container))
-		assert.False(t, HasSplitEnrichmentMounts(container))
+		assert.True(t, HasSplitEnrichmentMounts(container))
 	})
 
 	t.Run("should add split mounts for both if split mounts is enabled", func(t *testing.T) {

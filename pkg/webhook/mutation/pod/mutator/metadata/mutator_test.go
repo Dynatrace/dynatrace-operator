@@ -48,15 +48,15 @@ func TestIsEnabled(t *testing.T) {
 			withoutCSI: false,
 		},
 		{
-			title:   "only OA enabled, without FF => not enabled",
+			title:   "only OA enabled, without FF => enabled",
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
 				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 			},
-			withCSI:    false,
-			withoutCSI: false,
+			withCSI:    true,
+			withoutCSI: true,
 		},
 		{
 			title:   "meta enabled => enabled",
@@ -140,7 +140,7 @@ func TestIsEnabled(t *testing.T) {
 			withoutCSI: true,
 		},
 		{
-			title:   "OA + FF enabled => enabled with no CSI",
+			title:   "OA + FF enabled => enabled",
 			podMods: func(p *corev1.Pod) {},
 			nsMods:  func(n *corev1.Namespace) {},
 			dkMods: func(dk *dynakube.DynaKube) {
@@ -148,7 +148,7 @@ func TestIsEnabled(t *testing.T) {
 				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 			},
-			withCSI:    false,
+			withCSI:    true,
 			withoutCSI: true,
 		},
 		{
@@ -165,7 +165,7 @@ func TestIsEnabled(t *testing.T) {
 			withoutCSI: true,
 		},
 		{
-			title: "OA + FF enabled + csi Volume-Type => disabled",
+			title: "OA + FF enabled + csi Volume-Type => enabled",
 			podMods: func(p *corev1.Pod) {
 				p.Annotations = map[string]string{oacommon.AnnotationVolumeType: oacommon.CSIVolumeType}
 			},
@@ -175,8 +175,8 @@ func TestIsEnabled(t *testing.T) {
 				dk.Annotations = map[string]string{exp.OANodeImagePullKey: "true"}
 				dk.Spec.MetadataEnrichment.Enabled = ptr.To(false)
 			},
-			withCSI:    false,
-			withoutCSI: false,
+			withCSI:    true,
+			withoutCSI: true,
 		},
 	}
 	for _, test := range cases {

@@ -4,7 +4,6 @@ package applicationmonitoring
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -16,10 +15,9 @@ import (
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,15 +27,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
-
-const (
-	metadataFile = "/var/lib/dynatrace/enrichment/dt_metadata.json"
-)
-
-type metadata struct {
-	WorkloadKind string `json:"dt.kubernetes.workload.kind,omitempty"`
-	WorkloadName string `json:"dt.kubernetes.workload.name,omitempty"`
-}
 
 // Verification of the metadata enrichment part of the operator. The test checks that
 // enrichment variables are added to the initContainer and dt_metadata.json
@@ -106,7 +95,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 			assess: podHasOnlyMetadataEnrichmentInitContainer,
 		},
 		{
-			name: "control oneagent-injection with annotations - pod",
+			name: "control oneagent-injection with annotations (metadata enrichment will be enabled regardless of namespace selector/annotations) - pod",
 			app: sample.NewApp(t, &testDynakube,
 				sample.WithName("pod-oa-annotation"),
 				sample.WithNamespaceLabels(injectEverythingLabels),
@@ -114,15 +103,15 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 					oacommon.AnnotationInject:   "true",
 					metacommon.AnnotationInject: "false",
 				})),
-			assess: podHasOnlyOneAgentInitContainer,
+			assess: podHasCompleteInitContainer,
 		},
 		{
-			name: "control oneagent-injection with namespace-selector - pod",
+			name: "control oneagent-injection with namespace-selector (metadata enrichment will be enabled regardless of namespace selector/annotations) - pod",
 			app: sample.NewApp(t, &testDynakube,
 				sample.WithName("pod-oa-label"),
 				sample.WithNamespaceLabels(testDynakube.OneAgent().GetNamespaceSelector().MatchLabels),
 			),
-			assess: podHasOnlyOneAgentInitContainer,
+			assess: podHasCompleteInitContainer,
 		},
 		{
 			name: "namespace-selectors don't conflict - pod",
@@ -161,7 +150,7 @@ func podHasOnlyMetadataEnrichmentInitContainer(samplePod *sample.App) features.F
 }
 
 func assessPodHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
-	enrichmentMetadata := getMetadataEnrichmentMetadataFromPod(ctx, t, resource, testPod)
+	enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, resource, testPod)
 
 	assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
 	assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
@@ -200,46 +189,13 @@ func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
 	}
 }
 
-func podHasOnlyOneAgentInitContainer(samplePod *sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
-		initContainers := testPod.Spec.InitContainers
-
-		require.Len(t, initContainers, 1)
-
-		assert.NotContains(t, testPod.Annotations, metacommon.AnnotationWorkloadKind)
-		assert.NotContains(t, testPod.Annotations, metacommon.AnnotationWorkloadName)
-
-		return ctx
-	}
-}
-
 func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) deployment.PodConsumer {
 	return func(pod corev1.Pod) {
-		enrichmentMetadata := getMetadataEnrichmentMetadataFromPod(ctx, t, resource, pod)
+		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, resource, pod)
 
 		assert.Equal(t, "deployment", enrichmentMetadata.WorkloadKind)
 		assert.Equal(t, deploymentName, enrichmentMetadata.WorkloadName)
 	}
-}
-
-func getMetadataEnrichmentMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) metadata {
-	require.NotEmpty(t, enrichedPod.Spec.Containers)
-	enrichedContainer := enrichedPod.Spec.Containers[0].Name
-	readMetadataCommand := shell.ReadFile(metadataFile)
-	result, err := pod.Exec(ctx, resource, enrichedPod, enrichedContainer, readMetadataCommand...)
-
-	require.NoError(t, err)
-
-	assert.Zero(t, result.StdErr.Len())
-	assert.NotEmpty(t, result.StdOut)
-
-	var enrichmentMetadata metadata
-	err = json.Unmarshal(result.StdOut.Bytes(), &enrichmentMetadata)
-
-	require.NoError(t, err)
-
-	return enrichmentMetadata
 }
 
 func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) deployment.PodConsumer {

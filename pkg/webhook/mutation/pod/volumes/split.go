@@ -37,7 +37,7 @@ func addSplitMounts(container *corev1.Container, request *dtwebhook.BaseRequest)
 		addSplitOneAgentConfigVolumeMount(container)
 	}
 
-	if request.DynaKube.MetadataEnrichment().IsEnabled() {
+	if request.DynaKube.MetadataEnrichment().IsEnabled() || request.DynaKube.OneAgent().IsAppInjectionNeeded() {
 		addSplitEnrichmentConfigVolumeMount(container)
 	}
 }
