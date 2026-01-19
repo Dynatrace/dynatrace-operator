@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -76,4 +77,23 @@ func TestHTTPError(t *testing.T) {
 		}
 		assert.EqualError(t, httpErr, "HTTP 400: dynatrace server error 400: bad1; dynatrace server error 400: bad2")
 	})
+}
+
+func TestIsNotFound(t *testing.T) {
+	tests := []struct {
+		name   string
+		in     error
+		expect bool
+	}{
+		{"nil", nil, false},
+		{"no http error", errors.New("BOOM"), false},
+		{"wrong status code", &HTTPError{StatusCode: 401}, false},
+		{"matching status code", &HTTPError{StatusCode: 404}, true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expect, IsNotFound(test.in))
+		})
+	}
 }
