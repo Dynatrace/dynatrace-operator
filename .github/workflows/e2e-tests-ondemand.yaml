@@ -2,6 +2,12 @@ name: E2E tests ondemand
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target branch to run E2E ondemand tests over'
+        # Note: we don't use default here with default branch because it doesn't work with
+        # schedule, so it will be null.
+        required: false
   schedule:
     # At 03:00 UTC on Monday, Wednesday, and Friday.
     - cron: 0 3 * * 1,3,5
@@ -69,7 +75,7 @@ jobs:
         with:
           flc-namespace: ${{ format('dto-{0}-ondemand', matrix.platform ) }}
           flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
-          target-branch: ${{ env.branch }}
+          target-branch: ${{ inputs.target || env.branch }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
           tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
