@@ -35,7 +35,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -776,28 +776,28 @@ func TestOTLPWebhook(t *testing.T) {
 
 func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 	return envtest.WebhookInstallOptions{
-		MutatingWebhooks: []*admissionv1.MutatingWebhookConfiguration{
+		MutatingWebhooks: []*admissionregistrationv1.MutatingWebhookConfiguration{
 			// TODO(avorima): Load this from a file using Paths
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "dynatrace-webhook",
 				},
-				Webhooks: []admissionv1.MutatingWebhook{
+				Webhooks: []admissionregistrationv1.MutatingWebhook{
 					{
 						Name:               "webhook.pod.dynatrace.com",
-						ReinvocationPolicy: ptr.To(admissionv1.IfNeededReinvocationPolicy),
-						FailurePolicy:      ptr.To(admissionv1.Ignore),
+						ReinvocationPolicy: ptr.To(admissionregistrationv1.IfNeededReinvocationPolicy),
+						FailurePolicy:      ptr.To(admissionregistrationv1.Ignore),
 						TimeoutSeconds:     ptr.To[int32](30),
-						Rules: []admissionv1.RuleWithOperations{
+						Rules: []admissionregistrationv1.RuleWithOperations{
 							{
-								Rule: admissionv1.Rule{
+								Rule: admissionregistrationv1.Rule{
 									APIGroups:   []string{""},
 									APIVersions: []string{"v1"},
 									Resources:   []string{"pods"},
-									Scope:       ptr.To(admissionv1.NamespacedScope),
+									Scope:       ptr.To(admissionregistrationv1.NamespacedScope),
 								},
-								Operations: []admissionv1.OperationType{
-									admissionv1.Create,
+								Operations: []admissionregistrationv1.OperationType{
+									admissionregistrationv1.Create,
 								},
 							},
 						},
@@ -809,14 +809,14 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 								},
 							},
 						},
-						ClientConfig: admissionv1.WebhookClientConfig{
-							Service: &admissionv1.ServiceReference{
+						ClientConfig: admissionregistrationv1.WebhookClientConfig{
+							Service: &admissionregistrationv1.ServiceReference{
 								Name: "dynatrace-webhook",
 								Path: ptr.To("/inject"),
 							},
 						},
 						AdmissionReviewVersions: []string{"v1beta1", "v1"},
-						SideEffects:             ptr.To(admissionv1.SideEffectClassNone),
+						SideEffects:             ptr.To(admissionregistrationv1.SideEffectClassNone),
 					},
 				},
 			},

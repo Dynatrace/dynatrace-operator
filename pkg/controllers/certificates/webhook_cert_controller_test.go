@@ -12,7 +12,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -110,29 +110,29 @@ func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
 }
 
 func TestReconcile(t *testing.T) {
-	dkCrd := &apiv1.CustomResourceDefinition{
+	dkCrd := &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8scrd.DynaKubeName,
 		},
-		Spec: apiv1.CustomResourceDefinitionSpec{
-			Conversion: &apiv1.CustomResourceConversion{
+		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+			Conversion: &apiextensionsv1.CustomResourceConversion{
 				Strategy: strategyWebhook,
-				Webhook: &apiv1.WebhookConversion{
-					ClientConfig: &apiv1.WebhookClientConfig{},
+				Webhook: &apiextensionsv1.WebhookConversion{
+					ClientConfig: &apiextensionsv1.WebhookClientConfig{},
 				},
 			},
 		},
 	}
 
-	ecCrd := &apiv1.CustomResourceDefinition{
+	ecCrd := &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8scrd.EdgeConnectName,
 		},
-		Spec: apiv1.CustomResourceDefinitionSpec{
-			Conversion: &apiv1.CustomResourceConversion{
+		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+			Conversion: &apiextensionsv1.CustomResourceConversion{
 				Strategy: strategyWebhook,
-				Webhook: &apiv1.WebhookConversion{
-					ClientConfig: &apiv1.WebhookClientConfig{},
+				Webhook: &apiextensionsv1.WebhookConversion{
+					ClientConfig: &apiextensionsv1.WebhookClientConfig{},
 				},
 			},
 		},
@@ -212,7 +212,7 @@ func TestReconcile(t *testing.T) {
 		expectedBundle, err := cs.loadCombinedBundle()
 		require.NoError(t, err)
 
-		actualCrd := &apiv1.CustomResourceDefinition{}
+		actualCrd := &apiextensionsv1.CustomResourceDefinition{}
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: k8scrd.DynaKubeName}, actualCrd)
 		require.NoError(t, err)
 		assert.Equal(t, expectedBundle, actualCrd.Spec.Conversion.Webhook.ClientConfig.CABundle)
@@ -378,28 +378,28 @@ func (builder *fakeClientBuilder) WithInvalidCertificateSecret() *fakeClientBuil
 
 func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
 	builder.objs = append(builder.objs,
-		&apiv1.CustomResourceDefinition{
+		&apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: k8scrd.DynaKubeName,
 			},
-			Spec: apiv1.CustomResourceDefinitionSpec{
-				Conversion: &apiv1.CustomResourceConversion{
+			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+				Conversion: &apiextensionsv1.CustomResourceConversion{
 					Strategy: strategyWebhook,
-					Webhook: &apiv1.WebhookConversion{
-						ClientConfig: &apiv1.WebhookClientConfig{},
+					Webhook: &apiextensionsv1.WebhookConversion{
+						ClientConfig: &apiextensionsv1.WebhookClientConfig{},
 					},
 				},
 			},
 		},
-		&apiv1.CustomResourceDefinition{
+		&apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: k8scrd.EdgeConnectName,
 			},
-			Spec: apiv1.CustomResourceDefinitionSpec{
-				Conversion: &apiv1.CustomResourceConversion{
+			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+				Conversion: &apiextensionsv1.CustomResourceConversion{
 					Strategy: strategyWebhook,
-					Webhook: &apiv1.WebhookConversion{
-						ClientConfig: &apiv1.WebhookClientConfig{},
+					Webhook: &apiextensionsv1.WebhookConversion{
+						ClientConfig: &apiextensionsv1.WebhookClientConfig{},
 					},
 				},
 			},
