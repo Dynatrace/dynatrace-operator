@@ -258,18 +258,8 @@ linters:
     importas:
       alias:
         # Kubernetes API packages should always be imported as <group><version>
-        - pkg: k8s.io/api/core/v1
-          alias: corev1
-        - pkg: k8s.io/api/apps/v1
-          alias: appsv1
-        - pkg: k8s.io/api/batch/v1
-          alias: batchv1
-        - pkg: k8s.io/api/rbac/v1
-          alias: rbacv1
-        - pkg: k8s.io/api/policy/v1
-          alias: policyv1
-        - pkg: k8s.io/api/policy/v1beta1
-          alias: policyv1beta1
+        - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
+          alias: "$1$2"
         - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
           alias: metav1
         - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
@@ -277,7 +267,7 @@ linters:
         # Istio client packages
         - pkg: istio.io/client-go/pkg/apis/networking/v1beta1
           alias: istiov1beta1
-        # pkg/util/kubernetes packages should never be aliased
+        # pkg/util/kubernetes/fields or objects/k8s* packages should never be aliased
         - pkg: github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/(fields|objects)/k8s\w+
           alias: ""
     staticcheck:
