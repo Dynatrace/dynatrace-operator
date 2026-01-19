@@ -420,6 +420,8 @@ properties:
     type: boolean
     title: Deploy helm hook
     default: false
+    enum:
+    - false
 required:
 - name
 - namespace
