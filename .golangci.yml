@@ -256,6 +256,7 @@ linters:
         - name: enforce-switch-style
           disabled: true
     importas:
+      no-unaliased: true
       alias:
         # Kubernetes API packages should always be imported as <group><version>
         - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
