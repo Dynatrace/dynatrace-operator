@@ -416,6 +416,12 @@ properties:
     enum:
       - "google-marketplace"
 
+  crdStorageMigrationJob:
+    type: boolean
+    title: Deploy helm hook
+    default: false
+    enum:
+    - false
 required:
 - name
 - namespace
