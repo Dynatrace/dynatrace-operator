@@ -75,7 +75,7 @@ type Client interface {
 	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)
 
 	// AsV2 is a temporary adapter to gradually migrate to the v2 client.
-	AsV2() *V2Client
+	AsV2() *ClientV2
 }
 
 const (

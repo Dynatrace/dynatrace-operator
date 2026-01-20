@@ -387,7 +387,7 @@ func TestReconcileComponents(t *testing.T) {
 			k8sEntityReconciler:            mockK8sEntityReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}}).Once()
+		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}}).Once()
 
 		var err error
 		expectReconcileError(t, mockOneAgentReconciler, &err)
@@ -425,7 +425,7 @@ func TestReconcileComponents(t *testing.T) {
 			k8sEntityReconciler:            k8sEntityReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}}).Once()
+		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}}).Once()
 
 		var err error
 		expectReconcileError(t, mockActiveGateReconciler, &err)
@@ -456,7 +456,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		dtclient.TokenScopeInstallerDownload,
 		dtclient.TokenScopeActiveGateTokenCreate,
 	}, nil)
-	mockClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}})
+	mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
 	mockDynatraceClientBuild(mockDtcBuilder, mockClient)
@@ -490,7 +490,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockKSPMReconciler := newMockdynakubeReconciler(t)
 	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
-	mockClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}})
+	mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
 
 	mockK8sEntityReconciler := newMockk8sEntityReconciler(t)
 	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, &settings.Client{}, anyDynaKube).Return(nil)

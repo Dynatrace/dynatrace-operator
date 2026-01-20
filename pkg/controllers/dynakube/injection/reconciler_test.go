@@ -128,7 +128,7 @@ func TestReconciler(t *testing.T) {
 		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 		settingsClient := settingsmock.NewAPIClient(t)
 		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
-		dtClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: settingsClient}).Once()
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Once()
 
 		istioClient := newIstioTestingClient(fakeistio.NewSimpleClientset(), dk)
 
@@ -186,7 +186,7 @@ func TestReconciler(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		istioClient := setupIstioClientWithObjects(dk)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: settingsClient}).Once()
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Once()
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
 
@@ -261,7 +261,7 @@ func TestReconciler(t *testing.T) {
 
 		dtClient := dtclientmock.NewClient(t)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: settingsClient}).Once()
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Once()
 
 		rec := NewReconciler(boomClient, boomClient, dtClient, istioClient, dk).(*Reconciler)
 		rec.connectionInfoReconciler = fakeReconciler

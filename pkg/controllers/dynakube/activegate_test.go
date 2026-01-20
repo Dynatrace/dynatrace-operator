@@ -135,7 +135,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}})
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
 
 		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
 		require.NoError(t, err)
@@ -177,7 +177,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.V2Client{Settings: &settings.Client{}})
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
 
 		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
 		require.NoError(t, err)

@@ -40,19 +40,19 @@ func (_m *Client) EXPECT() *Client_Expecter {
 }
 
 // AsV2 provides a mock function for the type Client
-func (_mock *Client) AsV2() *dynatrace.V2Client {
+func (_mock *Client) AsV2() *dynatrace.ClientV2 {
 	ret := _mock.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for AsV2")
 	}
 
-	var r0 *dynatrace.V2Client
-	if returnFunc, ok := ret.Get(0).(func() *dynatrace.V2Client); ok {
+	var r0 *dynatrace.ClientV2
+	if returnFunc, ok := ret.Get(0).(func() *dynatrace.ClientV2); ok {
 		r0 = returnFunc()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*dynatrace.V2Client)
+			r0 = ret.Get(0).(*dynatrace.ClientV2)
 		}
 	}
 	return r0
@@ -75,12 +75,12 @@ func (_c *Client_AsV2_Call) Run(run func()) *Client_AsV2_Call {
 	return _c
 }
 
-func (_c *Client_AsV2_Call) Return(v2Client *dynatrace.V2Client) *Client_AsV2_Call {
-	_c.Call.Return(v2Client)
+func (_c *Client_AsV2_Call) Return(clientV2 *dynatrace.ClientV2) *Client_AsV2_Call {
+	_c.Call.Return(clientV2)
 	return _c
 }
 
-func (_c *Client_AsV2_Call) RunAndReturn(run func() *dynatrace.V2Client) *Client_AsV2_Call {
+func (_c *Client_AsV2_Call) RunAndReturn(run func() *dynatrace.ClientV2) *Client_AsV2_Call {
 	_c.Call.Return(run)
 	return _c
 }

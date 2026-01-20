@@ -12,11 +12,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 )
 
-type V2Client struct {
+type ClientV2 struct {
 	Settings settings.APIClient
 }
 
-type V2Config struct {
+type ConfigV2 struct {
 	HTTPClient      *http.Client
 	TLSConfig       *tls.Config
 	BaseURL         string
@@ -30,75 +30,75 @@ type V2Config struct {
 	Timeout         time.Duration
 }
 
-// V2Option is a functional option for configuring the dtClient
-type V2Option func(*V2Config)
+// OptionV2 is a functional option for configuring the dtClient
+type OptionV2 func(*ConfigV2)
 
 // WithAPIToken sets the API token
-func WithAPIToken(token string) V2Option {
-	return func(c *V2Config) {
+func WithAPIToken(token string) OptionV2 {
+	return func(c *ConfigV2) {
 		c.APIToken = token
 	}
 }
 
 // WithPaasToken sets the PaaS token
-func WithPaasToken(token string) V2Option {
-	return func(c *V2Config) {
+func WithPaasToken(token string) OptionV2 {
+	return func(c *ConfigV2) {
 		c.PaasToken = token
 	}
 }
 
 // WithDataIngestToken sets the data ingest token
-func WithDataIngestToken(token string) V2Option {
-	return func(c *V2Config) {
+func WithDataIngestToken(token string) OptionV2 {
+	return func(c *ConfigV2) {
 		c.DataIngestToken = token
 	}
 }
 
 // WithHTTPClient sets a custom HTTP dtClient
-func WithHTTPClient(httpClient *http.Client) V2Option {
-	return func(c *V2Config) {
+func WithHTTPClient(httpClient *http.Client) OptionV2 {
+	return func(c *ConfigV2) {
 		c.HTTPClient = httpClient
 	}
 }
 
 // WithTLSConfig sets custom TLS configuration
-func WithTLSConfig(tlsConfig *tls.Config) V2Option {
-	return func(c *V2Config) {
+func WithTLSConfig(tlsConfig *tls.Config) OptionV2 {
+	return func(c *ConfigV2) {
 		c.TLSConfig = tlsConfig
 	}
 }
 
 // WithTimeout sets the request timeout
-func WithTimeout(timeout time.Duration) V2Option {
-	return func(c *V2Config) {
+func WithTimeout(timeout time.Duration) OptionV2 {
+	return func(c *ConfigV2) {
 		c.Timeout = timeout
 	}
 }
 
 // WithProxy sets the proxy URL
-func WithProxy(proxyURL string) V2Option {
-	return func(c *V2Config) {
+func WithProxy(proxyURL string) OptionV2 {
+	return func(c *ConfigV2) {
 		c.Proxy = proxyURL
 	}
 }
 
 // WithNetworkZone sets the network zone
-func WithNetworkZone(networkZone string) V2Option {
-	return func(c *V2Config) {
+func WithNetworkZone(networkZone string) OptionV2 {
+	return func(c *ConfigV2) {
 		c.NetworkZone = networkZone
 	}
 }
 
 // WithHostGroup sets the host group
-func WithHostGroup(hostGroup string) V2Option {
-	return func(c *V2Config) {
+func WithHostGroup(hostGroup string) OptionV2 {
+	return func(c *ConfigV2) {
 		c.HostGroup = hostGroup
 	}
 }
 
-// newV2Client creates a new Dynatrace API client
-func newV2Client(baseURL string, options ...V2Option) (*V2Client, error) {
-	config := V2Config{
+// newClientV2 creates a new Dynatrace API client
+func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
+	config := ConfigV2{
 		BaseURL:   baseURL,
 		UserAgent: "dynatrace-operator/2.0",
 		Timeout:   30 * time.Second,
@@ -150,14 +150,14 @@ func newV2Client(baseURL string, options ...V2Option) (*V2Client, error) {
 		DataIngestToken: config.DataIngestToken,
 	})
 
-	return &V2Client{
+	return &ClientV2{
 		Settings: settings.NewClient(apiClient),
 	}, nil
 }
 
-func (dtc *dynatraceClient) AsV2() *V2Client {
+func (dtc *dynatraceClient) AsV2() *ClientV2 {
 	// Fields are already validated by the v1 client constructor
-	v2, _ := newV2Client(
+	v2, _ := newClientV2(
 		dtc.url,
 		WithAPIToken(dtc.apiToken),
 		WithPaasToken(dtc.paasToken),
