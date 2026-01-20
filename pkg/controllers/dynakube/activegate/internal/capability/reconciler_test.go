@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
+	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/activegate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -74,8 +75,8 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName) *dynakube.Dy
 	}
 }
 
-func getMockReconciler(t *testing.T, returnValue error) *MockCapabilityReconciler {
-	mockReconciler := NewMockCapabilityReconciler(t)
+func getMockReconciler(t *testing.T, returnValue error) *reconcilermock.CapabilityReconciler {
+	mockReconciler := reconcilermock.NewCapabilityReconciler(t)
 	mockReconciler.EXPECT().Reconcile(anyCtx).Return(returnValue).Once()
 
 	return mockReconciler
@@ -86,9 +87,9 @@ func TestNewReconciler(t *testing.T) {
 		fake.NewClientBuilder().Build(),
 		capability.NewMultiCapability(&dynakube.DynaKube{}),
 		&dynakube.DynaKube{},
-		NewMockCapabilityReconciler(t),
-		NewMockCapabilityReconciler(t),
-		NewMockCapabilityReconciler(t),
+		reconcilermock.NewCapabilityReconciler(t),
+		reconcilermock.NewCapabilityReconciler(t),
+		reconcilermock.NewCapabilityReconciler(t),
 	).(*Reconciler)
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)
@@ -117,8 +118,8 @@ func TestReconcile(t *testing.T) {
 
 		dk := buildDynakube(capabilitiesWithoutService)
 		mockCustompropertiesReconciler := getMockReconciler(t, expectErr)
-		mockStatefulSetReconciler := NewMockCapabilityReconciler(t)
-		mockTLSSecretReconciler := NewMockCapabilityReconciler(t)
+		mockStatefulSetReconciler := reconcilermock.NewCapabilityReconciler(t)
+		mockTLSSecretReconciler := reconcilermock.NewCapabilityReconciler(t)
 
 		r := NewReconciler(clt, capability.NewMultiCapability(dk), dk, mockStatefulSetReconciler, mockCustompropertiesReconciler, mockTLSSecretReconciler)
 

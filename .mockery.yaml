@@ -25,14 +25,6 @@ packages:
       filename: "mock_{{.InterfaceName | snakecase }}_test.go"
     interfaces:
       Executor:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
-    config:
-      dir: "{{.InterfaceDir}}/internal/capability"
-      pkgname: "capability"
-      structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
-    interfaces:
-      CapabilityReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
     interfaces:
       StatusUpdater:
@@ -85,12 +77,15 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect:
     interfaces:
       Client:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
-    interfaces:
-      Builder:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
       Reconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
+    interfaces:
+      CapabilityReconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
+    interfaces:
+      Builder:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:
