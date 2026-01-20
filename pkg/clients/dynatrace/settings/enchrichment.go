@@ -52,7 +52,7 @@ func (c *Client) GetRules(ctx context.Context, kubeSystemUUID, entityID string) 
 		Execute(&resp)
 	if err != nil {
 		if core.IsNotFound(err) {
-			log.Info("enrichment settings schema not available on cluster, skipping getting the enrichment rules")
+			log.Info("enrichment settings not available on cluster, skipping getting the enrichment rules", "schemaID", metadataEnrichmentSettingsSchemaID)
 
 			return nil, nil
 		}
