@@ -42,14 +42,6 @@ packages:
           pkgname: "{{ .SrcPackageName }}"
           structname: '{{ .InterfaceName | firstUpper }}'
           filename: "mock_{{.InterfaceName | snakecase }}_test.go"
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
-    config:
-      dir: "{{.InterfaceDir}}/../activegate"
-      pkgname: "activegate"
-      structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
-    interfaces:
-      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
@@ -86,6 +78,9 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
     interfaces:
       Builder:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
+    interfaces:
+      Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:
