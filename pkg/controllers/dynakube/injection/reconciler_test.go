@@ -5,7 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
@@ -437,6 +439,83 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 		}
 
 		assertSecretFound(t, clt, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), dk.Namespace)
+	})
+}
+
+func TestGenerateCorrectCertInitSecret(t *testing.T) {
+	ctx := t.Context()
+	dkBase := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-dynakube",
+			Namespace:   "my-dynatrace",
+			Annotations: map[string]string{},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: "url",
+			ActiveGate: activegate.Spec{
+				Capabilities: []activegate.CapabilityDisplayName{
+					activegate.RoutingCapability.DisplayName,
+				},
+			},
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
+			},
+		},
+	}
+
+	namespaces := []*corev1.Namespace{
+		clientInjectedNamespace("ns-1", dkBase.Name),
+		clientInjectedNamespace("ns-2", dkBase.Name),
+	}
+
+	tokenSecret := clientSecret(dkBase.Name, dkBase.Namespace, map[string][]byte{
+		dtclient.APIToken:  []byte("testAPIToken"),
+		dtclient.PaasToken: []byte("testPaasToken"),
+	})
+
+	tenantSecret := clientSecret(dkBase.OneAgent().GetTenantSecret(), dkBase.Namespace, map[string][]byte{
+		"tenant-token": []byte("token"),
+	})
+
+	autoTLSSecret := clientSecret(dkBase.ActiveGate().GetTLSSecretName(), dkBase.Namespace, map[string][]byte{
+		dynakube.TLSCertKey: []byte("certificate"),
+	})
+
+	t.Run("create new cert secret and delete it if not needed", func(t *testing.T) {
+		dk := dkBase.DeepCopy()
+
+		clt := fake.NewClientWithIndex(
+			tokenSecret,
+			dk,
+			namespaces[0], namespaces[1],
+			tenantSecret,
+			autoTLSSecret,
+		)
+
+		dtClient := dtclientmock.NewClient(t)
+		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+
+		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
+
+		err := r.generateInitSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]})
+		require.NoError(t, err)
+
+		for _, ns := range namespaces {
+			assertSecretFound(t, clt, consts.BootstrapperInitCertsSecretName, ns.Name)
+		}
+
+		assertSecretFound(t, clt, bootstrapperconfig.GetSourceCertsSecretName(dk.Name), dk.Namespace)
+
+		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+
+		err = r.generateInitSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]})
+		require.NoError(t, err)
+
+		for _, ns := range namespaces {
+			assertSecretNotFound(t, clt, consts.BootstrapperInitCertsSecretName, ns.Name)
+		}
+
+		assertSecretNotFound(t, clt, bootstrapperconfig.GetSourceCertsSecretName(dk.Name), dk.Namespace)
 	})
 }
 
