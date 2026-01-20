@@ -35,10 +35,11 @@ packages:
     interfaces:
       Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube:
+    config:
+      structname: '{{ .InterfaceName | firstUpper }}'
     interfaces:
       k8sEntityReconciler:
-        config:
-          structname: '{{ .InterfaceName | firstUpper }}'
+      dynakubeReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     interfaces:
       Reconciler:

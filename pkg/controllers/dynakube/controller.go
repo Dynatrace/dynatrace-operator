@@ -89,8 +89,8 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		otelcReconcilerBuilder:              otelc.NewReconciler,
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
-		kspmReconcilerBuilder:               kspm.NewReconciler,
 
+		kspmReconciler:      kspm.NewReconciler(kubeClient, apiReader),
 		k8sEntityReconciler: k8sentity.NewReconciler(),
 	}
 }
@@ -107,6 +107,10 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
+type dynakubeReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 type k8sEntityReconciler interface {
 	Reconcile(ctx context.Context, dtclient dtclient.Client, dk *dynakube.DynaKube) error
 }
@@ -120,6 +124,7 @@ type Controller struct {
 	eventRecorder record.EventRecorder
 
 	k8sEntityReconciler k8sEntityReconciler
+	kspmReconciler      dynakubeReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
@@ -135,7 +140,6 @@ type Controller struct {
 	otelcReconcilerBuilder              otelc.ReconcilerBuilder
 	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
 	proxyReconcilerBuilder              proxy.ReconcilerBuilder
-	kspmReconcilerBuilder               kspm.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -453,10 +457,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	kspmReconciler := controller.kspmReconcilerBuilder(controller.client, controller.apiReader, dk)
-
-	err = kspmReconciler.Reconcile(ctx)
-	if err != nil {
+	if err := controller.kspmReconciler.Reconcile(ctx, dk); err != nil {
 		log.Info("could not reconcile kspm")
 
 		componentErrors = append(componentErrors, err)
