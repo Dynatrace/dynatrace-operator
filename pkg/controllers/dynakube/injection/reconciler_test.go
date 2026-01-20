@@ -443,7 +443,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 }
 
 func TestGenerateCorrectCertInitSecret(t *testing.T) {
-	ctx := t.Context()
+	ctx := context.Background()
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "my-dynakube",
@@ -493,7 +493,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 		)
 
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.EXPECT().GetProcessModuleConfig(anyCtx, mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
+		dtClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).Return(&dtclient.ProcessModuleConfig{}, nil)
 
 		r := Reconciler{client: clt, apiReader: clt, dk: dk, dynatraceClient: dtClient}
 
@@ -520,7 +520,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 }
 
 func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
-	ctx := t.Context()
+	ctx := context.Background()
 	dkBase := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "my-dynakube",
