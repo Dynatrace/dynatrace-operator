@@ -148,7 +148,8 @@ make prerequisites/mockery
 #### Adding a mock
 
 When adding a mock you have to add the mocked interface to .mockery.yaml.
-Take the following example of the dynatraceclient package with the `Builder` interface:
+
+For **shared mocks** (used across multiple packages), place them in `test/mocks/`:
 
 ```yaml
 quiet: False
@@ -163,6 +164,20 @@ packages:
     # all: true // or use all if mocks for all interfaces in a package/dir should be created
     interfaces:
       Builder:
+```
+
+For **single-use mocks** (used in one package only), place them as `_test.go` files in the same package:
+
+```yaml
+packages:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
+    interfaces:
+      StatusUpdater:
+        config:
+          dir: "{{.InterfaceDir}}"
+          pkgname: "{{ .SrcPackageName }}"
+          structname: "{{.Mock}}{{.InterfaceName}}"
+          filename: "mock_{{.InterfaceName | snakecase }}_test.go"
 ```
 
 then run mockery by simple running
