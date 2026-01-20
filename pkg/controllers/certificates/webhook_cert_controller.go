@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
-	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -138,7 +138,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 }
 
-func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiv1.CustomResourceDefinition) bool {
+func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiextensionsv1.CustomResourceDefinition) bool {
 	areMutatingWebhookConfigsValid := certSecret.areWebhookConfigsValid(mutatingWebhookClientConfigs)
 	areValidatingWebhookConfigsValid := certSecret.areWebhookConfigsValid(validatingWebhookConfigConfigs)
 	isCRDConversionConfigValid := certSecret.isCRDConversionValid(crd)
@@ -210,8 +210,8 @@ func (controller *WebhookCertificateController) getValidatingWebhookConfiguratio
 	return &mutatingWebhook, nil
 }
 
-func (controller *WebhookCertificateController) getCrd(ctx context.Context) (*apiv1.CustomResourceDefinition, error) {
-	var crd apiv1.CustomResourceDefinition
+func (controller *WebhookCertificateController) getCrd(ctx context.Context) (*apiextensionsv1.CustomResourceDefinition, error) {
+	var crd apiextensionsv1.CustomResourceDefinition
 	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: k8scrd.DynaKubeName}, &crd); err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (controller *WebhookCertificateController) updateClientConfigurations(ctx c
 }
 
 func (controller *WebhookCertificateController) updateCRDConfiguration(ctx context.Context, crdName string, bundle []byte) error {
-	var crd apiv1.CustomResourceDefinition
+	var crd apiextensionsv1.CustomResourceDefinition
 	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
 		return err
 	}
@@ -257,6 +257,6 @@ func (controller *WebhookCertificateController) updateCRDConfiguration(ctx conte
 	return nil
 }
 
-func hasConversionWebhook(crd apiv1.CustomResourceDefinition) bool {
+func hasConversionWebhook(crd apiextensionsv1.CustomResourceDefinition) bool {
 	return crd.Spec.Conversion != nil && crd.Spec.Conversion.Webhook != nil && crd.Spec.Conversion.Webhook.ClientConfig != nil
 }

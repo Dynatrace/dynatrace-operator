@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPrepareVolumes(t *testing.T) {
@@ -77,7 +77,7 @@ func TestPrepareVolumes(t *testing.T) {
 	})
 	t.Run("has automatically created AG tls volume", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: corev1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -211,7 +211,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	})
 	t.Run("has automatically created ActiveGate CA volume mount", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: corev1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "dynakube",
 			},
 			Spec: dynakube.DynaKubeSpec{
@@ -279,7 +279,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	})
 	t.Run("has no volume if proxy is set and proxy ignore feature-flags is used", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: corev1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
 				Annotations: map[string]string{
