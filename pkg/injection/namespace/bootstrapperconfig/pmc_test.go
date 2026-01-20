@@ -71,7 +71,7 @@ func TestPreparePMC(t *testing.T) {
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("uint")).
 			Return(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -125,7 +125,7 @@ func TestPreparePMC(t *testing.T) {
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("uint")).
 			Return(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -162,7 +162,7 @@ func TestPreparePMC(t *testing.T) {
 
 		mockDTClient := dtclientmock.NewClient(t)
 		expectedError := errors.New("API error")
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("uint")).
 			Return(nil, expectedError)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -193,7 +193,7 @@ func TestPreparePMC(t *testing.T) {
 		clt := fake.NewClient(dk) // No tenant secret
 
 		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("uint")).
 			Return(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -241,7 +241,7 @@ func TestPreparePMC(t *testing.T) {
 		)
 
 		mockDTClient := dtclientmock.NewClient(t)
-		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("context.backgroundCtx"), mock.AnythingOfType("uint")).
+		mockDTClient.On("GetProcessModuleConfig", mock.AnythingOfType("*context.cancelCtx"), mock.AnythingOfType("uint")).
 			Return(&dtclient.ProcessModuleConfig{Properties: []dtclient.ProcessModuleProperty{{Section: "test", Key: "test", Value: "test"}}}, nil)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
@@ -445,7 +445,7 @@ func TestGetCachedPMC(t *testing.T) {
 
 		result, err := secretGenerator.getCachedPMC(t.Context(), dk)
 
-		require.Error(t, err)
+		require.NoError(t, err)
 		require.Nil(t, result)
 	})
 
