@@ -75,12 +75,18 @@ func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context) error {
 }
 
 func (r *Reconciler) deleteSelfSignedTLSSecret(ctx context.Context) error {
-	return r.secrets.Delete(ctx, &corev1.Secret{
+	err := r.secrets.Delete(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.ActiveGate().GetTLSSecretName(),
+			Name:      r.dk.ActiveGate().GetAutoTLSSecretName(),
 			Namespace: r.dk.Namespace,
 		},
 	})
+
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
 }
 
 func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context) error {
