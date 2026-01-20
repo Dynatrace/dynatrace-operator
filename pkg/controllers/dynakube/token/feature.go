@@ -174,7 +174,7 @@ func getFeaturesForDataIngest() []Feature {
 				dtclient.TokenScopeOpenTelemetryTraceIngest,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.TelemetryIngest().IsZipkinEnabled()
+				return dk.TelemetryIngest().IsJaegerEnabled()
 			},
 		},
 		{
@@ -183,7 +183,7 @@ func getFeaturesForDataIngest() []Feature {
 				dtclient.TokenScopeMetricsIngest,
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.TelemetryIngest().IsZipkinEnabled()
+				return dk.TelemetryIngest().IsStatsdEnabled()
 			},
 		},
 		{
