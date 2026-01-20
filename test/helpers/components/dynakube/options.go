@@ -87,12 +87,6 @@ func WithActiveGateModules(capabilities ...activegate.CapabilityDisplayName) Opt
 	}
 }
 
-func WithMetadataEnrichment() Option {
-	return func(dk *dynakube.DynaKube) {
-		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
-	}
-}
-
 func WithActiveGateTLSSecret(tlsSecretName string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.ActiveGate.TLSSecretName = tlsSecretName
@@ -102,6 +96,12 @@ func WithActiveGateTLSSecret(tlsSecretName string) Option {
 func WithCustomActiveGateImage(imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.ActiveGate.Image = imageURI
+	}
+}
+
+func WithMetadataEnrichment() Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.MetadataEnrichment.Enabled = ptr.To(true)
 	}
 }
 
