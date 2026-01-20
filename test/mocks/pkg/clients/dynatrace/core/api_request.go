@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	"net/url"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -37,8 +39,8 @@ func (_m *APIRequest) EXPECT() *APIRequest_Expecter {
 }
 
 // Execute provides a mock function for the type APIRequest
-func (_mock *APIRequest) Execute(target any) error {
-	ret := _mock.Called(target)
+func (_mock *APIRequest) Execute(model any) error {
+	ret := _mock.Called(model)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Execute")
@@ -46,7 +48,7 @@ func (_mock *APIRequest) Execute(target any) error {
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(any) error); ok {
-		r0 = returnFunc(target)
+		r0 = returnFunc(model)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -59,12 +61,12 @@ type APIRequest_Execute_Call struct {
 }
 
 // Execute is a helper method to define mock.On call
-//   - target any
-func (_e *APIRequest_Expecter) Execute(target interface{}) *APIRequest_Execute_Call {
-	return &APIRequest_Execute_Call{Call: _e.mock.On("Execute", target)}
+//   - model any
+func (_e *APIRequest_Expecter) Execute(model interface{}) *APIRequest_Execute_Call {
+	return &APIRequest_Execute_Call{Call: _e.mock.On("Execute", model)}
 }
 
-func (_c *APIRequest_Execute_Call) Run(run func(target any)) *APIRequest_Execute_Call {
+func (_c *APIRequest_Execute_Call) Run(run func(model any)) *APIRequest_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 any
 		if args[0] != nil {
@@ -82,7 +84,7 @@ func (_c *APIRequest_Execute_Call) Return(err error) *APIRequest_Execute_Call {
 	return _c
 }
 
-func (_c *APIRequest_Execute_Call) RunAndReturn(run func(target any) error) *APIRequest_Execute_Call {
+func (_c *APIRequest_Execute_Call) RunAndReturn(run func(model any) error) *APIRequest_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -396,6 +398,59 @@ func (_c *APIRequest_WithRawBody_Call) Return(aPIRequest core.APIRequest) *APIRe
 }
 
 func (_c *APIRequest_WithRawBody_Call) RunAndReturn(run func(body []byte) core.APIRequest) *APIRequest_WithRawBody_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithRawQueryParams provides a mock function for the type APIRequest
+func (_mock *APIRequest) WithRawQueryParams(params url.Values) core.APIRequest {
+	ret := _mock.Called(params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithRawQueryParams")
+	}
+
+	var r0 core.APIRequest
+	if returnFunc, ok := ret.Get(0).(func(url.Values) core.APIRequest); ok {
+		r0 = returnFunc(params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(core.APIRequest)
+		}
+	}
+	return r0
+}
+
+// APIRequest_WithRawQueryParams_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithRawQueryParams'
+type APIRequest_WithRawQueryParams_Call struct {
+	*mock.Call
+}
+
+// WithRawQueryParams is a helper method to define mock.On call
+//   - params url.Values
+func (_e *APIRequest_Expecter) WithRawQueryParams(params interface{}) *APIRequest_WithRawQueryParams_Call {
+	return &APIRequest_WithRawQueryParams_Call{Call: _e.mock.On("WithRawQueryParams", params)}
+}
+
+func (_c *APIRequest_WithRawQueryParams_Call) Run(run func(params url.Values)) *APIRequest_WithRawQueryParams_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 url.Values
+		if args[0] != nil {
+			arg0 = args[0].(url.Values)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *APIRequest_WithRawQueryParams_Call) Return(aPIRequest core.APIRequest) *APIRequest_WithRawQueryParams_Call {
+	_c.Call.Return(aPIRequest)
+	return _c
+}
+
+func (_c *APIRequest_WithRawQueryParams_Call) RunAndReturn(run func(params url.Values) core.APIRequest) *APIRequest_WithRawQueryParams_Call {
 	_c.Call.Return(run)
 	return _c
 }

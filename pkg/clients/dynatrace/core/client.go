@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"net/url"
 
@@ -22,18 +21,27 @@ type APIClient interface {
 	GET(ctx context.Context, path string) APIRequest
 	POST(ctx context.Context, path string) APIRequest
 	PUT(ctx context.Context, path string) APIRequest
-	DELETE(ctx context.Context, path string) APIRequest
 }
 
 // APIRequest provides a fluent interface for building and executing HTTP requests
 type APIRequest interface {
+	// WithPath sets the path for the request
 	WithPath(path string) APIRequest
+	// WithQueryParams adds multiple query parameters to the request, overwriting existing keys if they exist
 	WithQueryParams(params map[string]string) APIRequest
+	// WithRawQueryParams adds multiple query parameters to the request
+	WithRawQueryParams(params url.Values) APIRequest
+	// WithJSONBody sets the request body as JSON
 	WithJSONBody(body any) APIRequest
+	// WithRawBody sets the request body as raw bytes
 	WithRawBody(body []byte) APIRequest
+	// WithTokenType sets the token type to use for authentication
 	WithTokenType(tokenType TokenType) APIRequest
+	// WithPaasToken sets the token type to PaaS
 	WithPaasToken() APIRequest
-	Execute(target any) error
+	// Execute executes the request and unmarshals the response into the provided model
+	Execute(model any) error
+	// ExecuteRaw executes the request and returns the raw response data
 	ExecuteRaw() ([]byte, error)
 }
 
@@ -59,13 +67,13 @@ func NewClient(cfg Config) *Client {
 type Request struct {
 	client *Client
 
-	ctx         context.Context
-	queryParams map[string]string
-	method      string
-	path        string
-	body        []byte
-	tokenType   TokenType
-	err         error
+	ctx       context.Context
+	query     url.Values
+	method    string
+	path      string
+	body      []byte
+	tokenType TokenType
+	err       error
 }
 
 // TokenType represents the type of authentication token to use
@@ -78,11 +86,15 @@ const (
 )
 
 func (c *Client) newRequest(ctx context.Context) *Request {
+	query := make(url.Values)
+	if c.cfg.BaseURL != nil {
+		query = c.cfg.BaseURL.Query()
+	}
+
 	return &Request{
-		client:      c,
-		ctx:         ctx,
-		queryParams: make(map[string]string),
-		tokenType:   TokenTypeAPI,
+		client: c,
+		ctx:    ctx,
+		query:  query,
 	}
 }
 
@@ -101,11 +113,6 @@ func (c *Client) PUT(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
 }
 
-// DELETE creates a DELETE request builder
-func (c *Client) DELETE(ctx context.Context, path string) APIRequest {
-	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
-}
-
 // WithPath sets the path for the request
 func (r *Request) WithPath(path string) APIRequest {
 	r.path = path
@@ -113,13 +120,30 @@ func (r *Request) WithPath(path string) APIRequest {
 	return r
 }
 
-// WithQueryParams adds multiple query parameters to the request
+// WithQueryParams adds multiple query parameters to the request, overwriting existing keys if they exist
 func (r *Request) WithQueryParams(params map[string]string) APIRequest {
-	if r.queryParams == nil {
-		r.queryParams = make(map[string]string)
+	if r.query == nil {
+		r.query = make(url.Values)
 	}
 
-	maps.Copy(r.queryParams, params)
+	for key, value := range params {
+		r.query.Set(key, value)
+	}
+
+	return r
+}
+
+// WithRawQueryParams adds multiple query parameters to the request
+func (r *Request) WithRawQueryParams(params url.Values) APIRequest {
+	if r.query == nil {
+		r.query = make(url.Values)
+	}
+
+	for key, values := range params {
+		for _, value := range values {
+			r.query.Add(key, value)
+		}
+	}
 
 	return r
 }
@@ -159,15 +183,15 @@ func (r *Request) WithPaasToken() APIRequest {
 	return r
 }
 
-// Execute executes the request and unmarshals the response into the provided target
-func (r *Request) Execute(target any) error {
+// Execute executes the request and unmarshals the response into the provided model
+func (r *Request) Execute(model any) error {
 	resp, err := r.doRequest()
 	if err != nil {
 		return err
 	}
 	defer utils.CloseBodyAfterRequest(resp)
 
-	return handleResponse(resp, target)
+	return handleResponse(resp, model)
 }
 
 // ExecuteRaw executes the request and returns the raw response data
@@ -208,13 +232,8 @@ func (r *Request) buildURL() (*url.URL, error) {
 
 	u := r.client.cfg.BaseURL.JoinPath(r.path)
 
-	if len(r.queryParams) > 0 {
-		q := u.Query()
-		for key, value := range r.queryParams {
-			q.Set(key, value)
-		}
-
-		u.RawQuery = q.Encode()
+	if len(r.query) > 0 {
+		u.RawQuery = r.query.Encode()
 	}
 
 	return u, nil

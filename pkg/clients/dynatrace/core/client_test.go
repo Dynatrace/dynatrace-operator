@@ -35,7 +35,6 @@ func TestClient_Verbs(t *testing.T) {
 	require.NoError(t, c.GET(t.Context(), http.MethodGet).Execute(nil))
 	require.NoError(t, c.POST(t.Context(), http.MethodPost).Execute(nil))
 	require.NoError(t, c.PUT(t.Context(), http.MethodPut).Execute(nil))
-	require.NoError(t, c.DELETE(t.Context(), http.MethodDelete).Execute(nil))
 }
 
 func TestClient_Headers(t *testing.T) {
@@ -188,8 +187,9 @@ func TestHandleErrorResponse_MultipleServerErrors(t *testing.T) {
 }
 
 func TestHandleErrorResponse_GenericHTTPError(t *testing.T) {
-	resp := newTestResponse(500, "/test", "not-json")
-	err := handleErrorResponse(resp, []byte("not-json"))
+	htmlBody := `<html><head><title>504 Gateway error</title></head><body><p>Oops!</p></body></html>`
+	resp := newTestResponse(500, "/test", "")
+	err := handleErrorResponse(resp, []byte(htmlBody))
 	httpErr := &HTTPError{}
 	require.ErrorAs(t, err, &httpErr)
 	assert.Empty(t, httpErr.ServerErrors)
