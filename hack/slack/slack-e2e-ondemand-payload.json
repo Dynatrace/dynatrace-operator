@@ -4,7 +4,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "E2E ondemand test results for for `${{ env.TARGET_BRANCH }}` `${{ github.sha }}` "
+        "text": "E2E ondemand test results for `${{ env.TARGET_BRANCH }}` `${{ github.sha }}` "
       }
     },
     {
