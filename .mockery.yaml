@@ -15,12 +15,12 @@ template-schema: '{{.Template}}.schema.json'
 
 packages:
   # =============================================================================
-  # Single-use mocks: placed in _test.go files next to their usage
+  # Single-use mocks: placed within same package in _test.go files next to their usage
   # =============================================================================
-  github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/remotecommand:
+  github.com/Dynatrace/dynatrace-operator/cmd/supportarchive:
     config:
-      dir: "{{.InterfaceDir}}/.."
-      pkgname: "supportarchive"
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{ .SrcPackageName }}"
       structname: "{{.Mock}}{{.InterfaceName}}"
       filename: "mock_{{.InterfaceName | snakecase }}_test.go"
     interfaces:

@@ -1,4 +1,4 @@
-package remotecommand
+package supportarchive
 
 import (
 	"bytes"
