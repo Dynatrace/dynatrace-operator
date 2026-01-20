@@ -171,13 +171,13 @@ For **single-use mocks** (used in one package only), place them as `_test.go` fi
 ```yaml
 packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{ .SrcPackageName }}"
+      structname: "{{.Mock}}{{.InterfaceName}}"
+      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
     interfaces:
       StatusUpdater:
-        config:
-          dir: "{{.InterfaceDir}}"
-          pkgname: "{{ .SrcPackageName }}"
-          structname: "{{.Mock}}{{.InterfaceName}}"
-          filename: "mock_{{.InterfaceName | snakecase }}_test.go"
 ```
 
 then run mockery by simple running
