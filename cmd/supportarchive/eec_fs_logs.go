@@ -7,7 +7,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/remotecommand"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -30,7 +29,7 @@ const (
 type fsLogCollector struct {
 	ctx                   context.Context
 	pods                  clientgocorev1.PodInterface
-	remoteCommandExecutor remotecommand.Executor
+	remoteCommandExecutor Executor
 	config                *rest.Config
 	collectorCommon
 	appName            string
@@ -41,7 +40,7 @@ var (
 	eecPodNotFoundError = errors.New("eec pod not found")
 )
 
-func newFsLogCollector(context context.Context, config *rest.Config, command remotecommand.Executor, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
+func newFsLogCollector(context context.Context, config *rest.Config, command Executor, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
 	return fsLogCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

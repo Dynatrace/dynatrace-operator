@@ -11,34 +11,63 @@ recursive: false
 require-template-schema-exists: true
 template: testify
 template-schema: '{{.Template}}.schema.json'
+
+
 packages:
-  github.com/Dynatrace/dynatrace-operator/cmd/supportarchive/remotecommand:
+  # =============================================================================
+  # Single-use mocks: placed within same package in _test.go files next to their usage
+  # =============================================================================
+  github.com/Dynatrace/dynatrace-operator/cmd/supportarchive:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName}}"
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
     interfaces:
       Executor:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
+    interfaces:
+      StatusUpdater:
+        config:
+          dir: "{{.InterfaceDir}}"
+          pkgname: "{{.SrcPackageName}}"
+          structname: "{{.Mock}}{{.InterfaceName}}"
+          filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+      Reconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName}}"
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+    interfaces:
+      k8sEntityReconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName}}"
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+    interfaces:
+      Modifier:
+  # =============================================================================
+  # Shared mocks: placed in test/mocks/ (using default config)
+  # =============================================================================
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
     interfaces:
       Client:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect:
     interfaces:
       Client:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
-    interfaces:
-      CapabilityReconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
-    interfaces:
-      StatusUpdater:
-      Reconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
-    interfaces:
-      Builder:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
       Reconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
     interfaces:
-      k8sEntityReconciler:
-        config:
-          structname: '{{ .InterfaceName | firstUpper }}'
+      CapabilityReconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
+    interfaces:
+      Builder:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio:
     interfaces:
       Reconciler:
@@ -48,18 +77,12 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry:
     interfaces:
       ImageGetter:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
-    config:
-      recursive: true
-      dir: "pkg/controllers/dynakube/activegate/internal/statefulset/builder/mocks"
-    interfaces:
-      Modifier:
-  github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator:
-    interfaces:
-      Mutator:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler:
     interfaces:
       Handler:
+  github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator:
+    interfaces:
+      Mutator:
   k8s.io/client-go/kubernetes/typed/core/v1:
     config:
       dir: "test/mocks/{{.SrcPackagePath}}"
