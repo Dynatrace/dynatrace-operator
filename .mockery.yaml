@@ -18,13 +18,13 @@ packages:
   # Single-use mocks: placed within same package in _test.go files next to their usage
   # =============================================================================
   github.com/Dynatrace/dynatrace-operator/cmd/supportarchive:
-    config:
-      dir: "{{.InterfaceDir}}"
-      pkgname: "{{ .SrcPackageName }}"
-      structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
     interfaces:
       Executor:
+        config:
+          dir: "{{.InterfaceDir}}"
+          pkgname: "{{ .SrcPackageName }}"
+          structname: "{{.Mock}}{{.InterfaceName}}"
+          filename: "mock_{{.InterfaceName | snakecase }}_test.go"
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
     interfaces:
       StatusUpdater:
@@ -43,14 +43,14 @@ packages:
           structname: '{{ .InterfaceName | firstUpper }}'
           filename: "mock_{{.InterfaceName | snakecase }}_test.go"
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
-    config:
-      dir: "{{.InterfaceDir}}"
-      pkgname: "{{ .SrcPackageName }}"
-      structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
-      recursive: true
     interfaces:
       Modifier:
+        config:
+          dir: "{{.InterfaceDir}}"
+          pkgname: "{{ .SrcPackageName }}"
+          structname: "{{.Mock}}{{.InterfaceName}}"
+          filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+          recursive: true
   # =============================================================================
   # Shared mocks: placed in test/mocks/ (using default config)
   # =============================================================================
