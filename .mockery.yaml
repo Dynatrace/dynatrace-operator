@@ -38,7 +38,7 @@ packages:
     config:
       dir: "{{.InterfaceDir}}"
       pkgname: "{{ .SrcPackageName }}"
-      structname: '{{ .InterfaceName | firstUpper }}'
+      structname: "{{.Mock}}{{.InterfaceName}}"
       filename: "mock_{{.InterfaceName | snakecase }}_test.go"
     interfaces:
       k8sEntityReconciler:
