@@ -113,11 +113,7 @@ func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKub
 		} else if err == nil && source.Data[pmc.InputFileName] != nil {
 			pmConfig, err = dtclient.NewProcessModuleConfig(source.Data[pmc.InputFileName])
 			if err != nil {
-				conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
-
-				log.Info("could not unmarshal process module config from source secret")
-
-				return nil, err
+				log.Error(err, "could not unmarshal process module config from source secret, will recreate")
 			}
 		}
 	}

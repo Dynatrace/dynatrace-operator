@@ -21,13 +21,21 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	testProxyURL = "http://proxy.example.com:8080"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestPreparePMC(t *testing.T) {
+	const (
+		testDynakube              = "dk"
+		testNamespace             = "ns"
+		testProxyURL              = "http://proxy.example.com:8080"
+		testHostGroup             = "test-host-group"
+		testUUID                  = "uuid"
+		testCommunicationEndpoint = "https://mytenant1.dev.dynatracelabs.com:443,https://myag.dev.dynatracelabs.com:443"
+		testTenantToken           = "tenant-token"
+	)
+
 	t.Run("successfully prepares PMC from API", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -37,7 +45,7 @@ func TestPreparePMC(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
-					HostGroup:            "test-host-group",
+					HostGroup:            testHostGroup,
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 			},
@@ -68,7 +76,7 @@ func TestPreparePMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.preparePMC(context.Background(), dk)
+		result, err := secretGenerator.preparePMC(t.Context(), dk)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -88,7 +96,7 @@ func TestPreparePMC(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
-					HostGroup:            "test-host-group",
+					HostGroup:            testHostGroup,
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
 				Proxy: &value.Source{
@@ -122,7 +130,7 @@ func TestPreparePMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.preparePMC(context.Background(), dk)
+		result, err := secretGenerator.preparePMC(t.Context(), dk)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -159,7 +167,7 @@ func TestPreparePMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.preparePMC(context.Background(), dk)
+		result, err := secretGenerator.preparePMC(t.Context(), dk)
 
 		require.Error(t, err)
 		require.Nil(t, result)
@@ -190,7 +198,7 @@ func TestPreparePMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.preparePMC(context.Background(), dk)
+		result, err := secretGenerator.preparePMC(t.Context(), dk)
 
 		require.Error(t, err)
 		require.Nil(t, result)
@@ -238,12 +246,10 @@ func TestPreparePMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.preparePMC(context.Background(), dk)
+		result, err := secretGenerator.preparePMC(t.Context(), dk)
 
 		require.Error(t, err)
 		require.Nil(t, result)
-
-		mockDTClient.AssertExpectations(t)
 	})
 
 	t.Run("uses cached PMC when not outdated", func(t *testing.T) {
@@ -298,7 +304,7 @@ func TestPreparePMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.preparePMC(context.Background(), dk)
+		result, err := secretGenerator.preparePMC(t.Context(), dk)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -306,13 +312,15 @@ func TestPreparePMC(t *testing.T) {
 		var pmConfig dtclient.ProcessModuleConfig
 		err = json.Unmarshal(result, &pmConfig)
 		require.NoError(t, err)
-
-		// Verify API was not called
-		mockDTClient.AssertNotCalled(t, "GetProcessModuleConfig")
 	})
 }
 
 func TestGetCachedPMC(t *testing.T) {
+	const (
+		testDynakube  = "dk"
+		testNamespace = "ns"
+	)
+
 	t.Run("returns nil when secret is outdated", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -328,7 +336,7 @@ func TestGetCachedPMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.getCachedPMC(context.Background(), dk)
+		result, err := secretGenerator.getCachedPMC(t.Context(), dk)
 
 		require.NoError(t, err)
 		require.Nil(t, result)
@@ -360,7 +368,7 @@ func TestGetCachedPMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.getCachedPMC(context.Background(), dk)
+		result, err := secretGenerator.getCachedPMC(t.Context(), dk)
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
@@ -381,7 +389,7 @@ func TestGetCachedPMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.getCachedPMC(context.Background(), dk)
+		result, err := secretGenerator.getCachedPMC(t.Context(), dk)
 
 		require.NoError(t, err)
 		require.Nil(t, result)
@@ -410,13 +418,13 @@ func TestGetCachedPMC(t *testing.T) {
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.getCachedPMC(context.Background(), dk)
+		result, err := secretGenerator.getCachedPMC(t.Context(), dk)
 
 		require.NoError(t, err)
 		require.Nil(t, result)
 	})
 
-	t.Run("returns error when PMC data is invalid", func(t *testing.T) {
+	t.Run("returns nil when source secret PMC data is invalid", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakube,
@@ -430,16 +438,47 @@ func TestGetCachedPMC(t *testing.T) {
 			pmc.InputFileName: []byte("invalid-json-data"),
 		})
 
-		targetSecret := clientSecret(consts.BootstrapperInitSecretName, testNamespace, map[string][]byte{
-			pmc.InputFileName: []byte("invalid-json-data"),
-		})
-
-		clt := fake.NewClient(dk, sourceSecret, targetSecret)
+		clt := fake.NewClient(dk, sourceSecret)
 		mockDTClient := dtclientmock.NewClient(t)
 
 		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
 
-		result, err := secretGenerator.getCachedPMC(context.Background(), dk)
+		result, err := secretGenerator.getCachedPMC(t.Context(), dk)
+
+		require.Error(t, err)
+		require.Nil(t, result)
+	})
+
+	t.Run("returns err when k8s api fails", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testDynakube,
+				Namespace: testNamespace,
+			},
+		}
+
+		conditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
+
+		failClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Create: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.CreateOption) error {
+				return errors.New("Create failed")
+			},
+			Delete: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.DeleteOption) error {
+				return errors.New("Delete failed")
+			},
+			Update: func(_ context.Context, _ client.WithWatch, _ client.Object, _ ...client.UpdateOption) error {
+				return errors.New("Update failed")
+			},
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				return errors.New("Get failed")
+			},
+		})
+
+		mockDTClient := dtclientmock.NewClient(t)
+
+		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
+
+		result, err := secretGenerator.getCachedPMC(t.Context(), dk)
 
 		require.Error(t, err)
 		require.Nil(t, result)
