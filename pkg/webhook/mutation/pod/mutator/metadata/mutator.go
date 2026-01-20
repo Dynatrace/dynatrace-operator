@@ -28,7 +28,7 @@ func NewMutator(metaClient client.Client) dtwebhook.Mutator {
 }
 
 func (mut *Mutator) IsEnabled(request *dtwebhook.BaseRequest) bool {
-	if oneagent.IsEnabled(request) && oneagent.IsSelfExtractingImage(request) {
+	if oneagent.IsEnabled(request) {
 		return true
 	}
 

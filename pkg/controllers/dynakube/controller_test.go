@@ -32,7 +32,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
-	dynakubemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube"
 	dtbuildermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -347,9 +346,9 @@ func TestReconcileComponents(t *testing.T) {
 		switch reconciler := reconciler.(type) {
 		case *controllermock.Reconciler:
 			reconciler.EXPECT().Reconcile(anyCtx).Return(uniqueError).Once()
-		case *dynakubemock.K8sEntityReconciler:
+		case *mockk8sEntityReconciler:
 			reconciler.EXPECT().Reconcile(anyCtx, args[0], args[1]).Return(uniqueError).Once()
-		case *dynakubemock.DynakubeReconciler:
+		case *mockdynakubeReconciler:
 			reconciler.EXPECT().Reconcile(anyCtx, args[0]).Return(uniqueError).Once()
 		default:
 			return
@@ -370,8 +369,8 @@ func TestReconcileComponents(t *testing.T) {
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
 		mockExtensionReconciler := controllermock.NewReconciler(t)
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		mockKSPMReconciler := dynakubemock.NewDynakubeReconciler(t)
-		mockK8sEntityReconciler := dynakubemock.NewK8sEntityReconciler(t)
+		mockKSPMReconciler := newMockdynakubeReconciler(t)
+		mockK8sEntityReconciler := newMockk8sEntityReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -409,7 +408,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockExtensionReconciler := controllermock.NewReconciler(t)
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		k8sEntityReconciler := dynakubemock.NewK8sEntityReconciler(t)
+		k8sEntityReconciler := newMockk8sEntityReconciler(t)
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
@@ -484,11 +483,11 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	anyDynaKube := mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
 
-	mockKSPMReconciler := dynakubemock.NewDynakubeReconciler(t)
+	mockKSPMReconciler := newMockdynakubeReconciler(t)
 	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
-	mockK8sEntityReconciler := dynakubemock.NewK8sEntityReconciler(t)
-	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, mockClient, anyDynaKube).Return(nil)
+	mockK8sEntityReconciler := newMockk8sEntityReconciler(t)
+	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, mockClient, mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })).Return(nil)
 
 	fakeIstio := fakeistio.NewSimpleClientset()
 
