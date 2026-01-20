@@ -122,12 +122,14 @@ const (
 
 // Relevant token scopes
 const (
-	TokenScopeInstallerDownload     = "InstallerDownload"
-	TokenScopeDataExport            = "DataExport"
-	TokenScopeMetricsIngest         = "metrics.ingest"
-	TokenScopeSettingsRead          = "settings.read"
-	TokenScopeSettingsWrite         = "settings.write"
-	TokenScopeActiveGateTokenCreate = "activeGateTokenManagement.create"
+	TokenScopeInstallerDownload        = "InstallerDownload"
+	TokenScopeDataExport               = "DataExport"
+	TokenScopeMetricsIngest            = "metrics.ingest"
+	TokenScopeOpenTelemetryTraceIngest = "openTelemetryTrace.ingest"
+	TokenScopeLogsIngest               = "logs.ingest"
+	TokenScopeSettingsRead             = "settings.read"
+	TokenScopeSettingsWrite            = "settings.write"
+	TokenScopeActiveGateTokenCreate    = "activeGateTokenManagement.create"
 )
 
 const (

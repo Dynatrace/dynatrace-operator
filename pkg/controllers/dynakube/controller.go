@@ -347,7 +347,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling otel-collector")
 
-	otelcReconciler := controller.otelcReconcilerBuilder(controller.client, controller.apiReader, dk)
+	otelcReconciler := controller.otelcReconcilerBuilder(dynatraceClient, controller.client, controller.apiReader, dk)
 
 	err = otelcReconciler.Reconcile(ctx)
 	if err != nil {
