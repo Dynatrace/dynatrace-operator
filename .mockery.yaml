@@ -48,7 +48,6 @@ packages:
       pkgname: "{{.SrcPackageName}}"
       structname: "{{.Mock}}{{.InterfaceName}}"
       filename: "mock_{{.InterfaceName | snakecase}}_test.go"
-      recursive: true
     interfaces:
       Modifier:
   # =============================================================================
