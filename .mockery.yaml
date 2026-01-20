@@ -51,15 +51,6 @@ packages:
       recursive: true
     interfaces:
       Modifier:
-  github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler:
-    config:
-      dir: "{{.InterfaceDir}}/.."
-      pkgname: "pod"
-      structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
-    interfaces:
-      Handler:
-
   # =============================================================================
   # Shared mocks: placed in test/mocks/ (using default config)
   # =============================================================================
@@ -87,6 +78,9 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry:
     interfaces:
       ImageGetter:
+  github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler:
+    interfaces:
+      Handler:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator:
     interfaces:
       Mutator:
