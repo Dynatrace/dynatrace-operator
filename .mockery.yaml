@@ -20,9 +20,9 @@ packages:
   github.com/Dynatrace/dynatrace-operator/cmd/supportarchive:
     config:
       dir: "{{.InterfaceDir}}"
-      pkgname: "{{ .SrcPackageName }}"
+      pkgname: "{{.SrcPackageName}}"
       structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
     interfaces:
       Executor:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
@@ -30,24 +30,24 @@ packages:
       StatusUpdater:
         config:
           dir: "{{.InterfaceDir}}"
-          pkgname: "{{ .SrcPackageName }}"
+          pkgname: "{{.SrcPackageName}}"
           structname: "{{.Mock}}{{.InterfaceName}}"
-          filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+          filename: "mock_{{.InterfaceName | snakecase}}_test.go"
       Reconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube:
     config:
       dir: "{{.InterfaceDir}}"
-      pkgname: "{{ .SrcPackageName }}"
+      pkgname: "{{.SrcPackageName}}"
       structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
     interfaces:
       k8sEntityReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
-      pkgname: "{{ .SrcPackageName }}"
+      pkgname: "{{.SrcPackageName}}"
       structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
       recursive: true
     interfaces:
       Modifier:
