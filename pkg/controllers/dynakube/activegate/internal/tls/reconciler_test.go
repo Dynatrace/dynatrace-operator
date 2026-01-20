@@ -136,4 +136,44 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, conditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, fmt.Sprintf("%s created", agTLSSecret.Name), condition.Message)
 	})
+
+	t.Run("secret deleted", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testDynakubeName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+					},
+				},
+			},
+		}
+		fakeClient := fake.NewClient()
+		r := NewReconciler(fakeClient, fakeClient, dk)
+		err := r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
+			Namespace: r.dk.Namespace,
+			Name:      r.dk.ActiveGate().GetAutoTLSSecretName(),
+		})
+		require.NoError(t, err)
+
+		dk.Annotations = make(map[string]string)
+		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+
+		err = r.Reconcile(context.Background())
+		require.NoError(t, err)
+
+		_, err = r.secrets.Get(context.Background(), types.NamespacedName{
+			Namespace: r.dk.Namespace,
+			Name:      r.dk.ActiveGate().GetAutoTLSSecretName(),
+		})
+		require.Error(t, err)
+
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
 }
