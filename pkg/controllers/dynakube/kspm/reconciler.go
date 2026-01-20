@@ -14,8 +14,8 @@ type Reconciler struct {
 	client              client.Client
 	apiReader           client.Reader
 	dk                  *dynakube.DynaKube
-	tokenReconciler     controllers.Reconciler
-	daemonSetReconciler controllers.Reconciler
+	tokenReconciler     *token.Reconciler
+	daemonSetReconciler *daemonset.Reconciler
 }
 
 type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
@@ -25,20 +25,20 @@ func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.D
 		client:              client,
 		apiReader:           apiReader,
 		dk:                  dk,
-		tokenReconciler:     token.NewReconciler(client, apiReader, dk),
-		daemonSetReconciler: daemonset.NewReconciler(client, apiReader, dk),
+		tokenReconciler:     token.NewReconciler(client, apiReader),
+		daemonSetReconciler: daemonset.NewReconciler(client, apiReader),
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.tokenReconciler.Reconcile(ctx)
+	err := r.tokenReconciler.Reconcile(ctx, r.dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM Secret")
 
 		return err
 	}
 
-	err = r.daemonSetReconciler.Reconcile(ctx)
+	err = r.daemonSetReconciler.Reconcile(ctx, r.dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM DaemonSet")
 
