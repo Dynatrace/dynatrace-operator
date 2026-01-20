@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -17,38 +18,24 @@ import (
 )
 
 func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube) ([]byte, error) {
-	if !conditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
-		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
-
-		sourceKey := client.ObjectKey{
-			Name:      GetSourceCertsSecretName(dk.Name),
-			Namespace: dk.Namespace,
-		}
-
-		targetKey := client.ObjectKey{
-			Name:      consts.BootstrapperInitSecretName,
-			Namespace: dk.Namespace,
-		}
-
-		source, err := k8ssecret.GetSecretFromSource(ctx, s.secrets, sourceKey, targetKey)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
-
-			return nil, err
-		} else if err == nil && source.Data[pmc.InputFileName] != nil {
-			return source.Data[pmc.InputFileName], nil
-		}
+	pmConfig, err := s.getCachedPMC(ctx, dk)
+	if err != nil {
+		return nil, err
 	}
 
-	log.Debug("calling the Dynatrace API for ruxitagentproc content")
+	if pmConfig == nil {
+		var err error
 
-	conditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated, update in progress")
+		pmConfig, err = s.dtClient.GetProcessModuleConfig(ctx, 0)
+		if err != nil {
+			conditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 
-	pmc, err := s.dtClient.GetProcessModuleConfig(ctx, 0)
-	if err != nil {
-		conditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
+			return nil, err
+		}
 
-		return nil, err
+		log.Debug("calling the Dynatrace API for ruxitagentproc content")
+
+		conditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated, update in progress")
 	}
 
 	tenantToken, err := k8ssecret.GetDataFromSecretName(ctx, s.apiReader, types.NamespacedName{
@@ -61,7 +48,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 		return nil, err
 	}
 
-	pmc = pmc.
+	pmConfig = pmConfig.
 		AddHostGroup(dk.OneAgent().GetHostGroup()).
 		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).
 		// set proxy explicitly empty, so old proxy settings get deleted where necessary
@@ -77,7 +64,7 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 			return nil, err
 		}
 
-		pmc.AddProxy(proxy)
+		pmConfig.AddProxy(proxy)
 
 		dnsEntry := capability.BuildHostEntries(*dk)
 
@@ -85,12 +72,12 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 			dnsEntry += "," + dk.FF().GetNoProxy()
 		}
 
-		pmc.AddNoProxy(dnsEntry)
+		pmConfig.AddNoProxy(dnsEntry)
 	}
 
-	pmc.SortPropertiesByKey()
+	pmConfig.SortPropertiesByKey()
 
-	marshaled, err := json.Marshal(pmc)
+	marshaled, err := json.Marshal(pmConfig)
 	if err != nil {
 		conditions.SetSecretGenFailed(dk.Conditions(), ConfigConditionType, err)
 
@@ -100,4 +87,36 @@ func (s *SecretGenerator) preparePMC(ctx context.Context, dk *dynakube.DynaKube)
 	}
 
 	return marshaled, nil
+}
+
+func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKube) (*dtclient.ProcessModuleConfig, error) {
+	var pmConfig *dtclient.ProcessModuleConfig
+
+	if !conditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
+		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
+
+		sourceKey := client.ObjectKey{
+			Name:      GetSourceConfigSecretName(dk.Name),
+			Namespace: dk.Namespace,
+		}
+
+		targetKey := client.ObjectKey{
+			Name:      consts.BootstrapperInitSecretName,
+			Namespace: dk.Namespace,
+		}
+
+		source, err := k8ssecret.GetSecretFromSource(ctx, s.secrets, sourceKey, targetKey)
+		if err != nil && !k8serrors.IsNotFound(err) {
+			conditions.SetKubeAPIError(dk.Conditions(), ConfigConditionType, err)
+
+			return nil, err
+		} else if err == nil && source.Data[pmc.InputFileName] != nil {
+			pmConfig, err = dtclient.NewProcessModuleConfig(source.Data[pmc.InputFileName])
+			if err != nil {
+				log.Error(err, "could not unmarshal process module config from source secret, will recreate")
+			}
+		}
+	}
+
+	return pmConfig, nil
 }
