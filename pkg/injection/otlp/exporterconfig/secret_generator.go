@@ -72,6 +72,8 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		if err != nil {
 			return errors.WithStack(err)
 		}
+	} else if meta.FindStatusCondition(*dk.Conditions(), CertsConditionType) != nil {
+		return cleanupCerts(ctx, s.client, s.apiReader, namespaces, dk)
 	}
 
 	return nil
