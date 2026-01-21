@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/integrationtests"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -349,6 +350,63 @@ func TestWebhook(t *testing.T) {
 		})
 
 		assert.Contains(t, pod.Annotations, metadatamutator.AnnotationReason)
+	})
+
+	t.Run("custom pull secret is added to pod", func(t *testing.T) {
+		customPullSecret := "my-custom-pull-secret"
+		codeModulesImage := "custom.code.modules/image:1.2.3"
+
+		modules := installconfig.GetModules()
+		modules.CSIDriver = false
+		installconfig.SetModulesOverride(t, modules)
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.OANodeImagePullKey: "true",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				CustomPullSecret: customPullSecret,
+				OneAgent: oneagent.Spec{
+					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+						AppInjectionSpec: oneagent.AppInjectionSpec{
+							CodeModulesImage: codeModulesImage,
+						},
+					},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: testMEID,
+				KubernetesClusterName: testClusterName,
+				KubeSystemUUID:        testClusterUUID,
+				OneAgent: oneagent.Status{
+					ConnectionInfoStatus: oneagent.ConnectionInfoStatus{
+						ConnectionInfo: communication.ConnectionInfo{
+							TenantUUID: uuid.NewString(),
+						},
+					},
+				},
+				CodeModules: oneagent.CodeModulesStatus{
+					VersionStatus: status.VersionStatus{
+						ImageID: codeModulesImage,
+					},
+				},
+			},
+		}
+		createDynaKube(t, clt, dk)
+
+		dummyOwner, ownerReference := getDummyOwnerDeployment()
+		createObject(t, clt, dummyOwner)
+		pod := createPod(t, clt, func(pod *corev1.Pod) {
+			pod.OwnerReferences = ownerReference
+		})
+
+		require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
+		require.Len(t, pod.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, customPullSecret, pod.Spec.ImagePullSecrets[0].Name)
 	})
 }
 

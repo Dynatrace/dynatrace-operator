@@ -242,12 +242,14 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("node-image-pull-scenario", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
+		customPullSecret := "custom-pull-secret"
 		image := "myimage.io:latest"
 		dk := dynakube.DynaKube{}
 		dk.Name = "node-image-pull-scenario"
 		dk.Annotations = map[string]string{
 			exp.OANodeImagePullKey: "true",
 		}
+		dk.Spec.CustomPullSecret = customPullSecret
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 		dk.Status.CodeModules.ImageID = image
@@ -277,6 +279,9 @@ func TestMutateInitContainer(t *testing.T) {
 		assert.Equal(t, image, request.InstallContainer.Image)
 
 		assert.Empty(t, request.InstallContainer.Resources) // removes default, as they wouldn't work
+
+		assert.Len(t, pod.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, customPullSecret, pod.Spec.ImagePullSecrets[0].Name)
 	})
 
 	t.Run("zip-scenario -> custom init-resources", func(t *testing.T) {
@@ -502,4 +507,68 @@ func TestGetTechnology(t *testing.T) {
 			assert.Equal(t, test.expected, getTechnology(pod, dk))
 		})
 	}
+}
+
+func TestAddImagePullSecrets(t *testing.T) {
+	t.Run("should not add image pull secret when not set", func(t *testing.T) {
+		originalSecretName := "original-secret"
+		dk := dynakube.DynaKube{}
+		dk.Name = "test-dk"
+		pod := &corev1.Pod{}
+		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+			{Name: originalSecretName},
+		}
+
+		addImagePullSecrets(pod, dk)
+
+		require.Len(t, pod.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, originalSecretName, pod.Spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("should add custom pull secret when set", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		dk.Name = "test-dk"
+		customPullSecret := "custom-pull-secret"
+		dk.Spec.CustomPullSecret = customPullSecret
+		pod := &corev1.Pod{}
+
+		addImagePullSecrets(pod, dk)
+
+		require.Len(t, pod.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, customPullSecret, pod.Spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("should not add duplicate secrets", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		dk.Name = "test-dk"
+		customPullSecret := "custom-pull-secret"
+		dk.Spec.CustomPullSecret = customPullSecret
+		pod := &corev1.Pod{}
+		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+			{Name: customPullSecret},
+		}
+
+		addImagePullSecrets(pod, dk)
+
+		require.Len(t, pod.Spec.ImagePullSecrets, 1)
+		assert.Equal(t, customPullSecret, pod.Spec.ImagePullSecrets[0].Name)
+	})
+
+	t.Run("should preserve existing secrets", func(t *testing.T) {
+		customPullSecret := "custom-pull-secret"
+		dk := dynakube.DynaKube{}
+		dk.Name = "test-dk"
+		dk.Spec.CustomPullSecret = customPullSecret
+		pod := &corev1.Pod{}
+		existingSecret := "existing-secret"
+		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+			{Name: existingSecret},
+		}
+
+		addImagePullSecrets(pod, dk)
+
+		require.Len(t, pod.Spec.ImagePullSecrets, 2)
+		assert.Equal(t, existingSecret, pod.Spec.ImagePullSecrets[0].Name)
+		assert.Equal(t, customPullSecret, pod.Spec.ImagePullSecrets[1].Name)
+	})
 }
