@@ -77,7 +77,7 @@ func TestReadResponseForProcessModuleConfig(t *testing.T) {
 	dc := &dynatraceClient{}
 	require.NotNil(t, dc)
 
-	processConfig, err := dc.readResponseForProcessModuleConfig([]byte(goodProcessModuleConfigResponse))
+	processConfig, err := NewProcessModuleConfig([]byte(goodProcessModuleConfigResponse))
 	require.NoError(t, err)
 	assert.Equal(t, uint(1), processConfig.Revision)
 	require.Len(t, processConfig.Properties, 2)

@@ -179,7 +179,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(ctx context.Context, prevRevi
 		return nil, err
 	}
 
-	return dtc.readResponseForProcessModuleConfig(responseData)
+	return NewProcessModuleConfig(responseData)
 }
 
 func (dtc *dynatraceClient) createProcessModuleConfigRequest(ctx context.Context, prevRevision uint) (*http.Request, error) {
@@ -225,7 +225,7 @@ func (dtc *dynatraceClient) checkProcessModuleConfigRequestStatus(resp *http.Res
 	return false
 }
 
-func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) (*ProcessModuleConfig, error) {
+func NewProcessModuleConfig(response []byte) (*ProcessModuleConfig, error) {
 	resp := ProcessModuleConfig{}
 
 	err := json.Unmarshal(response, &resp)
