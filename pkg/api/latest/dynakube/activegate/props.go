@@ -112,10 +112,15 @@ func (ag *Spec) GetTLSSecretName() string {
 	}
 
 	if ag.IsAutomaticTLSSecretEnabled() {
-		return ag.name + TLSSecretSuffix
+		return ag.GetAutoTLSSecretName()
 	}
 
 	return ""
+}
+
+// GetAutoTLSSecretName returns the name of the automatically created AG TLS secret.
+func (ag *Spec) GetAutoTLSSecretName() string {
+	return ag.name + TLSSecretSuffix
 }
 
 func (ag *Spec) GetConnectionInfoConfigMapName() string {
