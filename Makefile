@@ -54,7 +54,7 @@ SHELL ?= bash
 -include hack/make/tests/*.mk
 -include hack/make/release/*.mk
 
-## Builds the operator image and pushes it to quay with a snapshot tag
+## Builds the operator image and pushes it to your registry (make sure to set the variable REGISTRY) with a snapshot tag
 build: images/build/push
 
 ## Installs prerequisites, builds and pushes a tagged operator image, and deploys the operator on a cluster

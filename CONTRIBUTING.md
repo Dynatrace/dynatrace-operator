@@ -107,17 +107,20 @@ make go/check-version
     make test/e2e/<scope_of_the_changes>
     ```
 
-7. To test your changes on a cluster use
-
-    > Pushing to the default container registry (`quay.io/dynatrace/dynatrace-operator`) requires specific permissions.
-    > You can use your own container registry by setting the `IMAGE` environment variable to a different value.
-
+7. To test your changes on a cluster:
     1. Connect to a cluster using `kubectl`
     2. Use make commands to build and deploy your operator as follows:
 
     ```sh
+    export REPOSITORY=<your GitHub handle>
     make build && make deploy
     ```
+
+> [!IMPORTANT]
+> Make sure to set the environment variables `REGISTRY` (default: ghcr.io) and/or `REPOSITORY` (default: dynatrace) to something you control.
+> For example: `REPOSITORY=<your GitHub handle>` => ghcr.io will still be used (default), but the images will be pulled from your GitHub account.
+> If you want to push to ghcr.io, make sure to authenticate to the registry: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry
+> You can also set `IMAGE`, which will reconfigure both registry and repository.
 
 8. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
 
