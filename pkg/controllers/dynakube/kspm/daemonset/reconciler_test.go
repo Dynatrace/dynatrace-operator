@@ -37,9 +37,8 @@ func TestReconcile(t *testing.T) {
 
 		mockK8sClient := fake.NewClient()
 
-		reconciler := NewReconciler(mockK8sClient,
-			mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(ctx, dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
@@ -49,7 +48,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context())
+		err = reconciler.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -71,8 +70,8 @@ func TestReconcile(t *testing.T) {
 
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "this is a test")
 
-		reconciler := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := reconciler.Reconcile(ctx)
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(ctx, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
@@ -90,10 +89,9 @@ func TestReconcile(t *testing.T) {
 
 		boomClient := createBOOMK8sClient(t)
 
-		reconciler := NewReconciler(boomClient,
-			boomClient, dk)
+		reconciler := NewReconciler(boomClient, boomClient)
 
-		err := reconciler.Reconcile(t.Context())
+		err := reconciler.Reconcile(t.Context(), dk)
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
@@ -107,9 +105,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 	t.Run("generate daemonset", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, nil)
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -144,9 +141,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().Labels = customLabels
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, nil)
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -161,9 +157,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().Annotations = customAnnotations
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, nil)
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -177,9 +172,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().PriorityClassName = customClass
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, nil)
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -192,9 +186,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.CustomPullSecret = customPullSecret
 
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, nil)
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -212,9 +205,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		dk := createDynakube(true)
 		dk.KSPM().Tolerations = customTolerations
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, nil)
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -227,9 +219,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		dk := createDynakube(true)
 		dk.KSPM().NodeSelector = customNodeSelector
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, nil)
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -245,9 +236,8 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 		dk := createDynakube(true)
 		dk.KSPM().NodeAffinity = customNodeAffinity
-		reconciler := NewReconciler(nil,
-			nil, dk)
-		daemonset, err := reconciler.generateDaemonSet()
+		reconciler := NewReconciler(nil, nil)
+		daemonset, err := reconciler.generateDaemonSet(dk)
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 

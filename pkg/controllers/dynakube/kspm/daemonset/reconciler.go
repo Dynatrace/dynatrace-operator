@@ -21,32 +21,24 @@ const (
 )
 
 type Reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-	dk        *dynakube.DynaKube
+	daemonset k8sdaemonset.QueryObject
 }
 
-func NewReconciler(clt client.Client,
-	apiReader client.Reader,
-	dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		client:    clt,
-		apiReader: apiReader,
-		dk:        dk,
+		daemonset: k8sdaemonset.Query(clt, apiReader, log),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dk.KSPM().IsEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), conditionType) == nil {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if !dk.KSPM().IsEnabled() {
+		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 			return nil // no condition == nothing is there to clean up
 		}
 
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), conditionType)
+		defer meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
-		query := k8sdaemonset.Query(r.client, r.apiReader, log)
-
-		err := query.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetDaemonSetName(), Namespace: r.dk.Namespace}})
+		err := r.daemonset.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}})
 		if err != nil {
 			log.Error(err, "failed to clean-up KSPM daemonset")
 		}
@@ -54,52 +46,52 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	ds, err := r.generateDaemonSet()
+	ds, err := r.generateDaemonSet(dk)
 	if err != nil {
 		return err
 	}
 
-	updated, err := k8sdaemonset.Query(r.client, r.apiReader, log).WithOwner(r.dk).CreateOrUpdate(ctx, ds)
+	updated, err := r.daemonset.WithOwner(dk).CreateOrUpdate(ctx, ds)
 	if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
 	}
 
 	if updated {
-		k8sconditions.SetDaemonSetOutdated(r.dk.Conditions(), conditionType, r.dk.KSPM().GetDaemonSetName()) // needed to reset the timestamp
-		k8sconditions.SetDaemonSetCreated(r.dk.Conditions(), conditionType, r.dk.KSPM().GetDaemonSetName())
+		k8sconditions.SetDaemonSetOutdated(dk.Conditions(), conditionType, dk.KSPM().GetDaemonSetName()) // needed to reset the timestamp
+		k8sconditions.SetDaemonSetCreated(dk.Conditions(), conditionType, dk.KSPM().GetDaemonSetName())
 	}
 
 	return nil
 }
 
-func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
-	tenantUUID, err := r.dk.TenantUUID()
+func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
+	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, err
 	}
 
-	labels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.KSPMComponentLabel)
-	templateAnnotations := map[string]string{tokenSecretHashAnnotation: r.dk.KSPM().TokenSecretHash}
-	maps.Copy(templateAnnotations, r.dk.KSPM().Annotations)
+	labels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KSPMComponentLabel)
+	templateAnnotations := map[string]string{tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash}
+	maps.Copy(templateAnnotations, dk.KSPM().Annotations)
 
 	affinity := k8saffinity.NewAMDOnlyNodeAffinity()
-	if r.dk.KSPM().NodeAffinity != nil {
-		affinity.NodeAffinity = r.dk.KSPM().NodeAffinity
+	if dk.KSPM().NodeAffinity != nil {
+		affinity.NodeAffinity = dk.KSPM().NodeAffinity
 	}
 
-	ds, err := k8sdaemonset.Build(r.dk, r.dk.KSPM().GetDaemonSetName(), getContainer(*r.dk, tenantUUID),
-		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), r.dk.KSPM().Labels),
-		k8sdaemonset.SetAllAnnotations(r.dk.KSPM().Annotations, templateAnnotations),
+	ds, err := k8sdaemonset.Build(dk, dk.KSPM().GetDaemonSetName(), getContainer(*dk, tenantUUID),
+		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.KSPM().Labels),
+		k8sdaemonset.SetAllAnnotations(dk.KSPM().Annotations, templateAnnotations),
 		k8sdaemonset.SetServiceAccount(serviceAccountName),
 		k8sdaemonset.SetAffinity(affinity),
-		k8sdaemonset.SetPriorityClass(r.dk.KSPM().PriorityClassName),
-		k8sdaemonset.SetNodeSelector(r.dk.KSPM().NodeSelector),
-		k8sdaemonset.SetTolerations(r.dk.KSPM().Tolerations),
-		k8sdaemonset.SetPullSecret(r.dk.ImagePullSecretReferences()...),
-		k8sdaemonset.SetUpdateStrategy(r.getUpdateStrategy()),
-		k8sdaemonset.SetVolumes(getVolumes(*r.dk)),
+		k8sdaemonset.SetPriorityClass(dk.KSPM().PriorityClassName),
+		k8sdaemonset.SetNodeSelector(dk.KSPM().NodeSelector),
+		k8sdaemonset.SetTolerations(dk.KSPM().Tolerations),
+		k8sdaemonset.SetPullSecret(dk.ImagePullSecretReferences()...),
+		k8sdaemonset.SetUpdateStrategy(r.getUpdateStrategy(dk)),
+		k8sdaemonset.SetVolumes(getVolumes(*dk)),
 		k8sdaemonset.SetAutomountServiceAccountToken(false),
 		k8sdaemonset.SetHostPID(true),
 	)
@@ -110,8 +102,8 @@ func (r *Reconciler) generateDaemonSet() (*appsv1.DaemonSet, error) {
 	return ds, nil
 }
 
-func (r *Reconciler) getUpdateStrategy() appsv1.DaemonSetUpdateStrategy {
-	updateStrategy := r.dk.KSPM().UpdateStrategy
+func (r *Reconciler) getUpdateStrategy(dk *dynakube.DynaKube) appsv1.DaemonSetUpdateStrategy {
+	updateStrategy := dk.KSPM().UpdateStrategy
 
 	if updateStrategy != nil {
 		return *updateStrategy
