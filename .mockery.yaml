@@ -57,6 +57,10 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
     interfaces:
       Client:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core:
+    interfaces:
+      APIClient:
+      APIRequest:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect:
     interfaces:
       Client:

@@ -35,7 +35,7 @@ const (
 	// Only Deployment that we deploy has a variable name length (SQL extension executor), but it would be longer than the EEC max name length (32) in all cases so we skip it.
 	// Keep this value around in case this changes.
 	// Maximum name length of a Deployment before its pod's names get truncated.
-	maxDeploymentNameLength = 57 //nolint:unused,deadcode
+	maxDeploymentNameLength = 57 //nolint:unused
 
 	maxNameLengthForExtensions = maxStatefulSetNameLength - len(consts.ExtensionsControllerSuffix)
 	maxNameLengthForOTELC      = maxStatefulSetNameLength - len(consts.OTELCollectorNameSuffix)
