@@ -1,4 +1,4 @@
-REGISTRY ?= quay.io
+REGISTRY ?= ghcr.io
 REPOSITORY ?= dynatrace
 IMAGE ?= "$(REGISTRY)/$(REPOSITORY)/dynatrace-operator"
 DEBUG ?= false
