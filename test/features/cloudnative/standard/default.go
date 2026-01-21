@@ -76,6 +76,7 @@ func Feature(t *testing.T, istioEnabled bool, withCSI bool) features.Feature {
 
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
+	cloudnative.AssessMetadataEnrichment(builder, sampleApp)
 	if istioEnabled {
 		istio.AssessIstio(builder, testDynakube, *sampleApp)
 	}

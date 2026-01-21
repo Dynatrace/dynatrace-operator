@@ -327,33 +327,6 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		}
 	}
 
-	validateContainerAttributesforOneAgentInjection := func(t *testing.T, pod corev1.Pod, args []string) {
-		t.Helper()
-
-		require.NotEmpty(t, args)
-
-		for _, arg := range args {
-			splitArg := strings.Split(arg, "=")
-			require.Len(t, splitArg, 2)
-
-			var attr containerattr.Attributes
-
-			require.NoError(t, json.Unmarshal([]byte(splitArg[1]), &attr))
-
-			assert.Contains(t, pod.Spec.Containers, corev1.Container{
-				Name:  attr.ContainerName,
-				Image: attr.ToURI(),
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      volumes.ConfigVolumeName,
-						MountPath: filepath.Join(volumes.ConfigMountPath, "oneagent"),
-						SubPath:   filepath.Join(attr.ContainerName, "oneagent"),
-					},
-				},
-			})
-		}
-	}
-
 	validateContainerAttributesforMetadataEnrichment := func(t *testing.T, pod corev1.Pod, args []string) {
 		t.Helper()
 
@@ -550,8 +523,14 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		app1Container := corev1.Container{
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      volumes.ConfigVolumeName,
+					MountPath: filepath.Join(volumes.ConfigMountPath, "oneagent"),
+					SubPath:   filepath.Join("app-1-name", "oneagent"),
+				},
+			},
 		}
-		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest(false, true))
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
@@ -649,7 +628,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Len(t, initContainer.Args, 2)
-		validateContainerAttributesforOneAgentInjection(t, pod, initContainer.Args)
+		validateContainerAttributes(t, pod, initContainer.Args)
 	})
 
 	t.Run("partially new => add enrichment", func(t *testing.T) {

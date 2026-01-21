@@ -13,7 +13,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -102,7 +102,7 @@ func (certSecret *certificateSecret) areWebhookConfigsValid(configs []*admission
 	return true
 }
 
-func (certSecret *certificateSecret) isCRDConversionValid(crd *apiextensionv1.CustomResourceDefinition) bool {
+func (certSecret *certificateSecret) isCRDConversionValid(crd *apiextensionsv1.CustomResourceDefinition) bool {
 	return !hasConversionWebhook(*crd) || certSecret.isBundleValid(crd.Spec.Conversion.Webhook.ClientConfig.CABundle)
 }
 

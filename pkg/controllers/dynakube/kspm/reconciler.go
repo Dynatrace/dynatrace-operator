@@ -4,41 +4,32 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/token"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Reconciler struct {
-	client              client.Client
-	apiReader           client.Reader
-	dk                  *dynakube.DynaKube
-	tokenReconciler     controllers.Reconciler
-	daemonSetReconciler controllers.Reconciler
+	tokenReconciler     *token.Reconciler
+	daemonSetReconciler *daemonset.Reconciler
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
-
-func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		client:              client,
-		apiReader:           apiReader,
-		dk:                  dk,
-		tokenReconciler:     token.NewReconciler(client, apiReader, dk),
-		daemonSetReconciler: daemonset.NewReconciler(client, apiReader, dk),
+		tokenReconciler:     token.NewReconciler(client, apiReader),
+		daemonSetReconciler: daemonset.NewReconciler(client, apiReader),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	err := r.tokenReconciler.Reconcile(ctx)
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	err := r.tokenReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM Secret")
 
 		return err
 	}
 
-	err = r.daemonSetReconciler.Reconcile(ctx)
+	err = r.daemonSetReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM DaemonSet")
 

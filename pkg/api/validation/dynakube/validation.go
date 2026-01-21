@@ -81,6 +81,7 @@ var (
 		noMappedHostPaths,
 		extensionsWithoutK8SMonitoring,
 		hostPathDatabaseVolumeFound,
+		disabledMetadataEnrichmentForInjectionModes,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

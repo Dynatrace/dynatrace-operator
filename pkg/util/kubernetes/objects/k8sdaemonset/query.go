@@ -9,7 +9,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) query.Generic[*appsv1.DaemonSet, *appsv1.DaemonSetList] {
+type QueryObject = query.Generic[*appsv1.DaemonSet, *appsv1.DaemonSetList]
+
+func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) QueryObject {
 	return query.Generic[*appsv1.DaemonSet, *appsv1.DaemonSetList]{
 		Target:     &appsv1.DaemonSet{},
 		ListTarget: &appsv1.DaemonSetList{},
