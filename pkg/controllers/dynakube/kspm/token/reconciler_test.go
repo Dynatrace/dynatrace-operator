@@ -28,9 +28,9 @@ func TestTokenCreation(t *testing.T) {
 
 		dk := createDynaKube(true)
 
-		r := NewReconciler(clt, clt, &dk)
+		r := NewReconciler(clt, clt)
 
-		err := r.ensureKSPMSecret(ctx)
+		err := r.ensureKSPMSecret(ctx, dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -47,9 +47,9 @@ func TestTokenCreation(t *testing.T) {
 
 		dk := createDynaKube(true)
 
-		r := NewReconciler(clt, clt, &dk)
+		r := NewReconciler(clt, clt)
 
-		err := r.ensureKSPMSecret(ctx)
+		err := r.ensureKSPMSecret(ctx, dk)
 		require.Error(t, err)
 		assert.Equal(t, k8sconditions.KubeAPIErrorReason, meta.FindStatusCondition(*dk.Conditions(), kspmConditionType).Reason)
 	})
@@ -69,9 +69,9 @@ func TestTokenCreation(t *testing.T) {
 		}
 		clt := dtfake.NewClient(objs...)
 
-		reconciler := NewReconciler(clt, clt, &dk)
+		reconciler := NewReconciler(clt, clt)
 
-		err := reconciler.Reconcile(ctx)
+		err := reconciler.Reconcile(ctx, dk)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -104,8 +104,8 @@ func createFailK8sClient(t *testing.T) client.Client {
 	return boomClient
 }
 
-func createDynaKube(kspmEnabled bool) dynakube.DynaKube {
-	dk := dynakube.DynaKube{
+func createDynaKube(kspmEnabled bool) *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-dk",
 		},

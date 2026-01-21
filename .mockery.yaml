@@ -42,6 +42,7 @@ packages:
       filename: "mock_{{.InterfaceName | snakecase}}_test.go"
     interfaces:
       k8sEntityReconciler:
+      dynakubeReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
@@ -56,6 +57,13 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
     interfaces:
       Client:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core:
+    interfaces:
+      APIClient:
+      APIRequest:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings:
+    interfaces:
+      APIClient:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect:
     interfaces:
       Client:

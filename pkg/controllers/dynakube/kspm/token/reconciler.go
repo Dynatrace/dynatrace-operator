@@ -19,42 +19,38 @@ import (
 )
 
 type Reconciler struct {
-	dk      *dynakube.DynaKube
 	secrets k8ssecret.QueryObject
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler
-
-func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		dk:      dk,
 		secrets: k8ssecret.Query(client, apiReader, log),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.KSPM().IsEnabled() {
-		return r.ensureKSPMSecret(ctx)
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if dk.KSPM().IsEnabled() {
+		return r.ensureKSPMSecret(ctx, dk)
 	}
 
-	return r.removeKSPMSecret(ctx)
+	return r.removeKSPMSecret(ctx, dk)
 }
 
-func (r *Reconciler) ensureKSPMSecret(ctx context.Context) error {
-	_, err := r.secrets.Get(ctx, types.NamespacedName{Name: r.dk.KSPM().GetTokenSecretName(), Namespace: r.dk.Namespace})
+func (r *Reconciler) ensureKSPMSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+	_, err := r.secrets.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil && k8serrors.IsNotFound(err) {
 		log.Info("creating new token for kspm")
 
-		secretConfig, err := generateKSPMTokenSecret(r.dk.KSPM().GetTokenSecretName(), r.dk)
+		secretConfig, err := generateKSPMTokenSecret(dk.KSPM().GetTokenSecretName(), dk)
 		if err != nil {
-			k8sconditions.SetSecretGenFailed(r.dk.Conditions(), kspmConditionType, err)
+			k8sconditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
 
 		tokenHash, err := hasher.GenerateHash(secretConfig.Data)
 		if err != nil {
-			k8sconditions.SetSecretGenFailed(r.dk.Conditions(), kspmConditionType, err)
+			k8sconditions.SetSecretGenFailed(dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
@@ -62,15 +58,15 @@ func (r *Reconciler) ensureKSPMSecret(ctx context.Context) error {
 		err = r.secrets.Create(ctx, secretConfig)
 		if err != nil {
 			log.Info("could not create secret for kspm token", "name", secretConfig.Name)
-			k8sconditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
+			k8sconditions.SetKubeAPIError(dk.Conditions(), kspmConditionType, err)
 
 			return err
 		}
 
-		r.dk.KSPM().TokenSecretHash = tokenHash
-		k8sconditions.SetSecretCreated(r.dk.Conditions(), kspmConditionType, r.dk.KSPM().GetTokenSecretName())
+		dk.KSPM().TokenSecretHash = tokenHash
+		k8sconditions.SetSecretCreated(dk.Conditions(), kspmConditionType, dk.KSPM().GetTokenSecretName())
 	} else if err != nil {
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), kspmConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), kspmConditionType, err)
 
 		return err
 	}
@@ -78,20 +74,20 @@ func (r *Reconciler) ensureKSPMSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) removeKSPMSecret(ctx context.Context) error {
-	if meta.FindStatusCondition(*r.dk.Conditions(), kspmConditionType) == nil {
+func (r *Reconciler) removeKSPMSecret(ctx context.Context, dk *dynakube.DynaKube) error {
+	if meta.FindStatusCondition(*dk.Conditions(), kspmConditionType) == nil {
 		return nil // no condition == nothing is there to clean up
 	}
 
-	err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: r.dk.KSPM().GetTokenSecretName(), Namespace: r.dk.Namespace}})
+	err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}})
 	if err != nil {
-		log.Info("could not delete kspm token", "name", r.dk.KSPM().GetTokenSecretName())
+		log.Info("could not delete kspm token", "name", dk.KSPM().GetTokenSecretName())
 
 		return err
 	}
 
-	r.dk.KSPM().TokenSecretHash = ""
-	meta.RemoveStatusCondition(r.dk.Conditions(), kspmConditionType)
+	dk.KSPM().TokenSecretHash = ""
+	meta.RemoveStatusCondition(dk.Conditions(), kspmConditionType)
 
 	return nil
 }
