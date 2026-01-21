@@ -119,6 +119,7 @@ make go/check-version
 > [!IMPORTANT]
 > Make sure to set the environment variables `REGISTRY` (default: ghcr.io) and/or `REPOSITORY` (default: dynatrace) to something you control.
 > For example: `REPOSITORY=<your GitHub handle>` => ghcr.io will still be used (default), but the images will be pulled from your GitHub account.
+> If you want to push to ghcr.io, make sure to authenticate to the registry: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry
 > You can also set `IMAGE`, which will reconfigure both registry and repository.
 
 8. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
