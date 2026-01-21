@@ -57,6 +57,8 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 			// The first element would be the "bootstrap" subcommand, which is not needed in case of self-extracting image
 			mutationRequest.InstallContainer.Args = mutationRequest.InstallContainer.Args[1:]
 			mutationRequest.InstallContainer.Image = mutationRequest.DynaKube.OneAgent().GetCodeModulesImage()
+
+			addImagePullSecrets(mutationRequest.Pod, mutationRequest.DynaKube)
 		} else {
 			log.Info("configuring init-container for ZIP download", "name", mutationRequest.PodName())
 			downloadArgs := []arg.Arg{
@@ -120,4 +122,19 @@ func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.D
 
 func getTechnology(pod corev1.Pod, dk dynakube.DynaKube) string {
 	return maputils.GetField(pod.Annotations, AnnotationTechnologies, dk.FF().GetNodeImagePullTechnology())
+}
+
+func addImagePullSecrets(pod *corev1.Pod, dk dynakube.DynaKube) {
+	if dk.Spec.CustomPullSecret == "" {
+		return
+	}
+
+	existingSecrets := make(map[string]bool)
+	for _, secret := range pod.Spec.ImagePullSecrets {
+		existingSecrets[secret.Name] = true
+	}
+
+	if !existingSecrets[dk.Spec.CustomPullSecret] {
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.Spec.CustomPullSecret})
+	}
 }
