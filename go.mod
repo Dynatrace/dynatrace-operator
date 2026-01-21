@@ -19,7 +19,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.50.0
 	go.opentelemetry.io/collector/config/configtls v1.49.0
-	go.opentelemetry.io/collector/confmap v1.49.0
+	go.opentelemetry.io/collector/confmap v1.50.0
 	go.opentelemetry.io/collector/pipeline v1.49.0
 	go.opentelemetry.io/collector/service v0.143.0
 	go.uber.org/zap v1.27.1
@@ -64,7 +64,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
