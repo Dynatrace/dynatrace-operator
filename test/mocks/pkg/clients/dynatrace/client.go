@@ -8,7 +8,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -40,224 +39,48 @@ func (_m *Client) EXPECT() *Client_Expecter {
 	return &Client_Expecter{mock: &_m.Mock}
 }
 
-// CreateLogMonitoringSetting provides a mock function for the type Client
-func (_mock *Client) CreateLogMonitoringSetting(ctx context.Context, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error) {
-	ret := _mock.Called(ctx, scope, clusterName, ingestRuleMatchers)
+// AsV2 provides a mock function for the type Client
+func (_mock *Client) AsV2() *dynatrace.ClientV2 {
+	ret := _mock.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for CreateLogMonitoringSetting")
+		panic("no return value specified for AsV2")
 	}
 
-	var r0 string
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) (string, error)); ok {
-		return returnFunc(ctx, scope, clusterName, ingestRuleMatchers)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) string); ok {
-		r0 = returnFunc(ctx, scope, clusterName, ingestRuleMatchers)
+	var r0 *dynatrace.ClientV2
+	if returnFunc, ok := ret.Get(0).(func() *dynatrace.ClientV2); ok {
+		r0 = returnFunc()
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dynatrace.ClientV2)
+		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) error); ok {
-		r1 = returnFunc(ctx, scope, clusterName, ingestRuleMatchers)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
-// Client_CreateLogMonitoringSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogMonitoringSetting'
-type Client_CreateLogMonitoringSetting_Call struct {
+// Client_AsV2_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AsV2'
+type Client_AsV2_Call struct {
 	*mock.Call
 }
 
-// CreateLogMonitoringSetting is a helper method to define mock.On call
-//   - ctx context.Context
-//   - scope string
-//   - clusterName string
-//   - ingestRuleMatchers []logmonitoring.IngestRuleMatchers
-func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx interface{}, scope interface{}, clusterName interface{}, ingestRuleMatchers interface{}) *Client_CreateLogMonitoringSetting_Call {
-	return &Client_CreateLogMonitoringSetting_Call{Call: _e.mock.On("CreateLogMonitoringSetting", ctx, scope, clusterName, ingestRuleMatchers)}
+// AsV2 is a helper method to define mock.On call
+func (_e *Client_Expecter) AsV2() *Client_AsV2_Call {
+	return &Client_AsV2_Call{Call: _e.mock.On("AsV2")}
 }
 
-func (_c *Client_CreateLogMonitoringSetting_Call) Run(run func(ctx context.Context, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers)) *Client_CreateLogMonitoringSetting_Call {
+func (_c *Client_AsV2_Call) Run(run func()) *Client_AsV2_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		var arg3 []logmonitoring.IngestRuleMatchers
-		if args[3] != nil {
-			arg3 = args[3].([]logmonitoring.IngestRuleMatchers)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-			arg3,
-		)
+		run()
 	})
 	return _c
 }
 
-func (_c *Client_CreateLogMonitoringSetting_Call) Return(s string, err error) *Client_CreateLogMonitoringSetting_Call {
-	_c.Call.Return(s, err)
+func (_c *Client_AsV2_Call) Return(clientV2 *dynatrace.ClientV2) *Client_AsV2_Call {
+	_c.Call.Return(clientV2)
 	return _c
 }
 
-func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(ctx context.Context, scope string, clusterName string, ingestRuleMatchers []logmonitoring.IngestRuleMatchers) (string, error)) *Client_CreateLogMonitoringSetting_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CreateOrUpdateKubernetesAppSetting provides a mock function for the type Client
-func (_mock *Client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
-	ret := _mock.Called(ctx, scope)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateOrUpdateKubernetesAppSetting")
-	}
-
-	var r0 string
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return returnFunc(ctx, scope)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = returnFunc(ctx, scope)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, scope)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_CreateOrUpdateKubernetesAppSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateOrUpdateKubernetesAppSetting'
-type Client_CreateOrUpdateKubernetesAppSetting_Call struct {
-	*mock.Call
-}
-
-// CreateOrUpdateKubernetesAppSetting is a helper method to define mock.On call
-//   - ctx context.Context
-//   - scope string
-func (_e *Client_Expecter) CreateOrUpdateKubernetesAppSetting(ctx interface{}, scope interface{}) *Client_CreateOrUpdateKubernetesAppSetting_Call {
-	return &Client_CreateOrUpdateKubernetesAppSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesAppSetting", ctx, scope)}
-}
-
-func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) Run(run func(ctx context.Context, scope string)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) Return(s string, err error) *Client_CreateOrUpdateKubernetesAppSetting_Call {
-	_c.Call.Return(s, err)
-	return _c
-}
-
-func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) RunAndReturn(run func(ctx context.Context, scope string) (string, error)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CreateOrUpdateKubernetesSetting provides a mock function for the type Client
-func (_mock *Client) CreateOrUpdateKubernetesSetting(ctx context.Context, name string, kubeSystemUUID string, scope string) (string, error) {
-	ret := _mock.Called(ctx, name, kubeSystemUUID, scope)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateOrUpdateKubernetesSetting")
-	}
-
-	var r0 string
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) (string, error)); ok {
-		return returnFunc(ctx, name, kubeSystemUUID, scope)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) string); ok {
-		r0 = returnFunc(ctx, name, kubeSystemUUID, scope)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = returnFunc(ctx, name, kubeSystemUUID, scope)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_CreateOrUpdateKubernetesSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateOrUpdateKubernetesSetting'
-type Client_CreateOrUpdateKubernetesSetting_Call struct {
-	*mock.Call
-}
-
-// CreateOrUpdateKubernetesSetting is a helper method to define mock.On call
-//   - ctx context.Context
-//   - name string
-//   - kubeSystemUUID string
-//   - scope string
-func (_e *Client_Expecter) CreateOrUpdateKubernetesSetting(ctx interface{}, name interface{}, kubeSystemUUID interface{}, scope interface{}) *Client_CreateOrUpdateKubernetesSetting_Call {
-	return &Client_CreateOrUpdateKubernetesSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesSetting", ctx, name, kubeSystemUUID, scope)}
-}
-
-func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Run(run func(ctx context.Context, name string, kubeSystemUUID string, scope string)) *Client_CreateOrUpdateKubernetesSetting_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		var arg3 string
-		if args[3] != nil {
-			arg3 = args[3].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-			arg3,
-		)
-	})
-	return _c
-}
-
-func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Return(s string, err error) *Client_CreateOrUpdateKubernetesSetting_Call {
-	_c.Call.Return(s, err)
-	return _c
-}
-
-func (_c *Client_CreateOrUpdateKubernetesSetting_Call) RunAndReturn(run func(ctx context.Context, name string, kubeSystemUUID string, scope string) (string, error)) *Client_CreateOrUpdateKubernetesSetting_Call {
+func (_c *Client_AsV2_Call) RunAndReturn(run func() *dynatrace.ClientV2) *Client_AsV2_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -694,72 +517,6 @@ func (_c *Client_GetHostEntityIDForIP_Call) Return(s string, err error) *Client_
 }
 
 func (_c *Client_GetHostEntityIDForIP_Call) RunAndReturn(run func(ctx context.Context, ip string) (string, error)) *Client_GetHostEntityIDForIP_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetK8sClusterME provides a mock function for the type Client
-func (_mock *Client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (dynatrace.K8sClusterME, error) {
-	ret := _mock.Called(ctx, kubeSystemUUID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetK8sClusterME")
-	}
-
-	var r0 dynatrace.K8sClusterME
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (dynatrace.K8sClusterME, error)); ok {
-		return returnFunc(ctx, kubeSystemUUID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) dynatrace.K8sClusterME); ok {
-		r0 = returnFunc(ctx, kubeSystemUUID)
-	} else {
-		r0 = ret.Get(0).(dynatrace.K8sClusterME)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, kubeSystemUUID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_GetK8sClusterME_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetK8sClusterME'
-type Client_GetK8sClusterME_Call struct {
-	*mock.Call
-}
-
-// GetK8sClusterME is a helper method to define mock.On call
-//   - ctx context.Context
-//   - kubeSystemUUID string
-func (_e *Client_Expecter) GetK8sClusterME(ctx interface{}, kubeSystemUUID interface{}) *Client_GetK8sClusterME_Call {
-	return &Client_GetK8sClusterME_Call{Call: _e.mock.On("GetK8sClusterME", ctx, kubeSystemUUID)}
-}
-
-func (_c *Client_GetK8sClusterME_Call) Run(run func(ctx context.Context, kubeSystemUUID string)) *Client_GetK8sClusterME_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Client_GetK8sClusterME_Call) Return(k8sClusterME dynatrace.K8sClusterME, err error) *Client_GetK8sClusterME_Call {
-	_c.Call.Return(k8sClusterME, err)
-	return _c
-}
-
-func (_c *Client_GetK8sClusterME_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string) (dynatrace.K8sClusterME, error)) *Client_GetK8sClusterME_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1305,216 +1062,6 @@ func (_c *Client_GetProcessModuleConfig_Call) Return(processModuleConfig *dynatr
 }
 
 func (_c *Client_GetProcessModuleConfig_Call) RunAndReturn(run func(ctx context.Context, prevRevision uint) (*dynatrace.ProcessModuleConfig, error)) *Client_GetProcessModuleConfig_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetRulesSettings provides a mock function for the type Client
-func (_mock *Client) GetRulesSettings(ctx context.Context, kubeSystemUUID string, entityID string) (dynatrace.GetRulesSettingsResponse, error) {
-	ret := _mock.Called(ctx, kubeSystemUUID, entityID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetRulesSettings")
-	}
-
-	var r0 dynatrace.GetRulesSettingsResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (dynatrace.GetRulesSettingsResponse, error)); ok {
-		return returnFunc(ctx, kubeSystemUUID, entityID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) dynatrace.GetRulesSettingsResponse); ok {
-		r0 = returnFunc(ctx, kubeSystemUUID, entityID)
-	} else {
-		r0 = ret.Get(0).(dynatrace.GetRulesSettingsResponse)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = returnFunc(ctx, kubeSystemUUID, entityID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_GetRulesSettings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRulesSettings'
-type Client_GetRulesSettings_Call struct {
-	*mock.Call
-}
-
-// GetRulesSettings is a helper method to define mock.On call
-//   - ctx context.Context
-//   - kubeSystemUUID string
-//   - entityID string
-func (_e *Client_Expecter) GetRulesSettings(ctx interface{}, kubeSystemUUID interface{}, entityID interface{}) *Client_GetRulesSettings_Call {
-	return &Client_GetRulesSettings_Call{Call: _e.mock.On("GetRulesSettings", ctx, kubeSystemUUID, entityID)}
-}
-
-func (_c *Client_GetRulesSettings_Call) Run(run func(ctx context.Context, kubeSystemUUID string, entityID string)) *Client_GetRulesSettings_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Client_GetRulesSettings_Call) Return(getRulesSettingsResponse dynatrace.GetRulesSettingsResponse, err error) *Client_GetRulesSettings_Call {
-	_c.Call.Return(getRulesSettingsResponse, err)
-	return _c
-}
-
-func (_c *Client_GetRulesSettings_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string, entityID string) (dynatrace.GetRulesSettingsResponse, error)) *Client_GetRulesSettings_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetSettingsForLogModule provides a mock function for the type Client
-func (_mock *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (dynatrace.GetLogMonSettingsResponse, error) {
-	ret := _mock.Called(ctx, monitoredEntity)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetSettingsForLogModule")
-	}
-
-	var r0 dynatrace.GetLogMonSettingsResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (dynatrace.GetLogMonSettingsResponse, error)); ok {
-		return returnFunc(ctx, monitoredEntity)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) dynatrace.GetLogMonSettingsResponse); ok {
-		r0 = returnFunc(ctx, monitoredEntity)
-	} else {
-		r0 = ret.Get(0).(dynatrace.GetLogMonSettingsResponse)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, monitoredEntity)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_GetSettingsForLogModule_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSettingsForLogModule'
-type Client_GetSettingsForLogModule_Call struct {
-	*mock.Call
-}
-
-// GetSettingsForLogModule is a helper method to define mock.On call
-//   - ctx context.Context
-//   - monitoredEntity string
-func (_e *Client_Expecter) GetSettingsForLogModule(ctx interface{}, monitoredEntity interface{}) *Client_GetSettingsForLogModule_Call {
-	return &Client_GetSettingsForLogModule_Call{Call: _e.mock.On("GetSettingsForLogModule", ctx, monitoredEntity)}
-}
-
-func (_c *Client_GetSettingsForLogModule_Call) Run(run func(ctx context.Context, monitoredEntity string)) *Client_GetSettingsForLogModule_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Client_GetSettingsForLogModule_Call) Return(getLogMonSettingsResponse dynatrace.GetLogMonSettingsResponse, err error) *Client_GetSettingsForLogModule_Call {
-	_c.Call.Return(getLogMonSettingsResponse, err)
-	return _c
-}
-
-func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (dynatrace.GetLogMonSettingsResponse, error)) *Client_GetSettingsForLogModule_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetSettingsForMonitoredEntity provides a mock function for the type Client
-func (_mock *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity dynatrace.K8sClusterME, schemaID string) (dynatrace.GetSettingsResponse, error) {
-	ret := _mock.Called(ctx, monitoredEntity, schemaID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetSettingsForMonitoredEntity")
-	}
-
-	var r0 dynatrace.GetSettingsResponse
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, dynatrace.K8sClusterME, string) (dynatrace.GetSettingsResponse, error)); ok {
-		return returnFunc(ctx, monitoredEntity, schemaID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, dynatrace.K8sClusterME, string) dynatrace.GetSettingsResponse); ok {
-		r0 = returnFunc(ctx, monitoredEntity, schemaID)
-	} else {
-		r0 = ret.Get(0).(dynatrace.GetSettingsResponse)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, dynatrace.K8sClusterME, string) error); ok {
-		r1 = returnFunc(ctx, monitoredEntity, schemaID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Client_GetSettingsForMonitoredEntity_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSettingsForMonitoredEntity'
-type Client_GetSettingsForMonitoredEntity_Call struct {
-	*mock.Call
-}
-
-// GetSettingsForMonitoredEntity is a helper method to define mock.On call
-//   - ctx context.Context
-//   - monitoredEntity dynatrace.K8sClusterME
-//   - schemaID string
-func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx interface{}, monitoredEntity interface{}, schemaID interface{}) *Client_GetSettingsForMonitoredEntity_Call {
-	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, monitoredEntity, schemaID)}
-}
-
-func (_c *Client_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context.Context, monitoredEntity dynatrace.K8sClusterME, schemaID string)) *Client_GetSettingsForMonitoredEntity_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 dynatrace.K8sClusterME
-		if args[1] != nil {
-			arg1 = args[1].(dynatrace.K8sClusterME)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Client_GetSettingsForMonitoredEntity_Call) Return(getSettingsResponse dynatrace.GetSettingsResponse, err error) *Client_GetSettingsForMonitoredEntity_Call {
-	_c.Call.Return(getSettingsResponse, err)
-	return _c
-}
-
-func (_c *Client_GetSettingsForMonitoredEntity_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity dynatrace.K8sClusterME, schemaID string) (dynatrace.GetSettingsResponse, error)) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Return(run)
 	return _c
 }
