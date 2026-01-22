@@ -21,7 +21,7 @@ jobs:
       pr_sha: ${{ steps.check-comment.outputs.pr_sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Check comment and get PR details
         id: check-comment
         uses: ./.github/actions/check-comment
@@ -45,7 +45,7 @@ jobs:
               body: `🚀 E2E workflow started! [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nℹ️ Please note that currently only the edgeconnect tests without a proxy (\`test/e2e/edgeconnect/normal\`) are being run.`
             });
       - name: Checkout PR
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ needs.check-comment.outputs.pr_sha }}
           fetch-depth: 0
