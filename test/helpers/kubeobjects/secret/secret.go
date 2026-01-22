@@ -51,3 +51,12 @@ func Delete(secret corev1.Secret) features.Func {
 		return ctx
 	}
 }
+
+func Exists(name, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := envConfig.Client().Resources().Get(ctx, name, namespace, &corev1.Secret{})
+		require.NoError(t, err)
+
+		return ctx
+	}
+}

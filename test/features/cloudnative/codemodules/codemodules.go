@@ -263,6 +263,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
+	builder.WithTeardown("custom tls secret exists", secret.Exists(agSecretName, cloudNativeDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -401,6 +402,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
 	builder.WithTeardown("deleted trusted CAs config map", configmap.Delete(caConfigMap))
+	builder.WithTeardown("custom tls secret exists", secret.Exists(agSecretName, cloudNativeDynakube.Namespace))
 
 	return builder.Feature()
 }
