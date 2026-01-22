@@ -96,6 +96,12 @@ func (b *builder) appendNoProxyArg(argMap *prioritymap.Map) {
 		}
 	}
 
+	if b.dk.FF().GetComponentNoProxy() != "" {
+		before := noProxyValue
+		noProxyValue = b.dk.FF().GetComponentNoProxy()
+		log.Info("dff used component-no-proxy", "component-no-proxy", noProxyValue, "before", before)
+	}
+
 	argMap.Append(argumentPrefix+"set-no-proxy", noProxyValue)
 }
 

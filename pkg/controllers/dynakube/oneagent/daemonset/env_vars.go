@@ -94,13 +94,20 @@ func (b *builder) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 		Key:      connectioninfo.TenantUUIDKey,
 		Optional: ptr.To(false),
 	}})
-	addDefaultValueSource(envVarMap, connectioninfo.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-		LocalObjectReference: corev1.LocalObjectReference{
-			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
-		},
-		Key:      connectioninfo.CommunicationEndpointsKey,
-		Optional: ptr.To(false),
-	}})
+
+	if b.dk.FF().GetInClusterAGDNSEntryPoint() != "" {
+		addDefaultValue(envVarMap, connectioninfo.EnvDtServer, b.dk.FF().GetInClusterAGDNSEntryPoint())
+
+		log.Info("dff used incluster-ag-dns-entry-point", "dns-entry-point", b.dk.FF().GetInClusterAGDNSEntryPoint())
+	} else {
+		addDefaultValueSource(envVarMap, connectioninfo.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
+			},
+			Key:      connectioninfo.CommunicationEndpointsKey,
+			Optional: ptr.To(false),
+		}})
+	}
 }
 
 // deprecated

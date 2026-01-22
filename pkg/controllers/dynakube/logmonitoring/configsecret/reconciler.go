@@ -147,6 +147,12 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 		hostIDSourceKey: "k8s-node-name",
 	}
 
+	if r.dk.FF().GetInClusterAGDNSEntryPoint() != "" {
+		before := deploymentConfigContent[serverKey]
+		deploymentConfigContent[serverKey] = r.dk.FF().GetInClusterAGDNSEntryPoint()
+		log.Info("dff used incluster-ag-dns-entry-point", "dns-entry-point", deploymentConfigContent[serverKey], "before", before)
+	}
+
 	if r.dk.HasProxy() {
 		proxyURL, err := r.dk.Proxy(ctx, r.apiReader)
 		if err != nil {
@@ -163,6 +169,12 @@ func (r *Reconciler) getSecretData(ctx context.Context) (map[string][]byte, erro
 	noProxy := createNoProxyValue(*r.dk)
 	if noProxy != "" {
 		deploymentConfigContent[noProxyKey] = noProxy
+	}
+
+	if r.dk.FF().GetComponentNoProxy() != "" {
+		before := deploymentConfigContent[noProxyKey]
+		deploymentConfigContent[noProxyKey] = r.dk.FF().GetComponentNoProxy()
+		log.Info("dff used component-no-proxy", "component-no-proxy", deploymentConfigContent[noProxyKey], "before", before)
 	}
 
 	if r.dk.Spec.NetworkZone != "" {

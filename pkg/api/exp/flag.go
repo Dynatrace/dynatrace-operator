@@ -45,6 +45,26 @@ func (ff *FeatureFlags) GetNoProxy() string {
 	return ff.getRaw(NoProxyKey)
 }
 
+// GetAGConnectionInfo is a feature flag to
+func (ff *FeatureFlags) GetAGConnectionInfo() string {
+	return ff.getRaw(FFPrefix + "ag-connection-info")
+}
+
+// GetInClusterAGDNSEntryPoint is a feature flag to
+func (ff *FeatureFlags) GetInClusterAGDNSEntryPoint() string {
+	return ff.getRaw(FFPrefix + "incluster-ag-dns-entry-point")
+}
+
+// GetComponentNoProxy is a feature flag to
+func (ff *FeatureFlags) GetComponentNoProxy() string {
+	return ff.getRaw(FFPrefix + "component-no-proxy")
+}
+
+// GetOtelcDtEndpoint is a feature flag to
+func (ff *FeatureFlags) GetOtelcDtEndpoint() string {
+	return ff.getRaw(FFPrefix + "otelc-dt-endpoint")
+}
+
 func (ff *FeatureFlags) IsPublicRegistry() bool {
 	return ff.getBoolWithDefault(PublicRegistryKey, false)
 }

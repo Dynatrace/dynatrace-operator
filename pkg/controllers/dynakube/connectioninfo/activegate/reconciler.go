@@ -95,6 +95,12 @@ func (r *reconciler) reconcileConnectionInfo(ctx context.Context) error {
 		return errors.WithMessage(err, "failed to get ActiveGate connection info")
 	}
 
+	if r.dk.FF().GetAGConnectionInfo() != "" {
+		before := connectionInfo.ConnectionInfo.Endpoints
+		connectionInfo.ConnectionInfo.Endpoints = r.dk.FF().GetAGConnectionInfo()
+		log.Info("dff used ag-connection-info", "agci", connectionInfo.ConnectionInfo.Endpoints, "before", before)
+	}
+
 	r.setDynakubeStatus(connectionInfo)
 
 	if len(connectionInfo.Endpoints) == 0 {

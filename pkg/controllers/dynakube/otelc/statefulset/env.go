@@ -111,6 +111,19 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 				},
 			}},
 		)
+
+		if dk.FF().GetOtelcDtEndpoint() != "" {
+			envs = append(envs, corev1.EnvVar{Name: envDTendpoint, Value: dk.FF().GetOtelcDtEndpoint()})
+			log.Info("dff used otelc-dt-endpoint", "dt_endpoint", dk.FF().GetOtelcDtEndpoint())
+		} else {
+			envs = append(envs,
+				corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
+					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpAPIEndpointConfigMapName},
+						Key:                  envDTendpoint,
+					},
+				}})
+		}
 	}
 
 	if dk.Extensions().IsPrometheusEnabled() && dk.Spec.TrustedCAs != "" {
@@ -137,29 +150,36 @@ func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 }
 
 func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
-	noProxyValues := []string{
-		"$(KUBERNETES_SERVICE_HOST)",
-		"kubernetes.default",
-	}
+	if dk.FF().GetComponentNoProxy() != "" {
+		noProxyValue := "$(KUBERNETES_SERVICE_HOST),kubernetes.default," + dk.FF().GetComponentNoProxy()
+		log.Info("dff used component-no-proxy", "component-no-proxy", noProxyValue)
+		return noProxyValue
+	} else {
 
-	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
-		noProxyValues = append(noProxyValues, ext.GetServiceNameFQDN())
-	}
+		noProxyValues := []string{
+			"$(KUBERNETES_SERVICE_HOST)",
+			"kubernetes.default",
+		}
 
-	if dk.ActiveGate().IsEnabled() {
-		noProxyValues = append(noProxyValues, activegate.GetServiceFQDN(dk))
-	}
+		if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
+			noProxyValues = append(noProxyValues, ext.GetServiceNameFQDN())
+		}
 
-	noProxyValue := dk.FF().GetNoProxy()
-	if noProxyValue != "" {
-		hostnames := strings.Split(noProxyValue, ",")
-		for _, hostname := range hostnames {
-			hostname = strings.TrimSpace(hostname)
-			if hostname != "" {
-				noProxyValues = append(noProxyValues, hostname)
+		if dk.ActiveGate().IsEnabled() {
+			noProxyValues = append(noProxyValues, activegate.GetServiceFQDN(dk))
+		}
+
+		noProxyValue := dk.FF().GetNoProxy()
+		if noProxyValue != "" {
+			hostnames := strings.Split(noProxyValue, ",")
+			for _, hostname := range hostnames {
+				hostname = strings.TrimSpace(hostname)
+				if hostname != "" {
+					noProxyValues = append(noProxyValues, hostname)
+				}
 			}
 		}
-	}
 
-	return strings.Join(noProxyValues, ",")
+		return strings.Join(noProxyValues, ",")
+	}
 }
