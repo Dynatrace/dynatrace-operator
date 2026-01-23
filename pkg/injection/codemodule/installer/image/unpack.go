@@ -78,7 +78,7 @@ func (installer *Installer) pullOCIimage(image containerv1.Image, imageName stri
 	// It doesn't really matter here as it's only for a temporary dir, but it's still better be consistent.
 	imageCachePath := filepath.Join(imageCacheDir, base64.StdEncoding.EncodeToString([]byte(ref.String())))
 	if err := crane.SaveOCI(image, imageCachePath); err != nil {
-		log.Info("saving v1.Image img as an OCI Image Layout at path", imageCacheDir, err)
+		log.Info("saving v1.Image img as an OCI Image Layout at path", "dir", imageCacheDir, "err", err)
 
 		return errors.WithMessagef(err, "saving v1.Image img as an OCI Image Layout at path %s", imageCacheDir)
 	}
