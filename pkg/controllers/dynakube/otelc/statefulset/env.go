@@ -93,12 +93,12 @@ func getEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 
 	if dk.TelemetryIngest().IsEnabled() {
 		envs = append(envs,
-			corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
+			/*corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OtlpAPIEndpointConfigMapName},
 					Key:                  envDTendpoint,
 				},
-			}},
+			}},*/
 			corev1.EnvVar{Name: envMyPodIP, ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.podIP",

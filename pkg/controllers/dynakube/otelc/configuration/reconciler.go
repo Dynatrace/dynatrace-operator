@@ -106,7 +106,7 @@ func (r *Reconciler) getData() (map[string]string, error) {
 		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
 	}
 
-	if r.dk.IsAGCertificateNeeded() {
+	if r.dk.IsAGCertificateNeeded() || r.dk.FF().GetOtelcAGTLSSecretName() != "" {
 		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
 	} else if r.dk.IsCACertificateNeeded() {
 		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))

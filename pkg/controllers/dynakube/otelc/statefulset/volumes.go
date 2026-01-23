@@ -79,6 +79,23 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
+		if dk.FF().GetOtelcAGTLSSecretName() != "" {
+			volumes = append(volumes, corev1.Volume{
+				Name: agCertVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dk.FF().GetOtelcAGTLSSecretName(),
+						Items: []corev1.KeyToPath{
+							{
+								Key:  dynakube.ServerCertKey,
+								Path: otelcconsts.ActiveGateCertFile,
+							},
+						},
+					},
+				},
+			})
+		}
+
 		if dk.IsAGCertificateNeeded() {
 			volumes = append(volumes, corev1.Volume{
 				Name: agCertVolumeName,
@@ -160,6 +177,14 @@ func buildContainerVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
+		if dk.FF().GetOtelcAGTLSSecretName() != "" {
+			vm = append(vm, corev1.VolumeMount{
+				Name:      agCertVolumeName,
+				MountPath: otelcconsts.ActiveGateTLSCertCAVolumeMountPath,
+				ReadOnly:  true,
+			})
+		}
+
 		if dk.IsAGCertificateNeeded() {
 			vm = append(vm, corev1.VolumeMount{
 				Name:      agCertVolumeName,

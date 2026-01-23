@@ -65,6 +65,11 @@ func (ff *FeatureFlags) GetOtelcDtEndpoint() string {
 	return ff.getRaw(FFPrefix + "otelc-dt-endpoint")
 }
 
+// GetOtelcAGTLSSecretName is a feature flag to
+func (ff *FeatureFlags) GetOtelcAGTLSSecretName() string {
+	return ff.getRaw(FFPrefix + "otelc-ag-tls-secret-name")
+}
+
 func (ff *FeatureFlags) IsPublicRegistry() bool {
 	return ff.getBoolWithDefault(PublicRegistryKey, false)
 }
