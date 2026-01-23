@@ -9,7 +9,7 @@ go/check-version:
 
 ## Runs golangci-lint
 go/golangci: go/check-version
-	$(GOLANGCI_LINT) run --fix --timeout 300s
+	$(GOLANGCI_LINT) run --fix
 
 ## Runs all the linting tools
 go/lint: prerequisites/go-linting go/golangci go/deadcode
