@@ -28,7 +28,9 @@ func addPodAttributes(request *dtwebhook.MutationRequest) error {
 		UserDefined: map[string]string{},
 	}
 
-	setDeprecatedAttributes(&attrs)
+	if request.DynaKube.FF().EnableAttributesDtKubernetes() {
+		setDeprecatedAttributes(&attrs)
+	}
 
 	envs := []corev1.EnvVar{
 		{Name: K8sPodNameEnv, ValueFrom: k8senv.NewSourceForField("metadata.name")},
