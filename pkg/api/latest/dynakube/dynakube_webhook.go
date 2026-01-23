@@ -6,8 +6,7 @@ import (
 )
 
 func SetupWebhookWithManager(mgr ctrl.Manager, validator admission.CustomValidator) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&DynaKube{}).
-		WithValidator(validator). // will create an endpoint at /validate-dynatrace-com-v1beta6-dynakube
+	return ctrl.NewWebhookManagedBy(mgr, &DynaKube{}).
+		WithCustomValidator(validator). // will create an endpoint at /validate-dynatrace-com-v1beta6-dynakube
 		Complete()
 }

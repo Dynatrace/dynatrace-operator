@@ -6,8 +6,7 @@ import (
 )
 
 func SetupWebhookWithManager(mgr ctrl.Manager, validator admission.CustomValidator) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&EdgeConnect{}).
-		WithValidator(validator). // will create an endpoint at /validate-dynatrace-com-v1alpha1-edgeconnect
+	return ctrl.NewWebhookManagedBy(mgr, &EdgeConnect{}).
+		WithCustomValidator(validator). // will create an endpoint at /validate-dynatrace-com-v1alpha1-edgeconnect
 		Complete()
 }
