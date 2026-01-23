@@ -274,6 +274,8 @@ linters:
     staticcheck:
       checks:
         - all
+    loggercheck:
+      require-string-key: true
   exclusions:
     generated: lax
     presets:
