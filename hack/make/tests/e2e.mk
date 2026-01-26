@@ -1,4 +1,4 @@
-GOTESTFLAGS := -v -count 1 -tags "$(shell ./hack/build/create_go_build_tags.sh true)"
+GOTESTFLAGS := -v -count 1 -tags e2e
 GOTESTCMD := go test $(GOTESTFLAGS)
 
 ## Start a test and save the result to an xml file
