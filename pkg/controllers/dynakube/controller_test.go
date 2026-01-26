@@ -570,7 +570,7 @@ func createExtensionReconcilerBuilder(reconciler controllers.Reconciler) extensi
 }
 
 func createOtelcReconcilerBuilder(reconciler controllers.Reconciler) otelc.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
+	return func(_ dtclient.Client, _ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
 		return reconciler
 	}
 }

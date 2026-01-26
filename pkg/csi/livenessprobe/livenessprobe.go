@@ -1,6 +1,7 @@
 package livenessprobe
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -8,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/kubernetes-csi/csi-lib-utils/connection"
 	"github.com/kubernetes-csi/csi-lib-utils/rpc"
-	"golang.org/x/net/context"
 )
 
 var (
