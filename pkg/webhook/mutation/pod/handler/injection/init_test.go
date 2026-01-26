@@ -131,7 +131,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 	})
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Annotations = map[string]string{exp.InjectionSeccompKey: "true"}
+		dk.Annotations = map[string]string{exp.InjectionSeccompKey: "true"} //nolint:staticcheck
 		pod := getTestPod()
 		pod.Annotations = map[string]string{}
 
@@ -497,7 +497,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 		{
 			title: "init seccomp ff set to true",
 			dk: dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "true"}},
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "true"}}, //nolint:staticcheck
 			},
 			isOpenShift: true,
 			podSc:       corev1.PodSecurityContext{},
@@ -518,7 +518,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 		{
 			title: "init seccomp ff set to false",
 			dk: dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "false"}},
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "false"}}, //nolint:staticcheck
 			},
 			isOpenShift: true,
 			podSc:       corev1.PodSecurityContext{},

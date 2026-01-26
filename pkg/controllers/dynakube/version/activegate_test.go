@@ -28,7 +28,7 @@ func TestActiveGateUpdater(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					exp.AGDisableUpdatesKey: "true",
+					exp.AGDisableUpdatesKey: "true", //nolint:staticcheck
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{

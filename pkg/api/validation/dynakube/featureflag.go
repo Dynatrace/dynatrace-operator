@@ -14,9 +14,9 @@ const (
 )
 
 var deprecatedFeatureFlags = []string{
-	exp.OAProxyIgnoredKey,
-	exp.AGUpdatesKey,
-	exp.AGDisableUpdatesKey,
+	exp.OAProxyIgnoredKey,   //nolint:staticcheck
+	exp.AGUpdatesKey,        //nolint:staticcheck
+	exp.AGDisableUpdatesKey, //nolint:staticcheck
 }
 
 func deprecatedFeatureFlag(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {

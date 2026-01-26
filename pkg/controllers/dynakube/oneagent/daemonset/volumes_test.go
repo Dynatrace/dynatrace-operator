@@ -283,7 +283,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				Name:      "Dynakube",
 				Namespace: "dynatrace",
 				Annotations: map[string]string{
-					exp.OAProxyIgnoredKey: "true",
+					exp.OAProxyIgnoredKey: "true", //nolint:staticcheck
 				},
 			},
 			Spec: dynakube.DynaKubeSpec{
