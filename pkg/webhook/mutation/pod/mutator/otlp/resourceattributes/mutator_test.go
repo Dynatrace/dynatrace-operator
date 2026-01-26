@@ -2,6 +2,7 @@ package resourceattributes
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 
@@ -22,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
+func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
 	const (
 		testSecContextLabel          = "test-security-context-label"
 		testCostCenterAnnotation     = "test-cost-center-annotation"
@@ -295,19 +296,16 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 			err := mut.Mutate(req)
 			require.NoError(t, err)
 
-			for i := range tt.pod.Spec.Containers {
-				container := &tt.pod.Spec.Containers[i]
-				var rawResourceAttributes string
-				for _, e := range container.Env {
-					if e.Name == "OTEL_RESOURCE_ATTRIBUTES" {
-						rawResourceAttributes = e.Value
+			require.Len(t, tt.pod.Spec.Containers, len(tt.wantAttributes))
 
-						break
-					}
+			for _, container := range tt.pod.Spec.Containers {
+				var resourceAttributes []string
+				if env := k8senv.Find(container.Env, "OTEL_RESOURCE_ATTRIBUTES"); env != nil {
+					resourceAttributes = slices.Sorted(strings.SplitSeq(env.Value, ","))
 				}
 
 				if len(tt.wantAttributes[container.Name]) == 0 {
-					assert.Empty(t, rawResourceAttributes, "container should be skipped, no Attributes injected")
+					assert.Empty(t, resourceAttributes, "container should be skipped, no Attributes injected")
 					// also check pod/node env vars are not injected
 					for _, envName := range []string{injection.K8sNodeNameEnv, injection.K8sPodNameEnv, injection.K8sPodUIDEnv} {
 						assert.False(t, k8senv.Contains(container.Env, envName), "env var %s should not be injected", envName)
@@ -316,36 +314,18 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:gocognit,revive
 					continue
 				}
 
-				require.NotEmpty(t, rawResourceAttributes)
-
-				resourceAttributes := strings.Split(rawResourceAttributes, ",")
-
+				require.NotEmpty(t, resourceAttributes)
+				assert.Equal(t, resourceAttributes, slices.Compact(slices.Clone(resourceAttributes)), "contains duplicate elements")
 				assert.Len(t, resourceAttributes, len(tt.wantAttributes[container.Name]), "container should have right amount of attributes")
+
 				for _, expected := range tt.wantAttributes[container.Name] {
-					count := 0
-					for _, attr := range resourceAttributes {
-						if attr == expected {
-							count++
-						}
-					}
-					// ensure that each expected attribute appears exactly once
-					assert.Equal(t, 1, count, "expected attr %s to appear exactly once; got %v", expected, resourceAttributes)
+					assert.Contains(t, resourceAttributes, expected)
 				}
 
 				// verify env vars for pod/node references present with correct field paths
-				var podNameVar, podUIDVar, nodeNameVar *corev1.EnvVar
-
-				for i := range container.Env {
-					if container.Env[i].Name == "K8S_PODNAME" {
-						podNameVar = &container.Env[i]
-					}
-					if container.Env[i].Name == "K8S_PODUID" {
-						podUIDVar = &container.Env[i]
-					}
-					if container.Env[i].Name == "K8S_NODE_NAME" {
-						nodeNameVar = &container.Env[i]
-					}
-				}
+				podNameVar := k8senv.Find(container.Env, "K8S_PODNAME")
+				podUIDVar := k8senv.Find(container.Env, "K8S_PODUID")
+				nodeNameVar := k8senv.Find(container.Env, "K8S_NODE_NAME")
 
 				require.NotNil(t, podNameVar, "missing K8S_PODNAME env var")
 				require.NotNil(t, podUIDVar, "missing K8S_PODUID env var")

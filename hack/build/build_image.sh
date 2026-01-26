@@ -17,12 +17,12 @@ platform=${5:-linux/amd64}
 
 commit=$(git rev-parse HEAD)
 go_linker_args=$(hack/build/create_go_linker_args.sh "${tag}" "${commit}" "${debug}")
-go_build_tags=$(hack/build/create_go_build_tags.sh false)
+go_build_tags=""
 
 out_image="${image}:${tag}"
 
 # directory required by docker copy command
-mkdir -p third_party_licenses 
+mkdir -p third_party_licenses
 
 if ! command -v docker 2>/dev/null; then
   CONTAINER_CMD=podman
