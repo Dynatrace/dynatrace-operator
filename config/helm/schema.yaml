@@ -15,12 +15,15 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 1.7.2
+  publishedVersion: 1.7.3
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v1.7.2 -->\n\n## What's Changed\n### Core changes \U0001F389\n* Bugfix/otelc\
-      \ noproxy backport by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/5602\n\
-      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.7.1...v1.7.2"
+      \ at v1.7.3 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Use local project\
+      \ binaries on make commands by @Incredible-O in https://github.com/Dynatrace/dynatrace-operator/pull/5687\n\
+      ### Core changes \U0001F389\n* Bump base image version release-1.7 by @aorcholski\
+      \ in https://github.com/Dynatrace/dynatrace-operator/pull/6023\n* Bump version\
+      \ of golang.org/x packages (release-1.7) by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/6026\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.7.2...v1.7.3"
     releaseTypes:
     - Feature
     recommended: true
@@ -393,7 +396,6 @@ properties:
     default: google-marketplace
     enum:
     - google-marketplace
-
   crdStorageMigrationJob:
     type: boolean
     title: Deploy helm hook
