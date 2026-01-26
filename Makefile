@@ -55,6 +55,7 @@ SHELL ?= bash
 -include hack/make/release/*.mk
 
 ## Builds the operator image and pushes it to your registry (make sure to set the variable REGISTRY) with a snapshot tag
+REGISTRY=quay.io
 build: images/build/push
 
 ## Installs prerequisites, builds and pushes a tagged operator image, and deploys the operator on a cluster
