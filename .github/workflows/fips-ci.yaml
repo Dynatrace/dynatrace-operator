@@ -35,7 +35,7 @@ jobs:
       - name: Check if it is a protected branch
         id: is-protected-branch
         run: |
-          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == refs/heads/release-* || "${{ github.event_name }}" == "merge_group" ]]; then
+          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == refs/heads/release-* || "$GITHUB_EVENT_NAME" == "merge_group" ]]; then
             echo "is_protected_branch=true" >> "$GITHUB_OUTPUT"
           else
             echo "is_protected_branch=false" >> "$GITHUB_OUTPUT"
