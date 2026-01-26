@@ -8,7 +8,7 @@ import (
 
 const (
 	kspmSettingsSchemaID      = "builtin:kubernetes.security-posture-management"
-	kspmSettingsSchemaVersion = ""
+	kspmSettingsSchemaVersion = "1"
 )
 
 type kspmSettingsValue struct {
