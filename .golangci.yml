@@ -1,4 +1,10 @@
 version: "2"
+
+run:
+  timeout: 5m
+  build-tags:
+    - e2e
+
 linters:
   default: none
   enable:
@@ -274,6 +280,8 @@ linters:
     staticcheck:
       checks:
         - all
+    loggercheck:
+      require-string-key: true
   exclusions:
     generated: lax
     presets:
