@@ -18,7 +18,7 @@ const (
 	errorKSPMRelativeHostPath = `The Dynakube's specification specifies KSPM, relative path found on the MappedHostPath list. Use absolute paths only. Relative path: %s`
 )
 
-func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func tooManyAGReplicas(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.KSPM().IsEnabled() && dk.ActiveGate().GetReplicas() > 1 {
 		return errorTooManyAGReplicas
 	}
@@ -26,7 +26,7 @@ func tooManyAGReplicas(_ context.Context, _ *Validator, dk *dynakube.DynaKube) s
 	return ""
 }
 
-func kspmWithoutK8SMonitoring(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func kspmWithoutK8SMonitoring(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.KSPM().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sAPIMonitoring()) {
 		return errorKSPMMissingKubemon
 	}
@@ -34,7 +34,7 @@ func kspmWithoutK8SMonitoring(_ context.Context, _ *Validator, dk *dynakube.Dyna
 	return ""
 }
 
-func missingKSPMImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingKSPMImage(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.KSPM().IsEnabled() {
 		return ""
 	}
@@ -46,7 +46,7 @@ func missingKSPMImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) st
 	return ""
 }
 
-func noMappedHostPaths(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func noMappedHostPaths(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.KSPM().IsEnabled() {
 		return ""
 	}
@@ -58,7 +58,7 @@ func noMappedHostPaths(_ context.Context, _ *Validator, dk *dynakube.DynaKube) s
 	return ""
 }
 
-func mappedHostPathsWithRootPath(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func mappedHostPathsWithRootPath(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.KSPM().IsEnabled() {
 		return ""
 	}
@@ -72,7 +72,7 @@ func mappedHostPathsWithRootPath(_ context.Context, _ *Validator, dk *dynakube.D
 	return ""
 }
 
-func relativeMappedHostPaths(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func relativeMappedHostPaths(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.KSPM().IsEnabled() {
 		return ""
 	}

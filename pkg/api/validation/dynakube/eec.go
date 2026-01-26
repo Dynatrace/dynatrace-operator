@@ -14,7 +14,7 @@ const (
 	warningConflictingAPIURLForExtensions                    = `You are already using a Dynakube ('%s') that enables extensions. Having multiple Dynakubes with same '.spec.apiUrl' and '.spec.extensions' enabled can have severe side-effects on “sum” and “count” metrics and cause double-billing.`
 )
 
-func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func extensionControllerImage(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}
@@ -28,13 +28,13 @@ func extensionControllerImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 	return ""
 }
 
-func conflictingAPIURLForExtensions(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func conflictingAPIURLForExtensions(ctx context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}
 
 	validDynakubes := &dynakube.DynaKubeList{}
-	if err := dv.apiReader.List(ctx, validDynakubes, &client.ListOptions{Namespace: dk.Namespace}); err != nil {
+	if err := vc.apiReader.List(ctx, validDynakubes, &client.ListOptions{Namespace: dk.Namespace}); err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
 
 		return ""
@@ -53,7 +53,7 @@ func conflictingAPIURLForExtensions(ctx context.Context, dv *Validator, dk *dyna
 	return ""
 }
 
-func extensionControllerPVCStorageDevice(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func extensionControllerPVCStorageDevice(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.Extensions().IsAnyEnabled() {
 		return ""
 	}

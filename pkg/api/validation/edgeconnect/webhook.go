@@ -7,11 +7,19 @@ import (
 )
 
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
-	validator := New(mgr.GetAPIReader(), mgr.GetConfig())
+	validatorClient := newClient(mgr.GetAPIReader(), mgr.GetConfig())
 
-	if err := v1alpha1.SetupWebhookWithManager(mgr, validator); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &v1alpha1.EdgeConnect{}).
+		WithValidator(newValidator[*v1alpha1.EdgeConnect](validatorClient)). // will create an endpoint at /validate-dynatrace-com-v1alpha1-edgeconnect
+		Complete(); err != nil {
 		return err
 	}
 
-	return v1alpha2.SetupWebhookWithManager(mgr, validator)
+	if err := ctrl.NewWebhookManagedBy(mgr, &v1alpha2.EdgeConnect{}).
+		WithValidator(newValidator[*v1alpha2.EdgeConnect](validatorClient)). // will create an endpoint at /validate-dynatrace-com-v1alpha2-edgeconnect
+		Complete(); err != nil {
+		return err
+	}
+
+	return nil
 }

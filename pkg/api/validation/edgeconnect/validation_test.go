@@ -35,10 +35,12 @@ func runValidators(ec *edgeconnect.EdgeConnect, other ...client.Object) (admissi
 		clt = fake.NewClient(other...)
 	}
 
-	validator := &Validator{
-		apiReader: clt,
-		cfg:       &rest.Config{},
-		modules:   installconfig.GetModules(),
+	validator := &validator[*edgeconnect.EdgeConnect]{
+		validatorClient: &validatorClient{
+			apiReader: clt,
+			cfg:       &rest.Config{},
+			modules:   installconfig.GetModules(),
+		},
 	}
 
 	return validator.ValidateCreate(context.Background(), ec)

@@ -133,8 +133,8 @@ func TestReconcileWithoutProxy(t *testing.T) {
 					ValueFrom: "",
 				}}}
 		dk.Annotations = map[string]string{
-			exp.AGIgnoreProxyKey:  "true", //nolint:staticcheck
-			exp.OAProxyIgnoredKey: "true", //nolint:staticcheck
+			exp.AGIgnoreProxyKey:  "true",
+			exp.OAProxyIgnoredKey: "true",
 		}
 
 		var testClient = createK8sClientWithProxySecret()

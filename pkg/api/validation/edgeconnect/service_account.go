@@ -11,7 +11,7 @@ const (
 `
 )
 
-func isInvalidServiceName(_ context.Context, _ *Validator, edgeConnectCR *edgeconnect.EdgeConnect) string {
+func isInvalidServiceName(_ context.Context, _ *validatorClient, edgeConnectCR *edgeconnect.EdgeConnect) string {
 	if edgeConnectCR.GetServiceAccountName() == "" {
 		return errorInvalidServiceName
 	}

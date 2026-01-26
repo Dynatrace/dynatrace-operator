@@ -22,7 +22,7 @@ const (
 	warningHostPathDatabaseVolumeDetected = `Host path database volume detected. If you're on OpenShift, mounting host path volumes will be prohibited by the SCC and cause silent failures. If you still want to do this, make sure to create and bind corresponding roles.`
 )
 
-func missingDatabaseExecutorImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingDatabaseExecutorImage(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}
@@ -36,7 +36,7 @@ func missingDatabaseExecutorImage(_ context.Context, _ *Validator, dk *dynakube.
 	return ""
 }
 
-func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}
@@ -71,7 +71,7 @@ func conflictingOrInvalidDatabasesVolumeMounts(_ context.Context, _ *Validator, 
 	return ""
 }
 
-func hostPathDatabaseVolumeFound(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func hostPathDatabaseVolumeFound(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}
@@ -89,7 +89,7 @@ func hostPathDatabaseVolumeFound(_ context.Context, _ *Validator, dk *dynakube.D
 	return ""
 }
 
-func unusedDatabasesVolume(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func unusedDatabasesVolume(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.Extensions().IsDatabasesEnabled() {
 		return ""
 	}

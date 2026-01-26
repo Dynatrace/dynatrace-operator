@@ -10,7 +10,7 @@ const (
 	warningExtensionsWithoutK8SMonitoring = "The Dynakube is configured with extensions without an ActiveGate with `kubernetes-monitoring` enabled or the `automatic-kubernetes-api-monitoring` feature flag. You need to ensure that Kubernetes monitoring is setup for this cluster."
 )
 
-func extensionsWithoutK8SMonitoring(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func extensionsWithoutK8SMonitoring(ctx context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.Extensions().IsAnyEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sAPIMonitoring()) {
 		return warningExtensionsWithoutK8SMonitoring
 	}

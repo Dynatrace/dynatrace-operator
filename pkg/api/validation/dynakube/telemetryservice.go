@@ -27,7 +27,7 @@ const (
 	errorOtelCollectorMissingImage           = `The Dynakube's specification specifies the OTel Collector, but no image repository/tag is configured.`
 )
 
-func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func emptyTelemetryIngestProtocolsList(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -41,7 +41,7 @@ func emptyTelemetryIngestProtocolsList(_ context.Context, _ *Validator, dk *dyna
 	return ""
 }
 
-func unknownTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func unknownTelemetryIngestProtocols(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -63,7 +63,7 @@ func unknownTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynaku
 	return ""
 }
 
-func duplicatedTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func duplicatedTelemetryIngestProtocols(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -95,7 +95,7 @@ func duplicatedTelemetryIngestProtocols(_ context.Context, _ *Validator, dk *dyn
 	return ""
 }
 
-func invalidTelemetryIngestName(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func invalidTelemetryIngestName(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -117,7 +117,7 @@ func invalidTelemetryIngestNameErrorMessage() string {
 	return fmt.Sprintf(errorTelemetryIngestNoDNS1053Label, validation.DNS1035LabelMaxLength)
 }
 
-func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -152,7 +152,7 @@ func conflictingTelemetryIngestServiceNames(ctx context.Context, dv *Validator, 
 	return ""
 }
 
-func forbiddenTelemetryIngestServiceNameSuffix(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func forbiddenTelemetryIngestServiceNameSuffix(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() {
 		return ""
 	}
@@ -173,7 +173,7 @@ func forbiddenTelemetryIngestServiceNameSuffix(_ context.Context, _ *Validator, 
 	return ""
 }
 
-func missingOtelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingOtelCollectorImage(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() && !dk.Extensions().IsPrometheusEnabled() {
 		return ""
 	}

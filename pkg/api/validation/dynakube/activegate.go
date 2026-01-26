@@ -22,7 +22,7 @@ Make sure you don't duplicate an Activegate capability in your custom resource.
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 )
 
-func duplicateActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func duplicateActiveGateCapabilities(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.ActiveGate().IsEnabled() {
 		capabilities := dk.Spec.ActiveGate.Capabilities
 		duplicateChecker := map[activegate.CapabilityDisplayName]bool{}
@@ -41,7 +41,7 @@ func duplicateActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynaku
 	return ""
 }
 
-func invalidActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func invalidActiveGateCapabilities(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.ActiveGate().IsEnabled() {
 		capabilities := dk.Spec.ActiveGate.Capabilities
 		for _, capability := range capabilities {
@@ -56,7 +56,7 @@ func invalidActiveGateCapabilities(_ context.Context, _ *Validator, dk *dynakube
 	return ""
 }
 
-func missingActiveGateMemoryLimit(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingActiveGateMemoryLimit(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.ActiveGate().IsEnabled() &&
 		!memoryLimitSet(dk.Spec.ActiveGate.Resources) {
 		return warningMissingActiveGateMemoryLimit
@@ -73,7 +73,7 @@ func activeGateMutuallyExclusivePVCSettings(dk *dynakube.DynaKube) bool {
 	return dk.Spec.ActiveGate.UseEphemeralVolume && dk.Spec.ActiveGate.VolumeClaimTemplate != nil
 }
 
-func mutuallyExclusiveActiveGatePVsettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func mutuallyExclusiveActiveGatePVsettings(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if activeGateMutuallyExclusivePVCSettings(dk) {
 		log.Info("requested dynakube specifies mutually exclusive VolumeClaimTemplate settings for ActiveGate.", "name", dk.Name, "namespace", dk.Namespace)
 

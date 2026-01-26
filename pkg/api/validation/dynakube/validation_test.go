@@ -284,10 +284,12 @@ func runValidators(dk *dynakube.DynaKube, other ...client.Object) (admission.War
 		clt = fake.NewClient(other...)
 	}
 
-	validator := &Validator{
-		apiReader: clt,
-		cfg:       &rest.Config{},
-		modules:   installconfig.GetModules(),
+	validator := &validator[*dynakube.DynaKube]{
+		validatorClient: &validatorClient{
+			apiReader: clt,
+			cfg:       &rest.Config{},
+			modules:   installconfig.GetModules(),
+		},
 	}
 
 	return validator.ValidateCreate(context.Background(), dk)
@@ -299,10 +301,12 @@ func runUpdateValidators(oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube, oth
 		clt = fake.NewClient(other...)
 	}
 
-	validator := &Validator{
-		apiReader: clt,
-		cfg:       &rest.Config{},
-		modules:   installconfig.GetModules(),
+	validator := &validator[*dynakube.DynaKube]{
+		validatorClient: &validatorClient{
+			apiReader: clt,
+			cfg:       &rest.Config{},
+			modules:   installconfig.GetModules(),
+		},
 	}
 
 	return validator.ValidateUpdate(context.Background(), oldDk, newDk)

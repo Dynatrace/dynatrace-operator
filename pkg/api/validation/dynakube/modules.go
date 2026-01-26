@@ -18,50 +18,50 @@ var (
 	errorKSPMDependsOnKubernetesMonitoringModule = installconfig.GetDependentModuleValidationErrorMessage("KubernetesMonitoring", "KSPM")
 )
 
-func isOneAgentModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsDaemonsetRequired() && !v.modules.OneAgent {
+func isOneAgentModuleDisabled(_ context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
+	if dk.OneAgent().IsDaemonsetRequired() && !vc.modules.OneAgent {
 		return errorOneAgentModuleDisabled
 	}
 
 	return ""
 }
 
-func isActiveGateModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.ActiveGate().IsEnabled() && !v.modules.ActiveGate {
+func isActiveGateModuleDisabled(_ context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
+	if dk.ActiveGate().IsEnabled() && !vc.modules.ActiveGate {
 		return errorActiveGateModuleDisabled
 	}
 
-	if dk.ActiveGate().IsKubernetesMonitoringEnabled() && !v.modules.KubernetesMonitoring {
+	if dk.ActiveGate().IsKubernetesMonitoringEnabled() && !vc.modules.KubernetesMonitoring {
 		return errorKubernetesMonitoringModuleDisabled
 	}
 
 	return ""
 }
 
-func isExtensionsModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.Extensions().IsAnyEnabled() && !v.modules.Extensions {
+func isExtensionsModuleDisabled(_ context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
+	if dk.Extensions().IsAnyEnabled() && !vc.modules.Extensions {
 		return errorExtensionsModuleDisabled
 	}
 
 	return ""
 }
 
-func isLogMonitoringModuleDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.LogMonitoring().IsEnabled() && !v.modules.LogMonitoring {
+func isLogMonitoringModuleDisabled(_ context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
+	if dk.LogMonitoring().IsEnabled() && !vc.modules.LogMonitoring {
 		return errorLogMonitoringModuleDisabled
 	}
 
 	return ""
 }
 
-func isKSPMDisabled(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+func isKSPMDisabled(_ context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.KSPM().IsEnabled() {
 		errs := []string{}
-		if !v.modules.KSPM {
+		if !vc.modules.KSPM {
 			errs = append(errs, errorKSPMModuleDisabled)
 		}
 
-		if !v.modules.KubernetesMonitoring {
+		if !vc.modules.KubernetesMonitoring {
 			errs = append(errs, errorKSPMDependsOnKubernetesMonitoringModule)
 		}
 

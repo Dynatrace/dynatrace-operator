@@ -11,7 +11,7 @@ var (
 	errorModuleDisabled = installconfig.GetModuleValidationErrorMessage("EdgeConnect")
 )
 
-func isModuleDisabled(_ context.Context, v *Validator, _ *edgeconnect.EdgeConnect) string {
+func isModuleDisabled(_ context.Context, v *validatorClient, _ *edgeconnect.EdgeConnect) string {
 	if v.modules.EdgeConnect {
 		return ""
 	}

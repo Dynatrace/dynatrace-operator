@@ -206,7 +206,7 @@ func TestIsModuleDisabled(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.title, func(t *testing.T) {
-			errMsg := test.moduleFunc(ctx, &Validator{modules: test.modules}, &test.dk)
+			errMsg := test.moduleFunc(ctx, &validatorClient{modules: test.modules}, &test.dk)
 			assert.Equal(t, test.expectedMessage, errMsg)
 		})
 	}

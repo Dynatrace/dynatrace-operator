@@ -24,7 +24,7 @@ const (
 	errorMutatedAPIURL = `The DynaKube's specification mutated the API URL although it is immutable. Please delete the CR and then apply a new one`
 )
 
-func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func NoAPIURL(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	apiURL := dk.Spec.APIURL
 
 	if apiURL == ExampleAPIURL {
@@ -42,7 +42,7 @@ func NoAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	return ""
 }
 
-func IsInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func IsInvalidAPIURL(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	apiURL := dk.Spec.APIURL
 
 	if !strings.HasSuffix(apiURL, "/api") {
@@ -72,7 +72,7 @@ func IsInvalidAPIURL(_ context.Context, _ *Validator, dk *dynakube.DynaKube) str
 	return ""
 }
 
-func IsThirdGenAPIUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func IsThirdGenAPIUrl(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if strings.Contains(dk.APIURL(), ".apps.") {
 		return errorThirdGenAPIURL
 	}
@@ -80,7 +80,7 @@ func IsThirdGenAPIUrl(_ context.Context, _ *Validator, dk *dynakube.DynaKube) st
 	return ""
 }
 
-func IsMutatedAPIURL(_ context.Context, _ *Validator, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string {
+func IsMutatedAPIURL(_ context.Context, _ *validatorClient, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string {
 	if oldDk.Spec.APIURL != newDk.Spec.APIURL {
 		return errorMutatedAPIURL
 	}

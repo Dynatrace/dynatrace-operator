@@ -15,13 +15,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-type Validator struct {
+type validator[T runtime.Object] struct {
+	*validatorClient
+}
+
+type validatorClient struct {
 	apiReader client.Reader
 	cfg       *rest.Config
 	modules   installconfig.Modules
 }
 
-type validatorFunc func(ctx context.Context, dv *Validator, ec *edgeconnect.EdgeConnect) string
+type validatorFunc func(ctx context.Context, dv *validatorClient, ec *edgeconnect.EdgeConnect) string
 
 var validatorErrorFuncs = []validatorFunc{
 	isModuleDisabled,
@@ -33,15 +37,18 @@ var validatorErrorFuncs = []validatorFunc{
 	automationRequiresProvisionerValidation,
 }
 
-func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
-	return &Validator{
-		apiReader: apiReader,
-		cfg:       cfg,
-		modules:   installconfig.GetModules(),
-	}
+func newValidator[T runtime.Object](vc *validatorClient) *validator[T] {
+	return &validator[T]{validatorClient: vc}
 }
 
-func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ admission.Warnings, err error) {
+func newClient(apiReader client.Reader, cfg *rest.Config) *validatorClient {
+	return &validatorClient{
+		apiReader: apiReader,
+		cfg:       cfg,
+		modules:   installconfig.GetModules()}
+}
+
+func (v *validator[T]) ValidateCreate(ctx context.Context, obj T) (_ admission.Warnings, err error) {
 	ec, err := getEdgeConnect(obj)
 	if err != nil {
 		return
@@ -56,7 +63,7 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ a
 	return
 }
 
-func (v *Validator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (warnings admission.Warnings, err error) {
+func (v *validator[T]) ValidateUpdate(ctx context.Context, _, newObj T) (warnings admission.Warnings, err error) {
 	ec, err := getEdgeConnect(newObj)
 	if err != nil {
 		return
@@ -71,15 +78,15 @@ func (v *Validator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object
 	return
 }
 
-func (v *Validator) ValidateDelete(_ context.Context, _ runtime.Object) (warnings admission.Warnings, err error) {
+func (v *validator[T]) ValidateDelete(_ context.Context, _ T) (warnings admission.Warnings, err error) {
 	return nil, nil
 }
 
-func (v *Validator) runValidators(ctx context.Context, validators []validatorFunc, ec *edgeconnect.EdgeConnect) []string {
+func (v *validator[T]) runValidators(ctx context.Context, validators []validatorFunc, ec *edgeconnect.EdgeConnect) []string {
 	results := []string{}
 
 	for _, validate := range validators {
-		if errMsg := validate(ctx, v, ec); errMsg != "" {
+		if errMsg := validate(ctx, v.validatorClient, ec); errMsg != "" {
 			results = append(results, errMsg)
 		}
 	}

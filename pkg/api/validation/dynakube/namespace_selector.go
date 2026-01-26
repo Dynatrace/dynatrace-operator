@@ -17,12 +17,12 @@ Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceS
 	errorNamespaceSelectorMatchLabelsViolateLabelSpec = "The DynaKube's namespaceSelector contains matchLabels that are not conform to spec."
 )
 
-func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func conflictingNamespaceSelector(ctx context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled() {
 		return ""
 	}
 
-	dkMapper := mapper.NewDynakubeMapper(ctx, nil, dv.apiReader, dk.Namespace, dk)
+	dkMapper := mapper.NewDynakubeMapper(ctx, nil, vc.apiReader, dk.Namespace, dk)
 
 	_, err := dkMapper.MatchingNamespaces()
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
@@ -34,7 +34,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *Validator, dk *dynaku
 	return ""
 }
 
-func namespaceSelectorViolateLabelSpec(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func namespaceSelectorViolateLabelSpec(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	errs := validation.ValidateLabelSelector(dk.OneAgent().GetNamespaceSelector(), validation.LabelSelectorValidationOptions{AllowInvalidLabelValueInSelector: false}, field.NewPath("spec", "namespaceSelector"))
 	if len(errs) == 0 {
 		return ""

@@ -12,7 +12,7 @@ const (
 	errorLogMonitoringMissingImage           = `The Dynakube's specification specifies standalone Log monitoring, but no image repository/tag is configured.`
 )
 
-func logMonitoringWithoutK8SMonitoring(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func logMonitoringWithoutK8SMonitoring(ctx context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.LogMonitoring().IsEnabled() && (!dk.ActiveGate().IsKubernetesMonitoringEnabled() || !dk.FF().IsAutomaticK8sAPIMonitoring()) {
 		return warningLogMonitoringWithoutK8SMonitoring
 	}
@@ -20,7 +20,7 @@ func logMonitoringWithoutK8SMonitoring(ctx context.Context, dv *Validator, dk *d
 	return ""
 }
 
-func ignoredLogMonitoringTemplate(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func ignoredLogMonitoringTemplate(ctx context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.LogMonitoring().IsStandalone() {
 		return ""
 	}
@@ -32,7 +32,7 @@ func ignoredLogMonitoringTemplate(ctx context.Context, dv *Validator, dk *dynaku
 	return ""
 }
 
-func missingLogMonitoringImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func missingLogMonitoringImage(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.LogMonitoring().IsStandalone() {
 		return ""
 	}

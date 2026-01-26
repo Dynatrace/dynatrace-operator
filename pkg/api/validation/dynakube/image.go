@@ -13,7 +13,7 @@ const (
 	errorUnparsableImageRef = `Custom %s image can't be parsed, make sure it's a valid image reference.`
 )
 
-func imageFieldHasTenantImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func imageFieldHasTenantImage(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	type imageField struct {
 		value   string
 		section string

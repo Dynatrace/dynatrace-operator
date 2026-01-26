@@ -12,9 +12,9 @@ const (
 	errorFailToInitIstioClient = `Failed to initialize istio client`
 )
 
-func noResourcesAvailable(_ context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func noResourcesAvailable(_ context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.Spec.EnableIstio {
-		istioClient, err := istio.NewClient(dv.cfg, dk)
+		istioClient, err := istio.NewClient(vc.cfg, dk)
 		if err != nil {
 			return errorFailToInitIstioClient
 		}

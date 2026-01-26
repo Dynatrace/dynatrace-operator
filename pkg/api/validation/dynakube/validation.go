@@ -17,7 +17,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-type Validator struct {
+type validator[T runtime.Object] struct {
+	*validatorClient
+}
+
+type validatorClient struct {
 	apiReader client.Reader
 	cfg       *rest.Config
 	modules   installconfig.Modules
@@ -88,18 +92,24 @@ var (
 	}
 )
 
-type validatorFunc func(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string
-type updateValidatorFunc func(ctx context.Context, dv *Validator, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string
+type validatorFunc func(ctx context.Context, dv *validatorClient, dk *dynakube.DynaKube) string
+type updateValidatorFunc func(ctx context.Context, dv *validatorClient, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string
 
-func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
-	return &Validator{
+func newValidator[T runtime.Object](vi *validatorClient) *validator[T] {
+	return &validator[T]{
+		validatorClient: vi,
+	}
+}
+
+func newClient(apiReader client.Reader, cfg *rest.Config) *validatorClient {
+	return &validatorClient{
 		apiReader: apiReader,
 		cfg:       cfg,
 		modules:   installconfig.GetModules(),
 	}
 }
 
-func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (v *validator[T]) ValidateCreate(ctx context.Context, obj T) (warnings admission.Warnings, err error) {
 	dk, err := getDynakube(obj)
 	if err != nil {
 		return
@@ -115,7 +125,7 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (war
 	return
 }
 
-func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
+func (v *validator[T]) ValidateUpdate(ctx context.Context, oldObj, newObj T) (warnings admission.Warnings, err error) {
 	oldDk, err := getDynakube(oldObj)
 	if err != nil {
 		return
@@ -138,15 +148,15 @@ func (v *Validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return
 }
 
-func (v *Validator) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (v *validator[T]) ValidateDelete(ctx context.Context, obj T) (warnings admission.Warnings, err error) {
 	return nil, nil
 }
 
-func (v *Validator) runValidators(ctx context.Context, validators []validatorFunc, dk *dynakube.DynaKube) []string {
+func (v *validator[T]) runValidators(ctx context.Context, validators []validatorFunc, dk *dynakube.DynaKube) []string {
 	results := []string{}
 
 	for _, validate := range validators {
-		if errMsg := validate(ctx, v, dk); errMsg != "" {
+		if errMsg := validate(ctx, v.validatorClient, dk); errMsg != "" {
 			results = append(results, errMsg)
 		}
 	}
@@ -154,11 +164,11 @@ func (v *Validator) runValidators(ctx context.Context, validators []validatorFun
 	return results
 }
 
-func (v *Validator) runUpdateValidators(ctx context.Context, updateValidators []updateValidatorFunc, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) []string {
+func (v *validator[T]) runUpdateValidators(ctx context.Context, updateValidators []updateValidatorFunc, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) []string {
 	results := []string{}
 
 	for _, validate := range updateValidators {
-		if errMsg := validate(ctx, v, oldDk, newDk); errMsg != "" {
+		if errMsg := validate(ctx, v.validatorClient, oldDk, newDk); errMsg != "" {
 			results = append(results, errMsg)
 		}
 	}

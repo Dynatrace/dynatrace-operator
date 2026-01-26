@@ -42,7 +42,7 @@ const (
 	maxNameLengthForKSPM       = maxDaemonSetNameLength - len(consts.NodeCollectorNameSuffix)
 )
 
-func nameInvalid(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func nameInvalid(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.Name == "" {
 		// Make unit testing easier. This can never happen in an actual cluster.
 		return ""

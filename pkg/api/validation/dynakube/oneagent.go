@@ -42,7 +42,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
 )
 
-func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func conflictingOneAgentConfiguration(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	counter := 0
 	if dk.OneAgent().IsApplicationMonitoringMode() {
 		counter += 1
@@ -69,13 +69,13 @@ func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynak
 	return ""
 }
 
-func conflictingOneAgentNodeSelector(ctx context.Context, dv *Validator, dk *dynakube.DynaKube) string {
+func conflictingOneAgentNodeSelector(ctx context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if !dk.OneAgent().IsDaemonsetRequired() && !dk.LogMonitoring().IsStandalone() {
 		return ""
 	}
 
 	validDynakubes := &dynakube.DynaKubeList{}
-	if err := dv.apiReader.List(ctx, validDynakubes, &client.ListOptions{Namespace: dk.Namespace}); err != nil {
+	if err := vc.apiReader.List(ctx, validDynakubes, &client.ListOptions{Namespace: dk.Namespace}); err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
 
 		return ""
@@ -128,8 +128,8 @@ func mapKeysToString(m map[string]bool, sep string) string {
 	return strings.Join(keys, sep)
 }
 
-func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if !v.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
+func imageFieldSetWithoutCSIFlag(_ context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
+	if !vc.modules.CSIDriver && !dk.FF().IsNodeImagePull() {
 		if dk.OneAgent().IsApplicationMonitoringMode() && len(dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
 			return errorImageFieldSetWithoutCSIFlag
 		}
@@ -142,7 +142,7 @@ func imageFieldSetWithoutCSIFlag(_ context.Context, v *Validator, dk *dynakube.D
 	return ""
 }
 
-func missingCodeModulesImage(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+func missingCodeModulesImage(_ context.Context, vc *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().IsAppInjectionNeeded() &&
 		dk.FF().IsNodeImagePull() &&
 		len(dk.OneAgent().GetCustomCodeModulesImage()) == 0 {
@@ -173,7 +173,7 @@ func hasOneAgentVolumeStorageEnabled(dk *dynakube.DynaKube) (isEnabled bool, isS
 	return
 }
 
-func unsupportedOneAgentImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func unsupportedOneAgentImage(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if k8senv.Find(dk.OneAgent().GetEnvironment(), oneagentInstallerScriptURLEnvVarName) != nil ||
 		k8senv.Find(dk.OneAgent().GetEnvironment(), oneagentInstallerTokenEnvVarName) != nil {
 		return warningOneAgentInstallerEnvVars
@@ -182,7 +182,7 @@ func unsupportedOneAgentImage(_ context.Context, _ *Validator, dk *dynakube.Dyna
 	return ""
 }
 
-func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dk)
 	if dk.OneAgent().IsReadOnlyFSSupported() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
@@ -191,7 +191,7 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, _ *Validator, d
 	return ""
 }
 
-func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func conflictingHostGroupSettings(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	if dk.OneAgent().GetHostGroupAsParam() != "" {
 		return warningHostGroupConflict
 	}
@@ -199,7 +199,7 @@ func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.
 	return ""
 }
 
-func deprecatedAutoUpdate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func deprecatedAutoUpdate(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	oa := dk.OneAgent()
 	if oa.IsClassicFullStackMode() && dk.RemovedFields().AutoUpdate.Get() != nil {
 		return warningDeprecatedAutoUpdate
@@ -216,7 +216,7 @@ func deprecatedAutoUpdate(_ context.Context, _ *Validator, dk *dynakube.DynaKube
 	return ""
 }
 
-func isOneAgentVersionValid(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func isOneAgentVersionValid(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	agentVersion := dk.OneAgent().GetCustomVersion()
 	if agentVersion == "" {
 		return ""
@@ -235,7 +235,7 @@ func isOneAgentVersionValid(_ context.Context, _ *Validator, dk *dynakube.DynaKu
 	return ""
 }
 
-func duplicateOneAgentArguments(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func duplicateOneAgentArguments(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	args := dk.OneAgent().GetArgumentsMap()
 	if args == nil {
 		return ""
@@ -254,7 +254,7 @@ func duplicateOneAgentArguments(_ context.Context, _ *Validator, dk *dynakube.Dy
 	return ""
 }
 
-func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func forbiddenHostIDSourceArgument(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	args := dk.OneAgent().GetArgumentsMap()
 	if args == nil {
 		return ""

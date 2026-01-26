@@ -14,12 +14,12 @@ const (
 )
 
 var deprecatedFeatureFlags = []string{
-	exp.OAProxyIgnoredKey,   //nolint:staticcheck
-	exp.AGUpdatesKey,        //nolint:staticcheck
-	exp.AGDisableUpdatesKey, //nolint:staticcheck
+	exp.OAProxyIgnoredKey,
+	exp.AGUpdatesKey,
+	exp.AGDisableUpdatesKey,
 }
 
-func deprecatedFeatureFlag(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+func deprecatedFeatureFlag(_ context.Context, _ *validatorClient, dk *dynakube.DynaKube) string {
 	results := strings.Builder{}
 
 	for _, flag := range deprecatedFeatureFlags {
