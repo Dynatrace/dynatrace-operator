@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - "*"
+  merge_group:
 
 permissions:
   contents: read
@@ -29,12 +30,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: 2
+          fetch-depth: ${{ github.event_name == 'merge_group' && 0 || 2 }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Check if it is a protected branch
         id: is-protected-branch
         run: |
-          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == refs/heads/release-* ]]; then
+          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == refs/heads/release-* || "${{ github.event_name }}" == "merge_group" ]]; then
             echo "is_protected_branch=true" >> "$GITHUB_OUTPUT"
           else
             echo "is_protected_branch=false" >> "$GITHUB_OUTPUT"
