@@ -41,8 +41,7 @@ packages:
       structname: "{{.Mock}}{{.InterfaceName}}"
       filename: "mock_{{.InterfaceName | snakecase}}_test.go"
     interfaces:
-      k8sEntityReconciler:
-      dynakubeReconciler:
+      dtSettingReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"
