@@ -11,13 +11,16 @@ import (
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-type validator[T runtime.Object] struct {
+type DynaKubeType interface {
+	*v1beta3.DynaKube | *v1beta4.DynaKube | *v1beta5.DynaKube | *dynakube.DynaKube
+}
+
+type validator[T DynaKubeType] struct {
 	*validatorClient
 }
 
@@ -95,7 +98,7 @@ var (
 type validatorFunc func(ctx context.Context, dv *validatorClient, dk *dynakube.DynaKube) string
 type updateValidatorFunc func(ctx context.Context, dv *validatorClient, oldDk *dynakube.DynaKube, newDk *dynakube.DynaKube) string
 
-func newValidator[T runtime.Object](vi *validatorClient) *validator[T] {
+func newGenericValidator[T DynaKubeType](vi *validatorClient) *validator[T] {
 	return &validator[T]{
 		validatorClient: vi,
 	}
@@ -109,7 +112,7 @@ func newClient(apiReader client.Reader, cfg *rest.Config) *validatorClient {
 	}
 }
 
-func (v *validator[T]) ValidateCreate(ctx context.Context, obj T) (warnings admission.Warnings, err error) {
+func (v *validator[DynaKubeObject]) ValidateCreate(ctx context.Context, obj DynaKubeObject) (warnings admission.Warnings, err error) {
 	dk, err := getDynakube(obj)
 	if err != nil {
 		return
@@ -176,10 +179,10 @@ func (v *validator[T]) runUpdateValidators(ctx context.Context, updateValidators
 	return results
 }
 
-func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
+func getDynakube[T DynaKubeType](obj T) (dk *dynakube.DynaKube, err error) {
 	dk = &dynakube.DynaKube{}
 
-	switch v := obj.(type) {
+	switch v := any(obj).(type) {
 	case *dynakube.DynaKube:
 		dk = v
 	case *v1beta5.DynaKube:
@@ -189,10 +192,6 @@ func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
 	case *v1beta3.DynaKube:
 		err = v.ConvertTo(dk)
 	default:
-		if gvk := obj.GetObjectKind().GroupVersionKind(); !gvk.Empty() {
-			return nil, fmt.Errorf("unknown object %s", gvk)
-		}
-
 		return nil, fmt.Errorf("unknown object %T", obj)
 	}
 

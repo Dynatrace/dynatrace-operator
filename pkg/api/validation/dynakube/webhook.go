@@ -11,28 +11,28 @@ import (
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
 	validatorImpl := newClient(mgr.GetAPIReader(), mgr.GetConfig())
 
-	v1beta3Validator := newValidator[*v1beta3.DynaKube](validatorImpl)
+	v1beta3Validator := newGenericValidator[*v1beta3.DynaKube](validatorImpl)
 	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta3.DynaKube{}).
 		WithValidator(v1beta3Validator). // will create an endpoint at /validate-dynatrace-com-v1beta3-dynakube
 		Complete(); err != nil {
 		return err
 	}
 
-	v1beta4Validator := newValidator[*v1beta4.DynaKube](validatorImpl)
+	v1beta4Validator := newGenericValidator[*v1beta4.DynaKube](validatorImpl)
 	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta4.DynaKube{}).
 		WithValidator(v1beta4Validator). // will create an endpoint at /validate-dynatrace-com-v1beta4-dynakube
 		Complete(); err != nil {
 		return err
 	}
 
-	v1beta5Validator := newValidator[*v1beta5.DynaKube](validatorImpl)
+	v1beta5Validator := newGenericValidator[*v1beta5.DynaKube](validatorImpl)
 	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta5.DynaKube{}).
 		WithValidator(v1beta5Validator). // will create an endpoint at /validate-dynatrace-com-v1beta4-dynakube
 		Complete(); err != nil {
 		return err
 	}
 
-	latestValidator := newValidator[*latest.DynaKube](validatorImpl)
+	latestValidator := newGenericValidator[*latest.DynaKube](validatorImpl)
 	if err := ctrl.NewWebhookManagedBy(mgr, &latest.DynaKube{}).
 		WithValidator(latestValidator). // will create an endpoint at /validate-dynatrace-com-v1beta4-dynakube
 		Complete(); err != nil {
