@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -14,12 +16,12 @@ const (
 	ConditionType = "KSPMSettings"
 )
 
-func setCreatedCondition(conditions *[]metav1.Condition) {
+func setCreatedCondition(conditions *[]metav1.Condition, datasetPipelineEnabled bool) {
 	condition := metav1.Condition{
 		Type:    ConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  createdReason,
-		Message: "KSPM settings have been created.",
+		Message: fmt.Sprintf("KSPM settings have been created. configurationDatasetPipelineEnable: %t", datasetPipelineEnabled),
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }

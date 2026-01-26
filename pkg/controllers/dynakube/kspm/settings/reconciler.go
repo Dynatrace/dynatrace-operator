@@ -29,13 +29,14 @@ func NewReconciler() *Reconciler {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk *dynakube.DynaKube) error {
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, ConditionType) {
+	// Kubernetes Monitoring is REQUIRED for KSPM, so it is ok to just check for this.
+	if !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
+		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
+
 		return nil
 	}
 
-	if !dk.KSPM().IsEnabled() {
-		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
-
+	if !k8sconditions.IsOutdated(r.timeProvider, dk, ConditionType) {
 		return nil
 	}
 
@@ -96,15 +97,17 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 		return nil
 	}
 
-	objectID, err := dtc.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, true)
+	datasetPipelineEnabled := dk.KSPM().IsEnabled()
+
+	objectID, err := dtc.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
 	if err != nil {
 		setErrorCondition(dk.Conditions(), err.Error())
 
 		return err
 	}
 
-	setCreatedCondition(dk.Conditions())
-	log.Info("kspm setting created", "settings", objectID)
+	setCreatedCondition(dk.Conditions(), datasetPipelineEnabled)
+	log.Info("kspm setting created", "settings", objectID, "configurationDatasetPipelineEnabled", datasetPipelineEnabled)
 
 	return nil
 }
