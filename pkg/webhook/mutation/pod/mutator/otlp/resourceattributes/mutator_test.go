@@ -1,11 +1,13 @@
 package resourceattributes
 
 import (
+	"maps"
 	"net/url"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	latestdynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -22,6 +24,14 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+type mutatorTestCase struct {
+	name           string
+	objects        []runtime.Object
+	namespace      corev1.Namespace
+	pod            *corev1.Pod
+	wantAttributes map[string][]string
+}
 
 func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
 	const (
@@ -66,13 +76,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
 		OwnerReferences: []metav1.OwnerReference{deploymentOwner},
 	}}
 
-	tests := []struct {
-		name           string
-		objects        []runtime.Object
-		namespace      corev1.Namespace
-		pod            *corev1.Pod
-		wantAttributes map[string][]string
-	}{
+	tests := []mutatorTestCase{
 		{
 			name: "adds Attributes with deployment workload via replicaset lookup",
 			objects: []runtime.Object{
@@ -277,8 +281,42 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
 		},
 	}
 
+	t.Run("with deprecated annotations", func(t *testing.T) {
+		dk := baseDK.DeepCopy()
+		dk.ObjectMeta.Annotations = map[string]string{exp.WebhookEnableAttributesDtKubernetes: "true"}
+		runMutatorTests(t, *dk, tests, false)
+	})
+
+	t.Run("without deprecated annotations", func(t *testing.T) {
+		dk := baseDK.DeepCopy()
+		dk.ObjectMeta.Annotations = map[string]string{}
+		runMutatorTests(t, *dk, tests, true)
+	})
+}
+
+func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTestCase, removeDeprecatedAttr bool) {
+	t.Helper()
+
+	removeDtKubernetesAnnotations := func(attributes map[string][]string) map[string][]string {
+		attributesCopy := maps.Clone(attributes)
+		for containerName, attrs := range attributesCopy {
+			filteredAttrs := slices.DeleteFunc(attrs, func(attr string) bool {
+				return strings.HasPrefix(attr, "dt.kubernetes.")
+			})
+			attributesCopy[containerName] = filteredAttrs
+		}
+		return attributesCopy
+	}
+
 	for _, tt := range tests {
+		wantAttributes := tt.wantAttributes
+		if removeDeprecatedAttr {
+			wantAttributes = removeDtKubernetesAnnotations(tt.wantAttributes)
+		}
+
 		t.Run(tt.name, func(t *testing.T) {
+			pod := tt.pod.DeepCopy()
+
 			builder := fake.NewClientBuilder().WithScheme(scheme.Scheme)
 			if tt.objects != nil {
 				builder = builder.WithRuntimeObjects(tt.objects...)
@@ -290,21 +328,21 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
 				t.Context(),
 				tt.namespace,
 				nil,
-				tt.pod,
-				baseDK,
+				pod,
+				dk,
 			)
 			err := mut.Mutate(req)
 			require.NoError(t, err)
 
-			require.Len(t, tt.pod.Spec.Containers, len(tt.wantAttributes))
+			require.Len(t, pod.Spec.Containers, len(wantAttributes))
 
-			for _, container := range tt.pod.Spec.Containers {
+			for _, container := range pod.Spec.Containers {
 				var resourceAttributes []string
 				if env := k8senv.Find(container.Env, "OTEL_RESOURCE_ATTRIBUTES"); env != nil {
 					resourceAttributes = slices.Sorted(strings.SplitSeq(env.Value, ","))
 				}
 
-				if len(tt.wantAttributes[container.Name]) == 0 {
+				if len(wantAttributes[container.Name]) == 0 {
 					assert.Empty(t, resourceAttributes, "container should be skipped, no Attributes injected")
 					// also check pod/node env vars are not injected
 					for _, envName := range []string{injection.K8sNodeNameEnv, injection.K8sPodNameEnv, injection.K8sPodUIDEnv} {
@@ -316,9 +354,9 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
 
 				require.NotEmpty(t, resourceAttributes)
 				assert.Equal(t, resourceAttributes, slices.Compact(slices.Clone(resourceAttributes)), "contains duplicate elements")
-				assert.Len(t, resourceAttributes, len(tt.wantAttributes[container.Name]), "container should have right amount of attributes")
+				assert.Len(t, resourceAttributes, len(wantAttributes[container.Name]), "container should have right amount of attributes")
 
-				for _, expected := range tt.wantAttributes[container.Name] {
+				for _, expected := range wantAttributes[container.Name] {
 					assert.Contains(t, resourceAttributes, expected)
 				}
 
