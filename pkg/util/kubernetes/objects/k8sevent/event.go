@@ -2,15 +2,22 @@ package k8sevent
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	crdVersionMismatchReason  = "CRDVersionMismatch"
-	crdVersionMismatchMessage = "The CustomResourceDefinition doesn't match version with the operator. Please update the CRD to avoid potential issues."
+	crdVersionMismatchReason = "CRDVersionMismatch"
+	crdVersionMismatchNote   = "The CustomResourceDefinition doesn't match version with the operator"
+	crdVersionMismatchAction = "Please update the CRD to avoid potential issues"
 )
 
-func SendCRDVersionMismatch(eventRecorder record.EventRecorder, object client.Object) {
-	eventRecorder.Event(object, corev1.EventTypeWarning, crdVersionMismatchReason, crdVersionMismatchMessage)
+func SendCRDVersionMismatch(eventRecorder events.EventRecorder, object client.Object) {
+	eventRecorder.Eventf(
+		object,
+		nil,
+		corev1.EventTypeWarning,
+		crdVersionMismatchReason,
+		crdVersionMismatchAction,
+		crdVersionMismatchNote)
 }

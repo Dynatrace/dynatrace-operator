@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -66,7 +66,7 @@ type Controller struct {
 	// that reads objects from the cache and writes to the api-server
 	client                   client.Client
 	apiReader                client.Reader
-	eventRecorder            record.EventRecorder
+	eventRecorder            events.EventRecorder
 	registryClientBuilder    registry.ClientBuilder
 	config                   *rest.Config
 	timeProvider             *timeprovider.Provider
@@ -82,7 +82,7 @@ func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
 		client:                   mgr.GetClient(),
 		apiReader:                mgr.GetAPIReader(),
-		eventRecorder:            mgr.GetEventRecorderFor(controllerName),
+		eventRecorder:            mgr.GetEventRecorder(controllerName),
 		registryClientBuilder:    registry.NewClient,
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),

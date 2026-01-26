@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	toolsEvents "k8s.io/client-go/tools/events"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -200,7 +200,7 @@ func createTestHandler(oaMut, metaMut dtwebhook.Mutator, objects ...client.Objec
 	handler := New(
 		fakeClient,
 		fakeClient,
-		events.NewRecorder(record.NewFakeRecorder(10)),
+		events.NewRecorder(toolsEvents.NewFakeRecorder(10)),
 		testWebhookImage,
 		false,
 		metaMut,

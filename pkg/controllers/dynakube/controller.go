@@ -42,7 +42,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -66,10 +66,10 @@ func Add(mgr manager.Manager, _ string) error {
 }
 
 func NewController(mgr manager.Manager, clusterID string) *Controller {
-	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetEventRecorderFor(controllerName), mgr.GetConfig(), clusterID)
+	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetEventRecorder(controllerName), mgr.GetConfig(), clusterID)
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, eventRecorder record.EventRecorder, config *rest.Config, clusterID string) *Controller {
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, eventRecorder events.EventRecorder, config *rest.Config, clusterID string) *Controller {
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,
@@ -122,7 +122,7 @@ type Controller struct {
 	// that reads objects from the cache and writes to the api-server
 	client        client.Client
 	apiReader     client.Reader
-	eventRecorder record.EventRecorder
+	eventRecorder events.EventRecorder
 
 	k8sEntityReconciler k8sEntityReconciler
 	kspmReconciler      dynakubeReconciler
