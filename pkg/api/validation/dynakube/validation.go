@@ -112,7 +112,7 @@ func newClient(apiReader client.Reader, cfg *rest.Config) *validatorClient {
 	}
 }
 
-func (v *validator[DynaKubeObject]) ValidateCreate(ctx context.Context, obj DynaKubeObject) (warnings admission.Warnings, err error) {
+func (v *validator[T]) ValidateCreate(ctx context.Context, obj T) (warnings admission.Warnings, err error) {
 	dk, err := getDynakube(obj)
 	if err != nil {
 		return
