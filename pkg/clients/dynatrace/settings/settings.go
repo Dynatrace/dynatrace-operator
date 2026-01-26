@@ -55,6 +55,10 @@ type APIClient interface {
 	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
 	// CreateLogMonitoringSetting returns the object ID of the created logmonitoring settings.
 	CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error)
+	// GetKSPMSettings returns the settings response with the number of settings objects.
+	GetKSPMSettings(ctx context.Context, monitoredEntity string) (GetSettingsResponse, error)
+	// CreateKSPMSetting returns the object ID of the created kspm settings.
+	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
 }
 
 // K8sClusterME is representing the relevant info for a Kubernetes Cluster Monitored Entity
