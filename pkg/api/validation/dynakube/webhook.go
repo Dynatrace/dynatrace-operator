@@ -12,24 +12,24 @@ func SetupWebhookWithManager(mgr ctrl.Manager) error {
 	validator := New(mgr.GetAPIReader(), mgr.GetConfig())
 
 	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta3.DynaKube{}).
-		WithCustomValidator(validator).
+		WithCustomValidator(validator). //nolint
 		Complete(); err != nil {
 		return err
 	}
 
 	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta4.DynaKube{}).
-		WithCustomValidator(validator).
+		WithCustomValidator(validator). //nolint
 		Complete(); err != nil {
 		return err
 	}
 
 	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta5.DynaKube{}).
-		WithCustomValidator(validator).
+		WithCustomValidator(validator). //nolint
 		Complete(); err != nil {
 		return err
 	}
 
 	return ctrl.NewWebhookManagedBy(mgr, &latest.DynaKube{}).
-		WithCustomValidator(validator).
+		WithCustomValidator(validator). //nolint
 		Complete()
 }

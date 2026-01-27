@@ -10,12 +10,12 @@ func SetupWebhookWithManager(mgr ctrl.Manager) error {
 	validator := New(mgr.GetAPIReader(), mgr.GetConfig())
 
 	if err := ctrl.NewWebhookManagedBy(mgr, &v1alpha1.EdgeConnect{}).
-		WithCustomValidator(validator).
+		WithCustomValidator(validator). //nolint
 		Complete(); err != nil {
 		return err
 	}
 
 	return ctrl.NewWebhookManagedBy(mgr, &v1alpha2.EdgeConnect{}).
-		WithCustomValidator(validator).
+		WithCustomValidator(validator). //nolint
 		Complete()
 }
