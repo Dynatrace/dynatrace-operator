@@ -283,7 +283,7 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
 
 	t.Run("with deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
-		dk.ObjectMeta.Annotations = map[string]string{exp.WebhookEnableAttributesDtKubernetes: "true"}
+		dk.ObjectMeta.Annotations = map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "true"}
 		runMutatorTests(t, *dk, tests, false)
 	})
 
