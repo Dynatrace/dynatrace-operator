@@ -143,6 +143,7 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),
 		helm.WithArgs("--set", "manifests=true"),
 		helm.WithArgs("--set", "debugLogs=true"),
+		helm.WithArgs("--set", "webhook.highAvailability=false"),
 	}
 
 	// Install from registry
@@ -154,8 +155,12 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 	}
 
 	// Install nightly
-	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
-		return append(opts, helm.WithArgs(chartURI)), nil
+	if chartURI := os.Getenv("HELM_CHART"); isNightlyChart(chartURI) {
+		return append(
+			opts,
+			helm.WithArgs("--set", "imagePullPolicy=IfNotPresent"),
+			helm.WithArgs(chartURI),
+		), nil
 	}
 
 	// Install from filesystem
@@ -173,6 +178,14 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
 		helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
 	), nil
+}
+
+func isNightlyChart(chartURI string) bool {
+	_, version, ok := strings.Cut(strings.TrimPrefix(chartURI, "oci://"), ":")
+	if !ok {
+		return false
+	}
+	return strings.HasPrefix(version, "0.0.0-nightly-")
 }
 
 // Cache image ref on first invocation to allow switching branches.
