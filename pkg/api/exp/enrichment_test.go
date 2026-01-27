@@ -44,7 +44,7 @@ func TestEnableAttributesDtKubernetes(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				WebhookEnableAttributesDtKubernetes: c.in,
+				EnrichmentEnableAttributesDtKubernetes: c.in,
 			}}
 
 			out := ff.EnableAttributesDtKubernetes()

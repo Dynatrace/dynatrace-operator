@@ -70,7 +70,7 @@ func TestAddPodAttributes(t *testing.T) {
 			},
 			{
 				name:                        "with deprecated annotations",
-				annotations:                 map[string]string{exp.WebhookEnableAttributesDtKubernetes: "true"},
+				annotations:                 map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "true"},
 				assertDeprecatedAnnotations: assertDeprecatedAttributes,
 			},
 		}
