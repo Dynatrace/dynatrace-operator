@@ -366,7 +366,7 @@ func PropagationTest(t *testing.T, clt client.Client, withDeprecatedAnnotations 
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
 }
 
-func TestOTLPWebhook(t *testing.T) {
+func TestOTLPWebhook(t *testing.T) { //nolint:revive
 	clt := integrationtests.SetupWebhookTestEnvironment(t,
 		getWebhookInstallOptions(),
 

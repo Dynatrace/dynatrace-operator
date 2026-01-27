@@ -283,18 +283,18 @@ func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
 
 	t.Run("with deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
-		dk.ObjectMeta.Annotations = map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "true"}
+		dk.Annotations = map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "true"}
 		runMutatorTests(t, *dk, tests, false)
 	})
 
 	t.Run("without deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
-		dk.ObjectMeta.Annotations = map[string]string{}
+		dk.Annotations = map[string]string{}
 		runMutatorTests(t, *dk, tests, true)
 	})
 }
 
-func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTestCase, removeDeprecatedAttr bool) {
+func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTestCase, removeDeprecatedAttr bool) { //nolint:revive
 	t.Helper()
 
 	removeDtKubernetesAnnotations := func(attributes map[string][]string) map[string][]string {
@@ -305,6 +305,7 @@ func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTe
 			})
 			attributesCopy[containerName] = filteredAttrs
 		}
+
 		return attributesCopy
 	}
 
