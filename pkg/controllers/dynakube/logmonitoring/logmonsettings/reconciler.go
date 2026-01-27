@@ -8,42 +8,39 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
-type reconciler struct {
+type Reconciler struct {
 	dk  *dynakube.DynaKube
 	dtc settings.APIClient
 
 	timeProvider *timeprovider.Provider
 }
 
-type ReconcilerBuilder func(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler
-
-var _ ReconcilerBuilder = NewReconciler
-
-func NewReconciler(dtc settings.APIClient, dk *dynakube.DynaKube) controllers.Reconciler {
-	return &reconciler{
+func NewReconciler(dtc settings.APIClient, dk *dynakube.DynaKube) *Reconciler {
+	return &Reconciler{
 		dk:           dk,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context) error {
-	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
-		return nil
-	}
-
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dk.LogMonitoring().IsEnabled() {
 		_ = meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
 
 		return nil
 	}
+
+	if !k8sconditions.IsOutdated(r.timeProvider, r.dk, ConditionType) {
+		return nil
+	}
+
+	_ = meta.RemoveStatusCondition(r.dk.Conditions(), ConditionType)
 
 	hasReadScope := k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsRead)
 	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(r.dk, dtclient.ConditionTypeAPITokenSettingsWrite)
@@ -75,7 +72,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
+func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	log.Info("start reconciling log monitoring settings")
 
 	if r.dk.Status.KubernetesClusterMEID == "" {
@@ -97,7 +94,7 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 	if logMonitoringSettings.TotalCount > 0 {
 		log.Info("there are already settings", "settings", logMonitoringSettings)
 
-		setAlreadyExistsCondition(r.dk.Conditions())
+		setExistsCondition(r.dk.Conditions())
 
 		return nil
 	}
@@ -114,7 +111,7 @@ func (r *reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 		return err
 	}
 
-	setCreatedCondition(r.dk.Conditions())
+	setExistsCondition(r.dk.Conditions())
 	log.Info("log monitoring setting created", "settings", objectID)
 
 	return nil
