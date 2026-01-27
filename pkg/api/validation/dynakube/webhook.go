@@ -11,17 +11,25 @@ import (
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
 	validator := New(mgr.GetAPIReader(), mgr.GetConfig())
 
-	if err := v1beta3.SetupWebhookWithManager(mgr, validator); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta3.DynaKube{}).
+		WithCustomValidator(validator).
+		Complete(); err != nil {
 		return err
 	}
 
-	if err := v1beta4.SetupWebhookWithManager(mgr, validator); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta4.DynaKube{}).
+		WithCustomValidator(validator).
+		Complete(); err != nil {
 		return err
 	}
 
-	if err := v1beta5.SetupWebhookWithManager(mgr, validator); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &v1beta5.DynaKube{}).
+		WithCustomValidator(validator).
+		Complete(); err != nil {
 		return err
 	}
 
-	return latest.SetupWebhookWithManager(mgr, validator)
+	return ctrl.NewWebhookManagedBy(mgr, &latest.DynaKube{}).
+		WithCustomValidator(validator).
+		Complete()
 }

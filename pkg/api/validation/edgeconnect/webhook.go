@@ -9,9 +9,13 @@ import (
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
 	validator := New(mgr.GetAPIReader(), mgr.GetConfig())
 
-	if err := v1alpha1.SetupWebhookWithManager(mgr, validator); err != nil {
+	if err := ctrl.NewWebhookManagedBy(mgr, &v1alpha1.EdgeConnect{}).
+		WithCustomValidator(validator).
+		Complete(); err != nil {
 		return err
 	}
 
-	return v1alpha2.SetupWebhookWithManager(mgr, validator)
+	return ctrl.NewWebhookManagedBy(mgr, &v1alpha2.EdgeConnect{}).
+		WithCustomValidator(validator).
+		Complete()
 }
