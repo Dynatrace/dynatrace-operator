@@ -88,12 +88,9 @@ func newWebhook( //nolint:revive
 			otlpexporter.New(),
 			otlpresourceattributes.New(metaClient),
 		),
-		kubeClient:       kubeClient,
 		apiReader:        apiReader,
 		recorder:         eventRecorder,
-		isOpenShift:      isOpenshift,
 		webhookNamespace: webhookPod.Namespace,
-		webhookPodImage:  webhookPodImage,
 		deployedViaOLM:   system.IsDeployedViaOlm(webhookPod),
 		decoder:          decoder,
 	}, nil

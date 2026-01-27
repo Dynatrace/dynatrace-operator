@@ -50,16 +50,11 @@ type webhook struct {
 	injectionHandler handler.Handler
 	otlpHandler      handler.Handler
 
-	decoder admission.Decoder
+	decoder   admission.Decoder
+	apiReader client.Reader
 
-	kubeClient client.Client
-	apiReader  client.Reader
-
-	webhookPodImage  string
 	webhookNamespace string
-	isOpenShift      bool
-
-	deployedViaOLM bool
+	deployedViaOLM   bool
 }
 
 func (wh *webhook) Handle(ctx context.Context, request admission.Request) admission.Response {
