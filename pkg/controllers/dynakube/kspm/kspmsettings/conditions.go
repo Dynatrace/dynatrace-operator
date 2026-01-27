@@ -6,10 +6,9 @@ import (
 )
 
 const (
-	existsReason   = "Exists"
-	outdatedReason = "Outdated"
-	skippedReason  = "Skipped"
-	errorReason    = "Error"
+	existsReason  = "Exists"
+	skippedReason = "Skipped"
+	errorReason   = "Error"
 
 	conditionType = "KSPMSettings"
 )
