@@ -19,7 +19,7 @@ func setExistsCondition(conditions *[]metav1.Condition) {
 		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  existsReason,
-		Message: "KSPM settings already exist, will not create new ones.",
+		Message: "KSPM settings exist.",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
@@ -29,7 +29,7 @@ func setErrorCondition(conditions *[]metav1.Condition, message string) {
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  errorReason,
-		Message: "KSPM settings creation was skipped: " + message,
+		Message: "KSPM settings creation encountered an error: " + message,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
