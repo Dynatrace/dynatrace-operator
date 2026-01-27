@@ -86,7 +86,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 
 		client := NewClient(apiClient)
 		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
-		require.ErrorAs(t, err, new(tooManyEntriesError))
+		require.ErrorAs(t, err, new(notSingleEntryError))
 		assert.Empty(t, objectID)
 	})
 }

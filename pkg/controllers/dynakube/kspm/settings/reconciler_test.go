@@ -1,8 +1,9 @@
-package settings
+package kspmsettings
 
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -49,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, alreadyExistReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
@@ -69,7 +70,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, createdReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
@@ -119,7 +120,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, createdReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("cleanup condition if KubeMon is turned off", func(t *testing.T) {
@@ -129,12 +130,61 @@ func TestReconcile(t *testing.T) {
 
 		r := NewReconciler()
 
-		setCreatedCondition(dk.Conditions(), false)
+		setExistsCondition(dk.Conditions())
 
 		err := r.Reconcile(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
 		require.Empty(t, dk.Conditions())
+	})
+
+	t.Run("update condition timestamp if outdated", func(t *testing.T) {
+		mockClient := settingsmock.NewAPIClient(t)
+
+		dk := getDK(false)
+
+		r := NewReconciler()
+		r.timeProvider.Set(time.Now().Add(time.Hour))
+
+		setExistsCondition(dk.Conditions())
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+
+		prevTS := condition.LastTransitionTime.Time
+
+		err := r.Reconcile(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+
+		condition = meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+
+		currentTS := condition.LastTransitionTime.Time
+
+		require.NotEqual(t, prevTS, currentTS)
+	})
+
+	t.Run("don't update condition timestamp if not outdated", func(t *testing.T) {
+		mockClient := settingsmock.NewAPIClient(t)
+
+		dk := getDK(false)
+
+		r := NewReconciler()
+
+		setExistsCondition(dk.Conditions())
+		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+
+		prevTS := condition.LastTransitionTime.Time
+
+		err := r.Reconcile(t.Context(), mockClient, dk)
+		require.NoError(t, err)
+
+		condition = meta.FindStatusCondition(*dk.Conditions(), conditionType)
+		require.NotNil(t, condition)
+
+		currentTS := condition.LastTransitionTime.Time
+
+		require.Equal(t, currentTS, prevTS)
 	})
 }
 
@@ -157,17 +207,17 @@ func TestCheckKSPMSettings(t *testing.T) {
 	}
 
 	t.Run("error fetching kspm settings", func(t *testing.T) {
+		testErr := errors.New("error when fetching")
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.GetSettingsResponse{}, errors.New("error when fetching settings"))
+			Return(settings.GetSettingsResponse{}, testErr)
 
 		dk := getDK(true, meID)
 
 		r := NewReconciler()
 
 		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "error when fetching settings")
+		require.ErrorIs(t, err, testErr)
 
 		verifyCondition(t, dk, errorReason)
 	})
@@ -196,7 +246,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, alreadyExistReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("create kspm settings", func(t *testing.T) {
@@ -213,7 +263,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, createdReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("create kubemon-only settings", func(t *testing.T) {
@@ -230,23 +280,23 @@ func TestCheckKSPMSettings(t *testing.T) {
 		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, createdReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("error creating kspm settings", func(t *testing.T) {
+		testErr := errors.New("error when creating")
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
 			Return(settings.GetSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
-			Return("", errors.New("error when creating"))
+			Return("", testErr)
 
 		dk := getDK(true, meID)
 
 		r := NewReconciler()
 
 		err := r.checkKSPMSettings(t.Context(), mockClient, dk)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "error when creating")
+		require.ErrorIs(t, err, testErr)
 
 		verifyCondition(t, dk, errorReason)
 	})
@@ -265,7 +315,7 @@ func setWriteScope(t *testing.T, dk *dynakube.DynaKube) {
 func verifyCondition(t *testing.T, dk *dynakube.DynaKube, expectedReason string) {
 	t.Helper()
 
-	c := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+	c := meta.FindStatusCondition(*dk.Conditions(), conditionType)
 
 	require.NotNil(t, c)
 	assert.Equal(t, expectedReason, c.Reason)

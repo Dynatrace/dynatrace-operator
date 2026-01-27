@@ -64,9 +64,5 @@ func (c *Client) CreateKSPMSetting(ctx context.Context, monitoredEntity string, 
 		return "", fmt.Errorf("create kspm setting: %w", err)
 	}
 
-	if len(response) != 1 {
-		return "", tooManyEntriesError(len(response))
-	}
-
-	return response[0].ObjectID, nil
+	return getObjectID(response)
 }

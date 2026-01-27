@@ -94,7 +94,7 @@ func TestCreateKSPMSetting(t *testing.T) {
 
 		client := NewClient(apiClient)
 		objectID, err := client.CreateKSPMSetting(ctx, "scope-1", true)
-		require.ErrorAs(t, err, new(tooManyEntriesError))
+		require.ErrorAs(t, err, new(notSingleEntryError))
 		assert.Empty(t, objectID)
 	})
 }

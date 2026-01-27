@@ -14,14 +14,14 @@ import (
 type Reconciler struct {
 	tokenReconciler     *token.Reconciler
 	daemonSetReconciler *daemonset.Reconciler
-	settingsReconciler  *settings.Reconciler
+	settingsReconciler  *kspmsettings.Reconciler
 }
 
 func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		tokenReconciler:     token.NewReconciler(client, apiReader),
 		daemonSetReconciler: daemonset.NewReconciler(client, apiReader),
-		settingsReconciler:  settings.NewReconciler(),
+		settingsReconciler:  kspmsettings.NewReconciler(),
 	}
 }
 
@@ -35,7 +35,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 
 	err = r.settingsReconciler.Reconcile(ctx, dtc, dk)
 	if err != nil {
-		log.Info("failed to reconcile Dynatrace KSPM DaemonSet")
+		log.Info("failed to reconcile KSPM Settings")
 
 		return err
 	}

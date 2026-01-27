@@ -1,4 +1,4 @@
-package settings
+package kspmsettings
 
 import (
 	"context"
@@ -31,14 +31,16 @@ func NewReconciler() *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk *dynakube.DynaKube) error {
 	// Kubernetes Monitoring is REQUIRED for KSPM, so it is ok to just check for this.
 	if !dk.ActiveGate().IsKubernetesMonitoringEnabled() {
-		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
+		_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
 		return nil
 	}
 
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, ConditionType) {
+	if !k8sconditions.IsOutdated(r.timeProvider, dk, conditionType) {
 		return nil
 	}
+
+	setOutdatedCondition(dk.Conditions()) // needed so the timestamp updates, will never actually show up in the status
 
 	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsRead)
 	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsWrite)
@@ -54,7 +56,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 
 	if len(missingScopes) > 0 {
 		message := strings.Join(missingScopes, ", ") + " scope(s) missing: cannot query existing kspm monitoring setting and/or safely create new one."
-		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), ConditionType, message)
+		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), conditionType, message)
 		log.Info(message)
 
 		return nil
@@ -92,7 +94,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 	if kspmSettings.TotalCount > 0 {
 		log.Info("there are already settings", "settings", kspmSettings)
 
-		setAlreadyExistsCondition(dk.Conditions())
+		setExistsCondition(dk.Conditions())
 
 		return nil
 	}
@@ -106,7 +108,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtc dtsettings.APICl
 		return err
 	}
 
-	setCreatedCondition(dk.Conditions(), datasetPipelineEnabled)
+	setExistsCondition(dk.Conditions())
 	log.Info("kspm setting created", "settings", objectID, "configurationDatasetPipelineEnabled", datasetPipelineEnabled)
 
 	return nil

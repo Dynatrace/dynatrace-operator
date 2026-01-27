@@ -1,36 +1,24 @@
-package settings
+package kspmsettings
 
 import (
-	"fmt"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	alreadyExistReason = "AlreadyExist"
-	skippedReason      = "Skipped"
-	errorReason        = "Error"
-	createdReason      = "Created"
+	existsReason   = "Exists"
+	outdatedReason = "Outdated"
+	skippedReason  = "Skipped"
+	errorReason    = "Error"
 
-	ConditionType = "KSPMSettings"
+	conditionType = "KSPMSettings"
 )
 
-func setCreatedCondition(conditions *[]metav1.Condition, datasetPipelineEnabled bool) {
+func setExistsCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
-		Type:    ConditionType,
+		Type:    conditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  createdReason,
-		Message: fmt.Sprintf("KSPM settings have been created. configurationDatasetPipelineEnable: %t", datasetPipelineEnabled),
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
-func setAlreadyExistsCondition(conditions *[]metav1.Condition) {
-	condition := metav1.Condition{
-		Type:    ConditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  alreadyExistReason,
+		Reason:  existsReason,
 		Message: "KSPM settings already exist, will not create new ones.",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
@@ -38,7 +26,7 @@ func setAlreadyExistsCondition(conditions *[]metav1.Condition) {
 
 func setErrorCondition(conditions *[]metav1.Condition, message string) {
 	condition := metav1.Condition{
-		Type:    ConditionType,
+		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  errorReason,
 		Message: "KSPM settings creation was skipped: " + message,
@@ -48,10 +36,20 @@ func setErrorCondition(conditions *[]metav1.Condition, message string) {
 
 func setSkippedCondition(conditions *[]metav1.Condition, message string) {
 	condition := metav1.Condition{
-		Type:    ConditionType,
+		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  skippedReason,
 		Message: "KSPM settings creation was skipped: " + message,
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
+}
+
+func setOutdatedCondition(conditions *[]metav1.Condition) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  outdatedReason,
+		Message: "Condition outdated",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
