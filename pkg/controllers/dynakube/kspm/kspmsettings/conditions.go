@@ -43,13 +43,3 @@ func setSkippedCondition(conditions *[]metav1.Condition, message string) {
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
-
-func setOutdatedCondition(conditions *[]metav1.Condition) {
-	condition := metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  outdatedReason,
-		Message: "Condition outdated",
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}

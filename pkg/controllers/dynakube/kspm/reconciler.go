@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/kspmsettings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/token"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

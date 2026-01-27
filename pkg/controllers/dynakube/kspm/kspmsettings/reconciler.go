@@ -40,7 +40,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtc dtsettings.APIClient, dk
 		return nil
 	}
 
-	setOutdatedCondition(dk.Conditions()) // needed so the timestamp updates, will never actually show up in the status
+	_ = meta.RemoveStatusCondition(dk.Conditions(), conditionType) // needed so the timestamp updates, will never actually show up in the status
 
 	hasReadScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsRead)
 	hasWriteScope := k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsWrite)
