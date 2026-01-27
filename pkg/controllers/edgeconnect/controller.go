@@ -82,7 +82,7 @@ func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
 		client:                   mgr.GetClient(),
 		apiReader:                mgr.GetAPIReader(),
-		eventRecorder:            mgr.GetEventRecorderFor(controllerName),
+		eventRecorder:            mgr.GetEventRecorderFor(controllerName), //nolint
 		registryClientBuilder:    registry.NewClient,
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),
