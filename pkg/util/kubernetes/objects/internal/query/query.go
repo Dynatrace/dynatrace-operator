@@ -9,12 +9,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+type MutateFn[T client.Object] func(T) error
 
 type Generic[T client.Object, L client.ObjectList] struct {
 	Target       T
@@ -83,6 +87,31 @@ func (c Generic[T, L]) Delete(ctx context.Context, object T, options ...client.D
 	err := c.KubeClient.Delete(ctx, object, options...)
 
 	return errors.WithStack(client.IgnoreNotFound(err))
+}
+
+func mutateDeployment(d *appsv1.Deployment) func() error {
+	return func() error {
+		d.ObjectMeta.OwnerReferences = []metav1.OwnerReference{}
+		return nil
+	}
+}
+
+func (c Generic[T, L]) CreateOrUpdate2(ctx context.Context, mutate MutateFn[T]) (bool, error) {
+	//var t T
+	op, err := controllerutil.CreateOrUpdate(ctx, c.KubeClient, c.Target, func() error {
+		//mutate(T)
+		return nil
+	})
+
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	var result bool
+	if op == controllerutil.OperationResultCreated {
+		result = true
+	}
+	return result, nil
 }
 
 func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, error) {

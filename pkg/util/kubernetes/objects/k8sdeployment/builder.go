@@ -2,12 +2,23 @@ package k8sdeployment
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
+
+type DeploymentBuilder struct{
+	mutators []query.MutateFn[*appsv1.Deployment]
+}
+
+
+func NewNewBuilder(mutators ...query.MutateFn[*appsv1.Deployment]) *DeploymentBuilder {
+	return &DeploymentBuilder{mutators: mutators}
+}
+
 
 var SetLabels = builder.SetLabels[*appsv1.Deployment]
 
@@ -58,6 +69,34 @@ func SetAllAnnotations(annotations, templateAnnotations map[string]string) build
 		d.Annotations = maputils.MergeMap(d.Annotations, annotations)
 		d.Spec.Template.Annotations = maputils.MergeMap(d.Spec.Template.Annotations, templateAnnotations)
 	}
+}
+
+func (b DeploymentBuilder) SetContainer(c corev1.Container) DeploymentBuilder {
+	b.mutators = append(b.mutators, func(d *appsv1.Deployment) error {
+		targetIndex := 0
+		for index := range d.Spec.Template.Spec.Containers {
+			if d.Spec.Template.Spec.Containers[targetIndex].Name == c.Name {
+				targetIndex = index
+
+				break
+			}
+		}
+
+		if targetIndex == 0 {
+			d.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
+		}
+
+		d.Spec.Template.Spec.Containers[targetIndex] = c
+		return nil
+	})
+	return b
+}
+
+func (b DeploymentBuilder) Mutate(d *appsv1.Deployment) error {
+	for _, m := range b.mutators {
+		m(d)
+	}
+	return nil
 }
 
 func SetContainer(container corev1.Container) builder.Option[*appsv1.Deployment] {

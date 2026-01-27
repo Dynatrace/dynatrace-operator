@@ -6,9 +6,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type Reconciler struct {
@@ -29,7 +33,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	log.Debug("reconciling deployments")
 
-	query := k8sdeployment.Query(r.client, r.apiReader, log)
+	//query := k8sdeployment.Query(r.client, r.apiReader, log)
 	ext := r.dk.Extensions()
 	expectedDeploymentNames := make([]string, len(ext.Databases))
 
@@ -44,28 +48,30 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	for i, dbSpec := range ext.Databases {
-		replicas, err := r.getReplicas(ctx, expectedDeploymentNames[i], dbSpec.Replicas)
+		_, err := r.getReplicas(ctx, expectedDeploymentNames[i], dbSpec.Replicas)
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 			return err
 		}
 
-		deploy, err := k8sdeployment.Build(
-			r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
-			k8sdeployment.SetReplicas(replicas),
-			k8sdeployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
-			k8sdeployment.SetAllAnnotations(nil, dbSpec.Annotations),
-			k8sdeployment.SetAffinity(dbSpec.Affinity),
-			k8sdeployment.SetTolerations(r.dk.Spec.Templates.SQLExtensionExecutor.Tolerations),
-			k8sdeployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),
-			k8sdeployment.SetNodeSelector(dbSpec.NodeSelector),
-			k8sdeployment.SetImagePullSecrets(r.dk.ImagePullSecretReferences()),
-			k8sdeployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
-			k8sdeployment.SetSecurityContext(buildPodSecurityContext()),
-			k8sdeployment.SetContainer(buildContainer(r.dk, dbSpec)),
-			k8sdeployment.SetVolumes(buildVolumes(r.dk, dbSpec)),
-		)
+		d := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
+
+		err = k8sdeployment.NewNewBuilder().SetContainer(corev1.Container{Name: "test"}).Mutate(d)
+		//r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
+		//k8sdeployment.SetReplicas(replicas),
+		//k8sdeployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
+		//k8sdeployment.SetAllAnnotations(nil, dbSpec.Annotations),
+		//k8sdeployment.SetAffinity(dbSpec.Affinity),
+		//k8sdeployment.SetTolerations(r.dk.Spec.Templates.SQLExtensionExecutor.Tolerations),
+		//k8sdeployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),
+		//k8sdeployment.SetNodeSelector(dbSpec.NodeSelector),
+		//k8sdeployment.SetImagePullSecrets(r.dk.ImagePullSecretReferences()),
+		//k8sdeployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
+		//k8sdeployment.SetSecurityContext(buildPodSecurityContext()),
+		//k8sdeployment.SetContainer(buildContainer(r.dk, dbSpec)),
+		//k8sdeployment.SetVolumes(buildVolumes(r.dk, dbSpec)),
+		//)
 		if err != nil {
 			// This error indicates that the scheme is missing required types and is unrecoverable.
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
@@ -73,15 +79,29 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		changed, err := query.WithOwner(r.dk).CreateOrUpdate(ctx, deploy)
+		//changed, err := controllerutil.CreateOrUpdate(ctx, r.client, d, func() error {
+		//	if d.ObjectMeta.CreationTimestamp.IsZero() {
+		//		d.Spec.Selector = &metav1.LabelSelector{
+		//			MatchLabels: map[string]string{"foo": "bar"},
+		//		}
+		//	}
+		//	return nil
+		//})
+
+		_, err = controllerutil.CreateOrUpdate(ctx, r.client, d, func() error {
+			//d.ObjectMeta = metav1.ObjectMeta{Name: ext.GetDatabaseDatasourceName(dbSpec.ID), Namespace: r.dk.Namespace}
+			//d.Spec = appsv1.DeploymentSpec{}
+			return nil
+		})
+
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 
 			return err
 		}
 
-		if changed {
-			log.Info("deployment created or updated", "name", deploy.Name)
+		if true {
+			log.Info("deployment created or updated", "name", d.Name)
 		}
 	}
 
