@@ -56,7 +56,7 @@ ENVTEST_K8S_VERSION ?= $(shell v='$(call gomodver,k8s.io/api)'; \
 	printf '%s\n' "$$v" | sed -E 's/^v?[0-9]+\.([0-9]+).*/1.\1/')
 
 ## Install all prerequisites
-prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint
+prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint prerequisites/git-ignore-revs-file
 
 ## Setup go development dependencies
 prerequisites/setup-go-dev-dependencies: prerequisites/kustomize prerequisites/controller-gen prerequisites/go-linting prerequisites/mockery
@@ -129,6 +129,10 @@ prerequisites/python:
 prerequisites/setup-pre-commit:
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
+
+## Configure git to use .git-blame-ignore-revs file
+prerequisites/git-ignore-revs-file:
+	git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
