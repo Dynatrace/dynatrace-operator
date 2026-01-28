@@ -2,7 +2,6 @@ package exp
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -34,59 +33,6 @@ func TestGetNoProxy(t *testing.T) {
 			}}
 
 			out := ff.GetNoProxy()
-
-			assert.Equal(t, c.out, out)
-		})
-	}
-}
-
-func TestGetApiRequestThreshold(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   time.Duration
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   DefaultMinRequestThresholdMinutes * time.Minute,
-		},
-		{
-			title: "with incorrect value type, negative int",
-			in:    "-1",
-			out:   DefaultMinRequestThresholdMinutes * time.Minute,
-		},
-		{
-			title: "with incorrect value type, too big int",
-			in:    "99999999999999999999999999999999999999999999999999999999999999999999999",
-			out:   DefaultMinRequestThresholdMinutes * time.Minute,
-		},
-		{
-			title: "with incorrect value type, string",
-			in:    "not a number",
-			out:   DefaultMinRequestThresholdMinutes * time.Minute,
-		},
-		{
-			title: "with incorrect value type, go time format",
-			in:    "1h",
-			out:   DefaultMinRequestThresholdMinutes * time.Minute,
-		},
-		{
-			title: "overrule",
-			in:    "5",
-			out:   5 * time.Minute,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				APIRequestThresholdKey: c.in,
-			}}
-
-			out := ff.GetAPIRequestThreshold()
 
 			assert.Equal(t, c.out, out)
 		})

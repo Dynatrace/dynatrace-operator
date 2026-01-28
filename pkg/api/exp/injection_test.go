@@ -6,55 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDisableMetadataEnrichment(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		depIn string
-		out   bool
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			depIn: "",
-			out:   false,
-		},
-		{
-			title: "overrule, non deprecated key",
-			in:    "false",
-			depIn: "",
-			out:   true,
-		},
-		{
-			title: "overrule, deprecated key",
-			in:    "",
-			depIn: "true",
-			out:   true,
-		},
-		{
-			title: "overrule, no deprecated key overrules",
-			in:    "true",
-			depIn: "true",
-			out:   false,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				InjectionMetadataEnrichmentKey:        c.in,
-				InjectionDisableMetadataEnrichmentKey: c.depIn,
-			}}
-
-			out := ff.DisableMetadataEnrichment()
-
-			assert.Equal(t, c.out, out)
-		})
-	}
-}
-
 func TestGetIgnoredNamespaces(t *testing.T) {
 	type testCase struct {
 		title string

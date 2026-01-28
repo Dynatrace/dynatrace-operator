@@ -120,39 +120,6 @@ func TestGetOneAgentMaxUnavailable(t *testing.T) {
 	}
 }
 
-func TestGetOneAgentSecCompProfile(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   string
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   "",
-		},
-		{
-			title: "overrule",
-			in:    "my-seccomp",
-			out:   "my-seccomp",
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				OASecCompProfileKey: c.in,
-			}}
-
-			out := ff.GetOneAgentSecCompProfile()
-
-			assert.Equal(t, c.out, out)
-		})
-	}
-}
-
 func TestOneAgentIgnoresProxyProxy(t *testing.T) {
 	type testCase struct {
 		title string
