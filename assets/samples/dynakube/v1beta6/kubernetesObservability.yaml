@@ -88,15 +88,15 @@ spec:
     #     networkZone=
     #   valueFrom: myCustomPropertiesSecret
 
-    # Optional: Resource settings for ActiveGate container.
+    # Optional: Resource settings for ActiveGate container. More information and sizing recommendations can be found under https://dt-url.net/26agsizes
     #
     resources:
       requests:
-        cpu: 500m
-        memory: 1.5Gi
+        cpu: 200m
+        memory: 6Gi
       limits:
         cpu: 1000m
-        memory: 1.5Gi
+        memory: 6Gi
 
     # Optional: Specify the node selector that controls on which nodes ActiveGate will be deployed.
     #
