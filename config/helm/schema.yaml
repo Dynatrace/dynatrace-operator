@@ -292,6 +292,14 @@ properties:
     title: Enables CSI driver
     description: The CloudNativeFullStack as well as AppOnly mode need the CSI driver to function properly.
     default: false
+  csidriver.apparmor:
+    type: boolean
+    title: Enables AppArmor for CSI driver
+    description: |
+      AppArmor is a security system for Linux.
+      If a cluster supports AppArmor the CSI driver uses it if it is enabled here.
+      If it is not supported by a cluster it must not be enabled.
+    default: false
   csidriver.provisioner.resources.requests.cpu:
     type: string
     title: CSI driver CPU request - provisioner
