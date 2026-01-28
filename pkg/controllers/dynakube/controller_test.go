@@ -347,10 +347,8 @@ func TestReconcileComponents(t *testing.T) {
 		switch reconciler := reconciler.(type) {
 		case *controllermock.Reconciler:
 			reconciler.EXPECT().Reconcile(anyCtx).Return(uniqueError).Once()
-		case *mockk8sEntityReconciler:
+		case *mockdtSettingReconciler:
 			reconciler.EXPECT().Reconcile(anyCtx, args[0], args[1]).Return(uniqueError).Once()
-		case *mockdynakubeReconciler:
-			reconciler.EXPECT().Reconcile(anyCtx, args[0]).Return(uniqueError).Once()
 		default:
 			return
 		}
@@ -370,8 +368,8 @@ func TestReconcileComponents(t *testing.T) {
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
 		mockExtensionReconciler := controllermock.NewReconciler(t)
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		mockKSPMReconciler := newMockdynakubeReconciler(t)
-		mockK8sEntityReconciler := newMockk8sEntityReconciler(t)
+		mockKSPMReconciler := newMockdtSettingReconciler(t)
+		mockK8sEntityReconciler := newMockdtSettingReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -387,7 +385,7 @@ func TestReconcileComponents(t *testing.T) {
 			k8sEntityReconciler:            mockK8sEntityReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}}).Once()
+		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
 
 		var err error
 		expectReconcileError(t, mockOneAgentReconciler, &err)
@@ -396,7 +394,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockLogMonitoringReconciler, &err)
 		expectReconcileError(t, mockExtensionReconciler, &err)
 		expectReconcileError(t, mockOtelcReconciler, &err)
-		expectReconcileError(t, mockKSPMReconciler, &err, dk)
+		expectReconcileError(t, mockKSPMReconciler, &err, &settings.Client{}, dk)
 		expectReconcileError(t, mockK8sEntityReconciler, &err, &settings.Client{}, dk)
 
 		err = controller.reconcileComponents(ctx, mockedDtc, nil, dk)
@@ -410,7 +408,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockExtensionReconciler := controllermock.NewReconciler(t)
 		mockOtelcReconciler := controllermock.NewReconciler(t)
-		k8sEntityReconciler := newMockk8sEntityReconciler(t)
+		k8sEntityReconciler := newMockdtSettingReconciler(t)
 
 		mockLogMonitoringReconciler := controllermock.NewReconciler(t)
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(oaconnectioninfo.NoOneAgentCommunicationEndpointsError).Once()
@@ -425,7 +423,7 @@ func TestReconcileComponents(t *testing.T) {
 			k8sEntityReconciler:            k8sEntityReconciler,
 		}
 		mockedDtc := dtclientmock.NewClient(t)
-		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}}).Once()
+		mockedDtc.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
 
 		var err error
 		expectReconcileError(t, mockActiveGateReconciler, &err)
@@ -487,12 +485,10 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	anyDynaKube := mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
 
-	mockKSPMReconciler := newMockdynakubeReconciler(t)
-	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
+	mockKSPMReconciler := newMockdtSettingReconciler(t)
+	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, &settings.Client{}, anyDynaKube).Return(nil)
 
-	mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
-
-	mockK8sEntityReconciler := newMockk8sEntityReconciler(t)
+	mockK8sEntityReconciler := newMockdtSettingReconciler(t)
 	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, &settings.Client{}, anyDynaKube).Return(nil)
 
 	fakeIstio := fakeistio.NewSimpleClientset()

@@ -40,6 +40,78 @@ func (_m *APIClient) EXPECT() *APIClient_Expecter {
 	return &APIClient_Expecter{mock: &_m.Mock}
 }
 
+// CreateKSPMSetting provides a mock function for the type APIClient
+func (_mock *APIClient) CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error) {
+	ret := _mock.Called(ctx, monitoredEntity, datasetPipelineEnabled)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateKSPMSetting")
+	}
+
+	var r0 string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, bool) (string, error)); ok {
+		return returnFunc(ctx, monitoredEntity, datasetPipelineEnabled)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, bool) string); ok {
+		r0 = returnFunc(ctx, monitoredEntity, datasetPipelineEnabled)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
+		r1 = returnFunc(ctx, monitoredEntity, datasetPipelineEnabled)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// APIClient_CreateKSPMSetting_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateKSPMSetting'
+type APIClient_CreateKSPMSetting_Call struct {
+	*mock.Call
+}
+
+// CreateKSPMSetting is a helper method to define mock.On call
+//   - ctx context.Context
+//   - monitoredEntity string
+//   - datasetPipelineEnabled bool
+func (_e *APIClient_Expecter) CreateKSPMSetting(ctx interface{}, monitoredEntity interface{}, datasetPipelineEnabled interface{}) *APIClient_CreateKSPMSetting_Call {
+	return &APIClient_CreateKSPMSetting_Call{Call: _e.mock.On("CreateKSPMSetting", ctx, monitoredEntity, datasetPipelineEnabled)}
+}
+
+func (_c *APIClient_CreateKSPMSetting_Call) Run(run func(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool)) *APIClient_CreateKSPMSetting_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 bool
+		if args[2] != nil {
+			arg2 = args[2].(bool)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_CreateKSPMSetting_Call) Return(s string, err error) *APIClient_CreateKSPMSetting_Call {
+	_c.Call.Return(s, err)
+	return _c
+}
+
+func (_c *APIClient_CreateKSPMSetting_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)) *APIClient_CreateKSPMSetting_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateLogMonitoringSetting provides a mock function for the type APIClient
 func (_mock *APIClient) CreateLogMonitoringSetting(ctx context.Context, scope string, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
 	ret := _mock.Called(ctx, scope, clusterName, matchers)
@@ -324,6 +396,72 @@ func (_c *APIClient_GetK8sClusterME_Call) Return(k8sClusterME settings.K8sCluste
 }
 
 func (_c *APIClient_GetK8sClusterME_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string) (settings.K8sClusterME, error)) *APIClient_GetK8sClusterME_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetKSPMSettings provides a mock function for the type APIClient
+func (_mock *APIClient) GetKSPMSettings(ctx context.Context, monitoredEntity string) (settings.GetSettingsResponse, error) {
+	ret := _mock.Called(ctx, monitoredEntity)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetKSPMSettings")
+	}
+
+	var r0 settings.GetSettingsResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.GetSettingsResponse, error)); ok {
+		return returnFunc(ctx, monitoredEntity)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.GetSettingsResponse); ok {
+		r0 = returnFunc(ctx, monitoredEntity)
+	} else {
+		r0 = ret.Get(0).(settings.GetSettingsResponse)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, monitoredEntity)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// APIClient_GetKSPMSettings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetKSPMSettings'
+type APIClient_GetKSPMSettings_Call struct {
+	*mock.Call
+}
+
+// GetKSPMSettings is a helper method to define mock.On call
+//   - ctx context.Context
+//   - monitoredEntity string
+func (_e *APIClient_Expecter) GetKSPMSettings(ctx interface{}, monitoredEntity interface{}) *APIClient_GetKSPMSettings_Call {
+	return &APIClient_GetKSPMSettings_Call{Call: _e.mock.On("GetKSPMSettings", ctx, monitoredEntity)}
+}
+
+func (_c *APIClient_GetKSPMSettings_Call) Run(run func(ctx context.Context, monitoredEntity string)) *APIClient_GetKSPMSettings_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_GetKSPMSettings_Call) Return(getSettingsResponse settings.GetSettingsResponse, err error) *APIClient_GetKSPMSettings_Call {
+	_c.Call.Return(getSettingsResponse, err)
+	return _c
+}
+
+func (_c *APIClient_GetKSPMSettings_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.GetSettingsResponse, error)) *APIClient_GetKSPMSettings_Call {
 	_c.Call.Return(run)
 	return _c
 }
