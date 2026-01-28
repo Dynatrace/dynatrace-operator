@@ -9,9 +9,7 @@ import (
 )
 
 func setupWebhookWithManager(mgr ctrl.Manager, obj runtime.Object, validator admission.Validator[runtime.Object]) error {
-	return ctrl.NewWebhookManagedBy(mgr, obj).
-		WithCustomValidator(validator). //nolint
-		Complete()
+	return ctrl.NewWebhookManagedBy(mgr, obj).WithCustomValidator(validator).Complete() //nolint
 }
 
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
