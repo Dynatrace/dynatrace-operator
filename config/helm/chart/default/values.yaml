@@ -120,6 +120,7 @@ csidriver:
       operator: Exists
   labels: {}
   annotations: {}
+  apparmor: false
   updateStrategy:
     rollingUpdate:
       maxSurge: 0

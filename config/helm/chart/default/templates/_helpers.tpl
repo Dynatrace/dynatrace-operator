@@ -47,6 +47,10 @@ Check if default image or imageref is used
     {{- if not .Values.debug -}}
         {{- toYaml .Values.webhook.securityContext -}}
     {{- end -}}
+    {{- if and (.Values.webhook.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+    appArmorProfile:
+        type: RuntimeDefault
+    {{- end }}
 {{- end -}}
 
 {{- define "csidriver.provisioner.resources" -}}
@@ -112,4 +116,12 @@ startupProbe:
 "helm.sh/hook": pre-upgrade
 "helm.sh/hook-weight": "-5"
 "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+{{- end -}}
+
+{{- define "kubernetes.appArmorSecurityContextSupported" -}}
+{{- if semverCompare ">=1.31.0" .Capabilities.KubeVersion.Version  -}}
+    true
+{{- else -}}
+    false
+{{- end -}}
 {{- end -}}
