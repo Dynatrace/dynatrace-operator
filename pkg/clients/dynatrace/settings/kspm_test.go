@@ -4,18 +4,17 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetSettingsForLogModule(t *testing.T) {
+func TestGetKSPMSettings(t *testing.T) {
 	ctx := t.Context()
 
 	params := map[string]string{
 		validateOnlyQueryParam: "true",
-		schemaIDsQueryParam:    logMonitoringSettingsSchemaID,
+		schemaIDsQueryParam:    kspmSettingsSchemaID,
 		scopesQueryParam:       "entity-1",
 	}
 
@@ -27,7 +26,7 @@ func TestGetSettingsForLogModule(t *testing.T) {
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		resp, err := client.GetSettingsForLogModule(ctx, "entity-1")
+		resp, err := client.GetKSPMSettings(ctx, "entity-1")
 		require.NoError(t, err)
 		assert.Equal(t, GetSettingsResponse{TotalCount: 3}, resp)
 	})
@@ -35,18 +34,27 @@ func TestGetSettingsForLogModule(t *testing.T) {
 	t.Run("empty monitoredEntity", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		client := NewClient(apiClient)
-		resp, err := client.GetSettingsForLogModule(ctx, "")
+		resp, err := client.GetKSPMSettings(ctx, "")
 		require.NoError(t, err)
 		assert.Equal(t, GetSettingsResponse{TotalCount: 0}, resp)
 	})
 }
 
-func TestCreateLogMonitoringSetting(t *testing.T) {
+func TestCreateKSPMSetting(t *testing.T) {
 	ctx := t.Context()
 
 	matchBody := func() any {
-		return matchJSONBody[logMonSettingsValue](logMonitoringSettingsSchemaID, logMonitoringSchemaVersion)
+		return matchJSONBody[kspmSettingsValue](kspmSettingsSchemaID, kspmSettingsSchemaVersion)
 	}
+
+	t.Run("no ME", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+
+		client := NewClient(apiClient)
+		objectID, err := client.CreateKSPMSetting(ctx, "", true)
+		require.Error(t, err)
+		assert.Empty(t, objectID)
+	})
 
 	t.Run("success", func(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
@@ -57,7 +65,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
+		objectID, err := client.CreateKSPMSetting(ctx, "scope-1", true)
 		require.NoError(t, err)
 		assert.Equal(t, "obj-123", objectID)
 	})
@@ -71,7 +79,7 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
+		objectID, err := client.CreateKSPMSetting(ctx, "scope-1", true)
 		require.Error(t, err)
 		assert.Empty(t, objectID)
 	})
@@ -85,36 +93,8 @@ func TestCreateLogMonitoringSetting(t *testing.T) {
 		apiClient.On("POST", ctx, ObjectsPath).Return(request)
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateLogMonitoringSetting(ctx, "scope-1", "cluster-1", nil)
+		objectID, err := client.CreateKSPMSetting(ctx, "scope-1", true)
 		require.ErrorAs(t, err, new(notSingleEntryError))
 		assert.Empty(t, objectID)
 	})
-}
-
-func Test_mapIngestRuleMatchers(t *testing.T) {
-	tests := []struct {
-		name  string
-		input []logmonitoring.IngestRuleMatchers
-		want  []ingestRuleMatchers
-	}{
-		{
-			name: "empty",
-			want: []ingestRuleMatchers{},
-		},
-		{
-			name: "not empty",
-			input: []logmonitoring.IngestRuleMatchers{
-				{Attribute: "foo", Values: []string{"bar"}},
-			},
-			want: []ingestRuleMatchers{
-				{Attribute: "foo", Values: []string{"bar"}, Operator: "MATCHES"},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := mapIngestRuleMatchers(tt.input)
-			assert.Equal(t, tt.want, got)
-		})
-	}
 }
