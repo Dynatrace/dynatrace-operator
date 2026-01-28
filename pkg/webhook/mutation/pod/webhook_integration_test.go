@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"

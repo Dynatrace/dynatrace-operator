@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/move"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/move"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -345,8 +345,8 @@ func TestMutateInitContainer(t *testing.T) {
 func TestAddInitArgs(t *testing.T) {
 	installPath := "test/install"
 	commonArgs := []string{
-		fmt.Sprintf("--%s=%s", cmd.SourceFolderFlag, AgentCodeModuleSource),
-		fmt.Sprintf("--%s=%s", cmd.TargetFolderFlag, consts.AgentInitBinDirMount),
+		fmt.Sprintf("--%s=%s", k8sinit.SourceFolderFlag, AgentCodeModuleSource),
+		fmt.Sprintf("--%s=%s", k8sinit.TargetFolderFlag, consts.AgentInitBinDirMount),
 		fmt.Sprintf("--%s=%s", configure.InstallPathFlag, installPath),
 	}
 

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"

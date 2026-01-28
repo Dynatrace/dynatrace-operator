@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -51,12 +51,12 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 			require.NotNil(t, oneAgentInstallInitContainer, "init container not found in '%s' pod", podItem.Name)
 
 			if !sampleApp.CanInitError() {
-				assert.Contains(t, oneAgentInstallInitContainer.Args, "--"+cmd.SuppressErrorsFlag, "errors may be suppressed, further checks are not useful")
+				assert.Contains(t, oneAgentInstallInitContainer.Args, "--"+k8sinit.SuppressErrorsFlag, "errors may be suppressed, further checks are not useful")
 
 				continue
 			}
 
-			assert.NotContains(t, oneAgentInstallInitContainer.Args, "--"+cmd.SuppressErrorsFlag, "in the tests the init-container should have no errors suppressed")
+			assert.NotContains(t, oneAgentInstallInitContainer.Args, "--"+k8sinit.SuppressErrorsFlag, "in the tests the init-container should have no errors suppressed")
 
 			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
 			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifNotEmptyCommand...)
