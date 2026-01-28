@@ -3,9 +3,9 @@ package oneagent
 import (
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/move"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/move"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -86,8 +86,8 @@ func initContainerResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
 
 func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string) error {
 	args := []arg.Arg{
-		{Name: cmd.SourceFolderFlag, Value: AgentCodeModuleSource},
-		{Name: cmd.TargetFolderFlag, Value: consts.AgentInitBinDirMount},
+		{Name: k8sinit.SourceFolderFlag, Value: AgentCodeModuleSource},
+		{Name: k8sinit.TargetFolderFlag, Value: consts.AgentInitBinDirMount},
 		{Name: configure.InstallPathFlag, Value: installPath},
 	}
 
