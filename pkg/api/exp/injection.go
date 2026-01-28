@@ -6,11 +6,6 @@ import (
 )
 
 const (
-	// Deprecated: Dedicated field since v1beta3.
-	InjectionDisableMetadataEnrichmentKey = FFPrefix + "disable-metadata-enrichment"
-	// Deprecated: Dedicated field since v1beta3.
-	InjectionMetadataEnrichmentKey = FFPrefix + "metadata-enrichment"
-
 	InjectionIgnoredNamespacesKey     = FFPrefix + "ignored-namespaces"
 	InjectionAutomaticKey             = FFPrefix + "automatic-injection"
 	InjectionLabelVersionDetectionKey = FFPrefix + "label-version-detection"
@@ -19,11 +14,6 @@ const (
 	// Deprecated: This field will be removed in a future release.
 	InjectionSeccompKey = FFPrefix + "init-container-seccomp-profile"
 )
-
-// Deprecated: Dedicated field since v1beta3.
-func (ff *FeatureFlags) DisableMetadataEnrichment() bool {
-	return ff.getDisableFlagWithDeprecatedAnnotation(InjectionMetadataEnrichmentKey, InjectionDisableMetadataEnrichmentKey)
-}
 
 // IsAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
 // or if pods need to be opted-in one by one ("automatic-injection=false").
