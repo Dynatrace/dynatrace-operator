@@ -48,8 +48,8 @@ Check if default image or imageref is used
         {{- toYaml .Values.webhook.securityContext -}}
     {{- end -}}
     {{- if and (.Values.webhook.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-    appArmorProfile:
-        type: RuntimeDefault
+appArmorProfile:
+  type: RuntimeDefault
     {{- end }}
 {{- end -}}
 
