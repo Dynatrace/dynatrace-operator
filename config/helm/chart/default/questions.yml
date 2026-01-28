@@ -137,6 +137,13 @@ questions:
     type: boolean
     group: "CSI Driver Deployment Configuration"
 
+  - variable: csidriver.apparmor
+    label: "Enable AppArmor for the Dynatrace CSI Driver's pod"
+    description: "Adds AppArmor security settings to the Dynatrace CSI Driver's pod. Default: false"
+    default: false
+    type: boolean
+    group: "CSI Driver Deployment Configuration"
+
   - variable: csidriver.server.requests.cpu
     label: "CPU resource requests settings for Dynatrace CSI Driver's server container"
     description: "The minimum amount of CPU resources that the Dynatrace CSI Driver's server container should request. Affects scheduling. Default: 50m"
