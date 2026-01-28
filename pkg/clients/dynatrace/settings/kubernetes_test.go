@@ -85,7 +85,7 @@ func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 
 		client := NewClient(apiClient)
 		_, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", "uuid-1", "scope-1")
-		require.ErrorAs(t, err, new(tooManyEntriesError))
+		require.ErrorAs(t, err, new(notSingleEntryError))
 	})
 }
 

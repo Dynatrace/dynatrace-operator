@@ -94,11 +94,7 @@ func (c *Client) performCreateOrUpdateKubernetesSetting(ctx context.Context, bod
 		return "", fmt.Errorf("create kubernetes setting: %w", err)
 	}
 
-	if len(response) != 1 {
-		return "", tooManyEntriesError(len(response))
-	}
-
-	return response[0].ObjectID, nil
+	return getObjectID(response)
 }
 
 func v1KubernetesObjectBody(clusterLabel, kubeSystemUUID, scope string) []postObjectsBody[kubernetesObjectValue] {
