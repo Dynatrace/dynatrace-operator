@@ -28,7 +28,7 @@ spec:
       labels:
         {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 8 }}
       annotations:
-      {{- if (.Values.operator).apparmor}}
+      {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
         container.apparmor.security.beta.kubernetes.io/crd-storage-migration: runtime/default
       {{- end }}
     spec:
@@ -63,4 +63,8 @@ spec:
               {{- toYaml (.Values.operator).limits | nindent 14 }}
           securityContext:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}
+            {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+              appArmorProfile:
+                type: RuntimeDefault
+            {{- end }}
 {{- end }}

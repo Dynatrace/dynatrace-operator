@@ -38,7 +38,7 @@ spec:
     metadata:
       annotations:
         dynatrace.com/inject: "false"
-      {{- if (.Values.operator).apparmor}}
+      {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
         container.apparmor.security.beta.kubernetes.io/operator: runtime/default
       {{- end }}
       {{- if .Values.operator.annotations }}
@@ -100,6 +100,10 @@ spec:
           {{- include "dynatrace-operator.startupProbe" . | nindent 10 }}
           securityContext:
           {{- toYaml .Values.operator.securityContext | nindent 12 }}
+          {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+            appArmorProfile:
+              type: RuntimeDefault
+          {{- end }}
       {{- include "dynatrace-operator.nodeAffinity" . | nindent 6 }}
       serviceAccountName: dynatrace-operator
       securityContext:
