@@ -2,7 +2,6 @@ package exp
 
 import (
 	"strconv"
-	"time"
 )
 
 const (
@@ -10,9 +9,6 @@ const (
 
 	PublicRegistryKey = FFPrefix + "public-registry"
 	NoProxyKey        = FFPrefix + "no-proxy"
-
-	// Deprecated: Dedicated field since v1beta2.
-	APIRequestThresholdKey = FFPrefix + "dynatrace-api-request-threshold"
 
 	UseEECLegacyMountsKey = FFPrefix + "use-eec-legacy-mounts"
 
@@ -28,16 +24,6 @@ type FeatureFlags struct {
 
 func NewFlags(annotations map[string]string) *FeatureFlags {
 	return &FeatureFlags{annotations: annotations}
-}
-
-// Deprecated: Dedicated field since v1beta2.
-func (ff *FeatureFlags) GetAPIRequestThreshold() time.Duration {
-	interval := ff.getIntWithDefault(APIRequestThresholdKey, DefaultMinRequestThresholdMinutes)
-	if interval < 0 {
-		interval = DefaultMinRequestThresholdMinutes
-	}
-
-	return time.Duration(interval) * time.Minute
 }
 
 // GetNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.

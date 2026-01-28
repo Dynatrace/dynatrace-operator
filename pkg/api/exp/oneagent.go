@@ -9,9 +9,6 @@ const (
 	OAPrivilegedKey          = FFPrefix + "oneagent-privileged"
 	OASkipLivenessProbeKey   = FFPrefix + "oneagent-skip-liveness-probe"
 
-	// Deprecated: Dedicated field since v1beta2.
-	OASecCompProfileKey = FFPrefix + "oneagent-seccomp-profile"
-
 	OANodeImagePullKey = FFPrefix + "node-image-pull"
 	// OANodeImagePullTechnologiesKey can be set on a Pod or DynaKube to configure which code module technologies to download. It's set to
 	// "all" if not set.
@@ -21,11 +18,6 @@ const (
 const (
 	DefaultOAIstioInitialConnectRetry = 6000
 )
-
-// Deprecated: Dedicated field since v1beta2.
-func (ff *FeatureFlags) GetOneAgentSecCompProfile() string {
-	return ff.getRaw(OASecCompProfileKey)
-}
 
 // GetOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (ff *FeatureFlags) GetOneAgentMaxUnavailable() int {
