@@ -37,7 +37,7 @@ spec:
         dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: provisioner
         cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
-        {{- if and (.Values.csidriver.apparmor) (ne (include "kubernetes.appArmorSecurityContextSupported" .) "true") (ne (include "dynatrace-operator.platform" .) "openshift") }}
+        {{- if and (.Values.csidriver.apparmor) (ne (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
         container.apparmor.security.beta.kubernetes.io/csi-init: runtime/default
         container.apparmor.security.beta.kubernetes.io/server: runtime/default
         container.apparmor.security.beta.kubernetes.io/provisioner: runtime/default

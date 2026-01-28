@@ -1031,24 +1031,3 @@ tests:
           path: spec.template.spec.containers[0].securityContext.appArmorProfile
       - isNull:
           path: spec.template.spec.containers[1].securityContext.appArmorProfile
-
-  - it: should not have apparmor annotations on OpenShift regardless of version
-    set:
-      platform: openshift
-      csidriver:
-        enabled: true
-        apparmor: true
-    capabilities:
-      majorVersion: 1
-      minorVersion: 30
-    asserts:
-      - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/csi-init"]
-      - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/server"]
-      - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/provisioner"]
-      - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/registrar"]
-      - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
