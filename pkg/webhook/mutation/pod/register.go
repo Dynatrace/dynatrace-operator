@@ -24,7 +24,9 @@ import (
 )
 
 func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, webhookPodName string, isOpenShift bool) error {
-	eventRecorder := events.NewRecorder(mgr.GetEventRecorderFor("dynatrace-webhook")) //nolint
+	eventRecorder := events.NewRecorder(
+		mgr.GetEventRecorderFor("dynatrace-webhook"), //
+	)
 	kubeConfig := mgr.GetConfig()
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
