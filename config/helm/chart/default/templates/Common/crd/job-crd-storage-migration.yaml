@@ -64,7 +64,7 @@ spec:
           securityContext:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}
             {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-              appArmorProfile:
-                type: RuntimeDefault
+            appArmorProfile:
+              type: RuntimeDefault
             {{- end }}
 {{- end }}
