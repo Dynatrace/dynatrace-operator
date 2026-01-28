@@ -18,18 +18,14 @@ func TestMutatorError_Error(t *testing.T) {
 		assert.Equal(t, "something went wrong", mutErr.Error())
 	})
 
-	t.Run("returns empty string for nil error", func(t *testing.T) {
+	t.Run("panics when calling Error on nil inner error", func(t *testing.T) {
 		mutErr := MutatorError{
 			Err: nil,
 		}
-		// This will panic when calling Error() on nil, so we need to check the inner error is not nil
-		// But we test the actual behavior - calling Error() when Err is nil
-		defer func() {
-			if r := recover(); r != nil {
-				assert.NotNil(t, r, "Expected panic when Error is nil")
-			}
-		}()
-		_ = mutErr.Error()
+		// This will panic when calling Error() on nil Err field
+		assert.Panics(t, func() {
+			_ = mutErr.Error()
+		})
 	})
 }
 
@@ -57,14 +53,13 @@ func TestMutatorError_Unwrap(t *testing.T) {
 		assert.True(t, errors.Is(mutErr, sentinelErr))
 	})
 
-	t.Run("works with wrapped errors", func(t *testing.T) {
-		innerErr := errors.New("inner")
-		wrappedErr := errors.New("outer: " + innerErr.Error())
+	t.Run("returns the single error when not using error wrapping", func(t *testing.T) {
+		singleErr := errors.New("single error")
 		mutErr := MutatorError{
-			Err: wrappedErr,
+			Err: singleErr,
 		}
-		// Unwrap should return the outer error
-		assert.Equal(t, wrappedErr, mutErr.Unwrap())
+		// When there's no actual wrapping, Unwrap returns the only error
+		assert.Equal(t, singleErr, mutErr.Unwrap())
 	})
 }
 
