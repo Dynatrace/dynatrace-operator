@@ -1,9 +1,9 @@
 package bootstrapper
 
 import (
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/move"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/move"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper/download"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -18,8 +18,8 @@ import (
 const (
 	Use = "bootstrap"
 
-	TargetFolderFlag   = cmd.TargetFolderFlag
-	SuppressErrorsFlag = cmd.SuppressErrorsFlag
+	TargetFolderFlag   = k8sinit.TargetFolderFlag
+	SuppressErrorsFlag = k8sinit.SuppressErrorsFlag
 	TechnologiesFlag   = move.TechnologyFlag
 
 	TargetVersionFlag      = "version"

@@ -1,6 +1,6 @@
 package injection
 
-import podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+import podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 
 const (
 	deprecatedClusterIDKey = "dt.kubernetes.cluster.id"
