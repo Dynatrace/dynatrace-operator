@@ -66,7 +66,12 @@ func Add(mgr manager.Manager, _ string) error {
 }
 
 func NewController(mgr manager.Manager, clusterID string) *Controller {
-	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetEventRecorderFor(controllerName), mgr.GetConfig(), clusterID)
+	return NewDynaKubeController(
+		mgr.GetClient(),
+		mgr.GetAPIReader(),
+		mgr.GetEventRecorderFor(controllerName), //nolint
+		mgr.GetConfig(),
+		clusterID)
 }
 
 func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, eventRecorder record.EventRecorder, config *rest.Config, clusterID string) *Controller {

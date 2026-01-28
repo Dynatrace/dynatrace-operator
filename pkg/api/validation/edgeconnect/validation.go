@@ -33,7 +33,7 @@ var validatorErrorFuncs = []validatorFunc{
 	automationRequiresProvisionerValidation,
 }
 
-func New(apiReader client.Reader, cfg *rest.Config) admission.CustomValidator {
+func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.Object] {
 	return &Validator{
 		apiReader: apiReader,
 		cfg:       cfg,
