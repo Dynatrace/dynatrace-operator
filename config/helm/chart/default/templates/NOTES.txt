@@ -8,3 +8,8 @@ https://github.com/Dynatrace/dynatrace-operator
 To verify the current state of the deployments, try:
   $ kubectl get pods -n {{ .Release.Namespace }}
   $ kubectl logs -f deployment/dynatrace-operator -n {{ .Release.Namespace }}
+
+{{ if or .Values.operator.apparmor .Values.webhook.apparmor .Values.csidriver.apparmor }}
+Notice: AppArmor configuration through chart values is deprecated and will be supported until Kubernetes 1.30 support ends (Aug 1, 2026).
+On newer Kubernetes versions prefer setting appArmorProfile in the pod or container securityContext.
+{{- end }}
