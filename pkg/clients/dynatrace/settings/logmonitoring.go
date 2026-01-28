@@ -73,11 +73,7 @@ func (c *Client) CreateLogMonitoringSetting(ctx context.Context, scope, clusterN
 		return "", fmt.Errorf("create logmonitoring setting: %w", err)
 	}
 
-	if len(response) != 1 {
-		return "", tooManyEntriesError(len(response))
-	}
-
-	return response[0].ObjectID, nil
+	return getObjectID(response)
 }
 
 func mapIngestRuleMatchers(input []logmonitoring.IngestRuleMatchers) []ingestRuleMatchers {

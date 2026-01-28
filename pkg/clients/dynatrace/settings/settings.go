@@ -55,6 +55,10 @@ type APIClient interface {
 	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
 	// CreateLogMonitoringSetting returns the object ID of the created logmonitoring settings.
 	CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error)
+	// GetKSPMSettings returns the settings response with the number of settings objects.
+	GetKSPMSettings(ctx context.Context, monitoredEntity string) (GetSettingsResponse, error)
+	// CreateKSPMSetting returns the object ID of the created kspm settings.
+	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
 }
 
 // K8sClusterME is representing the relevant info for a Kubernetes Cluster Monitored Entity
@@ -112,9 +116,20 @@ func newPostObjectsBody[T any](schemaID, schemaVersion, scope string, value T) [
 	}
 }
 
-type tooManyEntriesError int
+// getObjectID gives back the ID of the first element of the post response.
+// If there are 0 or multiple entries, it will error.
+// We only create (post) Settings if they do not exist yet, so receiving back not exactly one object is a cause for alarm.
+func getObjectID(response []postObjectsResponse) (string, error) {
+	if len(response) != 1 {
+		return "", notSingleEntryError(len(response))
+	}
 
-func (num tooManyEntriesError) Error() string {
+	return response[0].ObjectID, nil
+}
+
+type notSingleEntryError int
+
+func (num notSingleEntryError) Error() string {
 	return fmt.Sprintf("response is not containing exactly one entry, got %d entries", int(num))
 }
 

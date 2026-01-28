@@ -108,11 +108,8 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
-type dynakubeReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
-}
-
-type k8sEntityReconciler interface {
+// dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
+type dtSettingReconciler interface {
 	Reconcile(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error
 }
 
@@ -124,8 +121,8 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder record.EventRecorder
 
-	k8sEntityReconciler k8sEntityReconciler
-	kspmReconciler      dynakubeReconciler
+	k8sEntityReconciler dtSettingReconciler
+	kspmReconciler      dtSettingReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
@@ -458,7 +455,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	if err := controller.kspmReconciler.Reconcile(ctx, dk); err != nil {
+	if err := controller.kspmReconciler.Reconcile(ctx, dynatraceClient.AsV2().Settings, dk); err != nil {
 		log.Info("could not reconcile kspm")
 
 		componentErrors = append(componentErrors, err)
