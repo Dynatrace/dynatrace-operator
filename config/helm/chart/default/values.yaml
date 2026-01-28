@@ -94,7 +94,11 @@ webhook:
   limits:
     cpu: 300m
     memory: 128Mi
+
+  # TODO: remove
   highAvailability: true
+  replicas: 2
+  topologySpreadConstraints: []
   validatingWebhook:
     timeoutSeconds: 10
   mutatingWebhook:

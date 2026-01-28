@@ -26,7 +26,7 @@ metadata:
       {{- toYaml .Values.webhook.labels | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ and (.Values.webhook.highAvailability) (not .Values.debug) | ternary 2 1 }}
+  replicas: {{ not .Values.debug | ternary (include "dynatrace-operator.webhook.replicas" . | int) 1 }}
   revisionHistoryLimit: 1
   selector:
     matchLabels:
@@ -51,7 +51,7 @@ spec:
         {{- toYaml .Values.webhook.labels | nindent 8 }}
         {{- end }}
     spec:
-      {{- if (.Values.webhook).highAvailability }}
+      {{- if and (ge (include "dynatrace-operator.webhook.replicas" . | int) (int 2)) (empty .Values.webhook.topologySpreadConstraints) }}
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: "topology.kubernetes.io/zone"
