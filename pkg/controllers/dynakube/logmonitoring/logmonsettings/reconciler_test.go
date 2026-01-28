@@ -59,8 +59,7 @@ func TestReconcile(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.GetSettingsResponse{TotalCount: 0}, nil)
-		mockClient.
-			On("CreateLogMonitoringSetting", mock.Anything, meID, clusterName, mock.Anything).
+		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, mock.Anything).
 			Return("test-object-id", nil)
 
 		dk := getDK()
