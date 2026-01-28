@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/container"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/preload"
 	"github.com/stretchr/testify/assert"

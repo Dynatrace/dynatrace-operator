@@ -1,8 +1,8 @@
 package injection
 
 import (
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
@@ -28,7 +28,7 @@ func (h *Handler) createInitContainerBase(pod *corev1.Pod, dk dynakube.DynaKube)
 	}
 
 	if areErrorsSuppressed(pod, dk) {
-		args = append(args, arg.Arg{Name: cmd.SuppressErrorsFlag})
+		args = append(args, arg.Arg{Name: k8sinit.SuppressErrorsFlag})
 	}
 
 	initContainer := &corev1.Container{

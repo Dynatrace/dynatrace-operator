@@ -3,6 +3,7 @@ package logmonsettings
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
@@ -18,60 +19,71 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := t.Context()
+	const (
+		meID        = "meid"
+		clusterName = "cluster-name"
+	)
+
+	getDK := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: meID,
+				KubernetesClusterName: clusterName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				LogMonitoring: &logmonitoring.Spec{
+					IngestRuleMatchers: []logmonitoring.IngestRuleMatchers{},
+				},
+			},
+		}
+	}
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.GetSettingsResponse{TotalCount: 1}, nil)
 
-		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
-			LogMonitoring: &logmonitoring.Spec{},
-		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
-		r := &reconciler{dk: dk, dtc: mockClient}
+		dk := getDK()
+		r := NewReconciler(mockClient, dk)
 
 		setReadScope(t, dk)
 		setWriteScope(t, dk)
 
-		err := r.Reconcile(ctx)
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, alreadyExistReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.GetSettingsResponse{TotalCount: 0}, nil)
-		mockClient.
-			On("CreateLogMonitoringSetting", mock.Anything, "meid", "", mock.Anything).
+		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, mock.Anything).
 			Return("test-object-id", nil)
 
-		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
-			LogMonitoring: &logmonitoring.Spec{},
-		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
-		r := &reconciler{dk: dk, dtc: mockClient}
+		dk := getDK()
+
+		r := NewReconciler(mockClient, dk)
 
 		setReadScope(t, dk)
 		setWriteScope(t, dk)
 
-		err := r.Reconcile(ctx)
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, createdReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("read-only settings exist -> can not create setting", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 
-		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{
-			LogMonitoring: &logmonitoring.Spec{},
-		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: "meid"}}
-		r := &reconciler{dk: dk, dtc: mockClient}
+		dk := getDK()
+		r := NewReconciler(mockClient, dk)
 
 		setReadScope(t, dk)
 
-		err := r.Reconcile(ctx)
+		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
@@ -80,17 +92,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("write-only settings exist -> can not query setting", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 
-		dk := &dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "meid",
-				KubernetesClusterName: "cluster-name",
-			},
-			Spec: dynakube.DynaKubeSpec{
-				LogMonitoring: &logmonitoring.Spec{},
-			},
-		}
+		dk := getDK()
 
-		r := &reconciler{dk: dk, dtc: mockClient}
+		r := NewReconciler(mockClient, dk)
 
 		setWriteScope(t, dk)
 
@@ -99,28 +103,106 @@ func TestReconcile(t *testing.T) {
 
 		verifyCondition(t, dk, k8sconditions.OptionalScopeMissingReason)
 	})
+
+	t.Run("cleanup condition if logmon is turned off", func(t *testing.T) {
+		mockClient := settingsmock.NewAPIClient(t)
+
+		dk := &dynakube.DynaKube{}
+
+		r := NewReconciler(mockClient, dk)
+
+		setExistsCondition(dk.Conditions())
+
+		err := r.Reconcile(t.Context())
+		require.NoError(t, err)
+
+		require.Empty(t, dk.Conditions())
+	})
+
+	t.Run("update condition timestamp if outdated", func(t *testing.T) {
+		mockClient := settingsmock.NewAPIClient(t)
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+			Return(settings.GetSettingsResponse{TotalCount: 1}, nil)
+
+		dk := getDK()
+		setReadScope(t, dk)
+		setWriteScope(t, dk)
+
+		r := NewReconciler(mockClient, dk)
+		r.timeProvider.Set(time.Now().Add(time.Hour))
+
+		setExistsCondition(dk.Conditions())
+		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, condition)
+
+		prevTS := condition.LastTransitionTime.Time
+
+		err := r.Reconcile(t.Context())
+		require.NoError(t, err)
+
+		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, condition)
+
+		currentTS := condition.LastTransitionTime.Time
+
+		require.NotEqual(t, prevTS, currentTS)
+	})
+
+	t.Run("don't update condition timestamp if not outdated", func(t *testing.T) {
+		mockClient := settingsmock.NewAPIClient(t)
+
+		dk := getDK()
+
+		r := NewReconciler(mockClient, dk)
+
+		setExistsCondition(dk.Conditions())
+		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, condition)
+
+		prevTS := condition.LastTransitionTime.Time
+
+		err := r.Reconcile(t.Context())
+		require.NoError(t, err)
+
+		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+		require.NotNil(t, condition)
+
+		currentTS := condition.LastTransitionTime.Time
+
+		require.Equal(t, currentTS, prevTS)
+	})
 }
 
 func TestCheckLogMonitoringSettings(t *testing.T) {
-	ctx := t.Context()
+	const (
+		meID        = "meid"
+		clusterName = "cluster-name"
+	)
+
+	getDK := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: meID,
+				KubernetesClusterName: clusterName,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				LogMonitoring: &logmonitoring.Spec{
+					IngestRuleMatchers: []logmonitoring.IngestRuleMatchers{},
+				},
+			},
+		}
+	}
 
 	t.Run("error fetching log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.GetSettingsResponse{}, errors.New("error when fetching settings"))
 
-		dk := &dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "meid",
-			},
-		}
+		dk := getDK()
 
-		r := &reconciler{
-			dk:  dk,
-			dtc: mockClient,
-		}
+		r := NewReconciler(mockClient, dk)
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(t.Context())
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when fetching settings")
 
@@ -129,18 +211,12 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 	t.Run("KubernetesClusterMEID is missing -> skip", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
-		dk := &dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "",
-			},
-		}
+		dk := getDK()
+		dk.Status.KubernetesClusterMEID = ""
 
-		r := &reconciler{
-			dk:  dk,
-			dtc: mockClient,
-		}
+		r := NewReconciler(mockClient, dk)
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(t.Context())
 		require.NoError(t, err)
 
 		verifyCondition(t, dk, skippedReason)
@@ -148,37 +224,30 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 	t.Run("log monitoring settings already exist", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.GetSettingsResponse{TotalCount: 1}, nil)
 
-		dk := &dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "meid",
-			},
-		}
+		dk := getDK()
 
-		r := &reconciler{
-			dk:  dk,
-			dtc: mockClient,
-		}
+		r := NewReconciler(mockClient, dk)
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(t.Context())
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, alreadyExistReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("create log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.GetSettingsResponse{TotalCount: 0}, nil)
-		mockClient.On("CreateLogMonitoringSetting", mock.Anything, "meid", "cluster-name", mock.Anything).
+		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
 			Return("test-object-id", nil)
 
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "meid",
-				KubernetesClusterName: "cluster-name",
+				KubernetesClusterMEID: meID,
+				KubernetesClusterName: clusterName,
 			},
 			Spec: dynakube.DynaKubeSpec{
 				LogMonitoring: &logmonitoring.Spec{
@@ -187,42 +256,26 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 			},
 		}
 
-		r := &reconciler{
-			dk:  dk,
-			dtc: mockClient,
-		}
+		r := NewReconciler(mockClient, dk)
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(t.Context())
 		require.NoError(t, err)
 
-		verifyCondition(t, dk, createdReason)
+		verifyCondition(t, dk, existsReason)
 	})
 
 	t.Run("error creating log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
-		mockClient.On("GetSettingsForLogModule", mock.Anything, "meid").
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
 			Return(settings.GetSettingsResponse{TotalCount: 0}, nil)
-		mockClient.On("CreateLogMonitoringSetting", mock.Anything, "meid", "cluster-name", mock.Anything).
+		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
 			Return("", errors.New("error when creating"))
 
-		dk := &dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "meid",
-				KubernetesClusterName: "cluster-name",
-			},
-			Spec: dynakube.DynaKubeSpec{
-				LogMonitoring: &logmonitoring.Spec{
-					IngestRuleMatchers: []logmonitoring.IngestRuleMatchers{},
-				},
-			},
-		}
+		dk := getDK()
 
-		r := &reconciler{
-			dk:  dk,
-			dtc: mockClient,
-		}
+		r := NewReconciler(mockClient, dk)
 
-		err := r.checkLogMonitoringSettings(ctx)
+		err := r.checkLogMonitoringSettings(t.Context())
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "error when creating")
 

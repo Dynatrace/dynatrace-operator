@@ -3,7 +3,7 @@ package oneagent
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"

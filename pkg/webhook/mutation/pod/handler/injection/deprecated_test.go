@@ -3,7 +3,7 @@ package injection
 import (
 	"testing"
 
-	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/configure/attributes/pod"
+	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

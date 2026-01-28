@@ -3,7 +3,7 @@ package injection
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-bootstrapper/cmd"
+	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -148,7 +148,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := wh.createInitContainerBase(pod, *dk)
 
-		assert.NotContains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
+		assert.NotContains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
 
 	t.Run("should not set suppress-error arg - according to pod", func(t *testing.T) {
@@ -159,7 +159,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := wh.createInitContainerBase(pod, *dk)
 
-		assert.NotContains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
+		assert.NotContains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
 
 	t.Run("should set suppress-error arg - default", func(t *testing.T) {
@@ -170,7 +170,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := wh.createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
+		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
 
 	t.Run("should set suppress-error arg - unknown value", func(t *testing.T) {
@@ -181,7 +181,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer := wh.createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
+		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 
 		dk = getTestDynakube()
 		dk.Annotations = map[string]string{}
@@ -190,7 +190,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 
 		initContainer = wh.createInitContainerBase(pod, *dk)
 
-		assert.Contains(t, initContainer.Args, "--"+cmd.SuppressErrorsFlag)
+		assert.Contains(t, initContainer.Args, "--"+k8sinit.SuppressErrorsFlag)
 	})
 }
 

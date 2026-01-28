@@ -6,30 +6,19 @@ import (
 )
 
 const (
-	alreadyExistReason = "AlreadyExist"
-	skippedReason      = "Skipped"
-	errorReason        = "Error"
-	createdReason      = "Created"
+	existsReason  = "Exists"
+	skippedReason = "Skipped"
+	errorReason   = "Error"
 
 	ConditionType = "LogMonitoringSettings"
 )
 
-func setCreatedCondition(conditions *[]metav1.Condition) {
+func setExistsCondition(conditions *[]metav1.Condition) {
 	condition := metav1.Condition{
 		Type:    ConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  createdReason,
-		Message: "LogMonitoring settings have been created.",
-	}
-	_ = meta.SetStatusCondition(conditions, condition)
-}
-
-func setAlreadyExistsCondition(conditions *[]metav1.Condition) {
-	condition := metav1.Condition{
-		Type:    ConditionType,
-		Status:  metav1.ConditionTrue,
-		Reason:  alreadyExistReason,
-		Message: "LogMonitoring settings already exist, will not create new ones.",
+		Reason:  existsReason,
+		Message: "LogMonitoring settings exist.",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
@@ -39,7 +28,7 @@ func setErrorCondition(conditions *[]metav1.Condition, message string) {
 		Type:    ConditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  errorReason,
-		Message: "LogMonitoring settings creation was skipped: " + message,
+		Message: "LogMonitoring settings creation has encountered an error: " + message,
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
