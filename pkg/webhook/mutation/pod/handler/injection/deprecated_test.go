@@ -29,3 +29,10 @@ func assertDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
 	require.True(t, ok)
 	assert.Equal(t, attrs.ClusterUID, depValue)
 }
+
+func assertNoDeprecatedAttributes(t *testing.T, attrs podattr.Attributes) {
+	t.Helper()
+
+	_, ok := attrs.UserDefined[deprecatedClusterIDKey]
+	require.False(t, ok)
+}
