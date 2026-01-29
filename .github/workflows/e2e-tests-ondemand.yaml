@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'Target branch to run E2E ondemand tests over'
+        description: Target branch to run E2E ondemand tests over
         # Note: we don't use default here with default branch because it doesn't work with
         # schedule, so it will be null.
         required: false
