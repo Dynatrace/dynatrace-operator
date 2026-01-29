@@ -25,7 +25,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithExtensionsEECImageRefSpec(consts.EecImageRepo, consts.EecImageTag),
-		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID}),
+		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
 		componentDynakube.WithExtensionsDBExecutorImageRefSpec(consts.DBExecutorImageRepo, consts.DBExecutorImageTag),
 		componentDynakube.WithActiveGate(),
 	}
@@ -38,7 +38,9 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extensions execution controller started", statefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extensions db datasource deployment started", deployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace))
+	builder.Assess("extensions db-a datasource deployment started", deployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-a"), testDynakube.Namespace))
+	builder.Assess("extensions db-b datasource deployment started", deployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-b"), testDynakube.Namespace))
+	builder.Assess("extensions db-c datasource deployment started", deployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-c"), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
