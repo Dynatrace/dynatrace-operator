@@ -37,7 +37,7 @@ spec:
         dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: provisioner
         cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
-        {{- if and (.Values.csidriver.apparmor) (ne (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+        {{- if and (or .Values.csidriver.apparmor .Values.apparmor) (ne (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
         container.apparmor.security.beta.kubernetes.io/csi-init: runtime/default
         container.apparmor.security.beta.kubernetes.io/server: runtime/default
         container.apparmor.security.beta.kubernetes.io/provisioner: runtime/default
@@ -71,10 +71,6 @@ spec:
           {{- end }}
         securityContext:
         {{- toYaml .Values.csidriver.csiInit.securityContext| nindent 10 }}
-        {{- if and (.Values.csidriver.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-          appArmorProfile:
-            type: RuntimeDefault
-        {{- end }}
         volumeMounts:
         - mountPath: /data
           name: data-dir
@@ -139,10 +135,6 @@ spec:
           {{- include "csidriver.server.resources" . | nindent 10 }}
         securityContext:
         {{- toYaml .Values.csidriver.server.securityContext | nindent 10 }}
-        {{- if and (.Values.csidriver.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-          appArmorProfile:
-            type: RuntimeDefault
-        {{- end }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -219,10 +211,6 @@ spec:
           {{- include "csidriver.provisioner.resources" . | nindent 10 }}
         securityContext:
         {{- toYaml .Values.csidriver.provisioner.securityContext | nindent 10 }}
-        {{- if and (.Values.csidriver.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-          appArmorProfile:
-            type: RuntimeDefault
-        {{- end }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -254,10 +242,6 @@ spec:
           {{- end }}
         securityContext:
         {{- toYaml .Values.csidriver.registrar.securityContext | nindent 10 }}
-        {{- if and (.Values.csidriver.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-          appArmorProfile:
-            type: RuntimeDefault
-        {{- end }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -286,10 +270,6 @@ spec:
         terminationMessagePolicy: File
         securityContext:
         {{- toYaml .Values.csidriver.livenessprobe.securityContext| nindent 10 }}
-        {{- if and (.Values.csidriver.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-          appArmorProfile:
-            type: RuntimeDefault
-        {{- end }}
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
@@ -297,7 +277,12 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
+      {{- if and (or .Values.csidriver.apparmor .Values.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+      securityContext:
+        {{- include "kubernetes.defaultAppArmorProfile" . | nindent 8 }}
+      {{- else }}
       securityContext: {}
+      {{- end }}
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
       priorityClassName: {{ include "dynatrace-operator.CSIPriorityClassName" . }}

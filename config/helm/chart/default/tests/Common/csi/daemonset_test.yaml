@@ -938,17 +938,9 @@ tests:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
           value: runtime/default
       - isNull:
-          path: spec.template.spec.initContainers[0].securityContext.appArmorProfile
-      - isNull:
-          path: spec.template.spec.containers[0].securityContext.appArmorProfile
-      - isNull:
-          path: spec.template.spec.containers[1].securityContext.appArmorProfile
-      - isNull:
-          path: spec.template.spec.containers[2].securityContext.appArmorProfile
-      - isNull:
-          path: spec.template.spec.containers[3].securityContext.appArmorProfile
+          path: spec.template.spec.securityContext.appArmorProfile
 
-  - it: should have apparmor in securityContext when enabled on Kubernetes >= 1.31.0
+  - it: should have apparmor in pod securityContext when enabled on Kubernetes >= 1.31.0
     set:
       platform: kubernetes
       csidriver:
@@ -969,13 +961,7 @@ tests:
       - isNull:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
       - equal:
-          path: spec.template.spec.initContainers[0].securityContext.appArmorProfile.type
-          value: RuntimeDefault
-      - equal:
-          path: spec.template.spec.containers[0].securityContext.appArmorProfile.type
-          value: RuntimeDefault
-      - equal:
-          path: spec.template.spec.containers[1].securityContext.appArmorProfile.type
+          path: spec.template.spec.securityContext.appArmorProfile.type
           value: RuntimeDefault
 
   - it: should not have apparmor annotations when disabled on Kubernetes < 1.31.0
@@ -999,11 +985,7 @@ tests:
       - isNull:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
       - isNull:
-          path: spec.template.spec.initContainers[0].securityContext.appArmorProfile
-      - isNull:
-          path: spec.template.spec.containers[0].securityContext.appArmorProfile
-      - isNull:
-          path: spec.template.spec.containers[1].securityContext.appArmorProfile
+          path: spec.template.spec.securityContext.appArmorProfile
 
   - it: should not have apparmor in securityContext when disabled on Kubernetes >= 1.31.0
     set:
@@ -1026,8 +1008,62 @@ tests:
       - isNull:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
       - isNull:
-          path: spec.template.spec.initContainers[0].securityContext.appArmorProfile
+          path: spec.template.spec.securityContext.appArmorProfile
+
+  - it: should have apparmor annotations when legacy field enabled on Kubernetes < 1.31.0
+    set:
+      platform: kubernetes
+      apparmor: true
+      csidriver.csiInit.securityContext:
+        runAsUser: 0
+      csidriver.server.securityContext:
+        runAsUser: 0
+      csidriver.provisioner.securityContext:
+        runAsUser: 0
+      csidriver.registrar.securityContext:
+        runAsUser: 0
+      csidriver.livenessprobe.securityContext:
+        runAsUser: 0
+    capabilities:
+      majorVersion: 1
+      minorVersion: 30
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/csi-init"]
+          value: runtime/default
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/server"]
+          value: runtime/default
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/provisioner"]
+          value: runtime/default
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/registrar"]
+          value: runtime/default
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
+          value: runtime/default
       - isNull:
-          path: spec.template.spec.containers[0].securityContext.appArmorProfile
+          path: spec.template.spec.securityContext.appArmorProfile
+
+  - it: should have apparmor in pod securityContext when legacy field enabled on Kubernetes >= 1.31.0
+    set:
+      platform: kubernetes
+      apparmor: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 31
+    asserts:
       - isNull:
-          path: spec.template.spec.containers[1].securityContext.appArmorProfile
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/csi-init"]
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/server"]
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/provisioner"]
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/registrar"]
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/liveness-probe"]
+      - equal:
+          path: spec.template.spec.securityContext.appArmorProfile.type
+          value: RuntimeDefault

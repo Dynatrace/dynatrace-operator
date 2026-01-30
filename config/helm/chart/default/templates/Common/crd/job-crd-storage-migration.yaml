@@ -37,6 +37,9 @@ spec:
       serviceAccountName: dynatrace-crd-storage-migration
       securityContext:
         {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
+        {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
+          {{ include "kubernetes.defaultAppArmorProfile" . | nindent 8 }}
+        {{- end }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}
@@ -63,8 +66,4 @@ spec:
               {{- toYaml (.Values.operator).limits | nindent 14 }}
           securityContext:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}
-            {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-            appArmorProfile:
-              type: RuntimeDefault
-            {{- end }}
 {{- end }}

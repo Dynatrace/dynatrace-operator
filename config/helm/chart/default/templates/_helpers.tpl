@@ -47,10 +47,6 @@ Check if default image or imageref is used
     {{- if not .Values.debug -}}
         {{- toYaml .Values.webhook.securityContext -}}
     {{- end -}}
-    {{- if and (.Values.webhook.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") }}
-appArmorProfile:
-  type: RuntimeDefault
-    {{- end }}
 {{- end -}}
 
 {{- define "csidriver.provisioner.resources" -}}
@@ -124,4 +120,9 @@ startupProbe:
 {{- else -}}
     false
 {{- end -}}
+{{- end -}}
+
+{{- define "kubernetes.defaultAppArmorProfile" -}}
+appArmorProfile:
+  type: RuntimeDefault
 {{- end -}}
