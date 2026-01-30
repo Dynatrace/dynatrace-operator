@@ -52,16 +52,19 @@ func TestService(t *testing.T) {
 		assert.Equal(t, int32(4317), service.Spec.Ports[0].Port)
 		assert.Equal(t, int32(4317), service.Spec.Ports[0].TargetPort.IntVal)
 		assert.Equal(t, corev1.ProtocolTCP, service.Spec.Ports[0].Protocol)
+		assert.Equal(t, appProtocolGrpc, *service.Spec.Ports[0].AppProtocol)
 
 		assert.Equal(t, otlpHTTPPortName, service.Spec.Ports[1].Name)
 		assert.Equal(t, int32(4318), service.Spec.Ports[1].Port)
 		assert.Equal(t, int32(4318), service.Spec.Ports[1].TargetPort.IntVal)
 		assert.Equal(t, corev1.ProtocolTCP, service.Spec.Ports[1].Protocol)
+		assert.Equal(t, appProtocolHTTP, *service.Spec.Ports[1].AppProtocol)
 
 		assert.Equal(t, jaegerGrpcPortName, service.Spec.Ports[2].Name)
 		assert.Equal(t, int32(14250), service.Spec.Ports[2].Port)
 		assert.Equal(t, int32(14250), service.Spec.Ports[2].TargetPort.IntVal)
 		assert.Equal(t, corev1.ProtocolTCP, service.Spec.Ports[2].Protocol)
+		assert.Equal(t, appProtocolGrpc, *service.Spec.Ports[0].AppProtocol)
 
 		assert.Equal(t, jaegerThriftBinaryPortName, service.Spec.Ports[3].Name)
 		assert.Equal(t, int32(6832), service.Spec.Ports[3].Port)

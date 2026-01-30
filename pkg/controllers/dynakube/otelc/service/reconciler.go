@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -31,6 +32,8 @@ const (
 	jaegerThriftHTTPPort        = 14268
 	statsdPortName              = "statsd"
 	statsdPort                  = 8125
+	appProtocolHTTP             = "http"
+	appProtocolGrpc             = "grpc"
 )
 
 type Reconciler struct {
@@ -151,24 +154,27 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 		case otelcgen.OtlpProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
-					Name:       otlpGrpcPortName,
-					Port:       otlpGrpcPort,
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(otlpGrpcPort),
+					Name:        otlpGrpcPortName,
+					Port:        otlpGrpcPort,
+					Protocol:    corev1.ProtocolTCP,
+					AppProtocol: ptr.To(appProtocolGrpc),
+					TargetPort:  intstr.FromInt32(otlpGrpcPort),
 				},
 				corev1.ServicePort{
-					Name:       otlpHTTPPortName,
-					Port:       otlpHTTPPort,
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(otlpHTTPPort),
+					Name:        otlpHTTPPortName,
+					Port:        otlpHTTPPort,
+					Protocol:    corev1.ProtocolTCP,
+					AppProtocol: ptr.To(appProtocolHTTP),
+					TargetPort:  intstr.FromInt32(otlpHTTPPort),
 				})
 		case otelcgen.JaegerProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
-					Name:       jaegerGrpcPortName,
-					Port:       jaegerGrpcPort,
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(jaegerGrpcPort),
+					Name:        jaegerGrpcPortName,
+					Port:        jaegerGrpcPort,
+					Protocol:    corev1.ProtocolTCP,
+					AppProtocol: ptr.To(appProtocolGrpc),
+					TargetPort:  intstr.FromInt32(jaegerGrpcPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftBinaryPortName,
