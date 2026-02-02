@@ -1582,7 +1582,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
-    - description: DynaKube is the Schema for the DynaKube API
+    - description: DynaKube is the Schema for the DynaKube API.
       displayName: Dynatrace DynaKube
       kind: DynaKube
       name: dynakubes.dynatrace.com
