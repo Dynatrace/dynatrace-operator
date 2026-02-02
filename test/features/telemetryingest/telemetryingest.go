@@ -217,6 +217,27 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
+func Validation(t *testing.T) features.Feature {
+	builder := features.New("telemetryingest-validation")
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	testDynakube := componentDynakube.New(
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithTelemetryIngestEnabled(true, "zipkin", "zipkin"),
+		componentDynakube.WithOTelCollectorImageRefSpec(consts.OtelCollectorImageRepo, consts.OtelCollectorImageTag),
+		componentDynakube.WithTelemetryIngestEndpointTLS(consts.TelemetryIngestTLSSecretName),
+	)
+
+
+	builder.Assess("prevents duplicate protocols", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		assert.Error(t, c.Client().Resources().Create(ctx, testDynakube))
+		return ctx
+	})
+
+	return builder.Feature()
+}
+
 func checkActiveGateContainer(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		componentActiveGate.CheckContainer(dk)

@@ -60,7 +60,6 @@ var (
 		missingLogMonitoringImage,
 		emptyTelemetryIngestProtocolsList,
 		unknownTelemetryIngestProtocols,
-		duplicatedTelemetryIngestProtocols,
 		invalidTelemetryIngestName,
 		forbiddenTelemetryIngestServiceNameSuffix,
 		conflictingTelemetryIngestServiceNames,

@@ -142,6 +142,10 @@ func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
 	testEnv.Test(t, telemetryingest.OtelCollectorConfigUpdate(t))
 }
 
+func TestNoCSI_telemetryingest_validation(t *testing.T) {
+	testEnv.Test(t, telemetryingest.Validation(t))
+}
+
 func TestNoCSI_kspm(t *testing.T) {
 	testEnv.Test(t, kspm.Feature(t))
 }
