@@ -8,5 +8,8 @@ metadata:
   labels:
     {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 spec:
-  {{- toYaml .Values.webhook.podDisruptionBudget | nindent 2 }}
+  {{- include "dynatrace-operator.webhook.podDisruptionBudget" . | nindent 2 }}
+  selector:
+    matchLabels:
+      {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 6 }}
 {{- end }}
