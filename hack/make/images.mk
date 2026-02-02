@@ -1,6 +1,6 @@
 REGISTRY ?= ghcr.io
 REPOSITORY ?= dynatrace
-IMAGE ?= "$(REGISTRY)/$(REPOSITORY)/dynatrace-operator"
+IMAGE ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator
 DEBUG ?= false
 OPERATOR_BUILD_PLATFORM ?= linux/amd64
 OPERATOR_BUILD_ARCH ?= $(shell echo "${OPERATOR_BUILD_PLATFORM}" | sed "s/.*\///")
@@ -18,9 +18,9 @@ FIPS_TAG ?= ${TAG}-fips
 
 #use the digest if digest is set
 ifeq ($(DIGEST),)
-	IMAGE_URI ?= "$(IMAGE):$(TAG)"
+	IMAGE_URI ?= $(IMAGE):$(TAG)
 else
-	IMAGE_URI ?= "$(IMAGE):$(TAG)@$(DIGEST)"
+	IMAGE_URI ?= $(IMAGE):$(TAG)@$(DIGEST)
 endif
 
 BUILD_IMAGE_SH := ./hack/build/build_image.sh
