@@ -302,10 +302,19 @@ func (src *DynaKube) toMetadataEnrichment(dst *dynakubelatest.DynaKube) {
 func (src *DynaKube) toTelemetryIngestSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.TelemetryIngest != nil {
 		dst.Spec.TelemetryIngest = &telemetryingestlatest.Spec{}
-		dst.Spec.TelemetryIngest.Protocols = src.Spec.TelemetryIngest.Protocols
+		copyCast(&dst.Spec.TelemetryIngest.Protocols, src.Spec.TelemetryIngest.Protocols)
 		dst.Spec.TelemetryIngest.ServiceName = src.Spec.TelemetryIngest.ServiceName
 		dst.Spec.TelemetryIngest.TLSRefName = src.Spec.TelemetryIngest.TLSRefName
 	} else {
 		dst.Spec.TelemetryIngest = nil
+	}
+}
+
+func copyCast[From, To ~string](dest *[]To, src []From) {
+	if src != nil {
+		*dest = make([]To, len(src))
+		for i := range src {
+			(*dest)[i] = To(src[i])
+		}
 	}
 }
