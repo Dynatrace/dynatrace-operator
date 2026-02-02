@@ -16,10 +16,23 @@
 Little helper to migrate away from .Values.webhook.highAvailability
 */}}
 {{- define "dynatrace-operator.webhook.replicas" -}}
-	{{- if .Values.webhook.highAvailability -}}
-		{{- print .Values.webhook.replicas -}}
-	{{- else }}
-        {{- print 1 -}}
+	{{- if or (not .Values.webhook.highAvailability) .Values.debug -}}
+		{{- 1 -}}
+	{{- else -}}
+		{{- .Values.webhook.replicas -}}
 	{{- end -}}
 {{- end -}}
 
+
+{{- define "dynatrace-operator.webhook.topologySpreadConstraints" -}}
+	{{- if ge (int (include "dynatrace-operator.webhook.replicas" .)) 2 -}}
+topologySpreadConstraints:
+{{- toYaml .Values.webhook.topologySpreadConstraints | nindent 2 -}}
+	{{- end -}}
+{{- end -}}
+
+{{- define "dynatrace-operator.webhook.podDisruptionBudget" -}}
+	{{- if .Values.webhook.highAvailability -}}
+{{- .Values.webhook.podDisruptionBudget -}}
+	{{- end -}}
+{{- end -}}

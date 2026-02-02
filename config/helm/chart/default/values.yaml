@@ -96,9 +96,33 @@ webhook:
     memory: 128Mi
 
   # TODO: remove
-  highAvailability: true
-  replicas: 2
-  topologySpreadConstraints: []
+  highAvailability: false
+  replicas: 1
+  podDisruptionBudget:
+    # unhealthyPodEvictionPolicy: IfHealthyBudget / AlwaysAllow
+    # maxUnavailable: 1
+    minAvailable: 1
+    selector:
+      matchLabels:
+        internal.dynatrace.com/app: webhook
+        internal.dynatrace.com/component: webhook
+        # app.kubernetes.io/component: webhook (what it used to be)
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          internal.dynatrace.com/app: webhook
+          internal.dynatrace.com/component: webhook
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: DoNotSchedule
+      nodeTaintsPolicy: Honor
+      labelSelector:
+        matchLabels:
+          internal.dynatrace.com/app: webhook
+          internal.dynatrace.com/component: webhook
   validatingWebhook:
     timeoutSeconds: 10
   mutatingWebhook:
