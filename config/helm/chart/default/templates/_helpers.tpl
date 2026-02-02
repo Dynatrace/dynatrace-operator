@@ -123,6 +123,8 @@ startupProbe:
 {{- end -}}
 
 {{- define "kubernetes.defaultAppArmorProfile" -}}
+{{- if eq (include "kubernetes.appArmorSecurityContextSupported" .) "true" -}}
 appArmorProfile:
   type: RuntimeDefault
+{{- end -}}
 {{- end -}}

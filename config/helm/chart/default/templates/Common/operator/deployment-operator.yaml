@@ -104,7 +104,7 @@ spec:
       serviceAccountName: dynatrace-operator
       securityContext:
         {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
-        {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "true") -}}
+        {{- if .Values.operator.apparmor -}}
             {{ include "kubernetes.defaultAppArmorProfile" . | nindent 8 }}
         {{- end -}}
       {{- if .Values.customPullSecret }}
