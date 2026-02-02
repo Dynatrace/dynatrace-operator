@@ -18,12 +18,12 @@ import (
 const (
 	zipkinPortName              = "zipkin"
 	zipkinPort                  = 9411
-	otlpGrpcPortName            = "otlp-grpc"
-	otlpGrpcPort                = 4317
+	otlpGRPCPortName            = "otlp-grpc"
+	otlpGRPCPort                = 4317
 	otlpHTTPPortName            = "otlp-http"
 	otlpHTTPPort                = 4318
-	jaegerGrpcPortName          = "jaeger-grpc"
-	jaegerGrpcPort              = 14250
+	jaegerGRPCPortName          = "jaeger-grpc"
+	jaegerGRPCPort              = 14250
 	jaegerThriftBinaryPortName  = "jaeger-thrift-binary"
 	jaegerThriftBinaryPort      = 6832
 	jaegerThriftCompactPortName = "jaeger-thrift-compact"
@@ -33,7 +33,7 @@ const (
 	statsdPortName              = "statsd"
 	statsdPort                  = 8125
 	appProtocolHTTP             = "http"
-	appProtocolGrpc             = "grpc"
+	appProtocolGRPC             = "grpc"
 )
 
 type Reconciler struct {
@@ -154,11 +154,11 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 		case otelcgen.OtlpProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
-					Name:        otlpGrpcPortName,
-					Port:        otlpGrpcPort,
+					Name:        otlpGRPCPortName,
+					Port:        otlpGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptr.To(appProtocolGrpc),
-					TargetPort:  intstr.FromInt32(otlpGrpcPort),
+					AppProtocol: ptr.To(appProtocolGRPC),
+					TargetPort:  intstr.FromInt32(otlpGRPCPort),
 				},
 				corev1.ServicePort{
 					Name:        otlpHTTPPortName,
@@ -170,11 +170,11 @@ func buildServicePortList(protocols []otelcgen.Protocol) []corev1.ServicePort {
 		case otelcgen.JaegerProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
-					Name:        jaegerGrpcPortName,
-					Port:        jaegerGrpcPort,
+					Name:        jaegerGRPCPortName,
+					Port:        jaegerGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptr.To(appProtocolGrpc),
-					TargetPort:  intstr.FromInt32(jaegerGrpcPort),
+					AppProtocol: ptr.To(appProtocolGRPC),
+					TargetPort:  intstr.FromInt32(jaegerGRPCPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftBinaryPortName,
