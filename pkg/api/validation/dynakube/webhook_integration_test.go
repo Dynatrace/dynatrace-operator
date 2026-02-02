@@ -6,11 +6,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -161,6 +164,27 @@ func TestWebhook(t *testing.T) {
 			require.True(t, meta.IsNoMatchError(err))
 		})
 	}
+
+	t.Run("duplicate telemetryingest protocols", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: metav1.NamespaceDefault,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "https://test.localhost/api",
+				TelemetryIngest: &telemetryingest.Spec{
+					Protocols: []string{
+						"zipkin",
+						"zipkin",
+					},
+				},
+			},
+		}
+
+		err := clt.Create(t.Context(), dk)
+		require.True(t, apierrors.IsInvalid(err), err)
+	})
 }
 
 func compareWebhookResult(t *testing.T, clt client.Client, version, name string, seen sets.Set[string]) {
