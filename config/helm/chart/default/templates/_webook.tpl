@@ -25,19 +25,19 @@ Little helper to migrate away from .Values.webhook.highAvailability
 
 
 {{- define "dynatrace-operator.webhook.topologySpreadConstraints" -}}
-	{{- if ge (int (include "dynatrace-operator.webhook.replicas" .)) 2 -}}
+  {{- if and (ge (int (include "dynatrace-operator.webhook.replicas" .)) 2 ) (not (empty .Values.webhook.topologySpreadConstraints)) -}}
 topologySpreadConstraints:
-	{{- range $constraint := .Values.webhook.topologySpreadConstraints }}
+  {{- range $constraint := .Values.webhook.topologySpreadConstraints }}
 - {{ toYaml $constraint | nindent 2 }}
   labelSelector:
     matchLabels:
       {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 6 }}
-		{{- end }}
-	{{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 
 {{- define "dynatrace-operator.webhook.podDisruptionBudget" -}}
-	{{- if .Values.webhook.highAvailability -}}
+{{- if and (.Values.webhook.highAvailability) (not (empty .Values.webhook.podDisruptionBudget)) -}}
 {{- toYaml .Values.webhook.podDisruptionBudget -}}
-	{{- end -}}
+{{- end -}}
 {{- end -}}
