@@ -113,3 +113,18 @@ startupProbe:
 "helm.sh/hook-weight": "-5"
 "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 {{- end -}}
+
+{{- define "kubernetes.appArmorSecurityContextSupported" -}}
+{{- if semverCompare ">=1.31.0" .Capabilities.KubeVersion.Version  -}}
+    true
+{{- else -}}
+    false
+{{- end -}}
+{{- end -}}
+
+{{- define "kubernetes.defaultAppArmorProfile" -}}
+{{- if eq (include "kubernetes.appArmorSecurityContextSupported" .) "true" -}}
+appArmorProfile:
+  type: RuntimeDefault
+{{- end -}}
+{{- end -}}

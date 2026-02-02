@@ -700,3 +700,61 @@ tests:
             value: "debug"
           count: 1
           any: true
+
+  - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
+    set:
+      platform: kubernetes
+      webhook:
+        apparmor: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 30
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/webhook"]
+          value: runtime/default
+      - isNull:
+          path: spec.template.spec.securityContext.appArmorProfile
+
+  - it: should have apparmor in securityContext when enabled on Kubernetes >= 1.31.0
+    set:
+      platform: kubernetes
+      webhook:
+        apparmor: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 31
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/webhook"]
+      - equal:
+          path: spec.template.spec.securityContext.appArmorProfile.type
+          value: RuntimeDefault
+
+  - it: should not have apparmor annotation when disabled on Kubernetes < 1.31.0
+    set:
+      platform: kubernetes
+      webhook:
+        apparmor: false
+    capabilities:
+      majorVersion: 1
+      minorVersion: 30
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/webhook"]
+      - isNull:
+          path: spec.template.spec.securityContext.appArmorProfile
+
+  - it: should not have apparmor in securityContext when disabled on Kubernetes >= 1.31.0
+    set:
+      platform: kubernetes
+      webhook:
+        apparmor: false
+    capabilities:
+      majorVersion: 1
+      minorVersion: 31
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/webhook"]
+      - isNull:
+          path: spec.template.spec.securityContext.appArmorProfile

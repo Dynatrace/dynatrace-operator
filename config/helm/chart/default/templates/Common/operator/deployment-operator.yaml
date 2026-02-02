@@ -38,7 +38,7 @@ spec:
     metadata:
       annotations:
         dynatrace.com/inject: "false"
-      {{- if (.Values.operator).apparmor}}
+      {{- if and (.Values.operator.apparmor) (eq (include "kubernetes.appArmorSecurityContextSupported" .) "false") }}
         container.apparmor.security.beta.kubernetes.io/operator: runtime/default
       {{- end }}
       {{- if .Values.operator.annotations }}
@@ -104,6 +104,9 @@ spec:
       serviceAccountName: dynatrace-operator
       securityContext:
         {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
+        {{- if .Values.operator.apparmor -}}
+            {{ include "kubernetes.defaultAppArmorProfile" . | nindent 8 }}
+        {{- end -}}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}

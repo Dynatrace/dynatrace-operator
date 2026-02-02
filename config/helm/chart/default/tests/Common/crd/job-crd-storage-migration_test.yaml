@@ -50,26 +50,67 @@ tests:
       - isNotEmpty:
           path: spec.template.spec.containers[0].securityContext
 
-  - it: should have apparmor annotation when enabled
+  - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
     set:
       platform: kubernetes
       crdStorageMigrationJob: true
       operator:
         apparmor: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 30
     asserts:
       - equal:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
           value: runtime/default
+      - isNull:
+          path: spec.template.spec.securityContext.appArmorProfile
 
-  - it: should not have apparmor annotation when disabled
+  - it: should have apparmor in securityContext when enabled on Kubernetes >= 1.31.0
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+      operator:
+        apparmor: true
+    capabilities:
+      majorVersion: 1
+      minorVersion: 31
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+      - equal:
+          path: spec.template.spec.securityContext.appArmorProfile.type
+          value: RuntimeDefault
+
+  - it: should not have apparmor annotation when disabled on Kubernetes < 1.31.0
     set:
       platform: kubernetes
       crdStorageMigrationJob: true
       operator:
         apparmor: false
+    capabilities:
+      majorVersion: 1
+      minorVersion: 30
     asserts:
       - isNull:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+      - isNull:
+          path: spec.template.spec.securityContext.appArmorProfile
+
+  - it: should not have apparmor in securityContext when disabled on Kubernetes >= 1.31.0
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+      operator:
+        apparmor: false
+    capabilities:
+      majorVersion: 1
+      minorVersion: 31
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+      - isNull:
+          path: spec.template.spec.securityContext.appArmorProfile
 
   - it: should have custom pull secret when specified
     set:
@@ -142,4 +183,3 @@ tests:
     asserts:
       - hasDocuments:
           count: 1
-
