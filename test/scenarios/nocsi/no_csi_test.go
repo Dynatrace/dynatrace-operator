@@ -143,6 +143,8 @@ func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
 }
 
 func TestNoCSI_kspm(t *testing.T) {
+	// follow up ticket DAQ-18522
+	t.Skip("skipping kspm due to securityProblem.write")
 	testEnv.Test(t, kspm.Feature(t))
 }
 
