@@ -2,7 +2,6 @@ package oneagent
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
@@ -330,23 +329,21 @@ func (oa *OneAgent) GetArgumentsMap() map[string][]string {
 }
 
 // GetHostPath provides the host path for the storage volume if CSI driver is absent.
-func (oa *OneAgent) GetHostPath(tenant string) string {
+func (oa *OneAgent) GetHostPath() string {
 	if oa.IsCloudNativeFullstackMode() {
-		storagePath := StorageVolumeDefaultHostPath
 		if oa.CloudNativeFullStack.StorageHostPath != "" {
-			storagePath = oa.CloudNativeFullStack.StorageHostPath
+			return oa.CloudNativeFullStack.StorageHostPath
 		}
 
-		return filepath.Join(storagePath, tenant)
+		return StorageVolumeDefaultHostPath
 	}
 
 	if oa.IsHostMonitoringMode() {
-		storagePath := StorageVolumeDefaultHostPath
 		if oa.HostMonitoring.StorageHostPath != "" {
-			storagePath = oa.HostMonitoring.StorageHostPath
+			return oa.HostMonitoring.StorageHostPath
 		}
 
-		return filepath.Join(storagePath, tenant)
+		return StorageVolumeDefaultHostPath
 	}
 
 	return ""
