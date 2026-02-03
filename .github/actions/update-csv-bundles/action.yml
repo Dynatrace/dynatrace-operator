@@ -32,7 +32,8 @@ runs:
       id: vars
       shell: bash
       run: |
-        VERSION="${GITHUB_REF_NAME#v}"
+        REF_NAME=$(hack/build/ci/sanitize-branch-name.sh "${GITHUB_REF_NAME}")
+        VERSION="${REF_NAME#v}"
         MAJOR_MINOR="${VERSION%.*}"
         echo "major_minor=${MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
     - name: Setting properties
