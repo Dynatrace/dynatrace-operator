@@ -148,6 +148,10 @@ func TestNoCSI_kspm(t *testing.T) {
 	testEnv.Test(t, kspm.Feature(t))
 }
 
+func TestNoCSI_kspm_optional_scopes(t *testing.T) {
+	testEnv.Test(t, kspm.OptionalScopes(t))
+}
+
 func TestNoCSI_extensions_db_executor(t *testing.T) {
 	testEnv.Test(t, dbexecutor.Feature(t))
 }
