@@ -29,7 +29,6 @@ fi
 
 SDK_PARAMS=(
 --extra-service-accounts dynatrace-dynakube-oneagent
---extra-service-accounts dynatrace-activegate
 --extra-service-accounts dynatrace-otel-collector
 --extra-service-accounts dynatrace-edgeconnect
 --extra-service-accounts dynatrace-extension-controller
@@ -49,6 +48,13 @@ fi
 "${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./pkg/api/
 (cd "config/deploy/${PLATFORM}" && ${KUSTOMIZE} edit set image quay.io/dynatrace/dynatrace-operator:snapshot="${OLM_IMAGE}")
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
+# CSV will look at the serviceaccounts and render the clusterPermissions according the roles and bindings.
+# Since the aggregated CR depends on changes made in the cluster after installation the bundle will be missing permissions.
+# Adding the ServiceAccount to the CSV is required for it to be used.
+SDK_PARAMS+=(--extra-service-accounts dynatrace-activegate)
+cp bundle/manifests/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole* /tmp
+"${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
+cp /tmp/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole* bundle/manifests/
 "${OPERATOR_SDK}" bundle validate ./bundle
 
 rm -rf "./config/olm/${PLATFORM}/${VERSION}"
