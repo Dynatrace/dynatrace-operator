@@ -25,7 +25,7 @@ jobs:
     environment: E2E
     runs-on:
       - self-hosted
-      - operator-e2e
+      - test-operator-e2e
     outputs:
       cluster_status: ${{ steps.run_e2e_test.outputs.cluster_status }}
       job_id: ${{ job.check_run_id }}
