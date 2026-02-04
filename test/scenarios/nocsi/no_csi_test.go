@@ -142,6 +142,10 @@ func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
 	testEnv.Test(t, telemetryingest.OtelCollectorConfigUpdate(t))
 }
 
+func TestNoCSI_telemetryingest_validation(t *testing.T) {
+	testEnv.Test(t, telemetryingest.Validation(t))
+}
+
 func TestNoCSI_kspm(t *testing.T) {
 	// follow up ticket DAQ-18522
 	t.Skip("skipping kspm due to securityProblem.write")
