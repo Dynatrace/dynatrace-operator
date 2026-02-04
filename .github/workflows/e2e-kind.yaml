@@ -70,7 +70,7 @@ jobs:
           ./.github/scripts/prepare-e2e-secrets.sh
         env:
           TENANT1_NAME: ${{ secrets.TENANT1_NAME }}
-          TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
+          TENANT1_APITOKEN: ${{ secrets.TENANT1_APITOKEN_WITH_SECURITYPROBLEMS_WRITE }}
           TENANT1_APITOKEN_NOSETTINGS: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           TENANT1_DATAINGESTTOKEN: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           TENANT1_OAUTH_CLIENT_ID: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
