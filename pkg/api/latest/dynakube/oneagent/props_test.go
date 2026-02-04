@@ -18,7 +18,6 @@ package oneagent
 
 import (
 	"net/url"
-	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -503,75 +502,4 @@ func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
 		oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false)
 		assert.Equal(t, tc.autoUpdateEnabled, oa.IsAutoUpdateEnabled(), tc.name)
 	})
-}
-
-func TestOneAgent_GetHostPath(t *testing.T) {
-	tenant := "tenant"
-
-	tcs := []struct {
-		name             string
-		oa               *OneAgent
-		expectedHostPath string
-	}{
-		{
-			name: "Classic Full Stack - ignored",
-			oa: &OneAgent{
-				Spec: &Spec{
-					ClassicFullStack: &HostInjectSpec{
-						StorageHostPath: "whatever",
-					},
-				},
-			},
-			expectedHostPath: "",
-		},
-		{
-			name: "Cloud Native Full Stack - custom host path, append tenant",
-			oa: &OneAgent{
-				Spec: &Spec{
-					CloudNativeFullStack: &CloudNativeFullStackSpec{
-						HostInjectSpec: HostInjectSpec{
-							StorageHostPath: "/something/custom",
-						},
-					},
-				},
-			},
-			expectedHostPath: filepath.Join("/something/custom", tenant),
-		},
-		{
-			name: "Host Monitoring - custom host path, append tenant",
-			oa: &OneAgent{
-				Spec: &Spec{
-					HostMonitoring: &HostInjectSpec{
-						StorageHostPath: "/something/custom",
-					},
-				},
-			},
-			expectedHostPath: filepath.Join("/something/custom", tenant),
-		},
-		{
-			name: "Host Monitoring - default host path",
-			oa: &OneAgent{
-				Spec: &Spec{
-					HostMonitoring: &HostInjectSpec{},
-				},
-			},
-			expectedHostPath: filepath.Join(StorageVolumeDefaultHostPath, tenant),
-		},
-		{
-			name: "Cloud Native Full Stack - default host path",
-			oa: &OneAgent{
-				Spec: &Spec{
-					CloudNativeFullStack: &CloudNativeFullStackSpec{},
-				},
-			},
-			expectedHostPath: filepath.Join(StorageVolumeDefaultHostPath, tenant),
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			oa := tc.oa
-			assert.Equal(t, tc.expectedHostPath, oa.GetHostPath(tenant))
-		})
-	}
 }
