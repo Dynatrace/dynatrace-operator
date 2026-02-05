@@ -30,7 +30,7 @@ bundle/build:
 	podman push $(BUNDLE_IMG)
 
 bundle/run: bundle bundle/build
-	operator-sdk run bundle $(BUNDLE_IMG)
+	operator-sdk run bundle $(BUNDLE_IMG) --timeout=5m --namespace=dynatrace
 
 bundle/cleanup:
-	operator-sdk cleanup dynatrace-operator
+	operator-sdk cleanup dynatrace-operator --namespace=dynatrace
