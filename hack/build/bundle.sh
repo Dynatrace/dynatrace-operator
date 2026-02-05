@@ -48,6 +48,7 @@ fi
 "${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./pkg/api/
 (cd "config/deploy/${PLATFORM}" && ${KUSTOMIZE} edit set image quay.io/dynatrace/dynatrace-operator:snapshot="${OLM_IMAGE}")
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
+
 # operator-sdk will look at the --extra-service-accounts flag to populate the clusterPermissions in the CSV with the
 # RBAC that is bound to these ServiceAccounts. It then throws away any manifests it used for the clusterPermissions.
 # Since the aggregated role is "empty" on disk, all permissions that would be granted in a live Kubernetes cluster are not included.
@@ -59,6 +60,7 @@ SDK_PARAMS+=(--extra-service-accounts dynatrace-activegate)
 cp bundle/manifests/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole* /tmp
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
 cp /tmp/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole* bundle/manifests/
+
 "${OPERATOR_SDK}" bundle validate ./bundle
 
 rm -rf "./config/olm/${PLATFORM}/${VERSION}"
