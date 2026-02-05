@@ -48,9 +48,13 @@ fi
 "${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./pkg/api/
 (cd "config/deploy/${PLATFORM}" && ${KUSTOMIZE} edit set image quay.io/dynatrace/dynatrace-operator:snapshot="${OLM_IMAGE}")
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
-# CSV will look at the serviceaccounts and render the clusterPermissions according the roles and bindings.
-# Since the aggregated CR depends on changes made in the cluster after installation the bundle will be missing permissions.
-# Adding the ServiceAccount to the CSV is required for it to be used.
+# operator-sdk will look at the --extra-service-accounts flag to populate the clusterPermissions in the CSV with the
+# RBAC that is bound to these ServiceAccounts. It then throws away any manifests it used for the clusterPermissions.
+# Since the aggregated role is "empty" on disk, all permissions that would be granted in a live Kubernetes cluster are not included.
+# To circumvent this we first generate the manifests without the ServiceAccount that's bound to the aggregated role,
+# save the manifests, then re-render the CSV to include the clusterPermissions and restore the aggregated role and binding.
+# ServiceAccounts are required in the clusterPermissions to ensure that new installations work.
+# https://github.com/operator-framework/operator-lifecycle-manager/issues/2757
 SDK_PARAMS+=(--extra-service-accounts dynatrace-activegate)
 cp bundle/manifests/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole* /tmp
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
