@@ -27,7 +27,7 @@ var (
 	}
 )
 
-func getContainer(dk dynakube.DynaKube) corev1.Container {
+func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededCapabilities
 
@@ -35,7 +35,7 @@ func getContainer(dk dynakube.DynaKube) corev1.Container {
 		Name:            containerName,
 		Image:           dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
 		ImagePullPolicy: corev1.PullAlways,
-		VolumeMounts:    getVolumeMounts(),
+		VolumeMounts:    getVolumeMounts(tenantUUID),
 		Env:             getEnvs(),
 		Resources:       dk.LogMonitoring().Template().Resources,
 		SecurityContext: &securityContext,
@@ -44,7 +44,7 @@ func getContainer(dk dynakube.DynaKube) corev1.Container {
 	return container
 }
 
-func getInitContainer(dk dynakube.DynaKube) corev1.Container {
+func getInitContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededInitCapabilities
 
@@ -52,7 +52,7 @@ func getInitContainer(dk dynakube.DynaKube) corev1.Container {
 		Name:            initContainerName,
 		Image:           dk.LogMonitoring().Template().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
 		ImagePullPolicy: corev1.PullAlways,
-		VolumeMounts:    []corev1.VolumeMount{getDTVolumeMount()},
+		VolumeMounts:    []corev1.VolumeMount{getDTVolumeMounts(tenantUUID)},
 		Command:         []string{bootstrapCommand},
 		Env:             getInitEnvs(dk),
 		Args:            getInitArgs(dk),
