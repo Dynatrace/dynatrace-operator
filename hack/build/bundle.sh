@@ -29,6 +29,7 @@ fi
 
 SDK_PARAMS=(
 --extra-service-accounts dynatrace-dynakube-oneagent
+--extra-service-accounts dynatrace-activegate
 --extra-service-accounts dynatrace-otel-collector
 --extra-service-accounts dynatrace-edgeconnect
 --extra-service-accounts dynatrace-extension-controller
@@ -48,19 +49,11 @@ fi
 "${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./pkg/api/
 (cd "config/deploy/${PLATFORM}" && ${KUSTOMIZE} edit set image quay.io/dynatrace/dynatrace-operator:snapshot="${OLM_IMAGE}")
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
-
-# operator-sdk will look at the --extra-service-accounts flag to populate the clusterPermissions in the CSV with the
-# RBAC that is bound to these ServiceAccounts. It then throws away any manifests it used for the clusterPermissions.
-# Since the aggregated role is "empty" on disk, all permissions that would be granted in a live Kubernetes cluster are not included.
-# To circumvent this we first generate the manifests without the ServiceAccount that's bound to the aggregated role,
-# save the manifests, then re-render the CSV to include the clusterPermissions and restore the aggregated role and binding.
-# ServiceAccounts are required in the clusterPermissions to ensure that new installations work.
+# Add missing aggregated ClusterRole and binding. This fixes the issue of missing cluster permissions in the CSV.
+# operator-sdk looks at the RBAC on disk, but aggregated roles are rendered in the cluster.
 # https://github.com/operator-framework/operator-lifecycle-manager/issues/2757
-SDK_PARAMS+=(--extra-service-accounts dynatrace-activegate)
-cp bundle/manifests/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole* /tmp
-"${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
-cp /tmp/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole* bundle/manifests/
-
+yq 'select(.kind=="ClusterRole")|select(.metadata.name=="dynatrace-kubernetes-monitoring")|.' config/deploy/openshift/openshift.yaml > bundle/manifests/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrole.yaml
+yq 'select(.kind=="ClusterRoleBinding")|select(.metadata.name=="dynatrace-kubernetes-monitoring")|.' config/deploy/openshift/openshift.yaml > bundle/manifests/dynatrace-kubernetes-monitoring_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
 "${OPERATOR_SDK}" bundle validate ./bundle
 
 rm -rf "./config/olm/${PLATFORM}/${VERSION}"
