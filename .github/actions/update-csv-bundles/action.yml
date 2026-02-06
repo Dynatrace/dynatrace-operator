@@ -23,20 +23,19 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Derive release branch name
-      id: vars
-      shell: bash
-      env:
-        VERSION: ${{ inputs.version }}
-      run: |
-        MAJOR_MINOR="${VERSION%.*}"
-        echo "major_minor=${MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
     - name: Checkout release branch
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
-        ref: release-${{ steps.vars.outputs.major_minor }}
-        fetch-depth: 0
+        fetch-depth: 1
         clean: false
+    - name: Derive release branch name
+      id: vars
+      shell: bash
+      run: |
+        REF_NAME=$(hack/build/ci/sanitize-branch-name.sh "${GITHUB_REF_NAME}")
+        VERSION="${REF_NAME#v}"
+        MAJOR_MINOR="${VERSION%.*}"
+        echo "major_minor=${MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
     - name: Setting properties
       shell: bash
       env:
