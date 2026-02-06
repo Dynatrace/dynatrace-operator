@@ -22,6 +22,6 @@ jobs:
         shell: bash
         env:
           TENANT_NAME: ${{ secrets.TENANT1_NAME }}
-          TENANT_APITOKEN: ${{ secrets.TENANT1_APITOKEN }}
+          TENANT_APITOKEN: ${{ secrets.TENANT1_APITOKEN_WITH_SECURITYPROBLEMS_WRITE }}
         run: |
           ./hack/tenant/cleanup-kubernetes-settings.sh

@@ -77,7 +77,7 @@ jobs:
           flc-environment: ${{ format('dto-{0}-{1}',  matrix.platform, matrix.version ) }}
           target-branch: ${{ inputs.target || env.branch }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN_WITH_SECURITYPROBLEMS_WRITE }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}

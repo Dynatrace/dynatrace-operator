@@ -41,7 +41,7 @@ jobs:
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN_WITH_SECURITYPROBLEMS_WRITE }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
@@ -78,7 +78,7 @@ jobs:
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN_WITH_SECURITYPROBLEMS_WRITE }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
@@ -115,7 +115,7 @@ jobs:
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-image: ${{ format('{0}-fips', github.event.inputs.target || 'main') }}
           tenant1-name: ${{ secrets.TENANT1_NAME }}
-          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN }}
+          tenant1-apitoken: ${{ secrets.TENANT1_APITOKEN_WITH_SECURITYPROBLEMS_WRITE }}
           tenant1-apitoken-nosettings: ${{ secrets.TENANT1_APITOKEN_NOSETTINGS }}
           tenant1-dataingesttoken: ${{ secrets.TENANT1_DATAINGESTTOKEN }}
           tenant1-oauth-client-id: ${{ secrets.TENANT1_OAUTH_CLIENT_ID }}
