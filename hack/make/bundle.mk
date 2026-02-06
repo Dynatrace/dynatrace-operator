@@ -5,7 +5,7 @@ PLATFORM ?= openshift
 # Needed variable for manifest generation
 OLM ?= false
 # Default bundle image with tag
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
+BUNDLE_IMG ?= quay.io/dynatrace/olm_catalog_tests:$(VERSION)
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -25,7 +25,12 @@ bundle: manifests/$(PLATFORM)
 bundle/minimal: bundle
 	find ./config/olm/${PLATFORM}/${VERSION}/manifests/ ! \( -name "dynatrace-operator.v${VERSION}.clusterserviceversion.yaml" -o -name "dynatrace.com_dynakubes.yaml" \) -type f -exec rm {} +
 
-.PHONY: bundle/build
-## Builds the docker image used for OLM deployment
 bundle/build:
-	docker build -f ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile -t $(BUNDLE_IMG) ./config/olm/$(PLATFORM)/
+	podman build -f ./bundle.Dockerfile -t $(BUNDLE_IMG)
+	podman push $(BUNDLE_IMG)
+
+bundle/run: bundle bundle/build
+	operator-sdk run bundle $(BUNDLE_IMG) --timeout=5m --namespace=dynatrace
+
+bundle/cleanup:
+	operator-sdk cleanup dynatrace-operator --namespace=dynatrace
