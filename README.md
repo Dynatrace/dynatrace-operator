@@ -21,8 +21,8 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
   * `kubernetes-monitoring` allows monitoring of the Kubernetes API
   * `metrics-ingest` routes enriched metrics through ActiveGate
 
-For more information please have a look at [our DynaKube Custom Resource examples](assets/samples/dynakube) and our
-[official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes).
+For more information please have a look at [our DynaKube Custom Resource examples](assets/samples/dynakube) and
+our [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes).
 
 ## Support lifecycle
 
