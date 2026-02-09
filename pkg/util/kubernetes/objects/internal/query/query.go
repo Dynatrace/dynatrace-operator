@@ -96,11 +96,9 @@ func mutateDeployment(d *appsv1.Deployment) func() error {
 	}
 }
 
-func (c Generic[T, L]) CreateOrUpdate2(ctx context.Context, mutate MutateFn[T]) (bool, error) {
-	//var t T
-	op, err := controllerutil.CreateOrUpdate(ctx, c.KubeClient, c.Target, func() error {
-		//mutate(T)
-		return nil
+func (c Generic[T, L]) CreateOrUpdate2(ctx context.Context, obj client.Object, mutate MutateFn[T]) (bool, error) {
+	op, err := controllerutil.CreateOrUpdate(ctx, c.KubeClient, obj, func() error {
+		return mutate(c.Target)
 	})
 
 	if err != nil {

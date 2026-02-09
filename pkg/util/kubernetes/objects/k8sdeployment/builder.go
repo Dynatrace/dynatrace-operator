@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type DeploymentBuilder struct{
@@ -146,5 +147,14 @@ func SetImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o 
 func SetVolumes(volumes []corev1.Volume) func(o *appsv1.Deployment) {
 	return func(d *appsv1.Deployment) {
 		d.Spec.Template.Spec.Volumes = volumes
+	}
+}
+
+
+func Spec(deploy *appsv1.Deployment, spec appsv1.DeploymentSpec) controllerutil.MutateFn {
+	return func() error {
+		deploy.Spec = spec
+
+		return nil
 	}
 }
