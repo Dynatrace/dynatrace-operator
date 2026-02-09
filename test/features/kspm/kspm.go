@@ -40,3 +40,33 @@ func Feature(t *testing.T) features.Feature {
 
 	return builder.Feature()
 }
+
+func OptionalScopes(t *testing.T) features.Feature {
+	builder := features.New("kspm-optional-scopes")
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+	if secretConfig.APITokenNoSettings == "" {
+		t.Skip("skipping test. no token with missing settings scopes provided")
+	}
+
+	options := []componentDynakube.Option{
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithKSPM(),
+		componentDynakube.WithKSPMImageRefSpec(consts.KSPMImageRepo, consts.KSPMImageTag),
+		componentDynakube.WithActiveGate(),
+	}
+
+	testDynakube := *componentDynakube.New(options...)
+
+	componentDynakube.InstallWithoutSettingsScopes(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+
+	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+
+	builder.Assess("kspm node config collector started", daemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
+
+	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
+
+	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
+
+	return builder.Feature()
+}
