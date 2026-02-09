@@ -79,7 +79,7 @@ title_section = {
     "type": "section",
     "text": {
         "type": "mrkdwn",
-        "text": "E2E ondemand test results for `${{ github.sha }}` ",
+        "text": "E2E ondemand test results for `${{ env.TARGET_BRANCH }}` `${{ github.sha }}` "
     },
 }
 
