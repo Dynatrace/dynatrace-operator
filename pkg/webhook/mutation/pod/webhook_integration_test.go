@@ -973,9 +973,8 @@ func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *cor
 			RestartPolicy: corev1.RestartPolicyAlways,
 			Containers: []corev1.Container{
 				{
-					Name:            "app",
-					Image:           "docker.io/myapp:1.2.3",
-					ImagePullPolicy: corev1.PullAlways,
+					Name:  "app",
+					Image: "docker.io/myapp:1.2.3",
 				},
 			},
 		},

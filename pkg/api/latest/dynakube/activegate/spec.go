@@ -1,6 +1,7 @@
 package activegate
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -146,6 +147,9 @@ type CapabilityProperties struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
+
+	// The ActiveGate container image pull policy.
+	ImagePullPolicy image.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// Set activation group for ActiveGate
 	// +kubebuilder:validation:Optional

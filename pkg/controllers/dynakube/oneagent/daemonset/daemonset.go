@@ -233,7 +233,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 			Args:            arguments,
 			Env:             environmentVariables,
 			Image:           b.immutableOneAgentImage(),
-			ImagePullPolicy: corev1.PullAlways,
+			ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
 			Name:            podName,
 			Resources:       resources,
 			SecurityContext: b.securityContext(),
@@ -267,7 +267,7 @@ func (b *builder) podSpec() (corev1.PodSpec, error) {
 func (b *builder) initContainerSpec() corev1.Container {
 	return corev1.Container{
 		Image:           os.Getenv(k8senv.DtOperatorImageEnvName),
-		ImagePullPolicy: corev1.PullAlways,
+		ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
 		Name:            initContainerName,
 		Env:             b.initContainerEnvVars(),
 		Args:            b.initContainerArguments(),

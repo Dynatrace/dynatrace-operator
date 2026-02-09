@@ -985,6 +985,12 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -1286,6 +1292,12 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -1488,6 +1500,12 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -1564,6 +1582,12 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -2942,6 +2966,12 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -3243,6 +3273,12 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -3445,6 +3481,12 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -3521,6 +3563,12 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -4904,6 +4952,12 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -5205,6 +5259,12 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -5407,6 +5467,12 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -5483,6 +5549,12 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -5918,6 +5990,12 @@ spec:
                   group:
                     type: string
                   image:
+                    type: string
+                  imagePullPolicy:
+                    enum:
+                    - IfNotPresent
+                    - Always
+                    - Never
                     type: string
                   labels:
                     additionalProperties:
@@ -7590,6 +7668,12 @@ spec:
                     properties:
                       codeModulesImage:
                         type: string
+                      codeModulesImagePullPolicy:
+                        enum:
+                        - IfNotPresent
+                        - Always
+                        - Never
+                        type: string
                       initResources:
                         properties:
                           claims:
@@ -7751,6 +7835,12 @@ spec:
                         type: array
                       image:
                         type: string
+                      imagePullPolicy:
+                        enum:
+                        - IfNotPresent
+                        - Always
+                        - Never
+                        type: string
                       labels:
                         additionalProperties:
                           type: string
@@ -7830,6 +7920,12 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       codeModulesImage:
+                        type: string
+                      codeModulesImagePullPolicy:
+                        enum:
+                        - IfNotPresent
+                        - Always
+                        - Never
                         type: string
                       dnsPolicy:
                         type: string
@@ -7917,6 +8013,12 @@ spec:
                           type: object
                         type: array
                       image:
+                        type: string
+                      imagePullPolicy:
+                        enum:
+                        - IfNotPresent
+                        - Always
+                        - Never
                         type: string
                       initResources:
                         properties:
@@ -8144,6 +8246,12 @@ spec:
                         type: array
                       image:
                         type: string
+                      imagePullPolicy:
+                        enum:
+                        - IfNotPresent
+                        - Always
+                        - Never
+                        type: string
                       labels:
                         additionalProperties:
                           type: string
@@ -8287,6 +8395,12 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -8588,6 +8702,12 @@ spec:
                         type: array
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -8790,6 +8910,12 @@ spec:
                         type: string
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -8866,6 +8992,12 @@ spec:
                         type: object
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string
@@ -8989,6 +9121,12 @@ spec:
                     properties:
                       imageRef:
                         properties:
+                          pullPolicy:
+                            enum:
+                            - IfNotPresent
+                            - Always
+                            - Never
+                            type: string
                           repository:
                             example: docker.io/dynatrace/image-name
                             type: string

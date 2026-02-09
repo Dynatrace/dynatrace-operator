@@ -1042,7 +1042,7 @@ func TestInitContainerSpec(t *testing.T) {
 
 	assert.Equal(t, testOperatorImageName, spec.Image)
 	assert.Equal(t, initContainerName, spec.Name)
-	assert.Equal(t, corev1.PullAlways, spec.ImagePullPolicy)
+	assert.Empty(t, spec.ImagePullPolicy)
 	assert.NotEmpty(t, spec.Env)
 	assert.NotEmpty(t, spec.Args)
 	assert.NotEmpty(t, spec.VolumeMounts)

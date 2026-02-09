@@ -42,6 +42,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
 

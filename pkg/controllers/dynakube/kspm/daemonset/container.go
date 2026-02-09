@@ -21,7 +21,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	container := corev1.Container{
 		Name:            containerName,
 		Image:           dk.KSPM().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
-		ImagePullPolicy: corev1.PullAlways,
+		ImagePullPolicy: dk.KSPM().ImageRef.GetPullPolicy(),
 		VolumeMounts:    getMounts(dk),
 		Env:             getEnvs(dk, tenantUUID),
 		SecurityContext: &securityContext,

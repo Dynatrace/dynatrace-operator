@@ -25,7 +25,7 @@ func TestGetContainer(t *testing.T) {
 
 		assert.NotEmpty(t, mainContainer.Name)
 		assert.NotEmpty(t, mainContainer.Image)
-		assert.NotEmpty(t, mainContainer.ImagePullPolicy)
+		assert.Empty(t, mainContainer.ImagePullPolicy)
 		assert.NotEmpty(t, mainContainer.VolumeMounts)
 		assert.Len(t, mainContainer.VolumeMounts, expectedMountLen)
 		assert.NotEmpty(t, mainContainer.Env)

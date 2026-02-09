@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sjob"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,13 +21,14 @@ import (
 )
 
 type Properties struct {
-	CSIJob       helmconfig.Config
-	Owner        client.Object
-	APIReader    client.Reader
-	Client       client.Client
-	ImageURI     string
-	PathResolver metadata.PathResolver
-	PullSecrets  []string
+	CSIJob          helmconfig.Config
+	Owner           client.Object
+	APIReader       client.Reader
+	Client          client.Client
+	ImageURI        string
+	ImagePullPolicy corev1.PullPolicy
+	PathResolver    metadata.PathResolver
+	PullSecrets     []string
 }
 
 func NewInstaller(ctx context.Context, props *Properties) installer.Installer {

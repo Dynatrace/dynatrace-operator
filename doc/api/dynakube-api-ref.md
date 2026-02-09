@@ -37,6 +37,7 @@
 |`env`||-|array|
 |`group`||-|string|
 |`image`||-|string|
+|`imagePullPolicy`||-|string|
 |`labels`||-|object|
 |`nodeSelector`||-|object|
 |`priorityClassName`||-|string|
@@ -85,6 +86,7 @@
 |`dnsPolicy`||-|string|
 |`env`||-|array|
 |`image`||-|string|
+|`imagePullPolicy`||-|string|
 |`labels`||-|object|
 |`nodeSelector`||-|object|
 |`oneAgentResources`||-|object|
@@ -129,6 +131,7 @@
 |`dnsPolicy`||-|string|
 |`env`||-|array|
 |`image`||-|string|
+|`imagePullPolicy`||-|string|
 |`labels`||-|object|
 |`nodeSelector`||-|object|
 |`oneAgentResources`||-|object|
@@ -152,9 +155,11 @@
 |`annotations`||-|object|
 |`args`||-|array|
 |`codeModulesImage`||-|string|
+|`codeModulesImagePullPolicy`||-|string|
 |`dnsPolicy`||-|string|
 |`env`||-|array|
 |`image`||-|string|
+|`imagePullPolicy`||-|string|
 |`initResources`||-|object|
 |`labels`||-|object|
 |`namespaceSelector`||-|object|
@@ -184,6 +189,7 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`codeModulesImage`||-|string|
+|`codeModulesImagePullPolicy`||-|string|
 |`initResources`||-|object|
 |`namespaceSelector`||-|object|
 |`version`||-|string|
@@ -198,6 +204,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
 
@@ -205,6 +212,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
 
@@ -234,6 +242,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
 
@@ -263,6 +272,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
 
@@ -270,6 +280,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
+|`pullPolicy`||-|string|
 |`repository`||-|string|
 |`tag`||-|string|
 

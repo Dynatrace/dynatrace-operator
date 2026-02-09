@@ -18,7 +18,7 @@ func getContainer(dk *dynakube.DynaKube) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
 		Image:           dk.Spec.Templates.OpenTelemetryCollector.ImageRef.String(),
-		ImagePullPolicy: corev1.PullAlways,
+		ImagePullPolicy: dk.Spec.Templates.OpenTelemetryCollector.ImageRef.GetPullPolicy(),
 		SecurityContext: buildSecurityContext(),
 		Env:             getEnvs(dk),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,

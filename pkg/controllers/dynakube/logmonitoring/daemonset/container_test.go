@@ -24,7 +24,7 @@ func TestGetContainer(t *testing.T) {
 
 		assert.NotEmpty(t, mainContainer.Name)
 		assert.NotEmpty(t, mainContainer.Image)
-		assert.NotEmpty(t, mainContainer.ImagePullPolicy)
+		assert.Empty(t, mainContainer.ImagePullPolicy)
 		assert.NotEmpty(t, mainContainer.VolumeMounts)
 		assert.Len(t, mainContainer.VolumeMounts, expectedMountLen)
 		assert.NotEmpty(t, mainContainer.Env)
@@ -89,7 +89,7 @@ func TestGetInitContainer(t *testing.T) {
 
 		assert.NotEmpty(t, initContainer.Name)
 		assert.NotEmpty(t, initContainer.Image)
-		assert.NotEmpty(t, initContainer.ImagePullPolicy)
+		assert.Empty(t, initContainer.ImagePullPolicy)
 		assert.NotEmpty(t, initContainer.Args)
 		assert.Len(t, initContainer.Args, expectedBaseInitArgsLen)
 		assert.NotEmpty(t, initContainer.Command)
