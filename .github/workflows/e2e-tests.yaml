@@ -55,8 +55,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Determine cluster status
         if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
         run: |
-          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
   run-in-ocp:
@@ -94,8 +96,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Determine cluster status
         if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
         run: |
-          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
   run-in-ocp-fips:
@@ -133,10 +137,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Determine cluster status
         if: failure()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
         run: |
-          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
+
 
   notify-slack:
     name: Notify test results in Slack

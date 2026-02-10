@@ -90,6 +90,10 @@ jobs:
       - name: Prepare outputs
         id: prepare_outputs
         if: always()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
+          E2E_TEST_OUTCOME: ${{ steps.run_e2e_test.outcome }}
+          JOB_CHECK_RUN_ID: ${{ job.check_run_id }}
         run: |
           PLATFORM_VERSION="${{ matrix.platform }}_${{ matrix.version }}"
           PLATFORM_VERSION_CLEAN=${PLATFORM_VERSION//-/_}
@@ -104,12 +108,12 @@ jobs:
             fi
           }
 
-          run_id="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}"
-          emoji=$(get_emoji "${{ steps.run_e2e_test.outputs.cluster_status}}" "${{ steps.run_e2e_test.outcome }}")
+          run_id="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/$JOB_CHECK_RUN_ID"
+          emoji=$(get_emoji "$CLUSTER_STATUS" "$E2E_TEST_OUTCOME")
 
           echo "matrix={\"${PLATFORM_VERSION_CLEAN^^}_EMOJI\": \"${emoji}\", \"${PLATFORM_VERSION_CLEAN^^}_RUN_ID_URL\": \"${run_id}\"}" >> $GITHUB_OUTPUT
 
-          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
       - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@f24ce3360a8abf9bf386a62ab13d0ae5de5f9d13 # 0.31.7
