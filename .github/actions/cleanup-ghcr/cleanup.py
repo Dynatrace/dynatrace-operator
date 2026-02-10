@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+
+# This script cleans up unreferenced package versions from GitHub Container Registry (ghcr.io).
+# It keeps all versions that are referenced by tags updated within the last N days, as well
+# as any versions matching specified regex patterns. It can be run in dry-run mode to preview deletions.
+
+# It follows referenced digests starting from tagged versions, including multi-arch image manifests and Helm chart signatures
+# This ensures that we don't accidentally delete any versions that are still in use, while allowing us to clean up old unreferenced versions.
+
 import base64
 import os
 import requests
@@ -46,12 +54,17 @@ def fetch_manifest(tag):
     try:
         resp = requests.get(url, headers={
             "Authorization": f"Bearer {GHCR_TOKEN}",
-            "Accept": "application/vnd.oci.image.index.v1+json"
+            "Accept": "application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json"
         })
         resp.raise_for_status()
-        return resp.json()
+        return resp.json(), resp.headers.get('docker-content-digest', '')
     except requests.HTTPError as e:
-        raise Exception(f"Failed to fetch manifest for tag {tag}: {e}")
+        if resp.status_code == 404:
+            print(f"[WARN] Manifest not found for tag {tag} (404)")
+            return None, ''
+        else:
+            print(f"[ERROR] Failed to fetch manifest for tag {tag}: {e}")
+            return None, ''
 
 # 1. Fetch all package versions
 print(f"Fetching versions for {ORG}/{PACKAGE}...")
@@ -63,7 +76,8 @@ print(f"Keeping all packages that have tags younger than {KEEP_OUTDATED_TAGS_FOR
 print(f"Exception: Always keep tags matching: {TAGS_TO_ALWAYS_KEEP}")
 
 references_to_keep = set()
-tags_to_keep = set()
+multiarch_image_tags_to_keep = set()
+helm_tags_to_keep = set() # Helm packages have different dependencies to their signatures, so we track them separately
 
 tagged_versions = [v for v in packages if v.get('metadata', {}).get('container', {}).get('tags')]
 
@@ -77,24 +91,50 @@ for v in tagged_versions:
     if updated_at:
         updated_dt = datetime.strptime(updated_at, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
         if updated_dt >= threshold_date:
-            tags_to_keep.update(v['metadata']['container']['tags'])
-            references_to_keep.add(v['name'])
+            description = v.get('description', '').lower()
+            if 'helm' in description:
+                helm_tags_to_keep.update(v['metadata']['container']['tags'])
+            else:
+                multiarch_image_tags_to_keep.update(v['metadata']['container']['tags'])
 
-    # Check if tag matches any of the always-keep patterns, regardless of age
+    # Check if any tag matches any always-keep regex
     for t in v['metadata']['container']['tags']:
         if any(re.match(pattern, t) for pattern in TAGS_TO_ALWAYS_KEEP):
-            references_to_keep.add(v['name'])
-            tags_to_keep.update(v['metadata']['container']['tags'])
+            print(f"Keeping {v['name']} because tag '{t}' matches always-keep pattern")
+            description = v.get('description', '').lower()
+            if 'helm' in description:
+                helm_tags_to_keep.update(v['metadata']['container']['tags'])
+            else:
+                multiarch_image_tags_to_keep.update(v['metadata']['container']['tags'])
             break
 
 # 3. Fetch manifests to get multi-arch digests
 print("Keeping all digests referenced by those tags...")
 
-for tag in tags_to_keep:
-    manifest = fetch_manifest(tag)
+print("  Tracing back multi arch images...")
+for tag in multiarch_image_tags_to_keep:
+    manifest, digest = fetch_manifest(tag)
+    references_to_keep.add(digest)
+
     if manifest and 'manifests' in manifest:
         for m in manifest['manifests']:
             references_to_keep.add(m['digest'])
+
+print("  Tracing back helm package signatures...")
+for tag in helm_tags_to_keep:
+    _, digest_of_helm_chart = fetch_manifest(tag)
+    references_to_keep.add(digest_of_helm_chart)
+
+    # replace : with - in tag to get the signature tag
+    tag_of_reference_file = digest_of_helm_chart.replace(':', '-')
+    manifest, digest_of_signature_reference_file = fetch_manifest(tag_of_reference_file)
+    if manifest and digest_of_signature_reference_file:
+        references_to_keep.add(digest_of_signature_reference_file)
+
+        # add references for signature files
+        for m in manifest.get('manifests', []):
+            if 'digest' in m:
+                references_to_keep.add(m['digest'])
 
 print(f"Found {len(references_to_keep)} referenced digests")
 
