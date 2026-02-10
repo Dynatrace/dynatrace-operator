@@ -221,6 +221,8 @@ jobs:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
           version: v3.17.3
       - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          package-manager-cache: false
       - name: Check deepcopy files are up-to-date
         id: deepcopy
         run: |
