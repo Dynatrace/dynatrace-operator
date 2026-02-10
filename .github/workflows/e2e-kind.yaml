@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Check comment and get PR details
         id: check-comment
         uses: ./.github/actions/check-comment
@@ -50,6 +52,7 @@ jobs:
         with:
           ref: ${{ needs.check-comment.outputs.pr_sha }}
           fetch-depth: 0
+          persist-credentials: false
       - name: Setup up kind
         uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # v1.13.0
         with:

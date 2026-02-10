@@ -66,11 +66,13 @@ runs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         path: ref
+        persist-credentials: false
     - name: Checkout target branch
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         ref: ${{ inputs.target-branch || 'main' }}
         path: target
+        persist-credentials: false
     - name: Set up kubectl
       uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
     - name: Set up go

@@ -67,6 +67,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Run e2e test
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
@@ -124,6 +126,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@f24ce3360a8abf9bf386a62ab13d0ae5de5f9d13 # 0.31.7
         id: get-matrix-outputs
         with:
