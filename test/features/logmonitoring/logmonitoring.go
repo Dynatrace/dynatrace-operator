@@ -20,8 +20,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
@@ -65,18 +65,18 @@ func Feature(t *testing.T) features.Feature {
 	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	require.NoError(t, err)
 
-	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,
+	agSecret := k8ssecret.New(consts.AgSecretName, testDynakube.Namespace,
 		map[string][]byte{
 			dynakube.ServerCertKey:                 agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		})
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("log agent started", daemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("log agent started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("log monitoring conditions", checkConditions(testDynakube.Name, testDynakube.Namespace, true))
 
@@ -84,7 +84,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
-	builder.WithTeardown("deleted ag secret", secret.Delete(agSecret))
+	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 
 	return builder.Feature()
 }
@@ -118,7 +118,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("log agent started", daemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("log agent started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("log monitoring conditions with disabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, false))
 
@@ -126,7 +126,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	builder.Assess("trigger reconcile", triggerDaemonSetReconcile(testDynakube))
 
-	builder.Assess("log agent restarted", daemonset.WaitForDaemonset(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("log agent restarted", k8sdaemonset.WaitForDaemonset(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("log monitoring conditions with enabled scopes", checkConditions(testDynakube.Name, testDynakube.Namespace, true))
 
@@ -171,7 +171,7 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		logMonitoring := daemonset.NewQuery(ctx, resources, client.ObjectKey{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace})
+		logMonitoring := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace})
 
 		logMonDaemonSet, err := logMonitoring.Get()
 		require.NoError(t, err)

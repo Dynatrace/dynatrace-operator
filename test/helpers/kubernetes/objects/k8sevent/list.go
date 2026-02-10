@@ -1,6 +1,6 @@
 //go:build e2e
 
-package event
+package k8sevent
 
 import (
 	"context"

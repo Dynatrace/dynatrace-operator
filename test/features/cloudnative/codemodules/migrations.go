@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -29,7 +29,7 @@ func MigrateToImage(t *testing.T) features.Feature {
 	)
 
 	labels := appDynakube.OneAgent().GetNamespaceSelector().MatchLabels
-	sampleNamespace := *namespace.New("codemodules-sample", namespace.WithLabels(labels))
+	sampleNamespace := *k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &appDynakube,
 		sample.AsDeployment(),
@@ -78,7 +78,7 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 	)
 
 	labels := appDynakube.OneAgent().GetNamespaceSelector().MatchLabels
-	sampleNamespace := *namespace.New("codemodules-sample", namespace.WithLabels(labels))
+	sampleNamespace := *k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &appDynakube,
 		sample.AsDeployment(),

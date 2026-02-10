@@ -1,12 +1,12 @@
 //go:build e2e
 
-package namespace
+package k8snamespace
 
 import (
 	"context"
 	"path/filepath"
 
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	corev1 "k8s.io/api/core/v1"

@@ -1,6 +1,6 @@
 //go:build e2e
 
-package pod
+package k8spod
 
 import (
 	"context"

@@ -17,9 +17,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	componentActiveGate "github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tls"
@@ -58,7 +58,7 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("otel collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
 
@@ -87,12 +87,12 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 
 	agSecret, err := createAgTLSSecret(testDynakube.Namespace)
 	require.NoError(t, err, "failed to create ag-tls secret")
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
 
-	builder.Assess("otel collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
 	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakube))
@@ -138,18 +138,18 @@ func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature {
 	tlsSecret, err := tls.CreateTestdataTLSSecret(testDynakube.Namespace, consts.TelemetryIngestTLSSecretName, TelemetryIngestTLSKey, TelemetryIngestTLSCrt)
 	require.NoError(t, err, "failed to create TLS secret for otel collector endpoints")
 
-	builder.Assess("create OTel collector endpoint TLS secret", secret.Create(tlsSecret))
+	builder.Assess("create OTel collector endpoint TLS secret", k8ssecret.Create(tlsSecret))
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
-	builder.Assess("otel collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakube))
 	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakube))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
-	builder.WithTeardown("deleted OTel collector endpoint TLS secret", secret.Delete(tlsSecret))
+	builder.WithTeardown("deleted OTel collector endpoint TLS secret", k8ssecret.Delete(tlsSecret))
 
 	return builder.Feature()
 }
@@ -170,7 +170,7 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakubeZipkin)
 
-	builder.Assess("otel collector started", statefulset.IsReady(testDynakubeZipkin.OtelCollectorStatefulsetName(), testDynakubeZipkin.Namespace))
+	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakubeZipkin.OtelCollectorStatefulsetName(), testDynakubeZipkin.Namespace))
 	builder.Assess("otel collector config created", checkOtelCollectorConfig(&testDynakubeZipkin))
 	builder.Assess("otel collector service created", checkOtelCollectorService(&testDynakubeZipkin))
 	builder.Assess("otel collector endpoint configmap created", checkOtelCollectorEndpointConfigMap(&testDynakubeZipkin))
@@ -190,7 +190,7 @@ func OtelCollectorConfigUpdate(t *testing.T) features.Feature {
 	testDynakubeJaeger := *componentDynakube.New(optionsJaeger...)
 	componentDynakube.Update(builder, helpers.LevelAssess, testDynakubeJaeger)
 
-	builder.Assess("otel collector updated", statefulset.WaitFor(testDynakubeJaeger.OtelCollectorStatefulsetName(), testDynakubeJaeger.Namespace))
+	builder.Assess("otel collector updated", k8sstatefulset.WaitFor(testDynakubeJaeger.OtelCollectorStatefulsetName(), testDynakubeJaeger.Namespace))
 	builder.Assess("otel collector config updated", checkOtelCollectorConfig(&testDynakubeJaeger))
 	builder.Assess("otel collector service updated", checkOtelCollectorService(&testDynakubeJaeger))
 
@@ -336,7 +336,7 @@ func getOtelCollectorPodTimestamp(dk *dynakube.DynaKube, startTimestamp *time.Ti
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		podList := pod.GetPodsForOwner(ctx, t, resources, dk.OtelCollectorStatefulsetName(), dk.Namespace)
+		podList := k8spod.GetPodsForOwner(ctx, t, resources, dk.OtelCollectorStatefulsetName(), dk.Namespace)
 
 		expectedPodCount := 1
 		if dk.Spec.Templates.OpenTelemetryCollector.Replicas != nil && *dk.Spec.Templates.OpenTelemetryCollector.Replicas >= 1 {
@@ -418,7 +418,7 @@ func createAgTLSSecret(namespace string) (corev1.Secret, error) {
 		return corev1.Secret{}, err
 	}
 
-	return secret.New(consts.AgSecretName, namespace,
+	return k8ssecret.New(consts.AgSecretName, namespace,
 		map[string][]byte{
 			dynakube.ServerCertKey:                 agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,

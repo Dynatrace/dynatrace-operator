@@ -1,6 +1,6 @@
 //go:build e2e
 
-package secret
+package k8ssecret
 
 import (
 	"context"

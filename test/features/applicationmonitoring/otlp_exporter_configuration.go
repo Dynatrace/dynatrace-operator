@@ -17,7 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -145,7 +145,7 @@ func podHasNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) features.Fun
 
 func deploymentPodsHaveOTLPExporterEnvVarsInjected(app *sample.App, expectedBase string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		query := deployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
+		query := k8sdeployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
 
 		err := query.ForEachPod(func(p corev1.Pod) { assertOTLPEnvVarsPresentWithResourceAttributes(t, &p, expectedBase) })
 		require.NoError(t, err)
@@ -156,7 +156,7 @@ func deploymentPodsHaveOTLPExporterEnvVarsInjected(app *sample.App, expectedBase
 
 func deploymentPodsHaveNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		query := deployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
+		query := k8sdeployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
 		err := query.ForEachPod(func(p corev1.Pod) { assertOTLPEnvVarsAbsent(t, &p) })
 		require.NoError(t, err)
 

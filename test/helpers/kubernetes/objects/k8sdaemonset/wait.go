@@ -1,6 +1,6 @@
 //go:build e2e
 
-package daemonset
+package k8sdaemonset
 
 import (
 	"context"

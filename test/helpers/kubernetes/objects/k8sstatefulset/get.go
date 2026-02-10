@@ -1,6 +1,6 @@
 //go:build e2e
 
-package statefulset
+package k8sstatefulset
 
 import (
 	"context"

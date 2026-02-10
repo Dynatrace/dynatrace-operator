@@ -1,6 +1,6 @@
 //go:build e2e
 
-package job
+package k8sjob
 
 import (
 	"context"
