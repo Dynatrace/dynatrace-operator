@@ -1,0 +1,28 @@
+name: Cleanup GHCR Packages
+
+on:
+  schedule:
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run GHCR cleanup
+        uses: ./.github/actions/cleanup-ghcr
+        with:
+          org: "dynatrace"
+          package: "dynatrace-operator"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dry-run: true
+          package-repo-type: "orgs"
+          keep-days: "14"
+          tags-to-keep: "^snapshot$,^snapshot-release-.*"
