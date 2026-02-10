@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 23 * * *'
   workflow_dispatch:
+  push:
+    branches:
+      - feature/ghcr-cleanup
+  pull_request:
+    branches:
+      - feature/ghcr-cleanup
 
 jobs:
   cleanup:
