@@ -331,7 +331,7 @@ This design allows using a single container image with different entry points fo
 
 - **Unit Tests**: Test individual functions and components in isolation
 - **Integration Tests**: Test controller behavior with fake Kubernetes clients
-- **E2E Tests**: Full end-to-end testing in real clusters ([test/scenarios](./test/scenarios))
+- **E2E Tests**: Full end-to-end testing in real clusters ([test/e2e/scenarios](./test/e2e/scenarios))
 - **Mocks**: Generated using mockery for external dependencies
 
 ## Additional Resources
