@@ -42,6 +42,7 @@ func (c Generic[T, L]) Get(ctx context.Context, objectKey client.ObjectKey) (T, 
 }
 
 func (c Generic[T, L]) Create(ctx context.Context, object T) error {
+	logd.FromContext(ctx).Info("creating object", "object", object)
 	c.log(object).Info("creating")
 
 	err := hasher.AddAnnotation(object)
@@ -60,6 +61,7 @@ func (c Generic[T, L]) Create(ctx context.Context, object T) error {
 }
 
 func (c Generic[T, L]) Update(ctx context.Context, object T) error {
+	logd.FromContext(ctx).Info("updating object", "object", object)
 	c.log(object).Info("updating")
 
 	err := hasher.AddAnnotation(object)
@@ -78,6 +80,9 @@ func (c Generic[T, L]) Update(ctx context.Context, object T) error {
 }
 
 func (c Generic[T, L]) Delete(ctx context.Context, object T, options ...client.DeleteOption) error {
+	// TODO: see if KubeAwareEncoder makes log(object) obsolete
+	logd.FromContext(ctx).Info("deleting object", "object", object)
+
 	c.log(object).Info("deleting")
 
 	err := c.KubeClient.Delete(ctx, object, options...)
@@ -104,12 +109,16 @@ func (c Generic[T, L]) CreateOrUpdate(ctx context.Context, newObject T) (bool, e
 	}
 
 	if c.IsEqual(currentObject, newObject) {
+		// TODO: see if KubeAwareEncoder makes log(object) obsolete
+		logd.FromContext(ctx).Info("update not needed, no changes detected", "object", newObject)
 		c.log(newObject).Info("update not needed, no changes detected")
 
 		return false, nil
 	}
 
 	if c.MustRecreate(currentObject, newObject) {
+		// TODO: see if KubeAwareEncoder makes log(object) obsolete
+		logd.FromContext(ctx).Info("recreation needed, immutable change detected", "object", newObject)
 		c.log(newObject).Info("recreation needed, immutable change detected")
 
 		err := c.Recreate(ctx, newObject)
@@ -141,6 +150,8 @@ func (c Generic[T, L]) Recreate(ctx context.Context, object T) error {
 }
 
 func (c Generic[T, L]) GetAllFromNamespaces(ctx context.Context, objectName string) ([]T, error) {
+
+	logd.FromContext(ctx).Info("querying from all namespaces", "objectName", objectName)
 	c.Log.Info("querying from all namespaces", "name", objectName)
 
 	listOps := []client.ListOption{
@@ -160,6 +171,7 @@ func (c Generic[T, L]) CreateOrUpdateForNamespaces(ctx context.Context, object T
 		return err
 	}
 
+	logd.FromContext(ctx).Info("reconciling objects for multiple namespaces", "len(namespaces)", len(namespaces))
 	c.log(object).Info("reconciling objects for multiple namespaces", "len(namespaces)", len(namespaces))
 
 	namespacesContainingObject := make(map[string]T, len(objects))
@@ -178,6 +190,7 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 
 	for _, namespace := range namespaces {
 		if namespace.Status.Phase == corev1.NamespaceTerminating {
+			logd.FromContext(ctx).Info("skipping terminating namespace", "namespace", namespace.Name)
 			c.Log.Info("skipping terminating namespace", "namespace", namespace.Name)
 
 			continue
@@ -212,12 +225,14 @@ func (c Generic[T, L]) createOrUpdateForNamespaces(ctx context.Context, object T
 		}
 	}
 
+	logd.FromContext(ctx).Info("reconciled objects for multiple namespaces", "creationCount", creationCount, "updateCount", updateCount, "object", object)
 	c.log(object).Info("reconciled objects for multiple namespaces", "creationCount", creationCount, "updateCount", updateCount)
 
 	return goerrors.Join(errs...)
 }
 
 func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string, namespace string, options ...client.DeleteOption) error {
+	logd.FromContext(ctx).Info("deleting object from namespace", "name", objectName, "namespace", namespace)
 	c.Log.Info("deleting object from namespace", "name", objectName, "namespace", namespace)
 
 	c.Target.SetName(objectName)
@@ -227,6 +242,7 @@ func (c Generic[T, L]) DeleteForNamespace(ctx context.Context, objectName string
 }
 
 func (c Generic[T, L]) DeleteForNamespaces(ctx context.Context, objectName string, namespaces []string) error {
+	logd.FromContext(ctx).Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
 	c.Log.Info("deleting objects from multiple namespaces", "name", objectName, "len(namespaces)", len(namespaces))
 
 	errs := make([]error, 0, len(namespaces))

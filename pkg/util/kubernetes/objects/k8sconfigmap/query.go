@@ -31,7 +31,7 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 
 			KubeClient: kubeClient,
 			KubeReader: kubeReader,
-			Log:        log,
+			Log:        log.WithName("k8sconfigmap-query"),
 		},
 	}
 }

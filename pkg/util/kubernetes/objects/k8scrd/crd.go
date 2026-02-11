@@ -47,7 +47,7 @@ func IsLatestVersion(ctx context.Context, apiReader client.Reader, crdName strin
 	}
 
 	if appVersion != crdVersion {
-		log.Info("outdated CRD version", "CRD name", crdName, "CRD version", crdVersion, "expected version", appVersion)
+		log.ErrorCode(nil, "outdated CRD version", "DTERROCODE", "CRD name", crdName, "CRD version", crdVersion, "expected version", appVersion)
 
 		return false, nil
 	}

@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -89,6 +90,9 @@ func NewReconciler(clt client.Client,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+
+	ctx, log := logd.NewFromContext(ctx, "activegate-reconciler")
+
 	// If AG is not used or was not cleaned up due to being previously enabled
 	// Split the `if` for better logging.
 	if !r.dk.ActiveGate().IsEnabled() {
@@ -150,6 +154,8 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
 	if !r.dk.ActiveGate().IsEnabled() {
 		// TODO: Add clean up of the config map
 		return nil

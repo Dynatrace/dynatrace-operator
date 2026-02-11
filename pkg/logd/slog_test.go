@@ -1,6 +1,7 @@
 package logd
 
 import (
+	"errors"
 	"log/slog"
 	"testing"
 	"time"
@@ -83,5 +84,18 @@ func TestSlog(t *testing.T) {
 			{"level":"info","ts":"2026-01-14T16:42:01.892+0100","caller":"logd/slog_test.go:76","msg":"Info log"}
 			{"level":"Level(-4)","ts":"2026-01-14T16:42:01.892+0100","caller":"logd/slog_test.go:77","msg":"Debug log"}
 		*/
+	})
+
+	t.Run("slog via wrapper", func(t *testing.T) {
+		logger := Logger{
+			//Logger: newZapLogger(NewPrettyLogWriter(), logLevel),
+			Logger: newSlogger(t.Output(), TraceLevel),
+		}
+
+		logger.Error(errors.New("Error"), "ErrorLog", "key-error", "value-error")
+		logger.Warn("WarnLog", "key-warn", "value-warn")
+		logger.Info("InfoLog", "key-info", "value-info")
+		logger.Debug("DebugLog", "key-debug", "value-debug")
+		logger.Trace("TraceLog", "key-trace", "value-trace")
 	})
 }

@@ -1,10 +1,24 @@
 package logd
 
-/*
-func NewSlogger() logr.Logger {
+import (
+	"github.com/go-logr/logr"
+	"io"
+	"log/slog"
+	"time"
+)
+
+var logLevel slog.LevelVar
+
+func SetLogLevel(lvl LogLevel) {
+	logLevel.Set(slog.Level(lvl))
+}
+
+func newSlogger(out io.Writer, logLevel LogLevel) logr.Logger {
 	// make dynamic changing of log level possible
 	var lv slog.LevelVar
-	lv.Set(slog.LevelInfo)
+	// TODO: remove override
+	logLevel = LogLevel(slog.LevelDebug)
+	lv.Set(slog.Level(logLevel))
 
 	handlerOpts := &slog.HandlerOptions{
 		AddSource: false,
@@ -28,8 +42,7 @@ func NewSlogger() logr.Logger {
 		},
 	}
 
-	jsonHandler := slog.NewJSONHandler(os.Stdout, handlerOpts)
+	jsonHandler := slog.NewJSONHandler(out, handlerOpts)
 
 	return logr.FromSlogHandler(jsonHandler)
 }
-*/

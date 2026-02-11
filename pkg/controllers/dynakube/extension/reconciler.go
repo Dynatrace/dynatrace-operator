@@ -37,10 +37,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 }
 
 func (r *reconciler) Reconcile(ctx context.Context) error {
-	ctx, log := logd.NewFromContext(ctx, "extensions", "domain", "extensions")
+	ctx, log := logd.NewFromContext(ctx, "extensions-reconciler")
 	r.secrets.Log = log
 
-	log.Info("start reconciling extensions")
+	log.Enter("extensions-reconciler")
 
 	err := r.reconcileSecret(ctx)
 	if err != nil {
@@ -65,6 +65,8 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	if err := databases.NewReconciler(r.client, r.apiReader, r.dk).Reconcile(ctx); err != nil {
 		return err
 	}
+
+	log.ExitSuccess("extensions-reconciler", "")
 
 	return nil
 }

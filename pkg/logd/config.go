@@ -1,5 +1,7 @@
 package logd
 
+import "sync"
+
 const (
 	stacktraceKey   = "stacktrace"
 	errorVerboseKey = "errorVerbose"
@@ -11,14 +13,18 @@ type loggingConfig struct {
 }
 
 var (
-	config loggingConfig
-	// configOnce sync.Once
+	config     loggingConfig
+	configOnce sync.Once
 )
 
-/*
+func init() {
+	LoadConfig()
+}
+
 func LoadConfig() {
 	configOnce.Do(func() {
-		// read from ConfigMap
+		//TODO: read from ConfigMap
+		config.LogEnterExits = true
+		config.LogLevel = TraceLevel
 	})
 }
-*/

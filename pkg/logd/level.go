@@ -2,17 +2,33 @@ package logd
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
+	"log/slog"
 	"strings"
 )
 
-type LogLevel int8
+type LogLevel slog.Level
+
+/*
+const (
+	// these values are chosen to correspond with zapcore.Level values
+	TraceLevel LogLevel = 3
+	DebugLevel LogLevel = 2
+	InfoLevel  LogLevel = 1
+	WarnLevel  LogLevel = 0
+	ErrorLevel LogLevel = -1
+
+	DefaultLevel = InfoLevel
+)
+*/
 
 const (
-	TraceLevel LogLevel = 4
-	DebugLevel LogLevel = 3
-	InfoLevel  LogLevel = 2
-	WarnLevel  LogLevel = 1
-	ErrorLevel LogLevel = 0
+	// these values are chosen to correspond with zapcore.Level values
+	TraceLevel LogLevel = LogLevel(slog.LevelDebug - 4)
+	DebugLevel LogLevel = LogLevel(slog.LevelDebug)
+	InfoLevel  LogLevel = LogLevel(slog.LevelInfo)
+	WarnLevel  LogLevel = LogLevel(slog.LevelWarn)
+	ErrorLevel LogLevel = LogLevel(slog.LevelError)
 
 	DefaultLevel = InfoLevel
 )
@@ -51,4 +67,25 @@ func ParseLogLevel(level string) (LogLevel, error) {
 	default:
 		return DefaultLevel, fmt.Errorf("unknown log level: %s", level)
 	}
+}
+
+func Error(log logr.Logger, err error, msg string, keysAndValues ...any) {
+	// error logs can't be blocked, no log level check done in logrus
+	log.Error(err, msg, keysAndValues...)
+}
+
+func Warn(log logr.Logger, msg string, keysAndValues ...any) {
+	log.V(int(WarnLevel)).Info(msg, keysAndValues...)
+}
+
+func Info(log logr.Logger, msg string, keysAndValues ...any) {
+	log.V(int(InfoLevel)).Info(msg, keysAndValues...)
+}
+
+func Debug(log logr.Logger, msg string, keysAndValues ...any) {
+	log.V(int(DebugLevel)).Info(msg, keysAndValues...)
+}
+
+func Trace(log logr.Logger, msg string, keysAndValues ...any) {
+	log.V(int(TraceLevel)).Info(msg, keysAndValues...)
 }

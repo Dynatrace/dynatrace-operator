@@ -20,7 +20,9 @@ import (
 const DeprecatedOtelcTokenSecretKey = "otelc.token"
 
 func (r *reconciler) reconcileSecret(ctx context.Context) error {
-	log := logd.FromContext(ctx)
+	ctx, log := logd.NewFromContext(ctx, "secret-reconciler")
+
+	log.Enter("start reconciling extension secrets")
 
 	if !r.dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
@@ -30,14 +32,14 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 		secret, err := r.buildSecret(dttoken.Token{}, dttoken.Token{})
 		if err != nil {
-			log.Error(err, "failed to generate extension secret during cleanup")
+			log.ExitError(err, "failed to generate extension secret during cleanup")
 
 			return nil
 		}
 
 		err = r.secrets.Delete(ctx, secret)
 		if err != nil {
-			log.Error(err, "failed to clean up extension secret")
+			log.ExitError(err, "failed to clean up extension secret")
 
 			return nil
 		}
@@ -47,7 +49,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 	existingSecret, err := r.secrets.Get(ctx, client.ObjectKey{Name: r.getSecretName(), Namespace: r.dk.Namespace})
 	if err != nil && !k8serrors.IsNotFound(err) {
-		log.Info("failed to check existence of extension secret")
+		log.ExitFail("failed to check existence of extension secret")
 		conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
 
 		return err
@@ -59,7 +61,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	if k8serrors.IsNotFound(err) || migrationNeeded {
 		newEecToken, err := dttoken.New(eecConsts.TokenSecretValuePrefix)
 		if err != nil {
-			log.Info("failed to generate eec token")
+			log.ExitFail("failed to generate eec token")
 			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating eec token"))
 
 			return err
@@ -67,7 +69,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 		newOtelcToken, err := dttoken.New(consts.DatasourceTokenSecretValuePrefix)
 		if err != nil {
-			log.Info("failed to generate otelc token")
+			log.ExitFail("failed to generate otelc token")
 			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, errors.Wrap(err, "error generating otelc token"))
 
 			return err
@@ -75,7 +77,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 		newSecret, err := r.buildSecret(*newEecToken, *newOtelcToken)
 		if err != nil {
-			log.Info("failed to generate extension secret")
+			log.ExitFail("failed to generate extension secret")
 			conditions.SetSecretGenFailed(r.dk.Conditions(), secretConditionType, err)
 
 			return err
@@ -83,7 +85,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 
 		_, err = r.secrets.CreateOrUpdate(ctx, newSecret)
 		if err != nil {
-			log.Info("failed to create/update extension secret")
+			log.ExitFail("failed to create/update extension secret")
 			conditions.SetKubeAPIError(r.dk.Conditions(), secretConditionType, err)
 
 			return err
@@ -91,6 +93,8 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	}
 
 	conditions.SetSecretCreated(r.dk.Conditions(), secretConditionType, r.getSecretName())
+
+	log.ExitSuccess("extensions-secrets", "successfully reconciled extension secret")
 
 	return nil
 }

@@ -16,23 +16,46 @@ func newZapLogger(out io.Writer, logLevel LogLevel) logr.Logger {
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 	config.StacktraceKey = stacktraceKey
 	//	config.LevelKey = ""
-	config.EncodeLevel = func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
-		switch int(l) * -1 {
-		case int(TraceLevel):
-			enc.AppendString("trace")
-		case int(DebugLevel):
-			enc.AppendString("debug")
-		case int(InfoLevel):
-			enc.AppendString("info")
-		case int(WarnLevel):
-			enc.AppendString("warn")
-		case int(zapcore.ErrorLevel) * -1:
-			// errors are handled differently
-			enc.AppendString("error")
-		default:
-			enc.AppendString("unknown")
-		}
-	}
+	/*
+		config.EncodeLevel = func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+			switch int(l) * -1 {
 
-	return ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewJSONEncoder(config)), ctrlzap.Level(zapcore.Level(logLevel*-1)))
+			// TODO: our debug levels and zaplevels overlap inconsistently, fix it
+			case int(TraceLevel):
+				enc.AppendString("trace")
+			case int(DebugLevel):
+				enc.AppendString("debug")
+			case int(InfoLevel):
+				enc.AppendString("info")
+			case int(WarnLevel):
+				enc.AppendString("warn")
+			case int(zapcore.PanicLevel) * -1:
+				enc.AppendString("panic")
+			case int(zapcore.DPanicLevel) * -1:
+				enc.AppendString("dpanic")
+			case int(zapcore.ErrorLevel) * -1:
+				// errors are handled differently
+				enc.AppendString("error")
+			case int(zapcore.WarnLevel) * -1:
+				enc.AppendString("warn")
+			case int(zapcore.InfoLevel) * -1:
+				enc.AppendString("info")
+				//		case int(zapcore.WarnLevel) * -1:
+				//			enc.AppendString("warn")
+
+			default:
+				enc.AppendString("unknown")
+			}
+		}
+	*/
+	//encoder := zapcore.NewConsoleEncoder(config)
+	encoder := zapcore.NewJSONEncoder(config)
+
+	// This causes that the whole DK status is written to the log lines
+	/*	encoder := &ctrlzap.KubeAwareEncoder{
+		Encoder: zapcore.NewJSONEncoder(config),
+		Verbose: false,
+	}*/
+
+	return ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(encoder), ctrlzap.Level(zapcore.Level(logLevel*-1)))
 }

@@ -1,7 +1,6 @@
 package logd
 
 import (
-	"context"
 	"os"
 	"sync"
 
@@ -24,7 +23,8 @@ func Get() Logger {
 	baseLoggerOnce.Do(func() {
 		logLevel, err := readLogLevelFromEnv()
 		baseLogger = Logger{
-			Logger: newZapLogger(NewPrettyLogWriter(), logLevel),
+			//Logger: newZapLogger(NewPrettyLogWriter(), logLevel),
+			Logger: newSlogger(NewPrettyLogWriter(), logLevel),
 		}
 
 		if err != nil {
@@ -33,29 +33,6 @@ func Get() Logger {
 	})
 
 	return baseLogger
-}
-
-func FromContext(ctx context.Context) Logger {
-	log := baseLogger
-
-	if ctx != nil {
-		if logger, err := logr.FromContext(ctx); err == nil {
-			log = Logger{logger}
-		}
-	}
-
-	return log
-}
-
-func NewContext(ctx context.Context, logger Logger) context.Context {
-	return logr.NewContext(ctx, logger.Logger)
-}
-
-func NewFromContext(ctx context.Context, name string, keysAndValues ...any) (context.Context, Logger) {
-	log := FromContext(ctx).WithName(name)
-	ctx = NewContext(ctx, log)
-
-	return ctx, log
 }
 
 func LogBaseLoggerSettings() {
