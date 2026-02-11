@@ -51,4 +51,4 @@ runs:
         RETENTION_PERIOD_IN_DAYS: ${{ inputs.keep-days }}
         TAGS_TO_ALWAYS_KEEP: ${{ inputs.tags-to-keep }}
       run: |
-        ./${{ github.action_path }}/cleanup.py
+        python ${{ github.action_path }}/cleanup.py
