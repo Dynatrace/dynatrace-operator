@@ -1,6 +1,6 @@
 //go:build e2e
 
-package deployment
+package k8sdeployment
 
 import (
 	"context"

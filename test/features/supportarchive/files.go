@@ -16,11 +16,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	e2ewebhook "github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/service"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sevent"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sreplicaset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sservice"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,7 +78,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 }
 
 func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool) []string {
-	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	pods := k8spod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 
 	podList := filter(pods.Items, func(podItem corev1.Pod) bool {
@@ -111,7 +111,7 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 		return requiredFiles
 	}
 
-	pods := pod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	pods := k8spod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 
 	podList := filter(pods.Items, func(podItem corev1.Pod) bool {
 		appNamelabel, okAppNamelabel := podItem.Labels[k8slabel.AppNameLabel]
@@ -129,7 +129,7 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 }
 
 func (r requiredFiles) getRequiredReplicaSetFiles() []string {
-	replicaSets := replicaset.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	replicaSets := k8sreplicaset.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 	for _, replicaSet := range replicaSets.Items {
 		requiredFiles = append(requiredFiles,
@@ -143,7 +143,7 @@ func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 }
 
 func (r requiredFiles) getRequiredStatefulSetFiles() []string {
-	statefulSet, err := statefulset.NewQuery(r.ctx, r.resources, client.ObjectKey{
+	statefulSet, err := k8sstatefulset.NewQuery(r.ctx, r.resources, client.ObjectKey{
 		Namespace: r.dk.Namespace,
 		Name:      "dynakube-activegate"}).Get()
 	require.NoError(r.t, err)
@@ -172,7 +172,7 @@ func (r requiredFiles) getRequiredDaemonSetFiles() []string {
 }
 
 func (r requiredFiles) getRequiredServiceFiles() []string {
-	services := service.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	services := k8sservice.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 	for _, requiredService := range services.Items {
 		requiredFiles = append(requiredFiles,
@@ -356,7 +356,7 @@ func (r requiredFiles) getRequiredEventFiles() []string {
 		options.Limit = int64(supportarchive.NumEventsFlagValue)
 		options.FieldSelector = fmt.Sprint(supportarchive.DefaultEventFieldSelector)
 	}
-	events := event.List(r.t, r.ctx, r.resources, r.dk.Namespace, optFunc)
+	events := k8sevent.List(r.t, r.ctx, r.resources, r.dk.Namespace, optFunc)
 	requiredFiles := make([]string, 0)
 
 	for _, requiredEvent := range events.Items {

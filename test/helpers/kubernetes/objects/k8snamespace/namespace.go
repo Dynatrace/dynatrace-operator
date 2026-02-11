@@ -1,6 +1,6 @@
 //go:build e2e
 
-package namespace
+package k8snamespace
 
 import (
 	"context"

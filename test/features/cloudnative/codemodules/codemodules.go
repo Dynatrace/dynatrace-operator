@@ -25,12 +25,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/configmap"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sconfigmap"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdeployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
@@ -87,7 +87,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 	)
 
 	labels := cloudNativeDynakube.OneAgent().GetNamespaceSelector().MatchLabels
-	sampleNamespace := *namespace.New("codemodules-sample", namespace.WithLabels(labels))
+	sampleNamespace := *k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
 		sample.AsDeployment(),
@@ -150,7 +150,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 		}),
 	)
 
-	sampleNamespace := *namespace.New("codemodules-sample-with-proxy", namespace.WithIstio())
+	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy", k8snamespace.WithIstio())
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
@@ -217,7 +217,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 		dynakubeComponents.WithProxy(proxySpec),
 	)
 
-	sampleNamespace := *namespace.New("codemodules-sample-with-proxy-custom-ca", namespace.WithIstio())
+	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
@@ -230,12 +230,12 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	agCrt, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificate))
 	// public certificate and private key for ActiveGate server
 	agP12, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
-	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
+	agSecret := k8ssecret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
 			dynakube.ServerCertKey:          agCrt,
 			agCertificateAndPrivateKeyField: agP12,
 		})
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithTeardown(t, builder, cloudNativeDynakube)
@@ -263,7 +263,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
-	builder.WithTeardown("custom tls secret exists", secret.Exists(agSecretName, cloudNativeDynakube.Namespace))
+	builder.WithTeardown("custom tls secret exists", k8ssecret.Exists(agSecretName, cloudNativeDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -282,7 +282,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 		dynakubeComponents.WithProxy(proxySpec),
 	)
 
-	sampleNamespace := *namespace.New("codemodules-sample-with-proxy", namespace.WithIstio())
+	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy", k8snamespace.WithIstio())
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
@@ -346,7 +346,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 		dynakubeComponents.WithProxy(proxySpec),
 	)
 
-	sampleNamespace := *namespace.New("codemodules-sample-with-proxy-custom-ca", namespace.WithIstio())
+	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
@@ -359,21 +359,21 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	agCrt, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificate))
 	// public certificate and private key for ActiveGate server
 	agP12, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
-	agSecret := secret.New(agSecretName, cloudNativeDynakube.Namespace,
+	agSecret := k8ssecret.New(agSecretName, cloudNativeDynakube.Namespace,
 		map[string][]byte{
 			dynakube.ServerCertKey:          agCrt,
 			agCertificateAndPrivateKeyField: agP12,
 		})
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	proxyCert, proxyPk, err := proxy.CreateProxyTLSCertAndKey()
 	require.NoError(t, err, "failed to create proxy TLS secret")
 
 	// Add customCA config map
 	trustedCa := proxyCert
-	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
+	caConfigMap := k8sconfigmap.New(configMapName, cloudNativeDynakube.Namespace,
 		map[string]string{dynakube.TrustedCAKey: string(trustedCa)})
-	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
+	builder.Assess("create trusted CAs config map", k8sconfigmap.Create(caConfigMap))
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube, proxyCert, proxyPk)
@@ -401,8 +401,8 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
-	builder.WithTeardown("deleted trusted CAs config map", configmap.Delete(caConfigMap))
-	builder.WithTeardown("custom tls secret exists", secret.Exists(agSecretName, cloudNativeDynakube.Namespace))
+	builder.WithTeardown("deleted trusted CAs config map", k8sconfigmap.Delete(caConfigMap))
+	builder.WithTeardown("custom tls secret exists", k8ssecret.Exists(agSecretName, cloudNativeDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -423,7 +423,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 		dynakubeComponents.WithProxy(proxySpec),
 	)
 
-	sampleNamespace := *namespace.New("codemodules-sample-with-proxy-custom-ca", namespace.WithIstio())
+	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
 	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
@@ -436,9 +436,9 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 
 	// Add customCA config map
 	trustedCa := proxyCert
-	caConfigMap := configmap.New(configMapName, cloudNativeDynakube.Namespace,
+	caConfigMap := k8sconfigmap.New(configMapName, cloudNativeDynakube.Namespace,
 		map[string]string{dynakube.TrustedCAKey: string(trustedCa)})
-	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
+	builder.Assess("create trusted CAs config map", k8sconfigmap.Create(caConfigMap))
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube, proxyCert, proxyPk)
@@ -474,7 +474,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, cloudNativeDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(cloudNativeDynakube.Name, cloudNativeDynakube.Namespace))
-	builder.WithTeardown("deleted trusted CAs config map", configmap.Delete(caConfigMap))
+	builder.WithTeardown("deleted trusted CAs config map", k8sconfigmap.Delete(caConfigMap))
 
 	return builder.Feature()
 }
@@ -497,7 +497,7 @@ func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
 		require.NoError(t, err)
 
-		err = daemonset.NewQuery(ctx, resource, client.ObjectKey{
+		err = k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
@@ -517,7 +517,7 @@ func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 			require.NoError(t, err)
 
 			listCommand := shell.ListDirectory(dataPath)
-			result, err := pod.Exec(ctx, resource, podItem, provisionerContainerName, listCommand...)
+			result, err := k8spod.Exec(ctx, resource, podItem, provisionerContainerName, listCommand...)
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
@@ -532,7 +532,7 @@ func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 func measureDiskUsage(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		err := daemonset.NewQuery(ctx, resource, client.ObjectKey{
+		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
@@ -548,7 +548,7 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		err := daemonset.NewQuery(ctx, resource, client.ObjectKey{
+		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
@@ -568,7 +568,7 @@ func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resourc
 			shell.FilterLastLineOnly(),
 		),
 	)
-	result, err := pod.Exec(ctx, resource, podItem, containerName, diskUsageCommand...)
+	result, err := k8spod.Exec(ctx, resource, podItem, containerName, diskUsageCommand...)
 	require.NoError(t, err)
 
 	diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
@@ -580,7 +580,7 @@ func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resourc
 func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		err := deployment.NewQuery(ctx, resource, client.ObjectKey{
+		err := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
 		}).ForEachPod(func(podItem corev1.Pod) {
@@ -591,7 +591,7 @@ func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 			assert.True(t, isVolumeMounted(t, volumeMounts, oacommon.BinVolumeName))
 
 			listCommand := shell.ListDirectory(oacommon.DefaultInstallPath)
-			executionResult, err := pod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...)
+			executionResult, err := k8spod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
@@ -641,7 +641,7 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
+		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {

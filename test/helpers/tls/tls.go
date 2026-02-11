@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -23,7 +23,7 @@ func CreateTestdataTLSSecret(namespace string, name string, keyFile string, crtF
 		return corev1.Secret{}, err
 	}
 
-	tlsSecret := secret.New(name, namespace,
+	tlsSecret := k8ssecret.New(name, namespace,
 		map[string][]byte{
 			operatorconsts.TLSCrtDataName: tlsCrt,
 			operatorconsts.TLSKeyDataName: tlsKey,

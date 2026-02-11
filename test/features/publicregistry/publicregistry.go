@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -41,7 +41,7 @@ func Feature(t *testing.T) features.Feature {
 	testDynakube := *dynakube.New(options...)
 
 	// Register sample app install
-	sampleNamespace := *namespace.New("public-registry-sample")
+	sampleNamespace := *k8snamespace.New("public-registry-sample")
 	sampleApp := sample.NewApp(t, &testDynakube, sample.WithNamespace(sampleNamespace), sample.AsDeployment())
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
@@ -54,7 +54,7 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
 	// Check if the ActiveGate could start up
-	builder.Assess("ActiveGate started", statefulset.IsReady(activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate"), testDynakube.Namespace))
+	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate"), testDynakube.Namespace))
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())

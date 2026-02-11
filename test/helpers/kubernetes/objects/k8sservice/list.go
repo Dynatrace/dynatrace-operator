@@ -1,6 +1,6 @@
 //go:build e2e
 
-package service
+package k8sservice
 
 import (
 	"context"

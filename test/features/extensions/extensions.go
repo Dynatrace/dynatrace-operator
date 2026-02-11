@@ -12,8 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
@@ -42,26 +42,26 @@ func Feature(t *testing.T) features.Feature {
 	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	require.NoError(t, err)
 
-	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,
+	agSecret := k8ssecret.New(consts.AgSecretName, testDynakube.Namespace,
 		map[string][]byte{
 			dynakube.ServerCertKey:                 agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		})
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("extensions execution controller started", statefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extension collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
 
-	builder.WithTeardown("deleted ag secret", secret.Delete(agSecret))
+	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 
 	return builder.Feature()
 }

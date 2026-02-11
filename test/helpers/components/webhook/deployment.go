@@ -4,7 +4,7 @@ package webhook
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdeployment"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
@@ -13,5 +13,5 @@ const (
 )
 
 func WaitForDeployment(namespace string) env.Func {
-	return deployment.WaitFor(DeploymentName, namespace)
+	return k8sdeployment.WaitFor(DeploymentName, namespace)
 }

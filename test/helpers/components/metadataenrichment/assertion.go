@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +28,7 @@ func GetMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.R
 	require.NotEmpty(t, enrichedPod.Spec.Containers)
 	enrichedContainer := enrichedPod.Spec.Containers[0].Name
 	readMetadataCommand := shell.ReadFile(MetadataFile)
-	result, err := pod.Exec(ctx, resource, enrichedPod, enrichedContainer, readMetadataCommand...)
+	result, err := k8spod.Exec(ctx, resource, enrichedPod, enrichedContainer, readMetadataCommand...)
 
 	require.NoError(t, err)
 

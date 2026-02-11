@@ -1,6 +1,6 @@
 //go:build e2e
 
-package configmap
+package k8sconfigmap
 
 import (
 	"context"
