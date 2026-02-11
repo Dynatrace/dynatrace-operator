@@ -25,7 +25,7 @@ inputs:
   tags-to-keep:
     description: 'Comma-separated list of regex patterns for tags to always keep'
     required: false
-    default: '^snapshot$,^snapshot-release-.*'
+    default: '^snapshot$,^snapshot-release-[0-9.-]+$'
 
 runs:
   using: 'composite'

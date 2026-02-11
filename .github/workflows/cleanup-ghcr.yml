@@ -26,10 +26,10 @@ jobs:
         name: Run GHCR cleanup
         uses: ./.github/actions/cleanup-ghcr
         with:
-          org: "dynatrace"
+          org: ${{ github.repository_owner }}
           package: "dynatrace-operator"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           dry-run: true
           package-repo-type: "orgs"
           keep-days: "14"
-          tags-to-keep: "^snapshot$,^snapshot-release-.*"
+          tags-to-keep: "^snapshot$,^snapshot-release-[0-9.-]+$"

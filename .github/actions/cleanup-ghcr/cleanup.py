@@ -24,7 +24,7 @@ PACKAGE_REPO_TYPE = os.environ.get('PACKAGE_REPO_TYPE', 'orgs')
 RETENTION_PERIOD_IN_DAYS = int(os.environ.get('RETENTION_PERIOD_IN_DAYS', '14'))
 
 # Parse comma-separated regex patterns
-tags_to_keep_str = os.environ.get('TAGS_TO_ALWAYS_KEEP', '^snapshot$,^snapshot-release-.*')
+tags_to_keep_str = os.environ.get('TAGS_TO_ALWAYS_KEEP', '^snapshot$,^snapshot-release-[0-9.-]+$')
 TAGS_TO_ALWAYS_KEEP = [pattern.strip() for pattern in tags_to_keep_str.split(',')]
 
 headers = {
@@ -40,16 +40,17 @@ def fetch_all_pages(url):
         "per_page": 100,
         "page": 1
     }
-    while url:
-        print(f"Fetching {url} (page {params['page']})...")
+    while True:
+        print(f"Fetching {url} (page {params['page']}) ...")
         resp = requests.get(url, headers=headers, params=params)
         resp.raise_for_status()
         data.extend(resp.json())
 
-        if "next" in resp.links:
-            params['page'] += 1
-        else:
-            url = None
+        params['page'] += 1
+
+        if "next" not in resp.links:
+            break
+
     return data
 
 def fetch_manifest(tag):
@@ -71,12 +72,12 @@ def fetch_manifest(tag):
             return None, ''
 
 # 1. Fetch all package versions
-print(f"Fetching versions for {ORG}/{PACKAGE}...")
+print(f"Fetching versions for {ORG}/{PACKAGE} ...")
 packages = fetch_all_pages(f"https://api.github.com/{PACKAGE_REPO_TYPE}/{ORG}/packages/container/{PACKAGE}/versions")
 print(f"Found {len(packages)} packages")
 
 # 2. Find referenced digests (from tagged versions)
-print(f"Keeping all packages that have tags younger than {RETENTION_PERIOD_IN_DAYS} days...")
+print(f"Keeping all packages that have tags younger than {RETENTION_PERIOD_IN_DAYS} days ...")
 print(f"Exception: Always keep tags matching: {TAGS_TO_ALWAYS_KEEP}")
 
 references_to_keep = set()
@@ -112,21 +113,22 @@ for v in tagged_versions:
             break
 
 # 3. Fetch manifests to get multi-arch digests
-print("Keeping all digests referenced by those tags...")
+print("Keeping all digests referenced by those tags ...")
 
-print("  Tracing back multi arch images...")
+print("::group::Tracing back multi arch images ...")
 for tag in multiarch_image_tags_to_keep:
-    print(f"    Processing multi-arch tag {tag}...")
+    print(f"Processing multi-arch tag {tag} ...")
     manifest, digest = fetch_manifest(tag)
     references_to_keep.add(digest)
 
     if manifest and 'manifests' in manifest:
         for m in manifest['manifests']:
             references_to_keep.add(m['digest'])
+print("::endgroup::")
 
-print("  Tracing back helm package signatures...")
+print("::group::Tracing back helm package signatures ...")
 for tag in helm_tags_to_keep:
-    print(f"    Processing helm tag {tag}...")
+    print(f"Processing helm tag {tag} ...")
     _, digest_of_helm_chart = fetch_manifest(tag)
     references_to_keep.add(digest_of_helm_chart)
 
@@ -142,9 +144,10 @@ for tag in helm_tags_to_keep:
                 references_to_keep.add(m['digest'])
 
 print(f"Found {len(references_to_keep)} referenced digests")
+print("::endgroup::")
 
 # 4. Delete unreferenced versions
-print(f"\nStarting deletion of unreferenced packages...")
+print(f"\nStarting deletion of unreferenced packages ...")
 deleted = 0
 for v in packages:
     if v['name'] not in references_to_keep:
