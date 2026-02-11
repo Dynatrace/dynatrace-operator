@@ -11,6 +11,7 @@ import base64
 import os
 import requests
 import re
+from datetime import datetime, timedelta, timezone
 
 # Read configuration from environment variables
 ORG = os.environ.get('ORG', 'dynatrace')
@@ -35,17 +36,21 @@ headers = {
 def fetch_all_pages(url):
     """Fetch all pages from GitHub API."""
     data = []
+    params = {
+        "per_page": 100,
+        "page": 1
+    }
     while url:
-        resp = requests.get(url, headers=headers)
+        print(f"Fetching {url} (page {params['page']})...")
+        resp = requests.get(url, headers=headers, params=params)
         resp.raise_for_status()
         data.extend(resp.json())
 
-        # Get next page URL from Link header
-        link = resp.headers.get('Link', '')
-        url = None
-        for part in link.split(','):
-            if 'rel="next"' in part:
-                url = part.split(';')[0].strip()[1:-1]
+        if "next" in resp.links:
+            url = resp.links["next"]["url"]
+            params['page'] += 1
+        else:
+            url = None
     return data
 
 def fetch_manifest(tag):
@@ -68,7 +73,7 @@ def fetch_manifest(tag):
 
 # 1. Fetch all package versions
 print(f"Fetching versions for {ORG}/{PACKAGE}...")
-packages = fetch_all_pages(f"https://api.github.com/{PACKAGE_REPO_TYPE}/{ORG}/packages/container/{PACKAGE}/versions?per_page=100")
+packages = fetch_all_pages(f"https://api.github.com/{PACKAGE_REPO_TYPE}/{ORG}/packages/container/{PACKAGE}/versions")
 print(f"Found {len(packages)} packages")
 
 # 2. Find referenced digests (from tagged versions)
@@ -81,7 +86,6 @@ helm_tags_to_keep = set() # Helm packages have different dependencies to their s
 
 tagged_versions = [v for v in packages if v.get('metadata', {}).get('container', {}).get('tags')]
 
-from datetime import datetime, timedelta, timezone
 now = datetime.now(timezone.utc)
 threshold_date = now - timedelta(days=KEEP_OUTDATED_TAGS_FOR_DAYS)
 
@@ -113,6 +117,7 @@ print("Keeping all digests referenced by those tags...")
 
 print("  Tracing back multi arch images...")
 for tag in multiarch_image_tags_to_keep:
+    print(f"    Processing multi-arch tag {tag}...")
     manifest, digest = fetch_manifest(tag)
     references_to_keep.add(digest)
 
@@ -122,6 +127,7 @@ for tag in multiarch_image_tags_to_keep:
 
 print("  Tracing back helm package signatures...")
 for tag in helm_tags_to_keep:
+    print(f"    Processing helm tag {tag}...")
     _, digest_of_helm_chart = fetch_manifest(tag)
     references_to_keep.add(digest_of_helm_chart)
 
