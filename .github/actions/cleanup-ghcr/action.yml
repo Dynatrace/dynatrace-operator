@@ -48,7 +48,7 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         DRY_RUN: ${{ inputs.dry-run }}
         PACKAGE_REPO_TYPE: ${{ inputs.package-repo-type }}
-        KEEP_OUTDATED_TAGS_FOR_DAYS: ${{ inputs.keep-days }}
+        RETENTION_PERIOD_IN_DAYS: ${{ inputs.keep-days }}
         TAGS_TO_ALWAYS_KEEP: ${{ inputs.tags-to-keep }}
       run: |
-        python ${{ github.action_path }}/cleanup.py
+        ./${{ github.action_path }}/cleanup.py

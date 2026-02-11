@@ -21,7 +21,7 @@ GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
 GHCR_TOKEN = base64.b64encode(GITHUB_TOKEN.encode()).decode() if GITHUB_TOKEN else ''
 DRY_RUN = os.environ.get('DRY_RUN', 'true').lower() in ('true', '1', 'yes')
 PACKAGE_REPO_TYPE = os.environ.get('PACKAGE_REPO_TYPE', 'orgs')
-KEEP_OUTDATED_TAGS_FOR_DAYS = int(os.environ.get('KEEP_OUTDATED_TAGS_FOR_DAYS', '14'))
+RETENTION_PERIOD_IN_DAYS = int(os.environ.get('RETENTION_PERIOD_IN_DAYS', '14'))
 
 # Parse comma-separated regex patterns
 tags_to_keep_str = os.environ.get('TAGS_TO_ALWAYS_KEEP', '^snapshot$,^snapshot-release-.*')
@@ -47,7 +47,6 @@ def fetch_all_pages(url):
         data.extend(resp.json())
 
         if "next" in resp.links:
-            url = resp.links["next"]["url"]
             params['page'] += 1
         else:
             url = None
@@ -77,7 +76,7 @@ packages = fetch_all_pages(f"https://api.github.com/{PACKAGE_REPO_TYPE}/{ORG}/pa
 print(f"Found {len(packages)} packages")
 
 # 2. Find referenced digests (from tagged versions)
-print(f"Keeping all packages that have tags younger than {KEEP_OUTDATED_TAGS_FOR_DAYS} days...")
+print(f"Keeping all packages that have tags younger than {RETENTION_PERIOD_IN_DAYS} days...")
 print(f"Exception: Always keep tags matching: {TAGS_TO_ALWAYS_KEEP}")
 
 references_to_keep = set()
@@ -87,7 +86,7 @@ helm_tags_to_keep = set() # Helm packages have different dependencies to their s
 tagged_versions = [v for v in packages if v.get('metadata', {}).get('container', {}).get('tags')]
 
 now = datetime.now(timezone.utc)
-threshold_date = now - timedelta(days=KEEP_OUTDATED_TAGS_FOR_DAYS)
+threshold_date = now - timedelta(days=RETENTION_PERIOD_IN_DAYS)
 
 # Filter tags to only those updated within last N days
 for v in tagged_versions:
