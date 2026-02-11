@@ -90,7 +90,7 @@ threshold_date = now - timedelta(days=RETENTION_PERIOD_IN_DAYS)
 
 # Filter tags to only those updated within last N days
 for v in tagged_versions:
-    updated_at = v.get('updated_at') or v.get('created_at')
+    updated_at = v.get('updated_at')
     if updated_at:
         updated_dt = datetime.strptime(updated_at, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
         if updated_dt >= threshold_date:
