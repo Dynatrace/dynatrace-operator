@@ -188,9 +188,15 @@ jobs:
         with:
           go-version: 'stable' # Latest stable version
           cache: false
-      - name: Run lint
+      - name: Get golangci-lint version
+        id: linter-version
         run: |
-          make go/lint
+          echo "version=$(awk '/GOLANGCI_LINT_VERSION/{print $3}' hack/make/prerequisites.mk)" >> $GITHUB_OUTPUT
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
+        with:
+          version: ${{ steps.linter-version.outputs.version }}
+          skip-cache: true
 
   generated-files:
     name: Check generated files
