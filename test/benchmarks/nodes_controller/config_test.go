@@ -56,12 +56,12 @@ func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 		}
 	}
 
-	responses := []dtclient.HostInfoResponse{}
+	responses := make([]dtclient.HostInfoResponse, bc.NumEntities)
 	for i := range bc.NumEntities {
-		responses = append(responses, dtclient.HostInfoResponse{
+		responses[i] = dtclient.HostInfoResponse{
 			EntityID:    generateEntityID(i),
 			IPAddresses: []string{generateNodeIP(i)},
-		})
+		}
 	}
 	getResponseBytes, err := json.Marshal(responses)
 	require.NoError(b, err)
