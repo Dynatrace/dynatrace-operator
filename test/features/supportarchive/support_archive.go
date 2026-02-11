@@ -22,10 +22,10 @@ import (
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	edgeconnectComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/google/uuid"
@@ -91,8 +91,8 @@ func Feature(t *testing.T) features.Feature {
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
 	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
-	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))
-	builder.Assess("deploy NOT injected namespace", namespace.Create(*namespace.New(testAppNameNotInjected)))
+	builder.Assess("deploy injected namespace", k8snamespace.Create(*k8snamespace.New(testAppNameInjected, k8snamespace.WithLabels(injectLabels))))
+	builder.Assess("deploy NOT injected namespace", k8snamespace.Create(*k8snamespace.New(testAppNameNotInjected)))
 
 	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	require.NoError(t, err)
@@ -100,34 +100,34 @@ func Feature(t *testing.T) features.Feature {
 	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	require.NoError(t, err)
 
-	agSecret := secret.New(consts.AgSecretName, testDynakube.Namespace,
+	agSecret := k8ssecret.New(consts.AgSecretName, testDynakube.Namespace,
 		map[string][]byte{
 			dynakube.ServerCertKey:                 agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		})
-	builder.Assess("create AG TLS secret", secret.Create(agSecret))
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 	edgeconnectComponents.Install(builder, helpers.LevelAssess, nil, testEdgeConnect)
 	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckEcExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// check if components are running
-	builder.Assess("active gate pod is running", statefulset.IsReady(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
-	builder.Assess("extensions execution controller started", statefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("extension collector started", statefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("active gate pod is running", k8sstatefulset.IsReady(testDynakube.Name+"-"+agconsts.MultiActiveGateName, testDynakube.Namespace))
+	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
 	builder.Assess("support archive subcommand can be executed correctly without managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, false))
 
-	builder.WithTeardown("remove injected namespace", namespace.Delete(testAppNameInjected))
-	builder.WithTeardown("remove NOT injected namespace", namespace.Delete(testAppNameNotInjected))
+	builder.WithTeardown("remove injected namespace", k8snamespace.Delete(testAppNameInjected))
+	builder.WithTeardown("remove NOT injected namespace", k8snamespace.Delete(testAppNameNotInjected))
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 	builder.WithTeardown("remove edgeconnect CR", edgeconnectComponents.Delete(testEdgeConnect))
 	builder.Teardown(tenant.DeleteTenantSecret(edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 	builder.Teardown(edgeconnectComponents.DeleteTenantConfig(edgeconnectSecretConfig, edgeConnectTenantConfig))
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(testDynakube.Name, testDynakube.Namespace))
-	builder.WithTeardown("deleted ag secret", secret.Delete(agSecret))
+	builder.WithTeardown("deleted ag secret", k8ssecret.Delete(agSecret))
 
 	return builder.Feature()
 }
@@ -163,10 +163,10 @@ func testSupportArchiveCommand(testDynakube dynakube.DynaKube, testEdgeConnect e
 	}
 }
 
-func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *envconf.Config, cmdLineArguments []string, namespace string) *pod.ExecutionResult {
+func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *envconf.Config, cmdLineArguments []string, namespace string) *k8spod.ExecutionResult {
 	environmentResources := envConfig.Client().Resources()
 
-	pods := pod.List(t, ctx, environmentResources, namespace)
+	pods := k8spod.List(t, ctx, environmentResources, namespace)
 	require.NotNil(t, pods.Items)
 
 	operatorPods := filter(pods.Items, func(podItem corev1.Pod) bool {
@@ -176,7 +176,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	require.Len(t, operatorPods, 1)
 	command := slices.Concat([]string{"/usr/local/bin/dynatrace-operator", "support-archive"}, cmdLineArguments)
 
-	executionResult, err := pod.Exec(ctx, envConfig.Client().Resources(),
+	executionResult, err := k8spod.Exec(ctx, envConfig.Client().Resources(),
 		operatorPods[0],
 		operator.ContainerName,
 		command...,

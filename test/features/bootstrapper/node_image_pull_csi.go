@@ -12,9 +12,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/job"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sjob"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -37,7 +37,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 	)
 
-	sampleNamespace := *namespace.New("codemodules-sample-node-image-pull")
+	sampleNamespace := *k8snamespace.New("codemodules-sample-node-image-pull")
 	sampleApp := sample.NewApp(t, &appMonDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
@@ -49,7 +49,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 
 	builder.Assess("check if jobs completed", jobsAreCompleted(appMonDynakube))
 
-	builder.Assess("check if jobs got cleaned up", job.WaitForJobsDeletionWithOwner(appMonDynakube.Name, appMonDynakube.Namespace))
+	builder.Assess("check if jobs got cleaned up", k8sjob.WaitForJobsDeletionWithOwner(appMonDynakube.Name, appMonDynakube.Namespace))
 
 	builder.Assess("install sample app", sampleApp.Install())
 
@@ -66,12 +66,12 @@ func jobsAreCompleted(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 
-		jobList := job.GetJobsForOwner(ctx, t, resource, dk.Name, dk.Namespace)
+		jobList := k8sjob.GetJobsForOwner(ctx, t, resource, dk.Name, dk.Namespace)
 		require.NotEmpty(t, jobList.Items)
 
 		for _, job := range jobList.Items {
 			t.Logf("waiting for job to be completed: %s", job.Name)
-			ctx = pod.WaitForPodsDeletionWithOwner(job.Name, job.Namespace)(ctx, t, envConfig)
+			ctx = k8spod.WaitForPodsDeletionWithOwner(job.Name, job.Namespace)(ctx, t, envConfig)
 		}
 
 		return ctx

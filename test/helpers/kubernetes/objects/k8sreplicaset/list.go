@@ -1,6 +1,6 @@
 //go:build e2e
 
-package replicaset
+package k8sreplicaset
 
 import (
 	"context"

@@ -14,8 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
@@ -60,7 +60,7 @@ func ResilienceFeature(t *testing.T) features.Feature {
 		}),
 	)
 
-	sampleNamespace := *namespace.New("network-problem-sample")
+	sampleNamespace := *k8snamespace.New("network-problem-sample")
 	sampleApp := sample.NewApp(t, &testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),

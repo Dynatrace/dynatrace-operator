@@ -17,8 +17,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	ecComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/configmap"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
@@ -205,10 +205,10 @@ func WithHTTPSProxy(t *testing.T) features.Feature {
 	require.NoError(t, err, "failed to create proxy TLS secret")
 
 	// Add customCA config map
-	caConfigMap := configmap.New(caConfigMapName, testEdgeConnect.Namespace,
+	caConfigMap := k8sconfigmap.New(caConfigMapName, testEdgeConnect.Namespace,
 		map[string]string{dynakube.TrustedCAKey: string(proxyCert)})
-	builder.Assess("create trusted CAs config map", configmap.Create(caConfigMap))
-	builder.Teardown(configmap.Delete(caConfigMap))
+	builder.Assess("create trusted CAs config map", k8sconfigmap.Create(caConfigMap))
+	builder.Teardown(k8sconfigmap.Delete(caConfigMap))
 
 	dummyDynakube := dynakube.DynaKube{}
 	dummyDynakube.Namespace = testEdgeConnect.Namespace

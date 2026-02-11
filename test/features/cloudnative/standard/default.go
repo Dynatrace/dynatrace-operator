@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -61,11 +61,11 @@ func Feature(t *testing.T, istioEnabled bool, withCSI bool) features.Feature {
 	}
 	testDynakube := *dynakube.New(options...)
 	// Register sample app install
-	namespaceOptions := []namespace.Option{}
+	namespaceOptions := []k8snamespace.Option{}
 	if istioEnabled {
-		namespaceOptions = append(namespaceOptions, namespace.WithIstio())
+		namespaceOptions = append(namespaceOptions, k8snamespace.WithIstio())
 	}
-	sampleNamespace := *namespace.New("cloudnative-sample", namespaceOptions...)
+	sampleNamespace := *k8snamespace.New("cloudnative-sample", namespaceOptions...)
 	sampleApp := sample.NewApp(t, &testDynakube, sample.WithNamespace(sampleNamespace), sample.AsDeployment())
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())

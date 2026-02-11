@@ -14,8 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -82,7 +82,7 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 }
 
 func assessActiveGate(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	builder.Assess("ActiveGate started", statefulset.IsReady(activegate.GetActiveGateStateFulSetName(dk, "activegate"), dk.Namespace))
+	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(dk, "activegate"), dk.Namespace))
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers(dk))
 	builder.Assess("ActiveGate modules are active", checkActiveModules(dk))
 	if dk.Spec.Proxy != nil {
@@ -155,7 +155,7 @@ func checkMountPoints(dk *dynakube.DynaKube) features.Func {
 
 func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resources.Resources, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
 	readFileCommand := shell.ReadFile("/proc/mounts")
-	executionResult, err := pod.Exec(ctx, resources, podItem, containerName, readFileCommand...)
+	executionResult, err := k8spod.Exec(ctx, resources, podItem, containerName, readFileCommand...)
 	require.NoError(t, err)
 
 	stdOut := executionResult.StdOut.String()

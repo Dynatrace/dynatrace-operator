@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 	)
 
-	sampleNamespace := *namespace.New("upgrade-sample")
+	sampleNamespace := *k8snamespace.New("upgrade-sample")
 	sampleApp := sample.NewApp(t, &testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),

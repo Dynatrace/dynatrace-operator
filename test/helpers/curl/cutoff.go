@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,7 +25,7 @@ func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Fu
 }
 
 func WaitForCutOffCurlPod(podName, namespaceName string) features.Func {
-	return pod.WaitForCondition(podName, namespaceName, func(object k8s.Object) bool {
+	return k8spod.WaitForCondition(podName, namespaceName, func(object k8s.Object) bool {
 		pod, isPod := object.(*corev1.Pod)
 		// If probe fails we don't have internet, so we achieve waiting condition
 		return isPod && !pod.Status.ContainerStatuses[0].Ready

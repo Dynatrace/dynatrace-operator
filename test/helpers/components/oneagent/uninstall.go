@@ -10,8 +10,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -50,13 +50,13 @@ func createUninstallDaemonSet(dk dynakube.DynaKube) features.Func {
 }
 
 func waitForUninstallDaemonset(namespace string) features.Func {
-	return helpers.ToFeatureFunc(daemonset.WaitFor(uninstallOneAgentDaemonSetName, namespace), false)
+	return helpers.ToFeatureFunc(k8sdaemonset.WaitFor(uninstallOneAgentDaemonSetName, namespace), false)
 }
 
 func executeUninstall(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		require.NoError(t, daemonset.NewQuery(ctx, resource, client.ObjectKey{
+		require.NoError(t, k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      uninstallOneAgentDaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(cleanUpNodeConsumer(ctx, t, resource)))
@@ -68,7 +68,7 @@ func executeUninstall(namespace string) features.Func {
 func removeUninstallDaemonset(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		require.NoError(t, daemonset.NewQuery(ctx, resource, client.ObjectKey{
+		require.NoError(t, k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      uninstallOneAgentDaemonSetName,
 			Namespace: namespace,
 		}).Delete())
@@ -77,7 +77,7 @@ func removeUninstallDaemonset(namespace string) features.Func {
 	}
 }
 
-func cleanUpNodeConsumer(ctx context.Context, t *testing.T, resource *resources.Resources) daemonset.PodConsumer {
+func cleanUpNodeConsumer(ctx context.Context, t *testing.T, resource *resources.Resources) k8sdaemonset.PodConsumer {
 	return func(pod corev1.Pod) {
 		stdOut := bytes.NewBuffer([]byte{})
 		stdErr := bytes.NewBuffer([]byte{})
