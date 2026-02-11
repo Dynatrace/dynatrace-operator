@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/Dynatrace/dynatrace-bootstrapper v1.2.0
 	github.com/container-storage-interface/spec v1.12.0
-	github.com/docker/cli v29.1.5+incompatible
+	github.com/docker/cli v29.2.1+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-containerregistry v0.20.7
