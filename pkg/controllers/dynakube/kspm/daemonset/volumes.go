@@ -65,22 +65,22 @@ func getTokenVolume(dk dynakube.DynaKube) corev1.Volume {
 }
 
 func getNodeVolumeMounts(mappedHostPaths []string) []corev1.VolumeMount {
-	volumeMounts := make([]corev1.VolumeMount, 0)
+	volumeMounts := make([]corev1.VolumeMount, len(mappedHostPaths))
 	for i, path := range mappedHostPaths {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		volumeMounts[i] = corev1.VolumeMount{
 			Name:      getVolumeName(i + 1),
 			MountPath: filepath.Join(nodeRootMountPath, path),
 			ReadOnly:  true,
-		})
+		}
 	}
 
 	return volumeMounts
 }
 
 func getNodeVolumes(mappedHostPaths []string) []corev1.Volume {
-	volumes := make([]corev1.Volume, 0)
+	volumes := make([]corev1.Volume, len(mappedHostPaths))
 	for i, path := range mappedHostPaths {
-		volumes = append(volumes, corev1.Volume{
+		volumes[i] = corev1.Volume{
 			Name: getVolumeName(i + 1),
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
@@ -88,7 +88,7 @@ func getNodeVolumes(mappedHostPaths []string) []corev1.Volume {
 					Type: ptr.To(corev1.HostPathDirectory),
 				},
 			},
-		})
+		}
 	}
 
 	return volumes

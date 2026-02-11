@@ -13,10 +13,10 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 	return query.Generic[*appsv1.Deployment, *appsv1.DeploymentList]{
 		Target:     &appsv1.Deployment{},
 		ListTarget: &appsv1.DeploymentList{},
-		ToList: func(sl *appsv1.DeploymentList) []*appsv1.Deployment {
-			out := []*appsv1.Deployment{}
-			for _, s := range sl.Items {
-				out = append(out, &s)
+		ToList: func(list *appsv1.DeploymentList) []*appsv1.Deployment {
+			out := make([]*appsv1.Deployment, len(list.Items))
+			for i, item := range list.Items {
+				out[i] = &item
 			}
 
 			return out

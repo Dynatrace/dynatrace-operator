@@ -18,10 +18,10 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 		query.Generic[*corev1.ConfigMap, *corev1.ConfigMapList]{
 			Target:     &corev1.ConfigMap{},
 			ListTarget: &corev1.ConfigMapList{},
-			ToList: func(cml *corev1.ConfigMapList) []*corev1.ConfigMap {
-				out := []*corev1.ConfigMap{}
-				for _, cm := range cml.Items {
-					out = append(out, &cm)
+			ToList: func(list *corev1.ConfigMapList) []*corev1.ConfigMap {
+				out := make([]*corev1.ConfigMap, len(list.Items))
+				for i, item := range list.Items {
+					out[i] = &item
 				}
 
 				return out

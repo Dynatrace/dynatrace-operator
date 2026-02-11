@@ -297,6 +297,7 @@ linters:
           - wsl_v5
           - dupl
           - govet
+          - prealloc
         path: _(test|gen)\.go
       - linters:
           - govet
@@ -304,6 +305,7 @@ linters:
           - perfsprint
           - thelper
           - wsl_v5
+          - prealloc
         path: (test/*)
       - linters:
           - gosec

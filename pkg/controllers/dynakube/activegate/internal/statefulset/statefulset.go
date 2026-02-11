@@ -166,14 +166,10 @@ func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
 }
 
 func (statefulSetBuilder Builder) buildVolumeMounts() []corev1.VolumeMount {
-	var volumeMounts []corev1.VolumeMount
-
-	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+	return []corev1.VolumeMount{{
 		Name:      consts.GatewayTmpVolumeName,
 		MountPath: consts.GatewayTmpMountPoint,
-	})
-
-	return volumeMounts
+	}}
 }
 
 func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityContext {

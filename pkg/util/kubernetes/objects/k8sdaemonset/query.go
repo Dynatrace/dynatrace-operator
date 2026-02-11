@@ -15,10 +15,10 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 	return query.Generic[*appsv1.DaemonSet, *appsv1.DaemonSetList]{
 		Target:     &appsv1.DaemonSet{},
 		ListTarget: &appsv1.DaemonSetList{},
-		ToList: func(sl *appsv1.DaemonSetList) []*appsv1.DaemonSet {
-			out := []*appsv1.DaemonSet{}
-			for _, s := range sl.Items {
-				out = append(out, &s)
+		ToList: func(list *appsv1.DaemonSetList) []*appsv1.DaemonSet {
+			out := make([]*appsv1.DaemonSet, len(list.Items))
+			for i, item := range list.Items {
+				out[i] = &item
 			}
 
 			return out

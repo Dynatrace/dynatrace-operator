@@ -18,10 +18,10 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 		query.Generic[*corev1.Secret, *corev1.SecretList]{
 			Target:     &corev1.Secret{},
 			ListTarget: &corev1.SecretList{},
-			ToList: func(sl *corev1.SecretList) []*corev1.Secret {
-				out := []*corev1.Secret{}
-				for _, s := range sl.Items {
-					out = append(out, &s)
+			ToList: func(list *corev1.SecretList) []*corev1.Secret {
+				out := make([]*corev1.Secret, len(list.Items))
+				for i, item := range list.Items {
+					out[i] = &item
 				}
 
 				return out
