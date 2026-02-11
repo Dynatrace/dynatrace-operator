@@ -305,7 +305,6 @@ linters:
           - perfsprint
           - thelper
           - wsl_v5
-          - prealloc
         path: (test/*)
       - linters:
           - gosec
