@@ -96,9 +96,16 @@ func mutateDeployment(d *appsv1.Deployment) func() error {
 	}
 }
 
-func (c Generic[T, L]) CreateOrUpdate2(ctx context.Context, obj client.Object, mutate MutateFn[T]) (bool, error) {
+func (c Generic[T, L]) CreateOrUpdate2(ctx context.Context, obj client.Object, mutate MutateFn[client.Object]) (bool, error) {
+	if c.Owner != nil {
+		err := controllerutil.SetControllerReference(c.Owner, obj, scheme.Scheme)
+		if err != nil {
+			return false, errors.WithStack(err)
+		}
+	}
+
 	op, err := controllerutil.CreateOrUpdate(ctx, c.KubeClient, obj, func() error {
-		return mutate(c.Target)
+		return mutate(obj)
 	})
 
 	if err != nil {
@@ -109,6 +116,7 @@ func (c Generic[T, L]) CreateOrUpdate2(ctx context.Context, obj client.Object, m
 	if op == controllerutil.OperationResultCreated {
 		result = true
 	}
+
 	return result, nil
 }
 

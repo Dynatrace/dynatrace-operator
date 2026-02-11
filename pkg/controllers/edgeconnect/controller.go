@@ -285,7 +285,7 @@ func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, ec *ed
 
 	_log.Debug("reconcile regular EdgeConnect")
 
-	return controller.reconcileEdgeConnectRegular(ctx, ec)
+	return controller.reconcileEdgeConnectRegular2(ctx, ec)
 }
 
 func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespace string) (*edgeconnect.EdgeConnect, error) {
@@ -380,7 +380,15 @@ func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, ec *e
 }
 
 func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
-	desiredDeployment := deployment.New(ec)
+	desiredDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        ec.Name,
+			Namespace:   ec.Namespace,
+			Labels:      deployment.Labels(ec),
+			Annotations: deployment.Annotations(),
+		},
+	}
+	desiredDeployment.Spec = deployment.CreateSpec(ec)
 
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name, "deploymentName", desiredDeployment.Name)
 
@@ -399,11 +407,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 
 	desiredDeployment.Spec.Template.Annotations[consts.EdgeConnectAnnotationSecretHash] = secretHash
 
-	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate2(ctx, desiredDeployment, func(d *appsv1.Deployment) error {
-		// TODO: test update
-		d.Spec = desiredDeployment.Spec
-		return nil
-	})
+	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
 	if err != nil {
 		_log.Info("could not create or update deployment for EdgeConnect")
 

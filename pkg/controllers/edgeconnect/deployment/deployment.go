@@ -19,10 +19,35 @@ const (
 )
 
 func New(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
-	return create(ec)
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ec.Name,
+			Namespace: ec.Namespace,
+		},
+	}
 }
 
-func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
+func Labels(ec *edgeconnect.EdgeConnect) map[string]string {
+	appLabels := buildAppLabels(ec)
+	labels := appLabels.BuildLabels()
+
+	return labels
+}
+
+func PodLabels(ec *edgeconnect.EdgeConnect) map[string]string {
+	customPodLabels := maputils.MergeMap(
+		ec.Spec.Labels,
+		Labels(ec), // higher priority
+	)
+
+	return customPodLabels
+}
+
+func Annotations() map[string]string {
+	return buildAnnotations()
+}
+
+func CreateSpec(ec *edgeconnect.EdgeConnect) appsv1.DeploymentSpec {
 	appLabels := buildAppLabels(ec)
 	labels := appLabels.BuildLabels()
 
@@ -33,44 +58,36 @@ func create(ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 
 	log.Debug("EdgeConnect deployment app labels", "labels", labels)
 
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        ec.Name,
-			Namespace:   ec.Namespace,
-			Labels:      labels,
-			Annotations: buildAnnotations(),
+	return appsv1.DeploymentSpec{
+		Replicas: ec.Spec.Replicas,
+		Selector: &metav1.LabelSelector{
+			MatchLabels: appLabels.BuildMatchLabels(),
 		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: ec.Spec.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: appLabels.BuildMatchLabels(),
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: ec.Spec.Annotations,
+				Labels:      customPodLabels,
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: ec.Spec.Annotations,
-					Labels:      customPodLabels,
-				},
-				Spec: corev1.PodSpec{
-					Containers:                    []corev1.Container{edgeConnectContainer(ec)},
-					ImagePullSecrets:              prepareImagePullSecrets(ec),
-					ServiceAccountName:            ec.GetServiceAccountName(),
-					DeprecatedServiceAccount:      ec.GetServiceAccountName(),
-					TerminationGracePeriodSeconds: ptr.To(int64(30)),
-					Volumes:                       prepareVolumes(ec),
-					NodeSelector:                  ec.Spec.NodeSelector,
-					Tolerations:                   ec.Spec.Tolerations,
-					TopologySpreadConstraints:     ec.Spec.TopologySpreadConstraints,
-				},
+			Spec: corev1.PodSpec{
+				Containers:                    []corev1.Container{EdgeConnectContainer(ec)},
+				ImagePullSecrets:              prepareImagePullSecrets(ec),
+				ServiceAccountName:            ec.GetServiceAccountName(),
+				DeprecatedServiceAccount:      ec.GetServiceAccountName(),
+				TerminationGracePeriodSeconds: ptr.To(int64(30)),
+				Volumes:                       prepareVolumes(ec),
+				NodeSelector:                  ec.Spec.NodeSelector,
+				Tolerations:                   ec.Spec.Tolerations,
+				TopologySpreadConstraints:     ec.Spec.TopologySpreadConstraints,
 			},
-			Strategy: appsv1.DeploymentStrategy{
-				// default is already 25%
-				RollingUpdate: &appsv1.RollingUpdateDeployment{},
-			},
-			MinReadySeconds:         0,
-			RevisionHistoryLimit:    nil,
-			Paused:                  false,
-			ProgressDeadlineSeconds: nil,
 		},
+		Strategy: appsv1.DeploymentStrategy{
+			// default is already 25%
+			RollingUpdate: &appsv1.RollingUpdateDeployment{},
+		},
+		MinReadySeconds:         0,
+		//RevisionHistoryLimit:    nil,
+		Paused:                  false,
+		//ProgressDeadlineSeconds: nil, // default 600
 	}
 }
 
@@ -99,7 +116,7 @@ func buildAnnotations() map[string]string {
 	}
 }
 
-func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
+func EdgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
 	return corev1.Container{
 		Name:            consts.EdgeConnectContainerName,
 		Image:           ec.Status.Version.ImageID,

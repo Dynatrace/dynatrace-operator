@@ -15,11 +15,41 @@ type DeploymentBuilder struct{
 	mutators []query.MutateFn[*appsv1.Deployment]
 }
 
-
 func NewNewBuilder(mutators ...query.MutateFn[*appsv1.Deployment]) *DeploymentBuilder {
 	return &DeploymentBuilder{mutators: mutators}
 }
 
+func (b DeploymentBuilder) Mutate(d *appsv1.Deployment) error {
+	for _, mutator := range b.mutators {
+		err := mutator(d)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+
+func (b DeploymentBuilder) SetContainer(c corev1.Container) DeploymentBuilder {
+	b.mutators = append(b.mutators, func(d *appsv1.Deployment) error {
+		targetIndex := 0
+		for index := range d.Spec.Template.Spec.Containers {
+			if d.Spec.Template.Spec.Containers[targetIndex].Name == c.Name {
+				targetIndex = index
+
+				break
+			}
+		}
+
+		if targetIndex == 0 {
+			d.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
+		}
+
+		d.Spec.Template.Spec.Containers[targetIndex] = c
+		return nil
+	})
+	return b
+}
 
 var SetLabels = builder.SetLabels[*appsv1.Deployment]
 
@@ -70,34 +100,6 @@ func SetAllAnnotations(annotations, templateAnnotations map[string]string) build
 		d.Annotations = maputils.MergeMap(d.Annotations, annotations)
 		d.Spec.Template.Annotations = maputils.MergeMap(d.Spec.Template.Annotations, templateAnnotations)
 	}
-}
-
-func (b DeploymentBuilder) SetContainer(c corev1.Container) DeploymentBuilder {
-	b.mutators = append(b.mutators, func(d *appsv1.Deployment) error {
-		targetIndex := 0
-		for index := range d.Spec.Template.Spec.Containers {
-			if d.Spec.Template.Spec.Containers[targetIndex].Name == c.Name {
-				targetIndex = index
-
-				break
-			}
-		}
-
-		if targetIndex == 0 {
-			d.Spec.Template.Spec.Containers = make([]corev1.Container, 1)
-		}
-
-		d.Spec.Template.Spec.Containers[targetIndex] = c
-		return nil
-	})
-	return b
-}
-
-func (b DeploymentBuilder) Mutate(d *appsv1.Deployment) error {
-	for _, m := range b.mutators {
-		m(d)
-	}
-	return nil
 }
 
 func SetContainer(container corev1.Container) builder.Option[*appsv1.Deployment] {
