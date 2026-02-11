@@ -92,10 +92,7 @@ type HostMapping struct {
 }
 
 func (ec *EdgeConnect) HostMappings() []HostMapping {
-	hostMappings := make([]HostMapping, 0)
-	hostMappings = append(hostMappings, HostMapping{From: ec.K8sAutomationHostPattern(), To: KubernetesDefaultDNS})
-
-	return hostMappings
+	return []HostMapping{{From: ec.K8sAutomationHostPattern(), To: KubernetesDefaultDNS}}
 }
 
 func (ec *EdgeConnect) K8sAutomationHostPattern() string {

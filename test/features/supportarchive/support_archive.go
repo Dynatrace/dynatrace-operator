@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -30,7 +31,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -174,8 +174,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	})
 
 	require.Len(t, operatorPods, 1)
-	command := []string{"/usr/local/bin/dynatrace-operator", "support-archive"}
-	command = append(command, cmdLineArguments...)
+	command := slices.Concat([]string{"/usr/local/bin/dynatrace-operator", "support-archive"}, cmdLineArguments)
 
 	executionResult, err := k8spod.Exec(ctx, envConfig.Client().Resources(),
 		operatorPods[0],

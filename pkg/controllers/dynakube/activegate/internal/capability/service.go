@@ -11,20 +11,20 @@ import (
 )
 
 func CreateService(dk *dynakube.DynaKube) *corev1.Service {
-	var ports []corev1.ServicePort
-
-	ports = append(ports,
-		corev1.ServicePort{
+	ports := []corev1.ServicePort{
+		{
 			Name:       consts.HTTPSServicePortName,
 			Protocol:   corev1.ProtocolTCP,
 			Port:       consts.HTTPSServicePort,
 			TargetPort: intstr.FromString(consts.HTTPSServicePortName),
-		}, corev1.ServicePort{
+		},
+		{
 			Name:       consts.HTTPServicePortName,
 			Protocol:   corev1.ProtocolTCP,
 			Port:       consts.HTTPServicePort,
 			TargetPort: intstr.FromString(consts.HTTPServicePortName),
-		})
+		},
+	}
 
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
 

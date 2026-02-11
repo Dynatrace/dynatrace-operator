@@ -5,6 +5,7 @@ package supportarchive
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -54,27 +55,28 @@ func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Re
 }
 
 func (r requiredFiles) collectRequiredFiles() []string {
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles, supportarchive.OperatorVersionFileName)
-	requiredFiles = append(requiredFiles, supportarchive.TroublshootOutputFileName)
-	requiredFiles = append(requiredFiles, supportarchive.SupportArchiveOutputFileName)
-	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(k8slabel.AppNameLabel, true)...)
-	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(k8slabel.AppManagedByLabel, r.collectManaged)...)
-	requiredFiles = append(requiredFiles, r.getRequiredPodDiagnosticLogFiles(r.collectManaged)...)
-	requiredFiles = append(requiredFiles, r.getRequiredReplicaSetFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredServiceFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredWorkloadFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredNamespaceFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredDynaKubeFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredEdgeConnectFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredStatefulSetFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredDaemonSetFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredWebhookConfigurationFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredCRDFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredConfigMapFiles()...)
-	requiredFiles = append(requiredFiles, r.getRequiredEventFiles()...)
-
-	return requiredFiles
+	return slices.Concat(
+		[]string{
+			supportarchive.OperatorVersionFileName,
+			supportarchive.TroublshootOutputFileName,
+			supportarchive.SupportArchiveOutputFileName,
+		},
+		r.getRequiredPodFiles(k8slabel.AppNameLabel, true),
+		r.getRequiredPodFiles(k8slabel.AppManagedByLabel, r.collectManaged),
+		r.getRequiredPodDiagnosticLogFiles(r.collectManaged),
+		r.getRequiredReplicaSetFiles(),
+		r.getRequiredServiceFiles(),
+		r.getRequiredWorkloadFiles(),
+		r.getRequiredNamespaceFiles(),
+		r.getRequiredDynaKubeFiles(),
+		r.getRequiredEdgeConnectFiles(),
+		r.getRequiredStatefulSetFiles(),
+		r.getRequiredDaemonSetFiles(),
+		r.getRequiredWebhookConfigurationFiles(),
+		r.getRequiredCRDFiles(),
+		r.getRequiredConfigMapFiles(),
+		r.getRequiredEventFiles(),
+	)
 }
 
 func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool) []string {
@@ -130,13 +132,12 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 
 func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 	replicaSets := k8sreplicaset.List(r.t, r.ctx, r.resources, r.dk.Namespace)
-	requiredFiles := make([]string, 0)
-	for _, replicaSet := range replicaSets.Items {
-		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/replicaset/%s%s",
-				supportarchive.ManifestsDirectoryName,
-				replicaSet.Namespace, replicaSet.Name,
-				supportarchive.ManifestsFileExtension))
+	requiredFiles := make([]string, len(replicaSets.Items))
+	for i, replicaSet := range replicaSets.Items {
+		requiredFiles[i] = fmt.Sprintf("%s/%s/replicaset/%s%s",
+			supportarchive.ManifestsDirectoryName,
+			replicaSet.Namespace, replicaSet.Name,
+			supportarchive.ManifestsFileExtension)
 	}
 
 	return requiredFiles
@@ -147,12 +148,12 @@ func (r requiredFiles) getRequiredStatefulSetFiles() []string {
 		Namespace: r.dk.Namespace,
 		Name:      "dynakube-activegate"}).Get()
 	require.NoError(r.t, err)
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/statefulset/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			statefulSet.Namespace, statefulSet.Name,
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
@@ -160,193 +161,175 @@ func (r requiredFiles) getRequiredStatefulSetFiles() []string {
 func (r requiredFiles) getRequiredDaemonSetFiles() []string {
 	oneagentDaemonSet, err := oneagent.Get(r.ctx, r.resources, r.dk)
 	require.NoError(r.t, err)
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/daemonset/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			oneagentDaemonSet.Namespace,
 			oneagentDaemonSet.Name,
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
 
 func (r requiredFiles) getRequiredServiceFiles() []string {
 	services := k8sservice.List(r.t, r.ctx, r.resources, r.dk.Namespace)
-	requiredFiles := make([]string, 0)
-	for _, requiredService := range services.Items {
-		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/service/%s%s",
-				supportarchive.ManifestsDirectoryName,
-				requiredService.Namespace,
-				requiredService.Name,
-				supportarchive.ManifestsFileExtension))
+	requiredFiles := make([]string, len(services.Items))
+	for i, requiredService := range services.Items {
+		requiredFiles[i] = fmt.Sprintf("%s/%s/service/%s%s",
+			supportarchive.ManifestsDirectoryName,
+			requiredService.Namespace,
+			requiredService.Name,
+			supportarchive.ManifestsFileExtension)
 	}
 
 	return requiredFiles
 }
 
 func (r requiredFiles) getRequiredWorkloadFiles() []string {
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"deployment",
 			operator.DeploymentName,
-			supportarchive.ManifestsFileExtension))
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"deployment",
 			e2ewebhook.DeploymentName,
-			supportarchive.ManifestsFileExtension))
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"daemonset",
 			csi.DaemonSetName,
-			supportarchive.ManifestsFileExtension))
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.ec.Namespace,
 			"deployment",
 			r.ec.Name,
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
 
 func (r requiredFiles) getRequiredNamespaceFiles() []string {
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/namespace-%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			r.dk.Namespace,
-			supportarchive.ManifestsFileExtension))
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/namespace-%s%s",
 			supportarchive.ManifestsDirectoryName,
 			supportarchive.InjectedNamespacesManifestsDirectoryName,
 			testAppNameInjected,
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
 
 func (r requiredFiles) getRequiredDynaKubeFiles() []string {
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"dynakube",
 			r.dk.Name,
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
 
 func (r requiredFiles) getRequiredEdgeConnectFiles() []string {
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.ec.Namespace,
 			"edgeconnect",
 			r.ec.Name,
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
 
 func (r requiredFiles) getRequiredWebhookConfigurationFiles() []string {
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			supportarchive.WebhookConfigurationsDirectoryName,
 			strings.ToLower(supportarchive.MutatingWebhookConfigurationKind),
-			supportarchive.ManifestsFileExtension))
-
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			supportarchive.WebhookConfigurationsDirectoryName,
 			strings.ToLower(supportarchive.ValidatingWebhookConfigurationKind),
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
 
 func (r requiredFiles) getRequiredCRDFiles() []string {
-	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			supportarchive.CRDDirectoryName,
 			strings.Join([]string{strings.ToLower(supportarchive.CRDKindName), "dynakubes"}, "-"),
-			supportarchive.ManifestsFileExtension))
-
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			supportarchive.CRDDirectoryName,
 			strings.Join([]string{strings.ToLower(supportarchive.CRDKindName), "edgeconnects"}, "-"),
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
 
 func (r requiredFiles) getRequiredConfigMapFiles() []string {
-	requiredFiles := make([]string, 0)
-
-	requiredFiles = append(requiredFiles,
+	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"configmap",
 			"dynatrace-node-cache",
-			supportarchive.ManifestsFileExtension))
-
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"configmap",
 			"kube-root-ca.crt",
-			supportarchive.ManifestsFileExtension))
-
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s/%s-%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"configmap",
 			r.dk.Name,
 			"deployment-metadata",
-			supportarchive.ManifestsFileExtension))
-
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s/%s-%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"configmap",
 			r.dk.Name,
 			"oneagent-connection-info",
-			supportarchive.ManifestsFileExtension))
-
-	requiredFiles = append(requiredFiles,
+			supportarchive.ManifestsFileExtension),
 		fmt.Sprintf("%s/%s/%s/%s-%s%s",
 			supportarchive.ManifestsDirectoryName,
 			r.dk.Namespace,
 			"configmap",
 			r.dk.Name,
 			"activegate-connection-info",
-			supportarchive.ManifestsFileExtension))
+			supportarchive.ManifestsFileExtension),
+	}
 
 	return requiredFiles
 }
@@ -357,16 +340,15 @@ func (r requiredFiles) getRequiredEventFiles() []string {
 		options.FieldSelector = fmt.Sprint(supportarchive.DefaultEventFieldSelector)
 	}
 	events := k8sevent.List(r.t, r.ctx, r.resources, r.dk.Namespace, optFunc)
-	requiredFiles := make([]string, 0)
+	requiredFiles := make([]string, len(events.Items))
 
-	for _, requiredEvent := range events.Items {
-		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/%s/%s%s",
-				supportarchive.ManifestsDirectoryName,
-				requiredEvent.Namespace,
-				"event",
-				requiredEvent.Name,
-				supportarchive.ManifestsFileExtension))
+	for i, ev := range events.Items {
+		requiredFiles[i] = fmt.Sprintf("%s/%s/%s/%s%s",
+			supportarchive.ManifestsDirectoryName,
+			ev.Namespace,
+			"event",
+			ev.Name,
+			supportarchive.ManifestsFileExtension)
 	}
 
 	return requiredFiles

@@ -92,16 +92,12 @@ func TestAreConfigsValid(t *testing.T) {
 			Data: map[string][]byte{RootCert: testValue1},
 		}
 
-		var webhookConfigs []*admissionregistrationv1.WebhookClientConfig
-		webhookConfigs = append(webhookConfigs, &admissionregistrationv1.WebhookClientConfig{
-			CABundle: testValue1,
-		})
-		webhookConfigs = append(webhookConfigs, &admissionregistrationv1.WebhookClientConfig{
-			CABundle: testValue1,
-		})
-		webhookConfigs = append(webhookConfigs, &admissionregistrationv1.WebhookClientConfig{
-			CABundle: testValue1,
-		})
+		//nolint:prealloc // prefer cleaner syntax over preallocating
+		webhookConfigs := []*admissionregistrationv1.WebhookClientConfig{
+			{CABundle: testValue1},
+			{CABundle: testValue1},
+			{CABundle: testValue1},
+		}
 
 		assert.True(t, certSecret.areWebhookConfigsValid(webhookConfigs))
 

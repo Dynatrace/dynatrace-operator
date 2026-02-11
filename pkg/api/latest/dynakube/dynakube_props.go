@@ -82,11 +82,10 @@ func (dk *DynaKube) PullSecretNames() []string {
 }
 
 func (dk *DynaKube) ImagePullSecretReferences() []corev1.LocalObjectReference {
-	imagePullSecrets := make([]corev1.LocalObjectReference, 0)
-	for _, pullSecretName := range dk.PullSecretNames() {
-		imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
-			Name: pullSecretName,
-		})
+	pullSecretNames := dk.PullSecretNames()
+	imagePullSecrets := make([]corev1.LocalObjectReference, len(pullSecretNames))
+	for i, pullSecretName := range pullSecretNames {
+		imagePullSecrets[i].Name = pullSecretName
 	}
 
 	return imagePullSecrets

@@ -1,6 +1,8 @@
 package k8ssecret
 
 import (
+	"slices"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/builder"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,23 +18,21 @@ var (
 )
 
 func Build(owner metav1.Object, name string, data map[string][]byte, options ...builder.Option[*corev1.Secret]) (*corev1.Secret, error) {
-	neededOpts := []builder.Option[*corev1.Secret]{
+	neededOpts := slices.Concat([]builder.Option[*corev1.Secret]{
 		setName(name),
 		setData(data),
 		setNamespace(owner.GetNamespace()),
-	}
-	neededOpts = append(neededOpts, options...)
+	}, options)
 
 	return builder.Build(owner, &corev1.Secret{}, neededOpts...)
 }
 
 func BuildForNamespace(name, namespace string, data map[string][]byte, options ...builder.Option[*corev1.Secret]) (*corev1.Secret, error) {
-	neededOpts := []builder.Option[*corev1.Secret]{
+	neededOpts := slices.Concat([]builder.Option[*corev1.Secret]{
 		setName(name),
 		setData(data),
 		setNamespace(namespace),
-	}
-	neededOpts = append(neededOpts, options...)
+	}, options)
 
 	return builder.Build(nil, &corev1.Secret{}, neededOpts...)
 }

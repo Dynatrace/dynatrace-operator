@@ -1,6 +1,8 @@
 package k8sdeployment
 
 import (
+	"slices"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/builder"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,11 +14,10 @@ import (
 var SetLabels = builder.SetLabels[*appsv1.Deployment]
 
 func Build(owner metav1.Object, name string, options ...builder.Option[*appsv1.Deployment]) (*appsv1.Deployment, error) {
-	neededOpts := []builder.Option[*appsv1.Deployment]{
+	neededOpts := slices.Concat([]builder.Option[*appsv1.Deployment]{
 		builder.SetName[*appsv1.Deployment](name),
 		builder.SetNamespace[*appsv1.Deployment](owner.GetNamespace()),
-	}
-	neededOpts = append(neededOpts, options...)
+	}, options)
 
 	return builder.Build(owner, &appsv1.Deployment{}, neededOpts...)
 }

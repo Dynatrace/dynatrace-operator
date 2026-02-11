@@ -1,6 +1,8 @@
 package k8sjob
 
 import (
+	"slices"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/builder"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	batchv1 "k8s.io/api/batch/v1"
@@ -19,12 +21,11 @@ var (
 )
 
 func Build(owner metav1.Object, name string, container corev1.Container, options ...builder.Option[*batchv1.Job]) (*batchv1.Job, error) {
-	neededOpts := []builder.Option[*batchv1.Job]{
+	neededOpts := slices.Concat([]builder.Option[*batchv1.Job]{
 		setName(name),
 		SetContainer(container),
 		setNamespace(owner.GetNamespace()),
-	}
-	neededOpts = append(neededOpts, options...)
+	}, options)
 
 	return builder.Build(owner, &batchv1.Job{}, neededOpts...)
 }
@@ -55,11 +56,9 @@ func SetOnFailureRestartPolicy() builder.Option[*batchv1.Job] {
 
 func SetPullSecret(pullSecrets ...string) builder.Option[*batchv1.Job] {
 	return func(s *batchv1.Job) {
-		imagePullSecrets := make([]corev1.LocalObjectReference, 0)
-		for _, pullSecretName := range pullSecrets {
-			imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{
-				Name: pullSecretName,
-			})
+		imagePullSecrets := make([]corev1.LocalObjectReference, len(pullSecrets))
+		for i, pullSecretName := range pullSecrets {
+			imagePullSecrets[i].Name = pullSecretName
 		}
 
 		s.Spec.Template.Spec.ImagePullSecrets = append(s.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets...)

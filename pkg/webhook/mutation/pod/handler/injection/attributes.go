@@ -53,17 +53,18 @@ func createEnvVarRef(envName string) string {
 }
 
 func addContainerAttributes(request *dtwebhook.MutationRequest) (bool, error) {
-	attributes := []containerattr.Attributes{}
-	for _, c := range request.NewContainers(isInjected) {
-		attributes = append(attributes, containerattr.Attributes{
-			ImageInfo:     createImageInfo(c.Image),
-			ContainerName: c.Name,
-		})
+	containers := request.NewContainers(isInjected)
+	if len(containers) > 0 {
+		attributes := make([]containerattr.Attributes, len(containers))
+		for i, c := range containers {
+			attributes[i] = containerattr.Attributes{
+				ImageInfo:     createImageInfo(c.Image),
+				ContainerName: c.Name,
+			}
 
-		volumes.AddConfigVolumeMount(c, request.BaseRequest)
-	}
+			volumes.AddConfigVolumeMount(c, request.BaseRequest)
+		}
 
-	if len(attributes) > 0 {
 		args, err := containerattr.ToArgs(attributes)
 		if err != nil {
 			return false, err
