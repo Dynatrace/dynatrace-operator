@@ -33,7 +33,7 @@ type mutatorTestCase struct {
 	wantAttributes map[string][]string
 }
 
-func Test_Mutator_Mutate(t *testing.T) { //nolint:revive // cognitive-complexity
+func Test_Mutator_Mutate(t *testing.T) {
 	const (
 		testSecContextLabel          = "test-security-context-label"
 		testCostCenterAnnotation     = "test-cost-center-annotation"
