@@ -20,4 +20,4 @@ const (
 	defaultRetryPeriod   = int64(6)
 )
 
-var log = logd.Get().WithName("operator-command")
+var log = logd.Get().WithName("operator")

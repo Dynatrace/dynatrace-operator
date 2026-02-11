@@ -2,7 +2,7 @@
 ## Run the operator locally
 debug/operator:
 	kubectl -n dynatrace scale --replicas=0 deployment/dynatrace-operator
-	POD_NAMESPACE=dynatrace RUN_LOCAL=true go run ./cmd operator
+#	POD_NAMESPACE=dynatrace RUN_LOCAL=true go run ./cmd operator
 
 ## Run the webhook locally (requires running telepresence)
 debug/webhook:

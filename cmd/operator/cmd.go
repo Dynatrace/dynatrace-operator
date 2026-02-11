@@ -43,7 +43,7 @@ func run(cmd *cobra.Command, args []string) error {
 	version.LogVersion()
 	logd.LogBaseLoggerSettings()
 
-	ctrl.SetLogger(log.WithName("controller-runtime").Logger)
+	ctrl.SetLogger(log.Logger)
 	stdLog.SetOutput(&log)
 
 	kubeCfg, err := config.GetConfig()
