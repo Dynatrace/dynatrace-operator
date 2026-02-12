@@ -117,26 +117,20 @@ func (m *Mutator) addResourceAttributes(request *dtwebhook.BaseRequest, c *corev
 	}
 
 	if request.DynaKube.FF().EnableAttributesDtKubernetes() {
-		kubernetesMetaDataAttributes.Merge(Attributes{
-			"dt.kubernetes.cluster.id": request.DynaKube.Status.KubeSystemUUID,
-		})
+		kubernetesMetaDataAttributes["dt.kubernetes.cluster.id"] = request.DynaKube.Status.KubeSystemUUID
 	}
 
 	kubernetesMetaDataAttributes = sanitizeMap(kubernetesMetaDataAttributes)
 
 	// add workload Attributes (only once fetched per pod, but appended per container to env var if not already present)
 	if ownerInfo != nil {
-		_ = kubernetesMetaDataAttributes.Merge(Attributes{
-			"k8s.workload.kind": ownerInfo.Kind,
-			"k8s.workload.name": ownerInfo.Name,
-		})
+		kubernetesMetaDataAttributes["k8s.workload.kind"] = ownerInfo.Kind
+		kubernetesMetaDataAttributes["k8s.workload.name"] = ownerInfo.Name
 	}
 
 	if ownerInfo != nil && request.DynaKube.FF().EnableAttributesDtKubernetes() {
-		_ = kubernetesMetaDataAttributes.Merge(Attributes{
-			metadata.DeprecatedWorkloadNameKey: ownerInfo.Name,
-			metadata.DeprecatedWorkloadKindKey: ownerInfo.Kind,
-		})
+		kubernetesMetaDataAttributes[metadata.DeprecatedWorkloadNameKey] = ownerInfo.Name
+		kubernetesMetaDataAttributes[metadata.DeprecatedWorkloadKindKey] = ownerInfo.Kind
 	}
 
 	// add standard kubernetes metadata attributes
