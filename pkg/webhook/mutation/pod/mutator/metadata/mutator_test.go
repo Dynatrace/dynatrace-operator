@@ -421,6 +421,9 @@ func TestMutate(t *testing.T) {
 				if tc.withDeprecatedAnnotations {
 					assert.Contains(t, request.InstallContainer.Args, buildArgument(DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
 					assert.Contains(t, request.InstallContainer.Args, buildArgument(DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
+				} else {
+					assert.NotContains(t, request.InstallContainer.Args, buildArgument(DeprecatedWorkloadKindKey, request.Pod.OwnerReferences[0].Kind))
+					assert.NotContains(t, request.InstallContainer.Args, buildArgument(DeprecatedWorkloadNameKey, request.Pod.OwnerReferences[0].Name))
 				}
 
 				assert.Contains(t, request.InstallContainer.Args, buildArgument("dt.security_context", "high"))
