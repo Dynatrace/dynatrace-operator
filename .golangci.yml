@@ -282,6 +282,9 @@ linters:
         - all
     loggercheck:
       require-string-key: true
+    nolintlint:
+      # Prevent flaky revive linter from failing CI
+      allow-unused: true
   exclusions:
     generated: lax
     presets:
