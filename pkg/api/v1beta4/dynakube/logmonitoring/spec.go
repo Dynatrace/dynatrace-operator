@@ -62,7 +62,7 @@ type TemplateSpec struct {
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
-	// Set additional arguments to the LogMonitoring main container
+	// Set additional arguments to the LogMonitoring init container
 	// +kubebuilder:validation:Optional
 	Args []string `json:"args,omitempty"`
 }
