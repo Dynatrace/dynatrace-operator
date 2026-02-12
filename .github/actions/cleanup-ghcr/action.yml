@@ -1,0 +1,54 @@
+name: 'Cleanup GHCR Packages'
+description: 'Clean up old GHCR container package versions'
+inputs:
+  org:
+    description: 'GitHub organization or user name'
+    required: true
+  package:
+    description: 'Package name'
+    required: true
+  github-token:
+    description: 'GitHub token with package:delete permissions'
+    required: true
+  dry-run:
+    description: 'Whether to run in dry-run mode (true/false)'
+    required: false
+    default: 'true'
+  package-repo-type:
+    description: 'Package repository type (users or orgs)'
+    required: false
+    default: 'orgs'
+  keep-days:
+    description: 'Number of days to keep outdated tags'
+    required: false
+    default: '14'
+  tags-to-keep:
+    description: 'Comma-separated list of regex patterns for tags to always keep'
+    required: false
+    default: '^snapshot$,^snapshot-release-[0-9.-]+$'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.14'
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip install requests
+
+    - name: Run cleanup script
+      shell: bash
+      env:
+        ORG: ${{ inputs.org }}
+        PACKAGE: ${{ inputs.package }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        PACKAGE_REPO_TYPE: ${{ inputs.package-repo-type }}
+        RETENTION_PERIOD_IN_DAYS: ${{ inputs.keep-days }}
+        TAGS_TO_ALWAYS_KEEP: ${{ inputs.tags-to-keep }}
+      run: |
+        python ${{ github.action_path }}/cleanup.py

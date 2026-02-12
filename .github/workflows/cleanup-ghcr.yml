@@ -1,0 +1,40 @@
+name: Cleanup GHCR Packages
+
+on:
+  schedule:
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Whether to run in dry-run mode'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - if: github.repository_owner == 'Dynatrace'
+        name: Run GHCR cleanup
+        uses: ./.github/actions/cleanup-ghcr
+        with:
+          org: ${{ github.repository_owner }}
+          package: "dynatrace-operator"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dry-run: ${{ github.event.inputs.dry-run || 'false' }}
+          package-repo-type: "orgs"
+          keep-days: "14"
+          tags-to-keep: "^snapshot$,^snapshot-release-[0-9.-]+$"
