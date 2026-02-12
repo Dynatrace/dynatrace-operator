@@ -7,7 +7,7 @@ const (
 	DeprecatedWorkloadNameKey = "dt.kubernetes.workload.name"
 )
 
-func SetDeprecatedAttributes(attrs *podattr.Attributes) {
+func setDeprecatedAttributes(attrs *podattr.Attributes) {
 	if attrs.UserDefined == nil {
 		attrs.UserDefined = map[string]string{}
 	}

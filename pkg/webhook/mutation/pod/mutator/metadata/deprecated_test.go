@@ -17,7 +17,7 @@ func Test_setDeprecatedAttributes(t *testing.T) {
 			},
 		}
 
-		SetDeprecatedAttributes(&attrs)
+		setDeprecatedAttributes(&attrs)
 
 		assertDeprecatedAttributes(t, attrs)
 	})
