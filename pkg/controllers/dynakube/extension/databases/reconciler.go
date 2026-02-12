@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +56,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 		d := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
 
-		err = k8sdeployment.NewNewBuilder().SetContainer(corev1.Container{Name: "test"}).Mutate(d)
+		depl := k8sdeployment.NewNewBuilder().SetContainer(buildContainer(r.dk, dbSpec))
 		// r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
 		//k8sdeployment.SetReplicas(replicas),
 		//k8sdeployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
@@ -79,18 +78,17 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		// changed, err := controllerutil.CreateOrUpdate(ctx, r.client, d, func() error {
-		//	if d.ObjectMeta.CreationTimestamp.IsZero() {
-		//		d.Spec.Selector = &metav1.LabelSelector{
-		//			MatchLabels: map[string]string{"foo": "bar"},
-		//		}
-		//	}
-		//	return nil
-		//})
-
 		_, err = controllerutil.CreateOrUpdate(ctx, r.client, d, func() error {
-			// d.ObjectMeta = metav1.ObjectMeta{Name: ext.GetDatabaseDatasourceName(dbSpec.ID), Namespace: r.dk.Namespace}
-			//d.Spec = appsv1.DeploymentSpec{}
+			err := depl.Mutate(d)
+			if err != nil {
+				return err
+			}
+
+			// That's all we need to do to cover HPA/ and issues with nils.
+			if dbSpec.Replicas != nil {
+				d.Spec.Replicas = dbSpec.Replicas
+			}
+
 			return nil
 		})
 		if err != nil {
