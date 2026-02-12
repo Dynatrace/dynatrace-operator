@@ -69,7 +69,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	}
 
 	if request.DynaKube.FF().EnableAttributesDtKubernetes() {
-		SetDeprecatedAttributes(&attrs)
+		setDeprecatedAttributes(&attrs)
 	}
 
 	addMetadataToInitArgs(request, &attrs)
