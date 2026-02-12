@@ -35,7 +35,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 	container := corev1.Container{
 		Name:            "codemodule-download",
 		Image:           inst.props.ImageURI,
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		ImagePullPolicy: inst.props.ImagePullPolicy,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      volumeName,

@@ -200,6 +200,20 @@ func (oa *OneAgent) GetCustomImage() string {
 	}
 }
 
+// GetImagePullPolicy provides the image pull reference for the OneAgent provided in the Spec.
+func (oa *OneAgent) GetImagePullPolicy() corev1.PullPolicy {
+	switch {
+	case oa.IsClassicFullStackMode():
+		return corev1.PullPolicy(oa.ClassicFullStack.ImagePullPolicy)
+	case oa.IsHostMonitoringMode():
+		return corev1.PullPolicy(oa.HostMonitoring.ImagePullPolicy)
+	case oa.IsCloudNativeFullstackMode():
+		return corev1.PullPolicy(oa.CloudNativeFullStack.ImagePullPolicy)
+	default:
+		return ""
+	}
+}
+
 // GetDefaultImage provides the image reference for the OneAgent from tenant registry.
 func (oa *OneAgent) GetDefaultImage(version string) string {
 	if oa.apiURLHost == "" {
@@ -286,6 +300,17 @@ func (oa *OneAgent) GetCustomCodeModulesImage() string {
 		return oa.CloudNativeFullStack.CodeModulesImage
 	} else if oa.IsApplicationMonitoringMode() && (oa.IsCSIAvailable() || oa.featureBootstrapperInjection) {
 		return oa.ApplicationMonitoring.CodeModulesImage
+	}
+
+	return ""
+}
+
+// GetCodeModulesImagePullPolicy provides the image pull policy for the CodeModules provided in the Spec.
+func (oa *OneAgent) GetCodeModulesImagePullPolicy() corev1.PullPolicy {
+	if oa.IsCloudNativeFullstackMode() {
+		return corev1.PullPolicy(oa.CloudNativeFullStack.CodeModulesImagePullPolicy)
+	} else if oa.IsApplicationMonitoringMode() && (oa.IsCSIAvailable() || oa.featureBootstrapperInjection) {
+		return corev1.PullPolicy(oa.ApplicationMonitoring.CodeModulesImagePullPolicy)
 	}
 
 	return ""

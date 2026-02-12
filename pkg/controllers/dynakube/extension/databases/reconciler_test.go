@@ -147,13 +147,6 @@ func TestReconcileSpec(t *testing.T) {
 		}
 	})
 
-	t.Run("override image pull policy", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag = "latest"
-		deploy := getReconciledDeployment(t, fakeClient(), dk)
-		assert.Equal(t, corev1.PullAlways, deploy.Spec.Template.Spec.Containers[0].ImagePullPolicy)
-	})
-
 	t.Run("override labels", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Databases[0].Labels = map[string]string{"foo": "bar"}
@@ -283,6 +276,7 @@ func getTestDynakube() *dynakube.DynaKube {
 					ImageRef: image.Ref{
 						Repository: testExecutorImageRepository,
 						Tag:        testExecutorImageTag,
+						PullPolicy: "IfNotPresent",
 					},
 				},
 			},
