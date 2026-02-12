@@ -72,9 +72,10 @@ def fetch_manifest(tag):
             return None, ''
 
 # 1. Fetch all package versions
-print(f"Fetching versions for {ORG}/{PACKAGE} ...")
+print(f"::group::Fetching versions for {ORG}/{PACKAGE} ...")
 packages = fetch_all_pages(f"https://api.github.com/{PACKAGE_REPO_TYPE}/{ORG}/packages/container/{PACKAGE}/versions")
 print(f"Found {len(packages)} packages")
+print("::endgroup::")
 
 # 2. Find referenced digests (from tagged versions)
 print(f"Keeping all packages that have tags younger than {RETENTION_PERIOD_IN_DAYS} days ...")
@@ -147,7 +148,7 @@ print(f"Found {len(references_to_keep)} referenced digests")
 print("::endgroup::")
 
 # 4. Delete unreferenced versions
-print(f"\nStarting deletion of unreferenced packages ...")
+print(f"::group::Starting deletion of unreferenced packages ...")
 deleted = 0
 for v in packages:
     if v['name'] not in references_to_keep:
@@ -164,3 +165,4 @@ for v in packages:
 print(f"\nTotal: {len(packages)}, Kept: {len(packages)-deleted}, Deleted: {deleted}")
 if DRY_RUN:
     print("DRY-RUN mode - set DRY_RUN=False to actually delete")
+print("::endgroup::")
