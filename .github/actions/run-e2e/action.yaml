@@ -66,11 +66,13 @@ runs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         path: ref
+        persist-credentials: false
     - name: Checkout target branch
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         ref: ${{ inputs.target-branch || 'main' }}
         path: target
+        persist-credentials: false
     - name: Set up kubectl
       uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
     - name: Set up go
@@ -133,7 +135,7 @@ runs:
         FLC_ENVIRONMENT: ${{ inputs.flc-environment }}
       if: always()
     - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@v2
+      uses: EnricoMi/publish-unit-test-result-action@27d65e188ec43221b20d26de30f4892fad91df2f # v2.22.0
       with:
         files: target/results/*.xml
       if: always()

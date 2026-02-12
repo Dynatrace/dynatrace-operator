@@ -37,6 +37,7 @@ runs:
         ref: release-${{ steps.vars.outputs.major_minor }}
         fetch-depth: 0
         clean: false
+        persist-credentials: false
     - name: Setting properties
       shell: bash
       env:

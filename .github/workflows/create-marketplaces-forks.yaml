@@ -39,6 +39,7 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0
           token: ${{ secrets.TEAM_USER_TOKEN }}
+          persist-credentials: false
       - name: Configure git identity
         run: |
           git config --global user.name  "${{ secrets.TEAM_USER_NAME }}"
