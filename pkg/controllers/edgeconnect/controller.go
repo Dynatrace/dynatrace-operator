@@ -23,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -397,7 +398,8 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 		if depl.Spec.Template.Annotations == nil {
 			depl.Spec.Template.Annotations = map[string]string{}
 		}
-
+		depl.Annotations = maputils.MergeMap(depl.Annotations, deployment.Annotations())
+		depl.Labels = maputils.MergeMap(depl.Labels, deployment.Labels(ec))
 		depl.Spec.Template.Annotations[consts.EdgeConnectAnnotationSecretHash] = secretHash
 
 		depl.Spec = deployment.CreateSpec(ec)
