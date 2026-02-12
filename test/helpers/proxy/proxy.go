@@ -19,11 +19,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdeployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
@@ -71,7 +71,7 @@ func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, test
 	if testDynakube.Spec.Proxy != nil {
 		installProxySCC(builder, t)
 		builder.Assess("install proxy", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyDeploymentPath), true))
-		builder.Assess("proxy started", helpers.ToFeatureFunc(deployment.WaitFor(proxyDeploymentName, proxyNamespaceName), true))
+		builder.Assess("proxy started", helpers.ToFeatureFunc(k8sdeployment.WaitFor(proxyDeploymentName, proxyNamespaceName), true))
 		builder.Assess("proxy ready", checkProxyReady())
 		builder.WithTeardown("removing proxy", DeleteProxy())
 	}
@@ -81,10 +81,10 @@ func SetupProxyWithCustomCAandTeardown(t *testing.T, builder *features.FeatureBu
 	if testDynakube.HasProxy() {
 		builder.Assess("create proxy namespace", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyNamespaceWithCustomCADeploymentPath), true))
 		proxySecret := createProxyTLSSecret(pemCert, pemPk)
-		builder.Assess("create proxy TLS secret", secret.Create(proxySecret))
+		builder.Assess("create proxy TLS secret", k8ssecret.Create(proxySecret))
 		installProxySCC(builder, t)
 		builder.Assess("install proxy", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyWithCustomCADeploymentPath), true))
-		builder.Assess("proxy started", helpers.ToFeatureFunc(deployment.WaitFor(proxyDeploymentName, proxyNamespaceName), true))
+		builder.Assess("proxy started", helpers.ToFeatureFunc(k8sdeployment.WaitFor(proxyDeploymentName, proxyNamespaceName), true))
 		builder.Assess("proxy ready", checkProxyReady())
 		builder.WithTeardown("removing proxy", DeleteProxy())
 	}
@@ -100,13 +100,13 @@ func installProxySCC(builder *features.FeatureBuilder, t *testing.T) {
 
 func DeleteProxy() features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		return namespace.Delete(proxyNamespaceName)(ctx, t, envConfig)
+		return k8snamespace.Delete(proxyNamespaceName)(ctx, t, envConfig)
 	}
 }
 
 func checkProxyReady() features.Func {
 	return func(ctx context.Context, t *testing.T, envc *envconf.Config) context.Context {
-		return helpers.ToFeatureFunc(deployment.WaitFor(proxyDeploymentName, proxyNamespaceName), false)(ctx, t, envc)
+		return helpers.ToFeatureFunc(k8sdeployment.WaitFor(proxyDeploymentName, proxyNamespaceName), false)(ctx, t, envc)
 	}
 }
 
@@ -136,13 +136,13 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *val
 	return func(ctx context.Context, t *testing.T, e *envconf.Config) context.Context {
 		resources := e.Client().Resources()
 
-		err := deployment.NewQuery(ctx, resources, client.ObjectKey{
+		err := k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
 		}).ForEachPod(func(podItem corev1.Pod) {
 			dir := filepath.Join(volumes.ConfigMountPath, pmc.DestinationRuxitAgentProcPath)
 			readFileCommand := shell.ReadFile(dir)
-			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), readFileCommand...)
+			result, err := k8spod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), readFileCommand...)
 			assert.Contains(t, result.StdOut.String(), fmt.Sprintf("proxy %s", proxySpec.Value))
 			require.NoError(t, err)
 		})
@@ -166,7 +166,7 @@ func createProxyTLSSecret(pemCert []byte, pemPK []byte) corev1.Secret {
 		"squid-ca-cert.pem": pem,
 	}
 
-	proxySecret := secret.New("proxy-ca", "proxy", secretData)
+	proxySecret := k8ssecret.New("proxy-ca", "proxy", secretData)
 	proxySecret.Type = corev1.SecretTypeOpaque
 
 	return proxySecret

@@ -7,8 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -16,15 +16,15 @@ import (
 )
 
 func WaitForDaemonset(dsName, namespace string) features.Func {
-	return helpers.ToFeatureFunc(daemonset.WaitFor(dsName, namespace), true)
+	return helpers.ToFeatureFunc(k8sdaemonset.WaitFor(dsName, namespace), true)
 }
 
 func WaitForDaemonSetPodsDeletion(dsName, namespace string) features.Func {
-	return pod.WaitForPodsDeletionWithOwner(dsName, namespace)
+	return k8spod.WaitForPodsDeletionWithOwner(dsName, namespace)
 }
 
 func Get(ctx context.Context, resource *resources.Resources, dk dynakube.DynaKube) (appsv1.DaemonSet, error) {
-	return daemonset.NewQuery(ctx, resource, client.ObjectKey{
+	return k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 		Name:      dk.OneAgent().GetDaemonsetName(),
 		Namespace: dk.Namespace,
 	}).Get()

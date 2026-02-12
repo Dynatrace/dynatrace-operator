@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sevent"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -25,7 +25,7 @@ func LogEvents(ctx context.Context, c *envconf.Config, t *testing.T) {
 		options.FieldSelector = fmt.Sprint(fields.OneTermEqualSelector("type", corev1.EventTypeWarning))
 	}
 
-	events := event.List(t, ctx, resource, "dynatrace", optFunc)
+	events := k8sevent.List(t, ctx, resource, "dynatrace", optFunc)
 
 	klog.InfoS("Events list", "events total", len(events.Items))
 	for _, eventItem := range events.Items {

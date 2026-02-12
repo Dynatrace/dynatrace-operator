@@ -5,13 +5,13 @@ go 1.25.0
 require (
 	github.com/Dynatrace/dynatrace-bootstrapper v1.2.0
 	github.com/container-storage-interface/spec v1.12.0
-	github.com/docker/cli v29.1.5+incompatible
+	github.com/docker/cli v29.2.1+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-containerregistry v0.20.7
 	github.com/google/uuid v1.6.0
-	github.com/klauspost/compress v1.18.3
-	github.com/kubernetes-csi/csi-lib-utils v0.23.1
+	github.com/klauspost/compress v1.18.4
+	github.com/kubernetes-csi/csi-lib-utils v0.23.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2

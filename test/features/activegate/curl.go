@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/stretchr/testify/require"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -67,7 +67,7 @@ func removeActiveGateCurlPod(podName, serviceURL string, dk dynakube.DynaKube) f
 }
 
 func waitForActiveGateCurlPod(podName string, dk dynakube.DynaKube) features.Func {
-	return pod.WaitFor(podName, curlNamespace(dk))
+	return k8spod.WaitFor(podName, curlNamespace(dk))
 }
 
 func checkActiveGateCurlResult(podName string, dk dynakube.DynaKube) features.Func {

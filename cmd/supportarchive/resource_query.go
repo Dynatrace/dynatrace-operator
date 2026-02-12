@@ -2,6 +2,7 @@ package supportarchive
 
 import (
 	"reflect"
+	"slices"
 
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest" //nolint:revive
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -30,16 +31,15 @@ type resourceQuery struct {
 }
 
 func getQueries(namespace string, appName string) []resourceQuery {
-	allQueries := make([]resourceQuery, 0)
-	allQueries = append(allQueries, getInjectedNamespaceQueryGroup().getQueries()...)
-	allQueries = append(allQueries, getOperatorNamespaceQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, k8slabel.AppNameLabel).getQueries()...)
-	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, k8slabel.AppManagedByLabel).getQueries()...)
-	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getConfigMapQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getEventsQueryGroup(namespace).getQueries()...)
-
-	return allQueries
+	return slices.Concat(
+		getInjectedNamespaceQueryGroup().getQueries(),
+		getOperatorNamespaceQueryGroup(namespace).getQueries(),
+		getComponentsQueryGroup(namespace, appName, k8slabel.AppNameLabel).getQueries(),
+		getComponentsQueryGroup(namespace, appName, k8slabel.AppManagedByLabel).getQueries(),
+		getCustomResourcesQueryGroup(namespace).getQueries(),
+		getConfigMapQueryGroup(namespace).getQueries(),
+		getEventsQueryGroup(namespace).getQueries(),
+	)
 }
 
 func getInjectedNamespaceQueryGroup() resourceQueryGroup {

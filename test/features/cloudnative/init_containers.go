@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +59,7 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 			assert.NotContains(t, oneAgentInstallInitContainer.Args, "--"+k8sinit.SuppressErrorsFlag, "in the tests the init-container should have no errors suppressed")
 
 			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
-			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifNotEmptyCommand...)
+			executionResult, err := k8spod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifNotEmptyCommand...)
 			require.NoError(t, err)
 
 			stdOut := executionResult.StdOut.String()

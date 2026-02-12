@@ -16,7 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -191,7 +191,7 @@ func assessPodHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resou
 
 func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		query := deployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
+		query := k8sdeployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
 		})
@@ -222,7 +222,7 @@ func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
 	}
 }
 
-func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) deployment.PodConsumer {
+func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) k8sdeployment.PodConsumer {
 	return func(pod corev1.Pod) {
 		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, resource, pod)
 
@@ -231,7 +231,7 @@ func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T
 	}
 }
 
-func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) deployment.PodConsumer {
+func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) k8sdeployment.PodConsumer {
 	return func(pod corev1.Pod) {
 		initContainers := pod.Spec.InitContainers
 

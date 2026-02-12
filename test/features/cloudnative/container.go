@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/stretchr/testify/assert"
@@ -101,7 +101,7 @@ func checkActiveGateContainer(dk *dynakube.DynaKube, trustedCAs []byte) features
 
 func checkFileContents(ctx context.Context, t *testing.T, testResources *resources.Resources, testPod corev1.Pod, containerName string, filename string, certificates string) { //nolint:revive
 	catCommand := shell.Shell(shell.Cat(filename))
-	executionResult, err := pod.Exec(ctx, testResources, testPod, containerName, catCommand...)
+	executionResult, err := k8spod.Exec(ctx, testResources, testPod, containerName, catCommand...)
 
 	require.NoError(t, err)
 
@@ -114,7 +114,7 @@ func checkFileContents(ctx context.Context, t *testing.T, testResources *resourc
 
 func checkFileNotFound(ctx context.Context, t *testing.T, testResources *resources.Resources, testPod corev1.Pod, containerName string, filename string) { //nolint:revive
 	existsCommand := shell.Shell(shell.Exists(filename))
-	executionResult, err := pod.Exec(ctx, testResources, testPod, containerName, existsCommand...)
+	executionResult, err := k8spod.Exec(ctx, testResources, testPod, containerName, existsCommand...)
 
 	require.NoError(t, err)
 

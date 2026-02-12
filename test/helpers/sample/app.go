@@ -11,12 +11,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/event"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdeployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sevent"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sreplicaset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
@@ -71,7 +71,7 @@ func NewApp(t *testing.T, owner metav1.Object, options ...Option) *App {
 		owner:     owner,
 		base:      base,
 		scBase:    sc,
-		namespace: *namespace.New(base.Namespace),
+		namespace: *k8snamespace.New(base.Namespace),
 	}
 
 	defaultOptions := []Option{
@@ -89,7 +89,7 @@ func WithName(name string) Option {
 	return func(app *App) {
 		if app.base.Namespace == app.base.Name {
 			app.base.Namespace = name
-			app.namespace = *namespace.New(name)
+			app.namespace = *k8snamespace.New(name)
 			app.scBase.Namespace = name
 		}
 		app.base.Name = name
@@ -176,7 +176,7 @@ func (app *App) Namespace() string {
 func (app *App) InstallNamespace() features.Func {
 	app.installedNamespace = true
 
-	return namespace.Create(app.namespace)
+	return k8snamespace.Create(app.namespace)
 }
 
 func (app *App) CanInitError() bool {
@@ -206,7 +206,7 @@ func (app *App) Install() features.Func {
 		require.NoError(t, resource.Create(ctx, object))
 
 		if dep, ok := object.(*appsv1.Deployment); ok {
-			err := deployment.WaitUntilReady(resource, dep)
+			err := k8sdeployment.WaitUntilReady(resource, dep)
 			if err != nil {
 				printEventList(t, ctx, resource, app.Namespace())
 			}
@@ -236,7 +236,7 @@ func (app *App) InstallFail() features.Func {
 		require.NoError(t, resource.Create(ctx, object))
 
 		if dep, ok := object.(*appsv1.Deployment); ok {
-			err := deployment.WaitUntilFailedCreate(resource, dep)
+			err := k8sdeployment.WaitUntilFailedCreate(resource, dep)
 			if err != nil {
 				printEventList(t, ctx, resource, app.Namespace())
 			}
@@ -284,10 +284,10 @@ func (app *App) Uninstall() features.Func {
 		require.NoError(t, resource.Delete(ctx, object))
 		require.NoError(t, wait.For(conditions.New(resource).ResourceDeleted(object), wait.WithTimeout(2*time.Minute)))
 		if dep, ok := object.(*appsv1.Deployment); ok {
-			ctx = pod.WaitForPodsDeletionWithOwner(dep.Name, dep.Namespace)(ctx, t, c)
+			ctx = k8spod.WaitForPodsDeletionWithOwner(dep.Name, dep.Namespace)(ctx, t, c)
 		}
 
-		return namespace.Delete(app.Namespace())(ctx, t, c)
+		return k8snamespace.Delete(app.Namespace())(ctx, t, c)
 	}
 }
 
@@ -303,7 +303,7 @@ func (app *App) UninstallFail() features.Func {
 		require.NoError(t, resource.Delete(ctx, object))
 		require.NoError(t, wait.For(conditions.New(resource).ResourceDeleted(object), wait.WithTimeout(2*time.Minute)))
 
-		return namespace.Delete(app.Namespace())(ctx, t, c)
+		return k8snamespace.Delete(app.Namespace())(ctx, t, c)
 	}
 }
 
@@ -360,9 +360,9 @@ func (app *App) asDeployment() *appsv1.Deployment {
 func (app *App) GetPods(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList {
 	var pods corev1.PodList
 	if app.isDeployment {
-		replica := replicaset.GetReplicaSetsForOwner(ctx, t, resource, app.Name(), app.Namespace())
+		replica := k8sreplicaset.GetReplicaSetsForOwner(ctx, t, resource, app.Name(), app.Namespace())
 		require.NotNil(t, replica)
-		pods = pod.GetPodsForOwner(ctx, t, resource, replica.Name, app.Namespace())
+		pods = k8spod.GetPodsForOwner(ctx, t, resource, replica.Name, app.Namespace())
 	} else {
 		var p corev1.Pod
 		require.NoError(t, resource.Get(ctx, app.Name(), app.Namespace(), &p))
@@ -380,7 +380,7 @@ func (app *App) Restart() features.Func {
 		deletePods(t, ctx, pods, resource)
 
 		if app.isDeployment {
-			require.NoError(t, deployment.WaitUntilReady(resource, app.build().(*appsv1.Deployment)))
+			require.NoError(t, k8sdeployment.WaitUntilReady(resource, app.build().(*appsv1.Deployment)))
 		} else {
 			ctx = app.Install()(ctx, t, envConfig)
 		}
@@ -402,6 +402,6 @@ func printEventList(t *testing.T, ctx context.Context, resource *resources.Resou
 		options.Limit = int64(300)
 		options.FieldSelector = fmt.Sprint(fields.OneTermEqualSelector("type", corev1.EventTypeWarning))
 	}
-	events := event.List(t, ctx, resource, namespace, optFunc)
+	events := k8sevent.List(t, ctx, resource, namespace, optFunc)
 	t.Log("events", events)
 }

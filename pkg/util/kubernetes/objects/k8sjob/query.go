@@ -18,10 +18,10 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 		query.Generic[*batchv1.Job, *batchv1.JobList]{
 			Target:     &batchv1.Job{},
 			ListTarget: &batchv1.JobList{},
-			ToList: func(sl *batchv1.JobList) []*batchv1.Job {
-				out := []*batchv1.Job{}
-				for _, s := range sl.Items {
-					out = append(out, &s)
+			ToList: func(list *batchv1.JobList) []*batchv1.Job {
+				out := make([]*batchv1.Job, len(list.Items))
+				for i, item := range list.Items {
+					out[i] = &item
 				}
 
 				return out

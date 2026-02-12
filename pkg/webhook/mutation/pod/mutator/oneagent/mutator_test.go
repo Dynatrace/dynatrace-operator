@@ -270,15 +270,9 @@ func TestMutate(t *testing.T) {
 	})
 	t.Run("no change => no update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
-		updateContainer := []corev1.Container{}
-
-		for _, c := range request.Pod.Spec.Containers {
-			container := &c
-			addVolumeMounts(container, "test")
-			updateContainer = append(updateContainer, *container)
+		for i := range request.Pod.Spec.Containers {
+			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
 		}
-
-		request.Pod.Spec.Containers = updateContainer
 
 		err := mut.Mutate(request)
 		require.NoError(t, err)
@@ -353,15 +347,9 @@ func TestReinvoke(t *testing.T) {
 
 	t.Run("no change => no update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers()
-		updateContainer := []corev1.Container{}
-
-		for _, c := range request.Pod.Spec.Containers {
-			container := &c
-			addVolumeMounts(container, "test")
-			updateContainer = append(updateContainer, *container)
+		for i := range request.Pod.Spec.Containers {
+			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
 		}
-
-		request.Pod.Spec.Containers = updateContainer
 
 		updated := mut.Reinvoke(request.ToReinvocationRequest())
 		require.False(t, updated)

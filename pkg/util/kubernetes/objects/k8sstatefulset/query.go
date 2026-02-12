@@ -13,10 +13,10 @@ func Query(kubeClient client.Client, kubeReader client.Reader, log logd.Logger) 
 	return query.Generic[*appsv1.StatefulSet, *appsv1.StatefulSetList]{
 		Target:     &appsv1.StatefulSet{},
 		ListTarget: &appsv1.StatefulSetList{},
-		ToList: func(sl *appsv1.StatefulSetList) []*appsv1.StatefulSet {
-			out := []*appsv1.StatefulSet{}
-			for _, s := range sl.Items {
-				out = append(out, &s)
+		ToList: func(list *appsv1.StatefulSetList) []*appsv1.StatefulSet {
+			out := make([]*appsv1.StatefulSet, len(list.Items))
+			for i, item := range list.Items {
+				out[i] = &item
 			}
 
 			return out

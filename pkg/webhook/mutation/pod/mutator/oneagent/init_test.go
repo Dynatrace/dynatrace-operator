@@ -2,6 +2,7 @@ package oneagent
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
@@ -374,11 +375,10 @@ func TestAddInitArgs(t *testing.T) {
 		err := addInitArgs(&pod, &initContainer, dk, installPath)
 		require.NoError(t, err)
 
-		expectedArgs := []string{
+		expectedArgs := slices.Concat([]string{
 			fmt.Sprintf("--%s=%s", configure.TenantFlag, tenantUUID),
 			fmt.Sprintf("--%s", configure.IsFullstackFlag),
-		}
-		expectedArgs = append(expectedArgs, commonArgs...)
+		}, commonArgs)
 
 		assert.ElementsMatch(t, expectedArgs, initContainer.Args)
 	})
@@ -409,12 +409,11 @@ func TestAddInitArgs(t *testing.T) {
 		err := addInitArgs(&pod, &initContainer, dk, installPath)
 		require.NoError(t, err)
 
-		expectedArgs := []string{
+		expectedArgs := slices.Concat([]string{
 			fmt.Sprintf("--%s=%s", move.TechnologyFlag, technology),
 			fmt.Sprintf("--%s=%s", configure.TenantFlag, tenantUUID),
 			fmt.Sprintf("--%s", configure.IsFullstackFlag),
-		}
-		expectedArgs = append(expectedArgs, commonArgs...)
+		}, commonArgs)
 
 		assert.ElementsMatch(t, expectedArgs, initContainer.Args)
 	})
@@ -433,10 +432,9 @@ func TestAddInitArgs(t *testing.T) {
 		err := addInitArgs(&pod, &initContainer, dk, installPath)
 		require.NoError(t, err)
 
-		expectedArgs := []string{
+		expectedArgs := slices.Concat([]string{
 			fmt.Sprintf("--%s=%s", move.TechnologyFlag, technology),
-		}
-		expectedArgs = append(expectedArgs, commonArgs...)
+		}, commonArgs)
 
 		assert.ElementsMatch(t, expectedArgs, initContainer.Args)
 	})

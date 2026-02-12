@@ -10,8 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdeployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -36,11 +36,11 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("extensions execution controller started", statefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("extensions db-a datasource deployment started", deployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-a"), testDynakube.Namespace))
-	builder.Assess("extensions db-b datasource deployment started", deployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-b"), testDynakube.Namespace))
-	builder.Assess("extensions db-c datasource deployment started", deployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-c"), testDynakube.Namespace))
+	builder.Assess("extensions db-a datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-a"), testDynakube.Namespace))
+	builder.Assess("extensions db-b datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-b"), testDynakube.Namespace))
+	builder.Assess("extensions db-c datasource deployment started", k8sdeployment.IsReady(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID+"-c"), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 

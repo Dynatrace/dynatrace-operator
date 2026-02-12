@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -31,7 +31,7 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	// Register sample app install
-	sampleNamespace := *namespace.New("cloudnative-disabled-injection-sample")
+	sampleNamespace := *k8snamespace.New("cloudnative-disabled-injection-sample")
 	sampleApp := sample.NewApp(t, &testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),

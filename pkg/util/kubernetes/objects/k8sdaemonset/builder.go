@@ -1,6 +1,8 @@
 package k8sdaemonset
 
 import (
+	"slices"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/builder"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	appsv1 "k8s.io/api/apps/v1"
@@ -18,12 +20,11 @@ var (
 )
 
 func Build(owner metav1.Object, name string, container corev1.Container, options ...builder.Option[*appsv1.DaemonSet]) (*appsv1.DaemonSet, error) {
-	neededOpts := []builder.Option[*appsv1.DaemonSet]{
+	neededOpts := slices.Concat([]builder.Option[*appsv1.DaemonSet]{
 		setName(name),
 		SetContainer(container),
 		setNamespace(owner.GetNamespace()),
-	}
-	neededOpts = append(neededOpts, options...)
+	}, options)
 
 	return builder.Build(owner, &appsv1.DaemonSet{}, neededOpts...)
 }

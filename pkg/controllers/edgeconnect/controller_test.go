@@ -3,6 +3,7 @@ package edgeconnect
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -779,8 +780,7 @@ func createFakeClientAndReconciler(t *testing.T, ec *edgeconnect.EdgeConnect, ob
 	fakeClient := fake.NewClientWithIndex(createCRD(t))
 
 	if ec != nil {
-		objs := []client.Object{ec, createCRD(t)}
-		objs = append(objs, objects...)
+		objs := slices.Concat([]client.Object{ec, createCRD(t)}, objects)
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
 
@@ -816,8 +816,7 @@ func createFakeClientAndReconcilerForProvisioner(t *testing.T, ec *edgeconnect.E
 	fakeClient := fake.NewClientWithIndex(createCRD(t))
 
 	if ec != nil {
-		objs := []client.Object{ec, createCRD(t)}
-		objs = append(objs, objects...)
+		objs := slices.Concat([]client.Object{ec, createCRD(t)}, objects)
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
 

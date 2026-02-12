@@ -39,7 +39,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Login to Registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -66,7 +66,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Login to Registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -126,7 +126,7 @@ jobs:
         run: |
           helm registry login -u "${{ github.repository_owner }}" -p "${{ secrets.GITHUB_TOKEN }}" "${{ env.IMAGE_REGISTRY }}"
       - name: Authenticate Docker
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -137,3 +137,8 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+          registry-url: ghcr.io
+          registry-namespace: dynatrace
+          helm-repository-name: dynatrace-operator
+          image-tag-prefix: "0.0.0-"
+          mutable-nightly-tag: "nightly-chart"

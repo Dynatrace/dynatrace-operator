@@ -29,12 +29,12 @@ func TestAddPodAttributes(t *testing.T) {
 
 		require.NotEmpty(t, request.InstallContainer.Args)
 
-		rawArgs := []string{}
+		rawArgs := make([]string, len(request.InstallContainer.Args))
 
-		for _, arg := range request.InstallContainer.Args {
+		for i, arg := range request.InstallContainer.Args {
 			_, rawArg, found := strings.Cut(arg, "=")
 			require.True(t, found, "missing '=': "+arg)
-			rawArgs = append(rawArgs, rawArg)
+			rawArgs[i] = rawArg
 		}
 
 		attr, err := podattr.ParseAttributes(rawArgs)

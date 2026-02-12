@@ -17,7 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/events"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/environment"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )

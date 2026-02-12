@@ -14,8 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/environment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -30,19 +30,19 @@ func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 
-	nsWithIstio := *namespace.New(operator.DefaultNamespace, namespace.WithIstio())
-	nsWithoutIstio := *namespace.New(operator.DefaultNamespace)
+	nsWithIstio := *k8snamespace.New(operator.DefaultNamespace, k8snamespace.WithIstio())
+	nsWithoutIstio := *k8snamespace.New(operator.DefaultNamespace)
 	testEnv.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnv.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnv.Setup(
 		helpers.SetScheme,
-		namespace.CreateForEnv(nsWithIstio),
+		k8snamespace.CreateForEnv(nsWithIstio),
 		operator.InstallLocal(true),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.Uninstall(true))
-		testEnv.Finish(namespace.CreateForEnv(nsWithoutIstio))
+		testEnv.Finish(k8snamespace.CreateForEnv(nsWithoutIstio))
 	}
 
 	testEnv.AfterEachTest(func(ctx context.Context, c *envconf.Config, t *testing.T) (context.Context, error) {

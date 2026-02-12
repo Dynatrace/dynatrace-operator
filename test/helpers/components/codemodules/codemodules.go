@@ -11,8 +11,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,14 +36,14 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) featur
 		var dk dynakube.DynaKube
 		require.NoError(t, e.Client().Resources().Get(ctx, testDynakube.Name, testDynakube.Namespace, &dk))
 
-		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
+		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: testDynakube.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			// /data/codemodules/1.318.0.20250609-191530/agent/conf/ruxitagentproc.conf
 			dir := filepath.Join("/data", "codemodules", dk.OneAgent().GetCodeModulesVersion(), "agent", "conf", RuxitAgentProcFile)
 			err := wait.For(func(ctx context.Context) (done bool, err error) {
-				result, err := pod.Exec(ctx, resources, podItem, "provisioner", shell.ReadFile(dir)...)
+				result, err := k8spod.Exec(ctx, resources, podItem, "provisioner", shell.ReadFile(dir)...)
 				if err != nil {
 					if strings.Contains(result.StdErr.String(), "No such file or directory") {
 						return false, nil

@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -32,7 +32,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("kspm node config collector started", daemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
@@ -62,7 +62,7 @@ func OptionalScopes(t *testing.T) features.Feature {
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
-	builder.Assess("kspm node config collector started", daemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 

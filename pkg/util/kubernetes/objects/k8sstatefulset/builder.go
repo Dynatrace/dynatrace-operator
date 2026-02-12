@@ -1,6 +1,8 @@
 package k8sstatefulset
 
 import (
+	"slices"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/builder"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -20,14 +22,11 @@ var (
 )
 
 func Build(owner metav1.Object, name string, container corev1.Container, options ...builder.Option[*appsv1.StatefulSet]) (*appsv1.StatefulSet, error) {
-	neededOpts := []builder.Option[*appsv1.StatefulSet]{
+	neededOpts := slices.Concat([]builder.Option[*appsv1.StatefulSet]{
 		setName(name),
 		SetContainer(container),
 		setNamespace(owner.GetNamespace()),
-	}
-	neededOpts = append(neededOpts, options...)
-
-	neededOpts = append(neededOpts, SetPVCAnnotation())
+	}, options, []builder.Option[*appsv1.StatefulSet]{SetPVCAnnotation()})
 
 	return builder.Build(owner, &appsv1.StatefulSet{}, neededOpts...)
 }

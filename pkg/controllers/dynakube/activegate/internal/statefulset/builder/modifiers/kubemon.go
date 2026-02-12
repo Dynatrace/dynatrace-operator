@@ -1,6 +1,8 @@
 package modifiers
 
 import (
+	"slices"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -55,14 +57,13 @@ func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) error {
 }
 
 func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
-	volumeMounts := []corev1.VolumeMount{
+	volumeMounts := slices.Concat([]corev1.VolumeMount{
 		{
 			ReadOnly:  false,
 			Name:      trustStoreVolume,
 			MountPath: activeGateSslPath,
 		},
-	}
-	volumeMounts = append(volumeMounts, mod.getReadOnlyInitVolumeMounts()...)
+	}, mod.getReadOnlyInitVolumeMounts())
 
 	return []corev1.Container{
 		{

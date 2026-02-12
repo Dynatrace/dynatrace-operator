@@ -12,8 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8sdaemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -50,7 +50,7 @@ func GenerateMetadata(t *testing.T) features.Feature {
 
 	// Register Dynakube install
 	componentDynakube.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
-	builder.Assess("OneAgent started", daemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
+	builder.Assess("OneAgent started", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("Checking if all OneAgent pods have generated metadata", oneAgentHaveGeneratedMetadata(testDynakube))
@@ -66,7 +66,7 @@ func oneAgentHaveGeneratedMetadata(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		r := envConfig.Client().Resources()
 
-		q := daemonset.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
+		q := k8sdaemonset.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
 			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
 		})
@@ -78,7 +78,7 @@ func oneAgentHaveGeneratedMetadata(dk dynakube.DynaKube) features.Func {
 	}
 }
 
-func assertGeneratedMetadataFields(ctx context.Context, t *testing.T, resource *resources.Resources) daemonset.PodConsumer {
+func assertGeneratedMetadataFields(ctx context.Context, t *testing.T, resource *resources.Resources) k8sdaemonset.PodConsumer {
 	return func(pod corev1.Pod) {
 		generatedMetadata := getGeneratedMetadataFromPod(ctx, t, resource, pod)
 		assert.NotEmpty(t, generatedMetadata, "generated metadata should not be empty")
@@ -93,7 +93,7 @@ func getGeneratedMetadataFromPod(ctx context.Context, t *testing.T, resource *re
 	readGeneratedMetadataCmd := shell.ReadFile(generateMetadataFile)
 	require.NotEmpty(t, oaPod.Spec.Containers, "OneAgent pod should have at least one container")
 	container := oaPod.Spec.Containers[0].Name
-	result, err := pod.Exec(ctx, resource, oaPod, container, readGeneratedMetadataCmd...)
+	result, err := k8spod.Exec(ctx, resource, oaPod, container, readGeneratedMetadataCmd...)
 
 	require.NoError(t, err)
 
