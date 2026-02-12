@@ -66,15 +66,7 @@ func executeUninstall(namespace string) features.Func {
 }
 
 func removeUninstallDaemonset(namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resource := envConfig.Client().Resources()
-		require.NoError(t, k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
-			Name:      uninstallOneAgentDaemonSetName,
-			Namespace: namespace,
-		}).Delete())
-
-		return ctx
-	}
+	return k8sdaemonset.Delete(uninstallOneAgentDaemonSetName, namespace)
 }
 
 func cleanUpNodeConsumer(ctx context.Context, t *testing.T, resource *resources.Resources) k8sdaemonset.PodConsumer {

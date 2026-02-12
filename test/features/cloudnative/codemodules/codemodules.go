@@ -645,9 +645,6 @@ func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
-			require.NotNil(t, podItem)
-			require.NotNil(t, podItem.Spec)
-
 			checkEnvVarsInContainer(t, podItem, dk.OneAgent().GetDaemonsetName(), httpsProxy)
 		})
 

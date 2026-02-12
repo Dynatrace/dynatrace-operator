@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,15 +42,6 @@ func (query *Query) Get() (appsv1.DaemonSet, error) {
 	return daemonSet, err
 }
 
-func (query *Query) Delete() error {
-	daemonSet, err := query.Get()
-	if err != nil && !k8sErrors.IsNotFound(err) {
-		return err
-	}
-
-	return query.resource.Delete(query.ctx, &daemonSet)
-}
-
 func (query *Query) ForEachPod(actionFunc PodConsumer) error {
 	var pods corev1.PodList
 	daemonSet, err := query.Get()
@@ -71,6 +61,16 @@ func (query *Query) ForEachPod(actionFunc PodConsumer) error {
 	}
 
 	return nil
+}
+
+func Delete(name, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		ds := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}
+		require.NoError(t, client.IgnoreNotFound(resources.Delete(ctx, ds)))
+
+		return ctx
+	}
 }
 
 func IsReady(name, namespace string) features.Func {
