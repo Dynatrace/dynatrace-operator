@@ -33,7 +33,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	log.Debug("reconciling deployments")
 
-	//query := k8sdeployment.Query(r.client, r.apiReader, log)
+	// query := k8sdeployment.Query(r.client, r.apiReader, log)
 	ext := r.dk.Extensions()
 	expectedDeploymentNames := make([]string, len(ext.Databases))
 
@@ -58,7 +58,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		d := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
 
 		err = k8sdeployment.NewNewBuilder().SetContainer(corev1.Container{Name: "test"}).Mutate(d)
-		//r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
+		// r.dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
 		//k8sdeployment.SetReplicas(replicas),
 		//k8sdeployment.SetAllLabels(buildAllLabels(r.dk, dbSpec)),
 		//k8sdeployment.SetAllAnnotations(nil, dbSpec.Annotations),
@@ -79,7 +79,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			return err
 		}
 
-		//changed, err := controllerutil.CreateOrUpdate(ctx, r.client, d, func() error {
+		// changed, err := controllerutil.CreateOrUpdate(ctx, r.client, d, func() error {
 		//	if d.ObjectMeta.CreationTimestamp.IsZero() {
 		//		d.Spec.Selector = &metav1.LabelSelector{
 		//			MatchLabels: map[string]string{"foo": "bar"},
@@ -89,11 +89,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		//})
 
 		_, err = controllerutil.CreateOrUpdate(ctx, r.client, d, func() error {
-			//d.ObjectMeta = metav1.ObjectMeta{Name: ext.GetDatabaseDatasourceName(dbSpec.ID), Namespace: r.dk.Namespace}
+			// d.ObjectMeta = metav1.ObjectMeta{Name: ext.GetDatabaseDatasourceName(dbSpec.ID), Namespace: r.dk.Namespace}
 			//d.Spec = appsv1.DeploymentSpec{}
 			return nil
 		})
-
 		if err != nil {
 			k8sconditions.SetKubeAPIError(r.dk.Conditions(), conditionType, err)
 

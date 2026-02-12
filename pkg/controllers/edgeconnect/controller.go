@@ -285,7 +285,7 @@ func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, ec *ed
 
 	_log.Debug("reconcile regular EdgeConnect")
 
-	return controller.reconcileEdgeConnectRegular2(ctx, ec)
+	return controller.reconcileEdgeConnectRegular(ctx, ec)
 }
 
 func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespace string) (*edgeconnect.EdgeConnect, error) {
@@ -380,42 +380,82 @@ func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, ec *e
 }
 
 func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
-	desiredDeployment := &appsv1.Deployment{
+	depl := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        ec.Name,
-			Namespace:   ec.Namespace,
-			Labels:      deployment.Labels(ec),
-			Annotations: deployment.Annotations(),
+			Name:      ec.Name,
+			Namespace: ec.Namespace,
 		},
 	}
-	desiredDeployment.Spec = deployment.CreateSpec(ec)
+	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name, "deploymentName", depl.Name)
 
-	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name, "deploymentName", desiredDeployment.Name)
+	op, err := controllerutil.CreateOrUpdate(ctx, controller.client, depl, func() error {
+		_, secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, ec)
+		if err != nil {
+			return err
+		}
 
-	if err := controllerutil.SetControllerReference(ec, desiredDeployment, scheme.Scheme); err != nil {
-		return errors.WithStack(err)
-	}
+		if depl.Spec.Template.Annotations == nil {
+			depl.Spec.Template.Annotations = map[string]string{}
+		}
 
-	_, secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, ec)
-	if err != nil {
-		return err
-	}
+		depl.Spec.Template.Annotations[consts.EdgeConnectAnnotationSecretHash] = secretHash
 
-	if desiredDeployment.Spec.Template.Annotations == nil {
-		desiredDeployment.Spec.Template.Annotations = map[string]string{}
-	}
+		depl.Spec = deployment.CreateSpec(ec)
 
-	desiredDeployment.Spec.Template.Annotations[consts.EdgeConnectAnnotationSecretHash] = secretHash
+		if err := controllerutil.SetControllerReference(ec, depl, scheme.Scheme); err != nil {
+			return errors.WithStack(err)
+		}
 
-	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
+		return nil
+	})
 	if err != nil {
 		_log.Info("could not create or update deployment for EdgeConnect")
 
 		return err
 	}
 
+	_log.Info("deployment for EdgeConnect", "operation", op)
+
 	return nil
 }
+
+// func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
+//	desiredDeployment := &appsv1.Deployment{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:        ec.Name,
+//			Namespace:   ec.Namespace,
+//			Labels:      deployment.Labels(ec),
+//			Annotations: deployment.Annotations(),
+//		},
+//	}
+//	desiredDeployment.Spec = deployment.CreateSpec(ec)
+//
+//	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name, "deploymentName", desiredDeployment.Name)
+//
+//	if err := controllerutil.SetControllerReference(ec, desiredDeployment, scheme.Scheme); err != nil {
+//		return errors.WithStack(err)
+//	}
+//
+//	_, secretHash, err := controller.createOrUpdateEdgeConnectConfigSecret(ctx, ec)
+//	if err != nil {
+//		return err
+//	}
+//
+//	if desiredDeployment.Spec.Template.Annotations == nil {
+//		desiredDeployment.Spec.Template.Annotations = map[string]string{}
+//	}
+//
+//	desiredDeployment.Spec.Template.Annotations[consts.EdgeConnectAnnotationSecretHash] = secretHash
+//
+//	_, err = k8sdeployment.Query(controller.client, controller.apiReader, log).WithOwner(ec).CreateOrUpdate(ctx, desiredDeployment)
+//	if err != nil {
+//		_log.Info("could not create or update deployment for EdgeConnect")
+//
+//		return err
+//	}
+//
+//	return nil
+//}
 
 func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Context, ec *edgeconnect.EdgeConnect) error { //nolint:revive
 	_log := log.WithValues("namespace", ec.Namespace, "name", ec.Name)

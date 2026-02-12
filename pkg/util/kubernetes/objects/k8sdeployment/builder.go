@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type DeploymentBuilder struct{
+type DeploymentBuilder struct {
 	mutators []query.MutateFn[*appsv1.Deployment]
 }
 
@@ -26,9 +26,9 @@ func (b DeploymentBuilder) Mutate(d *appsv1.Deployment) error {
 			return err
 		}
 	}
+
 	return nil
 }
-
 
 func (b DeploymentBuilder) SetContainer(c corev1.Container) DeploymentBuilder {
 	b.mutators = append(b.mutators, func(d *appsv1.Deployment) error {
@@ -46,8 +46,10 @@ func (b DeploymentBuilder) SetContainer(c corev1.Container) DeploymentBuilder {
 		}
 
 		d.Spec.Template.Spec.Containers[targetIndex] = c
+
 		return nil
 	})
+
 	return b
 }
 
@@ -151,7 +153,6 @@ func SetVolumes(volumes []corev1.Volume) func(o *appsv1.Deployment) {
 		d.Spec.Template.Spec.Volumes = volumes
 	}
 }
-
 
 func Spec(deploy *appsv1.Deployment, spec appsv1.DeploymentSpec) controllerutil.MutateFn {
 	return func() error {

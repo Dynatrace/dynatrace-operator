@@ -84,9 +84,9 @@ func CreateSpec(ec *edgeconnect.EdgeConnect) appsv1.DeploymentSpec {
 			// default is already 25%
 			RollingUpdate: &appsv1.RollingUpdateDeployment{},
 		},
-		MinReadySeconds:         0,
+		MinReadySeconds: 0,
 		//RevisionHistoryLimit:    nil,
-		Paused:                  false,
+		Paused: false,
 		//ProgressDeadlineSeconds: nil, // default 600
 	}
 }

@@ -107,7 +107,6 @@ func (c Generic[T, L]) CreateOrUpdate2(ctx context.Context, obj client.Object, m
 	op, err := controllerutil.CreateOrUpdate(ctx, c.KubeClient, obj, func() error {
 		return mutate(obj)
 	})
-
 	if err != nil {
 		return false, errors.WithStack(err)
 	}

@@ -184,6 +184,7 @@ func TestAnnotations(t *testing.T) {
 		}
 
 		deployment := New(ec)
+		deployment.Spec = CreateSpec(ec)
 
 		assert.Len(t, deployment.Spec.Template.Annotations, 1)
 		assert.Contains(t, deployment.Spec.Template.Annotations, testAnnotationKey)
