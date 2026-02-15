@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/test/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -238,7 +239,7 @@ func WithKSPMImageRefSpec(repo, tag string) Option {
 	}
 }
 
-func WithTelemetryIngestEnabled(enabled bool, protocols ...string) Option {
+func WithTelemetryIngestEnabled(enabled bool, protocols ...otelcgen.Protocol) Option {
 	return func(dk *dynakube.DynaKube) {
 		if enabled {
 			dk.Spec.TelemetryIngest = &telemetryingest.Spec{}

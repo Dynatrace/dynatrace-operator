@@ -99,9 +99,9 @@ func TestService(t *testing.T) {
 	t.Run("create service for specified protocols", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{
-			Protocols: []string{
-				string(otelcgen.ZipkinProtocol),
-				string(otelcgen.StatsdProtocol),
+			Protocols: []otelcgen.Protocol{
+				otelcgen.ZipkinProtocol,
+				otelcgen.StatsdProtocol,
 			},
 		})
 		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
