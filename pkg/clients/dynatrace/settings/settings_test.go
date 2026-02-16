@@ -80,9 +80,8 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "true",
-			schemaIDsQueryParam:    "schema-1",
-			scopesQueryParam:       "entity-1",
+			schemaIDsQueryParam: "schema-1",
+			scopesQueryParam:    "entity-1",
 		}).Return(request).Once()
 		request.EXPECT().Execute(new(GetSettingsResponse)).Run(func(obj any) {
 			target := obj.(*GetSettingsResponse)
@@ -102,6 +101,42 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{}, "schema-1")
 		require.NoError(t, err)
 		assert.Equal(t, GetSettingsResponse{TotalCount: 0}, resp)
+	})
+}
+
+func TestDeleteSettings(t *testing.T) {
+	ctx := t.Context()
+	objectID := "settings-object-123"
+
+	t.Run("success", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		request := coremock.NewAPIRequest(t)
+		request.EXPECT().Execute(nil).Return(nil).Once()
+		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
+
+		client := NewClient(apiClient)
+		err := client.DeleteSettings(ctx, objectID)
+		require.NoError(t, err)
+	})
+
+	t.Run("error from API", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		request := coremock.NewAPIRequest(t)
+		request.EXPECT().Execute(nil).Return(errors.New("api error")).Once()
+		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
+
+		client := NewClient(apiClient)
+		err := client.DeleteSettings(ctx, objectID)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "delete monitored entity settings")
+	})
+
+	t.Run("empty objectID", func(t *testing.T) {
+		apiClient := coremock.NewAPIClient(t)
+		client := NewClient(apiClient)
+		err := client.DeleteSettings(ctx, "")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot delete settings: no settings ID provided")
 	})
 }
 

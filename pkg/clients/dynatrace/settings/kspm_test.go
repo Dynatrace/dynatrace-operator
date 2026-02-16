@@ -44,7 +44,7 @@ func TestCreateKSPMSetting(t *testing.T) {
 	ctx := t.Context()
 
 	matchBody := func() any {
-		return matchJSONBody[kspmSettingsValue](kspmSettingsSchemaID, kspmSettingsSchemaVersion)
+		return matchJSONBody[KspmSettingsValue](kspmSettingsSchemaID, kspmSettingsSchemaVersion)
 	}
 
 	t.Run("no ME", func(t *testing.T) {
