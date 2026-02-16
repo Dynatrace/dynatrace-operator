@@ -183,8 +183,8 @@ func podHasOnlyMetadataEnrichmentInitContainer(samplePod *sample.App) features.F
 func assessPodHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
 	enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, resource, testPod)
 
-	assert.Equal(t, "pod", enrichmentMetadata.K8sWorkloadKind)
-	assert.Equal(t, testPod.Name, enrichmentMetadata.K8sWorkloadName)
+	assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
+	assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
 }
 
 func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App) features.Func {
@@ -224,8 +224,8 @@ func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T
 	return func(pod corev1.Pod) {
 		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, resource, pod)
 
-		assert.Equal(t, "deployment", enrichmentMetadata.K8sWorkloadKind)
-		assert.Equal(t, deploymentName, enrichmentMetadata.K8sWorkloadName)
+		assert.Equal(t, "deployment", enrichmentMetadata.WorkloadKind)
+		assert.Equal(t, deploymentName, enrichmentMetadata.WorkloadName)
 	}
 }
 
