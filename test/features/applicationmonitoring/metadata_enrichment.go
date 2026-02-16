@@ -147,17 +147,15 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 }
 
 func MetadataEnrichmentDeprecatedAttributes(t *testing.T) features.Feature {
-	builder := features.New("metadata-enrichment")
+	builder := features.New("metadata-enrichment-deprecated-attributes")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	// Register actual test
 	testDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/enable-attributes-dt.kubernetes": "true"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
-	// dynakubeComponents install
 	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
 
 	dummyApp := sample.NewApp(t, &testDynakube, sample.WithName("dummy-app"))
