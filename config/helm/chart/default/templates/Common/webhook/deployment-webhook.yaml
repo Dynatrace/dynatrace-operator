@@ -26,7 +26,7 @@ metadata:
       {{- toYaml .Values.webhook.labels | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ and (.Values.webhook.highAvailability) (not .Values.debug) | ternary 2 1 }}
+  replicas: {{ include "dynatrace-operator.webhook.replicas" . }}
   revisionHistoryLimit: 1
   selector:
     matchLabels:
@@ -51,22 +51,7 @@ spec:
         {{- toYaml .Values.webhook.labels | nindent 8 }}
         {{- end }}
     spec:
-      {{- if (.Values.webhook).highAvailability }}
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: "topology.kubernetes.io/zone"
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 14 }}
-        - maxSkew: 1
-          topologyKey: "kubernetes.io/hostname"
-          whenUnsatisfiable: DoNotSchedule
-          nodeTaintsPolicy: Honor
-          labelSelector:
-            matchLabels:
-              {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 14 }}
-      {{- end }}
+      {{- include "dynatrace-operator.webhook.topologySpreadConstraints" . | nindent 6 }}
       volumes:
       - emptyDir:
           sizeLimit: {{ .Values.webhook.volumes.certsDir.sizeLimit }}
