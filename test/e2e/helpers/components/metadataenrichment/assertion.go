@@ -20,8 +20,8 @@ const (
 )
 
 type Metadata struct {
-	K8sWorkloadKind string `json:"k8s.workload.kind,omitempty"`
-	K8sWorkloadName string `json:"k8s.workload.name,omitempty"`
+	WorkloadKind string `json:"k8s.workload.kind,omitempty"`
+	WorkloadName string `json:"k8s.workload.name,omitempty"`
 
 	// deprecated fields, should exist only if enable-attributes-dt.kubernetes feature flag is enabled
 	DtWorkloadKind string `json:"dt.kubernetes.workload.kind,omitempty"`
