@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
 
@@ -144,9 +143,7 @@ func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 }
 
 func (r requiredFiles) getRequiredStatefulSetFiles() []string {
-	statefulSet, err := k8sstatefulset.NewQuery(r.ctx, r.resources, client.ObjectKey{
-		Namespace: r.dk.Namespace,
-		Name:      "dynakube-activegate"}).Get()
+	statefulSet, err := k8sstatefulset.Get(r.ctx, r.resources, "dynakube-activegate", r.dk.Namespace)
 	require.NoError(r.t, err)
 	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/statefulset/%s%s",
