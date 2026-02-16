@@ -12,8 +12,8 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
 
-func GetJobsForOwner(ctx context.Context, t *testing.T, resource *resources.Resources, ownerName, namespace string) batchv1.JobList {
-	jobs := GetJobsForNamespace(ctx, t, resource, namespace)
+func ListForOwner(ctx context.Context, t *testing.T, resource *resources.Resources, ownerName, namespace string) batchv1.JobList {
+	jobs := getJobsForNamespace(ctx, t, resource, namespace)
 
 	var targetJobs batchv1.JobList
 	for _, jobItem := range jobs.Items {
@@ -29,7 +29,7 @@ func GetJobsForOwner(ctx context.Context, t *testing.T, resource *resources.Reso
 	return targetJobs
 }
 
-func GetJobsForNamespace(ctx context.Context, t *testing.T, resource *resources.Resources, namespace string) batchv1.JobList {
+func getJobsForNamespace(ctx context.Context, t *testing.T, resource *resources.Resources, namespace string) batchv1.JobList {
 	var jobs batchv1.JobList
 	err := resource.WithNamespace(namespace).List(ctx, &jobs)
 

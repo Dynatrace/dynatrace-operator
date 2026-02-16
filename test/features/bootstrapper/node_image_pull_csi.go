@@ -49,7 +49,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 
 	builder.Assess("check if jobs completed", jobsAreCompleted(appMonDynakube))
 
-	builder.Assess("check if jobs got cleaned up", k8sjob.WaitForJobsDeletionWithOwner(appMonDynakube.Name, appMonDynakube.Namespace))
+	builder.Assess("check if jobs got cleaned up", k8sjob.WaitForDeletionWithOwner(appMonDynakube.Name, appMonDynakube.Namespace))
 
 	builder.Assess("install sample app", sampleApp.Install())
 
@@ -66,7 +66,7 @@ func jobsAreCompleted(dk dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 
-		jobList := k8sjob.GetJobsForOwner(ctx, t, resource, dk.Name, dk.Namespace)
+		jobList := k8sjob.ListForOwner(ctx, t, resource, dk.Name, dk.Namespace)
 		require.NotEmpty(t, jobList.Items)
 
 		for _, job := range jobList.Items {

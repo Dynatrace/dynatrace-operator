@@ -14,10 +14,10 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func WaitForJobsDeletionWithOwner(ownerName string, namespace string) features.Func {
+func WaitForDeletionWithOwner(ownerName string, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		jobs := GetJobsForOwner(ctx, t, resources, ownerName, namespace)
+		jobs := ListForOwner(ctx, t, resources, ownerName, namespace)
 
 		if len(jobs.Items) > 0 {
 			err := wait.For(conditions.New(resources).ResourcesDeleted(&jobs), wait.WithTimeout(1*time.Minute))
