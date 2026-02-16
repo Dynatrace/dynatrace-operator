@@ -38,6 +38,65 @@ func (_m *APIClient) EXPECT() *APIClient_Expecter {
 	return &APIClient_Expecter{mock: &_m.Mock}
 }
 
+// DELETE provides a mock function for the type APIClient
+func (_mock *APIClient) DELETE(ctx context.Context, path string) core.APIRequest {
+	ret := _mock.Called(ctx, path)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DELETE")
+	}
+
+	var r0 core.APIRequest
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) core.APIRequest); ok {
+		r0 = returnFunc(ctx, path)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(core.APIRequest)
+		}
+	}
+	return r0
+}
+
+// APIClient_DELETE_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DELETE'
+type APIClient_DELETE_Call struct {
+	*mock.Call
+}
+
+// DELETE is a helper method to define mock.On call
+//   - ctx context.Context
+//   - path string
+func (_e *APIClient_Expecter) DELETE(ctx interface{}, path interface{}) *APIClient_DELETE_Call {
+	return &APIClient_DELETE_Call{Call: _e.mock.On("DELETE", ctx, path)}
+}
+
+func (_c *APIClient_DELETE_Call) Run(run func(ctx context.Context, path string)) *APIClient_DELETE_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *APIClient_DELETE_Call) Return(aPIRequest core.APIRequest) *APIClient_DELETE_Call {
+	_c.Call.Return(aPIRequest)
+	return _c
+}
+
+func (_c *APIClient_DELETE_Call) RunAndReturn(run func(ctx context.Context, path string) core.APIRequest) *APIClient_DELETE_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GET provides a mock function for the type APIClient
 func (_mock *APIClient) GET(ctx context.Context, path string) core.APIRequest {
 	ret := _mock.Called(ctx, path)

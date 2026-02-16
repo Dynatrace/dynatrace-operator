@@ -21,6 +21,7 @@ type APIClient interface {
 	GET(ctx context.Context, path string) APIRequest
 	POST(ctx context.Context, path string) APIRequest
 	PUT(ctx context.Context, path string) APIRequest
+	DELETE(ctx context.Context, path string) APIRequest
 }
 
 // APIRequest provides a fluent interface for building and executing HTTP requests
@@ -111,6 +112,11 @@ func (c *Client) POST(ctx context.Context, path string) APIRequest {
 // PUT creates a PUT request builder
 func (c *Client) PUT(ctx context.Context, path string) APIRequest {
 	return c.newRequest(ctx).withMethod(http.MethodPut).WithPath(path)
+}
+
+// DELETE creates a DELETE request builder
+func (c *Client) DELETE(ctx context.Context, path string) APIRequest {
+	return c.newRequest(ctx).withMethod(http.MethodDelete).WithPath(path)
 }
 
 // WithPath sets the path for the request
