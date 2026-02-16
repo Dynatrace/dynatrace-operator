@@ -20,7 +20,7 @@ func WaitForDaemonset(dsName, namespace string) features.Func {
 }
 
 func WaitForDaemonSetPodsDeletion(dsName, namespace string) features.Func {
-	return k8spod.WaitForPodsDeletionWithOwner(dsName, namespace)
+	return k8spod.WaitForDeletionWithOwner(dsName, namespace)
 }
 
 func Get(ctx context.Context, resource *resources.Resources, dk dynakube.DynaKube) (appsv1.DaemonSet, error) {

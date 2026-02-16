@@ -71,7 +71,7 @@ func jobsAreCompleted(dk dynakube.DynaKube) features.Func {
 
 		for _, job := range jobList.Items {
 			t.Logf("waiting for job to be completed: %s", job.Name)
-			ctx = k8spod.WaitForPodsDeletionWithOwner(job.Name, job.Namespace)(ctx, t, envConfig)
+			ctx = k8spod.WaitForDeletionWithOwner(job.Name, job.Namespace)(ctx, t, envConfig)
 		}
 
 		return ctx

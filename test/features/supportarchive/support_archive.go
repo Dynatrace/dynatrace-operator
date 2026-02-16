@@ -169,8 +169,8 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	pods := k8spod.List(t, ctx, environmentResources, namespace)
 	require.NotNil(t, pods.Items)
 
-	operatorPods := filter(pods.Items, func(podItem corev1.Pod) bool {
-		return strings.Contains(podItem.Name, "dynatrace-operator")
+	operatorPods := filter(pods.Items, func(pod corev1.Pod) bool {
+		return strings.Contains(pod.Name, "dynatrace-operator")
 	})
 
 	require.Len(t, operatorPods, 1)

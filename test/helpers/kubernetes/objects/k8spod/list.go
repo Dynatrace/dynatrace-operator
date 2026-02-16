@@ -11,10 +11,10 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
 
-func List(t *testing.T, ctx context.Context, resource *resources.Resources, namespaceName string) corev1.PodList {
+func List(t *testing.T, ctx context.Context, resource *resources.Resources, namespace string) corev1.PodList {
 	var pods corev1.PodList
 
-	require.NoError(t, resource.WithNamespace(namespaceName).List(ctx, &pods))
+	require.NoError(t, resource.WithNamespace(namespace).List(ctx, &pods))
 
 	return pods
 }

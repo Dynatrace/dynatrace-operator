@@ -45,10 +45,10 @@ func WaitFor(name string, namespace string) features.Func {
 	// Default of 5 minutes can be a bit too short for the ActiveGate to startup
 }
 
-func WaitForPodsDeletionWithOwner(ownerName string, namespace string) features.Func {
+func WaitForDeletionWithOwner(ownerName string, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		targetPods := GetPodsForOwner(ctx, t, resources, ownerName, namespace)
+		targetPods := ListForOwner(ctx, t, resources, ownerName, namespace)
 
 		err := wait.For(conditions.New(resources).ResourcesDeleted(&targetPods), wait.WithTimeout(5*time.Minute))
 		require.NoError(t, err)

@@ -82,10 +82,8 @@ func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool)
 	pods := k8spod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 
-	podList := filter(pods.Items, func(podItem corev1.Pod) bool {
-		label, ok := podItem.Labels[labelKey]
-
-		return ok && label == operator.DeploymentName
+	podList := filter(pods.Items, func(pod corev1.Pod) bool {
+		return pod.Labels[labelKey] == operator.DeploymentName
 	})
 
 	for _, operatorPod := range podList {
@@ -114,11 +112,8 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 
 	pods := k8spod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 
-	podList := filter(pods.Items, func(podItem corev1.Pod) bool {
-		appNamelabel, okAppNamelabel := podItem.Labels[k8slabel.AppNameLabel]
-		appManagedByLabel, okAppManagedByLabel := podItem.Labels[k8slabel.AppManagedByLabel]
-
-		return okAppNamelabel && appNamelabel == supportarchive.LabelEecPodName && okAppManagedByLabel && appManagedByLabel == operator.DeploymentName
+	podList := filter(pods.Items, func(pod corev1.Pod) bool {
+		return pod.Labels[k8slabel.AppNameLabel] == supportarchive.LabelEecPodName && pod.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
 	})
 
 	for _, pod := range podList {
