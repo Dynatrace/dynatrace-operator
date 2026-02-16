@@ -177,6 +177,12 @@
       enabled: true,
       automerge: true,
     },
+    {
+        matchPackageNames: [
+            "go.opentelemetry.io/collector/**",
+        ],
+        groupName: "go.opentelemetry.io/collector",
+    },
   ],
   platformAutomerge: true,
 }
