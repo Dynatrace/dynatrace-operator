@@ -359,7 +359,7 @@ func (app *App) asDeployment() *appsv1.Deployment {
 
 func (app *App) GetPods(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList {
 	if app.isDeployment {
-		replica := k8sreplicaset.GetReplicaSetsForOwner(ctx, t, resource, app.Name(), app.Namespace())
+		replica := k8sreplicaset.GetForOwner(ctx, t, resource, app.Name(), app.Namespace())
 		require.NotNil(t, replica)
 
 		return k8spod.ListForOwner(ctx, t, resource, replica.Name, app.Namespace())

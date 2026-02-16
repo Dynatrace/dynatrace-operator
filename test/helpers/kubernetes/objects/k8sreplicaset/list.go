@@ -20,8 +20,8 @@ func List(t *testing.T, ctx context.Context, resource *resources.Resources, name
 	return replicasets
 }
 
-func GetReplicaSetsForOwner(ctx context.Context, t *testing.T, resource *resources.Resources, ownerName, namespace string) *appsv1.ReplicaSet {
-	replicasets := GetReplicaSetsForNamespace(ctx, t, resource, namespace)
+func GetForOwner(ctx context.Context, t *testing.T, resource *resources.Resources, ownerName, namespace string) *appsv1.ReplicaSet {
+	replicasets := listForNamespace(ctx, t, resource, namespace)
 
 	for _, replicaset := range replicasets.Items {
 		if len(replicaset.OwnerReferences) < 1 {
@@ -36,7 +36,7 @@ func GetReplicaSetsForOwner(ctx context.Context, t *testing.T, resource *resourc
 	return nil
 }
 
-func GetReplicaSetsForNamespace(ctx context.Context, t *testing.T, resource *resources.Resources, namespace string) appsv1.ReplicaSetList {
+func listForNamespace(ctx context.Context, t *testing.T, resource *resources.Resources, namespace string) appsv1.ReplicaSetList {
 	var replicasets appsv1.ReplicaSetList
 	err := resource.WithNamespace(namespace).List(ctx, &replicasets)
 
