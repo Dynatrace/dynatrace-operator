@@ -13,9 +13,8 @@ func TestGetKSPMSettings(t *testing.T) {
 	ctx := t.Context()
 
 	params := map[string]string{
-		validateOnlyQueryParam: "true",
-		schemaIDsQueryParam:    kspmSettingsSchemaID,
-		scopesQueryParam:       "entity-1",
+		schemaIDsQueryParam: kspmSettingsSchemaID,
+		scopesQueryParam:    "entity-1",
 	}
 
 	t.Run("success", func(t *testing.T) {

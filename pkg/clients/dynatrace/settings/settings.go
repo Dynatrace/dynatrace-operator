@@ -219,7 +219,7 @@ func (c *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEnt
 // DeleteSettings deletes the settings using the settings object ID.
 func (c *Client) DeleteSettings(ctx context.Context, objectID string) error {
 	if objectID == "" {
-		return fmt.Errorf("cannot delete settings: no settings ID provided")
+		return errors.New("cannot delete settings: no settings ID provided")
 	}
 
 	err := c.apiClient.DELETE(ctx, path.Join(ObjectsPath, objectID)).
