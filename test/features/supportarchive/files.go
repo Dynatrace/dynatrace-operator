@@ -337,14 +337,14 @@ func (r requiredFiles) getRequiredEventFiles() []string {
 		options.FieldSelector = fmt.Sprint(supportarchive.DefaultEventFieldSelector)
 	}
 	events := k8sevent.List(r.t, r.ctx, r.resources, r.dk.Namespace, optFunc)
-	requiredFiles := make([]string, len(events.Items))
+	requiredFiles := make([]string, len(events))
 
-	for i, ev := range events.Items {
+	for i, event := range events {
 		requiredFiles[i] = fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
-			ev.Namespace,
+			event.Namespace,
 			"event",
-			ev.Name,
+			event.Name,
 			supportarchive.ManifestsFileExtension)
 	}
 

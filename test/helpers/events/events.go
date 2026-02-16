@@ -27,8 +27,8 @@ func LogEvents(ctx context.Context, c *envconf.Config, t *testing.T) {
 
 	events := k8sevent.List(t, ctx, resource, "dynatrace", optFunc)
 
-	klog.InfoS("Events list", "events total", len(events.Items))
-	for _, eventItem := range events.Items {
-		klog.InfoS("Event", "name", eventItem.Name, "message", eventItem.Message, "reason", eventItem.Reason, "type", eventItem.Type)
+	klog.InfoS("Events list", "events total", len(events))
+	for _, event := range events {
+		klog.InfoS("Event", "name", event.Name, "message", event.Message, "reason", event.Reason, "type", event.Type)
 	}
 }
