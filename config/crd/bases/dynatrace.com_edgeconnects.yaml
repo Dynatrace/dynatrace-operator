@@ -499,6 +499,12 @@ spec:
                 type: array
               imageRef:
                 properties:
+                  pullPolicy:
+                    enum:
+                    - IfNotPresent
+                    - Always
+                    - Never
+                    type: string
                   repository:
                     example: docker.io/dynatrace/image-name
                     type: string

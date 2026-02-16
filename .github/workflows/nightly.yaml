@@ -79,7 +79,7 @@ jobs:
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Create SBOM
         id: sbom
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+        uses: aquasecurity/trivy-action@c1824fd6edce30d7ab345a9989de00bbd46ef284 # 0.34.0
         with:
           image-ref: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.digest }}
           format: 'cyclonedx'

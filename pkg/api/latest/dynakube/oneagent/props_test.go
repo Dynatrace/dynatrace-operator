@@ -100,6 +100,35 @@ func TestCustomOneAgentImage(t *testing.T) {
 	})
 }
 
+func TestGetOneAgentImagePullPolicy(t *testing.T) {
+	t.Run("hostmonitoring", func(t *testing.T) {
+		oneAgent := OneAgent{Spec: &Spec{ClassicFullStack: &HostInjectSpec{ImagePullPolicy: "foo"}}}
+		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+	})
+
+	t.Run("CFS", func(t *testing.T) {
+		oneAgent := OneAgent{Spec: &Spec{HostMonitoring: &HostInjectSpec{ImagePullPolicy: "foo"}}}
+		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+	})
+
+	t.Run("CNFS", func(t *testing.T) {
+		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{HostInjectSpec: HostInjectSpec{ImagePullPolicy: "foo"}}}}
+		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+	})
+}
+
+func TestGetCodeModulesImagePullPolicy(t *testing.T) {
+	t.Run("CNFS", func(t *testing.T) {
+		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{AppInjectionSpec: AppInjectionSpec{CodeModulesImagePullPolicy: "foo"}}}}
+		assert.EqualValues(t, "foo", oneAgent.GetCodeModulesImagePullPolicy())
+	})
+
+	t.Run("appmonitoring", func(t *testing.T) {
+		oneAgent := OneAgent{featureBootstrapperInjection: true, Spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{AppInjectionSpec: AppInjectionSpec{CodeModulesImagePullPolicy: "foo"}}}}
+		assert.EqualValues(t, "foo", oneAgent.GetCodeModulesImagePullPolicy())
+	})
+}
+
 func TestOneAgentDaemonsetName(t *testing.T) {
 	oneAgent := OneAgent{name: "test-name"}
 	assert.Equal(t, "test-name-oneagent", oneAgent.GetDaemonsetName())

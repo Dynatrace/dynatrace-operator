@@ -103,13 +103,14 @@ func (provisioner *OneAgentProvisioner) getJobInstaller(ctx context.Context, dk 
 	}
 
 	props := &job.Properties{
-		ImageURI:     imageURI,
-		Owner:        &dk,
-		PullSecrets:  pullSecrets,
-		APIReader:    provisioner.apiReader,
-		Client:       provisioner.kubeClient,
-		PathResolver: provisioner.path,
-		CSIJob:       helmconfig.Get(),
+		ImageURI:        imageURI,
+		ImagePullPolicy: dk.OneAgent().GetCodeModulesImagePullPolicy(),
+		Owner:           &dk,
+		PullSecrets:     pullSecrets,
+		APIReader:       provisioner.apiReader,
+		Client:          provisioner.kubeClient,
+		PathResolver:    provisioner.path,
+		CSIJob:          helmconfig.Get(),
 	}
 
 	return provisioner.jobInstallerBuilder(ctx, props)

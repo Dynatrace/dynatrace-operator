@@ -69,7 +69,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 		{
 			Name:            initContainerTemplateName,
 			Image:           mod.dk.ActiveGate().GetImage(),
-			ImagePullPolicy: corev1.PullAlways,
+			ImagePullPolicy: mod.dk.ActiveGate().GetPullPolicy(),
 			WorkingDir:      k8scrt2jksWorkingDir,
 			Command:         []string{"/bin/bash"},
 			Args:            []string{"-c", k8scrt2jksPath},
