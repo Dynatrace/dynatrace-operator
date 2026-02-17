@@ -183,6 +183,12 @@
         ],
         groupName: "go.opentelemetry.io/collector",
     },
+    {
+        matchPackageNames: [
+            "istio.io/**",
+        ],
+        groupName: "istio.io",
+    },
   ],
   platformAutomerge: true,
 }
