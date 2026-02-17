@@ -122,6 +122,10 @@ make go/check-version
 > If you want to push to ghcr.io, make sure to authenticate to the registry: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry
 > You can also set `IMAGE`, which will reconfigure both registry and repository.
 
+> [!IMPORTANT]
+> **For operator development team:** Use the `-local` suffix with make targets (e.g., `make images/build/push-local && make deploy-local`).
+> This automatically sets `REGISTRY=quay.io` and runs the target with the `-local` suffix removed, avoiding conflicts with CI builds on ghcr.io.
+
 8. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
 
 9. A maintainer will review the pull request and make comments. It's preferable to add additional commits over amending and force-pushing since it can be difficult to follow code reviews when the commit history changes. Commits will be squashed when they're merged.
