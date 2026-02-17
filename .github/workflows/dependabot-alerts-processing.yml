@@ -19,7 +19,7 @@ jobs:
     steps:
       # Step 1: Cache last run timestamp
       - name: Cache last run timestamp
-        uses: actions/cache@v5
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: last-run.txt
           key: dependabot-triage-lastrun-${{ github.run_id }}
@@ -36,7 +36,7 @@ jobs:
 
       # Step 3: Fetch Dependabot alerts and create consolidated issue using the App token
       - name: Fetch new Dependabot critical alerts and create consolidated issue
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
