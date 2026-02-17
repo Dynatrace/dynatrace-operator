@@ -80,7 +80,8 @@ runs:
     - name: Generate OLM bundles (openshift)
       shell: bash
       env:
-        VERSION: ${{ inputs.version }}@${{ inputs.digest }}
+        DIGEST: ${{ inputs.digest }}
+        VERSION: ${{ inputs.version }}
         PLATFORM: openshift
         CHANNELS: stable
         DEFAULT_CHANNEL: stable
@@ -91,7 +92,8 @@ runs:
     - name: Generate OLM bundles (kubernetes)
       shell: bash
       env:
-        VERSION: ${{ inputs.version }}@${{ inputs.digest }}
+        DIGEST: ${{ inputs.digest }}
+        VERSION: ${{ inputs.version }}
         PLATFORM: kubernetes
         CHANNELS: stable
         DEFAULT_CHANNEL: stable
