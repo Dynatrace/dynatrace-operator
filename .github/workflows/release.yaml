@@ -370,6 +370,7 @@ jobs:
         path: changelog_artifact
     - uses: ./.github/actions/update-csv-bundles
       with:
+        digest: ${{ needs.build-push.outputs.digest }}
         version: ${{ needs.prepare.outputs.version_without_prefix }}
         changelog-path: ./changelog_artifact/CHANGELOG.md
         app-id: ${{ secrets.RELEASE_APP_ID }}

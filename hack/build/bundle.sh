@@ -8,9 +8,9 @@ BUNDLE_DEFAULT_CHANNEL="${4:-}"
 OCP_MIN_VERSION="v4.14"
 
 if [ -z "$OLM_IMAGE" ]; then
-  OLM_IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}"
+  OLM_IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}@${DIGEST}"
   if [ "${PLATFORM}" == "kubernetes" ]; then
-    OLM_IMAGE="public.ecr.aws/dynatrace/dynatrace-operator:v${VERSION}"
+    OLM_IMAGE="public.ecr.aws/dynatrace/dynatrace-operator:v${VERSION}@${DIGEST}"
   fi
 fi
 echo "OLM image: ${OLM_IMAGE}"
