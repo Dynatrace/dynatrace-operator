@@ -121,8 +121,7 @@ make go/check-version
 > For example: `REPOSITORY=<your GitHub handle>` => ghcr.io will still be used (default), but the images will be pulled from your GitHub account.
 > If you want to push to ghcr.io, make sure to authenticate to the registry: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry
 > You can also set `IMAGE`, which will reconfigure both registry and repository.
-
-> [!IMPORTANT]
+>
 > **For operator development team:** Use the `-local` suffix with make targets (e.g., `make images/build/push-local && make deploy-local`).
 > This automatically sets `REGISTRY=quay.io` and runs the target with the `-local` suffix removed, avoiding conflicts with CI builds on ghcr.io.
 
