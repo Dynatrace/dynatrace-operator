@@ -24,10 +24,6 @@ MARKDOWNLINT_CLI_VERSION ?= v0.47.0
 MARKDOWN_LINK_CHECK_VERSION ?= v3.14.2
 # renovate depName=github.com/helm-unittest/helm-unittest
 HELMUNITTEST_VERSION ?= v1.0.3
-# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
-CYCLONEDX_GOMOD_VERSION ?= v1.10.0
-# renovate depName=github.com/mikefarah/yq/v4
-YQ_VERSION ?= v4.52.2
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
 GO_TEST_COVERAGE_VERSION ?= v2.18.3
 
@@ -37,8 +33,6 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 DEADCODE ?= $(LOCALBIN)/deadcode
 MOCKERY ?= $(LOCALBIN)/mockery
-CYCLONEDX_GOMOD ?= $(LOCALBIN)/cyclonedx-gomod
-YQ ?= $(LOCALBIN)/yq
 GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 PYTHON ?= $(LOCALBIN)/.venv/bin/python3
@@ -84,14 +78,6 @@ prerequisites/kustomize:
 ## Install verktra/mockery
 prerequisites/mockery:
 	$(call go-install-tool,$(MOCKERY),github.com/vektra/mockery/v3,$(MOCKERY_VERSION))
-
-## Install 'cyclonedx-gomod' if it is missing
-prerequisites/cyclonedx-gomod:
-	$(call go-install-tool,$(CYCLONEDX_GOMOD),github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod,$(CYCLONEDX_GOMOD_VERSION))
-
-## Install 'yq' if it is missing
-prerequisites/yq:
-	$(call go-install-tool,$(YQ),github.com/mikefarah/yq/v4,$(YQ_VERSION))
 
 ## Install setup-envtest locally
 prerequisites/envtest:
