@@ -19,7 +19,6 @@ output=$(oras push "${REGISTRY_URL}/${REPOSITORY_NAME}:0.0.0-${IMAGE_VERSION}" \
   --annotation "org.opencontainers.image.title=${title}" \
   --annotation "org.opencontainers.image.url=${url}" \
   --annotation "org.opencontainers.image.version=${IMAGE_VERSION}" \
-  --annotation "quay.expires-after=14d" \
   --annotation "vcs-ref=${GITHUB_SHA}" \
   --config "${HELM_CONFIG_FILE}:application/vnd.cncf.helm.config.v1+json" 2>&1)
 exit_status=$?
