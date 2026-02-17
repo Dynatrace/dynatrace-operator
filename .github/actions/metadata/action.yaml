@@ -65,7 +65,7 @@ runs:
           quay.expires-after=10d
 
           # releases and snapshots of the main branch should never expire
-          ${{ ((github.ref_type == 'tag' && startsWith(github.ref_name, 'release-')) || github.ref_name == 'main') && 'quay.expires-after=' }}
+          ${{ ((github.ref_type == 'tag' && startsWith(github.ref_name, 'v')) || github.ref_name == 'main') && 'quay.expires-after=' }}
 
           # retention policy for nightly builds
           ${{ github.event_name == 'schedule' && 'quay.expires-after=14d' }}
