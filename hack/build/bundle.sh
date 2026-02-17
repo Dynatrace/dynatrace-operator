@@ -5,7 +5,7 @@ PLATFORM="${1:-openshift}"
 VERSION="${2:-0.0.1}"
 BUNDLE_CHANNELS="${3:-}"
 BUNDLE_DEFAULT_CHANNEL="${4:-}"
-OCP_MIN_VERSION="v4.12"
+OCP_MIN_VERSION="v4.14"
 
 if [ -z "$OLM_IMAGE" ]; then
   OLM_IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}"
