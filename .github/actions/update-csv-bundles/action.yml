@@ -86,7 +86,7 @@ runs:
         CHANNELS: stable
         DEFAULT_CHANNEL: stable
         IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
-        OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}
+        OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
       run: |
         make bundle
     - name: Generate OLM bundles (kubernetes)
@@ -98,7 +98,7 @@ runs:
         CHANNELS: stable
         DEFAULT_CHANNEL: stable
         IMAGE: docker.io/dynatrace/dynatrace-operator
-        OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}
+        OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
       run: |
         make bundle
     - name: Finalize CSV files
