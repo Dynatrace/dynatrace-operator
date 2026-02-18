@@ -59,7 +59,7 @@ jobs:
         run: |
           echo "is_authorized=${{ secrets.QUAY_USERNAME != '' && secrets.QUAY_PASSWORD != '' }}" >> $GITHUB_OUTPUT
       - name: Detect CI file changes
-        uses: tj-actions/changed-files@8cba46e29c11878d930bca7870bb54394d3e8b21 # v47.0.2
+        uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         id: ci
         with:
           files: |
@@ -67,7 +67,7 @@ jobs:
             .github/actions/**
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Go file changes
-        uses: tj-actions/changed-files@8cba46e29c11878d930bca7870bb54394d3e8b21 # v47.0.2
+        uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         id: go-files
         with:
           files: |
@@ -75,28 +75,28 @@ jobs:
             go.mod
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Dockerfile changes
-        uses: tj-actions/changed-files@8cba46e29c11878d930bca7870bb54394d3e8b21 # v47.0.2
+        uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         id: dockerfile
         with:
           files: |
             Dockerfile
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect Helm config changes
-        uses: tj-actions/changed-files@8cba46e29c11878d930bca7870bb54394d3e8b21 # v47.0.2
+        uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         id: helm
         with:
           files: |
             config/**
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect prerequisites.mk changes
-        uses: tj-actions/changed-files@8cba46e29c11878d930bca7870bb54394d3e8b21 # v47.0.2
+        uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         id: prerequisites
         with:
           files: |
             hack/make/prerequisites.mk
           base_sha: ${{ github.event.pull_request.base.sha || github.event.merge_group.head_sha || github.event.before }}
       - name: Detect markdown changes
-        uses: tj-actions/changed-files@8cba46e29c11878d930bca7870bb54394d3e8b21 # v47.0.2
+        uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         id: markdown
         with:
           files: |
