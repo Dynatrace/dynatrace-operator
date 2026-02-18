@@ -79,7 +79,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 }
 
 func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool) []string {
-	pods := k8spod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	pods := k8spod.List(r.ctx, r.t, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 
 	podList := filter(pods.Items, func(pod corev1.Pod) bool {
@@ -110,7 +110,7 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 		return requiredFiles
 	}
 
-	pods := k8spod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	pods := k8spod.List(r.ctx, r.t, r.resources, r.dk.Namespace)
 
 	podList := filter(pods.Items, func(pod corev1.Pod) bool {
 		return pod.Labels[k8slabel.AppNameLabel] == supportarchive.LabelEecPodName && pod.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
