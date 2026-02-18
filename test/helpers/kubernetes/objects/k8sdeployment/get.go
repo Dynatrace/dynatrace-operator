@@ -54,9 +54,9 @@ func (query *Query) ForEachPod(consumer PodConsumer) error {
 func IsReady(name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		deploy := &appsv1.Deployment{}
-		require.NoError(t, resources.Get(ctx, name, namespace, deploy))
-		assert.Equal(t, deploy.Status.Replicas, deploy.Status.ReadyReplicas)
+		deployment := &appsv1.Deployment{}
+		require.NoError(t, resources.Get(ctx, name, namespace, deployment))
+		assert.Equal(t, deployment.Status.Replicas, deployment.Status.ReadyReplicas)
 
 		return ctx
 	}

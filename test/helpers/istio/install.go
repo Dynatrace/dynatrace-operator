@@ -95,30 +95,27 @@ func checkOperatorIstioInitContainers(testDynakube dynakube.DynaKube) features.F
 func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dynakube.DynaKube) {
 	istioInitName := determineIstioInitContainerName(t)
 
-	for _, podItem := range pods.Items {
-		if podItem.DeletionTimestamp != nil {
+	for _, pod := range pods.Items {
+		if pod.DeletionTimestamp != nil {
 			continue
 		}
 
-		require.NotNil(t, podItem)
-		require.NotNil(t, podItem.Spec)
-
-		if strings.HasPrefix(podItem.Name, testDynakube.OneAgent().GetDaemonsetName()) {
+		if strings.HasPrefix(pod.Name, testDynakube.OneAgent().GetDaemonsetName()) {
 			continue
 		}
 
-		require.NotEmpty(t, podItem.Spec.InitContainers, "'%s' pod has no init containers", podItem.Name)
+		require.NotEmpty(t, pod.Spec.InitContainers, "'%s' pod has no init containers", pod.Name)
 
 		istioInitFound := false
 
-		for _, initContainer := range podItem.Spec.InitContainers {
+		for _, initContainer := range pod.Spec.InitContainers {
 			if initContainer.Name == istioInitName {
 				istioInitFound = true
 
 				break
 			}
 		}
-		assert.True(t, istioInitFound, "'%s' pod - '%s' init container not found", podItem.Name, istioInitName)
+		assert.True(t, istioInitFound, "'%s' pod - '%s' init container not found", pod.Name, istioInitName)
 	}
 }
 

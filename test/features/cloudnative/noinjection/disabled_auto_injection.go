@@ -65,14 +65,12 @@ func checkInitContainersNotInjected(sampleApp *sample.App) features.Func {
 		pods := sampleApp.GetPods(ctx, t, resources)
 		require.NotEmpty(t, pods.Items)
 
-		for _, podItem := range pods.Items {
-			if podItem.DeletionTimestamp != nil {
+		for _, pod := range pods.Items {
+			if pod.DeletionTimestamp != nil {
 				continue
 			}
 
-			require.NotNil(t, podItem)
-			require.NotNil(t, podItem.Spec)
-			require.Empty(t, podItem.Spec.InitContainers)
+			require.Empty(t, pod.Spec.InitContainers)
 		}
 
 		return ctx

@@ -29,8 +29,8 @@ func checkMetadataEnrichment(sampleApp *sample.App) features.Func {
 		pods := sampleApp.GetPods(ctx, t, kubeResources)
 		require.NotEmpty(t, pods.Items)
 
-		for _, podItem := range pods.Items {
-			enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, kubeResources, podItem)
+		for _, pod := range pods.Items {
+			enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, kubeResources, pod)
 			assert.Equal(t, "deployment", enrichmentMetadata.WorkloadKind)
 			assert.Equal(t, deploymentName, enrichmentMetadata.WorkloadName)
 		}

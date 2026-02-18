@@ -165,10 +165,10 @@ func deploymentPodsHaveNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) 
 }
 
 // Assertions
-func assertOTLPEnvVarsPresent(t *testing.T, podItem *corev1.Pod, expectedBase string) {
-	require.NotNil(t, podItem)
-	require.NotEmpty(t, podItem.Spec.Containers)
-	appContainer := podItem.Spec.Containers[0]
+func assertOTLPEnvVarsPresent(t *testing.T, pod *corev1.Pod, expectedBase string) {
+	require.NotNil(t, pod)
+	require.NotEmpty(t, pod.Spec.Containers)
+	appContainer := pod.Spec.Containers[0]
 	envMap := map[string]corev1.EnvVar{}
 	for _, e := range appContainer.Env {
 		envMap[e.Name] = e
@@ -203,10 +203,10 @@ func assertOTLPEnvVarsPresent(t *testing.T, podItem *corev1.Pod, expectedBase st
 	}
 }
 
-func assertOTLPEnvVarsAbsent(t *testing.T, podItem *corev1.Pod) {
-	require.NotNil(t, podItem)
-	require.NotEmpty(t, podItem.Spec.Containers)
-	appContainer := podItem.Spec.Containers[0]
+func assertOTLPEnvVarsAbsent(t *testing.T, pod *corev1.Pod) {
+	require.NotNil(t, pod)
+	require.NotEmpty(t, pod.Spec.Containers)
+	appContainer := pod.Spec.Containers[0]
 	for _, name := range []string{exporter.OTLPTraceEndpointEnv, exporter.OTLPLogsEndpointEnv, exporter.OTLPMetricsEndpointEnv, exporter.OTLPTraceHeadersEnv, exporter.OTLPLogsHeadersEnv, exporter.OTLPMetricsHeadersEnv, exporter.DynatraceAPITokenEnv, resourceattributes.OTELResourceAttributesEnv} {
 		for _, e := range appContainer.Env {
 			assert.NotEqual(t, name, e.Name, "%s should not be injected", name)
@@ -214,12 +214,12 @@ func assertOTLPEnvVarsAbsent(t *testing.T, podItem *corev1.Pod) {
 	}
 }
 
-func assertOTLPEnvVarsPresentWithResourceAttributes(t *testing.T, podItem *corev1.Pod, expectedBase string) {
-	assertOTLPEnvVarsPresent(t, podItem, expectedBase)
-	gotResourceAttributes, ok := resourceattributes.NewAttributesFromEnv(podItem.Spec.Containers[0].Env, resourceattributes.OTELResourceAttributesEnv)
+func assertOTLPEnvVarsPresentWithResourceAttributes(t *testing.T, pod *corev1.Pod, expectedBase string) {
+	assertOTLPEnvVarsPresent(t, pod, expectedBase)
+	gotResourceAttributes, ok := resourceattributes.NewAttributesFromEnv(pod.Spec.Containers[0].Env, resourceattributes.OTELResourceAttributesEnv)
 
 	require.True(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing")
 	assert.Equal(t, url.QueryEscape("checkout service"), gotResourceAttributes["service.name"])       // annotation encoded
 	assert.Equal(t, url.QueryEscape("value:with/special chars"), gotResourceAttributes["custom.key"]) // annotation encoded
-	assert.Equal(t, podItem.Namespace, gotResourceAttributes["k8s.namespace.name"])
+	assert.Equal(t, pod.Namespace, gotResourceAttributes["k8s.namespace.name"])
 }
