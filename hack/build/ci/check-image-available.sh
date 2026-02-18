@@ -12,13 +12,14 @@ ELAPSED=0
 echo "Checking if image ${IMAGE}:${TAG} is available on ghcr.io"
 
 token=$(curl -s https://ghcr.io/token\?scope\="repository:${IMAGE}:pull" | jq -r .token)
-while true; do
-  tags=$(curl -s -H "Authorization: Bearer ${token}" "https://ghcr.io/v2/${IMAGE}/tags/list")
-  tag_found=$(echo "$tags" | jq --arg TAG "$TAG" 'any(.tags[]; . ==  $TAG)')
-  if $tag_found; then
-    echo "Image exists"
-    exit 0
-  fi
+lookup_image() {
+    curl -s --fail \
+        -H "Authorization: Bearer ${token}" \
+        -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json' \
+        "https://ghcr.io/v2/${IMAGE}/manifests/${TAG}" &>/dev/null
+}
+
+while ! lookup_image; do
   if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
     echo "Timeout reached. Image does not exist."
     exit 1
@@ -27,3 +28,4 @@ while true; do
   sleep "$INTERVAL"
   ELAPSED=$((ELAPSED+INTERVAL))
 done
+echo "Image exists"
