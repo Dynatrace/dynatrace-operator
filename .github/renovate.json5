@@ -178,16 +178,16 @@
       automerge: true,
     },
     {
-        matchPackageNames: [
-            "go.opentelemetry.io/collector/**",
-        ],
-        groupName: "go.opentelemetry.io/collector",
+      matchPackageNames: [
+        "go.opentelemetry.io/collector/**",
+      ],
+      groupName: "go.opentelemetry.io/collector",
     },
     {
-        matchPackageNames: [
-            "istio.io/**",
-        ],
-        groupName: "istio.io",
+      matchPackageNames: [
+        "istio.io/**",
+      ],
+      groupName: "istio.io",
     },
   ],
   platformAutomerge: true,
