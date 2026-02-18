@@ -30,6 +30,7 @@ jobs:
     needs: check-comment
     if: needs.check-comment.outputs.triggered == 'true' && needs.check-comment.outputs.detected-command == '/run-e2e-kind'
     runs-on: ubuntu-24.04
+    environment: E2E
     permissions:
       contents: read
       pull-requests: write
