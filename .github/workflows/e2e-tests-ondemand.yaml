@@ -116,7 +116,7 @@ jobs:
           if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
-      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@f24ce3360a8abf9bf386a62ab13d0ae5de5f9d13 # 0.31.7
+      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@f5847cb398fe65d53794e6aba98ebdfa0801f691 # 0.32.0
         if: always()
         with:
           value: ${{ steps.prepare_outputs.outputs.matrix }}
@@ -132,7 +132,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@f24ce3360a8abf9bf386a62ab13d0ae5de5f9d13 # 0.31.7
+      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@f5847cb398fe65d53794e6aba98ebdfa0801f691 # 0.32.0
         id: get-matrix-outputs
         with:
           artifact-name: run-matrix-artifact
