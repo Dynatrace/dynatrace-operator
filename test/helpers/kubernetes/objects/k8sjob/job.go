@@ -5,11 +5,16 @@ package k8sjob
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 func ListForOwner(ctx context.Context, t *testing.T, resource *resources.Resources, ownerName, namespace string) batchv1.JobList {
@@ -41,4 +46,18 @@ func listForNamespace(ctx context.Context, t *testing.T, resource *resources.Res
 	}
 
 	return jobs
+}
+
+func WaitForDeletionWithOwner(ownerName string, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		jobs := ListForOwner(ctx, t, resources, ownerName, namespace)
+
+		if len(jobs.Items) > 0 {
+			err := wait.For(conditions.New(resources).ResourcesDeleted(&jobs), wait.WithTimeout(1*time.Minute))
+			require.NoError(t, err)
+		}
+
+		return ctx
+	}
 }
