@@ -35,8 +35,6 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 				continue
 			}
 
-			require.NotNil(t, pod)
-			require.NotNil(t, pod.Spec)
 			require.NotEmpty(t, pod.Spec.InitContainers)
 
 			var oneAgentInstallInitContainer *corev1.Container

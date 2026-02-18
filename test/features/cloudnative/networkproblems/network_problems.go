@@ -93,8 +93,6 @@ func checkForDummyVolume(sampleApp *sample.App) features.Func {
 		pods := sampleApp.GetPods(ctx, t, resources)
 
 		for _, pod := range pods.Items {
-			require.NotNil(t, pod)
-			require.NotNil(t, pod.Spec)
 			require.NotEmpty(t, pod.Spec.InitContainers)
 
 			err = wait.For(func(ctx context.Context) (done bool, err error) {
