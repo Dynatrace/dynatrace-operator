@@ -247,7 +247,7 @@ only after you can try to run you test).
 >
 > - Existing kube config with the context of a test K8s cluster
 > - Cleanup the cluster using `make undeploy`
-> - Configured Dynatrace tenant(s) with an access token (see `/test/testdata/secrets-samples`). Read more about Access tokens on the [official documentation](https://www.dynatrace.com/support/help/manage/access-control/access-tokens).
+> - Configured Dynatrace tenant(s) with an access token (see `/test/e2e/testdata/secrets-samples`). Read more about Access tokens on the [official documentation](https://www.dynatrace.com/support/help/manage/access-control/access-tokens).
 
 Check the available E2E tests via make command:
 

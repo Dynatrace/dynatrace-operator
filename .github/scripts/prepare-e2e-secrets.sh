@@ -2,9 +2,9 @@
 
 set -eu -o pipefail
 
-mkdir -p test/testdata/secrets/
+mkdir -p test/e2e/testdata/secrets/
 
-pushd test/testdata/secrets/
+pushd test/e2e/testdata/secrets/
 
 cat << EOF > single-tenant.yaml
 tenantUid: $TENANT1_NAME
