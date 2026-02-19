@@ -15,35 +15,27 @@ import (
 func InstallFromFile(path string, options ...decoder.DecodeOption) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		kubernetesManifest, err := os.Open(path)
-		defer func() { kubernetesManifest.Close() }()
 		if err != nil {
 			return ctx, err
 		}
+		defer func() { kubernetesManifest.Close() }()
 
 		resources := envConfig.Client().Resources()
-		err = decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists), options...)
-		if err != nil {
-			return ctx, err
-		}
 
-		return ctx, nil
+		return ctx, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists), options...)
 	}
 }
 
 func UninstallFromFile(path string, options ...decoder.DecodeOption) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		kubernetesManifest, err := os.Open(path)
-		defer func() { kubernetesManifest.Close() }()
 		if err != nil {
 			return ctx, err
 		}
+		defer func() { kubernetesManifest.Close() }()
 
 		resources := envConfig.Client().Resources()
-		err = decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.DeleteHandler(resources), k8serrors.IsNotFound), options...)
-		if err != nil {
-			return ctx, err
-		}
 
-		return ctx, nil
+		return ctx, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.DeleteHandler(resources), k8serrors.IsNotFound), options...)
 	}
 }

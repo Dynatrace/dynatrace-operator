@@ -284,7 +284,7 @@ func (app *App) Uninstall() features.Func {
 		require.NoError(t, resource.Delete(ctx, object))
 		require.NoError(t, wait.For(conditions.New(resource).ResourceDeleted(object), wait.WithTimeout(2*time.Minute)))
 		if dep, ok := object.(*appsv1.Deployment); ok {
-			ctx = k8spod.WaitForPodsDeletionWithOwner(dep.Name, dep.Namespace)(ctx, t, c)
+			ctx = k8spod.WaitForDeletionWithOwner(dep.Name, dep.Namespace)(ctx, t, c)
 		}
 
 		return k8snamespace.Delete(app.Namespace())(ctx, t, c)
@@ -358,18 +358,17 @@ func (app *App) asDeployment() *appsv1.Deployment {
 }
 
 func (app *App) GetPods(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList {
-	var pods corev1.PodList
 	if app.isDeployment {
-		replica := k8sreplicaset.GetReplicaSetsForOwner(ctx, t, resource, app.Name(), app.Namespace())
+		replica := k8sreplicaset.GetForOwner(ctx, t, resource, app.Name(), app.Namespace())
 		require.NotNil(t, replica)
-		pods = k8spod.GetPodsForOwner(ctx, t, resource, replica.Name, app.Namespace())
-	} else {
-		var p corev1.Pod
-		require.NoError(t, resource.Get(ctx, app.Name(), app.Namespace(), &p))
-		pods = corev1.PodList{Items: []corev1.Pod{p}}
+
+		return k8spod.ListForOwner(ctx, t, resource, replica.Name, app.Namespace())
 	}
 
-	return pods
+	var pod corev1.Pod
+	require.NoError(t, resource.Get(ctx, app.Name(), app.Namespace(), &pod))
+
+	return corev1.PodList{Items: []corev1.Pod{pod}}
 }
 
 func (app *App) Restart() features.Func {
@@ -390,10 +389,10 @@ func (app *App) Restart() features.Func {
 }
 
 func deletePods(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources) {
-	for _, podItem := range pods.Items {
-		require.NoError(t, resource.Delete(ctx, &podItem))
+	for _, pod := range pods.Items {
+		require.NoError(t, resource.Delete(ctx, &pod))
 		require.NoError(t, wait.For(
-			conditions.New(resource).ResourceDeleted(&podItem)), wait.WithTimeout(1*time.Minute))
+			conditions.New(resource).ResourceDeleted(&pod)), wait.WithTimeout(1*time.Minute))
 	}
 }
 

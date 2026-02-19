@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
 
@@ -80,13 +79,11 @@ func (r requiredFiles) collectRequiredFiles() []string {
 }
 
 func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool) []string {
-	pods := k8spod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	pods := k8spod.List(r.ctx, r.t, r.resources, r.dk.Namespace)
 	requiredFiles := make([]string, 0)
 
-	podList := filter(pods.Items, func(podItem corev1.Pod) bool {
-		label, ok := podItem.Labels[labelKey]
-
-		return ok && label == operator.DeploymentName
+	podList := filter(pods.Items, func(pod corev1.Pod) bool {
+		return pod.Labels[labelKey] == operator.DeploymentName
 	})
 
 	for _, operatorPod := range podList {
@@ -113,13 +110,10 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 		return requiredFiles
 	}
 
-	pods := k8spod.List(r.t, r.ctx, r.resources, r.dk.Namespace)
+	pods := k8spod.List(r.ctx, r.t, r.resources, r.dk.Namespace)
 
-	podList := filter(pods.Items, func(podItem corev1.Pod) bool {
-		appNamelabel, okAppNamelabel := podItem.Labels[k8slabel.AppNameLabel]
-		appManagedByLabel, okAppManagedByLabel := podItem.Labels[k8slabel.AppManagedByLabel]
-
-		return okAppNamelabel && appNamelabel == supportarchive.LabelEecPodName && okAppManagedByLabel && appManagedByLabel == operator.DeploymentName
+	podList := filter(pods.Items, func(pod corev1.Pod) bool {
+		return pod.Labels[k8slabel.AppNameLabel] == supportarchive.LabelEecPodName && pod.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
 	})
 
 	for _, pod := range podList {
@@ -144,9 +138,7 @@ func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 }
 
 func (r requiredFiles) getRequiredStatefulSetFiles() []string {
-	statefulSet, err := k8sstatefulset.NewQuery(r.ctx, r.resources, client.ObjectKey{
-		Namespace: r.dk.Namespace,
-		Name:      "dynakube-activegate"}).Get()
+	statefulSet, err := k8sstatefulset.Get(r.ctx, r.resources, "dynakube-activegate", r.dk.Namespace)
 	require.NoError(r.t, err)
 	requiredFiles := []string{
 		fmt.Sprintf("%s/%s/statefulset/%s%s",
@@ -340,14 +332,14 @@ func (r requiredFiles) getRequiredEventFiles() []string {
 		options.FieldSelector = fmt.Sprint(supportarchive.DefaultEventFieldSelector)
 	}
 	events := k8sevent.List(r.t, r.ctx, r.resources, r.dk.Namespace, optFunc)
-	requiredFiles := make([]string, len(events.Items))
+	requiredFiles := make([]string, len(events))
 
-	for i, ev := range events.Items {
+	for i, event := range events {
 		requiredFiles[i] = fmt.Sprintf("%s/%s/%s/%s%s",
 			supportarchive.ManifestsDirectoryName,
-			ev.Namespace,
+			event.Namespace,
 			"event",
-			ev.Name,
+			event.Name,
 			supportarchive.ManifestsFileExtension)
 	}
 

@@ -39,11 +39,11 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) featur
 		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: testDynakube.Namespace,
-		}).ForEachPod(func(podItem corev1.Pod) {
+		}).ForEachPod(func(pod corev1.Pod) {
 			// /data/codemodules/1.318.0.20250609-191530/agent/conf/ruxitagentproc.conf
 			dir := filepath.Join("/data", "codemodules", dk.OneAgent().GetCodeModulesVersion(), "agent", "conf", RuxitAgentProcFile)
 			err := wait.For(func(ctx context.Context) (done bool, err error) {
-				result, err := k8spod.Exec(ctx, resources, podItem, "provisioner", shell.ReadFile(dir)...)
+				result, err := k8spod.Exec(ctx, resources, pod, "provisioner", shell.ReadFile(dir)...)
 				if err != nil {
 					if strings.Contains(result.StdErr.String(), "No such file or directory") {
 						return false, nil

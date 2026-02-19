@@ -30,25 +30,23 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 		pods := sampleApp.GetPods(ctx, t, resources)
 		require.NotEmpty(t, pods.Items)
 
-		for _, podItem := range pods.Items {
-			if podItem.DeletionTimestamp != nil {
+		for _, pod := range pods.Items {
+			if pod.DeletionTimestamp != nil {
 				continue
 			}
 
-			require.NotNil(t, podItem)
-			require.NotNil(t, podItem.Spec)
-			require.NotEmpty(t, podItem.Spec.InitContainers)
+			require.NotEmpty(t, pod.Spec.InitContainers)
 
 			var oneAgentInstallInitContainer *corev1.Container
 
-			for _, initContainer := range podItem.Spec.InitContainers {
+			for _, initContainer := range pod.Spec.InitContainers {
 				if initContainer.Name == webhook.InstallContainerName {
 					oneAgentInstallInitContainer = &initContainer // loop breaks after assignment, memory aliasing is not a problem
 
 					break
 				}
 			}
-			require.NotNil(t, oneAgentInstallInitContainer, "init container not found in '%s' pod", podItem.Name)
+			require.NotNil(t, oneAgentInstallInitContainer, "init container not found in '%s' pod", pod.Name)
 
 			if !sampleApp.CanInitError() {
 				assert.Contains(t, oneAgentInstallInitContainer.Args, "--"+k8sinit.SuppressErrorsFlag, "errors may be suppressed, further checks are not useful")
@@ -59,7 +57,7 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 			assert.NotContains(t, oneAgentInstallInitContainer.Args, "--"+k8sinit.SuppressErrorsFlag, "in the tests the init-container should have no errors suppressed")
 
 			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
-			executionResult, err := k8spod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifNotEmptyCommand...)
+			executionResult, err := k8spod.Exec(ctx, resources, pod, sampleApp.ContainerName(), ifNotEmptyCommand...)
 			require.NoError(t, err)
 
 			stdOut := executionResult.StdOut.String()

@@ -166,11 +166,11 @@ func testSupportArchiveCommand(testDynakube dynakube.DynaKube, testEdgeConnect e
 func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *envconf.Config, cmdLineArguments []string, namespace string) *k8spod.ExecutionResult {
 	environmentResources := envConfig.Client().Resources()
 
-	pods := k8spod.List(t, ctx, environmentResources, namespace)
+	pods := k8spod.List(ctx, t, environmentResources, namespace)
 	require.NotNil(t, pods.Items)
 
-	operatorPods := filter(pods.Items, func(podItem corev1.Pod) bool {
-		return strings.Contains(podItem.Name, "dynatrace-operator")
+	operatorPods := filter(pods.Items, func(pod corev1.Pod) bool {
+		return strings.Contains(pod.Name, "dynatrace-operator")
 	})
 
 	require.Len(t, operatorPods, 1)

@@ -4,20 +4,30 @@ package k8snamespace
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubernetes/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+)
+
+const (
+	InjectionKey          = "istio-injection"
+	InjectionEnabledValue = "enabled"
 )
 
 type Option func(namespace *corev1.Namespace)
@@ -100,5 +110,27 @@ func CreateForEnv(namespace corev1.Namespace) env.Func {
 		}
 
 		return AddIstioNetworkAttachment(namespace)(ctx, envConfig)
+	}
+}
+
+var networkAttachmentPath = filepath.Join(project.TestDataDir(), "network/ocp-istio-cni.yaml")
+
+func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		isOpenshift, err := platform.NewResolver().IsOpenshift()
+		if err != nil {
+			return ctx, err
+		}
+		if !isOpenshift {
+			return ctx, nil
+		}
+		if namespace.Labels[InjectionKey] == InjectionEnabledValue {
+			ctx, err = manifests.InstallFromFile(networkAttachmentPath, decoder.MutateNamespace(namespace.Name))(ctx, envConfig)
+			if err != nil {
+				return ctx, err
+			}
+		}
+
+		return ctx, nil
 	}
 }

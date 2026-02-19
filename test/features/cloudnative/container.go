@@ -36,26 +36,24 @@ func checkSampleContainer(sampleApp *sample.App, agCrtFunc func() []byte, truste
 		pods := sampleApp.GetPods(ctx, t, resources)
 		require.NotEmpty(t, pods.Items)
 
-		for _, podItem := range pods.Items {
-			if podItem.DeletionTimestamp != nil {
+		for _, pod := range pods.Items {
+			if pod.DeletionTimestamp != nil {
 				continue
 			}
 
-			require.NotNil(t, podItem)
-			require.NotNil(t, podItem.Spec)
-			require.NotEmpty(t, podItem.Spec.Containers)
+			require.NotEmpty(t, pod.Spec.Containers)
 
 			certs := string(agCrtFunc()) + "\n" + string(trustedCAs)
 
 			if string(agCrtFunc()) == "" && string(trustedCAs) == "" {
-				checkFileNotFound(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomPemPath)
+				checkFileNotFound(ctx, t, resources, pod, sampleApp.ContainerName(), oneAgentCustomPemPath)
 			} else {
-				checkFileContents(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomPemPath, certs)
+				checkFileContents(ctx, t, resources, pod, sampleApp.ContainerName(), oneAgentCustomPemPath, certs)
 			}
 			if string(trustedCAs) == "" {
-				checkFileNotFound(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomProxyPemPath)
+				checkFileNotFound(ctx, t, resources, pod, sampleApp.ContainerName(), oneAgentCustomProxyPemPath)
 			} else {
-				checkFileContents(ctx, t, resources, podItem, sampleApp.ContainerName(), oneAgentCustomProxyPemPath, string(trustedCAs))
+				checkFileContents(ctx, t, resources, pod, sampleApp.ContainerName(), oneAgentCustomProxyPemPath, string(trustedCAs))
 			}
 		}
 

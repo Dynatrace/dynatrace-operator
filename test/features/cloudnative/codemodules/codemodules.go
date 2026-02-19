@@ -500,9 +500,9 @@ func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 		err = k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: dk.Namespace,
-		}).ForEachPod(func(podItem corev1.Pod) {
+		}).ForEachPod(func(pod corev1.Pod) {
 			err = wait.For(func(ctx context.Context) (done bool, err error) {
-				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
+				logStream, err := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
 					Container: provisionerContainerName,
 				}).Stream(ctx)
 				require.NoError(t, err)
@@ -510,14 +510,14 @@ func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 				_, err = io.Copy(buffer, logStream)
 				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dk.OneAgent().GetCustomCodeModulesImage())
 				isOld := strings.Contains(buffer.String(), "agent already installed")
-				t.Logf("wait for Installed agent version in %s", podItem.Name)
+				t.Logf("wait for Installed agent version in %s", pod.Name)
 
 				return isNew || isOld, err
 			}, wait.WithTimeout(time.Minute*5))
 			require.NoError(t, err)
 
 			listCommand := shell.ListDirectory(dataPath)
-			result, err := k8spod.Exec(ctx, resource, podItem, provisionerContainerName, listCommand...)
+			result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, listCommand...)
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
@@ -535,9 +535,9 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
-		}).ForEachPod(func(podItem corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
-			storageMap[podItem.Name] = diskUsage
+		}).ForEachPod(func(pod corev1.Pod) {
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, provisionerContainerName, dataPath)
+			storageMap[pod.Name] = diskUsage
 		})
 		require.NoError(t, err)
 
@@ -551,9 +551,9 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
-		}).ForEachPod(func(podItem corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
-			assert.InDelta(t, storageMap[podItem.Name], diskUsage, diskUsageKiBDelta)
+		}).ForEachPod(func(pod corev1.Pod) {
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, provisionerContainerName, dataPath)
+			assert.InDelta(t, storageMap[pod.Name], diskUsage, diskUsageKiBDelta)
 		})
 		require.NoError(t, err)
 
@@ -561,14 +561,14 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 	}
 }
 
-func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, containerName, path string) int { //nolint:revive
+func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, containerName, path string) int { //nolint:revive
 	diskUsageCommand := shell.Shell(
 		shell.Pipe(
 			shell.DiskUsageWithTotal(path),
 			shell.FilterLastLineOnly(),
 		),
 	)
-	result, err := k8spod.Exec(ctx, resource, podItem, containerName, diskUsageCommand...)
+	result, err := k8spod.Exec(ctx, resource, pod, containerName, diskUsageCommand...)
 	require.NoError(t, err)
 
 	diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
@@ -583,20 +583,20 @@ func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 		err := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
-		}).ForEachPod(func(podItem corev1.Pod) {
-			volumes := podItem.Spec.Volumes
-			volumeMounts := podItem.Spec.Containers[0].VolumeMounts
+		}).ForEachPod(func(pod corev1.Pod) {
+			volumes := pod.Spec.Volumes
+			volumeMounts := pod.Spec.Containers[0].VolumeMounts
 
 			assert.True(t, isVolumeAttached(t, volumes, oacommon.BinVolumeName))
 			assert.True(t, isVolumeMounted(t, volumeMounts, oacommon.BinVolumeName))
 
 			listCommand := shell.ListDirectory(oacommon.DefaultInstallPath)
-			executionResult, err := k8spod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...)
+			executionResult, err := k8spod.Exec(ctx, resource, pod, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, sampleApp.ContainerName(), oacommon.DefaultInstallPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, sampleApp.ContainerName(), oacommon.DefaultInstallPath)
 			assert.Positive(t, diskUsage)
 		})
 
@@ -644,11 +644,8 @@ func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
-		}).ForEachPod(func(podItem corev1.Pod) {
-			require.NotNil(t, podItem)
-			require.NotNil(t, podItem.Spec)
-
-			checkEnvVarsInContainer(t, podItem, dk.OneAgent().GetDaemonsetName(), httpsProxy)
+		}).ForEachPod(func(pod corev1.Pod) {
+			checkEnvVarsInContainer(t, pod, dk.OneAgent().GetDaemonsetName(), httpsProxy)
 		})
 
 		require.NoError(t, err)
@@ -657,8 +654,8 @@ func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 	}
 }
 
-func checkEnvVarsInContainer(t *testing.T, podItem corev1.Pod, containerName string, envVar string) {
-	for _, container := range podItem.Spec.Containers {
+func checkEnvVarsInContainer(t *testing.T, pod corev1.Pod, containerName string, envVar string) {
+	for _, container := range pod.Spec.Containers {
 		if container.Name == containerName {
 			require.NotNil(t, container.Env)
 			require.True(t, k8senv.Contains(container.Env, envVar))

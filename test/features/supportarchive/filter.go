@@ -1,7 +1,7 @@
 package supportarchive
 
 func filter[T any](arr []T, predicate func(val T) bool) []T {
-	ret := make([]T, 0)
+	var ret []T
 
 	for _, val := range arr {
 		if predicate(val) {

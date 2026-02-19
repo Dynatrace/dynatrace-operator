@@ -153,9 +153,9 @@ func checkMountPoints(dk *dynakube.DynaKube) features.Func {
 	}
 }
 
-func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resources.Resources, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
+func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resources.Resources, pod corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
 	readFileCommand := shell.ReadFile("/proc/mounts")
-	executionResult, err := k8spod.Exec(ctx, resources, podItem, containerName, readFileCommand...)
+	executionResult, err := k8spod.Exec(ctx, resources, pod, containerName, readFileCommand...)
 	require.NoError(t, err)
 
 	stdOut := executionResult.StdOut.String()

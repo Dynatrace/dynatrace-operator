@@ -14,14 +14,14 @@ func TestFilter(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		input := []int{}
 		actual := filter(input, isPositive)
-		expected := []int{}
+		var expected []int
 
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("none", func(t *testing.T) {
 		input := []int{-3, -2, -1}
 		actual := filter(input, isPositive)
-		expected := []int{}
+		var expected []int
 
 		assert.Equal(t, expected, actual)
 	})

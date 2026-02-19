@@ -336,7 +336,7 @@ func getOtelCollectorPodTimestamp(dk *dynakube.DynaKube, startTimestamp *time.Ti
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		podList := k8spod.GetPodsForOwner(ctx, t, resources, dk.OtelCollectorStatefulsetName(), dk.Namespace)
+		podList := k8spod.ListForOwner(ctx, t, resources, dk.OtelCollectorStatefulsetName(), dk.Namespace)
 
 		expectedPodCount := 1
 		if dk.Spec.Templates.OpenTelemetryCollector.Replicas != nil && *dk.Spec.Templates.OpenTelemetryCollector.Replicas >= 1 {

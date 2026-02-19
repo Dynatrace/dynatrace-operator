@@ -13,8 +13,8 @@ import (
 
 func ObjectFromFile[T client.Object](t *testing.T, path string) T {
 	kubernetesManifest, err := os.Open(path)
-	defer func() { require.NoError(t, kubernetesManifest.Close()) }()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, kubernetesManifest.Close()) }()
 
 	rawObject, err := decoder.DecodeAny(kubernetesManifest)
 	require.NoError(t, err)
