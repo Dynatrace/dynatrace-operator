@@ -16,7 +16,7 @@ func TestReconciler_prepareService(t *testing.T) {
 		dk := createDynakube()
 
 		fakeClient := fake.NewClient()
-		r := &reconciler{client: fakeClient, apiReader: fakeClient, dk: dk, timeProvider: timeprovider.New()}
+		r := &Reconciler{client: fakeClient, apiReader: fakeClient, dk: dk, timeProvider: timeprovider.New()}
 		svc, err := r.buildService()
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{

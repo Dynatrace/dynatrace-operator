@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (r *reconciler) reconcileService(ctx context.Context) error {
+func (r *Reconciler) reconcileService(ctx context.Context) error {
 	if !r.dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
 			return nil
@@ -42,7 +42,7 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 	return r.createOrUpdateService(ctx)
 }
 
-func (r *reconciler) createOrUpdateService(ctx context.Context) error {
+func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	newService, err := r.buildService()
 	if err != nil {
 		k8sconditions.SetServiceGenFailed(r.dk.Conditions(), serviceConditionType, err)
@@ -63,7 +63,7 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) buildService() (*corev1.Service, error) {
+func (r *Reconciler) buildService() (*corev1.Service, error) {
 	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.ExtensionComponentLabel)
 	appLabels := k8slabel.NewAppLabels(k8slabel.ExtensionComponentLabel, r.dk.Name, k8slabel.ExtensionComponentLabel, "")
 
@@ -86,7 +86,7 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 }
 
 // TODO: Remove as part of DAQ-18375
-func (r *reconciler) deleteLegacyService(ctx context.Context) {
+func (r *Reconciler) deleteLegacyService(ctx context.Context) {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.dk.Name + "-extensions-controller",

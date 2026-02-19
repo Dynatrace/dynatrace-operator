@@ -18,7 +18,7 @@ import (
 // TODO: Remove in future release when migration is no longer needed
 const DeprecatedOtelcTokenSecretKey = "otelc.token"
 
-func (r *reconciler) reconcileSecret(ctx context.Context) error {
+func (r *Reconciler) reconcileSecret(ctx context.Context) error {
 	if !r.dk.Extensions().IsAnyEnabled() {
 		if meta.FindStatusCondition(*r.dk.Conditions(), secretConditionType) == nil {
 			return nil
@@ -92,7 +92,7 @@ func (r *reconciler) reconcileSecret(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Token) (*corev1.Secret, error) {
+func (r *Reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Token) (*corev1.Secret, error) {
 	secretData := map[string][]byte{
 		eecConsts.TokenSecretKey:        []byte(eecToken.String()),
 		consts.DatasourceTokenSecretKey: []byte(otelcToken.String()),
@@ -101,11 +101,11 @@ func (r *reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Toke
 	return k8ssecret.Build(r.dk, r.getSecretName(), secretData)
 }
 
-func (r *reconciler) getSecretName() string {
+func (r *Reconciler) getSecretName() string {
 	return r.dk.Extensions().GetTokenSecretName()
 }
 
-func (r *reconciler) removeDeprecatedSecretAndConditionIfNeeded(ctx context.Context, existingSecret *corev1.Secret) bool {
+func (r *Reconciler) removeDeprecatedSecretAndConditionIfNeeded(ctx context.Context, existingSecret *corev1.Secret) bool {
 	if existingSecret == nil {
 		return false
 	}

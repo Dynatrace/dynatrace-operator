@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type reconciler struct {
+type Reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
 	timeProvider *timeprovider.Provider
@@ -26,7 +26,7 @@ type ReconcilerBuilder func(clt client.Client, apiReader client.Reader, dk *dyna
 var _ ReconcilerBuilder = NewReconciler
 
 func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
-	return &reconciler{
+	return &Reconciler{
 		client:       clt,
 		apiReader:    apiReader,
 		dk:           dk,
@@ -35,7 +35,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.Dyna
 	}
 }
 
-func (r *reconciler) Reconcile(ctx context.Context) error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	log.Info("start reconciling extensions")
 
 	err := r.reconcileSecret(ctx)
