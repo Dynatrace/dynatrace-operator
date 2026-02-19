@@ -15,6 +15,7 @@ type Spec struct {
 	// +kubebuilder:validation:Optional
 	TLSRefName string `json:"tlsRefName,omitempty"`
 
+	// +listType=set
 	// +kubebuilder:validation:Optional
 	Protocols []string `json:"protocols,omitempty"`
 }
