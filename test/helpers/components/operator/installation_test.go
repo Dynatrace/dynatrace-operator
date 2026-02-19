@@ -38,6 +38,7 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "csidriver.enabled=true",
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
+				"--set", "webhook.highAvailability=false",
 				helmRegistryURL,
 			},
 		}, opts)
@@ -58,6 +59,8 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "csidriver.enabled=true",
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
+				"--set", "webhook.highAvailability=false",
+				"--set", "imagePullPolicy=IfNotPresent",
 				"oci://registry:0.0.0-nightly-chart",
 			},
 		}, opts)
@@ -82,6 +85,7 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "csidriver.enabled=false",
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
+				"--set", "webhook.highAvailability=false",
 				"--set", "image=repo:tag",
 				filepath.Join(project.RootDir(), "config", "helm", "chart", "default"),
 			},
@@ -103,6 +107,7 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "csidriver.enabled=false",
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
+				"--set", "webhook.highAvailability=false",
 				"--set", "image=repo:tag",
 				filepath.Join(project.RootDir(), "config", "helm", "chart", "default"),
 			},
@@ -110,6 +115,8 @@ func TestGetHelmOptions(t *testing.T) {
 	})
 
 	t.Run("no image found", func(t *testing.T) {
+		// clear cached image to ensure make is called
+		imageRef = ""
 		tempDir := t.TempDir()
 		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho make[1] Entering directory"), os.ModePerm)) //nolint:gosec
 		t.Setenv("PATH", tempDir+":"+os.Getenv("PATH"))
@@ -117,4 +124,23 @@ func TestGetHelmOptions(t *testing.T) {
 		_, err := getHelmOptions("", "test", false)
 		require.Error(t, err)
 	})
+}
+
+func Test_isNightlyChart(t *testing.T) {
+	tests := []struct {
+		chart         string
+		expectNightly bool
+	}{
+		{"", false},
+		{"mychart:1.2.3", false},
+		{"oci://mychart:1.2.3", false},
+		{"oci://0.0.0-nightly-1", false},
+		{"mychart:nightly-1", false},
+		{"mychart:0.0.0-nightly-1", true},
+		{"oci://mychart:0.0.0-nightly-1", true},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.expectNightly, isNightlyChart(test.chart), test.chart)
+	}
 }
