@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -59,6 +60,8 @@ type APIClient interface {
 	GetKSPMSettings(ctx context.Context, monitoredEntity string) (GetSettingsResponse, error)
 	// CreateKSPMSetting returns the object ID of the created kspm settings.
 	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
+	// DeleteSettings deletes the settings for a monitored entity.
+	DeleteSettings(ctx context.Context, settingsID string) error
 }
 
 // K8sClusterME is representing the relevant info for a Kubernetes Cluster Monitored Entity
@@ -68,7 +71,17 @@ type K8sClusterME struct {
 }
 
 type GetSettingsResponse struct {
-	TotalCount int `json:"totalCount"`
+	TotalCount int                 `json:"totalCount"`
+	Items      []KSPMSettingObject `json:"items"`
+}
+
+type KSPMSettingObject struct {
+	ObjectID string            `json:"objectId"`
+	Value    KspmSettingsValue `json:"value"`
+}
+
+type KspmSettingsValue struct {
+	DatasetPipelineEnabled bool `json:"configurationDatasetPipelineEnabled"`
 }
 
 type getKubernetesObjectsResponse struct {
@@ -192,9 +205,8 @@ func (c *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEnt
 
 	err := c.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "true",
-			schemaIDsQueryParam:    schemaID,
-			scopesQueryParam:       monitoredEntity.ID,
+			schemaIDsQueryParam: schemaID,
+			scopesQueryParam:    monitoredEntity.ID,
 		}).
 		Execute(&response)
 	if err != nil {
@@ -202,4 +214,19 @@ func (c *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEnt
 	}
 
 	return response, nil
+}
+
+// DeleteSettings deletes the settings using the settings object ID.
+func (c *Client) DeleteSettings(ctx context.Context, objectID string) error {
+	if objectID == "" {
+		return errors.New("cannot delete settings: no settings ID provided")
+	}
+
+	err := c.apiClient.DELETE(ctx, path.Join(ObjectsPath, objectID)).
+		Execute(nil)
+	if err != nil {
+		return fmt.Errorf("delete monitored entity settings: %w", err)
+	}
+
+	return nil
 }
