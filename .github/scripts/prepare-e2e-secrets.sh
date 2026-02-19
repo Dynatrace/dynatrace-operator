@@ -2,11 +2,12 @@
 
 set -eu -o pipefail
 
-mkdir -p test/testdata/secrets/
+for dir in test/testdata/secrets test/e2e/testdata/secrets ; do
+  mkdir -p ${dir}
 
-pushd test/testdata/secrets/
+  pushd ${dir}
 
-cat << EOF > single-tenant.yaml
+  cat << EOF > single-tenant.yaml
 tenantUid: $TENANT1_NAME
 apiUrl: https://$TENANT1_NAME.dev.dynatracelabs.com/api
 apiToken: $TENANT1_APITOKEN
@@ -14,7 +15,7 @@ apiTokenNoSettings: $TENANT1_APITOKEN_NOSETTINGS
 dataIngestToken: $TENANT1_DATAINGESTTOKEN
 EOF
 
-cat << EOF > multi-tenant.yaml
+  cat << EOF > multi-tenant.yaml
 tenants:
   - tenantUid: $TENANT1_NAME
     apiUrl: https://$TENANT1_NAME.dev.dynatracelabs.com/api
@@ -26,7 +27,7 @@ tenants:
     dataIngestToken: $TENANT2_DATAINGESTTOKEN
 EOF
 
-cat << EOF > edgeconnect-tenant.yaml
+  cat << EOF > edgeconnect-tenant.yaml
 name: e2e-test
 tenantUid: $TENANT1_NAME
 apiServer: $TENANT1_NAME.dev.apps.dynatracelabs.com
@@ -35,4 +36,5 @@ oAuthClientSecret: $TENANT1_OAUTH_SECRET
 resource: $TENANT1_OAUTH_URN
 EOF
 
-popd
+  popd
+done
