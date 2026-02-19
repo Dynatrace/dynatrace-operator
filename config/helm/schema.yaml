@@ -283,9 +283,48 @@ properties:
     default: 128Mi
   webhook.highAvailability:
     type: boolean
-    title: Enables Webhook's high availability mode
-    description: Increases replicas and adds topology constraints for the Webhook.
+    title: (DEPRECATED) Enable Webhook's high availability mode
+    description: (DEPRECATED) Increases replicas and adds topology constraints for the Webhook.
     default: false
+  webhook.replicas:
+    type: integer
+    title: Webhook replicas
+    description: |
+      The number of replicas for the Webhook.
+      Only used if webhook.highAvailability is set to true.
+      Default: 2
+    default: 2
+  webhook.topologySpreadConstraints:
+    type: array
+    title: Webhook topology spread constraints
+    description: |
+      The topology spread constraints for the Webhook.
+      Only used if webhook.highAvailability is set to true.
+      Default: maxSkew: 1
+    default:
+      - maxSkew: 1
+        topologyKey: "topology.kubernetes.io/zone"
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            internal.dynatrace.com/app: webhook
+            internal.dynatrace.com/component: webhook
+      - maxSkew: 1
+        topologyKey: "kubernetes.io/hostname"
+        whenUnsatisfiable: ScheduleAnyway
+        nodeTaintsPolicy: Honor
+        labelSelector:
+          matchLabels:
+            internal.dynatrace.com/app: webhook
+            internal.dynatrace.com/component: webhook
+  webhook.podDisruptionBudget.minAvailable:
+    type: integer
+    title: Webhook Pod Disruption Budget minAvailable
+    description: |
+      The minimum number of available replicas for the Webhook.
+      Only used if webhook.highAvailability is set to true.
+      Default: 1
+    default: 1
 
   csidriver.enabled:
     type: boolean
