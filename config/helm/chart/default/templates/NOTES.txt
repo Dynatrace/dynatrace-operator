@@ -13,3 +13,6 @@ To verify the current state of the deployments, try:
 Notice: AppArmor configuration through chart values is deprecated and will be supported until Kubernetes 1.30 support ends (Aug 1, 2026).
 On newer Kubernetes versions prefer setting appArmorProfile in the pod or container securityContext.
 {{- end }}
+{{- if not .Values.webhook.highAvailability }}
+WARNING: The `webhook.highAvailability` field is deprecated and will be removed in a future release. Please migrate to the new `webhook.replicas`, `webhook.topologySpreadConstraints`, and `webhook.podDisruptionBudget` fields.
+{{- end }}
