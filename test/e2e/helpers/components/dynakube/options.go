@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -190,13 +191,13 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 	}
 }
 
-func WithExtensionsEECImageRefSpec(repo, tag string) Option {
+func WithExtensionsEECImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.ExtensionExecutionController.ImageRef = image.Ref{
-			Repository: repo,
-			Tag:        tag,
+			Repository: helpers.EnvOrDefault(consts.EecImageRepoEnvVar, consts.DefaultEecImageRepo),
+			Tag:        helpers.EnvOrDefault(consts.EecImageTagEnvVar, consts.DefaultEecImageTag),
 		}
-		if !strings.Contains(repo, "public.ecr.aws/dynatrace/dynatrace-eec") {
+		if !strings.Contains(dk.Spec.Templates.ExtensionExecutionController.ImageRef.Repository, "public.ecr.aws/dynatrace/dynatrace-eec") {
 			// Use legacy mounts when using a public image until a fixed version is released
 			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
 			dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
@@ -210,12 +211,12 @@ func WithLogMonitoring() Option {
 	}
 }
 
-func WithLogMonitoringImageRefSpec(repo, tag string) Option {
+func WithLogMonitoringImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			ImageRef: image.Ref{
-				Repository: repo,
-				Tag:        tag,
+				Repository: helpers.EnvOrDefault(consts.LogMonitoringImageRepoEnvVar, consts.DefaultLogMonitoringImageRepo),
+				Tag:        helpers.EnvOrDefault(consts.LogMonitoringImageTagEnvVar, consts.DefaultLogMonitoringImageTag),
 			},
 		}
 	}
@@ -227,12 +228,12 @@ func WithKSPM() Option {
 	}
 }
 
-func WithKSPMImageRefSpec(repo, tag string) Option {
+func WithKSPMImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.KspmNodeConfigurationCollector = kspm.NodeConfigurationCollectorSpec{
 			ImageRef: image.Ref{
-				Repository: repo,
-				Tag:        tag,
+				Repository: helpers.EnvOrDefault(consts.KSPMImageRepoEnvVar, consts.DefaultKSPMImageRepo),
+				Tag:        helpers.EnvOrDefault(consts.KSPMImageTagEnvVar, consts.DefaultKSPMImageTag),
 			},
 		}
 	}
@@ -258,12 +259,12 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 	}
 }
 
-func WithOTelCollectorImageRefSpec(repo, tag string) Option {
+func WithOTelCollectorImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.OpenTelemetryCollector = dynakube.OpenTelemetryCollectorSpec{
 			ImageRef: image.Ref{
-				Repository: repo,
-				Tag:        tag,
+				Repository: helpers.EnvOrDefault(consts.OtelCollectorImageRepoEnvVar, consts.DefaultOtelCollectorImageRepo),
+				Tag:        helpers.EnvOrDefault(consts.OtelCollectorImageTagEnvVar, consts.DefaultOtelCollectorImageTag),
 			},
 		}
 	}
@@ -278,11 +279,11 @@ func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
 	}
 }
 
-func WithExtensionsDBExecutorImageRefSpec(repo, tag string) Option {
+func WithExtensionsDBExecutorImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.SQLExtensionExecutor.ImageRef = image.Ref{
-			Repository: repo,
-			Tag:        tag,
+			Repository: helpers.EnvOrDefault(consts.DBExecutorImageRepoEnvVar, consts.DefaultDBExecutorImageRepo),
+			Tag:        helpers.EnvOrDefault(consts.DBExecutorImageTagEnvVar, consts.DefaultDBExecutorImageTag),
 		}
 	}
 }
