@@ -17,8 +17,8 @@ func NewAttributesFromEnv(envs []corev1.EnvVar, name string) (Attributes, bool) 
 	if ev := k8senv.Find(envs, name); ev != nil {
 		found = true
 
-		split := strings.Split(ev.Value, ",")
-		for _, pair := range split {
+		split := strings.SplitSeq(ev.Value, ",")
+		for pair := range split {
 			if key, value, ok := strings.Cut(pair, "="); ok {
 				res[strings.TrimSpace(key)] = strings.TrimSpace(value)
 			}

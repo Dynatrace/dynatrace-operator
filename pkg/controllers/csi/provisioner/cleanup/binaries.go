@@ -1,6 +1,7 @@
 package cleanup
 
 import (
+	maps0 "maps"
 	"os"
 	"strings"
 
@@ -19,9 +20,7 @@ func (c *Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState)
 
 	relevantLatestBins := c.collectRelevantLatestBins(dks)
 
-	for k, v := range relevantLatestBins {
-		keptBins[k] = v
-	}
+	maps0.Copy(keptBins, relevantLatestBins)
 
 	c.removeOldSharedBinaries(keptBins)
 }

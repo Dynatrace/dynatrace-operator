@@ -177,7 +177,7 @@ func (flc fsLogCollector) findLogFilesRecursively(podName string, podNamespace s
 	logFiles := []string{}
 	pwd := ""
 
-	for _, line := range strings.Split(buf.String(), "\n") {
+	for line := range strings.SplitSeq(buf.String(), "\n") {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 {
 			continue
