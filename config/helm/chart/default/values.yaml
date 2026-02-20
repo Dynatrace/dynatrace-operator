@@ -94,7 +94,30 @@ webhook:
   limits:
     cpu: 300m
     memory: 128Mi
-  highAvailability: true
+  highAvailability: true # DEPRECATED, will be removed in future release, only for migration purposes, we will ignore it when it is false, and consider the new values when it is true.
+  replicas: 2 # Will be ignored when `highAvailability` is false, just for migration purposes.
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          internal.dynatrace.com/app: webhook
+          internal.dynatrace.com/component: webhook
+    - maxSkew: 1
+      topologyKey: "kubernetes.io/hostname"
+      whenUnsatisfiable: ScheduleAnyway
+      nodeTaintsPolicy: Honor
+      labelSelector:
+        matchLabels:
+          internal.dynatrace.com/app: webhook
+          internal.dynatrace.com/component: webhook
+  podDisruptionBudget:
+    minAvailable: 1
+    selector:
+      matchLabels:
+        internal.dynatrace.com/app: webhook
+        internal.dynatrace.com/component: webhook
   validatingWebhook:
     timeoutSeconds: 10
   mutatingWebhook:

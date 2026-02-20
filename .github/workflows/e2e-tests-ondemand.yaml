@@ -67,6 +67,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Run e2e test
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
@@ -88,6 +90,10 @@ jobs:
       - name: Prepare outputs
         id: prepare_outputs
         if: always()
+        env:
+          CLUSTER_STATUS: ${{ steps.run_e2e_test.outputs.cluster_status }}
+          E2E_TEST_OUTCOME: ${{ steps.run_e2e_test.outcome }}
+          JOB_CHECK_RUN_ID: ${{ job.check_run_id }}
         run: |
           PLATFORM_VERSION="${{ matrix.platform }}_${{ matrix.version }}"
           PLATFORM_VERSION_CLEAN=${PLATFORM_VERSION//-/_}
@@ -102,15 +108,15 @@ jobs:
             fi
           }
 
-          run_id="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}"
-          emoji=$(get_emoji "${{ steps.run_e2e_test.outputs.cluster_status}}" "${{ steps.run_e2e_test.outcome }}")
+          run_id="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/$JOB_CHECK_RUN_ID"
+          emoji=$(get_emoji "$CLUSTER_STATUS" "$E2E_TEST_OUTCOME")
 
           echo "matrix={\"${PLATFORM_VERSION_CLEAN^^}_EMOJI\": \"${emoji}\", \"${PLATFORM_VERSION_CLEAN^^}_RUN_ID_URL\": \"${run_id}\"}" >> $GITHUB_OUTPUT
 
-          if [[ "${{ steps.run_e2e_test.outputs.cluster_status }}" == "skipped" ]]; then
+          if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
-      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@f24ce3360a8abf9bf386a62ab13d0ae5de5f9d13 # 0.31.7
+      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@f5847cb398fe65d53794e6aba98ebdfa0801f691 # 0.32.0
         if: always()
         with:
           value: ${{ steps.prepare_outputs.outputs.matrix }}
@@ -124,7 +130,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@f24ce3360a8abf9bf386a62ab13d0ae5de5f9d13 # 0.31.7
+        with:
+          persist-credentials: false
+      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@f5847cb398fe65d53794e6aba98ebdfa0801f691 # 0.32.0
         id: get-matrix-outputs
         with:
           artifact-name: run-matrix-artifact

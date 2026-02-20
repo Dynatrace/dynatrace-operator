@@ -128,3 +128,18 @@ appArmorProfile:
   type: RuntimeDefault
 {{- end -}}
 {{- end -}}
+
+{{- define "dynatrace-operator.webhook.replicas" -}}
+  {{- if or (not .Values.webhook.highAvailability) .Values.debug -}}
+    {{- 1 -}}
+  {{- else -}}
+    {{- .Values.webhook.replicas -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "dynatrace-operator.webhook.topologySpreadConstraints" -}}
+  {{- if .Values.webhook.highAvailability -}}
+topologySpreadConstraints:
+  {{- toYaml .Values.webhook.topologySpreadConstraints | nindent 2 }}
+  {{- end -}}
+{{- end -}}

@@ -283,9 +283,23 @@ properties:
     default: 128Mi
   webhook.highAvailability:
     type: boolean
-    title: Enables Webhook's high availability mode
-    description: Increases replicas and adds topology constraints for the Webhook.
+    title: (DEPRECATED) Enable Webhook's high availability mode
+    description: (DEPRECATED) Increases replicas and adds topology constraints for the Webhook.
     default: false
+  webhook.replicas:
+    type: integer
+    title: Webhook replicas
+    description: |
+      The number of replicas for the Webhook.
+      Only used if webhook.highAvailability is set to true.
+    default: 2
+  webhook.podDisruptionBudget.minAvailable:
+    type: integer
+    title: Webhook Pod Disruption Budget minAvailable
+    description: |
+      The minimum number of available replicas for the Webhook.
+      Only used if webhook.highAvailability is set to true.
+    default: 1
 
   csidriver.enabled:
     type: boolean

@@ -103,6 +103,7 @@ kind-logs-*
 /node_modules
 
 test/testdata/secrets/*
+test/e2e/testdata/secrets/*
 *.prof
 
 local/

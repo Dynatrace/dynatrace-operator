@@ -1,0 +1,62 @@
+suite: test webhook high availability
+templates:
+  - Common/webhook/deployment-webhook.yaml
+  - Common/webhook/poddisruptionbudget-webhook.yaml
+tests:
+  - it: should default to HA mode (replicas=2, PDB exists)
+    asserts:
+      - template: Common/webhook/deployment-webhook.yaml
+        equal:
+          path: spec.replicas
+          value: 2
+      - template: Common/webhook/deployment-webhook.yaml
+        isNotEmpty:
+          path: spec.template.spec.topologySpreadConstraints
+      - template: Common/webhook/poddisruptionbudget-webhook.yaml
+        hasDocuments:
+          count: 1
+
+  - it: should disable HA mode when highAvailability is false
+    set:
+      webhook.highAvailability: false
+    asserts:
+      - template: Common/webhook/deployment-webhook.yaml
+        equal:
+          path: spec.replicas
+          value: 1
+      - template: Common/webhook/deployment-webhook.yaml
+        isNull:
+          path: spec.template.spec.topologySpreadConstraints
+      - template: Common/webhook/poddisruptionbudget-webhook.yaml
+        hasDocuments:
+          count: 0
+
+  - it: should respect custom replicas when HA is enabled
+    set:
+      webhook.highAvailability: true
+      webhook.replicas: 5
+    asserts:
+      - template: Common/webhook/deployment-webhook.yaml
+        equal:
+          path: spec.replicas
+          value: 5
+
+  - it: should ignore custom replicas when HA is disabled
+    set:
+      webhook.highAvailability: false
+      webhook.replicas: 5
+    asserts:
+      - template: Common/webhook/deployment-webhook.yaml
+        equal:
+          path: spec.replicas
+          value: 1
+
+  - it: should respect custom PDB when HA is enabled
+    set:
+      webhook.highAvailability: true
+      webhook.podDisruptionBudget.minAvailable: 2
+    asserts:
+      - template: Common/webhook/poddisruptionbudget-webhook.yaml
+        equal:
+          path: spec.minAvailable
+          value: 2

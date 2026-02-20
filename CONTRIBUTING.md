@@ -121,6 +121,9 @@ make go/check-version
 > For example: `REPOSITORY=<your GitHub handle>` => ghcr.io will still be used (default), but the images will be pulled from your GitHub account.
 > If you want to push to ghcr.io, make sure to authenticate to the registry: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry
 > You can also set `IMAGE`, which will reconfigure both registry and repository.
+>
+> **For operator development team:** Use the `-local` suffix with make targets (e.g., `make images/build/push-local && make deploy-local`).
+> This automatically sets `REGISTRY=quay.io` and runs the target with the `-local` suffix removed, avoiding conflicts with CI builds on ghcr.io.
 
 8. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
 
@@ -244,7 +247,7 @@ only after you can try to run you test).
 >
 > - Existing kube config with the context of a test K8s cluster
 > - Cleanup the cluster using `make undeploy`
-> - Configured Dynatrace tenant(s) with an access token (see `/test/testdata/secrets-samples`). Read more about Access tokens on the [official documentation](https://www.dynatrace.com/support/help/manage/access-control/access-tokens).
+> - Configured Dynatrace tenant(s) with an access token (see `/test/e2e/testdata/secrets-samples`). Read more about Access tokens on the [official documentation](https://www.dynatrace.com/support/help/manage/access-control/access-tokens).
 
 Check the available E2E tests via make command:
 

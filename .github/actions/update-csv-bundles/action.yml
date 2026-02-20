@@ -2,6 +2,9 @@ name: "Update CSV bundles"
 description: "Generate and finalize OLM CSV bundles for a given version"
 
 inputs:
+  digest:
+    description: "Image digest"
+    required: true
   version:
     description: "Version without v-prefix"
     required: true
@@ -37,6 +40,7 @@ runs:
         ref: release-${{ steps.vars.outputs.major_minor }}
         fetch-depth: 0
         clean: false
+        persist-credentials: false
     - name: Setting properties
       shell: bash
       env:
@@ -77,23 +81,25 @@ runs:
     - name: Generate OLM bundles (openshift)
       shell: bash
       env:
+        DIGEST: ${{ inputs.digest }}
         VERSION: ${{ inputs.version }}
         PLATFORM: openshift
         CHANNELS: stable
         DEFAULT_CHANNEL: stable
         IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
-        OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}
+        OLM_IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
       run: |
         make bundle
     - name: Generate OLM bundles (kubernetes)
       shell: bash
       env:
+        DIGEST: ${{ inputs.digest }}
         VERSION: ${{ inputs.version }}
         PLATFORM: kubernetes
         CHANNELS: stable
         DEFAULT_CHANNEL: stable
         IMAGE: docker.io/dynatrace/dynatrace-operator
-        OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}
+        OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
       run: |
         make bundle
     - name: Finalize CSV files
