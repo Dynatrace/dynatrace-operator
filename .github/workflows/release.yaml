@@ -353,7 +353,7 @@ jobs:
 
   update-csv-bundles:
     name: Update Operatorhub Bundles
-    needs: release
+    needs: [release, prepare, build-push]
     runs-on: ubuntu-24.04
     if: ${{ !contains(github.ref, '-rc.') }}
     permissions:
