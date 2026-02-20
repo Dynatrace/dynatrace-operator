@@ -16,8 +16,8 @@ func TestReconciler_prepareService(t *testing.T) {
 		dk := createDynakube()
 
 		fakeClient := fake.NewClient()
-		r := &Reconciler{client: fakeClient, apiReader: fakeClient, dk: dk, timeProvider: timeprovider.New()}
-		svc, err := r.buildService()
+		r := &Reconciler{client: fakeClient, apiReader: fakeClient, timeProvider: timeprovider.New()}
+		svc, err := r.buildService(dk)
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{
 			k8slabel.AppComponentLabel: k8slabel.ExtensionComponentLabel,
