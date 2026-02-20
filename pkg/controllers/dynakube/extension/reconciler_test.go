@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -201,7 +200,7 @@ func TestReconciler_ReconcileService(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		r := &Reconciler{client: mockK8sClient, apiReader: mockK8sClient, timeProvider: timeprovider.New()}
+		r := NewReconciler(mockK8sClient, mockK8sClient)
 		err := r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
