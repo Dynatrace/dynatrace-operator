@@ -152,8 +152,8 @@ func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
 
 	noProxyValue := dk.FF().GetNoProxy()
 	if noProxyValue != "" {
-		hostnames := strings.Split(noProxyValue, ",")
-		for _, hostname := range hostnames {
+		hostnames := strings.SplitSeq(noProxyValue, ",")
+		for hostname := range hostnames {
 			hostname = strings.TrimSpace(hostname)
 			if hostname != "" {
 				noProxyValues = append(noProxyValues, hostname)

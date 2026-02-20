@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
@@ -15,13 +16,7 @@ type TokenScopes []string
 
 // Contains returns true if scope is included on the scopes, or false otherwise.
 func (s TokenScopes) Contains(scope string) bool {
-	for _, x := range s {
-		if x == scope {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(s, scope)
 }
 
 func (dtc *dynatraceClient) GetTokenScopes(ctx context.Context, token string) (TokenScopes, error) {
