@@ -3,7 +3,7 @@ module github.com/Dynatrace/dynatrace-operator
 go 1.25.0
 
 require (
-	github.com/Dynatrace/dynatrace-bootstrapper v1.2.0
+	github.com/Dynatrace/dynatrace-bootstrapper v1.2.1-0.20260212115511-37d81e8eea32
 	github.com/container-storage-interface/spec v1.12.0
 	github.com/docker/cli v29.2.1+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible

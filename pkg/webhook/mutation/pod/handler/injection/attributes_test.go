@@ -9,6 +9,7 @@ import (
 
 	containerattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/container"
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -47,8 +48,6 @@ func TestAddPodAttributes(t *testing.T) {
 		assert.Contains(t, attr.NodeName, K8sNodeNameEnv)
 		assert.Equal(t, request.Pod.Namespace, attr.NamespaceName)
 
-		assertDeprecatedAttributes(t, attr)
-
 		require.Len(t, request.InstallContainer.Env, 3)
 		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodNameEnv))
 		assert.NotNil(t, k8senv.Find(request.InstallContainer.Env, K8sPodUIDEnv))
@@ -58,40 +57,67 @@ func TestAddPodAttributes(t *testing.T) {
 	}
 
 	t.Run("args and envs added", func(t *testing.T) {
-		initContainer := corev1.Container{
-			Args: []string{},
-		}
-		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "test"},
+		type testCase struct {
+			name                        string
+			annotations                 map[string]string
+			assertDeprecatedAnnotations func(t *testing.T, attrs podattr.Attributes)
 		}
 
-		expectedPod := pod.DeepCopy()
+		testCases := []testCase{
+			{
+				name:                        "without deprecated annotations",
+				annotations:                 map[string]string{},
+				assertDeprecatedAnnotations: assertNoDeprecatedAttributes,
+			},
+			{
+				name:                        "with deprecated annotations",
+				annotations:                 map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "true"},
+				assertDeprecatedAnnotations: assertDeprecatedAttributes,
+			},
+		}
 
-		request := dtwebhook.MutationRequest{
-			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
-					Spec: dynakube.DynaKubeSpec{
-						MetadataEnrichment: metadataenrichment.Spec{
-							Enabled: ptr.To(true),
+		for _, test := range testCases {
+			t.Run(test.name, func(t *testing.T) {
+				initContainer := corev1.Container{
+					Args: []string{},
+				}
+				pod := corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "test"},
+				}
+
+				expectedPod := pod.DeepCopy()
+
+				request := dtwebhook.MutationRequest{
+					BaseRequest: &dtwebhook.BaseRequest{
+						Pod: &pod,
+						DynaKube: dynakube.DynaKube{
+							ObjectMeta: metav1.ObjectMeta{
+								Annotations: test.annotations,
+							},
+							Spec: dynakube.DynaKubeSpec{
+								MetadataEnrichment: metadataenrichment.Spec{
+									Enabled: ptr.To(true),
+								},
+							},
+							Status: dynakube.DynaKubeStatus{
+								KubernetesClusterMEID: "meid",
+								KubeSystemUUID:        "systemuuid",
+								KubernetesClusterName: "meidname",
+							},
 						},
 					},
-					Status: dynakube.DynaKubeStatus{
-						KubernetesClusterMEID: "meid",
-						KubeSystemUUID:        "systemuuid",
-						KubernetesClusterName: "meidname",
-					},
-				},
-			},
-			InstallContainer: &initContainer,
+					InstallContainer: &initContainer,
+				}
+
+				err := addPodAttributes(&request)
+				require.NoError(t, err)
+				require.Equal(t, *expectedPod, *request.Pod)
+
+				attr := validateAttributes(t, request)
+				test.assertDeprecatedAnnotations(t, attr)
+			})
 		}
-
-		err := addPodAttributes(&request)
-		require.NoError(t, err)
-		require.Equal(t, *expectedPod, *request.Pod)
-
-		validateAttributes(t, request)
 	})
 }
 

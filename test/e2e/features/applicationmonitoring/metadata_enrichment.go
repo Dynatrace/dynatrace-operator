@@ -121,6 +121,14 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 			),
 			assess: podHasCompleteInitContainer,
 		},
+		{
+			name: "metadata enrichment doesn't have deprecated attributes - pod",
+			app: sample.NewApp(t, &testDynakube,
+				sample.WithName("pod-no-dt-attributes"),
+				sample.WithNamespaceLabels(injectEverythingLabels),
+			),
+			assess: assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes,
+		},
 	}
 
 	// dynakubeComponents install
@@ -132,6 +140,29 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		builder.Assess(fmt.Sprintf("%s: Checking sample app", test.name), test.assess(test.app))
 		builder.WithTeardown(fmt.Sprintf("%s: Uninstalling sample app", test.name), test.app.Uninstall())
 	}
+
+	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
+
+	return builder.Feature()
+}
+
+func MetadataEnrichmentDeprecatedAttributes(t *testing.T) features.Feature {
+	builder := features.New("metadata-enrichment-deprecated-attributes")
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	testDynakube := *dynakubeComponents.New(
+		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/enable-attributes-dt.kubernetes": "true"}),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithMetadataEnrichment(),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
+	)
+	dynakubeComponents.Install(builder, helpers.LevelAssess, &secretConfig, testDynakube)
+
+	dummyApp := sample.NewApp(t, &testDynakube, sample.WithName("dummy-app"))
+
+	builder.Assess("Installing sample app", dummyApp.Install())
+	builder.Assess("Checking sample app", assessMetadataEnrichmentHasDeprecatedAttributes(dummyApp))
+	builder.WithTeardown("Uninstalling sample app", dummyApp.Uninstall())
 
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
 
@@ -210,5 +241,29 @@ func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) k8sdeployment.PodConsu
 		assert.NotContains(t, initContainers[0].Args, "--"+bootstrapper.TargetFolderFlag+"="+consts.AgentInitBinDirMount)
 		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadKind)
 		assert.Contains(t, pod.Annotations, metacommon.AnnotationWorkloadName)
+	}
+}
+
+func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, envConfig.Client().Resources(), testPod)
+
+		assert.Equal(t, "pod", enrichmentMetadata.DtWorkloadKind)
+		assert.Equal(t, testPod.Name, enrichmentMetadata.DtWorkloadName)
+
+		return ctx
+	}
+}
+
+func assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes(samplePod *sample.App) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		testPod := samplePod.GetPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		enrichmentMetadata := metadataenrichment.GetMetadataFromPod(ctx, t, envConfig.Client().Resources(), testPod)
+
+		assert.Empty(t, enrichmentMetadata.DtWorkloadKind)
+		assert.Empty(t, enrichmentMetadata.DtWorkloadName)
+
+		return ctx
 	}
 }
