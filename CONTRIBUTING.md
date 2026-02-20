@@ -245,9 +245,9 @@ only after you can try to run you test).
 
 **Prerequisites:**
 
-* Existing kube config with the context of a test K8s cluster
-* Cleanup the cluster using `make undeploy`
-* Configured Dynatrace tenant(s) with an access token (see `/test/e2e/testdata/secrets-samples`). Read more about Access tokens on the [official documentation](https://www.dynatrace.com/support/help/manage/access-control/access-tokens).
+- Existing kube config with the context of a test K8s cluster
+- Cleanup the cluster using `make undeploy`
+- Configured Dynatrace tenant(s) with an access token (see `/test/e2e/testdata/secrets-samples`). Read more about Access tokens on the [official documentation](https://www.dynatrace.com/support/help/manage/access-control/access-tokens).
 
 Check the available E2E tests via make command:
 
@@ -259,16 +259,16 @@ We recommended only executing the ones related to the changes as each one can ta
 
 The images of components that are deployed by the operator can be configured using the following environment variables:
 
-* `E2E_EEC_IMAGE_REPO`
-* `E2E_EEC_IMAGE_TAG`
-* `E2E_LOGMON_IMAGE_REPO`
-* `E2E_LOGMON_IMAGE_TAG`
-* `E2E_KSPM_IMAGE_REPO`
-* `E2E_KSPM_IMAGE_TAG`
-* `E2E_OTELC_IMAGE_REPO`
-* `E2E_OTELC_IMAGE_TAG`
-* `E2E_DB_EXECUTOR_IMAGE_REPO`
-* `E2E_DB_EXECUTOR_IMAGE_TAG`
+- `E2E_EEC_IMAGE_REPO`
+- `E2E_EEC_IMAGE_TAG`
+- `E2E_LOGMON_IMAGE_REPO`
+- `E2E_LOGMON_IMAGE_TAG`
+- `E2E_KSPM_IMAGE_REPO`
+- `E2E_KSPM_IMAGE_TAG`
+- `E2E_OTELC_IMAGE_REPO`
+- `E2E_OTELC_IMAGE_TAG`
+- `E2E_DB_EXECUTOR_IMAGE_REPO`
+- `E2E_DB_EXECUTOR_IMAGE_TAG`
 
 If the repository is set to a non-default value, the DynaKube will use the `devregistry` secret as custom pull secret.
 

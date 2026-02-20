@@ -319,6 +319,7 @@ func setImageRefFromEnvs(dk *dynakube.DynaKube, image *image.Ref, repo, tag envV
 
 	if image.Repository != repo.defaultValue {
 		dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
+
 		return true
 	}
 
