@@ -270,6 +270,8 @@ The images of components that are deployed by the operator can be configured usi
 * `E2E_DB_EXECUTOR_IMAGE_REPO`
 * `E2E_DB_EXECUTOR_IMAGE_TAG`
 
+If the repository is set to a non-default value, the DynaKube will use the `devregistry` secret as custom pull secret.
+
 ### Triggering E2E tests on kind in CI
 
 You can trigger the E2E tests on a kind cluster in GitHub Actions by commenting on a pull request with:
