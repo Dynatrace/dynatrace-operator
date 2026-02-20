@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,8 +34,8 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		dk := createDynakube()
 
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		// assert extensions token is not generated
@@ -62,7 +61,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 
 		fakeClient := fake.NewClient()
 		fakeClient.Create(t.Context(), secretMock)
-		r := NewReconciler(fakeClient, fakeClient, dk)
+		r := NewReconciler(fakeClient, fakeClient)
 
 		// assert extensions token is there before reconciliation
 		var secretFound corev1.Secret
@@ -73,7 +72,7 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		require.NotEmpty(t, dk.Conditions())
 
 		// reconcile
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		// assert extensions token is deleted after reconciliation
@@ -88,8 +87,8 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		// assert extensions token is generated
@@ -112,8 +111,8 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
 
 		misconfiguredReader, _ := client.New(&rest.Config{}, client.Options{})
-		r := NewReconciler(fake.NewClient(), misconfiguredReader, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fake.NewClient(), misconfiguredReader)
+		err := r.Reconcile(t.Context(), dk)
 		require.Error(t, err)
 
 		// assert extensions token condition is added
@@ -145,9 +144,9 @@ func TestReconciler_ReconcileSecret(t *testing.T) {
 		k8sconditions.SetSecretCreated(dk.Conditions(), secretConditionType, oldSecret.Name)
 
 		fakeClient := fake.NewClient(oldSecret)
-		r := NewReconciler(fakeClient, fakeClient, dk)
+		r := NewReconciler(fakeClient, fakeClient)
 
-		err = r.Reconcile(t.Context())
+		err = r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		// assert extensions token is generated
@@ -176,8 +175,8 @@ func TestReconciler_ReconcileService(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		r := NewReconciler(mockK8sClient, mockK8sClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(mockK8sClient, mockK8sClient)
+		err := r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 
@@ -201,8 +200,8 @@ func TestReconciler_ReconcileService(t *testing.T) {
 
 		mockK8sClient := fake.NewClient(dk)
 
-		r := &reconciler{client: mockK8sClient, apiReader: mockK8sClient, dk: dk, timeProvider: timeprovider.New()}
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(mockK8sClient, mockK8sClient)
+		err := r.Reconcile(t.Context(), dk)
 
 		require.NoError(t, err)
 
@@ -220,8 +219,8 @@ func TestReconciler_legacyCleanup(t *testing.T) {
 		k8sconditions.SetStatefulSetCreated(dk.Conditions(), "ExtensionsControllerStatefulSet", "test")
 
 		fakeClient := fake.NewClient(append([]client.Object{dk}, legacyResources(dk)...)...)
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		assertLegacyResourcesCleanedUp(t, fakeClient, dk)
@@ -236,8 +235,8 @@ func TestReconciler_legacyCleanup(t *testing.T) {
 		k8sconditions.SetServiceCreated(dk.Conditions(), serviceConditionType, "test")
 
 		fakeClient := fake.NewClient(append([]client.Object{dk}, legacyResources(dk)...)...)
-		r := NewReconciler(fakeClient, fakeClient, dk)
-		err := r.Reconcile(t.Context())
+		r := NewReconciler(fakeClient, fakeClient)
+		err := r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		assertLegacyResourcesCleanedUp(t, fakeClient, dk)

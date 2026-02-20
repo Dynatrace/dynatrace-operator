@@ -3,6 +3,7 @@ package extension
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -13,14 +14,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (r *reconciler) reconcileService(ctx context.Context) error {
-	if !r.dk.Extensions().IsAnyEnabled() {
-		if meta.FindStatusCondition(*r.dk.Conditions(), serviceConditionType) == nil {
+func (r *Reconciler) reconcileService(ctx context.Context, dk *dynakube.DynaKube) error {
+	if !dk.Extensions().IsAnyEnabled() {
+		if meta.FindStatusCondition(*dk.Conditions(), serviceConditionType) == nil {
 			return nil
 		}
-		defer meta.RemoveStatusCondition(r.dk.Conditions(), serviceConditionType)
+		defer meta.RemoveStatusCondition(dk.Conditions(), serviceConditionType)
 
-		svc, err := r.buildService()
+		svc, err := r.buildService(dk)
 		if err != nil {
 			log.Error(err, "could not build service during cleanup")
 
@@ -32,20 +33,20 @@ func (r *reconciler) reconcileService(ctx context.Context) error {
 			log.Error(err, "failed to clean up extension service")
 		}
 
-		r.deleteLegacyService(ctx)
+		r.deleteLegacyService(ctx, dk)
 
 		return nil
 	}
 
-	defer r.deleteLegacyService(ctx)
+	defer r.deleteLegacyService(ctx, dk)
 
-	return r.createOrUpdateService(ctx)
+	return r.createOrUpdateService(ctx, dk)
 }
 
-func (r *reconciler) createOrUpdateService(ctx context.Context) error {
-	newService, err := r.buildService()
+func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.DynaKube) error {
+	newService, err := r.buildService(dk)
 	if err != nil {
-		k8sconditions.SetServiceGenFailed(r.dk.Conditions(), serviceConditionType, err)
+		k8sconditions.SetServiceGenFailed(dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
@@ -53,31 +54,31 @@ func (r *reconciler) createOrUpdateService(ctx context.Context) error {
 	_, err = k8sservice.Query(r.client, r.apiReader, log).CreateOrUpdate(ctx, newService)
 	if err != nil {
 		log.Info("failed to create/update extension service")
-		k8sconditions.SetKubeAPIError(r.dk.Conditions(), serviceConditionType, err)
+		k8sconditions.SetKubeAPIError(dk.Conditions(), serviceConditionType, err)
 
 		return err
 	}
 
-	k8sconditions.SetServiceCreated(r.dk.Conditions(), serviceConditionType, r.dk.Extensions().GetServiceName())
+	k8sconditions.SetServiceCreated(dk.Conditions(), serviceConditionType, dk.Extensions().GetServiceName())
 
 	return nil
 }
 
-func (r *reconciler) buildService() (*corev1.Service, error) {
-	coreLabels := k8slabel.NewCoreLabels(r.dk.Name, k8slabel.ExtensionComponentLabel)
-	appLabels := k8slabel.NewAppLabels(k8slabel.ExtensionComponentLabel, r.dk.Name, k8slabel.ExtensionComponentLabel, "")
+func (r *Reconciler) buildService(dk *dynakube.DynaKube) (*corev1.Service, error) {
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ExtensionComponentLabel)
+	appLabels := k8slabel.NewAppLabels(k8slabel.ExtensionComponentLabel, dk.Name, k8slabel.ExtensionComponentLabel, "")
 
 	svcPorts := []corev1.ServicePort{
 		{
-			Name:       r.dk.Extensions().GetPortName(),
+			Name:       dk.Extensions().GetPortName(),
 			Port:       consts.ExtensionsDatasourceTargetPort,
 			Protocol:   corev1.ProtocolTCP,
 			TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: consts.ExtensionsDatasourceTargetPortName},
 		},
 	}
 
-	return k8sservice.Build(r.dk,
-		r.dk.Extensions().GetServiceName(),
+	return k8sservice.Build(dk,
+		dk.Extensions().GetServiceName(),
 		appLabels.BuildMatchLabels(),
 		svcPorts,
 		k8sservice.SetLabels(coreLabels.BuildLabels()),
@@ -86,11 +87,11 @@ func (r *reconciler) buildService() (*corev1.Service, error) {
 }
 
 // TODO: Remove as part of DAQ-18375
-func (r *reconciler) deleteLegacyService(ctx context.Context) {
+func (r *Reconciler) deleteLegacyService(ctx context.Context, dk *dynakube.DynaKube) {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.dk.Name + "-extensions-controller",
-			Namespace: r.dk.Namespace,
+			Name:      dk.Name + "-extensions-controller",
+			Namespace: dk.Namespace,
 		},
 	}
 

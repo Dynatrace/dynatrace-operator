@@ -91,11 +91,11 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
-		extensionReconcilerBuilder:          extension.NewReconciler,
 		otelcReconcilerBuilder:              otelc.NewReconciler,
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 
+		extensionReconciler: extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:      kspm.NewReconciler(kubeClient, apiReader),
 		k8sEntityReconciler: k8sentity.NewReconciler(),
 	}
@@ -113,6 +113,10 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
+type extensionReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
 	Reconcile(ctx context.Context, dtclient settings.APIClient, dk *dynakube.DynaKube) error
@@ -126,6 +130,7 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder record.EventRecorder
 
+	extensionReconciler extensionReconciler
 	k8sEntityReconciler dtSettingReconciler
 	kspmReconciler      dtSettingReconciler
 
@@ -139,7 +144,6 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-	extensionReconcilerBuilder          extension.ReconcilerBuilder
 	otelcReconcilerBuilder              otelc.ReconcilerBuilder
 	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
 	proxyReconcilerBuilder              proxy.ReconcilerBuilder
@@ -375,10 +379,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		componentErrors = append(componentErrors, err)
 	}
 
-	extensionReconciler := controller.extensionReconcilerBuilder(controller.client, controller.apiReader, dk)
-
-	err = extensionReconciler.Reconcile(ctx)
-	if err != nil {
+	if err := controller.extensionReconciler.Reconcile(ctx, dk); err != nil {
 		log.Info("could not reconcile Extensions")
 
 		componentErrors = append(componentErrors, err)

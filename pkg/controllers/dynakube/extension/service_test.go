@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,8 +15,8 @@ func TestReconciler_prepareService(t *testing.T) {
 		dk := createDynakube()
 
 		fakeClient := fake.NewClient()
-		r := &reconciler{client: fakeClient, apiReader: fakeClient, dk: dk, timeProvider: timeprovider.New()}
-		svc, err := r.buildService()
+		r := NewReconciler(fakeClient, fakeClient)
+		svc, err := r.buildService(dk)
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{
 			k8slabel.AppComponentLabel: k8slabel.ExtensionComponentLabel,
