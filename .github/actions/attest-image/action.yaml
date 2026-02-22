@@ -1,0 +1,18 @@
+name: Attest Image
+description: Attests a given image to a registry
+inputs:
+  subject-name:
+    description: The name of the subject to attest
+    required: true
+  subject-digest:
+    description: The digest of the subject to attest
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Attest
+      uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+      with:
+        subject-name: ${{ inputs.subject-name }}
+        subject-digest: ${{ inputs.subject-digest }}
+        push-to-registry: true
