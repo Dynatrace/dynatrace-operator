@@ -124,9 +124,8 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	var err error
 
 	if updater.Target().Source == status.TenantRegistryVersionSource {
-
+		previousVersion = updater.Target().Version //nolint:staticcheck
 	}
-	previousVersion = updater.Target().Version
 
 	downgrade, err := isDowngrade(updater.Name(), previousVersion, latestVersion)
 	if downgrade {

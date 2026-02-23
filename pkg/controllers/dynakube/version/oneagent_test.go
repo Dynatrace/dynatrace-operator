@@ -41,7 +41,7 @@ func TestOneAgentUpdater(t *testing.T) {
 		assert.Equal(t, "oneagent", updater.Name())
 		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dk.Spec.OneAgent.ClassicFullStack.Image, updater.CustomImage())
-		assert.Equal(t, dk.Spec.OneAgent.ClassicFullStack.Version, updater.CustomVersion())
+		assert.Equal(t, dk.Spec.OneAgent.ClassicFullStack.Version, updater.CustomVersion()) //nolint:staticcheck
 		assert.False(t, updater.IsAutoUpdateEnabled())
 		imageInfo, err := updater.LatestImageInfo(ctx)
 		require.NoError(t, err)

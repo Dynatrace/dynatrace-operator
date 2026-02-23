@@ -44,7 +44,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 		assert.Equal(t, "codemodules", updater.Name())
 		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage, updater.CustomImage())
-		assert.Equal(t, dk.Spec.OneAgent.ApplicationMonitoring.Version, updater.CustomVersion())
+		assert.Equal(t, dk.Spec.OneAgent.ApplicationMonitoring.Version, updater.CustomVersion()) //nolint:staticcheck
 		assert.True(t, updater.IsAutoUpdateEnabled())
 		imageInfo, err := updater.LatestImageInfo(ctx)
 		require.NoError(t, err)

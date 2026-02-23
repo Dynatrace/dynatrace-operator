@@ -229,7 +229,7 @@ func TestNeedsUpdate(t *testing.T) {
 		oldVersion := "1.2.3.4-5"
 		newVersion := "2.4.5.6-7"
 		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion //nolint:staticcheck
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
 
 		r := reconciler{
@@ -252,7 +252,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 		oldVersion := "1.2.3.4-5"
 		newVersion := "2.4.5.6-7"
 		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion //nolint:staticcheck
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
 		assert.True(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
@@ -260,7 +260,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 	t.Run("no change; version", func(t *testing.T) {
 		version := "1.2.3.4-5"
 		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = version
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = version //nolint:staticcheck
 		setOneAgentCustomVersionStatus(updatedDynakube, version)
 		assert.False(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
@@ -278,7 +278,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 		oldImage := "repo.com:tag@sha256:123"
 		newImage := "repo.com:tag"
 		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newImage
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newImage //nolint:staticcheck
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
 		assert.False(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})

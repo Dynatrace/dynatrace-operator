@@ -659,14 +659,14 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 	}
 
 	for _, validVersion := range validVersions {
-		dk.OneAgent().ClassicFullStack.Version = validVersion
+		dk.OneAgent().ClassicFullStack.Version = validVersion //nolint:staticcheck
 		t.Run(fmt.Sprintf("OneAgent custom version %s is allowed", validVersion), func(t *testing.T) {
 			assertAllowed(t, &dk)
 		})
 	}
 
 	for _, invalidVersion := range invalidVersions {
-		dk.OneAgent().ClassicFullStack.Version = invalidVersion
+		dk.OneAgent().ClassicFullStack.Version = invalidVersion //nolint:staticcheck
 		t.Run(fmt.Sprintf("OneAgent custom version %s is not allowed", invalidVersion), func(t *testing.T) {
 			assertDenied(t, []string{versionInvalidMessage}, &dk)
 		})
