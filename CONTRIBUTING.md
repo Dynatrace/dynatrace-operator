@@ -259,18 +259,14 @@ We recommended only executing the ones related to the changes as each one can ta
 
 The images of components that are deployed by the operator can be configured using the following environment variables:
 
-- `E2E_EEC_IMAGE_REPO`
-- `E2E_EEC_IMAGE_TAG`
-- `E2E_LOGMON_IMAGE_REPO`
-- `E2E_LOGMON_IMAGE_TAG`
-- `E2E_KSPM_IMAGE_REPO`
-- `E2E_KSPM_IMAGE_TAG`
-- `E2E_OTELC_IMAGE_REPO`
-- `E2E_OTELC_IMAGE_TAG`
-- `E2E_DB_EXECUTOR_IMAGE_REPO`
-- `E2E_DB_EXECUTOR_IMAGE_TAG`
+- `E2E_EEC_IMAGE`
+- `E2E_LOGMON_IMAGE`
+- `E2E_KSPM_IMAGE`
+- `E2E_OTELC_IMAGE`
+- `E2E_DB_EXECUTOR_IMAGE`
 
-If the repository is set to a non-default value, the DynaKube will use the `devregistry` secret as custom pull secret.
+> [!NOTE] Make sure to populate the default DynaKube pull secret when using image from a private registry.
+> The name format is `<dynakube-name>-pull-secret`.
 
 ### Triggering E2E tests on kind in CI
 

@@ -4,6 +4,7 @@ package dynakube
 
 import (
 	"os"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -193,12 +194,11 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 func WithExtensionsEECImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		if setImageRefFromEnvs(
-			dk,
 			&dk.Spec.Templates.ExtensionExecutionController.ImageRef,
-			newEnvVar(consts.EecImageRepoEnvVar, consts.DefaultEecImageRepo),
-			newEnvVar(consts.EecImageTagEnvVar, consts.DefaultEecImageTag),
+			consts.EecImageEnvVar,
+			consts.DefaultEecImage,
 		) {
-			// Use legacy mounts when using a public image until a fixed version is released
+			// Disable legacy mounts when using a non-default image
 			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
 		}
 	}
@@ -214,10 +214,9 @@ func WithLogMonitoringImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
 		setImageRefFromEnvs(
-			dk,
 			&dk.Spec.Templates.LogMonitoring.ImageRef,
-			newEnvVar(consts.LogMonitoringImageRepoEnvVar, consts.DefaultLogMonitoringImageRepo),
-			newEnvVar(consts.LogMonitoringImageTagEnvVar, consts.DefaultLogMonitoringImageTag),
+			consts.LogMonitoringImageEnvVar,
+			consts.DefaultLogMonitoringImage,
 		)
 	}
 }
@@ -231,10 +230,9 @@ func WithKSPM() Option {
 func WithKSPMImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
-			dk,
 			&dk.Spec.Templates.KspmNodeConfigurationCollector.ImageRef,
-			newEnvVar(consts.KSPMImageRepoEnvVar, consts.DefaultKSPMImageRepo),
-			newEnvVar(consts.KSPMImageTagEnvVar, consts.DefaultKSPMImageTag),
+			consts.KSPMImageEnvVar,
+			consts.DefaultKSPMImage,
 		)
 	}
 }
@@ -262,10 +260,9 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 func WithOTelCollectorImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
-			dk,
 			&dk.Spec.Templates.OpenTelemetryCollector.ImageRef,
-			newEnvVar(consts.OtelCollectorImageRepoEnvVar, consts.DefaultOtelCollectorImageRepo),
-			newEnvVar(consts.OtelCollectorImageTagEnvVar, consts.DefaultOtelCollectorImageTag),
+			consts.OtelCollectorImageEnvVar,
+			consts.DefaultOtelCollectorImage,
 		)
 	}
 }
@@ -282,46 +279,22 @@ func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
 func WithExtensionsDBExecutorImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
-			dk,
 			&dk.Spec.Templates.SQLExtensionExecutor.ImageRef,
-			newEnvVar(consts.DBExecutorImageRepoEnvVar, consts.DefaultDBExecutorImageRepo),
-			newEnvVar(consts.DBExecutorImageTagEnvVar, consts.DefaultDBExecutorImageTag),
+			consts.DBExecutorImageEnvVar,
+			consts.DefaultDBExecutorImage,
 		)
 	}
 }
 
-type envVar struct {
-	name         string
-	defaultValue string
-}
-
-func newEnvVar(name, defaultValue string) envVar {
-	if name == "" || defaultValue == "" {
-		panic("missing name or defaultValue")
+// setImageRefFromEnvs populates the image.Ref from an environment variable with fallback.
+// Returns true, if the set environment variable differs from the default value.
+func setImageRefFromEnvs(image *image.Ref, envVar, defaultValue string) bool {
+	value := os.Getenv(envVar)
+	if value == "" {
+		value = defaultValue
 	}
 
-	return envVar{name: name, defaultValue: defaultValue}
-}
+	image.Repository, image.Tag, _ = strings.Cut(value, ":")
 
-// setImageRefFromEnvs populates the image.Ref from environment variables with fallback.
-// If the image repository differs from the default value, the custom pull secret is set on the DynaKube.
-// Returns true, if the pull secret was set.
-func setImageRefFromEnvs(dk *dynakube.DynaKube, image *image.Ref, repo, tag envVar) bool {
-	image.Repository = os.Getenv(repo.name)
-	if image.Repository == "" {
-		image.Repository = repo.defaultValue
-	}
-
-	image.Tag = os.Getenv(tag.name)
-	if image.Tag == "" {
-		image.Tag = tag.defaultValue
-	}
-
-	if image.Repository != repo.defaultValue {
-		dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
-
-		return true
-	}
-
-	return false
+	return value != defaultValue
 }
