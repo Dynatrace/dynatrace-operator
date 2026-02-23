@@ -1,12 +1,13 @@
 package cleanup
 
 import (
+	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"golang.org/x/exp/maps"
 )
 
 func (c *Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState) {
@@ -19,9 +20,7 @@ func (c *Cleaner) removeUnusedBinaries(dks []dynakube.DynaKube, fsState fsState)
 
 	relevantLatestBins := c.collectRelevantLatestBins(dks)
 
-	for k, v := range relevantLatestBins {
-		keptBins[k] = v
-	}
+	maps.Copy(keptBins, relevantLatestBins)
 
 	c.removeOldSharedBinaries(keptBins)
 }
@@ -91,7 +90,7 @@ func (c *Cleaner) collectStillMountedBins() (map[string]bool, error) {
 	}
 
 	if len(mountedBins) > 0 {
-		log.Info("binaries to keep because they are still mounted", "paths", strings.Join(maps.Keys(mountedBins), ","))
+		log.Info("binaries to keep because they are still mounted", "paths", strings.Join(slices.Collect(maps.Keys(mountedBins)), ","))
 	}
 
 	return mountedBins, nil
@@ -111,7 +110,7 @@ func (c *Cleaner) collectRelevantLatestBins(dks []dynakube.DynaKube) map[string]
 	}
 
 	if len(latestBins) > 0 {
-		log.Info("binaries to keep because they are the latest for existing dynakubes", "paths", strings.Join(maps.Keys(latestBins), ","))
+		log.Info("binaries to keep because they are the latest for existing dynakubes", "paths", strings.Join(slices.Collect(maps.Keys(latestBins)), ","))
 	}
 
 	return latestBins

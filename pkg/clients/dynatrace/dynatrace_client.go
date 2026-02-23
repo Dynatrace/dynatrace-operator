@@ -110,7 +110,7 @@ func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]by
 	return responseData, nil
 }
 
-func (dtc *dynatraceClient) makeRequestAndUnmarshal(ctx context.Context, url string, token tokenType, response interface{}) error {
+func (dtc *dynatraceClient) makeRequestAndUnmarshal(ctx context.Context, url string, token tokenType, response any) error {
 	resp, err := dtc.makeRequest(ctx, url, token)
 	if err != nil {
 		return err

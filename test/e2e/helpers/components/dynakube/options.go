@@ -3,6 +3,7 @@
 package dynakube
 
 import (
+	"maps"
 	"os"
 	"strings"
 
@@ -53,9 +54,7 @@ func WithCustomCAs(configMapName string) Option {
 
 func WithAnnotations(annotations map[string]string) Option {
 	return func(dk *dynakube.DynaKube) {
-		for key, value := range annotations {
-			dk.Annotations[key] = value
-		}
+		maps.Copy(dk.Annotations, annotations)
 	}
 }
 

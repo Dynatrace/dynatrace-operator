@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"maps"
 	"math/big"
 	"time"
 
@@ -44,11 +45,7 @@ type Certs struct {
 // certificates will be stored on cs.Data.
 func (cs *Certs) ValidateCerts() error {
 	cs.Data = map[string][]byte{}
-	if cs.SrcData != nil {
-		for k, v := range cs.SrcData {
-			cs.Data[k] = v
-		}
-	}
+	maps.Copy(cs.Data, cs.SrcData)
 
 	now := time.Now().UTC()
 	if !cs.Now.IsZero() {
