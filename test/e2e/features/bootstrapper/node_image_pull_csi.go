@@ -22,8 +22,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const (
-	bootstrapperImage = "ghcr.io/dynatrace/dynatrace-bootstrapper:snapshot"
+var (
+	bootstrapperImage = helpers.EnvOrDefault("E2E_CODEMODULES_IMAGE", "ghcr.io/dynatrace/dynatrace-bootstrapper:snapshot")
 )
 
 func InstallWithCSI(t *testing.T) features.Feature {
