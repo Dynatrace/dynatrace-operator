@@ -266,8 +266,7 @@ The images of components that are deployed by the operator can be configured usi
 - `E2E_DB_EXECUTOR_IMAGE`
 - `E2E_CODEMODULES_IMAGE`
 
-> [!NOTE] Make sure to populate the default DynaKube pull secret when using image from a private registry.
-> The name format is `<dynakube-name>-pull-secret`.
+If an image value is overwritten, `devregistry` will be used as image pull secret. Make sure it contains the proper authentication.
 
 ### Triggering E2E tests on kind in CI
 

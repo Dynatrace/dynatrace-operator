@@ -194,6 +194,7 @@ func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
 func WithExtensionsEECImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		if setImageRefFromEnvs(
+			dk,
 			&dk.Spec.Templates.ExtensionExecutionController.ImageRef,
 			consts.EecImageEnvVar,
 			consts.DefaultEecImage,
@@ -214,6 +215,7 @@ func WithLogMonitoringImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
 		setImageRefFromEnvs(
+			dk,
 			&dk.Spec.Templates.LogMonitoring.ImageRef,
 			consts.LogMonitoringImageEnvVar,
 			consts.DefaultLogMonitoringImage,
@@ -230,6 +232,7 @@ func WithKSPM() Option {
 func WithKSPMImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
+			dk,
 			&dk.Spec.Templates.KspmNodeConfigurationCollector.ImageRef,
 			consts.KSPMImageEnvVar,
 			consts.DefaultKSPMImage,
@@ -260,6 +263,7 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 func WithOTelCollectorImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
+			dk,
 			&dk.Spec.Templates.OpenTelemetryCollector.ImageRef,
 			consts.OtelCollectorImageEnvVar,
 			consts.DefaultOtelCollectorImage,
@@ -279,6 +283,7 @@ func WithExtensionsDatabases(databases ...extensions.DatabaseSpec) Option {
 func WithExtensionsDBExecutorImageRef() Option {
 	return func(dk *dynakube.DynaKube) {
 		setImageRefFromEnvs(
+			dk,
 			&dk.Spec.Templates.SQLExtensionExecutor.ImageRef,
 			consts.DBExecutorImageEnvVar,
 			consts.DefaultDBExecutorImage,
@@ -287,8 +292,9 @@ func WithExtensionsDBExecutorImageRef() Option {
 }
 
 // setImageRefFromEnvs populates the image.Ref from an environment variable with fallback.
-// Returns true, if the set environment variable differs from the default value.
-func setImageRefFromEnvs(image *image.Ref, envVar, defaultValue string) bool {
+// If the image differs from the default value, the custom pull secret is set on the DynaKube.
+// Returns true, if the pull secret was set.
+func setImageRefFromEnvs(dk *dynakube.DynaKube, image *image.Ref, envVar, defaultValue string) bool {
 	value := os.Getenv(envVar)
 	if value == "" {
 		value = defaultValue
@@ -296,5 +302,11 @@ func setImageRefFromEnvs(image *image.Ref, envVar, defaultValue string) bool {
 
 	image.Repository, image.Tag, _ = strings.Cut(value, ":")
 
-	return value != defaultValue
+	if value != defaultValue {
+		dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
+
+		return true
+	}
+
+	return false
 }
