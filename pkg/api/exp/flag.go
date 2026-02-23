@@ -5,11 +5,9 @@ import (
 )
 
 const (
-	FFPrefix = "feature.dynatrace.com/"
-
-	PublicRegistryKey = FFPrefix + "public-registry"
+	FFPrefix             = "feature.dynatrace.com/"
 	AutomaticRegistryKey = FFPrefix + "automatic-registry"
-	NoProxyKey        = FFPrefix + "no-proxy"
+	NoProxyKey           = FFPrefix + "no-proxy"
 
 	UseEECLegacyMountsKey = FFPrefix + "use-eec-legacy-mounts"
 
@@ -30,10 +28,6 @@ func NewFlags(annotations map[string]string) *FeatureFlags {
 // GetNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
 func (ff *FeatureFlags) GetNoProxy() string {
 	return ff.getRaw(NoProxyKey)
-}
-
-func (ff *FeatureFlags) IsPublicRegistry() bool {
-	return ff.getBoolWithDefault(PublicRegistryKey, false)
 }
 
 func (ff *FeatureFlags) IsAutomaticRegistry() bool {

@@ -119,49 +119,6 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.LastProbeTimestamp)
 	})
-
-	t.Run("public-registry", func(t *testing.T) {
-		testActiveGateImage := getTestActiveGateImageInfo()
-		testOneAgentImage := getTestOneAgentImageInfo()
-		testCodeModulesImage := getTestCodeModulesImage()
-		dk := dynakubeTemplate.DeepCopy()
-		enablePublicRegistry(dk)
-
-		fakeClient := fake.NewClient()
-		setupPullSecret(t, fakeClient, *dk)
-
-		dkStatus := &dk.Status
-
-		mockClient := dtclientmock.NewClient(t)
-		mockActiveGateImageInfo(mockClient, testActiveGateImage)
-		mockCodeModulesImageInfo(mockClient, testCodeModulesImage)
-		mockOneAgentImageInfo(mockClient, testOneAgentImage)
-
-		versionReconciler := reconciler{
-			apiReader:    fakeClient,
-			timeProvider: timeprovider.New().Freeze(),
-			dtClient:     mockClient,
-		}
-		err := versionReconciler.ReconcileCodeModules(ctx, dk)
-		require.NoError(t, err)
-		err = versionReconciler.ReconcileActiveGate(ctx, dk)
-		require.NoError(t, err)
-		err = versionReconciler.ReconcileOneAgent(ctx, dk)
-		require.NoError(t, err)
-		require.NoError(t, err)
-
-		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, verifiedReason, condition.Reason)
-		assert.Equal(t, "Version verified for component.", condition.Message)
-
-		assert.Equal(t, testActiveGateImage.String(), dkStatus.ActiveGate.ImageID)
-		assert.Equal(t, testActiveGateImage.Tag, dkStatus.ActiveGate.Version)
-		assert.Equal(t, testOneAgentImage.String(), dkStatus.OneAgent.ImageID)
-		assert.Equal(t, testOneAgentImage.Tag, dkStatus.OneAgent.Version)
-		assert.Equal(t, testCodeModulesImage.String(), dkStatus.CodeModules.ImageID)
-		assert.Equal(t, testCodeModulesImage.Tag, dkStatus.CodeModules.Version)
-	})
 }
 
 func TestUpdateVersionStatuses(t *testing.T) {
@@ -348,13 +305,6 @@ func getTestActiveGateImageInfo() dtclient.LatestImageInfo {
 	return dtclient.LatestImageInfo{
 		Source: testDockerRegistry + "/linux/activegate",
 		Tag:    latestActiveGateVersion,
-	}
-}
-
-func getTestCodeModulesImage() dtclient.LatestImageInfo {
-	return dtclient.LatestImageInfo{
-		Source: testDockerRegistry + "/linux/codemodules",
-		Tag:    "1.2.3.4-5",
 	}
 }
 

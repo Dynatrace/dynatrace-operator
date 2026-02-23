@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -100,45 +98,6 @@ func TestRun(t *testing.T) {
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
 	})
-	t.Run("public registry", func(t *testing.T) {
-		target := &status.VersionStatus{
-			Source: status.TenantRegistryVersionSource,
-		}
-
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
-		updater := newPublicRegistryUpdater(t, target, &testImage, false)
-		updater.On("CheckForDowngrade", mock.AnythingOfType("string")).Return(false, nil)
-
-		err := versionReconciler.run(ctx, updater)
-		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
-		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
-		assert.Equal(t, testImage.String(), target.ImageID)
-		assert.Equal(t, testImage.Tag, target.Version)
-		assert.NotEmpty(t, target.Version)
-	})
-
-	t.Run("public registry, no downgrade allowed", func(t *testing.T) {
-		target := &status.VersionStatus{
-			Source: status.TenantRegistryVersionSource,
-		}
-		versionReconciler := reconciler{
-			timeProvider: timeProvider,
-		}
-		updater := newPublicRegistryUpdater(t, target, &testImage, false)
-		updater.On("CheckForDowngrade", mock.AnythingOfType("string")).Return(true, nil)
-
-		err := versionReconciler.run(ctx, updater)
-		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
-		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
-		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
-		assert.Empty(t, target.Version)
-		assert.Empty(t, target.ImageID)
-	})
 	t.Run("classicfullstack enabled, public registry is ignored", func(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
@@ -188,12 +147,6 @@ func TestDetermineSource(t *testing.T) {
 		updater := newCustomVersionUpdater(t, nil, customVersion, false)
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomVersionVersionSource, source)
-	})
-
-	t.Run("public-registry", func(t *testing.T) {
-		updater := newPublicRegistryUpdater(t, nil, nil, false)
-		source := determineSource(updater)
-		assert.Equal(t, status.PublicRegistryVersionSource, source)
 	})
 
 	t.Run("default", func(t *testing.T) {
@@ -295,16 +248,6 @@ func TestGetTagFromImageID(t *testing.T) {
 	})
 }
 
-func enablePublicRegistry(dk *dynakube.DynaKube) *dynakube.DynaKube {
-	if dk.Annotations == nil {
-		dk.Annotations = make(map[string]string)
-	}
-
-	dk.Annotations[exp.PublicRegistryKey] = "true"
-
-	return dk
-}
-
 func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image string) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.On("CustomImage").Maybe().Return(image)
@@ -315,7 +258,6 @@ func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image str
 func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version string, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsPublicRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return(version)
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
@@ -325,7 +267,6 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(errors.New("BOOM"))
 
@@ -335,25 +276,14 @@ func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUp
 func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
 	return updater
 }
 
-func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageInfo *dtclient.LatestImageInfo, autoUpdate bool) *MockStatusUpdater {
-	updater := newBaseUpdater(t, target, autoUpdate)
-	updater.On("CustomImage").Maybe().Return("")
-	updater.On("IsPublicRegistryEnabled").Maybe().Return(true)
-	updater.On("LatestImageInfo", mock.AnythingOfType("context.backgroundCtx")).Maybe().Return(imageInfo, nil)
-
-	return updater
-}
-
 func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
-	updater.On("IsPublicRegistryEnabled").Maybe().Return(false)
 
 	return updater
 }
