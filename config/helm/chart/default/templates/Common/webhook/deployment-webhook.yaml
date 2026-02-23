@@ -74,6 +74,12 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: DT_WEBHOOK_IMAGE
+              value: {{ include "dynatrace-operator.image" . }}
+            - name: OLM_OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['olm.operatorNamespace']
             - name: WEBHOOK_PORT
               value: "{{ .Values.webhook.ports.server | default "8443" }}"
             - name: HEALTH_PROBE_BIND_ADDRESS

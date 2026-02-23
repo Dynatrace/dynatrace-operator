@@ -8,12 +8,14 @@ import (
 )
 
 const (
-	NodeName               = "KUBE_NODE_NAME"
-	CSIDataDir             = "CSI_DATA_DIR"
-	PodNamespace           = "POD_NAMESPACE"
-	PodName                = "POD_NAME"
-	DtOperatorImageEnvName = "DT_OPERATOR_IMAGE"
-	AppVersion             = "APP_VERSION"
+	NodeName                  = "KUBE_NODE_NAME"
+	CSIDataDir                = "CSI_DATA_DIR"
+	PodNamespace              = "POD_NAMESPACE"
+	PodName                   = "POD_NAME"
+	DtOperatorImageEnvName    = "DT_OPERATOR_IMAGE"
+	DtWebhookImageEnvName     = "DT_WEBHOOK_IMAGE"
+	OlmOperatorNamespaceEnv   = "OLM_OPERATOR_NAMESPACE"
+	AppVersion                = "APP_VERSION"
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {

@@ -2,7 +2,9 @@ package system
 
 import (
 	"context"
+	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -10,8 +12,7 @@ import (
 )
 
 const (
-	Namespace             = "kube-system"
-	olmSpecificAnnotation = "olm.operatorNamespace"
+	Namespace = "kube-system"
 )
 
 func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
@@ -25,8 +26,6 @@ func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
 	return kubeSystemNamespace.UID, nil
 }
 
-func IsDeployedViaOlm(pod corev1.Pod) bool {
-	_, isDeployedViaOlm := pod.Annotations[olmSpecificAnnotation]
-
-	return isDeployedViaOlm
+func IsDeployedViaOlm() bool {
+	return os.Getenv(k8senv.OlmOperatorNamespaceEnv) != ""
 }

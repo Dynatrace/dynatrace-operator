@@ -1,7 +1,6 @@
 package webhook
 
 import (
-	"context"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook/certificates"
@@ -10,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -63,7 +61,6 @@ func run(cmd *cobra.Command, args []string) error {
 	version.LogVersion()
 	logd.LogBaseLoggerSettings()
 
-	podName := os.Getenv(k8senv.PodName)
 	namespace := os.Getenv(k8senv.PodNamespace)
 
 	kubeConfig, err := config.GetConfig()
@@ -97,7 +94,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	signalHandler := ctrl.SetupSignalHandler()
 
-	err = startCertificateWatcher(webhookManager, namespace, podName)
+	err = startCertificateWatcher(webhookManager, namespace)
 	if err != nil {
 		return err
 	}
@@ -127,14 +124,8 @@ func run(cmd *cobra.Command, args []string) error {
 	return errors.WithStack(err)
 }
 
-func startCertificateWatcher(webhookManager manager.Manager, namespace string, podName string) error {
-	webhookPod, err := k8spod.Get(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
-	if err != nil {
-		return err
-	}
-
-	isDeployedViaOLM := system.IsDeployedViaOlm(*webhookPod)
-	if !isDeployedViaOLM {
+func startCertificateWatcher(webhookManager manager.Manager, namespace string) error {
+	if !system.IsDeployedViaOlm() {
 		watcher, err := certificates.NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
 		if err != nil {
 			return err

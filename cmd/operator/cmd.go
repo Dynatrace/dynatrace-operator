@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"context"
 	"os"
 	"reflect"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -22,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -59,30 +56,19 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func runInPod(kubeCfg *rest.Config) error {
-	clt, err := client.New(kubeCfg, client.Options{})
-	if err != nil {
-		return err
-	}
-
-	podName := os.Getenv(k8senv.PodName)
 	namespace := os.Getenv(k8senv.PodNamespace)
 
-	operatorPod, err := k8spod.Get(context.Background(), clt, podName, namespace)
-	if err != nil {
-		return err
-	}
-
-	isOLM := system.IsDeployedViaOlm(*operatorPod)
+	isOLM := system.IsDeployedViaOlm()
 
 	if !isOLM {
-		err = runCertInit(kubeCfg, namespace)
+		err := runCertInit(kubeCfg, namespace)
 		if err != nil {
 			return err
 		}
 	}
 
 	if shouldRunCRDStorageMigrationInitManager() {
-		err = runCRDStorageMigration(kubeCfg, namespace)
+		err := runCRDStorageMigration(kubeCfg, namespace)
 		if err != nil {
 			return err
 		}
