@@ -27,6 +27,7 @@ jobs:
       docker_changed: ${{ steps.dockerfile.outputs.any_changed == 'true' && 'true' || '' }}
       ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
       is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
+      is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -42,6 +43,12 @@ jobs:
           else
             echo "is_protected_branch=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Check if docker credentials are present
+        id: is-docker-authorized
+        run: |
+          echo "is_authorized=$IS_OWNER_REPO" >> $GITHUB_OUTPUT
+        env:
+          IS_OWNER_REPO: ${{ github.repository_owner == 'Dynatrace' }}
       - name: Detect CI file changes
         uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         id: ci
@@ -96,7 +103,7 @@ jobs:
   build-images:
     name: Build images
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_docker_authorized && (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     strategy:
       matrix:
         platform: [linux/arm64, linux/amd64]

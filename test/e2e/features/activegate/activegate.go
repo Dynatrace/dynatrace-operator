@@ -5,6 +5,7 @@ package activegate
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 	"testing"
 
@@ -232,9 +233,7 @@ func markExistingContainers(containers *map[string]bool, podContainers []corev1.
 
 func initMap(srcMap *map[string]bool) map[string]bool {
 	dstMap := make(map[string]bool)
-	for k, v := range *srcMap {
-		dstMap[k] = v
-	}
+	maps.Copy(dstMap, *srcMap)
 
 	return dstMap
 }
