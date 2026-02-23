@@ -40,6 +40,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	errorHostIDSourceArgumentInCloudNative = "Setting --set-host-id-source in CloudNativFullstack mode is not allowed."
 
 	errorSameHostTagMultipleTimes = "Providing the same tag(s) (%s) multiple times with --set-host-tag is not allowed."
+
+	warningDeprecatedVersion = `version field is deprecated. Please use "%s" field instead to set a version.`
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -267,6 +269,23 @@ func forbiddenHostIDSourceArgument(_ context.Context, _ *Validator, dk *dynakube
 	for key := range args {
 		if dk.OneAgent().IsCloudNativeFullstackMode() && key == "--set-host-id-source" {
 			return errorHostIDSourceArgumentInCloudNative
+		}
+	}
+
+	return ""
+}
+
+func deprecatedOneAgentVersionField(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	oa := dk.OneAgent()
+
+	if oa.GetCustomVersion() != "" {
+		switch {
+		case oa.IsApplicationMonitoringMode():
+			return fmt.Sprintf(warningDeprecatedVersion, "codeModulesImage")
+		case oa.IsCloudNativeFullstackMode():
+			return fmt.Sprintf(warningDeprecatedVersion, "image and/or codeModulesImage")
+		default:
+			return fmt.Sprintf(warningDeprecatedVersion, "image")
 		}
 	}
 
