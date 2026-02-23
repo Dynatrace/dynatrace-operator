@@ -45,9 +45,7 @@ type Certs struct {
 // certificates will be stored on cs.Data.
 func (cs *Certs) ValidateCerts() error {
 	cs.Data = map[string][]byte{}
-	if cs.SrcData != nil {
-		maps.Copy(cs.Data, cs.SrcData)
-	}
+	maps.Copy(cs.Data, cs.SrcData)
 
 	now := time.Now().UTC()
 	if !cs.Now.IsZero() {
