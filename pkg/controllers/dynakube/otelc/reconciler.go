@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
@@ -23,9 +22,9 @@ type Reconciler struct {
 	configurationReconciler *configuration.Reconciler
 }
 
-type ReconcilerBuilder func(dtc dynatrace.Client, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
+type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
 
-func NewReconciler(dtc dynatrace.Client, client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler { //nolint
+func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler { //nolint
 	return &Reconciler{
 		client:                  client,
 		apiReader:               apiReader,
