@@ -1049,21 +1049,21 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 	}
 
 	testcases := []struct {
-		name       string
-		valid      oneagent.Spec
+		name            string
+		valid           oneagent.Spec
 		expectedWarning string
 	}{
 		{
 			"classic fullstack",
 			oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
-				Version: "1.0.0.20240101-000000", // nolint:staticcheck
+				Version: "1.0.0.20240101-000000", //nolint:staticcheck
 			}},
 			fmt.Sprintf(warningDeprecatedVersion, "image"),
 		},
 		{
 			"host monitoring",
 			oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
-				Version: "1.0.0.20240101-000000", // nolint:staticcheck
+				Version: "1.0.0.20240101-000000", //nolint:staticcheck
 			}},
 			fmt.Sprintf(warningDeprecatedVersion, "image"),
 		},
@@ -1071,7 +1071,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 			"cloudnative fullstack",
 			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
 				HostInjectSpec: oneagent.HostInjectSpec{
-					Version: "1.0.0.20240101-000000", // nolint:staticcheck
+					Version: "1.0.0.20240101-000000", //nolint:staticcheck
 				},
 			}},
 			fmt.Sprintf(warningDeprecatedVersion, "image and/or codeModulesImage"),
@@ -1079,7 +1079,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"app monitoring",
 			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-				Version: "1.0.0.20240101-000000", // nolint:staticcheck
+				Version: "1.0.0.20240101-000000", //nolint:staticcheck
 			}},
 			fmt.Sprintf(warningDeprecatedVersion, "codeModulesImage"),
 		},
