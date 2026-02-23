@@ -18,4 +18,6 @@ const (
 	OtelCollectorImageEnvVar  = "E2E_OTELC_IMAGE"
 	DefaultDBExecutorImage    = "public.ecr.aws/dynatrace/dynatrace-database-datasource-executor:1.327.41.20251114-153023"
 	DBExecutorImageEnvVar     = "E2E_DB_EXECUTOR_IMAGE"
+	DefaultCodeModulesImage   = "ghcr.io/dynatrace/dynatrace-bootstrapper:snapshot"
+	CodeModulesImageEnvVar    = "E2E_CODEMODULES_IMAGE"
 )
