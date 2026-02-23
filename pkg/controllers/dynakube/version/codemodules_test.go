@@ -10,8 +10,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -20,7 +22,7 @@ import (
 
 func TestCodeModulesUpdater(t *testing.T) {
 	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
+	testImage := image.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -38,8 +40,15 @@ func TestCodeModulesUpdater(t *testing.T) {
 				},
 			},
 		}
+
+		imageClient := imageclientmock.NewAPIClient(t)
 		mockClient := dtclientmock.NewClient(t)
-		mockCodeModulesImageInfo(mockClient, testImage)
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			Settings: nil,
+			Image:    imageClient,
+		})
+		mockCodeModulesImageInfo(imageClient, testImage)
+
 		updater := newCodeModulesUpdater(dk, mockClient)
 
 		assert.Equal(t, "codemodules", updater.Name())
@@ -196,8 +205,15 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 			},
 		}
 
+		imageClient := imageclientmock.NewAPIClient(t)
+		imageClient.EXPECT().LatestCodeModulesImage(anyCtx).Return(nil, errors.New("BOOM")).Once()
+
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetLatestCodeModulesImage(anyCtx).Return(nil, errors.New("BOOM")).Once()
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			Settings: nil,
+			Image:    imageClient,
+		})
+
 		updater := newCodeModulesUpdater(dk, mockClient)
 
 		_, err := updater.LatestImageInfo(context.Background())

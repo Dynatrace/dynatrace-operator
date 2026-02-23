@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -72,8 +73,8 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 	return isPublicRegistry
 }
 
-func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imgInfo, err := updater.dtClient.GetLatestCodeModulesImage(ctx)
+func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*image.LatestImageInfo, error) {
+	imgInfo, err := updater.dtClient.AsV2().Image.LatestCodeModulesImage(ctx)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
 	}

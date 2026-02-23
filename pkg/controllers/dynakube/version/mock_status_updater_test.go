@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -320,23 +320,23 @@ func (_c *MockStatusUpdater_IsPublicRegistryEnabled_Call) RunAndReturn(run func(
 }
 
 // LatestImageInfo provides a mock function for the type MockStatusUpdater
-func (_mock *MockStatusUpdater) LatestImageInfo(ctx context.Context) (*dynatrace.LatestImageInfo, error) {
+func (_mock *MockStatusUpdater) LatestImageInfo(ctx context.Context) (*image.LatestImageInfo, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for LatestImageInfo")
 	}
 
-	var r0 *dynatrace.LatestImageInfo
+	var r0 *image.LatestImageInfo
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (*dynatrace.LatestImageInfo, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) (*image.LatestImageInfo, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) *dynatrace.LatestImageInfo); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) *image.LatestImageInfo); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*dynatrace.LatestImageInfo)
+			r0 = ret.Get(0).(*image.LatestImageInfo)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -371,12 +371,12 @@ func (_c *MockStatusUpdater_LatestImageInfo_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *MockStatusUpdater_LatestImageInfo_Call) Return(latestImageInfo *dynatrace.LatestImageInfo, err error) *MockStatusUpdater_LatestImageInfo_Call {
+func (_c *MockStatusUpdater_LatestImageInfo_Call) Return(latestImageInfo *image.LatestImageInfo, err error) *MockStatusUpdater_LatestImageInfo_Call {
 	_c.Call.Return(latestImageInfo, err)
 	return _c
 }
 
-func (_c *MockStatusUpdater_LatestImageInfo_Call) RunAndReturn(run func(ctx context.Context) (*dynatrace.LatestImageInfo, error)) *MockStatusUpdater_LatestImageInfo_Call {
+func (_c *MockStatusUpdater_LatestImageInfo_Call) RunAndReturn(run func(ctx context.Context) (*image.LatestImageInfo, error)) *MockStatusUpdater_LatestImageInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }

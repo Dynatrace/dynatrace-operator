@@ -64,12 +64,6 @@ type Client interface {
 
 	GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error)
 
-	GetLatestOneAgentImage(ctx context.Context) (*LatestImageInfo, error)
-
-	GetLatestCodeModulesImage(ctx context.Context) (*LatestImageInfo, error)
-
-	GetLatestActiveGateImage(ctx context.Context) (*LatestImageInfo, error)
-
 	// GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch.
 	// Returns the version as received from the server on success.
 	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)

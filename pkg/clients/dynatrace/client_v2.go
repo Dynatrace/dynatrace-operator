@@ -9,11 +9,13 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 )
 
 type ClientV2 struct {
 	Settings settings.APIClient
+	Image    image.APIClient
 }
 
 type ConfigV2 struct {
@@ -152,6 +154,7 @@ func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 
 	return &ClientV2{
 		Settings: settings.NewClient(apiClient),
+		Image:    image.NewClient(apiClient),
 	}, nil
 }
 

@@ -9,9 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -20,7 +22,7 @@ import (
 
 func TestOneAgentUpdater(t *testing.T) {
 	ctx := t.Context()
-	testImage := dtclient.LatestImageInfo{
+	testImage := image.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -36,8 +38,14 @@ func TestOneAgentUpdater(t *testing.T) {
 				},
 			},
 		}
+
+		imageClient := imageclientmock.NewAPIClient(t)
 		mockClient := dtclientmock.NewClient(t)
-		mockOneAgentImageInfo(mockClient, testImage)
+		mockClient.EXPECT().AsV2().Return(&dynatrace.ClientV2{
+			Settings: nil,
+			Image:    imageClient,
+		})
+		mockOneAgentImageInfo(imageClient, testImage)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
 
@@ -122,8 +130,15 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 			},
 		}
 
+		imageClient := imageclientmock.NewAPIClient(t)
+		imageClient.EXPECT().LatestOneAgentImage(anyCtx).Return(nil, errors.New("BOOM")).Once()
+
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetLatestOneAgentImage(anyCtx).Return(nil, errors.New("BOOM")).Once()
+		mockClient.EXPECT().AsV2().Return(&dynatrace.ClientV2{
+			Settings: nil,
+			Image:    imageClient,
+		})
+
 		updater := newOneAgentUpdater(dk, nil, mockClient)
 
 		_, err := updater.LatestImageInfo(t.Context())

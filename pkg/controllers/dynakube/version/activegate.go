@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -79,8 +80,8 @@ func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
 	return isPublicRegistry
 }
 
-func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imageInfo, err := updater.dtClient.GetLatestActiveGateImage(ctx)
+func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*image.LatestImageInfo, error) {
+	imageInfo, err := updater.dtClient.AsV2().Image.LatestActiveGateImage(ctx)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ import (
 
 func TestRun(t *testing.T) {
 	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
+	testImage := image.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -211,7 +211,7 @@ func TestDetermineSource(t *testing.T) {
 	})
 
 	t.Run("classicfullstack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
-		testImage := dtclient.LatestImageInfo{
+		testImage := image.LatestImageInfo{
 			Source: "some.registry.com",
 			Tag:    "1.2.3.4-5",
 		}
@@ -224,7 +224,7 @@ func TestDetermineSource(t *testing.T) {
 }
 
 func TestUpdateVersionStatus(t *testing.T) {
-	testImage := dtclient.LatestImageInfo{
+	testImage := image.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -342,7 +342,7 @@ func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bo
 	return updater
 }
 
-func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageInfo *dtclient.LatestImageInfo, autoUpdate bool) *MockStatusUpdater {
+func newPublicRegistryUpdater(t *testing.T, target *status.VersionStatus, imageInfo *image.LatestImageInfo, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
 	updater.On("IsPublicRegistryEnabled").Maybe().Return(true)

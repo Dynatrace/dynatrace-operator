@@ -10,7 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -19,7 +21,7 @@ import (
 
 func TestActiveGateUpdater(t *testing.T) {
 	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
+	testImage := image.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -40,8 +42,14 @@ func TestActiveGateUpdater(t *testing.T) {
 				},
 			},
 		}
+
+		imageClient := imageclientmock.NewAPIClient(t)
 		mockClient := dtclientmock.NewClient(t)
-		mockActiveGateImageInfo(mockClient, testImage)
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			Settings: nil,
+			Image:    imageClient,
+		})
+		mockActiveGateImageInfo(imageClient, testImage)
 
 		updater := newActiveGateUpdater(dk, fake.NewClient(), mockClient)
 
