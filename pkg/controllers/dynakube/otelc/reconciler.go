@@ -48,7 +48,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	err = r.statefulsetReconciler.Reconcile(ctx)
+	err = r.statefulsetReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace OTELc statefulset")
 
