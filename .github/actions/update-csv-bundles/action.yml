@@ -17,6 +17,10 @@ inputs:
   private-key:
     description: "GitHub App private key for creating release PR"
     required: true
+  operator-sdk-version:
+    description: "Version of the operator-sdk to use"
+    required: false
+    default: "v1.36.0"
 
 outputs:
   major_minor:
@@ -65,7 +69,7 @@ runs:
     - name: Install operator-sdk
       shell: bash
       env:
-        OPERATOR_SDK_VERSION: v1.36.0
+        OPERATOR_SDK_VERSION: ${{ inputs.operator-sdk-version }}
         VERSION: ${{ inputs.version }}
       run: |
           curl -OJL \
@@ -107,16 +111,15 @@ runs:
       env:
         VERSION: ${{ inputs.version }}
       run: |
-
         echo "Finalizing CSV files for Kubernetes"
         ./.github/scripts/release/csv/finalize_csv_files.py \
           --platform "kubernetes" \
-          --version "${VERSION}" \
+          --version "${VERSION}"
 
         echo "Finalizing CSV files for Openshift"
         ./.github/scripts/release/csv/finalize_csv_files.py \
           --platform "openshift" \
-          --version "${VERSION}" \
+          --version "${VERSION}"
     - name: Create GitHub app token
       uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
       id: create-github-app-token

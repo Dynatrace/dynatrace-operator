@@ -42,6 +42,7 @@ packages:
       filename: "mock_{{.InterfaceName | snakecase}}_test.go"
     interfaces:
       dtSettingReconciler:
+      extensionReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"

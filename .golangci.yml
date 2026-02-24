@@ -42,6 +42,7 @@ linters:
     - mirror
     - misspell
     - mnd
+    - modernize
     - nakedret
     - nilerr
     - nilnil
@@ -159,6 +160,9 @@ linters:
         - ^require\.
         - WaitForCondition
         - ^int*
+    modernize:
+      disable:
+        - omitzero
     revive:
       enable-all-rules: true
       rules:

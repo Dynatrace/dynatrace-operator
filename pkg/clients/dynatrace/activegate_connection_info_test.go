@@ -117,7 +117,7 @@ func tenantInternalServerError(url string) http.HandlerFunc {
 	}
 }
 
-func connectionInfoServerHandler(url string, response interface{}) http.HandlerFunc {
+func connectionInfoServerHandler(url string, response any) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if request.URL.Path == url {
 			rawData, err := json.Marshal(response)

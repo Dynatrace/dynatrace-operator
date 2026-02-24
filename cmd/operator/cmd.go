@@ -137,7 +137,7 @@ func shouldRunCRDStorageMigrationInitManager() bool {
 func checkCRDs(operatorManager manager.Manager) error {
 	groupKind := schema.GroupKind{
 		Group: latest.GroupVersion.Group,
-		Kind:  reflect.TypeOf(dynakube.DynaKube{}).Name(),
+		Kind:  reflect.TypeFor[dynakube.DynaKube]().Name(),
 	}
 
 	_, err := operatorManager.GetRESTMapper().RESTMapping(groupKind, latest.GroupVersion.Version)
@@ -150,7 +150,7 @@ func checkCRDs(operatorManager manager.Manager) error {
 	if installconfig.GetModules().EdgeConnect {
 		groupKind = schema.GroupKind{
 			Group: v1alpha2.GroupVersion.Group,
-			Kind:  reflect.TypeOf(edgeconnect.EdgeConnect{}).Name(),
+			Kind:  reflect.TypeFor[edgeconnect.EdgeConnect]().Name(),
 		}
 
 		_, err = operatorManager.GetRESTMapper().RESTMapping(groupKind, v1alpha2.GroupVersion.Version)
