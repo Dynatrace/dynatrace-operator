@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -22,7 +21,6 @@ type StatusUpdater interface {
 	IsAutoUpdateEnabled() bool
 	CheckForDowngrade(latestVersion string) (bool, error)
 	ValidateStatus() error
-	LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error)
 
 	UseTenantRegistry(context.Context) error
 }
@@ -90,22 +88,6 @@ func setImageIDToCustomImage(
 
 	target.ImageID = imageURI
 	target.Version = string(status.CustomImageVersionSource)
-
-	log.Info("updated image version info",
-		"newImageID", target.ImageID)
-}
-
-func setImageFromImageInfo(
-	target *status.VersionStatus,
-	imageInfo dtclient.LatestImageInfo,
-) {
-	imageURI := imageInfo.String()
-	log.Info("updating image version info",
-		"image", imageInfo.String(),
-		"oldImageID", target.ImageID)
-
-	target.Version = imageInfo.Tag
-	target.ImageID = imageURI
 
 	log.Info("updated image version info",
 		"newImageID", target.ImageID)

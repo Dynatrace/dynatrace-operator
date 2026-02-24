@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -15,10 +14,7 @@ import (
 
 func TestRun(t *testing.T) {
 	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
+	testImage := "some.registry.com:1.2.3.4-5"
 	timeProvider := timeprovider.New().Freeze()
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
@@ -26,12 +22,12 @@ func TestRun(t *testing.T) {
 		versionReconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		updater := newCustomImageUpdater(t, target, testImage.String())
-		err := versionReconciler.run(ctx, updater)
+		updater := newCustomImageUpdater(t, target, testImage)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
-		assert.Equal(t, testImage.String(), target.ImageID)
+		assert.Equal(t, testImage, target.ImageID)
 		assert.Equal(t, string(status.CustomImageVersionSource), target.Version)
 	})
 
@@ -111,7 +107,6 @@ func TestRun(t *testing.T) {
 
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 		assert.Empty(t, target.Version)
@@ -124,11 +119,10 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newClassicFullStackUpdater(t, target, false)
-		updater.On("CustomImage").Return(testImage.String())
+		updater.On("CustomImage").Return(testImage)
 
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
 	})
@@ -164,31 +158,12 @@ func TestDetermineSource(t *testing.T) {
 	})
 
 	t.Run("classicfullstack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
-		testImage := dtclient.LatestImageInfo{
-			Source: "some.registry.com",
-			Tag:    "1.2.3.4-5",
-		}
+		customVersion := "1.2.3.4-5"
 		updater := newClassicFullStackUpdater(t, nil, false)
 		updater.On("CustomImage").Return("")
-		updater.On("CustomVersion").Return(testImage.Tag)
+		updater.On("CustomVersion").Return(customVersion)
 		source := determineSource(updater)
 		assert.Equal(t, status.CustomVersionVersionSource, source)
-	})
-}
-
-func TestUpdateVersionStatus(t *testing.T) {
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
-
-	t.Run("set status", func(t *testing.T) {
-		target := status.VersionStatus{}
-
-		setImageFromImageInfo(&target, testImage)
-
-		assert.Equal(t, testImage.String(), target.ImageID)
-		assert.Equal(t, testImage.Tag, target.Version)
 	})
 }
 

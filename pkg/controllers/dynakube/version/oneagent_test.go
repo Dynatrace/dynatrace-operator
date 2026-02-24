@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,25 +15,21 @@ import (
 )
 
 func TestOneAgentUpdater(t *testing.T) {
-	ctx := t.Context()
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
+	testVersion := "1.2.3.4-5"
+	testImage := "some.registry.com:" + testVersion
 
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
-						Image:   testImage.String(),
-						Version: testImage.Tag,
+						Image:   testImage,
+						Version: testVersion,
 					},
 				},
 			},
 		}
 		mockClient := dtclientmock.NewClient(t)
-		mockOneAgentImageInfo(mockClient, testImage)
 
 		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
 
@@ -43,9 +38,6 @@ func TestOneAgentUpdater(t *testing.T) {
 		assert.Equal(t, dk.Spec.OneAgent.ClassicFullStack.Image, updater.CustomImage())
 		assert.Equal(t, dk.Spec.OneAgent.ClassicFullStack.Version, updater.CustomVersion()) //nolint:staticcheck
 		assert.False(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, testImage, *imageInfo)
 	})
 }
 

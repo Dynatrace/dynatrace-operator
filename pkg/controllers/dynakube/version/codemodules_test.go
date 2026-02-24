@@ -18,27 +18,23 @@ import (
 )
 
 func TestCodeModulesUpdater(t *testing.T) {
-	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
+	testVersion := "1.2.3.4-5"
+	testImage := "some.registry.com:" + testVersion
 
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						Version: testImage.Tag,
+						Version: testVersion,
 						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage.String(),
+							CodeModulesImage: testImage,
 						},
 					},
 				},
 			},
 		}
 		mockClient := dtclientmock.NewClient(t)
-		mockCodeModulesImageInfo(mockClient, testImage)
 		updater := newCodeModulesUpdater(dk, mockClient)
 
 		assert.Equal(t, "codemodules", updater.Name())
@@ -46,9 +42,6 @@ func TestCodeModulesUpdater(t *testing.T) {
 		assert.Equal(t, dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage, updater.CustomImage())
 		assert.Equal(t, dk.Spec.OneAgent.ApplicationMonitoring.Version, updater.CustomVersion()) //nolint:staticcheck
 		assert.True(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, testImage, *imageInfo)
 	})
 }
 

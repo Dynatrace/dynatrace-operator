@@ -63,15 +63,6 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 	return true
 }
 
-func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imgInfo, err := updater.dtClient.GetLatestCodeModulesImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
-	}
-
-	return imgInfo, err
-}
-
 func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
 	return false, nil
 }

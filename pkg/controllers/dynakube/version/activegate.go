@@ -70,15 +70,6 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 	return !updater.dk.FF().IsActiveGateUpdatesDisabled()
 }
 
-func (updater activeGateUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imageInfo, err := updater.dtClient.GetLatestActiveGateImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)
-	}
-
-	return imageInfo, err
-}
-
 func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
 	return false, nil
 }

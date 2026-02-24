@@ -71,15 +71,6 @@ func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
 	return updater.dk.OneAgent().IsAutoUpdateEnabled()
 }
 
-func (updater oneAgentUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imageInfo, err := updater.dtClient.GetLatestOneAgentImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
-	}
-
-	return imageInfo, err
-}
-
 func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	var err error
 
