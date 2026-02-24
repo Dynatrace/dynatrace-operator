@@ -58,7 +58,6 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	}
 
 	if updater.IsAutoRegistryEnabled() {
-		// TODO:
 		err = r.processAutoRegistry(ctx, updater)
 		if err != nil {
 			return err
