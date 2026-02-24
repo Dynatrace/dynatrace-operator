@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	bootstrapperImage = helpers.EnvOrDefault(consts.CodeModulesImageEnvVar, consts.DefaultOtelCollectorImage)
+	bootstrapperImage = helpers.EnvOrDefault(consts.CodeModulesImageEnvVar, consts.DefaultCodeModulesImage)
 )
 
 func InstallWithCSI(t *testing.T) features.Feature {
