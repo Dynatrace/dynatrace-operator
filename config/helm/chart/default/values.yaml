@@ -24,6 +24,9 @@ imageRef:
   repository: "" #path to repo
   tag: "" #defaults to chart version
 
+# Image pull policy for the dynatrace-operator image.
+imagePullPolicy:
+
 customPullSecret: ""
 installCRD: true
 
