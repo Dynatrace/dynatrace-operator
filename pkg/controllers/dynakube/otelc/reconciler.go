@@ -38,7 +38,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	err = r.endpointReconciler.Reconcile(ctx)
+	err = r.endpointReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		return err
 	}
