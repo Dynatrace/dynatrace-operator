@@ -21,7 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-	agk8smocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
+	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	controllermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers"
 	istiomock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/istio"
 	versionmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/version"
@@ -610,10 +610,10 @@ func createMockDtClient(t *testing.T, authTokenRouteRequired bool) *dtclientmock
 	t.Helper()
 
 	dtc := dtclientmock.NewClient(t)
-	agClient := agk8smocks.NewAPIClient(t)
+	agClient := agclientmock.NewAPIClient(t)
 
 	if authTokenRouteRequired {
-		agClient.On("GetAuthToken", anyCtx, testName).Return(&agclient.AuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil)
+		agClient.EXPECT().GetAuthToken(anyCtx, testName).Return(&agclient.AuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil).Maybe()
 	}
 
 	dtc.On("AsV2").Return(&dtclient.ClientV2{ActiveGate: agClient})

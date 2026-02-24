@@ -3,7 +3,6 @@ package connectioninfo
 import (
 	"context"
 
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
@@ -41,15 +40,15 @@ func IsTenantSecretPresent(ctx context.Context, secrets k8ssecret.QueryObject, s
 	return true, nil
 }
 
-func BuildTenantSecret(owner metav1.Object, secretName string, connectionInfo dtclient.ConnectionInfo) (*corev1.Secret, error) {
-	secretData := ExtractSensitiveData(connectionInfo)
+func BuildTenantSecret(owner metav1.Object, secretName string, tenantToken string) (*corev1.Secret, error) {
+	secretData := ExtractSensitiveData(tenantToken)
 
 	return k8ssecret.Build(owner, secretName, secretData)
 }
 
-func ExtractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]byte {
+func ExtractSensitiveData(tenantToken string) map[string][]byte {
 	data := map[string][]byte{
-		TenantTokenKey: []byte(connectionInfo.TenantToken),
+		TenantTokenKey: []byte(tenantToken),
 	}
 
 	return data

@@ -5,11 +5,8 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
-
-var log = logd.Get().WithName("dtclient-activegate")
 
 const (
 	authTokenValidity = time.Hour * 24 * 60
@@ -60,9 +57,7 @@ func (c *Client) GetAuthToken(ctx context.Context, dynakubeName string) (*AuthTo
 		WithJSONBody(body).
 		Execute(&authTokenInfo)
 	if err != nil {
-		log.Info("failed to retrieve ag-auth-token")
-
-		return nil, errors.WithStack(err)
+		return nil, errors.WithMessage(err, "failed to retrieve ag-auth-token")
 	}
 
 	return &authTokenInfo, nil
@@ -98,10 +93,6 @@ func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) 
 		TenantUUID:  resp.TenantUUID,
 		TenantToken: resp.TenantToken,
 		Endpoints:   resp.CommunicationEndpoints,
-	}
-
-	if connectionInfo.Endpoints == "" {
-		log.Info("tenant has no endpoints")
 	}
 
 	return connectionInfo, nil

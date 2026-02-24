@@ -5,7 +5,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -123,13 +122,7 @@ func (r *reconciler) setDynakubeStatus(connectionInfo agclient.ConnectionInfo) {
 }
 
 func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo agclient.ConnectionInfo) error {
-	secretData := dtclient.ConnectionInfo{
-		TenantUUID:  connectionInfo.TenantUUID,
-		TenantToken: connectionInfo.TenantToken,
-		Endpoints:   connectionInfo.Endpoints,
-	}
-
-	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, secretData)
+	secret, err := connectioninfo.BuildTenantSecret(r.dk, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}

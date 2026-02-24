@@ -57,9 +57,9 @@ func TestReconcile(t *testing.T) {
 
 		clt := fake.NewClientBuilder().Build()
 
-		dtc := agclientmock.NewAPIClient(t)
-		dtc.On("GetAuthToken", anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
-		r := NewReconciler(clt, clt, dk, dtc)
+		agCl := agclientmock.NewAPIClient(t)
+		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
+		r := NewReconciler(clt, clt, dk, agCl)
 
 		err := r.Reconcile(t.Context())
 		require.NoError(t, err)
@@ -81,9 +81,9 @@ func TestReconcile(t *testing.T) {
 
 		clt := fake.NewClientBuilder().Build()
 
-		dtc := agclientmock.NewAPIClient(t)
-		dtc.On("GetAuthToken", anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Twice()
-		r := NewReconciler(clt, clt, dk, dtc)
+		agCl := agclientmock.NewAPIClient(t)
+		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Twice()
+		r := NewReconciler(clt, clt, dk, agCl)
 
 		// create secret
 		err := r.Reconcile(t.Context())
@@ -140,9 +140,9 @@ func TestReconcile(t *testing.T) {
 
 		clt := fake.NewClientBuilder().Build()
 
-		dtc := agclientmock.NewAPIClient(t)
-		dtc.On("GetAuthToken", anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
-		r := NewReconciler(clt, clt, dk, dtc)
+		agCl := agclientmock.NewAPIClient(t)
+		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
+		r := NewReconciler(clt, clt, dk, agCl)
 
 		// create secret
 		err := r.Reconcile(t.Context())
