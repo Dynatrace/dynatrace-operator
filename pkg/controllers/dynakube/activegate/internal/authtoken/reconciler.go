@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -30,11 +30,11 @@ var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	dk      *dynakube.DynaKube
-	dtc     dtclient.Client
+	dtc     agclient.APIClient
 	secrets k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, dtc dtclient.Client) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, dtc agclient.APIClient) *Reconciler {
 	return &Reconciler{
 		dk:      dk,
 		dtc:     dtc,
@@ -105,7 +105,7 @@ func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
 }
 
 func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]byte, error) {
-	authTokenInfo, err := r.dtc.GetActiveGateAuthToken(ctx, r.dk.Name)
+	authTokenInfo, err := r.dtc.GetAuthToken(ctx, r.dk.Name)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 

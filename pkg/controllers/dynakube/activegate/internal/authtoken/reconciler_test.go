@@ -7,9 +7,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	testAgAuthTokenResponse = &dtclient.ActiveGateAuthTokenInfo{
+	testAgAuthTokenResponse = &agclient.AuthTokenInfo{
 		TokenID: "test",
 		Token:   "dt.some.valuegoeshere",
 	}
@@ -57,8 +57,8 @@ func TestReconcile(t *testing.T) {
 
 		clt := fake.NewClientBuilder().Build()
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetActiveGateAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
+		dtc := agclientmock.NewAPIClient(t)
+		dtc.On("GetAuthToken", anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
 		r := NewReconciler(clt, clt, dk, dtc)
 
 		err := r.Reconcile(t.Context())
@@ -81,8 +81,8 @@ func TestReconcile(t *testing.T) {
 
 		clt := fake.NewClientBuilder().Build()
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetActiveGateAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Twice()
+		dtc := agclientmock.NewAPIClient(t)
+		dtc.On("GetAuthToken", anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Twice()
 		r := NewReconciler(clt, clt, dk, dtc)
 
 		// create secret
@@ -140,8 +140,8 @@ func TestReconcile(t *testing.T) {
 
 		clt := fake.NewClientBuilder().Build()
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetActiveGateAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
+		dtc := agclientmock.NewAPIClient(t)
+		dtc.On("GetAuthToken", anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
 		r := NewReconciler(clt, clt, dk, dtc)
 
 		// create secret

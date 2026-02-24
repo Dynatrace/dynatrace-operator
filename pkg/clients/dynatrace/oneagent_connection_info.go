@@ -12,6 +12,12 @@ type OneAgentConnectionInfo struct {
 	ConnectionInfo
 }
 
+type ConnectionInfo struct {
+	TenantUUID  string
+	TenantToken string
+	Endpoints   string
+}
+
 type oneAgentConnectionInfoJSONResponse struct {
 	TenantUUID                      string   `json:"tenantUUID"`
 	TenantToken                     string   `json:"tenantToken"`

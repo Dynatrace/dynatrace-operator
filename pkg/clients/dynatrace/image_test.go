@@ -2,6 +2,8 @@ package dynatrace
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -130,4 +132,34 @@ func TestGetLatestImageFailure(t *testing.T) {
 
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 	})
+}
+
+func tenantInternalServerError(url string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path == url {
+			rawData, err := json.Marshal(serverErrorResponse{
+				ErrorMessage: ServerError{
+					Code:    http.StatusInternalServerError,
+					Message: "error retrieving tenant info",
+				}})
+
+			writer.WriteHeader(http.StatusInternalServerError)
+
+			if err == nil {
+				_, _ = writer.Write(rawData)
+			}
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+		}
+	}
+}
+
+func tenantMalformedJSON(url string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path == url {
+			writer.Write([]byte("this is not json"))
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+		}
+	}
 }
