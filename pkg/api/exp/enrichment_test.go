@@ -17,7 +17,7 @@ func TestEnableAttributesDtKubernetes(t *testing.T) {
 		{
 			title: "default",
 			in:    "",
-			out:   false,
+			out:   true,
 		},
 		{
 			title: "overrule to true",
