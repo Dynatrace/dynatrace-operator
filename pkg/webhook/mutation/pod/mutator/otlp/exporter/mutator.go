@@ -101,7 +101,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest) (bool, error) {
 
 	log.Debug("injecting OTLP env vars", "podName", request.PodName(), "namespace", request.Namespace.Name)
 
-	apiURL, err := endpoint.BuildOTLPEndpoint(&request.DynaKube)
+	apiURL, err := endpoint.BuildOTLPEndpoint(request.DynaKube)
 	if err != nil {
 		return false, dtwebhook.MutatorError{
 			Err:      fmt.Errorf("could not acquire ingest endpoint: %w", err),
