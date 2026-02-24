@@ -104,7 +104,5 @@ func (c *Client) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) 
 		log.Info("tenant has no endpoints")
 	}
 
-	log.Info("tenant has some endpoints")
-
 	return connectionInfo, nil
 }

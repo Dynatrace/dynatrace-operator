@@ -29,16 +29,16 @@ const (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	dk      *dynakube.DynaKube
-	dtc     agclient.APIClient
-	secrets k8ssecret.QueryObject
+	dk       *dynakube.DynaKube
+	agClient agclient.APIClient
+	secrets  k8ssecret.QueryObject
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, dtc agclient.APIClient) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, dk *dynakube.DynaKube, agClient agclient.APIClient) *Reconciler {
 	return &Reconciler{
-		dk:      dk,
-		dtc:     dtc,
-		secrets: k8ssecret.Query(clt, apiReader, log),
+		dk:       dk,
+		agClient: agClient,
+		secrets:  k8ssecret.Query(clt, apiReader, log),
 	}
 }
 
@@ -105,7 +105,7 @@ func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context) error {
 }
 
 func (r *Reconciler) getActiveGateAuthToken(ctx context.Context) (map[string][]byte, error) {
-	authTokenInfo, err := r.dtc.GetAuthToken(ctx, r.dk.Name)
+	authTokenInfo, err := r.agClient.GetAuthToken(ctx, r.dk.Name)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(r.dk.Conditions(), ActiveGateAuthTokenSecretConditionType, err)
 
