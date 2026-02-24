@@ -66,12 +66,12 @@ func TestAddPodAttributes(t *testing.T) {
 		testCases := []testCase{
 			{
 				name:                        "without deprecated annotations",
-				annotations:                 map[string]string{},
+				annotations:                 map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "false"},
 				assertDeprecatedAnnotations: assertNoDeprecatedAttributes,
 			},
 			{
 				name:                        "with deprecated annotations",
-				annotations:                 map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "true"},
+				annotations:                 map[string]string{},
 				assertDeprecatedAnnotations: assertDeprecatedAttributes,
 			},
 		}

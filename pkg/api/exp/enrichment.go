@@ -5,5 +5,5 @@ const (
 )
 
 func (ff *FeatureFlags) EnableAttributesDtKubernetes() bool {
-	return ff.getBoolWithDefault(EnrichmentEnableAttributesDtKubernetes, false)
+	return ff.getBoolWithDefault(EnrichmentEnableAttributesDtKubernetes, true)
 }

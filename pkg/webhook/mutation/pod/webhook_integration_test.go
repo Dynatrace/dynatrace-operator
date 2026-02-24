@@ -287,7 +287,7 @@ func TestWebhook(t *testing.T) {
 	})
 }
 
-func PropagationTest(t *testing.T, clt client.Client, withDeprecatedAnnotations bool) {
+func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotations bool) {
 	t.Helper()
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -323,8 +323,8 @@ func PropagationTest(t *testing.T, clt client.Client, withDeprecatedAnnotations 
 		},
 	}
 
-	if withDeprecatedAnnotations {
-		dk.Annotations[exp.EnrichmentEnableAttributesDtKubernetes] = "true"
+	if withoutDeprecatedAnnotations {
+		dk.Annotations[exp.EnrichmentEnableAttributesDtKubernetes] = "false"
 	}
 
 	createDynaKube(t, clt, dk)
@@ -359,7 +359,11 @@ func PropagationTest(t *testing.T, clt client.Client, withDeprecatedAnnotations 
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.name", testClusterName))
 	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.entity.kubernetes_cluster", testMEID))
 
-	if withDeprecatedAnnotations {
+	if withoutDeprecatedAnnotations {
+		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
+		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
+		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.kubernetes.cluster.id", testClusterUUID))
+	} else {
 		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
 		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(metadatamutator.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
 		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.kubernetes.cluster.id", testClusterUUID))
@@ -405,12 +409,12 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 		testCases := []testCase{
 			{
 				name:                     "without deprecated annotations",
-				annotations:              map[string]string{},
+				annotations:              map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "false"},
 				withDeprecatedAttributes: false,
 			},
 			{
 				name:                     "with deprecated annotations",
-				annotations:              map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "true"},
+				annotations:              map[string]string{},
 				withDeprecatedAttributes: true,
 			},
 		}

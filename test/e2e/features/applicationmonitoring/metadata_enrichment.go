@@ -122,12 +122,12 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 			assess: podHasCompleteInitContainer,
 		},
 		{
-			name: "metadata enrichment doesn't have deprecated attributes - pod",
+			name: "metadata enrichment have deprecated attributes - pod",
 			app: sample.NewApp(t, &testDynakube,
 				sample.WithName("pod-no-dt-attributes"),
 				sample.WithNamespaceLabels(injectEverythingLabels),
 			),
-			assess: assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes,
+			assess: assessMetadataEnrichmentHasDeprecatedAttributes,
 		},
 	}
 
@@ -147,11 +147,11 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 }
 
 func MetadataEnrichmentDeprecatedAttributes(t *testing.T) features.Feature {
-	builder := features.New("metadata-enrichment-deprecated-attributes")
+	builder := features.New("metadata-enrichment-without-deprecated-attributes")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	testDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/enable-attributes-dt.kubernetes": "true"}),
+		dynakubeComponents.WithAnnotations(map[string]string{"feature.dynatrace.com/enable-attributes-dt.kubernetes": "false"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
@@ -161,7 +161,7 @@ func MetadataEnrichmentDeprecatedAttributes(t *testing.T) features.Feature {
 	dummyApp := sample.NewApp(t, &testDynakube, sample.WithName("dummy-app"))
 
 	builder.Assess("Installing sample app", dummyApp.Install())
-	builder.Assess("Checking sample app", assessMetadataEnrichmentHasDeprecatedAttributes(dummyApp))
+	builder.Assess("Checking sample app", assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes(dummyApp))
 	builder.WithTeardown("Uninstalling sample app", dummyApp.Uninstall())
 
 	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)

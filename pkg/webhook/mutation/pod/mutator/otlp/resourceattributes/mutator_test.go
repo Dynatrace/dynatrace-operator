@@ -283,13 +283,13 @@ func Test_Mutator_Mutate(t *testing.T) {
 
 	t.Run("with deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
-		dk.Annotations = map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "true"}
+		dk.Annotations = map[string]string{}
 		runMutatorTests(t, *dk, tests, false)
 	})
 
 	t.Run("without deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
-		dk.Annotations = map[string]string{}
+		dk.Annotations = map[string]string{exp.EnrichmentEnableAttributesDtKubernetes: "false"}
 		runMutatorTests(t, *dk, tests, true)
 	})
 }
