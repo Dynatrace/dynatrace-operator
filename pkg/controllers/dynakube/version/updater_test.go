@@ -1,7 +1,6 @@
 package version
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -13,7 +12,6 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	ctx := context.Background()
 	testImage := "some.registry.com:1.2.3.4-5"
 	timeProvider := timeprovider.New().Freeze()
 
@@ -37,7 +35,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 		}
 		updater := newCustomImageUpdater(t, target, "incorrect-uri")
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
@@ -51,25 +49,25 @@ func TestRun(t *testing.T) {
 		updater := newDefaultUpdater(t, target, false)
 
 		// 1. call => status empty => should run
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
-		err = versionReconciler.run(ctx, updater)
+		err = versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 
 		// 3. call => source is different => should run
 		target.Source = status.CustomImageVersionSource
-		err = versionReconciler.run(ctx, updater)
+		err = versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 
 		// 4. call => source is NOT different => should NOT run
-		err = versionReconciler.run(ctx, updater)
+		err = versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 	})
@@ -82,14 +80,14 @@ func TestRun(t *testing.T) {
 		updater := newCustomVersionUpdater(t, target, "123", false)
 
 		// 1. call => status empty => should run
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
 
 		// 2. call => it is custom version => should run
-		err = versionReconciler.run(ctx, updater)
+		err = versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 		assert.Equal(t, status.CustomVersionVersionSource, target.Source)
@@ -105,7 +103,7 @@ func TestRun(t *testing.T) {
 		updater.On("CustomImage").Return("")
 		updater.On("CustomVersion").Return("")
 
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
@@ -121,7 +119,7 @@ func TestRun(t *testing.T) {
 		updater := newClassicFullStackUpdater(t, target, false)
 		updater.On("CustomImage").Return(testImage)
 
-		err := versionReconciler.run(ctx, updater)
+		err := versionReconciler.run(t.Context(), updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
@@ -233,6 +231,7 @@ func newCustomImageUpdater(t *testing.T, target *status.VersionStatus, image str
 func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version string, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
+	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return(version)
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
@@ -242,6 +241,7 @@ func newCustomVersionUpdater(t *testing.T, target *status.VersionStatus, version
 func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, true)
 	updater.On("CustomImage").Maybe().Return("")
+	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(errors.New("BOOM"))
 
@@ -251,6 +251,7 @@ func newFailingUpdater(t *testing.T, target *status.VersionStatus) *MockStatusUp
 func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
 	updater.On("CustomImage").Maybe().Return("")
+	updater.On("IsAutoRegistryEnabled").Maybe().Maybe().Return(false)
 	updater.On("CustomVersion").Maybe().Return("")
 	updater.On("UseTenantRegistry", mock.Anything).Maybe().Return(nil)
 
@@ -259,6 +260,7 @@ func newDefaultUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bo
 
 func newClassicFullStackUpdater(t *testing.T, target *status.VersionStatus, autoUpdate bool) *MockStatusUpdater {
 	updater := newBaseUpdater(t, target, autoUpdate)
+	updater.On("IsAutoRegistryEnabled").Maybe().Return(false)
 
 	return updater
 }

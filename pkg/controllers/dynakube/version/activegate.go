@@ -74,6 +74,10 @@ func (updater *activeGateUpdater) CheckForDowngrade(_ string) (bool, error) {
 	return false, nil
 }
 
+func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
+}
+
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	latestVersion, err := updater.dtClient.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
 	if err != nil {

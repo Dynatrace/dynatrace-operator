@@ -63,6 +63,10 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 	return true
 }
 
+func (updater codeModulesUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
+}
+
 func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
 	return false, nil
 }

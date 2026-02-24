@@ -71,6 +71,10 @@ func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
 	return updater.dk.OneAgent().IsAutoUpdateEnabled()
 }
 
+func (updater oneAgentUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
+}
+
 func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	var err error
 

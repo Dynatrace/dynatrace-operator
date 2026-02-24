@@ -19,6 +19,7 @@ type StatusUpdater interface {
 	CustomImage() string
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
+	IsAutoRegistryEnabled() bool
 	CheckForDowngrade(latestVersion string) (bool, error)
 	ValidateStatus() error
 
@@ -56,6 +57,16 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 		}
 	}
 
+	if updater.IsAutoRegistryEnabled() {
+		// TODO:
+		err = r.processAutoRegistry(ctx, updater)
+		if err != nil {
+			return err
+		}
+
+		return updater.ValidateStatus()
+	}
+
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
 
 	err = updater.UseTenantRegistry(ctx)
@@ -64,6 +75,12 @@ func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	}
 
 	return updater.ValidateStatus()
+}
+
+func (r *reconciler) processAutoRegistry(_ context.Context, updater StatusUpdater) error {
+	log.Info("updating version status according to public registry", "updater", updater.Name())
+	// TODO: implement in ICP-1077
+	return errors.New("auto registry is not yet supported")
 }
 
 func determineSource(updater StatusUpdater) status.VersionSource {
