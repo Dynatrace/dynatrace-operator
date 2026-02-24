@@ -40,7 +40,7 @@ func TestService(t *testing.T) {
 	t.Run("create service if it does not exist", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
@@ -104,7 +104,7 @@ func TestService(t *testing.T) {
 				string(otelcgen.StatsdProtocol),
 			},
 		})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
@@ -141,7 +141,7 @@ func TestService(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err = NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
@@ -172,7 +172,7 @@ func TestService(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err = NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
@@ -185,7 +185,7 @@ func TestService(t *testing.T) {
 	t.Run("update from default service to custom service", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
@@ -201,7 +201,7 @@ func TestService(t *testing.T) {
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{
 			ServiceName: testServiceName,
 		}
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err = NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
@@ -216,7 +216,7 @@ func TestService(t *testing.T) {
 		dk := getTestDynakube(&telemetryingest.Spec{
 			ServiceName: testServiceName,
 		})
-		err := NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
@@ -230,7 +230,7 @@ func TestService(t *testing.T) {
 
 		// update
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-		err = NewReconciler(mockK8sClient, mockK8sClient, dk).Reconcile(t.Context())
+		err = NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
