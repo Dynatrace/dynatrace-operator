@@ -91,13 +91,13 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
-		otelcReconcilerBuilder:              otelc.NewReconciler,
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 		proxyReconcilerBuilder:              proxy.NewReconciler,
 
 		extensionReconciler: extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:      kspm.NewReconciler(kubeClient, apiReader),
 		k8sEntityReconciler: k8sentity.NewReconciler(),
+		otelcReconciler:     otelc.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -113,7 +113,7 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(controller)
 }
 
-type extensionReconciler interface {
+type dynakubeReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
@@ -130,9 +130,10 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder record.EventRecorder
 
-	extensionReconciler extensionReconciler
+	extensionReconciler dynakubeReconciler
 	k8sEntityReconciler dtSettingReconciler
 	kspmReconciler      dtSettingReconciler
+	otelcReconciler     dynakubeReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
@@ -144,7 +145,6 @@ type Controller struct {
 	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
-	otelcReconcilerBuilder              otelc.ReconcilerBuilder
 	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
 	proxyReconcilerBuilder              proxy.ReconcilerBuilder
 
@@ -387,10 +387,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	log.Info("start reconciling otel-collector")
 
-	otelcReconciler := controller.otelcReconcilerBuilder(controller.client, controller.apiReader, dk)
-
-	err = otelcReconciler.Reconcile(ctx)
-	if err != nil {
+	if err := controller.otelcReconciler.Reconcile(ctx, dk); err != nil {
 		log.Info("could not reconcile otelc")
 
 		componentErrors = append(componentErrors, err)
