@@ -21,8 +21,6 @@ type Reconciler struct {
 	configMaps k8sconfigmap.QueryObject
 }
 
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader) *Reconciler
-
 func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		configMaps: k8sconfigmap.Query(client, apiReader, log),
