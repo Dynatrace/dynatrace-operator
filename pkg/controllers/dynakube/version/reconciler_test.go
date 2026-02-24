@@ -30,7 +30,7 @@ const (
 	testAPIURL         = "https://" + testDockerRegistry + "/api"
 
 	latestActiveGateVersion = "1.2.3.4-56"
-	latestOneAgentVersion = "1.2.3.4-5"
+	latestOneAgentVersion   = "1.2.3.4-5"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
@@ -303,7 +303,6 @@ func createTestPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.Dy
 		},
 	})
 }
-
 
 func setOneAgentCustomVersionStatus(dk *dynakube.DynaKube, version string) {
 	dk.Status.OneAgent.Source = status.CustomVersionVersionSource
