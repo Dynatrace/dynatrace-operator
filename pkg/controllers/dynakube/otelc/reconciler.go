@@ -33,7 +33,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler { 
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
-	err := r.serviceReconciler.Reconcile(ctx)
+	err := r.serviceReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		return err
 	}
