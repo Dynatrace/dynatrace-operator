@@ -209,7 +209,7 @@ properties:
     description: If the Operator image is in a private registry, the name of the appropriate pull secret can be set here
     default: ""
 
-  imagePullPolicy:
+  imageRef.pullPolicy:
     type: string
     title: Operator image pull policy
     description: Overrite the default image pull policy for the operator.
