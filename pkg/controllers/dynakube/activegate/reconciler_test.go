@@ -616,7 +616,7 @@ func createMockDtClient(t *testing.T, authTokenRouteRequired bool) *dtclientmock
 		agClient.EXPECT().GetAuthToken(anyCtx, testName).Return(&agclient.AuthTokenInfo{TokenID: "test", Token: "dt.some.valuegoeshere"}, nil).Maybe()
 	}
 
-	dtc.On("AsV2").Return(&dtclient.ClientV2{ActiveGate: agClient})
+	dtc.EXPECT().AsV2().Return(&dtclient.ClientV2{ActiveGate: agClient})
 
 	return dtc
 }
