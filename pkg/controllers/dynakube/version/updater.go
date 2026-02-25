@@ -87,6 +87,10 @@ func determineSource(updater StatusUpdater) status.VersionSource {
 		return status.CustomImageVersionSource
 	}
 
+	if updater.IsAutoRegistryEnabled() {
+		return status.AutomaticRegistryVersionSource
+	}
+
 	if updater.CustomVersion() != "" {
 		return status.CustomVersionVersionSource
 	}
