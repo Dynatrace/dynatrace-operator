@@ -8,12 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 )
 
 type ClientV2 struct {
-	Settings settings.APIClient
+	Settings   settings.APIClient
+	ActiveGate activegate.APIClient
 }
 
 type ConfigV2 struct {
@@ -151,7 +153,8 @@ func newClientV2(baseURL string, options ...OptionV2) (*ClientV2, error) {
 	})
 
 	return &ClientV2{
-		Settings: settings.NewClient(apiClient),
+		Settings:   settings.NewClient(apiClient),
+		ActiveGate: activegate.NewClient(apiClient),
 	}, nil
 }
 

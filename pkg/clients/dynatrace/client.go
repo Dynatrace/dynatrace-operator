@@ -59,17 +59,6 @@ type Client interface {
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(ctx context.Context, token string) (TokenScopes, error)
 
-	// GetActiveGateConnectionInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
-	GetActiveGateConnectionInfo(ctx context.Context) (ActiveGateConnectionInfo, error)
-
-	GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error)
-
-	GetLatestOneAgentImage(ctx context.Context) (*LatestImageInfo, error)
-
-	GetLatestCodeModulesImage(ctx context.Context) (*LatestImageInfo, error)
-
-	GetLatestActiveGateImage(ctx context.Context) (*LatestImageInfo, error)
-
 	// GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch.
 	// Returns the version as received from the server on success.
 	GetLatestActiveGateVersion(ctx context.Context, os string) (string, error)

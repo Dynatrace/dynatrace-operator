@@ -238,7 +238,7 @@ func createDynaKubeWithVersion(t *testing.T) *dynakube.DynaKube {
 	version := "test-version"
 	dk.Spec.OneAgent = oneagent.Spec{
 		ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-			Version: version,
+			Version: version, //nolint:staticcheck
 		},
 	}
 	dk.Status.CodeModules.Version = version

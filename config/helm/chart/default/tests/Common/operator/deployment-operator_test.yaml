@@ -76,7 +76,6 @@ tests:
                   - operator
                 # Replace this with the built image name
                 image: image-name
-                imagePullPolicy: Always
                 env:
                   - name: POD_NAMESPACE
                     valueFrom:
@@ -301,7 +300,6 @@ tests:
                   - operator
                 # Replace this with the built image name
                 image: image-name
-                imagePullPolicy: Always
                 env:
                   - name: POD_NAMESPACE
                     valueFrom:

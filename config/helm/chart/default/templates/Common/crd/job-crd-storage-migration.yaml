@@ -55,7 +55,9 @@ spec:
       containers:
         - name: crd-storage-migration
           image: {{ include "dynatrace-operator.image" . }}
-          imagePullPolicy: {{ .Values.imagePullPolicy | default "Always" }}
+          {{- with .Values.imageRef.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
           args:
             - crd-storage-migration
             - --namespace={{ .Release.Namespace }}

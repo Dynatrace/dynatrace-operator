@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -18,11 +17,7 @@ import (
 )
 
 func TestActiveGateUpdater(t *testing.T) {
-	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
+	testImage := "some.registry.com:1.2.3.4-5"
 
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -35,13 +30,12 @@ func TestActiveGateUpdater(t *testing.T) {
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName},
 					CapabilityProperties: activegate.CapabilityProperties{
-						Image: testImage.String(),
+						Image: testImage,
 					},
 				},
 			},
 		}
 		mockClient := dtclientmock.NewClient(t)
-		mockActiveGateImageInfo(mockClient, testImage)
 
 		updater := newActiveGateUpdater(dk, fake.NewClient(), mockClient)
 
@@ -50,9 +44,6 @@ func TestActiveGateUpdater(t *testing.T) {
 		assert.Equal(t, dk.Spec.ActiveGate.Image, updater.CustomImage())
 		assert.Empty(t, updater.CustomVersion())
 		assert.False(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, testImage, *imageInfo)
 	})
 }
 

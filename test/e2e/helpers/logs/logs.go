@@ -47,8 +47,7 @@ func AssertContains(t *testing.T, logStream io.ReadCloser, contains string) {
 }
 
 func FindLineContainingText(log, searchText string) string {
-	lines := strings.Split(log, "\n")
-	for _, line := range lines {
+	for line := range strings.SplitSeq(log, "\n") {
 		if strings.Contains(line, searchText) {
 			return line
 		}

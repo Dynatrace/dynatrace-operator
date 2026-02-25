@@ -68,6 +68,7 @@ func TestGetHelmOptions(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho repo:tag"), os.ModePerm)) //nolint:gosec
 		t.Setenv("PATH", tempDir+":"+os.Getenv("PATH"))
 
+		imageRef = "" // clear cache
 		t.Setenv("HELM_CHART", "oci://registry:snapshot-test")
 		opts, err := getHelmOptions("", "test", false)
 		require.NoError(t, err)
@@ -83,6 +84,7 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
 				"--set", "image=repo:tag",
+				"--set", "imageRef.pullPolicy=Always",
 				filepath.Join(project.RootDir(), "config", "helm", "chart", "default"),
 			},
 		}, opts)
@@ -104,6 +106,7 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
 				"--set", "image=repo:tag",
+				"--set", "imageRef.pullPolicy=Always",
 				filepath.Join(project.RootDir(), "config", "helm", "chart", "default"),
 			},
 		}, opts)
@@ -114,6 +117,7 @@ func TestGetHelmOptions(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "make"), []byte("#!/bin/sh\necho make[1] Entering directory"), os.ModePerm)) //nolint:gosec
 		t.Setenv("PATH", tempDir+":"+os.Getenv("PATH"))
 
+		imageRef = "" // clear cache
 		_, err := getHelmOptions("", "test", false)
 		require.Error(t, err)
 	})

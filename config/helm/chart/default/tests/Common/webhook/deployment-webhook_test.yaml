@@ -108,7 +108,6 @@ tests:
                   - webhook-server
                   - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
                 image: image-name
-                imagePullPolicy: Always
                 env:
                   - name: POD_NAMESPACE
                     valueFrom:
@@ -308,7 +307,6 @@ tests:
                   - webhook-server
                   - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
                 image: image-name
-                imagePullPolicy: Always
                 env:
                   - name: POD_NAMESPACE
                     valueFrom:
@@ -473,7 +471,6 @@ tests:
                   - webhook-server
                   - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
                 image: image-name
-                imagePullPolicy: Always
                 env:
                   - name: POD_NAMESPACE
                     valueFrom:

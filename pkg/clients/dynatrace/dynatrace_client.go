@@ -80,22 +80,6 @@ func (dtc *dynatraceClient) makeRequest(ctx context.Context, url string, tokenTy
 	return dtc.httpClient.Do(req)
 }
 
-func createBaseRequest(ctx context.Context, url, method, apiToken string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, method, url, body)
-	if err != nil {
-		return nil, errors.WithMessage(err, "error initializing http request")
-	}
-
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", APITokenHeader+apiToken)
-
-	if method == http.MethodPost {
-		req.Header.Add("Content-Type", "application/json")
-	}
-
-	return req, nil
-}
-
 func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {
 	responseData, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -110,7 +94,7 @@ func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]by
 	return responseData, nil
 }
 
-func (dtc *dynatraceClient) makeRequestAndUnmarshal(ctx context.Context, url string, token tokenType, response interface{}) error {
+func (dtc *dynatraceClient) makeRequestAndUnmarshal(ctx context.Context, url string, token tokenType, response any) error {
 	resp, err := dtc.makeRequest(ctx, url, token)
 	if err != nil {
 		return err

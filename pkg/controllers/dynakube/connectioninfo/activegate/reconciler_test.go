@@ -9,11 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 		})
 
 		fakeClient := fake.NewClient(buildActiveGateSecret(*dk, testTenantUUID))
-		dtc := dtclientmock.NewClient(t)
+		dtc := agclientmock.NewAPIClient(t)
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
@@ -66,8 +66,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("store ActiveGate connection info to DynaKube status + create tenant secret", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetActiveGateConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
+		dtc := agclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk)
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
@@ -91,8 +91,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("update ActiveGate connection info + update tenant secret", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetActiveGateConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
+		dtc := agclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk, buildActiveGateSecret(*dk, testTenantUUID))
 		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{
@@ -125,8 +125,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("update ActiveGate connection info if tenant secret is missing, ignore timestamp", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetActiveGateConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
+		dtc := agclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk)
 
@@ -159,8 +159,8 @@ func TestReconcile(t *testing.T) {
 			},
 		})
 
-		dtc := dtclientmock.NewClient(t)
-		dtc.EXPECT().GetActiveGateConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
+		dtc := agclientmock.NewAPIClient(t)
+		dtc.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		r := NewReconciler(fakeClient, fakeClient, dtc, dk)
 		err := r.Reconcile(ctx)
@@ -173,13 +173,11 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func getTestActiveGateConnectionInfo() dtclient.ActiveGateConnectionInfo {
-	return dtclient.ActiveGateConnectionInfo{
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID:  testTenantUUID,
-			TenantToken: testTenantToken,
-			Endpoints:   testTenantEndpoints,
-		},
+func getTestActiveGateConnectionInfo() agclient.ConnectionInfo {
+	return agclient.ConnectionInfo{
+		TenantUUID:  testTenantUUID,
+		TenantToken: testTenantToken,
+		Endpoints:   testTenantEndpoints,
 	}
 }
 

@@ -35,7 +35,7 @@ deploy: manifests/crd/helm
 			--set image=$(IMAGE_URI) \
 			--set debugLogs=$(DEBUG_LOGS) \
 			--set debug=$(DEBUG) \
-			--set imagePullPolicy=$(IMAGE_PULL_POLICY)
+			--set imageRef.pullPolicy=$(IMAGE_PULL_POLICY)
 
 ## Undeploy the current operator installation
 undeploy:
