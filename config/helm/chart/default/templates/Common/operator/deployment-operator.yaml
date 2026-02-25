@@ -57,7 +57,7 @@ spec:
             - operator
           # Replace this with the built image name
           image: {{ include "dynatrace-operator.image" . }}
-          {{- with .Values.imagePullPolicy }}
+          {{- with .Values.imageRef.pullPolicy }}
           imagePullPolicy: {{ . }}
           {{- end }}
           env:

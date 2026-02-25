@@ -84,7 +84,7 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
 				"--set", "image=repo:tag",
-				"--set", "imagePullPolicy=Always",
+				"--set", "imageRef.pullPolicy=Always",
 				filepath.Join(project.RootDir(), "config", "helm", "chart", "default"),
 			},
 		}, opts)
@@ -106,7 +106,7 @@ func TestGetHelmOptions(t *testing.T) {
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
 				"--set", "image=repo:tag",
-				"--set", "imagePullPolicy=Always",
+				"--set", "imageRef.pullPolicy=Always",
 				filepath.Join(project.RootDir(), "config", "helm", "chart", "default"),
 			},
 		}, opts)
