@@ -55,13 +55,9 @@ type Client interface {
 	// GetHostEntityIDForIP returns the host entity id for a given IP address.
 	// Returns an error in case the lookup failed.
 	GetHostEntityIDForIP(ctx context.Context, ip string) (string, error)
+
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(ctx context.Context, token string) (TokenScopes, error)
-
-	// GetActiveGateConnectionInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
-	GetActiveGateConnectionInfo(ctx context.Context) (ActiveGateConnectionInfo, error)
-
-	GetActiveGateAuthToken(ctx context.Context, dynakubeName string) (*ActiveGateAuthTokenInfo, error)
 
 	// GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch.
 	// Returns the version as received from the server on success.
