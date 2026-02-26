@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -9,11 +10,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -103,8 +107,11 @@ func TestReconcile(t *testing.T) {
 			},
 		)
 
+		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", &core.HTTPError{StatusCode: 404})
+
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), mock.Anything).Return("", dtclient.V1HostEntityAPINotAvailableErr{APIURL: "test"})
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
@@ -146,11 +153,14 @@ func TestReconcile(t *testing.T) {
 			},
 		)
 
+		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("HOST-42", nil).Once()
+		hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
+			return e.EventType == hostevent.MarkedForTerminationEvent
+		})).Return(&core.HTTPError{StatusCode: 404}).Once()
+
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), "1.2.3.4").Return("HOST-42", nil)
-		dtClient.On("SendEvent", mock.AnythingOfType("*context.cancelCtx"), mock.MatchedBy(func(e *dtclient.EventData) bool {
-			return e.EventType == "MARKED_FOR_TERMINATION"
-		})).Return(dtclient.V1EventsAPINotAvailableErr{APIURL: "test"})
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
@@ -238,8 +248,9 @@ func TestReconcile(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
+		hostClient := hostclientmock.NewAPIClient(t)
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), mock.Anything).Return("", cache.ErrEntryNotFound)
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
@@ -249,15 +260,21 @@ func TestReconcile(t *testing.T) {
 		c, err := ctrl.getCache(ctx)
 		require.NoError(t, err)
 
-		require.ErrorIs(t, ctrl.reconcileNodeDeletion(ctx, c, "node1"), cache.ErrEntryNotFound)
+		// Only EXPECT to call something on deletion
+		expectErr := errors.New("error")
+		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", expectErr)
+
+		require.ErrorIs(t, ctrl.reconcileNodeDeletion(ctx, c, "node1"), expectErr)
 	})
 
 	t.Run("Remove host from cache even if server error: host not found", func(t *testing.T) {
 		ctx := t.Context()
 		fakeClient := createDefaultFakeClient()
 
+		hostClient := hostclientmock.NewAPIClient(t)
+		hostClient.EXPECT().GetEntityIDForIP(t.Context(), "1.2.3.4").Return("", hostevent.EntityNotFoundError{IP: "1.2.3.4"})
 		dtClient := dtclientmock.NewClient(t)
-		dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), mock.Anything).Return("", dtclient.HostEntityNotFoundErr{IP: "1.2.3.4"})
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient}).Once()
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
@@ -301,7 +318,7 @@ func TestReconcile(t *testing.T) {
 
 func createReconcileRequest(nodeName string) reconcile.Request {
 	return reconcile.Request{
-		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: nodeName},
+		NamespacedName: types.NamespacedName{Name: nodeName},
 	}
 }
 
@@ -347,25 +364,25 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclientmock.Cl
 }
 
 func createDTMockClient(t *testing.T, ip, host string) *dtclientmock.Client {
-	dtClient := dtclientmock.NewClient(t)
-	dtClient.On("GetHostEntityIDForIP", mock.AnythingOfType("*context.cancelCtx"), ip).Return(host, nil)
-	dtClient.On("SendEvent", mock.AnythingOfType("*context.cancelCtx"), mock.MatchedBy(func(e *dtclient.EventData) bool {
-		return e.EventType == "MARKED_FOR_TERMINATION"
+	hostClient := hostclientmock.NewAPIClient(t)
+	hostClient.EXPECT().GetEntityIDForIP(t.Context(), ip).Return(host, nil)
+	hostClient.EXPECT().SendEvent(t.Context(), mock.MatchedBy(func(e hostevent.Event) bool {
+		return e.EventType == hostevent.MarkedForTerminationEvent
 	})).Return(nil)
+	dtClient := dtclientmock.NewClient(t)
+	dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{HostEvent: hostClient})
 
 	return dtClient
 }
 
 func reconcileAllNodes(t *testing.T, ctrl *Controller, fakeClient client.Client) {
-	ctx := context.Background()
-
 	var nodeList corev1.NodeList
-	err := fakeClient.List(ctx, &nodeList)
+	err := fakeClient.List(t.Context(), &nodeList)
 
 	require.NoError(t, err)
 
 	for _, clusterNode := range nodeList.Items {
-		result, err := ctrl.Reconcile(ctx, createReconcileRequest(clusterNode.Name))
+		result, err := ctrl.Reconcile(t.Context(), createReconcileRequest(clusterNode.Name))
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 	}

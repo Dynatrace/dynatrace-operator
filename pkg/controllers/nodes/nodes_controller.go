@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
@@ -185,15 +186,11 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	entityID, err := dynatraceClient.GetHostEntityIDForIP(ctx, cachedNode.IPAddress)
+	hostEventClient := dynatraceClient.AsV2().HostEvent
+
+	entityID, err := hostEventClient.GetEntityIDForIP(ctx, cachedNode.IPAddress)
 	if err != nil {
-		if errors.As(err, &dtclient.HostEntityNotFoundErr{}) {
-			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
-
-			return nil
-		}
-
-		if errors.As(err, &dtclient.V1HostEntityAPINotAvailableErr{}) {
+		if core.IsNotFound(err) || errors.As(err, new(hostevent.EntityNotFoundError)) {
 			log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 			return nil
@@ -205,19 +202,14 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond) //nolint:gosec
+	err = hostEventClient.SendEvent(ctx, hostevent.NewMarkForTerminationEvent(
+		entityID,
+		"Dynatrace Operator",
+		"Kubernetes node cordoned. Node might be drained or terminated.",
+		cachedNode.LastSeen.Add(-10*time.Minute),
+	))
 
-	err = dynatraceClient.SendEvent(ctx, &dtclient.EventData{
-		EventType:     dtclient.MarkedForTerminationEvent,
-		Source:        "Dynatrace Operator",
-		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",
-		StartInMillis: ts,
-		EndInMillis:   ts,
-		AttachRules: dtclient.EventDataAttachRules{
-			EntityIDs: []string{entityID},
-		},
-	})
-	if errors.As(err, &dtclient.V1EventsAPINotAvailableErr{}) {
+	if core.IsNotFound(err) {
 		log.Info("skipping to send mark for termination event", "dynakube", dk.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 
 		return nil
