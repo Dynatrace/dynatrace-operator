@@ -26,6 +26,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/provisioner/cleanup"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
@@ -134,11 +135,18 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 
 	err = provisioner.installAgent(ctx, dk)
-	if err != nil && errors.Is(err, errNotReady) {
+
+	switch {
+	case errors.Is(err, errNotReady):
 		log.Info(err.Error(), "dynakube", dk.Name)
 
 		return reconcile.Result{RequeueAfter: notReadyRequeueDuration}, nil
-	} else if err != nil {
+	case dynatraceapi.IsUnreachable(err):
+		log.Info("the Dynatrace API server is unavailable or request limit reached! Reconcile requeued.",
+			"errorCode", dynatraceapi.StatusCode(err), "errorMessage", dynatraceapi.Message(err), "requeueAfter", shortRequeueDuration)
+
+		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
+	case err != nil:
 		return reconcile.Result{}, err
 	}
 

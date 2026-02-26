@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"testing"
 
@@ -33,13 +34,11 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("no dynakube(ie.: delete case) => do nothing, no error", func(t *testing.T) { // TODO: Replace "do nothing" with "run GC"
 		prov := createProvisioner(t)
 		dk := createDynaKubeBase(t)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
@@ -50,7 +49,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeNoCSI(t)
 		prov := createProvisioner(t, dk)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
@@ -62,7 +61,7 @@ func TestReconcile(t *testing.T) {
 		dk := createNotReadyDynaKube(t)
 		prov := createProvisioner(t, dk)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
@@ -76,7 +75,7 @@ func TestReconcile(t *testing.T) {
 		dk.Status.CodeModules.ImageID = ""
 		prov := createProvisioner(t, dk)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
@@ -89,7 +88,7 @@ func TestReconcile(t *testing.T) {
 		dk.Status.CodeModules.Version = string(status.CustomImageVersionSource)
 		prov := createProvisioner(t, dk)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
@@ -103,7 +102,7 @@ func TestReconcile(t *testing.T) {
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, createSuccessfulInstaller(t))
 		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
@@ -111,16 +110,31 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
 
-	t.Run("dynakube with version, issue with dtc => fail before installer creation", func(t *testing.T) {
+	t.Run("dynakube with version, unknown issue with dtc => fail before installer creation", func(t *testing.T) {
 		dk := createDynaKubeWithVersion(t)
 		prov := createProvisioner(t, dk, createToken(t, dk))
 		prov.dynatraceClientBuilder = mockFailingDtClientBuilder(t)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
 		require.NotNil(t, result)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
+	})
+
+	t.Run("dynakube with version, known issue with dtc => no error, just short requeue", func(t *testing.T) {
+		dk := createDynaKubeWithVersion(t)
+		prov := createProvisioner(t, dk, createToken(t, dk))
+
+		unavailableInstaller := installermock.NewInstaller(t)
+		unavailableInstaller.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, dtclient.ServerError{Code: http.StatusServiceUnavailable})
+		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
+		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
+
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, shortRequeueDuration, result.RequeueAfter)
 	})
 
 	t.Run("dynakube with image => image installer used, dtclient not created, no error", func(t *testing.T) {
@@ -128,7 +142,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
@@ -141,7 +155,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t), "")
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
@@ -155,7 +169,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t), dk.Spec.CustomPullSecret)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
@@ -168,7 +182,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createNotReadyInstaller(t), "")
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, notReadyRequeueDuration, result.RequeueAfter)
@@ -181,7 +195,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createFailingInstaller(t), "")
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
 		require.NotNil(t, result)
 
@@ -193,7 +207,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createFailingInstaller(t))
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
 		require.NotNil(t, result)
 
@@ -238,7 +252,7 @@ func createDynaKubeWithVersion(t *testing.T) *dynakube.DynaKube {
 	version := "test-version"
 	dk.Spec.OneAgent = oneagent.Spec{
 		ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-			Version: version,
+			Version: version, //nolint:staticcheck
 		},
 	}
 	dk.Status.CodeModules.Version = version
@@ -316,7 +330,7 @@ func createSuccessfulInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.On("InstallAgent", mock.Anything, mock.Anything).Return(true, nil)
+	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(true, nil)
 
 	return m
 }
@@ -325,7 +339,7 @@ func createNotReadyInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.On("InstallAgent", mock.Anything, mock.Anything).Return(false, nil)
+	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, nil)
 
 	return m
 }
@@ -334,7 +348,7 @@ func createFailingInstaller(t *testing.T) *installermock.Installer {
 	t.Helper()
 
 	m := installermock.NewInstaller(t)
-	m.On("InstallAgent", mock.Anything, mock.Anything).Return(false, errors.New("BOOM"))
+	m.EXPECT().InstallAgent(mock.Anything, mock.Anything).Return(false, errors.New("BOOM"))
 
 	return m
 }
@@ -387,9 +401,9 @@ func mockFailingDtClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.On("Build", mock.Anything).Return(nil, errors.New("BOOM"))
+	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(nil, errors.New("BOOM"))
 
 	return mockDtcBuilder
 }
@@ -398,9 +412,9 @@ func mockSuccessfulDtClientBuilder(t *testing.T) dynatraceclient.Builder {
 	t.Helper()
 
 	mockDtcBuilder := dtbuildermock.NewBuilder(t)
-	mockDtcBuilder.On("SetDynakube", mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.On("SetTokens", mock.Anything).Return(mockDtcBuilder)
-	mockDtcBuilder.On("Build", mock.Anything).Return(dtclientmock.NewClient(t), nil)
+	mockDtcBuilder.EXPECT().SetDynakube(mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.EXPECT().SetTokens(mock.Anything).Return(mockDtcBuilder)
+	mockDtcBuilder.EXPECT().Build(mock.Anything).Return(dtclientmock.NewClient(t), nil)
 
 	return mockDtcBuilder
 }

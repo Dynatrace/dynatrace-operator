@@ -171,6 +171,7 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 
 	return append(opts,
 		helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
+		helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
 		helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
 	), nil
 }

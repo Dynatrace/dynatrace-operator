@@ -71,22 +71,8 @@ func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
 	return updater.dk.OneAgent().IsAutoUpdateEnabled()
 }
 
-func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FF().IsPublicRegistry() && !updater.dk.OneAgent().IsClassicFullStackMode()
-	if isPublicRegistry {
-		setVerifiedCondition(updater.dk.Conditions(), oaConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
-	}
-
-	return isPublicRegistry
-}
-
-func (updater oneAgentUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imageInfo, err := updater.dtClient.GetLatestOneAgentImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)
-	}
-
-	return imageInfo, err
+func (updater oneAgentUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
 }
 
 func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
@@ -132,16 +118,8 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 
 	var err error
 
-	switch updater.Target().Source {
-	case status.TenantRegistryVersionSource:
-		previousVersion = updater.Target().Version
-	case status.PublicRegistryVersionSource:
-		previousVersion, err = getTagFromImageID(imageID)
-		if err != nil {
-			setVerificationFailedReasonCondition(updater.dk.Conditions(), oaConditionType, err)
-
-			return false, err
-		}
+	if updater.Target().Source == status.TenantRegistryVersionSource {
+		previousVersion = updater.Target().Version //nolint:staticcheck
 	}
 
 	downgrade, err := isDowngrade(updater.Name(), previousVersion, latestVersion)

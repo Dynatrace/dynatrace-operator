@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -19,37 +18,30 @@ import (
 )
 
 func TestCodeModulesUpdater(t *testing.T) {
-	ctx := context.Background()
-	testImage := dtclient.LatestImageInfo{
-		Source: "some.registry.com",
-		Tag:    "1.2.3.4-5",
-	}
+	testVersion := "1.2.3.4-5"
+	testImage := "some.registry.com:" + testVersion
 
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						Version: testImage.Tag,
+						Version: testVersion,
 						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage.String(),
+							CodeModulesImage: testImage,
 						},
 					},
 				},
 			},
 		}
 		mockClient := dtclientmock.NewClient(t)
-		mockCodeModulesImageInfo(mockClient, testImage)
 		updater := newCodeModulesUpdater(dk, mockClient)
 
 		assert.Equal(t, "codemodules", updater.Name())
 		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage, updater.CustomImage())
-		assert.Equal(t, dk.Spec.OneAgent.ApplicationMonitoring.Version, updater.CustomVersion())
+		assert.Equal(t, dk.Spec.OneAgent.ApplicationMonitoring.Version, updater.CustomVersion()) //nolint:staticcheck
 		assert.True(t, updater.IsAutoUpdateEnabled())
-		imageInfo, err := updater.LatestImageInfo(ctx)
-		require.NoError(t, err)
-		assert.Equal(t, testImage, *imageInfo)
 	})
 }
 
@@ -150,63 +142,6 @@ func TestCodeModulesIsEnabled(t *testing.T) {
 		assert.Nil(t, condition)
 
 		assert.Empty(t, updater.Target())
-	})
-}
-
-func TestCodeModulesPublicRegistry(t *testing.T) {
-	t.Run("sets condition if enabled", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.PublicRegistryKey: "true",
-				},
-			},
-		}
-
-		updater := newCodeModulesUpdater(dk, nil)
-
-		isEnabled := updater.IsPublicRegistryEnabled()
-		require.True(t, isEnabled)
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), cmConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, verifiedReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-	})
-	t.Run("ignores conditions if not enabled", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-
-		updater := newCodeModulesUpdater(dk, nil)
-
-		isEnabled := updater.IsPublicRegistryEnabled()
-		require.False(t, isEnabled)
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), cmConditionType)
-		require.Nil(t, condition)
-	})
-}
-
-func TestCodeModulesLatestImageInfo(t *testing.T) {
-	t.Run("problem with Dynatrace request => visible in conditions", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.PublicRegistryKey: "true",
-				},
-			},
-		}
-
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetLatestCodeModulesImage(anyCtx).Return(nil, errors.New("BOOM")).Once()
-		updater := newCodeModulesUpdater(dk, mockClient)
-
-		_, err := updater.LatestImageInfo(context.Background())
-		require.Error(t, err)
-
-		condition := meta.FindStatusCondition(*dk.Conditions(), cmConditionType)
-		require.NotNil(t, condition)
-		assert.Equal(t, k8sconditions.DynatraceAPIErrorReason, condition.Reason)
-		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	})
 }
 

@@ -99,7 +99,6 @@ tests:
             initContainers:
             - name: csi-init
               image: image-name
-              imagePullPolicy: Always
               args:
               - csi-init
               env:
@@ -214,7 +213,6 @@ tests:
                   - name: GOMEMLIMIT
                     value: 90MiB
                 image: image-name
-                imagePullPolicy: Always
                 livenessProbe:
                   failureThreshold: 5
                   httpGet:
@@ -299,7 +297,6 @@ tests:
                         }
                       }
                 image: image-name
-                imagePullPolicy: Always
                 startupProbe:
                   exec:
                     command:
@@ -357,7 +354,6 @@ tests:
                   - name: GOMEMLIMIT
                     value: 27MiB
                 image: image-name
-                imagePullPolicy: Always
                 name: registrar
                 resources:
                   limits:
@@ -390,7 +386,6 @@ tests:
                   - "--health-port=9808"
                   - "--probe-timeout=9s"
                 image: image-name
-                imagePullPolicy: Always
                 name: liveness-probe
                 env:
                 - name: GOMEMLIMIT

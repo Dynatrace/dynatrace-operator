@@ -74,6 +74,7 @@ var (
 		unsupportedOneAgentImage,
 		conflictingHostGroupSettings,
 		deprecatedAutoUpdate,
+		deprecatedOneAgentVersionField,
 		deprecatedFeatureFlag,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,

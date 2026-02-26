@@ -78,6 +78,7 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:Node"
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// Deprecated: This field will be removed in a future release.
 	// Use a specific OneAgent version. Defaults to the latest version from the Dynatrace cluster.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
@@ -140,7 +141,7 @@ type HostInjectSpec struct {
 
 type ApplicationMonitoringSpec struct {
 
-	// Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.
+	// Deprecated: Use a specific OneAgent CodeModule version. Defaults to the latest version from the Dynatrace cluster.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`

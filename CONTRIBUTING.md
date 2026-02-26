@@ -243,11 +243,11 @@ only after you can try to run you test).
 
 ## E2E tests
 
-> **Prerequisites:**
->
-> - Existing kube config with the context of a test K8s cluster
-> - Cleanup the cluster using `make undeploy`
-> - Configured Dynatrace tenant(s) with an access token (see `/test/e2e/testdata/secrets-samples`). Read more about Access tokens on the [official documentation](https://www.dynatrace.com/support/help/manage/access-control/access-tokens).
+**Prerequisites:**
+
+- Existing kube config with the context of a test K8s cluster
+- Cleanup the cluster using `make undeploy`
+- Configured Dynatrace tenant(s) with an access token (see `/test/e2e/testdata/secrets-samples`). Read more about Access tokens on the [official documentation](https://www.dynatrace.com/support/help/manage/access-control/access-tokens).
 
 Check the available E2E tests via make command:
 
@@ -256,6 +256,17 @@ make help | grep 'e2e'
 ```
 
 We recommended only executing the ones related to the changes as each one can take some minutes to finish.
+
+The images of components that are deployed by the operator can be configured using the following environment variables:
+
+- `E2E_EEC_IMAGE`
+- `E2E_LOGMON_IMAGE`
+- `E2E_KSPM_IMAGE`
+- `E2E_OTELC_IMAGE`
+- `E2E_DB_EXECUTOR_IMAGE`
+- `E2E_CODEMODULES_IMAGE`
+
+If an image value is overwritten, `devregistry` will be used as image pull secret. Make sure it contains the proper authentication.
 
 ### Triggering E2E tests on kind in CI
 

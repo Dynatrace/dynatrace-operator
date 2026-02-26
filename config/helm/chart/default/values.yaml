@@ -23,6 +23,7 @@ image: ""
 imageRef:
   repository: "" #path to repo
   tag: "" #defaults to chart version
+  pullPolicy: ""
 
 customPullSecret: ""
 installCRD: true

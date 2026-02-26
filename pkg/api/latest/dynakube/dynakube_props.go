@@ -127,7 +127,7 @@ func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.P
 }
 
 func (dk *DynaKube) IsCodeModulesStatusReady() bool {
-	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsPublicRegistry() {
+	if dk.OneAgent().GetCustomCodeModulesImage() != "" || dk.FF().IsAutomaticRegistry() {
 		if dk.OneAgent().GetCodeModulesImage() == "" {
 			return false
 		}

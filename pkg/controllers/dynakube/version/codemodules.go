@@ -63,22 +63,8 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 	return true
 }
 
-func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
-	isPublicRegistry := updater.dk.FF().IsPublicRegistry()
-	if isPublicRegistry {
-		setVerifiedCondition(updater.dk.Conditions(), cmConditionType) // Bit hacky, as things can still go wrong, but if so we will just overwrite this is LatestImageInfo.
-	}
-
-	return isPublicRegistry
-}
-
-func (updater codeModulesUpdater) LatestImageInfo(ctx context.Context) (*dtclient.LatestImageInfo, error) {
-	imgInfo, err := updater.dtClient.GetLatestCodeModulesImage(ctx)
-	if err != nil {
-		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)
-	}
-
-	return imgInfo, err
+func (updater codeModulesUpdater) IsAutoRegistryEnabled() bool {
+	return updater.dk.FF().IsAutomaticRegistry()
 }
 
 func (updater *codeModulesUpdater) CheckForDowngrade(_ string) (bool, error) {
