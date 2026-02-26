@@ -178,9 +178,6 @@
       automerge: true,
     },
     {
-      matchBaseBranches: [
-        "/^release-\\d+\\.\\d+$/",
-      ],
       separateMinorPatch: true,
     },
     {
