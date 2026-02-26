@@ -9,28 +9,19 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 )
 
 var errMissingKubeSystemUUID = goerrors.New("no kube-system namespace UUID given")
 
-type Reconciler struct {
-	dtc          settings.APIClient
-	clusterLabel string
+type Reconciler struct{}
+
+func NewReconciler() *Reconciler {
+	return &Reconciler{}
 }
 
-type ReconcilerBuilder func(dtc settings.APIClient, dk *dynakube.DynaKube, clusterLabel string) controllers.Reconciler
-
-func NewReconciler(dtc settings.APIClient, clusterLabel string) *Reconciler {
-	return &Reconciler{
-		dtc:          dtc,
-		clusterLabel: clusterLabel,
-	}
-}
-
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtc settings.APIClient, clusterLabel string, dk *dynakube.DynaKube) error {
 	if !k8sconditions.IsOptionalScopeAvailable(dk, dtclient.ConditionTypeAPITokenSettingsRead) {
 		log.Info("api token missing optional scope, skipping reconciliation", "scope", dtclient.TokenScopeSettingsRead)
 
@@ -43,21 +34,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return nil
 	}
 
-	objectID, err := r.createObjectIDIfNotExists(ctx, dk)
+	objectID, err := r.createObjectIDIfNotExists(ctx, dtc, clusterLabel, dk)
 	if err != nil {
 		return err
 	}
 
 	if objectID != "" {
-		log.Info("created kubernetes cluster setting", "clusterLabel", r.clusterLabel, "cluster", dk.Status.KubeSystemUUID, "object id", objectID)
+		log.Info("created kubernetes cluster setting", "clusterLabel", clusterLabel, "cluster", dk.Status.KubeSystemUUID, "object id", objectID)
 	} else {
-		log.Info("kubernetes cluster setting already exists", "clusterLabel", r.clusterLabel, "cluster", dk.Status.KubeSystemUUID)
+		log.Info("kubernetes cluster setting already exists", "clusterLabel", clusterLabel, "cluster", dk.Status.KubeSystemUUID)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context, dtc settings.APIClient, clusterLabel string, dk *dynakube.DynaKube) (string, error) {
 	if dk.Status.KubeSystemUUID == "" {
 		return "", errMissingKubeSystemUUID
 	}
@@ -71,20 +62,20 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context, dk *dynakube
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.KubernetesSettingsSchemaID)
+	settings, err := dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.KubernetesSettingsSchemaID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
 
 	if settings.TotalCount > 0 {
-		if err := r.handleKubernetesAppEnabled(ctx, k8sEntity, dk); err != nil {
+		if err := r.handleKubernetesAppEnabled(ctx, k8sEntity, dtc, dk); err != nil {
 			return "", err
 		}
 
 		return "", nil
 	}
 
-	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(ctx, r.clusterLabel, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID)
+	objectID, err := dtc.CreateOrUpdateKubernetesSetting(ctx, clusterLabel, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID)
 	if err != nil {
 		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
@@ -92,9 +83,9 @@ func (r *Reconciler) createObjectIDIfNotExists(ctx context.Context, dk *dynakube
 	return objectID, nil
 }
 
-func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity settings.K8sClusterME, dk *dynakube.DynaKube) error {
+func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity settings.K8sClusterME, dtc settings.APIClient, dk *dynakube.DynaKube) error {
 	if dk.FF().IsK8sAppEnabled() {
-		appSettings, err := r.dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.AppTransitionSchemaID)
+		appSettings, err := dtc.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.AppTransitionSchemaID)
 		if err != nil {
 			if !core.IsNotFound(err) {
 				return errors.WithMessage(err, "error trying to check if app setting exists")
@@ -110,7 +101,7 @@ func (r *Reconciler) handleKubernetesAppEnabled(ctx context.Context, k8sEntity s
 		if appSettings.TotalCount == 0 {
 			meID := k8sEntity.ID
 			if meID != "" {
-				transitionSchemaObjectID, err := r.dtc.CreateOrUpdateKubernetesAppSetting(ctx, meID)
+				transitionSchemaObjectID, err := dtc.CreateOrUpdateKubernetesAppSetting(ctx, meID)
 				if err != nil {
 					log.Info("schema app-transition.kubernetes failed to set", "meID", meID, "err", err)
 
