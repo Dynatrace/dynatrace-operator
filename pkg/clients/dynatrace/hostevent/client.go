@@ -47,7 +47,7 @@ func (e EntityNotFoundError) Error() string {
 	return "HOST entity not found for IP: " + e.IP
 }
 
-type hostsResponse struct {
+type HostsResponse struct {
 	EntityID      string   `json:"entityId"`
 	NetworkZoneID string   `json:"networkZoneId"`
 	IPAddresses   []string `json:"ipAddresses"`
@@ -59,7 +59,7 @@ type hostEntityMap map[string]string
 // Update adds or overwrites the IP-to-Entity mapping if the IP already existed.
 // The reason we do this "overwrite check" is somewhat unknown, it used to be part of a "caching" logic, however that cache was actually never really used.
 // Kept it "as is" mainly to not introduce new behavior, it is unknown how the API we use handles repeated IP usage. But it can be just dead code.
-func (entityMap hostEntityMap) Update(info hostsResponse) {
+func (entityMap hostEntityMap) Update(info HostsResponse) {
 	for _, ip := range info.IPAddresses {
 		if oldEntityID, ok := entityMap[ip]; ok {
 			log.Info("hosts mapping: duplicate IP, replacing HOST entity to 'newer' one", "ip", ip, "new", info.EntityID, "old", oldEntityID)
@@ -75,7 +75,7 @@ func (c *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error
 		return "", errors.New("must provide IP")
 	}
 
-	var hosts []hostsResponse
+	var hosts []HostsResponse
 
 	err := c.apiClient.GET(ctx, hostsPath).
 		WithQueryParams(map[string]string{
@@ -96,7 +96,7 @@ func (c *Client) GetEntityIDForIP(ctx context.Context, ip string) (string, error
 	return entityID, nil
 }
 
-func buildHostEntityMap(hosts []hostsResponse, networkZone string) hostEntityMap {
+func buildHostEntityMap(hosts []HostsResponse, networkZone string) hostEntityMap {
 	entities := make(hostEntityMap)
 
 	for _, host := range hosts {
@@ -124,7 +124,8 @@ type EventAttachRules struct {
 }
 
 func NewMarkForTerminationEvent(entityID, source, description string, timestamp time.Time) Event {
-	ts := uint64(timestamp.UnixNano() / int64(time.Millisecond))
+	ts := uint64(timestamp.UnixNano() / int64(time.Millisecond)) //nolint:gosec // won't overflow
+
 	return Event{
 		EventType:   MarkedForTerminationEvent,
 		Description: description,

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,9 +56,9 @@ func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 		}
 	}
 
-	responses := make([]dtclient.HostInfoResponse, bc.NumEntities)
+	responses := make([]hostevent.HostsResponse, bc.NumEntities)
 	for i := range bc.NumEntities {
-		responses[i] = dtclient.HostInfoResponse{
+		responses[i] = hostevent.HostsResponse{
 			EntityID:    generateEntityID(i),
 			IPAddresses: []string{generateNodeIP(i)},
 		}

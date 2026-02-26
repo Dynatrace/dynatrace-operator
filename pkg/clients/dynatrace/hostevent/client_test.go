@@ -20,11 +20,11 @@ func TestGetEntityIDForIP(t *testing.T) {
 			}).
 			Return(req).Once()
 		req.EXPECT().
-			Execute(new([]hostsResponse)).
+			Execute(new([]HostsResponse)).
 			Run(func(model any) {
 				if err == nil {
-					resp := model.(*[]hostsResponse)
-					*resp = []hostsResponse{
+					resp := model.(*[]HostsResponse)
+					*resp = []HostsResponse{
 						{EntityID: "HOST-42", IPAddresses: []string{"1.1.1.1"}},
 					}
 				}
@@ -53,7 +53,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 		client := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"})
 		_, err := client.GetEntityIDForIP(t.Context(), "1.1.1.1")
 		require.True(t, core.IsNotFound(err))
-		assert.Equal(t, hostsPath+" is not available on the tenant", err.(*core.HTTPError).Message)
+		assert.EqualError(t, err, hostsPath+" is not available on the tenant")
 	})
 
 	t.Run("api error generic", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 }
 
 func Test_buildHostEntityMap(t *testing.T) {
-	hosts := []hostsResponse{
+	hosts := []HostsResponse{
 		{
 			EntityID:      "HOST-1",
 			NetworkZoneID: "default",
@@ -84,7 +84,7 @@ func Test_buildHostEntityMap(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		hosts       []hostsResponse
+		hosts       []HostsResponse
 		networkZone string
 		want        hostEntityMap
 	}{
@@ -163,7 +163,7 @@ func TestSendEvent(t *testing.T) {
 		client := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"})
 		err := client.SendEvent(t.Context(), Event{EventType: "TEST"})
 		require.True(t, core.IsNotFound(err))
-		assert.Equal(t, eventsPath+" is not available on the tenant", err.(*core.HTTPError).Message)
+		assert.EqualError(t, err, eventsPath+" is not available on the tenant")
 	})
 
 	t.Run("api error generic", func(t *testing.T) {
