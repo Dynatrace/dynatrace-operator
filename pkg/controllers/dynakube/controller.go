@@ -304,6 +304,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 
 	if err := controller.proxyReconciler.Reconcile(ctx, dk); err != nil {
 		log.Info("could not reconcile proxy resources")
+
 		return err
 	}
 

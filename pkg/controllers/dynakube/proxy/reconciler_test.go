@@ -63,6 +63,7 @@ func createDynaKube() *dynakube.DynaKube {
 func createDynaKubeWithProxy(proxy *value.Source) *dynakube.DynaKube {
 	dk := createDynaKube()
 	dk.Spec.Proxy = proxy
+
 	return dk
 }
 
