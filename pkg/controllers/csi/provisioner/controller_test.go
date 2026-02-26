@@ -34,13 +34,11 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("no dynakube(ie.: delete case) => do nothing, no error", func(t *testing.T) { // TODO: Replace "do nothing" with "run GC"
 		prov := createProvisioner(t)
 		dk := createDynaKubeBase(t)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
@@ -51,7 +49,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynaKubeNoCSI(t)
 		prov := createProvisioner(t, dk)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
@@ -63,7 +61,7 @@ func TestReconcile(t *testing.T) {
 		dk := createNotReadyDynaKube(t)
 		prov := createProvisioner(t, dk)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
@@ -77,7 +75,7 @@ func TestReconcile(t *testing.T) {
 		dk.Status.CodeModules.ImageID = ""
 		prov := createProvisioner(t, dk)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
@@ -90,7 +88,7 @@ func TestReconcile(t *testing.T) {
 		dk.Status.CodeModules.Version = string(status.CustomImageVersionSource)
 		prov := createProvisioner(t, dk)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
@@ -104,7 +102,7 @@ func TestReconcile(t *testing.T) {
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, createSuccessfulInstaller(t))
 		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
@@ -117,7 +115,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk, createToken(t, dk))
 		prov.dynatraceClientBuilder = mockFailingDtClientBuilder(t)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
 		require.NotNil(t, result)
 
@@ -133,7 +131,7 @@ func TestReconcile(t *testing.T) {
 		prov.urlInstallerBuilder = mockURLInstallerBuilder(t, unavailableInstaller)
 		prov.dynatraceClientBuilder = mockSuccessfulDtClientBuilder(t)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, shortRequeueDuration, result.RequeueAfter)
@@ -144,7 +142,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createSuccessfulInstaller(t))
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
@@ -157,7 +155,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t), "")
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
@@ -171,7 +169,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createSuccessfulInstaller(t), dk.Spec.CustomPullSecret)
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
@@ -184,7 +182,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createNotReadyInstaller(t), "")
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, notReadyRequeueDuration, result.RequeueAfter)
@@ -197,7 +195,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createFailingInstaller(t), "")
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
 		require.NotNil(t, result)
 
@@ -209,7 +207,7 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createFailingInstaller(t))
 
-		result, err := prov.Reconcile(ctx, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
 		require.NotNil(t, result)
 
