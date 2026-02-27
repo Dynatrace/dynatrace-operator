@@ -3,6 +3,7 @@ package bootstrapperconfig
 import (
 	"context"
 	"encoding/json"
+	goerrors "errors"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
@@ -47,6 +48,8 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
+	var errs []error
+
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
@@ -60,13 +63,15 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, namespaces, dk, data)
 		if err != nil {
-			return errors.WithStack(err)
+			errs = append(errs, errors.WithStack(err))
 		}
 	}
 
 	certs, err := s.generateCerts(ctx, dk)
 	if err != nil {
-		return errors.WithStack(err)
+		errs = append(errs, errors.WithStack(err))
+
+		return goerrors.Join(errs...)
 	}
 
 	if len(certs) != 0 {
@@ -78,13 +83,16 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		// Create the certs secret for all namespaces
 		err := s.createSecretForNSlist(ctx, consts.BootstrapperInitCertsSecretName, CertsConditionType, namespaces, dk, certs)
 		if err != nil {
-			return errors.WithStack(err)
+			errs = append(errs, errors.WithStack(err))
 		}
 	} else if meta.FindStatusCondition(*dk.Conditions(), CertsConditionType) != nil {
-		return cleanupCerts(ctx, s.client, s.apiReader, namespaces, dk)
+		err := cleanupCerts(ctx, s.client, s.apiReader, namespaces, dk)
+		if err != nil {
+			errs = append(errs, errors.WithStack(err))
+		}
 	}
 
-	return nil
+	return goerrors.Join(errs...)
 }
 
 func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-limit
