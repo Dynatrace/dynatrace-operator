@@ -115,7 +115,7 @@ make go/check-version
 
     ```sh
     export REPOSITORY=<your GitHub handle>
-    make build && make deploy
+    make build deploy
     ```
 
 > [!IMPORTANT]
@@ -124,7 +124,7 @@ make go/check-version
 > If you want to push to ghcr.io, make sure to authenticate to the registry: https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry
 > You can also set `IMAGE`, which will reconfigure both registry and repository.
 >
-> **For operator development team:** Use the `-local` suffix with make targets (e.g., `make images/build/push-local && make deploy-local`).
+> **For operator development team:** Use the `-local` suffix with make targets (e.g., `make images/build/push-local deploy-local`).
 > This automatically sets `REGISTRY=quay.io` and runs the target with the `-local` suffix removed, avoiding conflicts with CI builds on ghcr.io.
 
 8. Create a pull request from the fork ([see guide](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)), with a proper title and fill out the description template. Once everything is ready, set the PR ready for review.
