@@ -188,7 +188,6 @@ func TestReconcileErrors(t *testing.T) {
 
 func TestHandleKubernetesAppEnabled(t *testing.T) {
 	t.Run("don't create app setting due to empty MonitoredEntitys", func(t *testing.T) {
-
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.AppTransitionSchemaID).
