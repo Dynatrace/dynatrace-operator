@@ -52,29 +52,6 @@ const (
 	versionsResponse       = `{ "availableVersions": [ "1.123.1", "1.123.2", "1.123.3", "1.123.4" ] }`
 )
 
-func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client) {
-	ctx := context.Background()
-
-	t.Run("os field is required", func(t *testing.T) {
-		_, err := dynatraceClient.GetLatestAgentVersion(ctx, "", InstallerTypeDefault)
-
-		require.Error(t, err, "empty OS")
-	})
-
-	t.Run("installer field is required", func(t *testing.T) {
-		_, err := dynatraceClient.GetLatestAgentVersion(ctx, OsUnix, "")
-
-		require.Error(t, err, "empty installer type")
-	})
-
-	t.Run("happy path", func(t *testing.T) {
-		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(ctx, OsUnix, InstallerTypePaaS)
-
-		require.NoError(t, err)
-		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")
-	})
-}
-
 func TestGetLatestAgent(t *testing.T) {
 	ctx := context.Background()
 
@@ -212,18 +189,6 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 		}
 
 		_, _ = writer.Write(resp)
-	default:
-		writeError(writer, http.StatusMethodNotAllowed)
-	}
-}
-
-func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter) {
-	switch request.Method {
-	case http.MethodGet:
-		writer.WriteHeader(http.StatusOK)
-
-		out, _ := json.Marshal(map[string]string{"latestAgentVersion": "1.242.0.20220429-180918"})
-		_, _ = writer.Write(out)
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}

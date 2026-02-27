@@ -2,7 +2,6 @@ package version
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -11,6 +10,8 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -83,8 +84,12 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
+		versionClient := versionclientmock.NewAPIClient(t)
 		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, testVersion, 1)
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			Version: versionClient,
+		})
+		mockLatestAgentVersion(versionClient, testVersion, 1)
 		updater := newCodeModulesUpdater(dk, mockClient)
 
 		err := updater.UseTenantRegistry(ctx)
@@ -105,10 +110,13 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
+
+		versionClient := versionclientmock.NewAPIClient(t)
+		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, dtclient.OsUnix, dtclient.InstallerTypePaaS).Return("", errors.New("BOOM")).Once()
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().
-			GetLatestAgentVersion(anyCtx, dtclient.OsUnix, dtclient.InstallerTypePaaS).
-			Return("", errors.New("BOOM")).Once()
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			Version: versionClient,
+		})
 		updater := newCodeModulesUpdater(dk, mockClient)
 
 		err := updater.UseTenantRegistry(ctx)

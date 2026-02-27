@@ -26,22 +26,6 @@ func (dtc *dynatraceClient) GetLatestAgent(ctx context.Context, os, installerTyp
 	return err
 }
 
-// GetLatestAgentVersion gets the latest agent version for the given OS and installer type configured on the Tenant.
-func (dtc *dynatraceClient) GetLatestAgentVersion(ctx context.Context, os, installerType string) (string, error) {
-	response := struct {
-		LatestAgentVersion string `json:"latestAgentVersion"`
-	}{}
-
-	if len(os) == 0 || len(installerType) == 0 {
-		return "", errors.New("os or installerType is empty")
-	}
-
-	url := dtc.getLatestAgentVersionURL(os, installerType, determineFlavor(installerType), determineArch(installerType))
-	err := dtc.makeRequestAndUnmarshal(ctx, url, dynatracePaaSToken, &response)
-
-	return response.LatestAgentVersion, errors.WithStack(err)
-}
-
 // determineArch gives you the proper arch value, because the OSAgent and ActiveGate images on the tenant-image-registry only have AMD images.
 func determineArch(installerType string) string {
 	if installerType == InstallerTypeDefault {
@@ -49,15 +33,6 @@ func determineArch(installerType string) string {
 	}
 
 	return arch.Arch
-}
-
-// determineFlavor gives you the proper flavor value, because the default installer type has no "multidistro" flavor so the default flavor is always needed in that case.
-func determineFlavor(installerType string) string { //nolint:nolintlint,unparam
-	if installerType == InstallerTypeDefault {
-		return arch.FlavorDefault
-	}
-
-	return arch.Flavor
 }
 
 // GetAgentVersions gets available agent versions for the given OS and installer type.

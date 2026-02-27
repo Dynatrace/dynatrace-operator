@@ -11,10 +11,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -54,8 +56,12 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
+		versionClient := versionclientmock.NewAPIClient(t)
+		versionClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return("", errors.New("Something wrong happened"))
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return("", errors.New("Something wrong happened"))
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			Version: versionClient,
+		})
 
 		versionReconciler := reconciler{
 			dtClient:     mockClient,
@@ -79,9 +85,13 @@ func TestReconcile(t *testing.T) {
 		setupPullSecret(t, fakeClient, *dk)
 
 		dkStatus := &dk.Status
+		versionClient := versionclientmock.NewAPIClient(t)
 		mockClient := dtclientmock.NewClient(t)
-		mockLatestAgentVersion(mockClient, latestAgentVersion, 3)
-		mockLatestActiveGateVersion(mockClient, latestActiveGateVersion)
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
+			Version: versionClient,
+		})
+		mockLatestAgentVersion(versionClient, latestAgentVersion, 3)
+		mockLatestActiveGateVersion(versionClient, latestActiveGateVersion)
 
 		versionReconciler := reconciler{
 			apiReader:    fakeClient,
@@ -314,10 +324,10 @@ func setOneAgentCustomImageStatus(dk *dynakube.DynaKube, image string) {
 	dk.Status.OneAgent.ImageID = image
 }
 
-func mockLatestAgentVersion(mockClient *dtclientmock.Client, latestVersion string, expectedCalls int) {
+func mockLatestAgentVersion(mockClient *versionclientmock.APIClient, latestVersion string, expectedCalls int) {
 	mockClient.EXPECT().GetLatestAgentVersion(anyCtx, mock.Anything, mock.Anything).Return(latestVersion, nil).Times(expectedCalls)
 }
 
-func mockLatestActiveGateVersion(mockClient *dtclientmock.Client, latestVersion string) {
+func mockLatestActiveGateVersion(mockClient *versionclientmock.APIClient, latestVersion string) {
 	mockClient.EXPECT().GetLatestActiveGateVersion(anyCtx, mock.Anything).Return(latestVersion, nil).Once()
 }

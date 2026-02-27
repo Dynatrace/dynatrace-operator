@@ -170,8 +170,6 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	require.NotNil(t, dtc)
 
 	// TODO: Fix this monster, this is not ok
-	testAgentVersionGetLatestAgentVersion(t, dtc)
-	testActiveGateVersionGetLatestActiveGateVersion(t, dtc)
 	testGetTokenScopes(t, dtc)
 
 	testServerErrors(t)
@@ -190,15 +188,9 @@ func dynatraceServerHandler(t *testing.T) http.HandlerFunc {
 }
 
 func handleRequest(request *http.Request, writer http.ResponseWriter) {
-	latestAgentVersion := fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo", OsUnix, InstallerTypePaaS)
-	latestActiveGateVersion := fmt.Sprintf("/v1/deployment/installer/gateway/%s/latest/metainfo", OsUnix)
 	agentVersions := fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", OsUnix, InstallerTypePaaS)
 
 	switch request.URL.Path {
-	case latestAgentVersion:
-		handleLatestAgentVersion(request, writer)
-	case latestActiveGateVersion:
-		handleLatestActiveGateVersion(request, writer)
 	case agentVersions:
 		handleAvailableAgentVersions(request, writer)
 	case "/v1/deployment/installer/agent/connectioninfo":

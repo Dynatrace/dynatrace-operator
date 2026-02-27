@@ -79,7 +79,7 @@ func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
-	latestVersion, err := updater.dtClient.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
+	latestVersion, err := updater.dtClient.AsV2().Version.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)

@@ -84,7 +84,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 		return nil
 	}
 
-	latestAgentVersionUnixPaas, err := updater.dtClient.GetLatestAgentVersion(ctx,
+	latestAgentVersionUnixPaas, err := updater.dtClient.AsV2().Version.GetLatestAgentVersion(ctx,
 		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
