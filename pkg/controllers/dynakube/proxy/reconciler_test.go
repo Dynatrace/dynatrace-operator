@@ -34,7 +34,7 @@ const (
 func createK8sClientWithProxySecret(t *testing.T) client.Client {
 	t.Helper()
 	mockK8sClient := dtfake.NewClient()
-	_ = mockK8sClient.Create(t.Context(),
+	err := mockK8sClient.Create(t.Context(),
 		&corev1.Secret{
 			Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte("test-token")},
 			ObjectMeta: metav1.ObjectMeta{
@@ -43,6 +43,7 @@ func createK8sClientWithProxySecret(t *testing.T) client.Client {
 			},
 		},
 	)
+	require.NoError(t, err)
 
 	return mockK8sClient
 }
