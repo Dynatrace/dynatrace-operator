@@ -1,7 +1,6 @@
 package pod
 
 import (
-	"context"
 	"net/http"
 	"os"
 
@@ -21,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func registerInjectEndpoint(ctx context.Context, mgr manager.Manager, webhookNamespace string, isOpenShift bool) error {
+func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, isOpenShift bool) error {
 	eventRecorder := events.NewRecorder(mgr.GetEventRecorderFor("dynatrace-webhook")) //nolint
 	kubeConfig := mgr.GetConfig()
 	kubeClient := mgr.GetClient()

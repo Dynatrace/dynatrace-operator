@@ -28,7 +28,7 @@ const (
 )
 
 func AddWebhookToManager(ctx context.Context, mgr manager.Manager, ns string, isOpenShift bool) error {
-	if err := registerInjectEndpoint(ctx, mgr, ns, isOpenShift); err != nil {
+	if err := registerInjectEndpoint(mgr, ns, isOpenShift); err != nil {
 		return err
 	}
 
