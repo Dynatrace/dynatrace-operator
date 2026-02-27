@@ -31,21 +31,6 @@ const (
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 var anyClusterLabel = testName
 
-type testReconciler struct {
-	Reconciler
-
-	dtClient *settingsmock.APIClient
-}
-
-func newTestReconciler(t *testing.T) *testReconciler {
-	dtClient := settingsmock.NewAPIClient(t)
-
-	return &testReconciler{
-		Reconciler: Reconciler{},
-		dtClient:   dtClient,
-	}
-}
-
 func createMonitoredEntities() settings.K8sClusterME {
 	return settings.K8sClusterME{
 		ID: "KUBERNETES_CLUSTER-119C75CCDA94799F", Name: "operator test entity 1",
@@ -54,9 +39,6 @@ func createMonitoredEntities() settings.K8sClusterME {
 
 func TestReconcile(t *testing.T) {
 	t.Run("create setting when no settings for the found monitored entities are existing", func(t *testing.T) {
-		dk := newDynaKube()
-		r := newTestReconciler(t)
-
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
@@ -65,15 +47,13 @@ func TestReconcile(t *testing.T) {
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, testMEID).
 			Return(testObjectID, nil).Once()
 
-		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, dk)
+		r := NewReconciler()
+		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, newDynaKube())
 		require.NoError(t, err)
 		assert.Equal(t, testObjectID, actual)
 	})
 
 	t.Run("don't create setting when settings for the found monitored entities are existing", func(t *testing.T) {
-		dk := newDynaKube()
-		r := newTestReconciler(t)
-
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
@@ -82,7 +62,8 @@ func TestReconcile(t *testing.T) {
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.AppTransitionSchemaID).
 			Return(settings.GetSettingsResponse{TotalCount: 1}, nil).Once()
 
-		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, dk)
+		r := NewReconciler()
+		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, newDynaKube())
 		require.NoError(t, err)
 		assert.Empty(t, actual)
 	})
@@ -90,8 +71,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("optional scope settings.read not available", func(t *testing.T) {
 		dk := newDynaKube()
 		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsRead, "not available")
-		r := newTestReconciler(t)
 
+		r := NewReconciler()
 		err := r.Reconcile(t.Context(), settingsmock.NewAPIClient(t), anyClusterLabel, dk)
 		require.NoError(t, err)
 	})
@@ -99,16 +80,13 @@ func TestReconcile(t *testing.T) {
 	t.Run("optional scope settings.write not available", func(t *testing.T) {
 		dk := newDynaKube()
 		k8sconditions.SetOptionalScopeMissing(dk.Conditions(), dtclient.ConditionTypeAPITokenSettingsWrite, "not available")
-		r := newTestReconciler(t)
 
+		r := NewReconciler()
 		err := r.Reconcile(t.Context(), settingsmock.NewAPIClient(t), anyClusterLabel, dk)
 		require.NoError(t, err)
 	})
 
 	t.Run("app-transition schema not found", func(t *testing.T) {
-		dk := newDynaKube()
-		r := newTestReconciler(t)
-
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
@@ -117,14 +95,14 @@ func TestReconcile(t *testing.T) {
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.AppTransitionSchemaID).
 			Return(settings.GetSettingsResponse{}, &core.HTTPError{StatusCode: 404}).Once()
 
-		err := r.Reconcile(t.Context(), dtClient, anyClusterLabel, dk)
+		r := NewReconciler()
+		err := r.Reconcile(t.Context(), dtClient, anyClusterLabel, newDynaKube())
 		require.NoError(t, err)
 	})
 
 	t.Run("reconcile k8sentity again on first run", func(t *testing.T) {
 		dk := newDynaKube()
 		dk.Status.KubernetesClusterMEID = ""
-		r := newTestReconciler(t)
 
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
@@ -134,6 +112,7 @@ func TestReconcile(t *testing.T) {
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, "").
 			Return(testObjectID, nil).Once()
 
+		r := NewReconciler()
 		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, dk)
 		require.NoError(t, err)
 		assert.Equal(t, testObjectID, actual)
@@ -144,8 +123,8 @@ func TestReconcileErrors(t *testing.T) {
 	t.Run("missing kube-system uuid", func(t *testing.T) {
 		dk := newDynaKube()
 		dk.Status.KubeSystemUUID = ""
-		r := newTestReconciler(t)
 
+		r := NewReconciler()
 		actual, err := r.createObjectIDIfNotExists(t.Context(), settingsmock.NewAPIClient(t), anyClusterLabel, dk)
 
 		require.ErrorIs(t, err, errMissingKubeSystemUUID)
@@ -155,15 +134,13 @@ func TestReconcileErrors(t *testing.T) {
 	t.Run("get kubernetes settings fails", func(t *testing.T) {
 		expectErr := errors.New("could not get settings for monitored entities")
 
-		dk := newDynaKube()
-		r := newTestReconciler(t)
-
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
 			Return(settings.GetSettingsResponse{}, expectErr).Once()
 
-		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, dk)
+		r := NewReconciler()
+		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, newDynaKube())
 
 		require.ErrorIs(t, err, expectErr)
 		assert.Empty(t, actual)
@@ -171,9 +148,6 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run("create kubernetes setting fails", func(t *testing.T) {
 		expectErr := errors.New("could not create kubernetes setting")
-
-		dk := newDynaKube()
-		r := newTestReconciler(t)
 
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
@@ -183,7 +157,8 @@ func TestReconcileErrors(t *testing.T) {
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, testMEID).
 			Return("", expectErr).Once()
 
-		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, dk)
+		r := NewReconciler()
+		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, newDynaKube())
 
 		require.ErrorIs(t, err, expectErr)
 		assert.Empty(t, actual)
@@ -191,9 +166,6 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run("create kubernetes app setting fails", func(t *testing.T) {
 		expectErr := errors.New("could not create monitored entity")
-
-		dk := newDynaKube()
-		r := newTestReconciler(t)
 
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
@@ -206,7 +178,8 @@ func TestReconcileErrors(t *testing.T) {
 			CreateOrUpdateKubernetesAppSetting(anyCtx, testMEID).
 			Return("", expectErr).Once()
 
-		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, dk)
+		r := NewReconciler()
+		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, newDynaKube())
 
 		require.ErrorIs(t, err, expectErr)
 		assert.Empty(t, actual)
@@ -215,44 +188,40 @@ func TestReconcileErrors(t *testing.T) {
 
 func TestHandleKubernetesAppEnabled(t *testing.T) {
 	t.Run("don't create app setting due to empty MonitoredEntitys", func(t *testing.T) {
-		dk := newDynaKube()
-		r := newTestReconciler(t)
 
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.AppTransitionSchemaID).
 			Return(settings.GetSettingsResponse{}, nil).Once()
 
-		err := r.handleKubernetesAppEnabled(t.Context(), settings.K8sClusterME{}, dtClient, dk)
+		r := NewReconciler()
+		err := r.handleKubernetesAppEnabled(t.Context(), settings.K8sClusterME{}, dtClient, newDynaKube())
 		require.NoError(t, err)
 	})
 
 	t.Run("don't create app setting as settings already exist", func(t *testing.T) {
 		entity := createMonitoredEntities()
-		dk := newDynaKube()
-		r := newTestReconciler(t)
 
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, entity, settings.AppTransitionSchemaID).
 			Return(settings.GetSettingsResponse{TotalCount: 1}, nil).Once()
 
-		err := r.handleKubernetesAppEnabled(t.Context(), entity, dtClient, dk)
+		r := NewReconciler()
+		err := r.handleKubernetesAppEnabled(t.Context(), entity, dtClient, newDynaKube())
 		require.NoError(t, err)
 	})
 
 	t.Run("don't create app setting when get entities api response is error", func(t *testing.T) {
 		expectErr := errors.New("could not get monitored entities")
 
-		dk := newDynaKube()
-		r := newTestReconciler(t)
-
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.AppTransitionSchemaID).
 			Return(settings.GetSettingsResponse{}, expectErr).Once()
 
-		err := r.handleKubernetesAppEnabled(t.Context(), settings.K8sClusterME{}, dtClient, dk)
+		r := NewReconciler()
+		err := r.handleKubernetesAppEnabled(t.Context(), settings.K8sClusterME{}, dtClient, newDynaKube())
 		require.ErrorIs(t, err, expectErr)
 	})
 
@@ -260,8 +229,6 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		expectErr := errors.New("could not create app setting")
 
 		entity := createMonitoredEntities()
-		dk := newDynaKube()
-		r := newTestReconciler(t)
 
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
@@ -271,14 +238,14 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 			CreateOrUpdateKubernetesAppSetting(anyCtx, entity.ID).
 			Return("", expectErr).Once()
 
-		err := r.handleKubernetesAppEnabled(t.Context(), entity, dtClient, dk)
+		r := NewReconciler()
+		err := r.handleKubernetesAppEnabled(t.Context(), entity, dtClient, newDynaKube())
 		require.ErrorIs(t, err, expectErr)
 	})
 
 	t.Run("create app setting as settings already exist", func(t *testing.T) {
 		entity := createMonitoredEntities()
-		dk := newDynaKube()
-		r := newTestReconciler(t)
+		r := NewReconciler()
 
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
@@ -288,7 +255,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 			CreateOrUpdateKubernetesAppSetting(anyCtx, entity.ID).
 			Return("test", nil).Once()
 
-		err := r.handleKubernetesAppEnabled(t.Context(), entity, dtClient, dk)
+		err := r.handleKubernetesAppEnabled(t.Context(), entity, dtClient, newDynaKube())
 		require.NoError(t, err)
 	})
 }
