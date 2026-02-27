@@ -64,7 +64,8 @@ If the bug flew under the radar, and got discovered later:
 
 ## Quick start
 
-> **Important:** Use the exact Go version specified in the Dockerfile.
+> [!IMPORTANT]
+> Use the exact Go version specified in the Dockerfile.
 > Mismatched versions can cause golangci-lint inconsistencies and CI failures.
 
 1. Verify your Go version matches the [`Dockerfile`](./Dockerfile):
@@ -90,22 +91,23 @@ make go/check-version
 
 5. Create a new branch to work on:
 
-    > Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`.
-
    ```sh
    git checkout -b feature/your-branch
    ```
 
-6. Once the changes are finished, make sure there are no warnings in the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
+> [!NOTE]
+> Group your branch into a category using a prefix for your branch name, like `feature/`, `ci/`, `bugfix/`, `doc/`.
 
-    > **NOTE:**
-    > Unit tests can also be automatically run via pre-commit hook, installed by running `make prerequisites/setup-pre-commit`.
-    > With the pre-commit hook can only commit code that passes all checks.
+6. Once the changes are finished, make sure there are no warnings in the code. For debugging you can [run the unit tests](#unit-tests) and [end-to-end tests](#e2e-tests).
 
     ```sh
     make go/test
     make test/e2e/<scope_of_the_changes>
     ```
+
+> [!NOTE]
+> Unit tests can also be automatically run via pre-commit hook, installed by running `make prerequisites/setup-pre-commit`.
+> With the pre-commit hook can only commit code that passes all checks.
 
 7. To test your changes on a cluster:
     1. Connect to a cluster using `kubectl`
