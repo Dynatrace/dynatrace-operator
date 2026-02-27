@@ -91,13 +91,13 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
-		proxyReconcilerBuilder:              proxy.NewReconciler,
 
 		apiMonitoringReconciler: apimonitoring.NewReconciler(),
 		extensionReconciler:     extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:          kspm.NewReconciler(kubeClient, apiReader),
 		k8sEntityReconciler:     k8sentity.NewReconciler(),
 		otelcReconciler:         otelc.NewReconciler(kubeClient, apiReader),
+		proxyReconciler:         proxy.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -139,6 +139,7 @@ type Controller struct {
 	k8sEntityReconciler     dtSettingReconciler
 	kspmReconciler          dtSettingReconciler
 	otelcReconciler         dynakubeReconciler
+	proxyReconciler         dynakubeReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
@@ -150,7 +151,6 @@ type Controller struct {
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
 	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
-	proxyReconcilerBuilder              proxy.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -306,10 +306,9 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 		return err
 	}
 
-	proxyReconciler := controller.proxyReconcilerBuilder(controller.client, controller.apiReader, dk)
+	if err := controller.proxyReconciler.Reconcile(ctx, dk); err != nil {
+		log.Info("could not reconcile proxy resources")
 
-	err = proxyReconciler.Reconcile(ctx)
-	if err != nil {
 		return err
 	}
 
