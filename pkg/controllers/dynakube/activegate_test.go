@@ -89,11 +89,9 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
-		mockAPIMonitoringReconciler := controllermock.NewReconciler(t)
-
 		controller := &Controller{
-			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder: createAPIMonitoringReconcilerBuilder(mockAPIMonitoringReconciler),
+			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			apiMonitoringReconciler:     newMockapiMonitoringReconciler(t),
 		}
 
 		mockClient := dtclientmock.NewClient(t)
@@ -123,19 +121,21 @@ func TestReconcileActiveGate(t *testing.T) {
 			},
 		}
 
+		settingsClient := &settings.Client{}
+
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
-		mockAPIMonitoringReconciler := controllermock.NewReconciler(t)
-		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
+		mockAPIMonitoringReconciler := newMockapiMonitoringReconciler(t)
+		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx, settingsClient, testName, dk).Return(nil).Once()
 
 		controller := &Controller{
-			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder: createAPIMonitoringReconcilerBuilder(mockAPIMonitoringReconciler),
+			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			apiMonitoringReconciler:     mockAPIMonitoringReconciler,
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
 
 		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
 		require.NoError(t, err)
@@ -165,19 +165,21 @@ func TestReconcileActiveGate(t *testing.T) {
 			},
 		}
 
+		settingsClient := &settings.Client{}
+
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
-		mockAPIMonitoringReconciler := controllermock.NewReconciler(t)
-		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
+		mockAPIMonitoringReconciler := newMockapiMonitoringReconciler(t)
+		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx, settingsClient, clusterLabel, dk).Return(nil).Once()
 
 		controller := &Controller{
-			activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconcilerBuilder: createAPIMonitoringReconcilerBuilder(mockAPIMonitoringReconciler),
+			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
+			apiMonitoringReconciler:     mockAPIMonitoringReconciler,
 		}
 
 		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: &settings.Client{}})
+		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient})
 
 		err := controller.reconcileActiveGate(t.Context(), dk, mockClient, nil)
 		require.NoError(t, err)
