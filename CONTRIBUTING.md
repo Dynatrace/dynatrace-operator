@@ -141,90 +141,79 @@ make go/test
 
 ### Mocking
 
-For our mocking needs we trust in [testify](https://github.com/stretchr/testify) while using [mockery](https://github.com/vektra/mockery) to generate our mocks.
-We check in our mocks to improve code readability especially when reading via GitHub and to remove the dependency on make scripts to run our tests.
-Mockery only has to be run when adding new mocks or have to be updated to changed interfaces.
+For our mocking needs we use [testify](https://github.com/stretchr/testify) with [mockery](https://github.com/vektra/mockery) to generate our mocks.
+We check in our mocks to improve code readability, especially when reading via GitHub, and to remove the dependency on make scripts to run our tests.
+Mockery only has to be run when adding new mocks or updating mocks for changed interfaces.
 
-#### Installing _mockery_
+#### Installing Mockery
 
-Mockery is installed by running (see [docs](https://vektra.github.io/mockery/latest/installation/#go-install) for further information)
+Mockery is installed by running:
 
 ```shell
 make prerequisites/mockery
 ```
 
-#### Adding a mock
+See the [mockery installation documentation](https://vektra.github.io/mockery/latest/installation/) for further information.
 
-When adding a mock you have to add the mocked interface to .mockery.yaml.
+#### Adding a Mock
 
-For **shared mocks** (used across multiple packages), place them in `test/mocks/`:
+When adding a mock, you must add the mocked interface to `.mockery.yaml`. See the [mockery configuration documentation](https://vektra.github.io/mockery/latest/configuration/) for details.
+
+##### Shared Mocks (Exported Interfaces)
+
+For **shared mocks** (used across multiple packages), place them in `test/mocks/`. These use the default configuration defined at the top of `.mockery.yaml`:
 
 ```yaml
-quiet: False
-disable-version-string: True
-with-expecter: True
-mockname: "{{.InterfaceName}}"
-filename: "{{.MockName}}.go"
-outpkg: mocks
-dir: "test/mocks{{.InterfaceDirRelative}}"
+dir: 'test/mocks/{{trimPrefix "dynatrace-operator/" .InterfaceDirRelative}}'
+filename: "{{.InterfaceName | snakecase}}.go"
+structname: '{{.InterfaceName}}'
 packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
-    # all: true // or use all if mocks for all interfaces in a package/dir should be created
     interfaces:
       Builder:
 ```
+
+##### Package-Local Mocks (Unexported Interfaces)
 
 For **single-use mocks** (used in one package only), place them as `_test.go` files in the same package:
 
 ```yaml
 packages:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
-    config:
-      dir: "{{.InterfaceDir}}"
-      pkgname: "{{ .SrcPackageName }}"
-      structname: "{{.Mock}}{{.InterfaceName}}"
-      filename: "mock_{{.InterfaceName | snakecase }}_test.go"
     interfaces:
       StatusUpdater:
+        config:
+          dir: "{{.InterfaceDir}}"
+          pkgname: "{{.SrcPackageName}}"
+          structname: "{{.Mock}}{{.InterfaceName}}"
+          filename: "mock_{{.InterfaceName | snakecase}}_test.go"
 ```
 
-then run mockery by simple running
+##### Generating Mocks
+
+After updating `.mockery.yaml`, run mockery to generate the mocks:
 
 ```shell
 make go/gen_mocks
 ```
 
-#### Migrating to Mockery
+#### Using Mocks in Tests
 
-To move our existing codebase to mockery you have to look out for these pitfalls:
+When using mocks in tests, always use the constructor function with a reference parameter to `testing.T` `mocks.NewXYZ(t)` instead of creating the struct directly (`mocks.XYZ{}`). This allows mockery to track expectations and ensure all expected calls are made:
 
-1. As a rule of thumb, use `mocks.NewXYZ(t)` function instead of `mocks.XYZ{}` struct when any expectation is defined (`On(..)`). It allows to easily detect cases when no expectations are needed or new ones should be added.
+```go
+builderMock := dtbuildermock.NewBuilder(t) // <- t required here
+builderMock.EXPECT().Build(mock.Anything).Return(nil)
+```
 
-2. Mocks require a reference parameter to `testingT`:
-
-   ```go
-   //...
-   builderMock := dtbuildermock.NewBuilder(t) // <- t required here
-   //...
-   ```
-
-3. Add call to `Maybe()` to return if it should be tested if the function is called at all:
-
-    ```go
-    builderMock.On("Build", mock.Anything).Return(nil).Maybe()
-
-    actual, _ := builderMock.Build()
-    builderMock.AssertCalled(t, "Build")
-    //builderMock.AssertNumberOfCalls(t, "Build", 1)
-   ```
-
-  > ❗ In the case of using multiple mock packages in the same test file, the standard package alias naming is `{struct}mock`, e.g. `clientmock`.
-  >
-  > ```go
-  > clientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
-  > installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
-  > reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
-  > ```
+> [!NOTE]
+> When using multiple mock packages in the same test file, the standard package alias naming convention is `{struct}mock`, e.g., `clientmock`.
+>
+> ```go
+> clientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+> installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+> reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
+> ```
 
 ## Integration tests
 
