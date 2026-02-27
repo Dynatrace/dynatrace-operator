@@ -88,16 +88,16 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
 		activeGateReconcilerBuilder:         activegate.NewReconciler,
 		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
-		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
 		injectionReconcilerBuilder:          injection.NewReconciler,
 		istioReconcilerBuilder:              istio.NewReconciler,
 		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
 
-		extensionReconciler: extension.NewReconciler(kubeClient, apiReader),
-		kspmReconciler:      kspm.NewReconciler(kubeClient, apiReader),
-		k8sEntityReconciler: k8sentity.NewReconciler(),
-		otelcReconciler:     otelc.NewReconciler(kubeClient, apiReader),
-		proxyReconciler:     proxy.NewReconciler(kubeClient, apiReader),
+		apiMonitoringReconciler: apimonitoring.NewReconciler(),
+		extensionReconciler:     extension.NewReconciler(kubeClient, apiReader),
+		kspmReconciler:          kspm.NewReconciler(kubeClient, apiReader),
+		k8sEntityReconciler:     k8sentity.NewReconciler(),
+		otelcReconciler:         otelc.NewReconciler(kubeClient, apiReader),
+		proxyReconciler:         proxy.NewReconciler(kubeClient, apiReader),
 	}
 }
 
@@ -111,6 +111,10 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
 		Complete(controller)
+}
+
+type apiMonitoringReconciler interface {
+	Reconcile(ctx context.Context, dtc settings.APIClient, clusterLabel string, dk *dynakube.DynaKube) error
 }
 
 type dynakubeReconciler interface {
@@ -130,11 +134,12 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder record.EventRecorder
 
-	extensionReconciler dynakubeReconciler
-	k8sEntityReconciler dtSettingReconciler
-	kspmReconciler      dtSettingReconciler
-	otelcReconciler     dynakubeReconciler
-	proxyReconciler     dynakubeReconciler
+	apiMonitoringReconciler apiMonitoringReconciler
+	extensionReconciler     dynakubeReconciler
+	k8sEntityReconciler     dtSettingReconciler
+	kspmReconciler          dtSettingReconciler
+	otelcReconciler         dynakubeReconciler
+	proxyReconciler         dynakubeReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
@@ -143,7 +148,6 @@ type Controller struct {
 	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
 	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
 	oneAgentReconcilerBuilder           oneagent.ReconcilerBuilder
-	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
 	injectionReconcilerBuilder          injection.ReconcilerBuilder
 	istioReconcilerBuilder              istio.ReconcilerBuilder
 	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
