@@ -40,18 +40,18 @@ func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 			w.Header().Set("Content-Type", "application/json")
 
 			if r.FormValue("Api-Token") == "" && r.Header.Get("Authorization") == "" {
-				b.Fatal()
+				b.Fatal("missing authorization")
 			}
 
 			switch r.URL.Path {
-			case "/v1/entity/infrastructure/hosts":
+			case "/api/v1/entity/infrastructure/hosts":
 				w.WriteHeader(http.StatusOK)
 				w.Write(expectedHostInfoBytes)
 
-			case "/v1/events":
+			case "/api/v1/events":
 				w.WriteHeader(http.StatusOK)
 			default:
-				b.Fatal()
+				b.Fatal("unexpected path: ", r.URL.Path)
 			}
 		}
 	}
