@@ -588,6 +588,7 @@ func createFailClient(objs ...client.Object) client.Client {
 			if obj.GetName() == consts.BootstrapperInitCertsSecretName {
 				return goerrors.New("failed to create bootstrapper certs secret")
 			}
+
 			return client.Create(ctx, obj, opts...)
 		},
 		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
@@ -597,6 +598,7 @@ func createFailClient(objs ...client.Object) client.Client {
 			if obj.GetName() == consts.BootstrapperInitCertsSecretName {
 				return goerrors.New("failed to update bootstrapper certs secret")
 			}
+
 			return client.Update(ctx, obj, opts...)
 		},
 	}, objs...)
@@ -608,12 +610,14 @@ func createConfigFailClient(objs ...client.Object) client.Client {
 			if obj.GetName() == consts.BootstrapperInitSecretName {
 				return goerrors.New("failed to create bootstrapper config secret")
 			}
+
 			return client.Create(ctx, obj, opts...)
 		},
 		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 			if obj.GetName() == consts.BootstrapperInitSecretName {
 				return goerrors.New("failed to update bootstrapper config secret")
 			}
+
 			return client.Update(ctx, obj, opts...)
 		},
 	}, objs...)

@@ -48,7 +48,7 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
-	var errs []error
+	var retErr error
 
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
@@ -63,15 +63,13 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, namespaces, dk, data)
 		if err != nil {
-			errs = append(errs, errors.WithStack(err))
+			retErr = goerrors.Join(retErr, err)
 		}
 	}
 
 	certs, err := s.generateCerts(ctx, dk)
 	if err != nil {
-		errs = append(errs, errors.WithStack(err))
-
-		return goerrors.Join(errs...)
+		return goerrors.Join(retErr, err)
 	}
 
 	if len(certs) != 0 {
@@ -83,16 +81,16 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		// Create the certs secret for all namespaces
 		err := s.createSecretForNSlist(ctx, consts.BootstrapperInitCertsSecretName, CertsConditionType, namespaces, dk, certs)
 		if err != nil {
-			errs = append(errs, errors.WithStack(err))
+			retErr = goerrors.Join(retErr, err)
 		}
 	} else if meta.FindStatusCondition(*dk.Conditions(), CertsConditionType) != nil {
 		err := cleanupCerts(ctx, s.client, s.apiReader, namespaces, dk)
 		if err != nil {
-			errs = append(errs, errors.WithStack(err))
+			retErr = goerrors.Join(retErr, err)
 		}
 	}
 
-	return goerrors.Join(errs...)
+	return retErr
 }
 
 func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-limit
