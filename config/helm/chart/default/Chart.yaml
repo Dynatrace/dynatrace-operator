@@ -24,9 +24,11 @@ kubeVersion: '>=1.25.0-0'
 maintainers:
 - name: 0sewa0
   email: marcell.sevcsik@dynatrace.com
+- name: andriisoldatenko
+  email: andrii.soldatenko@dynatrace.com
 - name: chrismuellner
   email: christoph.muellner@dynatrace.com
-- name: luhi-DT
-  email: lukas.hinterreiter@dynatrace.com
+- name: geba-dyna
+  email: george.balea@dynatrace.com
 sources:
 - https://github.com/Dynatrace/dynatrace-operator
