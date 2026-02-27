@@ -91,7 +91,7 @@ func TestReconcileActiveGate(t *testing.T) {
 
 		controller := &Controller{
 			activeGateReconcilerBuilder: createActivegateReconcilerBuilder(mockActiveGateReconciler),
-			apiMonitoringReconciler:     newMockapiMonitoringReconciler(t),
+			apiMonitoringReconciler:     newMockApiMonitoringReconciler(t),
 		}
 
 		mockClient := dtclientmock.NewClient(t)
@@ -126,7 +126,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
-		mockAPIMonitoringReconciler := newMockapiMonitoringReconciler(t)
+		mockAPIMonitoringReconciler := newMockApiMonitoringReconciler(t)
 		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx, settingsClient, testName, dk).Return(nil).Once()
 
 		controller := &Controller{
@@ -170,7 +170,7 @@ func TestReconcileActiveGate(t *testing.T) {
 		mockActiveGateReconciler := controllermock.NewReconciler(t)
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 
-		mockAPIMonitoringReconciler := newMockapiMonitoringReconciler(t)
+		mockAPIMonitoringReconciler := newMockApiMonitoringReconciler(t)
 		mockAPIMonitoringReconciler.EXPECT().Reconcile(anyCtx, settingsClient, clusterLabel, dk).Return(nil).Once()
 
 		controller := &Controller{
