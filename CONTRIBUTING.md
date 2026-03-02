@@ -168,9 +168,9 @@ dir: 'test/mocks/{{trimPrefix "dynatrace-operator/" .InterfaceDirRelative}}'
 filename: "{{.InterfaceName | snakecase}}.go"
 structname: '{{.InterfaceName}}'
 packages:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers:
     interfaces:
-      Builder:
+      Reconciler:
 ```
 
 ##### Package-Local Mocks (Unexported Interfaces)
@@ -202,8 +202,8 @@ make go/gen_mocks
 When using mocks in tests, always use the constructor function with a reference parameter to `testing.T` `mocks.NewXYZ(t)` instead of creating the struct directly (`mocks.XYZ{}`). This allows mockery to track expectations and ensure all expected calls are made:
 
 ```go
-builderMock := dtbuildermock.NewBuilder(t) // <- t required here
-builderMock.EXPECT().Build(mock.Anything).Return(nil)
+mockActiveGateReconciler := controllermock.NewReconciler(t) // <- t required here
+mockActiveGateReconciler.EXPECT().Reconcile(anyCtx).Return(nil).Once()
 ```
 
 > [!NOTE]
