@@ -13,6 +13,7 @@ const (
 	PodNamespace           = "POD_NAMESPACE"
 	PodName                = "POD_NAME"
 	DtOperatorImageEnvName = "DT_OPERATOR_IMAGE"
+	DtOperatorPullSecret   = "DT_OPERATOR_PULL_SECRET"
 	AppVersion             = "APP_VERSION"
 )
 

@@ -2,12 +2,14 @@ package dynakube
 
 import (
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -74,6 +76,11 @@ func (dk *DynaKube) PullSecretNames() []string {
 	names := []string{
 		dk.Name + PullSecretSuffix,
 	}
+
+	if helmPullSecret := os.Getenv(k8senv.DtOperatorPullSecret); len(helmPullSecret) != 0 {
+		names = append(names, helmPullSecret)
+	}
+
 	if dk.Spec.CustomPullSecret != "" {
 		names = append(names, dk.Spec.CustomPullSecret)
 	}
