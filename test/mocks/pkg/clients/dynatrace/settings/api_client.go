@@ -459,22 +459,22 @@ func (_c *APIClient_GetK8sClusterME_Call) RunAndReturn(run func(ctx context.Cont
 }
 
 // GetKSPMSettings provides a mock function for the type APIClient
-func (_mock *APIClient) GetKSPMSettings(ctx context.Context, monitoredEntity string) (settings.SettingsResponse[settings.KspmSettingsValue], error) {
+func (_mock *APIClient) GetKSPMSettings(ctx context.Context, monitoredEntity string) (settings.SettingsResponse[settings.KSPMSettingsValue], error) {
 	ret := _mock.Called(ctx, monitoredEntity)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetKSPMSettings")
 	}
 
-	var r0 settings.SettingsResponse[settings.KspmSettingsValue]
+	var r0 settings.SettingsResponse[settings.KSPMSettingsValue]
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.SettingsResponse[settings.KspmSettingsValue], error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.SettingsResponse[settings.KSPMSettingsValue], error)); ok {
 		return returnFunc(ctx, monitoredEntity)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.SettingsResponse[settings.KspmSettingsValue]); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.SettingsResponse[settings.KSPMSettingsValue]); ok {
 		r0 = returnFunc(ctx, monitoredEntity)
 	} else {
-		r0 = ret.Get(0).(settings.SettingsResponse[settings.KspmSettingsValue])
+		r0 = ret.Get(0).(settings.SettingsResponse[settings.KSPMSettingsValue])
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = returnFunc(ctx, monitoredEntity)
@@ -514,12 +514,12 @@ func (_c *APIClient_GetKSPMSettings_Call) Run(run func(ctx context.Context, moni
 	return _c
 }
 
-func (_c *APIClient_GetKSPMSettings_Call) Return(getSettingsResponse settings.SettingsResponse[settings.KspmSettingsValue], err error) *APIClient_GetKSPMSettings_Call {
+func (_c *APIClient_GetKSPMSettings_Call) Return(getSettingsResponse settings.SettingsResponse[settings.KSPMSettingsValue], err error) *APIClient_GetKSPMSettings_Call {
 	_c.Call.Return(getSettingsResponse, err)
 	return _c
 }
 
-func (_c *APIClient_GetKSPMSettings_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.SettingsResponse[settings.KspmSettingsValue], error)) *APIClient_GetKSPMSettings_Call {
+func (_c *APIClient_GetKSPMSettings_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.SettingsResponse[settings.KSPMSettingsValue], error)) *APIClient_GetKSPMSettings_Call {
 	_c.Call.Return(run)
 	return _c
 }

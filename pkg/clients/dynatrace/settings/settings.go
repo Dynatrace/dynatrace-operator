@@ -57,7 +57,7 @@ type APIClient interface {
 	// CreateLogMonitoringSetting returns the object ID of the created logmonitoring settings.
 	CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error)
 	// GetKSPMSettings returns the settings response with the number of settings objects and their values.
-	GetKSPMSettings(ctx context.Context, monitoredEntity string) (SettingsResponse[KspmSettingsValue], error)
+	GetKSPMSettings(ctx context.Context, monitoredEntity string) (SettingsResponse[KSPMSettingsValue], error)
 	// CreateKSPMSetting returns the object ID of the created kspm settings.
 	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
 	// DeleteSettings deletes the settings for a monitored entity.
@@ -80,7 +80,7 @@ type SettingsItem[T any] struct {
 	Value    T      `json:"value"`
 }
 
-type KspmSettingsValue struct {
+type KSPMSettingsValue struct {
 	DatasetPipelineEnabled bool `json:"configurationDatasetPipelineEnabled"`
 }
 

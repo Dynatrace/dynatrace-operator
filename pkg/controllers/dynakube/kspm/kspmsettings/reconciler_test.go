@@ -39,7 +39,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.SettingsResponse[settings.KspmSettingsValue]{TotalCount: 1}, nil)
+			Return(settings.SettingsResponse[settings.KSPMSettingsValue]{TotalCount: 1}, nil)
 
 		dk := getDK(true)
 		r := NewReconciler()
@@ -56,7 +56,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.SettingsResponse[settings.KspmSettingsValue]{TotalCount: 0}, nil)
+			Return(settings.SettingsResponse[settings.KSPMSettingsValue]{TotalCount: 0}, nil)
 
 		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
 			Return("test-object-id", nil)
@@ -105,7 +105,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("create setting without KSPM", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.SettingsResponse[settings.KspmSettingsValue]{TotalCount: 0}, nil)
+			Return(settings.SettingsResponse[settings.KSPMSettingsValue]{TotalCount: 0}, nil)
 
 		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, false).
 			Return("test-object-id", nil)
@@ -210,7 +210,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 		testErr := errors.New("error when fetching")
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.SettingsResponse[settings.KspmSettingsValue]{}, testErr)
+			Return(settings.SettingsResponse[settings.KSPMSettingsValue]{}, testErr)
 
 		dk := getDK(true, meID)
 
@@ -237,7 +237,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("kspm settings already exist", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.SettingsResponse[settings.KspmSettingsValue]{TotalCount: 1}, nil)
+			Return(settings.SettingsResponse[settings.KSPMSettingsValue]{TotalCount: 1}, nil)
 
 		dk := getDK(false, meID)
 
@@ -252,7 +252,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("create kspm settings", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.SettingsResponse[settings.KspmSettingsValue]{TotalCount: 0}, nil)
+			Return(settings.SettingsResponse[settings.KSPMSettingsValue]{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
 			Return("test-object-id", nil)
 
@@ -269,7 +269,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("create kubemon-only settings", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.SettingsResponse[settings.KspmSettingsValue]{TotalCount: 0}, nil)
+			Return(settings.SettingsResponse[settings.KSPMSettingsValue]{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, false).
 			Return("test-object-id", nil)
 
@@ -287,7 +287,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 		testErr := errors.New("error when creating")
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetKSPMSettings(t.Context(), meID).
-			Return(settings.SettingsResponse[settings.KspmSettingsValue]{TotalCount: 0}, nil)
+			Return(settings.SettingsResponse[settings.KSPMSettingsValue]{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateKSPMSetting(t.Context(), meID, true).
 			Return("", testErr)
 
