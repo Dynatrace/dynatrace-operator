@@ -16,10 +16,10 @@ const (
 
 func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
 	var msg string
+
 	switch {
 	case k8serrors.IsNotFound(err):
 		msg = TokenNotFoundConditionMessage
-		break
 	default:
 		msg = TokenVerificationConditionMessage
 	}

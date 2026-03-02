@@ -28,5 +28,6 @@ func setServiceEntryFailedConditionForComponent(conditions *[]metav1.Condition, 
 	}
 
 	log.Error(err, "failed to configure Istio ServiceEntries and VirtualServices", "component", component)
+
 	_ = meta.SetStatusCondition(conditions, condition)
 }

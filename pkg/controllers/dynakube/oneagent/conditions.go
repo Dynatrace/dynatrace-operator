@@ -31,5 +31,6 @@ func setDaemonSetGenerationFailedCondition(conditions *[]metav1.Condition, err e
 	}
 
 	log.Error(err, "failed to generate the DaemonSet configuration")
+
 	_ = meta.SetStatusCondition(conditions, condition)
 }
