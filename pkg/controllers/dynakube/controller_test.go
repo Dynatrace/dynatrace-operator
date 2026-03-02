@@ -667,7 +667,7 @@ func TestTokenConditions(t *testing.T) {
 		_, err := controller.setupTokensAndClient(ctx, dk)
 
 		require.Error(t, err)
-		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenNotFoundErrorMessage)
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenNotFoundConditionMessage)
 		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 
 	})
@@ -706,7 +706,7 @@ func TestTokenConditions(t *testing.T) {
 		_, err := controller.setupTokensAndClient(ctx, dk)
 
 		require.Error(t, err)
-		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationErrorMessage)
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationConditionMessage)
 		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
 
@@ -924,7 +924,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.Error(t, err)
 
-		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenNotFoundErrorMessage)
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenNotFoundConditionMessage)
 		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead))
 		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite))
 	})

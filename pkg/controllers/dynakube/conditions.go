@@ -10,18 +10,18 @@ import (
 const (
 	TokenReadyConditionMessage             = "Token ready"
 	TokenWithoutDataIngestConditionMessage = "Token ready, DataIngest token not provided"
-	TokenVerificationErrorMessage          = "Token verification failed"
-	TokenNotFoundErrorMessage              = "Token secret not found"
+	TokenVerificationConditionMessage      = "Token verification failed"
+	TokenNotFoundConditionMessage          = "Token secret not found"
 )
 
 func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err error) {
 	var msg string
 	switch {
 	case k8serrors.IsNotFound(err):
-		msg = TokenNotFoundErrorMessage
+		msg = TokenNotFoundConditionMessage
 		break
 	default:
-		msg = TokenVerificationErrorMessage
+		msg = TokenVerificationConditionMessage
 	}
 
 	tokenErrorCondition := metav1.Condition{
