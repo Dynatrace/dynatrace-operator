@@ -656,7 +656,7 @@ func TestGetDynakube(t *testing.T) {
 func TestTokenConditions(t *testing.T) {
 	ctx := t.Context()
 
-	t.Run("token condition error is set if token are invalid", func(t *testing.T) {
+	t.Run("token condition error is set if token secret is missing", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		dk := &dynakube.DynaKube{}
 		controller := &Controller{
@@ -667,9 +667,49 @@ func TestTokenConditions(t *testing.T) {
 		_, err := controller.setupTokensAndClient(ctx, dk)
 
 		require.Error(t, err)
-		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, "secrets \"\" not found")
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenNotFoundErrorMessage)
+		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
+
+	})
+	t.Run("token condition error is set if token verification fails", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+		}
+		fakeClient := fake.NewClient(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dtclient.APIToken: []byte(testAPIToken),
+			},
+		})
+		mockClient := dtclientmock.NewClient(t)
+		mockClient.EXPECT().GetTokenScopes(anyCtx, testAPIToken).Return(nil, dtclient.ServerError{
+			Message:              "test-error",
+			ConstraintViolations: []dtclient.ConstraintViolation{},
+			Code:                 2,
+		})
+
+		mockDtcBuilder := dtbuildermock.NewBuilder(t)
+		mockDynatraceClientBuild(mockDtcBuilder, mockClient)
+
+		controller := &Controller{
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+		}
+
+		_, err := controller.setupTokensAndClient(ctx, dk)
+
+		require.Error(t, err)
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenVerificationErrorMessage)
 		assert.Empty(t, dk.Status.DynatraceAPI.LastTokenScopeRequest, "LastTokenProbeTimestamp should be Nil if token retrieval did not work.")
 	})
+
 	t.Run("token condition is set if token are valid", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -758,7 +798,7 @@ func TestTokenConditions(t *testing.T) {
 		}
 
 		controller := &Controller{}
-		controller.setAndLogCondition(dk, newCondition)
+		controller.setCondition(dk, newCondition)
 
 		assertCondition(t, dk, newCondition.Type, newCondition.Status, newCondition.Reason, newCondition.Message)
 	})
@@ -884,7 +924,7 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 		_, err := controller.setupTokensAndClient(t.Context(), dk)
 		require.Error(t, err)
 
-		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, "secrets \""+testName+"\" not found")
+		assertCondition(t, dk, dynakube.TokenConditionType, metav1.ConditionFalse, dynakube.ReasonTokenError, TokenNotFoundErrorMessage)
 		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsRead))
 		assert.Nil(t, meta.FindStatusCondition(dk.Status.Conditions, dtclient.ConditionTypeAPITokenSettingsWrite))
 	})
