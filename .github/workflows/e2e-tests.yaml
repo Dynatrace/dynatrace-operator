@@ -38,7 +38,7 @@ jobs:
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
         with:
-          flc-namespace: dto-daily
+          flc-namespace: dto
           flc-environment: dto-k8s-latest-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
@@ -79,7 +79,7 @@ jobs:
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
         with:
-          flc-namespace: dto-daily
+          flc-namespace: dto
           flc-environment: dto-ocp-latest-flc
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-branch: ${{ github.event.inputs.target }}
@@ -120,7 +120,7 @@ jobs:
         id: run_e2e_test
         uses: ./.github/actions/run-e2e
         with:
-          flc-namespace: dto-ocp-ondemand
+          flc-namespace: dto
           flc-environment: dto-ocp-fips
           helm-chart: ${{ github.event.inputs.helm-chart || 'oci://ghcr.io/dynatrace/dynatrace-operator:0.0.0-nightly-chart' }}
           target-image: ${{ format('{0}-fips', github.event.inputs.target || 'main') }}
