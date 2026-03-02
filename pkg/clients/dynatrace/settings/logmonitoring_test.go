@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -23,13 +24,13 @@ func TestGetSettingsForLogModule(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().Execute(new(GetSettingsResponse)).Run(injectResponse(GetSettingsResponse{TotalCount: 3})).Return(nil).Once()
+		request.EXPECT().Execute(new(SettingsResponse[json.RawMessage])).Run(injectResponse(SettingsResponse[json.RawMessage]{TotalCount: 3})).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForLogModule(ctx, "entity-1")
 		require.NoError(t, err)
-		assert.Equal(t, GetSettingsResponse{TotalCount: 3}, resp)
+		assert.Equal(t, SettingsResponse[json.RawMessage]{TotalCount: 3}, resp)
 	})
 
 	t.Run("empty monitoredEntity", func(t *testing.T) {
@@ -37,7 +38,7 @@ func TestGetSettingsForLogModule(t *testing.T) {
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForLogModule(ctx, "")
 		require.NoError(t, err)
-		assert.Equal(t, GetSettingsResponse{TotalCount: 0}, resp)
+		assert.Equal(t, SettingsResponse[json.RawMessage]{TotalCount: 0}, resp)
 	})
 }
 

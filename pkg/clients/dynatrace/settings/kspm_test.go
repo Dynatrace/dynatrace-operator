@@ -21,13 +21,13 @@ func TestGetKSPMSettings(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().Execute(new(GetSettingsResponse)).Run(injectResponse(GetSettingsResponse{TotalCount: 3})).Return(nil).Once()
+		request.EXPECT().Execute(new(SettingsResponse[KspmSettingsValue])).Run(injectResponse(SettingsResponse[KspmSettingsValue]{TotalCount: 3})).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
 		resp, err := client.GetKSPMSettings(ctx, "entity-1")
 		require.NoError(t, err)
-		assert.Equal(t, GetSettingsResponse{TotalCount: 3}, resp)
+		assert.Equal(t, SettingsResponse[KspmSettingsValue]{TotalCount: 3}, resp)
 	})
 
 	t.Run("empty monitoredEntity", func(t *testing.T) {
@@ -35,7 +35,7 @@ func TestGetKSPMSettings(t *testing.T) {
 		client := NewClient(apiClient)
 		resp, err := client.GetKSPMSettings(ctx, "")
 		require.NoError(t, err)
-		assert.Equal(t, GetSettingsResponse{TotalCount: 0}, resp)
+		assert.Equal(t, SettingsResponse[KspmSettingsValue]{TotalCount: 0}, resp)
 	})
 }
 
