@@ -31,9 +31,7 @@ func Feature(t *testing.T) features.Feature {
 	_ = previousVersionDynakube.ConvertFrom(&testDynakube)
 	componentDynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, *previousVersionDynakube)
 
-	legacyName := testDynakube.Name + "-extensions-controller"
-
-	builder.Assess("extension execution controller started", k8sstatefulset.IsReady(legacyName, testDynakube.Namespace))
+	builder.Assess("extension execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
 	builder.Assess("extension collector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
@@ -45,7 +43,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("extension collector started after upgrade", k8sstatefulset.WaitFor(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
 
-	builder.Assess("legacy extensions executor controller deleted", k8sstatefulset.WaitForDeletion(legacyName, testDynakube.Namespace))
+	builder.Assess("legacy extensions executor controller deleted", k8sstatefulset.WaitForDeletion(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
