@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -17,32 +16,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ controllers.Reconciler = &Reconciler{}
-
-var _ ReconcilerBuilder = NewReconciler
-
-type ReconcilerBuilder func(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler
-
 // Reconciler manages the proxy secret generation for the dynatrace namespace.
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dk        *dynakube.DynaKube
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if r.dk.NeedsActiveGateProxy() || r.dk.NeedsOneAgentProxy() {
-		return r.generateForDynakube(ctx, r.dk)
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+	if dk.NeedsActiveGateProxy() || dk.NeedsOneAgentProxy() {
+		return r.generateForDynakube(ctx, dk)
 	}
 
-	return r.ensureDeleted(ctx, r.dk)
+	return r.ensureDeleted(ctx, dk)
 }
 
-func NewReconciler(client client.Client, apiReader client.Reader, dk *dynakube.DynaKube) controllers.Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
-		dk:        dk,
 	}
 }
 
@@ -52,7 +43,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dk *dynakube.DynaK
 		return errors.WithStack(err)
 	}
 
-	secret, err := k8ssecret.Build(r.dk,
+	secret, err := k8ssecret.Build(dk,
 		BuildSecretName(dk.Name),
 		data,
 		k8ssecret.SetType(corev1.SecretTypeOpaque),

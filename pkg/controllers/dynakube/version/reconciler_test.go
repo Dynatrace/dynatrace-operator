@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -31,6 +30,7 @@ const (
 	testAPIURL         = "https://" + testDockerRegistry + "/api"
 
 	latestActiveGateVersion = "1.2.3.4-56"
+	latestOneAgentVersion   = "1.2.3.4-5"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
@@ -72,8 +72,6 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("all image versions were updated", func(t *testing.T) {
-		testActiveGateImage := getTestActiveGateImageInfo()
-		testOneAgentImage := getTestOneAgentImageInfo()
 		dk := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
 		timeProvider := timeprovider.New().Freeze()
@@ -102,8 +100,8 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, verifiedReason, condition.Reason)
 		assert.Equal(t, "Version verified for component.", condition.Message)
 
-		assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(testActiveGateImage.Tag), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
-		assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(testOneAgentImage.Tag), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dk.ActiveGate().GetDefaultImage(latestActiveGateVersion), latestActiveGateVersion, dkStatus.ActiveGate.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, dk.OneAgent().GetDefaultImage(latestOneAgentVersion), latestOneAgentVersion, dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.Version)
 
 		// no change if probe not old enough
@@ -118,49 +116,6 @@ func TestReconcile(t *testing.T) {
 		err = versionReconciler.ReconcileCodeModules(ctx, dk)
 		require.NoError(t, err)
 		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.LastProbeTimestamp)
-	})
-
-	t.Run("public-registry", func(t *testing.T) {
-		testActiveGateImage := getTestActiveGateImageInfo()
-		testOneAgentImage := getTestOneAgentImageInfo()
-		testCodeModulesImage := getTestCodeModulesImage()
-		dk := dynakubeTemplate.DeepCopy()
-		enablePublicRegistry(dk)
-
-		fakeClient := fake.NewClient()
-		setupPullSecret(t, fakeClient, *dk)
-
-		dkStatus := &dk.Status
-
-		mockClient := dtclientmock.NewClient(t)
-		mockActiveGateImageInfo(mockClient, testActiveGateImage)
-		mockCodeModulesImageInfo(mockClient, testCodeModulesImage)
-		mockOneAgentImageInfo(mockClient, testOneAgentImage)
-
-		versionReconciler := reconciler{
-			apiReader:    fakeClient,
-			timeProvider: timeprovider.New().Freeze(),
-			dtClient:     mockClient,
-		}
-		err := versionReconciler.ReconcileCodeModules(ctx, dk)
-		require.NoError(t, err)
-		err = versionReconciler.ReconcileActiveGate(ctx, dk)
-		require.NoError(t, err)
-		err = versionReconciler.ReconcileOneAgent(ctx, dk)
-		require.NoError(t, err)
-		require.NoError(t, err)
-
-		condition := meta.FindStatusCondition(dk.Status.Conditions, activeGateVersionConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, verifiedReason, condition.Reason)
-		assert.Equal(t, "Version verified for component.", condition.Message)
-
-		assert.Equal(t, testActiveGateImage.String(), dkStatus.ActiveGate.ImageID)
-		assert.Equal(t, testActiveGateImage.Tag, dkStatus.ActiveGate.Version)
-		assert.Equal(t, testOneAgentImage.String(), dkStatus.OneAgent.ImageID)
-		assert.Equal(t, testOneAgentImage.Tag, dkStatus.OneAgent.Version)
-		assert.Equal(t, testCodeModulesImage.String(), dkStatus.CodeModules.ImageID)
-		assert.Equal(t, testCodeModulesImage.Tag, dkStatus.CodeModules.Version)
 	})
 }
 
@@ -272,7 +227,7 @@ func TestNeedsUpdate(t *testing.T) {
 		oldVersion := "1.2.3.4-5"
 		newVersion := "2.4.5.6-7"
 		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion //nolint:staticcheck
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
 
 		r := reconciler{
@@ -295,7 +250,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 		oldVersion := "1.2.3.4-5"
 		newVersion := "2.4.5.6-7"
 		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion //nolint:staticcheck
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
 		assert.True(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
@@ -303,7 +258,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 	t.Run("no change; version", func(t *testing.T) {
 		version := "1.2.3.4-5"
 		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = version
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = version //nolint:staticcheck
 		setOneAgentCustomVersionStatus(updatedDynakube, version)
 		assert.False(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
 	})
@@ -321,9 +276,31 @@ func TestHasCustomFieldChanged(t *testing.T) {
 		oldImage := "repo.com:tag@sha256:123"
 		newImage := "repo.com:tag"
 		updatedDynakube := dk.DeepCopy()
-		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newImage
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newImage //nolint:staticcheck
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
 		assert.False(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil)))
+	})
+}
+
+func setupPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKube) {
+	t.Helper()
+	err := createTestPullSecret(t, fakeClient, dk)
+	require.NoError(t, err)
+}
+
+func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
+	timeProvider.Set(timeProvider.Now().Add(duration))
+}
+
+func createTestPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKube) error {
+	return fakeClient.Create(t.Context(), &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: dk.Namespace,
+			Name:      dk.Name + dtpullsecret.PullSecretSuffix,
+		},
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte("{}"),
+		},
 	})
 }
 
@@ -335,60 +312,6 @@ func setOneAgentCustomVersionStatus(dk *dynakube.DynaKube, version string) {
 func setOneAgentCustomImageStatus(dk *dynakube.DynaKube, image string) {
 	dk.Status.OneAgent.Source = status.CustomImageVersionSource
 	dk.Status.OneAgent.ImageID = image
-}
-
-func getTestOneAgentImageInfo() dtclient.LatestImageInfo {
-	return dtclient.LatestImageInfo{
-		Source: testDockerRegistry + "/linux/oneagent",
-		Tag:    "1.2.3.4-5",
-	}
-}
-
-func getTestActiveGateImageInfo() dtclient.LatestImageInfo {
-	return dtclient.LatestImageInfo{
-		Source: testDockerRegistry + "/linux/activegate",
-		Tag:    latestActiveGateVersion,
-	}
-}
-
-func getTestCodeModulesImage() dtclient.LatestImageInfo {
-	return dtclient.LatestImageInfo{
-		Source: testDockerRegistry + "/linux/codemodules",
-		Tag:    "1.2.3.4-5",
-	}
-}
-
-func setupPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKube) {
-	err := createTestPullSecret(fakeClient, dk)
-	require.NoError(t, err)
-}
-
-func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
-	timeProvider.Set(timeProvider.Now().Add(duration))
-}
-
-func createTestPullSecret(fakeClient client.Client, dk dynakube.DynaKube) error {
-	return fakeClient.Create(context.TODO(), &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: dk.Namespace,
-			Name:      dk.Name + dtpullsecret.PullSecretSuffix,
-		},
-		Data: map[string][]byte{
-			".dockerconfigjson": []byte("{}"),
-		},
-	})
-}
-
-func mockActiveGateImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.EXPECT().GetLatestActiveGateImage(anyCtx).Return(&imageInfo, nil).Once()
-}
-
-func mockCodeModulesImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.EXPECT().GetLatestCodeModulesImage(anyCtx).Return(&imageInfo, nil).Once()
-}
-
-func mockOneAgentImageInfo(mockClient *dtclientmock.Client, imageInfo dtclient.LatestImageInfo) {
-	mockClient.EXPECT().GetLatestOneAgentImage(anyCtx).Return(&imageInfo, nil).Once()
 }
 
 func mockLatestAgentVersion(mockClient *dtclientmock.Client, latestVersion string, expectedCalls int) {

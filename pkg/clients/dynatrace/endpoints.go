@@ -65,18 +65,6 @@ func (dtc *dynatraceClient) getTokensLookupURL() string {
 	return dtc.url + "/v2/apiTokens/lookup"
 }
 
-func (dtc *dynatraceClient) getLatestOneAgentImageURL() string {
-	return dtc.url + "/v1/deployment/image/agent/oneAgent/latest"
-}
-
-func (dtc *dynatraceClient) getLatestCodeModulesImageURL() string {
-	return dtc.url + "/v1/deployment/image/agent/codeModules/latest"
-}
-
-func (dtc *dynatraceClient) getLatestActiveGateImageURL() string {
-	return dtc.url + "/v1/deployment/image/gateway/latest"
-}
-
 func appendTechnologies(url string, technologies []string) string {
 	for _, tech := range technologies {
 		url = fmt.Sprintf("%s&include=%s", url, tech)
