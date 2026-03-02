@@ -32,13 +32,11 @@ import (
 )
 
 const (
-	testPaasToken       = "test-paas-token"
-	testAPIToken        = "test-api-token"
-	testDataIngestToken = "test-ingest-token"
+	testPaasToken = "test-paas-token"
+	testAPIToken  = "test-api-token"
 
-	testUUID                  = "test-uuid"
-	testTenantToken           = "abcd"
-	testCommunicationEndpoint = "https://tenant.dev.dynatracelabs.com:443"
+	testUUID        = "test-uuid"
+	testTenantToken = "abcd"
 
 	testHost = "test-host"
 
@@ -52,6 +50,11 @@ const (
 
 	oldCertValue = "old-cert-value"
 	oldTrustedCa = "old-trusted-ca"
+)
+
+var (
+	errBootstrapperConfigSecret = goerrors.New("failed to create bootstrapper config secret")
+	errBootstrapperCertsSecret  = goerrors.New("failed to create bootstrapper certs secret")
 )
 
 func TestNewSecretGenerator(t *testing.T) {
@@ -408,8 +411,8 @@ func TestGenerateForDynakube(t *testing.T) {
 		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
 		require.Error(t, err)
 
-		for _, e := range []string{"failed to create bootstrapper config secret", "failed to create bootstrapper certs secret"} {
-			assert.Contains(t, err.Error(), e)
+		for _, e := range []error{errBootstrapperConfigSecret, errBootstrapperCertsSecret} {
+			assert.ErrorIs(t, err, e)
 		}
 	})
 	t.Run("successfully generate bootstrapper certs secret even if config creation fails", func(t *testing.T) {
@@ -469,7 +472,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		secretGenerator := NewSecretGenerator(failClient, failClient, mockDTClient)
 		err := secretGenerator.GenerateForDynakube(context.Background(), dk, []corev1.Namespace{*namespace})
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to create bootstrapper config secret")
+		require.ErrorIs(t, err, errBootstrapperConfigSecret)
 
 		var secretConfig corev1.Secret
 		err = failClient.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secretConfig)
@@ -583,20 +586,20 @@ func createFailClient(objs ...client.Object) client.Client {
 	return fake.NewClientWithInterceptorsAndIndex(interceptor.Funcs{
 		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 			if obj.GetName() == consts.BootstrapperInitSecretName {
-				return goerrors.New("failed to create bootstrapper config secret")
+				return errBootstrapperConfigSecret
 			}
 			if obj.GetName() == consts.BootstrapperInitCertsSecretName {
-				return goerrors.New("failed to create bootstrapper certs secret")
+				return errBootstrapperCertsSecret
 			}
 
 			return client.Create(ctx, obj, opts...)
 		},
 		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 			if obj.GetName() == consts.BootstrapperInitSecretName {
-				return goerrors.New("failed to update bootstrapper config secret")
+				return errBootstrapperConfigSecret
 			}
 			if obj.GetName() == consts.BootstrapperInitCertsSecretName {
-				return goerrors.New("failed to update bootstrapper certs secret")
+				return errBootstrapperCertsSecret
 			}
 
 			return client.Update(ctx, obj, opts...)
@@ -608,14 +611,14 @@ func createConfigFailClient(objs ...client.Object) client.Client {
 	return fake.NewClientWithInterceptorsAndIndex(interceptor.Funcs{
 		Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 			if obj.GetName() == consts.BootstrapperInitSecretName {
-				return goerrors.New("failed to create bootstrapper config secret")
+				return errBootstrapperConfigSecret
 			}
 
 			return client.Create(ctx, obj, opts...)
 		},
 		Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
 			if obj.GetName() == consts.BootstrapperInitSecretName {
-				return goerrors.New("failed to update bootstrapper config secret")
+				return errBootstrapperConfigSecret
 			}
 
 			return client.Update(ctx, obj, opts...)
