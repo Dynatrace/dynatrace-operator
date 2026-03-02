@@ -52,13 +52,13 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
-		return errors.WithStack(err)
+		retErr = goerrors.Join(retErr, err)
 	}
 
 	if len(data) != 0 {
 		err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
 		if err != nil {
-			return err
+			retErr = goerrors.Join(retErr, err)
 		}
 
 		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, namespaces, dk, data)
@@ -69,13 +69,13 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 
 	certs, err := s.generateCerts(ctx, dk)
 	if err != nil {
-		return goerrors.Join(retErr, err)
+		retErr = goerrors.Join(retErr, err)
 	}
 
 	if len(certs) != 0 {
 		err = s.createSourceForWebhook(ctx, dk, GetSourceCertsSecretName(dk.Name), CertsConditionType, certs)
 		if err != nil {
-			return err
+			retErr = goerrors.Join(retErr, err)
 		}
 
 		// Create the certs secret for all namespaces
