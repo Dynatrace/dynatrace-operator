@@ -21,8 +21,9 @@ func (c *Client) GetKSPMSettings(ctx context.Context, monitoredEntity string) (S
 
 	err := c.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
-			schemaIDsQueryParam: kspmSettingsSchemaID,
-			scopesQueryParam:    monitoredEntity,
+			validateOnlyQueryParam: "true",
+			schemaIDsQueryParam:    kspmSettingsSchemaID,
+			scopesQueryParam:       monitoredEntity,
 		}).
 		Execute(&resp)
 	if err != nil {

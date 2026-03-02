@@ -88,11 +88,11 @@ func DeleteKSPMSettingsFromTenant(secretConfig tenant.Secret) features.Func {
 		require.NoError(t, err, "Could not get KSPM settings with IDs")
 
 		for _, setting := range settingsWithIDs.Items {
-			t.Log("Deleting KSPM setting")
+			t.Logf("Deleting KSPM setting with ID: %s", setting.ObjectID)
 			if err := settingsClient.DeleteSettings(ctx, setting.ObjectID); err != nil {
-				t.Logf("Failed to delete KSPM setting: %v", err)
+				t.Logf("Failed to delete KSPM setting with ID %s: %v", setting.ObjectID, err)
 			} else {
-				t.Log("Successfully deleted KSPM setting")
+				t.Logf("Successfully deleted KSPM setting with ID: %s", setting.ObjectID)
 			}
 		}
 

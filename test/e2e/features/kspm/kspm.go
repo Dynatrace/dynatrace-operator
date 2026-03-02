@@ -45,6 +45,9 @@ func Feature(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
+// OptionalScopes verifies that the operator handles missing settings scopes gracefully without creating KSPM settings on the tenant.
+//
+// Note: When settings scopes are missing on the token, the KSPM settings reconciler should skip the creation.
 func OptionalScopes(t *testing.T) features.Feature {
 	builder := features.New("kspm-optional-scopes")
 
@@ -69,9 +72,6 @@ func OptionalScopes(t *testing.T) features.Feature {
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
-
-	// Note: When settings scopes are missing on the token, the KSPM settings reconciler should skip creation
-	// The test verifies that the operator handles missing scopes gracefully without creating settings
 
 	componentDynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
