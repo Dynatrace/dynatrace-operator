@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,8 +47,8 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			"flavor":  arch.FlavorDefault,
 		}
 
-		client := setupMockedClient(t, OsUnix, InstallerTypeDefault, queryParams)
-		version, err := client.GetLatestAgentVersion(t.Context(), OsUnix, InstallerTypeDefault)
+		client := setupMockedClient(t, installer.OsUnix, installer.InstallerTypeDefault, queryParams)
+		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypeDefault)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -59,8 +60,8 @@ func TestGetLatestAgentVersion(t *testing.T) {
 			"arch":    arch.Arch,
 		}
 
-		client := setupMockedClient(t, OsUnix, InstallerTypePaaS, queryParams)
-		version, err := client.GetLatestAgentVersion(t.Context(), OsUnix, InstallerTypePaaS)
+		client := setupMockedClient(t, installer.OsUnix, installer.InstallerTypePaaS, queryParams)
+		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypePaaS)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -68,7 +69,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		versionClient := setupVersionClient(agentServerHandlerOk())
 
-		response, err := versionClient.GetLatestAgentVersion(t.Context(), OsUnix, InstallerTypeDefault)
+		response, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypeDefault)
 
 		require.NoError(t, err)
 
@@ -78,7 +79,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 	t.Run("bad request", func(t *testing.T) {
 		versionClient := setupVersionClient(agentServerHandlerBadRequest())
 
-		_, err := versionClient.GetLatestAgentVersion(t.Context(), OsUnix, InstallerTypeDefault)
+		_, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypeDefault)
 
 		var httpErr *core.HTTPError
 		ok := errors.As(err, &httpErr)
@@ -92,7 +93,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 	t.Run("unauthorized", func(t *testing.T) {
 		versionClient := setupVersionClient(agentServerHandlerUnauthorized())
 
-		_, err := versionClient.GetLatestAgentVersion(t.Context(), OsUnix, InstallerTypeDefault)
+		_, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypeDefault)
 
 		var httpErr *core.HTTPError
 		ok := errors.As(err, &httpErr)
@@ -122,7 +123,7 @@ func agentServerHandlerOk() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestAgentVersionPath(OsUnix, InstallerTypeDefault):
+		case getLatestAgentVersionPath(installer.OsUnix, installer.InstallerTypeDefault):
 			writer.WriteHeader(http.StatusOK)
 
 			response := "{\"latestAgentVersion\":\"1.2.3\"}"
@@ -139,7 +140,7 @@ func agentServerHandlerBadRequest() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestAgentVersionPath(OsUnix, InstallerTypeDefault):
+		case getLatestAgentVersionPath(installer.OsUnix, installer.InstallerTypeDefault):
 			writer.WriteHeader(http.StatusBadRequest)
 
 			_, _ = writer.Write([]byte("{\"error\":{\"code\":400,\"message\":\"Constraints violated.\",\"constraintViolations\":[{\"path\":\"bitness\",\"message\":\"'any' must be any of [...]\"}]}}"))
@@ -154,7 +155,7 @@ func agentServerHandlerUnauthorized() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestAgentVersionPath(OsUnix, InstallerTypeDefault):
+		case getLatestAgentVersionPath(installer.OsUnix, installer.InstallerTypeDefault):
 			writer.WriteHeader(http.StatusUnauthorized)
 
 			_, _ = writer.Write([]byte("{\"error\":{\"code\":401,\"message\":\"Token Authentication failed\"}}"))

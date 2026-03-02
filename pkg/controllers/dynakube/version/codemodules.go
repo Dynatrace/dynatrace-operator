@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
@@ -85,7 +86,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 	}
 
 	latestAgentVersionUnixPaas, err := updater.dtClient.AsV2().Version.GetLatestAgentVersion(ctx,
-		dtclient.OsUnix, dtclient.InstallerTypePaaS)
+		installer.OsUnix, installer.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), cmConditionType, err)

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
@@ -112,7 +113,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		}
 
 		versionClient := versionclientmock.NewAPIClient(t)
-		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, dtclient.OsUnix, dtclient.InstallerTypePaaS).Return("", errors.New("BOOM")).Once()
+		versionClient.EXPECT().GetLatestAgentVersion(anyCtx, installer.OsUnix, installer.InstallerTypePaaS).Return("", errors.New("BOOM")).Once()
 		mockClient := dtclientmock.NewClient(t)
 		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
 			Version: versionClient,

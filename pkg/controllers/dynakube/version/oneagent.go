@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -82,7 +83,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	latestVersion := updater.CustomVersion()
 
 	if latestVersion == "" {
-		latestVersion, err = updater.dtClient.AsV2().Version.GetLatestAgentVersion(ctx, dtclient.OsUnix, dtclient.InstallerTypeDefault)
+		latestVersion, err = updater.dtClient.AsV2().Version.GetLatestAgentVersion(ctx, installer.OsUnix, installer.InstallerTypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
 			k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)

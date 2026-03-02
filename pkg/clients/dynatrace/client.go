@@ -46,20 +46,6 @@ type Client interface {
 	AsV2() *ClientV2
 }
 
-const (
-	OsUnix = "unix"
-	// Commented for linter, left for further reference
-	// OsWindows = "windows"
-	// OsAix     = "aix"
-	// OsSolaris = "solaris"
-)
-
-// Relevant installer types.
-const (
-	InstallerTypeDefault = "default"
-	InstallerTypePaaS    = "paas"
-)
-
 // Relevant token scopes
 const (
 	TokenScopeInstallerDownload        = "InstallerDownload"

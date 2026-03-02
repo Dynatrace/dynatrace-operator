@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,8 +36,8 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 	}
 
 	t.Run("ok, paas token", func(t *testing.T) {
-		client := setupMockedClient(t, OsUnix)
-		version, err := client.GetLatestActiveGateVersion(t.Context(), OsUnix)
+		client := setupMockedClient(t, installer.OsUnix)
+		version, err := client.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -44,7 +45,7 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		versionClient := setupVersionClient(activeGateServerHandlerOk())
 
-		response, err := versionClient.GetLatestActiveGateVersion(t.Context(), OsUnix)
+		response, err := versionClient.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
 
 		require.NoError(t, err)
 
@@ -54,7 +55,7 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 	t.Run("bad request", func(t *testing.T) {
 		versionClient := setupVersionClient(activeGateServerHandlerBadRequest())
 
-		_, err := versionClient.GetLatestActiveGateVersion(t.Context(), OsUnix)
+		_, err := versionClient.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
 
 		var httpErr *core.HTTPError
 		ok := errors.As(err, &httpErr)
@@ -68,7 +69,7 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 	t.Run("unauthorized", func(t *testing.T) {
 		versionClient := setupVersionClient(activeGateServerHandlerUnauthorized())
 
-		_, err := versionClient.GetLatestActiveGateVersion(t.Context(), OsUnix)
+		_, err := versionClient.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
 
 		var httpErr *core.HTTPError
 		ok := errors.As(err, &httpErr)
@@ -85,7 +86,7 @@ func activeGateServerHandlerOk() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestActiveGateVersionPath(OsUnix):
+		case getLatestActiveGateVersionPath(installer.OsUnix):
 			writer.WriteHeader(http.StatusOK)
 
 			response := "{\"latestGatewayVersion\":\"1.2.3\"}"
@@ -102,7 +103,7 @@ func activeGateServerHandlerBadRequest() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestActiveGateVersionPath(OsUnix):
+		case getLatestActiveGateVersionPath(installer.OsUnix):
 			writer.WriteHeader(http.StatusBadRequest)
 			_, _ = writer.Write([]byte("{\"error\":{\"code\":400,\"message\":\"Constraints violated.\",\"constraintViolations\":[{\"path\":\"bitness\",\"message\":\"'any' must be any of [...]\"}]}}"))
 		default:
@@ -116,7 +117,7 @@ func activeGateServerHandlerUnauthorized() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestActiveGateVersionPath(OsUnix):
+		case getLatestActiveGateVersionPath(installer.OsUnix):
 			writer.WriteHeader(http.StatusUnauthorized)
 			_, _ = writer.Write([]byte("{\"error\":{\"code\":401,\"message\":\"Token Authentication failed\"}}"))
 		default:

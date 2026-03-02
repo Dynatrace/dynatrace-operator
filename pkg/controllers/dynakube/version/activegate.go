@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -79,7 +80,7 @@ func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
-	latestVersion, err := updater.dtClient.AsV2().Version.GetLatestActiveGateVersion(ctx, dtclient.OsUnix)
+	latestVersion, err := updater.dtClient.AsV2().Version.GetLatestActiveGateVersion(ctx, installer.OsUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)

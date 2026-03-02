@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/pkg/errors"
 )
 
@@ -41,7 +42,7 @@ func getLatestAgentVersionPath(os string, installerType string) string {
 
 // determineArch gives you the proper arch value, because the OSAgent and ActiveGate images on the tenant-image-registry only have AMD images.
 func determineArch(installerType string) string {
-	if installerType == InstallerTypeDefault {
+	if installerType == installer.InstallerTypeDefault {
 		return ""
 	}
 
@@ -50,7 +51,7 @@ func determineArch(installerType string) string {
 
 // determineFlavor gives you the proper flavor value, because the default installer type has no "multidistro" flavor so the default flavor is always needed in that case.
 func determineFlavor(installerType string) string { //nolint:nolintlint,unparam
-	if installerType == InstallerTypeDefault {
+	if installerType == installer.InstallerTypeDefault {
 		return arch.FlavorDefault
 	}
 

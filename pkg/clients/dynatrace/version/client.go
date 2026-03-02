@@ -6,20 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 )
 
-// Relevant installer types.
-const (
-	InstallerTypeDefault = "default"
-	InstallerTypePaaS    = "paas"
-)
-
-const (
-	OsUnix = "unix"
-	// Commented for linter, left for further reference
-	// OsWindows = "windows"
-	// OsAix     = "aix"
-	// OsSolaris = "solaris"
-)
-
 type APIClient interface {
 	// GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
 	// Returns the version as received from the server on success.
