@@ -20,11 +20,11 @@ func TestGetEntityIDForIP(t *testing.T) {
 			}).
 			Return(req).Once()
 		req.EXPECT().
-			Execute(new([]HostsResponse)).
+			Execute(new([]HostResponse)).
 			Run(func(model any) {
 				if err == nil {
-					resp := model.(*[]HostsResponse)
-					*resp = []HostsResponse{
+					resp := model.(*[]HostResponse)
+					*resp = []HostResponse{
 						{EntityID: "HOST-42", IPAddresses: []string{"1.1.1.1"}},
 					}
 				}
@@ -65,7 +65,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 }
 
 func Test_buildHostEntityMap(t *testing.T) {
-	hosts := []HostsResponse{
+	hosts := []HostResponse{
 		{
 			EntityID:      "HOST-1",
 			NetworkZoneID: "default",
@@ -84,7 +84,7 @@ func Test_buildHostEntityMap(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		hosts       []HostsResponse
+		hosts       []HostResponse
 		networkZone string
 		want        hostEntityMap
 	}{
@@ -185,5 +185,5 @@ func TestNewMarkForTerminationEvent(t *testing.T) {
 		},
 		StartInMillis: 1771952400000,
 		EndInMillis:   1771952400000,
-	}, NewMarkForTerminationEvent("foo", "bar", "baz", timestamp))
+	}, NewMarkedForTerminationEvent("foo", "bar", "baz", timestamp))
 }

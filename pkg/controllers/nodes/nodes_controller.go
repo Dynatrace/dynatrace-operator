@@ -202,7 +202,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 		return err
 	}
 
-	err = hostEventClient.SendEvent(ctx, hostevent.NewMarkForTerminationEvent(
+	err = hostEventClient.SendEvent(ctx, hostevent.NewMarkedForTerminationEvent(
 		entityID,
 		"Dynatrace Operator",
 		"Kubernetes node cordoned. Node might be drained or terminated.",

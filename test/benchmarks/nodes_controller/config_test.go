@@ -56,9 +56,9 @@ func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 		}
 	}
 
-	responses := make([]hostevent.HostsResponse, bc.NumEntities)
+	responses := make([]hostevent.HostResponse, bc.NumEntities)
 	for i := range bc.NumEntities {
-		responses[i] = hostevent.HostsResponse{
+		responses[i] = hostevent.HostResponse{
 			EntityID:    generateEntityID(i),
 			IPAddresses: []string{generateNodeIP(i)},
 		}
