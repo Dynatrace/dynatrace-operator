@@ -514,8 +514,8 @@ func (_c *APIClient_GetKSPMSettings_Call) Run(run func(ctx context.Context, moni
 	return _c
 }
 
-func (_c *APIClient_GetKSPMSettings_Call) Return(getSettingsResponse settings.SettingsResponse[settings.KSPMSettingsValue], err error) *APIClient_GetKSPMSettings_Call {
-	_c.Call.Return(getSettingsResponse, err)
+func (_c *APIClient_GetKSPMSettings_Call) Return(settingsResponse settings.SettingsResponse[settings.KSPMSettingsValue], err error) *APIClient_GetKSPMSettings_Call {
+	_c.Call.Return(settingsResponse, err)
 	return _c
 }
 
@@ -654,8 +654,8 @@ func (_c *APIClient_GetSettingsForLogModule_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *APIClient_GetSettingsForLogModule_Call) Return(getSettingsResponse settings.SettingsResponse[json.RawMessage], err error) *APIClient_GetSettingsForLogModule_Call {
-	_c.Call.Return(getSettingsResponse, err)
+func (_c *APIClient_GetSettingsForLogModule_Call) Return(settingsResponse settings.SettingsResponse[json.RawMessage], err error) *APIClient_GetSettingsForLogModule_Call {
+	_c.Call.Return(settingsResponse, err)
 	return _c
 }
 
@@ -726,8 +726,8 @@ func (_c *APIClient_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context
 	return _c
 }
 
-func (_c *APIClient_GetSettingsForMonitoredEntity_Call) Return(getSettingsResponse settings.SettingsResponse[json.RawMessage], err error) *APIClient_GetSettingsForMonitoredEntity_Call {
-	_c.Call.Return(getSettingsResponse, err)
+func (_c *APIClient_GetSettingsForMonitoredEntity_Call) Return(settingsResponse settings.SettingsResponse[json.RawMessage], err error) *APIClient_GetSettingsForMonitoredEntity_Call {
+	_c.Call.Return(settingsResponse, err)
 	return _c
 }
 
