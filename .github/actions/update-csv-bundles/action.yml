@@ -106,20 +106,6 @@ runs:
         OLM_IMAGE: docker.io/dynatrace/dynatrace-operator:v${{ inputs.version }}@${{ inputs.digest }}
       run: |
         make bundle
-    - name: Finalize CSV files
-      shell: bash
-      env:
-        VERSION: ${{ inputs.version }}
-      run: |
-        echo "Finalizing CSV files for Kubernetes"
-        ./.github/scripts/release/csv/finalize_csv_files.py \
-          --platform "kubernetes" \
-          --version "${VERSION}"
-
-        echo "Finalizing CSV files for Openshift"
-        ./.github/scripts/release/csv/finalize_csv_files.py \
-          --platform "openshift" \
-          --version "${VERSION}"
     - name: Create GitHub app token
       uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
       id: create-github-app-token
