@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -54,29 +54,16 @@ func DeleteKSPMSettingsFromTenant(secretConfig tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		var kubeSystemNS corev1.Namespace
-		err := resources.Get(ctx, kubeSystemNamespace, "", &kubeSystemNS)
-		if err != nil {
-			t.Logf("Could not get kube-system namespace: %v, skipping KSPM settings cleanup", err)
-
-			return ctx
-		}
+		require.NoError(t, resources.Get(ctx, kubeSystemNamespace, "", &kubeSystemNS), "Could not get kube-system namespace")
 
 		kubeSystemUUID := string(kubeSystemNS.UID)
 		t.Logf("kube-system UUID: %s", kubeSystemUUID)
 
 		settingsClient, err := BuildSettingsClient(secretConfig)
-		if err != nil {
-			t.Logf("Could not build settings client: %v, skipping KSPM settings cleanup", err)
-
-			return ctx
-		}
+		require.NoError(t, err, "Could not build settings client")
 
 		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
-		if err != nil {
-			t.Logf("Could not get K8s cluster MEID: %v, skipping KSPM settings cleanup", err)
-
-			return ctx
-		}
+		require.NoError(t, err, "Could not get K8s cluster MEID")
 
 		if k8sClusterME.ID == "" {
 			t.Log("No Kubernetes Cluster MEID found, skipping KSPM settings cleanup")
@@ -87,11 +74,7 @@ func DeleteKSPMSettingsFromTenant(secretConfig tenant.Secret) features.Func {
 		t.Logf("Found Kubernetes Cluster MEID: %s", k8sClusterME.ID)
 
 		kspmSettings, err := settingsClient.GetKSPMSettings(ctx, k8sClusterME.ID)
-		if err != nil {
-			t.Logf("Could not query KSPM settings: %v, skipping cleanup", err)
-
-			return ctx
-		}
+		require.NoError(t, err, "Could not query KSPM settings")
 
 		if kspmSettings.TotalCount == 0 {
 			t.Log("No existing KSPM settings found on tenant")
@@ -102,11 +85,7 @@ func DeleteKSPMSettingsFromTenant(secretConfig tenant.Secret) features.Func {
 		t.Logf("Found %d existing KSPM settings, attempting to delete them", kspmSettings.TotalCount)
 
 		settingsWithIDs, err := settingsClient.GetKSPMSettings(ctx, k8sClusterME.ID)
-		if err != nil {
-			t.Logf("Could not get KSPM settings with IDs: %v, skipping cleanup", err)
-
-			return ctx
-		}
+		require.NoError(t, err, "Could not get KSPM settings with IDs")
 
 		for _, setting := range settingsWithIDs.Items {
 			t.Log("Deleting KSPM setting")
