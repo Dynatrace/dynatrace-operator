@@ -27,7 +27,9 @@ func setDaemonSetGenerationFailedCondition(conditions *[]metav1.Condition, err e
 		Type:    oaConditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  daemonSetGenerationFailedReason,
-		Message: "Failed to generate the DaemonSet configuration, error: " + err.Error(),
+		Message: "Failed to generate the DaemonSet configuration",
 	}
+
+	log.Error(err, "failed to generate the DaemonSet configuration")
 	_ = meta.SetStatusCondition(conditions, condition)
 }
