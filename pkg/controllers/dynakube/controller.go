@@ -85,14 +85,14 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
 
-		deploymentMetadataReconcilerBuilder: deploymentmetadata.NewReconciler,
-		activeGateReconcilerBuilder:         activegate.NewReconciler,
-		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
-		apiMonitoringReconcilerBuilder:      apimonitoring.NewReconciler,
-		injectionReconcilerBuilder:          injection.NewReconciler,
-		istioReconcilerBuilder:              istio.NewReconciler,
-		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
-		proxyReconcilerBuilder:              proxy.NewReconciler,
+		deploymentMetadataReconciler:   deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
+		activeGateReconcilerBuilder:    activegate.NewReconciler,
+		oneAgentReconcilerBuilder:      oneagent.NewReconciler,
+		apiMonitoringReconcilerBuilder: apimonitoring.NewReconciler,
+		injectionReconcilerBuilder:     injection.NewReconciler,
+		istioReconcilerBuilder:         istio.NewReconciler,
+		logMonitoringReconcilerBuilder: logmonitoring.NewReconciler,
+		proxyReconcilerBuilder:         proxy.NewReconciler,
 
 		extensionReconciler: extension.NewReconciler(kubeClient, apiReader),
 		kspmReconciler:      kspm.NewReconciler(kubeClient, apiReader),
@@ -139,14 +139,14 @@ type Controller struct {
 	config                 *rest.Config
 	istioClientBuilder     istio.ClientBuilder
 
-	deploymentMetadataReconcilerBuilder deploymentmetadata.ReconcilerBuilder
-	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
-	oneAgentReconcilerBuilder           oneagent.ReconcilerBuilder
-	apiMonitoringReconcilerBuilder      apimonitoring.ReconcilerBuilder
-	injectionReconcilerBuilder          injection.ReconcilerBuilder
-	istioReconcilerBuilder              istio.ReconcilerBuilder
-	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
-	proxyReconcilerBuilder              proxy.ReconcilerBuilder
+	deploymentMetadataReconciler   dynakubeReconciler
+	activeGateReconcilerBuilder    activegate.ReconcilerBuilder
+	oneAgentReconcilerBuilder      oneagent.ReconcilerBuilder
+	apiMonitoringReconcilerBuilder apimonitoring.ReconcilerBuilder
+	injectionReconcilerBuilder     injection.ReconcilerBuilder
+	istioReconcilerBuilder         istio.ReconcilerBuilder
+	logMonitoringReconcilerBuilder logmonitoring.ReconcilerBuilder
+	proxyReconcilerBuilder         proxy.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
@@ -297,7 +297,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 
 	log.Info("start reconciling deployment meta data")
 
-	err = controller.deploymentMetadataReconcilerBuilder(controller.client, controller.apiReader, *dk, controller.clusterID).Reconcile(ctx)
+	err = controller.deploymentMetadataReconciler.Reconcile(ctx, dk)
 	if err != nil {
 		return err
 	}
