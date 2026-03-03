@@ -459,10 +459,8 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	anyDynaKube := mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
 
-	mockDeploymentMetadataReconciler := newMockdynakubeReconciler(t)
+	mockDeploymentMetadataReconciler := newMockDynakubeReconciler(t)
 	mockDeploymentMetadataReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
-
-	anyDynaKube := mock.MatchedBy(func(*dynakube.DynaKube) bool { return true })
 
 	mockProxyReconciler := newMockDynakubeReconciler(t)
 	mockProxyReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
@@ -481,7 +479,7 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	mockExtensionReconciler := newMockDynakubeReconciler(t)
 
-  mockExtensionReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
+	mockExtensionReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
 
 	mockOtelcReconciler := newMockDynakubeReconciler(t)
 	mockOtelcReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
@@ -495,21 +493,21 @@ func TestReconcileDynaKube(t *testing.T) {
 	fakeIstio := fakeistio.NewSimpleClientset()
 
 	baseController := &Controller{
-		apiReader:                           fakeClient,
-		client:                              fakeClient,
-		istioClientBuilder:                  fakeIstioClientBuilder(t, fakeIstio, true),
-		activeGateReconcilerBuilder:         createActivegateReconcilerBuilder(mockActiveGateReconciler),
-		deploymentMetadataReconciler:        mockDeploymentMetadataReconciler,
-		dynatraceClientBuilder:              mockDtcBuilder,
-		extensionReconciler:                 mockExtensionReconciler,
-		injectionReconcilerBuilder:          createInjectionReconcilerBuilder(mockInjectionReconciler),
-		istioReconcilerBuilder:              istio.NewReconciler,
-		logMonitoringReconcilerBuilder:      createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
-		oneAgentReconcilerBuilder:           createOneAgentReconcilerBuilder(mockOneAgentReconciler),
-		otelcReconciler:                     mockOtelcReconciler,
-		proxyReconciler:                     mockProxyReconciler,
-		kspmReconciler:                      mockKSPMReconciler,
-		k8sEntityReconciler:                 mockK8sEntityReconciler,
+		apiReader:                      fakeClient,
+		client:                         fakeClient,
+		istioClientBuilder:             fakeIstioClientBuilder(t, fakeIstio, true),
+		activeGateReconcilerBuilder:    createActivegateReconcilerBuilder(mockActiveGateReconciler),
+		deploymentMetadataReconciler:   mockDeploymentMetadataReconciler,
+		dynatraceClientBuilder:         mockDtcBuilder,
+		extensionReconciler:            mockExtensionReconciler,
+		injectionReconcilerBuilder:     createInjectionReconcilerBuilder(mockInjectionReconciler),
+		istioReconcilerBuilder:         istio.NewReconciler,
+		logMonitoringReconcilerBuilder: createLogMonitoringReconcilerBuilder(mockLogMonitoringReconciler),
+		oneAgentReconcilerBuilder:      createOneAgentReconcilerBuilder(mockOneAgentReconciler),
+		otelcReconciler:                mockOtelcReconciler,
+		proxyReconciler:                mockProxyReconciler,
+		kspmReconciler:                 mockKSPMReconciler,
+		k8sEntityReconciler:            mockK8sEntityReconciler,
 	}
 
 	request := reconcile.Request{
@@ -576,24 +574,6 @@ func createLogMonitoringReconcilerBuilder(reconciler controllers.Reconciler) log
 
 func createInjectionReconcilerBuilder(reconciler controllers.Reconciler) injection.ReconcilerBuilder {
 	return func(client client.Client, apiReader client.Reader, dynatraceClient dtclient.Client, istioClient *istio.Client, dk *dynakube.DynaKube) controllers.Reconciler {
-		return reconciler
-	}
-}
-
-func createAPIMonitoringReconcilerBuilder(reconciler controllers.Reconciler) apimonitoring.ReconcilerBuilder {
-	return func(_ settings.APIClient, _ *dynakube.DynaKube, _ string) controllers.Reconciler {
-		return reconciler
-	}
-}
-
-func createProxyReconcilerBuilder(reconciler controllers.Reconciler) proxy.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ *dynakube.DynaKube) controllers.Reconciler {
-    return reconciler
-  }
-}
-
-func createDeploymentMetadataReconcilerBuilder(reconciler controllers.Reconciler) deploymentmetadata.ReconcilerBuilder {
-	return func(_ client.Client, _ client.Reader, _ dynakube.DynaKube, _ string) controllers.Reconciler {
 		return reconciler
 	}
 }
