@@ -86,11 +86,11 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		istioClientBuilder:     istio.NewClient,
 
 		deploymentMetadataReconciler:   deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
-		activeGateReconcilerBuilder:         activegate.NewReconciler,
-		oneAgentReconcilerBuilder:           oneagent.NewReconciler,
-		injectionReconcilerBuilder:          injection.NewReconciler,
-		istioReconcilerBuilder:              istio.NewReconciler,
-		logMonitoringReconcilerBuilder:      logmonitoring.NewReconciler,
+		activeGateReconcilerBuilder:    activegate.NewReconciler,
+		oneAgentReconcilerBuilder:      oneagent.NewReconciler,
+		injectionReconcilerBuilder:     injection.NewReconciler,
+		istioReconcilerBuilder:         istio.NewReconciler,
+		logMonitoringReconcilerBuilder: logmonitoring.NewReconciler,
 
 		apiMonitoringReconciler: apimonitoring.NewReconciler(),
 		extensionReconciler:     extension.NewReconciler(kubeClient, apiReader),
@@ -146,11 +146,11 @@ type Controller struct {
 	istioClientBuilder     istio.ClientBuilder
 
 	deploymentMetadataReconciler   dynakubeReconciler
-	activeGateReconcilerBuilder         activegate.ReconcilerBuilder
-	oneAgentReconcilerBuilder           oneagent.ReconcilerBuilder
-	injectionReconcilerBuilder          injection.ReconcilerBuilder
-	istioReconcilerBuilder              istio.ReconcilerBuilder
-	logMonitoringReconcilerBuilder      logmonitoring.ReconcilerBuilder
+	activeGateReconcilerBuilder    activegate.ReconcilerBuilder
+	oneAgentReconcilerBuilder      oneagent.ReconcilerBuilder
+	injectionReconcilerBuilder     injection.ReconcilerBuilder
+	istioReconcilerBuilder         istio.ReconcilerBuilder
+	logMonitoringReconcilerBuilder logmonitoring.ReconcilerBuilder
 
 	tokens            token.Tokens
 	operatorNamespace string
