@@ -3,6 +3,7 @@ package bootstrapperconfig
 import (
 	"context"
 	"encoding/json"
+	goerrors "errors"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/enrichment/endpoint"
@@ -47,23 +48,31 @@ func NewSecretGenerator(client client.Client, apiReader client.Reader, dtClient 
 func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	log.Info("reconciling namespace bootstrapper init secret for", "dynakube", dk.Name)
 
+	configErr := s.reconcileConfig(ctx, dk, namespaces)
+	certsErr := s.reconcileCerts(ctx, dk, namespaces)
+
+	return goerrors.Join(configErr, certsErr)
+}
+
+func (s *SecretGenerator) reconcileConfig(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	data, err := s.generateConfig(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	if len(data) != 0 {
-		err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
-		if err != nil {
-			return err
-		}
-
-		err = s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, namespaces, dk, data)
-		if err != nil {
-			return errors.WithStack(err)
-		}
+	if len(data) == 0 {
+		return nil
 	}
 
+	err = s.createSourceForWebhook(ctx, dk, GetSourceConfigSecretName(dk.Name), ConfigConditionType, data)
+	if err != nil {
+		return err
+	}
+
+	return s.createSecretForNSlist(ctx, consts.BootstrapperInitSecretName, ConfigConditionType, namespaces, dk, data)
+}
+
+func (s *SecretGenerator) reconcileCerts(ctx context.Context, dk *dynakube.DynaKube, namespaces []corev1.Namespace) error {
 	certs, err := s.generateCerts(ctx, dk)
 	if err != nil {
 		return errors.WithStack(err)
@@ -76,11 +85,10 @@ func (s *SecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynakube.
 		}
 
 		// Create the certs secret for all namespaces
-		err := s.createSecretForNSlist(ctx, consts.BootstrapperInitCertsSecretName, CertsConditionType, namespaces, dk, certs)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	} else if meta.FindStatusCondition(*dk.Conditions(), CertsConditionType) != nil {
+		return s.createSecretForNSlist(ctx, consts.BootstrapperInitCertsSecretName, CertsConditionType, namespaces, dk, certs)
+	}
+
+	if meta.FindStatusCondition(*dk.Conditions(), CertsConditionType) != nil {
 		return cleanupCerts(ctx, s.client, s.apiReader, namespaces, dk)
 	}
 
