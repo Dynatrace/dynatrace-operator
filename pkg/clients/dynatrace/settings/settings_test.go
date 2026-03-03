@@ -80,8 +80,9 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 		apiClient := coremock.NewAPIClient(t)
 		request := coremock.NewAPIRequest(t)
 		request.EXPECT().WithQueryParams(map[string]string{
-			schemaIDsQueryParam: "schema-1",
-			scopesQueryParam:    "entity-1",
+			validateOnlyQueryParam: "true",
+			schemaIDsQueryParam:    "schema-1",
+			scopesQueryParam:       "entity-1",
 		}).Return(request).Once()
 		request.EXPECT().Execute(new(SimpleSettingsResponse)).Run(func(obj any) {
 			target := obj.(*SimpleSettingsResponse)
