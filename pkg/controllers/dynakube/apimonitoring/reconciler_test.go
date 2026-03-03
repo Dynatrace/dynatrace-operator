@@ -2,7 +2,6 @@ package apimonitoring
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"strconv"
 	"testing"
@@ -43,7 +42,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, nil).Once()
+			Return(settings.SimpleSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, testMEID).
 			Return(testObjectID, nil).Once()
@@ -58,10 +57,10 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 1}, nil).Once()
+			Return(settings.SimpleSettingsResponse{TotalCount: 1}, nil).Once()
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.AppTransitionSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 1}, nil).Once()
+			Return(settings.SimpleSettingsResponse{TotalCount: 1}, nil).Once()
 
 		r := NewReconciler()
 		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, newDynaKube())
@@ -91,10 +90,10 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 1}, nil).Once()
+			Return(settings.SimpleSettingsResponse{TotalCount: 1}, nil).Once()
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.AppTransitionSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, &core.HTTPError{StatusCode: 404}).Once()
+			Return(settings.SimpleSettingsResponse{}, &core.HTTPError{StatusCode: 404}).Once()
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, anyClusterLabel, newDynaKube())
@@ -108,7 +107,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.KubernetesSettingsSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, nil).Once()
+			Return(settings.SimpleSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, "").
 			Return(testObjectID, nil).Once()
@@ -138,7 +137,7 @@ func TestReconcileErrors(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, expectErr).Once()
+			Return(settings.SimpleSettingsResponse{}, expectErr).Once()
 
 		r := NewReconciler()
 		actual, err := r.createObjectIDIfNotExists(t.Context(), dtClient, anyClusterLabel, newDynaKube())
@@ -153,7 +152,7 @@ func TestReconcileErrors(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, nil).Once()
+			Return(settings.SimpleSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesSetting(anyCtx, testName, testUID, testMEID).
 			Return("", expectErr).Once()
@@ -171,10 +170,10 @@ func TestReconcileErrors(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.KubernetesSettingsSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 1}, nil).Once()
+			Return(settings.SimpleSettingsResponse{TotalCount: 1}, nil).Once()
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{ID: testMEID}, settings.AppTransitionSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, nil).Once()
+			Return(settings.SimpleSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, testMEID).
 			Return("", expectErr).Once()
@@ -192,7 +191,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.AppTransitionSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, nil).Once()
+			Return(settings.SimpleSettingsResponse{}, nil).Once()
 
 		r := NewReconciler()
 		err := r.handleKubernetesAppEnabled(t.Context(), settings.K8sClusterME{}, dtClient, newDynaKube())
@@ -205,7 +204,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, entity, settings.AppTransitionSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 1}, nil).Once()
+			Return(settings.SimpleSettingsResponse{TotalCount: 1}, nil).Once()
 
 		r := NewReconciler()
 		err := r.handleKubernetesAppEnabled(t.Context(), entity, dtClient, newDynaKube())
@@ -218,7 +217,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, settings.K8sClusterME{}, settings.AppTransitionSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, expectErr).Once()
+			Return(settings.SimpleSettingsResponse{}, expectErr).Once()
 
 		r := NewReconciler()
 		err := r.handleKubernetesAppEnabled(t.Context(), settings.K8sClusterME{}, dtClient, newDynaKube())
@@ -233,7 +232,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, entity, settings.AppTransitionSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, nil).Once()
+			Return(settings.SimpleSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, entity.ID).
 			Return("", expectErr).Once()
@@ -250,7 +249,7 @@ func TestHandleKubernetesAppEnabled(t *testing.T) {
 		dtClient := settingsmock.NewAPIClient(t)
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, entity, settings.AppTransitionSchemaID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, nil).Once()
+			Return(settings.SimpleSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
 			CreateOrUpdateKubernetesAppSetting(anyCtx, entity.ID).
 			Return("test", nil).Once()

@@ -1,7 +1,6 @@
 package logmonsettings
 
 import (
-	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -42,7 +41,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 1}, nil)
+			Return(settings.SimpleSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
 		r := NewReconciler(mockClient, dk)
@@ -59,7 +58,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 0}, nil)
+			Return(settings.SimpleSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, mock.Anything).
 			Return("test-object-id", nil)
 
@@ -123,7 +122,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("update condition timestamp if outdated", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 1}, nil)
+			Return(settings.SimpleSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
 		setReadScope(t, dk)
@@ -197,7 +196,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	t.Run("error fetching log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
-			Return(settings.SettingsResponse[json.RawMessage]{}, errors.New("error when fetching settings"))
+			Return(settings.SimpleSettingsResponse{}, errors.New("error when fetching settings"))
 
 		dk := getDK()
 
@@ -226,7 +225,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	t.Run("log monitoring settings already exist", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 1}, nil)
+			Return(settings.SimpleSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
 
@@ -241,7 +240,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	t.Run("create log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 0}, nil)
+			Return(settings.SimpleSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
 			Return("test-object-id", nil)
 
@@ -268,7 +267,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	t.Run("error creating log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewAPIClient(t)
 		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
-			Return(settings.SettingsResponse[json.RawMessage]{TotalCount: 0}, nil)
+			Return(settings.SimpleSettingsResponse{TotalCount: 0}, nil)
 		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
 			Return("", errors.New("error when creating"))
 

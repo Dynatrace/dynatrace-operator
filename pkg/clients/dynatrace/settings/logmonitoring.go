@@ -2,7 +2,6 @@ package settings
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
@@ -27,12 +26,12 @@ type ingestRuleMatchers struct {
 }
 
 // GetSettingsForLogModule returns the settings response with the number of settings objects and their values.
-func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (SettingsResponse[json.RawMessage], error) {
+func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (SimpleSettingsResponse, error) {
 	if monitoredEntity == "" {
-		return SettingsResponse[json.RawMessage]{}, nil
+		return SimpleSettingsResponse{}, nil
 	}
 
-	var resp SettingsResponse[json.RawMessage]
+	var resp SimpleSettingsResponse
 
 	err := c.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
@@ -42,7 +41,7 @@ func (c *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity st
 		}).
 		Execute(&resp)
 	if err != nil {
-		return SettingsResponse[json.RawMessage]{}, fmt.Errorf("get logmonitoring settings: %w", err)
+		return SimpleSettingsResponse{}, fmt.Errorf("get logmonitoring settings: %w", err)
 	}
 
 	return resp, nil

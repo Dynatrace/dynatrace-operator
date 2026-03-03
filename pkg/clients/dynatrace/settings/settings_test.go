@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -84,8 +83,8 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 			schemaIDsQueryParam: "schema-1",
 			scopesQueryParam:    "entity-1",
 		}).Return(request).Once()
-		request.EXPECT().Execute(new(SettingsResponse[json.RawMessage])).Run(func(obj any) {
-			target := obj.(*SettingsResponse[json.RawMessage])
+		request.EXPECT().Execute(new(SimpleSettingsResponse)).Run(func(obj any) {
+			target := obj.(*SimpleSettingsResponse)
 			target.TotalCount = 2
 		}).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request)
@@ -93,7 +92,7 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{ID: "entity-1"}, "schema-1")
 		require.NoError(t, err)
-		assert.Equal(t, SettingsResponse[json.RawMessage]{TotalCount: 2}, resp)
+		assert.Equal(t, SimpleSettingsResponse{TotalCount: 2}, resp)
 	})
 
 	t.Run("empty monitoredEntity.ID", func(t *testing.T) {
@@ -101,7 +100,7 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 		client := NewClient(apiClient)
 		resp, err := client.GetSettingsForMonitoredEntity(ctx, K8sClusterME{}, "schema-1")
 		require.NoError(t, err)
-		assert.Equal(t, SettingsResponse[json.RawMessage]{TotalCount: 0}, resp)
+		assert.Equal(t, SimpleSettingsResponse{TotalCount: 0}, resp)
 	})
 }
 
