@@ -129,7 +129,7 @@ func TestDeleteSettings(t *testing.T) {
 		client := NewClient(apiClient)
 		err := client.DeleteSettings(ctx, objectID)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "delete monitored entity settings")
+		assert.ErrorIs(t, err, errDeleteSettings)
 	})
 
 	t.Run("empty objectID", func(t *testing.T) {
@@ -137,7 +137,7 @@ func TestDeleteSettings(t *testing.T) {
 		client := NewClient(apiClient)
 		err := client.DeleteSettings(ctx, "")
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot delete settings: no settings ID provided")
+		assert.ErrorIs(t, err, errNoSettingsIDProvided)
 	})
 }
 

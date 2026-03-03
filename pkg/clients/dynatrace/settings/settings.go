@@ -33,7 +33,11 @@ const (
 	ObjectsPath = "/v2/settings/objects"
 )
 
-var errMissingKubeSystemUUID = errors.New("no kube-system namespace UUID given")
+var (
+	errMissingKubeSystemUUID = errors.New("no kube-system namespace UUID given")
+	errDeleteSettings        = errors.New("delete monitored entity settings failed")
+	errNoSettingsIDProvided  = errors.New("no settings ID provided")
+)
 
 type APIClient interface {
 	// GetK8sClusterME returns the Kubernetes Cluster Monitored Entity for the give kubernetes cluster.
@@ -210,13 +214,13 @@ func (c *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEnt
 // DeleteSettings deletes the settings using the settings object ID.
 func (c *Client) DeleteSettings(ctx context.Context, objectID string) error {
 	if objectID == "" {
-		return errors.New("cannot delete settings: no settings ID provided")
+		return errNoSettingsIDProvided
 	}
 
 	err := c.apiClient.DELETE(ctx, path.Join(ObjectsPath, objectID)).
 		Execute(nil)
 	if err != nil {
-		return fmt.Errorf("delete monitored entity settings: %w", err)
+		return fmt.Errorf("%w: %w", errDeleteSettings, err)
 	}
 
 	return nil
