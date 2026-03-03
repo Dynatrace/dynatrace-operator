@@ -2,10 +2,8 @@ package version
 
 import (
 	"errors"
-	"net/http"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	coremock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/core"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +11,7 @@ import (
 )
 
 func TestGetLatestActiveGateVersion(t *testing.T) {
-	setupMockedClient := func(t *testing.T, os string) *Client {
+	setupMockedClient := func(t *testing.T, os string, err error) *Client {
 		req := coremock.NewAPIRequest(t)
 		req.EXPECT().
 			WithPaasToken().
@@ -28,100 +26,33 @@ func TestGetLatestActiveGateVersion(t *testing.T) {
 				})
 				resp.LatestGatewayVersion = "1.2.3"
 			}).
-			Return(nil).Once()
+			Return(err).Once()
 		client := coremock.NewAPIClient(t)
 		client.EXPECT().GET(t.Context(), getLatestActiveGateVersionPath(os)).Return(req).Once()
 
 		return NewClient(client)
 	}
 
-	t.Run("ok, paas token", func(t *testing.T) {
-		client := setupMockedClient(t, installer.OsUnix)
+	t.Run("ok - returns version", func(t *testing.T) {
+		client := setupMockedClient(t, installer.OsUnix, nil)
+
 		version, err := client.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
 
-	t.Run("ok", func(t *testing.T) {
-		versionClient := setupVersionClient(activeGateServerHandlerOk())
+	t.Run("empty os", func(t *testing.T) {
+		client := NewClient(nil)
 
-		response, err := versionClient.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
-
-		require.NoError(t, err)
-
-		assert.Equal(t, "1.2.3", response)
+		_, err := client.GetLatestActiveGateVersion(t.Context(), "")
+		assert.Error(t, err, "os is empty")
 	})
 
-	t.Run("bad request", func(t *testing.T) {
-		versionClient := setupVersionClient(activeGateServerHandlerBadRequest())
+	t.Run("server error", func(t *testing.T) {
+		expectErr := errors.New("boom")
+		client := setupMockedClient(t, installer.OsUnix, expectErr)
 
-		_, err := versionClient.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
-
-		var httpErr *core.HTTPError
-		ok := errors.As(err, &httpErr)
-		require.True(t, ok)
-
-		require.Len(t, httpErr.ServerErrors, 1)
-		assert.Equal(t, http.StatusBadRequest, httpErr.ServerErrors[0].Code)
-		assert.Equal(t, "Constraints violated.", httpErr.ServerErrors[0].Message)
+		_, err := client.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
+		assert.ErrorIs(t, err, expectErr)
 	})
-
-	t.Run("unauthorized", func(t *testing.T) {
-		versionClient := setupVersionClient(activeGateServerHandlerUnauthorized())
-
-		_, err := versionClient.GetLatestActiveGateVersion(t.Context(), installer.OsUnix)
-
-		var httpErr *core.HTTPError
-		ok := errors.As(err, &httpErr)
-		require.True(t, ok)
-
-		require.Len(t, httpErr.ServerErrors, 1)
-		assert.Equal(t, http.StatusUnauthorized, httpErr.ServerErrors[0].Code)
-		assert.Equal(t, "Token Authentication failed", httpErr.ServerErrors[0].Message)
-	})
-}
-
-func activeGateServerHandlerOk() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("Content-Type", "application/json")
-
-		switch request.URL.Path {
-		case getLatestActiveGateVersionPath(installer.OsUnix):
-			writer.WriteHeader(http.StatusOK)
-
-			response := "{\"latestGatewayVersion\":\"1.2.3\"}"
-
-			_, _ = writer.Write([]byte(response))
-		default:
-			writer.WriteHeader(http.StatusInternalServerError)
-		}
-	}
-}
-
-func activeGateServerHandlerBadRequest() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("Content-Type", "application/json")
-
-		switch request.URL.Path {
-		case getLatestActiveGateVersionPath(installer.OsUnix):
-			writer.WriteHeader(http.StatusBadRequest)
-			_, _ = writer.Write([]byte("{\"error\":{\"code\":400,\"message\":\"Constraints violated.\",\"constraintViolations\":[{\"path\":\"bitness\",\"message\":\"'any' must be any of [...]\"}]}}"))
-		default:
-			writer.WriteHeader(http.StatusInternalServerError)
-		}
-	}
-}
-
-func activeGateServerHandlerUnauthorized() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("Content-Type", "application/json")
-
-		switch request.URL.Path {
-		case getLatestActiveGateVersionPath(installer.OsUnix):
-			writer.WriteHeader(http.StatusUnauthorized)
-			_, _ = writer.Write([]byte("{\"error\":{\"code\":401,\"message\":\"Token Authentication failed\"}}"))
-		default:
-			writer.WriteHeader(http.StatusInternalServerError)
-		}
-	}
 }

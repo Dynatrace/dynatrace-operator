@@ -11,13 +11,13 @@ import (
 
 // GetLatestAgentVersion gets the latest agent version for the given OS and installer type configured on the Tenant.
 func (c *Client) GetLatestAgentVersion(ctx context.Context, os, installerType string) (string, error) {
-	response := struct {
-		LatestAgentVersion string `json:"latestAgentVersion"`
-	}{}
-
 	if len(os) == 0 || len(installerType) == 0 {
 		return "", errors.New("os or installerType is empty")
 	}
+
+	response := struct {
+		LatestAgentVersion string `json:"latestAgentVersion"`
+	}{}
 
 	path := getLatestAgentVersionPath(os, installerType)
 

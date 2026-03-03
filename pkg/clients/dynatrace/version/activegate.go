@@ -9,6 +9,10 @@ import (
 
 // GetLatestActiveGateVersion gets the latest gateway version for the given OS and arch configured on the Tenant.
 func (c *Client) GetLatestActiveGateVersion(ctx context.Context, os string) (string, error) {
+	if len(os) == 0 {
+		return "", errors.New("os is empty")
+	}
+
 	response := struct {
 		LatestGatewayVersion string `json:"latestGatewayVersion"`
 	}{}
