@@ -85,19 +85,19 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
 
-		deploymentMetadataReconciler:   deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
 		activeGateReconcilerBuilder:    activegate.NewReconciler,
 		oneAgentReconcilerBuilder:      oneagent.NewReconciler,
 		injectionReconcilerBuilder:     injection.NewReconciler,
 		istioReconcilerBuilder:         istio.NewReconciler,
 		logMonitoringReconcilerBuilder: logmonitoring.NewReconciler,
 
-		apiMonitoringReconciler: apimonitoring.NewReconciler(),
-		extensionReconciler:     extension.NewReconciler(kubeClient, apiReader),
-		kspmReconciler:          kspm.NewReconciler(kubeClient, apiReader),
-		k8sEntityReconciler:     k8sentity.NewReconciler(),
-		otelcReconciler:         otelc.NewReconciler(kubeClient, apiReader),
-		proxyReconciler:         proxy.NewReconciler(kubeClient, apiReader),
+		apiMonitoringReconciler:      apimonitoring.NewReconciler(),
+		extensionReconciler:          extension.NewReconciler(kubeClient, apiReader),
+		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
+		k8sEntityReconciler:          k8sentity.NewReconciler(),
+		otelcReconciler:              otelc.NewReconciler(kubeClient, apiReader),
+		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
+		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
 	}
 }
 
@@ -134,18 +134,18 @@ type Controller struct {
 	apiReader     client.Reader
 	eventRecorder record.EventRecorder
 
-	apiMonitoringReconciler apiMonitoringReconciler
-	extensionReconciler     dynakubeReconciler
-	k8sEntityReconciler     dtSettingReconciler
-	kspmReconciler          dtSettingReconciler
-	otelcReconciler         dynakubeReconciler
-	proxyReconciler         dynakubeReconciler
+	apiMonitoringReconciler      apiMonitoringReconciler
+	extensionReconciler          dynakubeReconciler
+	k8sEntityReconciler          dtSettingReconciler
+	kspmReconciler               dtSettingReconciler
+	otelcReconciler              dynakubeReconciler
+	proxyReconciler              dynakubeReconciler
+	deploymentMetadataReconciler dynakubeReconciler
 
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
 	istioClientBuilder     istio.ClientBuilder
 
-	deploymentMetadataReconciler   dynakubeReconciler
 	activeGateReconcilerBuilder    activegate.ReconcilerBuilder
 	oneAgentReconcilerBuilder      oneagent.ReconcilerBuilder
 	injectionReconcilerBuilder     injection.ReconcilerBuilder
