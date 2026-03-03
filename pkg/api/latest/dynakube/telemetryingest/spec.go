@@ -1,5 +1,7 @@
 package telemetryingest
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+
 type TelemetryIngest struct {
 	*Spec
 
@@ -15,6 +17,7 @@ type Spec struct {
 	// +kubebuilder:validation:Optional
 	TLSRefName string `json:"tlsRefName,omitempty"`
 
+	// +listType=set
 	// +kubebuilder:validation:Optional
-	Protocols []string `json:"protocols,omitempty"`
+	Protocols []otelcgen.Protocol `json:"protocols,omitempty"`
 }

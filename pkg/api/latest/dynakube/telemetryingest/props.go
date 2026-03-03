@@ -19,12 +19,7 @@ func (spec *Spec) GetProtocols() otelcgen.Protocols {
 		return otelcgen.RegisteredProtocols
 	}
 
-	protocols := make(otelcgen.Protocols, len(spec.Protocols))
-	for i, proto := range spec.Protocols {
-		protocols[i] = otelcgen.Protocol(proto)
-	}
-
-	return protocols
+	return spec.Protocols
 }
 
 func (ts *TelemetryIngest) SetName(name string) {

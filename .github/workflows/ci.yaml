@@ -206,6 +206,8 @@ jobs:
         with:
           version: ${{ steps.linter-version.outputs.version }}
           skip-cache: true
+      - name: Run deadcode
+        run: make go/deadcode
 
   generated-files:
     name: Check generated files
