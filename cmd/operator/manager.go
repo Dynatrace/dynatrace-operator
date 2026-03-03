@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"os"
 	"strconv"
 	"time"
@@ -88,6 +89,7 @@ func createOptions(namespace string) ctrl.Options {
 }
 
 func getTimeFromEnvWithDefault(envName string, defaultValue int64) *time.Duration {
+	log := logd.Get().WithName("operator")
 	duration := time.Duration(defaultValue) * time.Second
 
 	envValue := os.Getenv(envName)

@@ -39,8 +39,10 @@ func New() *cobra.Command {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+	log := logd.Get().WithName("operator")
+
 	installconfig.ReadModules()
-	version.LogVersion()
+	version.LogVersionTo(log)
 	logd.LogBaseLoggerSettings()
 
 	ctrl.SetLogger(log.Logger)
@@ -119,6 +121,8 @@ func runLocally(kubeCfg *rest.Config) error {
 }
 
 func checkCRDs(operatorManager manager.Manager) error {
+	log := logd.Get().WithName("operator")
+
 	groupKind := schema.GroupKind{
 		Group: latest.GroupVersion.Group,
 		Kind:  reflect.TypeOf(dynakube.DynaKube{}).Name(),

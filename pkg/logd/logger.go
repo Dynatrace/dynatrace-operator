@@ -23,8 +23,8 @@ func Get() Logger {
 	baseLoggerOnce.Do(func() {
 		logLevel, err := readLogLevelFromEnv()
 		baseLogger = Logger{
-			//Logger: newZapLogger(NewPrettyLogWriter(), logLevel),
-			Logger: newSlogger(NewPrettyLogWriter(), logLevel),
+			Logger: newZapLogger(NewPrettyLogWriter(), logLevel),
+			//Logger: newSlogger(NewPrettyLogWriter(), logLevel),
 		}
 
 		if err != nil {
@@ -38,9 +38,9 @@ func Get() Logger {
 func LogBaseLoggerSettings() {
 	logLevel, err := readLogLevelFromEnv()
 	if err != nil {
-		baseLogger.Error(err, "failed to read log level from environment variable")
+		Get().Error(err, "failed to read log level from environment variable")
 	} else {
-		baseLogger.Info("logging level", "LogLevel", logLevel.String())
+		Get().Info("logging level", "LogLevel", logLevel.String())
 	}
 }
 

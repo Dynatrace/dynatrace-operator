@@ -1,7 +1,5 @@
 package operator
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/logd"
-
 const (
 	metricsBindAddress     = ":8080"
 	healthProbeBindAddress = ":10080"
@@ -20,4 +18,4 @@ const (
 	defaultRetryPeriod   = int64(6)
 )
 
-var log = logd.Get().WithName("operator")
+//var log = logd.Get().WithName("operator")

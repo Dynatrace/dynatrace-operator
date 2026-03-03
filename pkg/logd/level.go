@@ -9,6 +9,21 @@ import (
 
 type LogLevel slog.Level
 
+// consts for zap
+
+const (
+	LogLevelOffset = 100
+	// these values are chosen to correspond with zapcore.Level values
+	TraceLevel LogLevel = LogLevelOffset + 3
+	DebugLevel LogLevel = LogLevelOffset + 2
+	InfoLevel  LogLevel = LogLevelOffset + 1
+	WarnLevel  LogLevel = LogLevelOffset + 0
+	ErrorLevel LogLevel = -1
+
+	DefaultLevel = InfoLevel
+)
+
+// consts for slog
 /*
 const (
 	// these values are chosen to correspond with zapcore.Level values
@@ -16,22 +31,10 @@ const (
 	DebugLevel LogLevel = 2
 	InfoLevel  LogLevel = 1
 	WarnLevel  LogLevel = 0
-	ErrorLevel LogLevel = -1
+	ErrorLevel LogLevel = -8
 
 	DefaultLevel = InfoLevel
-)
-*/
-
-const (
-	// these values are chosen to correspond with zapcore.Level values
-	TraceLevel LogLevel = LogLevel(slog.LevelDebug - 4)
-	DebugLevel LogLevel = LogLevel(slog.LevelDebug)
-	InfoLevel  LogLevel = LogLevel(slog.LevelInfo)
-	WarnLevel  LogLevel = LogLevel(slog.LevelWarn)
-	ErrorLevel LogLevel = LogLevel(slog.LevelError)
-
-	DefaultLevel = InfoLevel
-)
+)*/
 
 func (l LogLevel) String() string {
 	switch l {

@@ -89,7 +89,7 @@ func TestSlog(t *testing.T) {
 	t.Run("slog via wrapper", func(t *testing.T) {
 		logger := Logger{
 			//Logger: newZapLogger(NewPrettyLogWriter(), logLevel),
-			Logger: newSlogger(t.Output(), TraceLevel),
+			Logger: newSlogger(NewPrettyLogWriter(WithWriter(t.Output())), TraceLevel),
 		}
 
 		logger.Error(errors.New("Error"), "ErrorLog", "key-error", "value-error")

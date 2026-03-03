@@ -16,8 +16,10 @@ func SetLogLevel(lvl LogLevel) {
 func newSlogger(out io.Writer, logLevel LogLevel) logr.Logger {
 	// make dynamic changing of log level possible
 	var lv slog.LevelVar
+
 	// TODO: remove override
 	logLevel = LogLevel(slog.LevelDebug)
+
 	lv.Set(slog.Level(logLevel))
 
 	handlerOpts := &slog.HandlerOptions{
@@ -36,6 +38,7 @@ func newSlogger(out io.Writer, logLevel LogLevel) logr.Logger {
 			case slog.LevelKey:
 				// this one is already DT compliant
 				a.Key = slog.LevelKey
+				a.Value = slogLogLeveString(a.Value)
 			}
 
 			return a
@@ -45,4 +48,24 @@ func newSlogger(out io.Writer, logLevel LogLevel) logr.Logger {
 	jsonHandler := slog.NewJSONHandler(out, handlerOpts)
 
 	return logr.FromSlogHandler(jsonHandler)
+}
+
+func slogLogLeveString(v slog.Value) slog.Value {
+	if v.Kind() == slog.KindAny {
+		switch val := v.Any().(type) {
+		case slog.Level:
+			return mappedLogLevelString(val)
+		}
+	}
+	return v
+}
+
+func mappedLogLevelString(v slog.Level) slog.Value {
+
+	if v == slog.LevelError {
+		return slog.StringValue("error")
+	}
+
+	lvl := LogLevel(v.Level()) * -1
+	return slog.StringValue(lvl.String())
 }

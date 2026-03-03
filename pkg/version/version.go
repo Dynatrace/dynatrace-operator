@@ -26,10 +26,13 @@ var (
 )
 
 // LogVersion logs metadata about the Operator.
-func LogVersion() {
-	LogVersionToLogger(log)
+func LogVersionTo(log logd.Logger) {
+	LogVersionToLogger(log.WithName("version"))
 }
 
+func LogVersion() {
+	LogVersionTo(log)
+}
 func LogVersionToLogger(log logd.Logger) {
 	log.Info(AppName,
 		"version", Version,
