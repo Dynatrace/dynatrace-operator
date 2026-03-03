@@ -13,12 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-)
-
-const (
-	kubeSystemNamespace = "kube-system"
 )
 
 func BuildSettingsClient(secretConfig tenant.Secret) (dtsettings.APIClient, error) {
@@ -54,7 +51,7 @@ func DeleteKSPMSettingsFromTenant(secretConfig tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		var kubeSystemNS corev1.Namespace
-		require.NoError(t, resources.Get(ctx, kubeSystemNamespace, "", &kubeSystemNS), "Could not get kube-system namespace")
+		require.NoError(t, resources.Get(ctx, metav1.NamespaceSystem, "", &kubeSystemNS), "Could not get kube-system namespace")
 
 		kubeSystemUUID := string(kubeSystemNS.UID)
 		t.Logf("kube-system UUID: %s", kubeSystemUUID)
