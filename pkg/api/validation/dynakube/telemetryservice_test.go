@@ -13,9 +13,8 @@ import (
 )
 
 const (
-	testOtherName        = "test-other-name"
-	testServiceName      = "test-service-name"
-	testOtherServiceName = "test-other-service-name"
+	testOtherName   = "test-other-name"
+	testServiceName = "test-service-name"
 )
 
 var otherDynakubeObjectMeta = metav1.ObjectMeta{
@@ -97,44 +96,6 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 							otelcgen.OtlpProtocol,
 							"unknown1",
 							"unknown2",
-						},
-					},
-				},
-			})
-	})
-
-	t.Run("duplicated protocol", func(t *testing.T) {
-		assertDenied(t,
-			[]string{errorTelemetryIngestDuplicatedProtocols},
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []otelcgen.Protocol{
-							otelcgen.ZipkinProtocol,
-							otelcgen.OtlpProtocol,
-							otelcgen.OtlpProtocol,
-						},
-					},
-				},
-			})
-	})
-
-	t.Run("duplicated protocols", func(t *testing.T) {
-		assertDenied(t,
-			[]string{errorTelemetryIngestDuplicatedProtocols},
-			&dynakube.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynakube.DynaKubeSpec{
-					APIURL: testAPIURL,
-					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []otelcgen.Protocol{
-							otelcgen.ZipkinProtocol,
-							otelcgen.ZipkinProtocol,
-							otelcgen.OtlpProtocol,
-							otelcgen.OtlpProtocol,
-							otelcgen.JaegerProtocol,
 						},
 					},
 				},

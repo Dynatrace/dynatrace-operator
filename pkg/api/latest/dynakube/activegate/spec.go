@@ -106,6 +106,7 @@ type Spec struct {
 	CapabilityProperties `json:",inline"`
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
+	// +listType=set
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	enabledDependencies dependencies

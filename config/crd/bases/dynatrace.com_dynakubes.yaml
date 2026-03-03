@@ -5893,6 +5893,7 @@ spec:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: set
                   customProperties:
                     properties:
                       value:
@@ -8376,6 +8377,7 @@ spec:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: set
                   serviceName:
                     type: string
                   tlsRefName:
