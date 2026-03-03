@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -175,7 +176,7 @@ func TestWebhook(t *testing.T) {
 			spec: dynakube.DynaKubeSpec{
 				APIURL: "https://test.localhost/api",
 				TelemetryIngest: &telemetryingest.Spec{
-					Protocols: []string{
+					Protocols: []otelcgen.Protocol{
 						"zipkin",
 						"zipkin",
 					},

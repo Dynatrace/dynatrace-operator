@@ -51,7 +51,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{},
+						Protocols: []otelcgen.Protocol{},
 					},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
@@ -73,9 +73,9 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
+						Protocols: []otelcgen.Protocol{
+							otelcgen.ZipkinProtocol,
+							otelcgen.OtlpProtocol,
 							"unknown",
 						},
 					},
@@ -91,9 +91,9 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []string{
-							string(otelcgen.ZipkinProtocol),
-							string(otelcgen.OtlpProtocol),
+						Protocols: []otelcgen.Protocol{
+							otelcgen.ZipkinProtocol,
+							otelcgen.OtlpProtocol,
 							"unknown1",
 							"unknown2",
 						},
