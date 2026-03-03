@@ -193,7 +193,7 @@ func TestReconciler(t *testing.T) {
 		dtClient := dtclientmock.NewClient(t)
 		istioClient := setupIstioClientWithObjects(dk)
 		settingsClient := settingsmock.NewAPIClient(t)
-		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Once()
+		dtClient.EXPECT().AsV2().Return(&dtclient.ClientV2{Settings: settingsClient}).Twice()
 
 		rec := NewReconciler(clt, clt, dtClient, istioClient, dk)
 

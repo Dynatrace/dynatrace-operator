@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -18,20 +18,20 @@ const (
 )
 
 type oneAgentUpdater struct {
-	dk        *dynakube.DynaKube
-	apiReader client.Reader
-	dtClient  dtclient.Client
+	dk            *dynakube.DynaKube
+	apiReader     client.Reader
+	versionClient version.APIClient
 }
 
 func newOneAgentUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
-	dtClient dtclient.Client,
+	versionClient version.APIClient,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
-		dk:        dk,
-		apiReader: apiReader,
-		dtClient:  dtClient,
+		dk:            dk,
+		apiReader:     apiReader,
+		versionClient: versionClient,
 	}
 }
 
@@ -83,7 +83,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	latestVersion := updater.CustomVersion()
 
 	if latestVersion == "" {
-		latestVersion, err = updater.dtClient.AsV2().Version.GetLatestAgentVersion(ctx, installer.OsUnix, installer.TypeDefault)
+		latestVersion, err = updater.versionClient.GetLatestAgentVersion(ctx, installer.OsUnix, installer.TypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
 			k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)

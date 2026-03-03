@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -18,20 +18,20 @@ const (
 )
 
 type activeGateUpdater struct {
-	dk        *dynakube.DynaKube
-	apiReader client.Reader
-	dtClient  dtclient.Client
+	dk            *dynakube.DynaKube
+	apiReader     client.Reader
+	versionClient version.APIClient
 }
 
 func newActiveGateUpdater(
 	dk *dynakube.DynaKube,
 	apiReader client.Reader,
-	dtClient dtclient.Client,
+	versionClient version.APIClient,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
-		dk:        dk,
-		apiReader: apiReader,
-		dtClient:  dtClient,
+		dk:            dk,
+		apiReader:     apiReader,
+		versionClient: versionClient,
 	}
 }
 
@@ -80,7 +80,7 @@ func (updater activeGateUpdater) IsAutoRegistryEnabled() bool {
 }
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
-	latestVersion, err := updater.dtClient.AsV2().Version.GetLatestActiveGateVersion(ctx, installer.OsUnix)
+	latestVersion, err := updater.versionClient.GetLatestActiveGateVersion(ctx, installer.OsUnix)
 	if err != nil {
 		log.Info("failed to determine image version", "error", err)
 		k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), activeGateVersionConditionType, err)

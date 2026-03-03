@@ -7,8 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	dtclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	versionclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,9 +29,9 @@ func TestOneAgentUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockClient := dtclientmock.NewClient(t)
+		mockVerionClient := versionclientmock.NewAPIClient(t)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVerionClient)
 
 		assert.Equal(t, "oneagent", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -86,9 +84,9 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
-		mockClient := dtclientmock.NewClient(t)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 
@@ -109,14 +107,10 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dk.OneAgent().GetDefaultImage(testVersion)
 
-		versionClient := versionclientmock.NewAPIClient(t)
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
-			Version: versionClient,
-		})
-		mockLatestAgentVersion(versionClient, testVersion, 1)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 
@@ -146,14 +140,10 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		versionClient := versionclientmock.NewAPIClient(t)
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
-			Version: versionClient,
-		})
-		mockLatestAgentVersion(versionClient, testVersion, 1)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockLatestAgentVersion(mockVersionClient, testVersion, 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile
@@ -184,14 +174,10 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		versionClient := versionclientmock.NewAPIClient(t)
-		mockClient := dtclientmock.NewClient(t)
-		mockClient.EXPECT().AsV2().Return(&dtclient.ClientV2{
-			Version: versionClient,
-		})
-		mockLatestAgentVersion(versionClient, "BOOM", 1)
+		mockVersionClient := versionclientmock.NewAPIClient(t)
+		mockLatestAgentVersion(mockVersionClient, "BOOM", 1)
 
-		updater := newOneAgentUpdater(dk, fake.NewClient(), mockClient)
+		updater := newOneAgentUpdater(dk, fake.NewClient(), mockVersionClient)
 
 		err := updater.UseTenantRegistry(t.Context())
 		require.Error(t, err)
