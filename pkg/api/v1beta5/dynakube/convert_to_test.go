@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	registryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -308,7 +309,7 @@ func getOldDynakubeBase() DynaKube {
 			TelemetryIngest: &telemetryingest.Spec{
 				ServiceName: "telemetry-ingest-service-name",
 				TLSRefName:  "telemetry-ingest-tls-secret-name",
-				Protocols:   []string{"protocol1", "protocol2"},
+				Protocols:   []otelcgen.Protocol{"protocol1", "protocol2"},
 			},
 		},
 	}
