@@ -11,16 +11,14 @@ import (
 )
 
 type Reconciler struct {
-	client    client.Client
-	apiReader client.Reader
-	clusterID string
+	configMapQuery k8sconfigmap.QueryObject
+	clusterID      string
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, clusterID string) *Reconciler {
 	return &Reconciler{
-		client:    clt,
-		apiReader: apiReader,
-		clusterID: clusterID,
+		configMapQuery: k8sconfigmap.Query(clt, apiReader, log),
+		clusterID:      clusterID,
 	}
 }
 
@@ -67,15 +65,13 @@ func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, dk *dynakube
 		return errors.WithStack(err)
 	}
 
-	configMapQuery := k8sconfigmap.Query(r.client, r.apiReader, log)
-
 	if len(configMapData) > 0 {
-		_, err := configMapQuery.CreateOrUpdate(ctx, configMap)
+		_, err := r.configMapQuery.CreateOrUpdate(ctx, configMap)
 
 		return err
 	}
 
-	return configMapQuery.Delete(ctx, configMap)
+	return r.configMapQuery.Delete(ctx, configMap)
 }
 
 func GetDeploymentMetadataConfigMapName(dynakubeName string) string {
