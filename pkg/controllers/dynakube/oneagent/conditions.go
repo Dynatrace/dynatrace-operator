@@ -22,7 +22,7 @@ func setDaemonSetCreatedCondition(conditions *[]metav1.Condition) {
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setDaemonSetGenerationFailedCondition(conditions *[]metav1.Condition, err error) {
+func setDaemonSetGenerationFailedCondition(conditions *[]metav1.Condition, _ error) {
 	condition := metav1.Condition{
 		Type:    oaConditionType,
 		Status:  metav1.ConditionFalse,

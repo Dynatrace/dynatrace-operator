@@ -44,7 +44,7 @@ func setVerificationSkippedReasonCondition(conditions *[]metav1.Condition, condi
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setVerificationFailedReasonCondition(conditions *[]metav1.Condition, conditionType string, err error) {
+func setVerificationFailedReasonCondition(conditions *[]metav1.Condition, conditionType string, _ error) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,

@@ -19,7 +19,7 @@ func setServiceEntryUpdatedConditionForComponent(conditions *[]metav1.Condition,
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setServiceEntryFailedConditionForComponent(conditions *[]metav1.Condition, component string, err error) {
+func setServiceEntryFailedConditionForComponent(conditions *[]metav1.Condition, component string, _ error) {
 	condition := metav1.Condition{
 		Type:    getConditionTypeName(component),
 		Status:  metav1.ConditionFalse,
