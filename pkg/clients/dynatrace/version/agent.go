@@ -42,7 +42,7 @@ func getLatestAgentVersionPath(os string, installerType string) string {
 
 // determineArch gives you the proper arch value, because the OSAgent and ActiveGate images on the tenant-image-registry only have AMD images.
 func determineArch(installerType string) string {
-	if installerType == installer.InstallerTypeDefault {
+	if installerType == installer.TypeDefault {
 		return ""
 	}
 
@@ -50,8 +50,8 @@ func determineArch(installerType string) string {
 }
 
 // determineFlavor gives you the proper flavor value, because the default installer type has no "multidistro" flavor so the default flavor is always needed in that case.
-func determineFlavor(installerType string) string { //nolint:nolintlint,unparam
-	if installerType == installer.InstallerTypeDefault {
+func determineFlavor(installerType string) string {
+	if installerType == installer.TypeDefault {
 		return arch.FlavorDefault
 	}
 

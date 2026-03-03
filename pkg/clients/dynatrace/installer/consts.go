@@ -2,8 +2,8 @@ package installer
 
 // Relevant installer types.
 const (
-	InstallerTypeDefault = "default"
-	InstallerTypePaaS    = "paas"
+	TypeDefault = "default"
+	TypePaaS    = "paas"
 )
 
 const (

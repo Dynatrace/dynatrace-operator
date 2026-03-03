@@ -29,7 +29,7 @@ func (dtc *dynatraceClient) GetLatestAgent(ctx context.Context, os, installerTyp
 
 // determineArch gives you the proper arch value, because the OSAgent and ActiveGate images on the tenant-image-registry only have AMD images.
 func determineArch(installerType string) string {
-	if installerType == installer.InstallerTypeDefault {
+	if installerType == installer.TypeDefault {
 		return ""
 	}
 

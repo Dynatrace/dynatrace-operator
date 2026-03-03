@@ -80,7 +80,7 @@ func run(cmd *cobra.Command, _ []string) error {
 
 		props := url.Properties{
 			Os:            installer.OsUnix,
-			Type:          installer.InstallerTypePaaS,
+			Type:          installer.TypePaaS,
 			Flavor:        flavor,
 			Arch:          arch.Arch,
 			Technologies:  technologies,

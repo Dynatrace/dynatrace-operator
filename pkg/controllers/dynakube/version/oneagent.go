@@ -83,7 +83,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	latestVersion := updater.CustomVersion()
 
 	if latestVersion == "" {
-		latestVersion, err = updater.dtClient.AsV2().Version.GetLatestAgentVersion(ctx, installer.OsUnix, installer.InstallerTypeDefault)
+		latestVersion, err = updater.dtClient.AsV2().Version.GetLatestAgentVersion(ctx, installer.OsUnix, installer.TypeDefault)
 		if err != nil {
 			log.Info("failed to determine image version")
 			k8sconditions.SetDynatraceAPIError(updater.dk.Conditions(), oaConditionType, err)

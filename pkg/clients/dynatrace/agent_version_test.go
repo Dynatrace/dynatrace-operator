@@ -70,7 +70,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(ctx, installer.OsUnix, installer.InstallerTypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
+		err = dtc.GetLatestAgent(ctx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, "arch", nil, false, file)
 		require.NoError(t, err)
 
 		resp, err := os.ReadFile(file.Name())
@@ -82,7 +82,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(ctx, installer.OsUnix, installer.InstallerTypePaaS, arch.FlavorMultidistro, "invalid", nil, false, file)
+		err = dtc.GetLatestAgent(ctx, installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, "invalid", nil, false, file)
 		require.Error(t, err)
 	})
 }
@@ -95,7 +95,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		readWriter := bytes.NewBuffer([]byte{})
-		err := dtc.GetAgent(ctx, installer.OsUnix, installer.InstallerTypePaaS, "", "", "", nil, false, readWriter)
+		err := dtc.GetAgent(ctx, installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, readWriter)
 
 		require.NoError(t, err)
 		assert.Equal(t, versionedAgentResponse, readWriter.String())
@@ -105,7 +105,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		readWriter := bytes.NewBuffer([]byte{})
-		err := dtc.GetAgent(ctx, installer.OsUnix, installer.InstallerTypePaaS, "", "", "", nil, false, readWriter)
+		err := dtc.GetAgent(ctx, installer.OsUnix, installer.TypePaaS, "", "", "", nil, false, readWriter)
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
 	})
@@ -118,7 +118,7 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, versionsRequestHandler)
 		defer dynatraceServer.Close()
 
-		availableVersions, err := dtc.GetAgentVersions(ctx, installer.OsUnix, installer.InstallerTypePaaS, "")
+		availableVersions, err := dtc.GetAgentVersions(ctx, installer.OsUnix, installer.TypePaaS, "")
 
 		require.NoError(t, err)
 		assert.Len(t, availableVersions, 4)
@@ -131,7 +131,7 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
-		availableVersions, err := dtc.GetAgentVersions(ctx, installer.OsUnix, installer.InstallerTypePaaS, "")
+		availableVersions, err := dtc.GetAgentVersions(ctx, installer.OsUnix, installer.TypePaaS, "")
 
 		require.EqualError(t, err, "dynatrace server error 400: test-error")
 		assert.Empty(t, availableVersions)

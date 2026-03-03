@@ -41,27 +41,27 @@ func TestGetLatestAgentVersion(t *testing.T) {
 		return NewClient(client)
 	}
 
-	t.Run("ok, uses paas token, InstallerTypeDefault", func(t *testing.T) {
+	t.Run("ok, uses paas token, installer.TypeDefault", func(t *testing.T) {
 		queryParams := map[string]string{
 			"bitness": "64",
 			"flavor":  arch.FlavorDefault,
 		}
 
-		client := setupMockedClient(t, installer.OsUnix, installer.InstallerTypeDefault, queryParams)
-		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypeDefault)
+		client := setupMockedClient(t, installer.OsUnix, installer.TypeDefault, queryParams)
+		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypeDefault)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
 
-	t.Run("ok, uses paas token, InstallerTypePaaS", func(t *testing.T) {
+	t.Run("ok, uses paas token, installer.TypePaaS", func(t *testing.T) {
 		queryParams := map[string]string{
 			"bitness": "64",
 			"flavor":  arch.Flavor,
 			"arch":    arch.Arch,
 		}
 
-		client := setupMockedClient(t, installer.OsUnix, installer.InstallerTypePaaS, queryParams)
-		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypePaaS)
+		client := setupMockedClient(t, installer.OsUnix, installer.TypePaaS, queryParams)
+		version, err := client.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypePaaS)
 		require.NoError(t, err)
 		assert.Equal(t, "1.2.3", version)
 	})
@@ -69,7 +69,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		versionClient := setupVersionClient(agentServerHandlerOk())
 
-		response, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypeDefault)
+		response, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypeDefault)
 
 		require.NoError(t, err)
 
@@ -79,7 +79,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 	t.Run("bad request", func(t *testing.T) {
 		versionClient := setupVersionClient(agentServerHandlerBadRequest())
 
-		_, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypeDefault)
+		_, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypeDefault)
 
 		var httpErr *core.HTTPError
 		ok := errors.As(err, &httpErr)
@@ -93,7 +93,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 	t.Run("unauthorized", func(t *testing.T) {
 		versionClient := setupVersionClient(agentServerHandlerUnauthorized())
 
-		_, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.InstallerTypeDefault)
+		_, err := versionClient.GetLatestAgentVersion(t.Context(), installer.OsUnix, installer.TypeDefault)
 
 		var httpErr *core.HTTPError
 		ok := errors.As(err, &httpErr)
@@ -123,7 +123,7 @@ func agentServerHandlerOk() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestAgentVersionPath(installer.OsUnix, installer.InstallerTypeDefault):
+		case getLatestAgentVersionPath(installer.OsUnix, installer.TypeDefault):
 			writer.WriteHeader(http.StatusOK)
 
 			response := "{\"latestAgentVersion\":\"1.2.3\"}"
@@ -140,7 +140,7 @@ func agentServerHandlerBadRequest() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestAgentVersionPath(installer.OsUnix, installer.InstallerTypeDefault):
+		case getLatestAgentVersionPath(installer.OsUnix, installer.TypeDefault):
 			writer.WriteHeader(http.StatusBadRequest)
 
 			_, _ = writer.Write([]byte("{\"error\":{\"code\":400,\"message\":\"Constraints violated.\",\"constraintViolations\":[{\"path\":\"bitness\",\"message\":\"'any' must be any of [...]\"}]}}"))
@@ -155,7 +155,7 @@ func agentServerHandlerUnauthorized() http.HandlerFunc {
 		writer.Header().Set("Content-Type", "application/json")
 
 		switch request.URL.Path {
-		case getLatestAgentVersionPath(installer.OsUnix, installer.InstallerTypeDefault):
+		case getLatestAgentVersionPath(installer.OsUnix, installer.TypeDefault):
 			writer.WriteHeader(http.StatusUnauthorized)
 
 			_, _ = writer.Write([]byte("{\"error\":{\"code\":401,\"message\":\"Token Authentication failed\"}}"))

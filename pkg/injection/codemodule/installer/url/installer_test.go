@@ -46,19 +46,19 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		target := filepath.Join(t.TempDir(), "target")
 		dtc := dtclientmock.NewClient(t)
 		dtc.
-			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), installer.OsUnix, installer.InstallerTypePaaS, arch.FlavorMultidistro,
+			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
 				mock.AnythingOfType("bool"), mock.AnythingOfType("*os.File")).
 			Return(errors.New(testErrorMessage))
 		dtc.
-			On("GetAgentVersions", mock.AnythingOfType("context.backgroundCtx"), installer.OsUnix, installer.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
+			On("GetAgentVersions", mock.AnythingOfType("context.backgroundCtx"), installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, errors.New(testErrorMessage))
 
 		installer := &Installer{
 			dtc: dtc,
 			props: &Properties{
 				Os:     installer.OsUnix,
-				Type:   installer.InstallerTypePaaS,
+				Type:   installer.TypePaaS,
 				Flavor: arch.FlavorMultidistro,
 			},
 		}
@@ -71,7 +71,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		target := filepath.Join(tmpDir, "target")
 		dtc := dtclientmock.NewClient(t)
 		dtc.
-			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), installer.OsUnix, installer.InstallerTypePaaS, arch.FlavorMultidistro,
+			On("GetAgent", mock.AnythingOfType("context.backgroundCtx"), installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
 				mock.AnythingOfType("bool"), mock.AnythingOfType("*os.File")).
 			Run(func(args mock.Arguments) {
@@ -90,7 +90,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
 				Os:     installer.OsUnix,
-				Type:   installer.InstallerTypePaaS,
+				Type:   installer.TypePaaS,
 				Flavor: arch.FlavorMultidistro,
 			},
 		}
@@ -105,7 +105,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		dtc.On("GetAgent",
 			mock.AnythingOfType("context.backgroundCtx"),
 			installer.OsUnix,
-			installer.InstallerTypePaaS,
+			installer.TypePaaS,
 			arch.FlavorMultidistro,
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string"),
@@ -129,7 +129,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
 				Os:            installer.OsUnix,
-				Type:          installer.InstallerTypePaaS,
+				Type:          installer.TypePaaS,
 				Flavor:        arch.FlavorMultidistro,
 				TargetVersion: testVersion,
 			},
@@ -143,7 +143,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		target := filepath.Join(tmpDir, VersionLatest)
 		dtc := dtclientmock.NewClient(t)
 		dtc.
-			On("GetLatestAgent", mock.AnythingOfType("context.backgroundCtx"), installer.OsUnix, installer.InstallerTypePaaS, arch.FlavorMultidistro,
+			On("GetLatestAgent", mock.AnythingOfType("context.backgroundCtx"), installer.OsUnix, installer.TypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("bool"),
 				mock.AnythingOfType("*os.File")).
 			Run(func(args mock.Arguments) {
@@ -162,7 +162,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			extractor: zip.NewOneAgentExtractor(metadata.PathResolver{RootDir: tmpDir}),
 			props: &Properties{
 				Os:            installer.OsUnix,
-				Type:          installer.InstallerTypePaaS,
+				Type:          installer.TypePaaS,
 				Flavor:        arch.FlavorMultidistro,
 				TargetVersion: VersionLatest,
 			},

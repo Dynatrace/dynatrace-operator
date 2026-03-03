@@ -167,7 +167,7 @@ func checkAPIURLForLatestAgentVersion(ctx context.Context, baseLog logd.Logger, 
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
 
-	_, err = dtc.AsV2().Version.GetLatestAgentVersion(ctx, installer.OsUnix, installer.InstallerTypeDefault)
+	_, err = dtc.AsV2().Version.GetLatestAgentVersion(ctx, installer.OsUnix, installer.TypeDefault)
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}
