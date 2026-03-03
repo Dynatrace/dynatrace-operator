@@ -195,8 +195,9 @@ func (c *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEnt
 
 	err := c.apiClient.GET(ctx, ObjectsPath).
 		WithQueryParams(map[string]string{
-			schemaIDsQueryParam: schemaID,
-			scopesQueryParam:    monitoredEntity.ID,
+			validateOnlyQueryParam: "true",
+			schemaIDsQueryParam:    schemaID,
+			scopesQueryParam:       monitoredEntity.ID,
 		}).
 		Execute(&response)
 	if err != nil {
