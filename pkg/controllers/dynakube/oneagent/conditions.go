@@ -29,8 +29,5 @@ func setDaemonSetGenerationFailedCondition(conditions *[]metav1.Condition, err e
 		Reason:  daemonSetGenerationFailedReason,
 		Message: "Failed to generate the DaemonSet configuration",
 	}
-
-	log.Error(err, "failed to generate the DaemonSet configuration")
-
 	_ = meta.SetStatusCondition(conditions, condition)
 }

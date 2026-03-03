@@ -31,7 +31,6 @@ func (controller *Controller) setConditionTokenError(dk *dynakube.DynaKube, err 
 		Message: msg,
 	}
 
-	log.Error(err, "token verification failed", "dynakube", dk.Name, "namespace", dk.Namespace)
 	controller.setCondition(dk, tokenErrorCondition)
 }
 

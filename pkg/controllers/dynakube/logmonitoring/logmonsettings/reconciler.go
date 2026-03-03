@@ -79,14 +79,14 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 		msg := "kubernetesClusterMEID is not available, which is needed for logmonitoring settings creation, will skip it for now"
 		log.Info(msg)
 
-		setSkippedCondition(r.dk.Conditions(), msg)
+		setSkippedCondition(r.dk.Conditions(), err)
 
 		return nil
 	}
 
 	logMonitoringSettings, err := r.dtc.GetSettingsForLogModule(ctx, r.dk.Status.KubernetesClusterMEID)
 	if err != nil {
-		setErrorCondition(r.dk.Conditions(), err.Error())
+		setErrorCondition(r.dk.Conditions(), err)
 
 		return errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -106,7 +106,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 
 	objectID, err := r.dtc.CreateLogMonitoringSetting(ctx, r.dk.Status.KubernetesClusterMEID, r.dk.Status.KubernetesClusterName, matchers)
 	if err != nil {
-		setErrorCondition(r.dk.Conditions(), err.Error())
+		setErrorCondition(r.dk.Conditions(), err)
 
 		return err
 	}

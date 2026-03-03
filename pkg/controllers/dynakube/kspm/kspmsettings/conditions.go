@@ -23,12 +23,12 @@ func setExistsCondition(conditions *[]metav1.Condition) {
 	_ = meta.SetStatusCondition(conditions, condition)
 }
 
-func setErrorCondition(conditions *[]metav1.Condition, message string) {
+func setErrorCondition(conditions *[]metav1.Condition, err error) {
 	condition := metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  errorReason,
-		Message: "KSPM settings creation encountered an error: " + message,
+		Message: "KSPM settings creation encountered an error",
 	}
 	_ = meta.SetStatusCondition(conditions, condition)
 }
