@@ -79,7 +79,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context) error {
 		msg := "kubernetesClusterMEID is not available, which is needed for logmonitoring settings creation, will skip it for now"
 		log.Info(msg)
 
-		setSkippedCondition(r.dk.Conditions(), err)
+		setSkippedCondition(r.dk.Conditions(), msg)
 
 		return nil
 	}
