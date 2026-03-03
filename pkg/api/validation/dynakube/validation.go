@@ -37,7 +37,6 @@ var (
 		IsInvalidAPIURL,
 		IsThirdGenAPIUrl,
 		invalidActiveGateCapabilities,
-		duplicateActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
 		invalidActiveGateProxyURL,
 		conflictingOneAgentConfiguration,

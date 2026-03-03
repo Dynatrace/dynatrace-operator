@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
@@ -165,13 +166,13 @@ func TestWebhook(t *testing.T) {
 		})
 	}
 
-	t.Run("duplicate telemetryingest protocols", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: metav1.NamespaceDefault,
-			},
-			Spec: dynakube.DynaKubeSpec{
+	invalidTests := []struct {
+		name string
+		spec dynakube.DynaKubeSpec
+	}{
+		{
+			name: "duplicate telemetryingest protocols",
+			spec: dynakube.DynaKubeSpec{
 				APIURL: "https://test.localhost/api",
 				TelemetryIngest: &telemetryingest.Spec{
 					Protocols: []string{
@@ -180,11 +181,35 @@ func TestWebhook(t *testing.T) {
 					},
 				},
 			},
-		}
+		},
+		{
+			name: "duplicate activegate capabilities",
+			spec: dynakube.DynaKubeSpec{
+				APIURL: "https://test.localhost/api",
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						"routing",
+						"routing",
+					},
+				},
+			},
+		},
+	}
 
-		err := clt.Create(t.Context(), dk)
-		require.True(t, apierrors.IsInvalid(err), err)
-	})
+	for _, tt := range invalidTests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := &dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: metav1.NamespaceDefault,
+				},
+				Spec: tt.spec,
+			}
+
+			err := clt.Create(t.Context(), dk)
+			require.True(t, apierrors.IsInvalid(err), err)
+		})
+	}
 }
 
 func compareWebhookResult(t *testing.T, clt client.Client, version, name string, seen sets.Set[string]) {

@@ -111,7 +111,6 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			[]string{
 				errorNoAPIURL,
 				errorConflictingNamespaceSelector,
-				fmt.Sprintf(errorDuplicateActiveGateCapability, activegate.KubeMonCapability.DisplayName),
 				fmt.Sprintf(errorInvalidActiveGateCapability, "me dumb"),
 				fmt.Sprintf(errorNodeSelectorConflict, "conflict2")},
 			&dynakube.DynaKube{
@@ -132,7 +131,6 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					},
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
-							activegate.KubeMonCapability.DisplayName,
 							activegate.KubeMonCapability.DisplayName,
 							"me dumb",
 						},
